@@ -1,0 +1,78 @@
+<div>
+	<button>Reject</button>
+	<button>Accept</button>
+</div>
+{% set terms_exist = doc.terms and (doc.terms|striptags).strip() or "" %}
+
+{% if letter_head and not no_letterhead -%}
+    <div class="letter-head">{{ letter_head }}</div>
+    <hr>
+{%- endif %}
+
+<div {% if terms_exist -%} class="page-break" {%- endif %}>
+<p>
+
+<!-- job offer content starts here, <br> is used to create new lines -->
+Date: {{ doc.offer_date }}
+<br><br>
+
+Dear {{ doc.applicant_name }}, 
+
+<br><br>
+
+We are pleased to appoint you in the services of {{ doc.company }} on the terms and conditions detailed in this letter.
+
+<br><br>
+
+Your designation shall be <b>{{ doc.designation }}</b>.
+
+<br><br>
+
+<!-- job offer terms and description from the table -->
+
+{%- if doc.offer_terms -%}
+    {%- for row in doc.offer_terms -%}
+        <b>{{ row.offer_term }}:</b> {{ row.value }}
+
+        <br>
+    {%- endfor -%}
+{%- endif -%}
+
+<br>
+
+<!-- job offer content continues -->
+
+
+Please read the detailed terms as below. If you have any queries, feel free to get in touch with us.
+We look forward to your long and fruitful career association with our organisation.
+If you decide to join us, 'Welcome to {{ doc.company }} !'
+
+<br><br>
+
+<p class="strong">
+
+Yours truly,
+
+<br><br><br><br>
+
+Authorized Signatory
+
+<br>
+
+{{ doc.company }}
+
+<!-- job offer content ends here -->
+
+</p>
+</div>
+
+<!-- job offer terms and conditions -->
+{% if terms_exist %}
+<div> {{ doc.terms }} </div>
+{% endif %}
+
+<script>
+	function alert(){
+
+	}
+</script>

@@ -1,0 +1,14 @@
+frappe.ui.form.on("Job Offer", {
+    refresh: function(frm){
+		if(frm.doc.status!=="Accepted"){
+			  frm.add_custom_button(__('Send Job Offer'), function(){
+				window.location.href = "http://hybrowlabs.localhost:8000/job_offer";
+			});
+		}
+		else{
+			frm.add_custom_button(__('Create Onboarding'), function(){
+				window.location.href = "http://hybrowlabs.localhost:8000/job_offer";
+			});
+		}
+    }
+})

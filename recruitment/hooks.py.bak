@@ -53,11 +53,7 @@ doctype_js = {"Job Offer" : ["public/js/job_offer.js"]}
 # ----------
 
 # automatically create page for each record of this doctype
-website_generators = ["Web Page"]
-
-website_context = {
-    "job_offer": "recruitment.www.get_context"
-}
+# website_generators = ["Web Page"]
 
 # Jinja
 # ----------

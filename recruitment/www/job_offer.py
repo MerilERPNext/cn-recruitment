@@ -1,0 +1,6 @@
+import frappe
+def get_context(context):
+	context.show_sidebar = True
+	logged_in_user = "prathamjadhav052@gmail.com"
+	job_offer_doc = frappe.get_doc("Job Offer",frappe.db.get_value('Job Offer', filters={'job_applicant': logged_in_user}))
+	context.doc = job_offer_doc
