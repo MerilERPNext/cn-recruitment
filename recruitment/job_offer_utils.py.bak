@@ -1,0 +1,25 @@
+import frappe
+
+@frappe.whitelist(allow_guest=True)
+def job_offer_update(status,appl):
+	jo_id = frappe.db.get_value("Job Offer",{"job_applicant":appl})
+	frappe.db.set_value('Job Offer',jo_id, {'status': status})
+	job_applicant=frappe.db.get_value("Job Offer",jo_id,"job_applicant")
+	frappe.db.set_value("Job Applicant",job_applicant,"status",status)
+	return jo_id
+
+@frappe.whitelist()
+def send_job_offer(job_offer_url,candidate,mail_id):
+	email_context={"canditate":candidate,"job_offer_url":job_offer_url}
+	frappe.sendmail(
+		recipients=[mail_id],
+		subject=frappe.render_template(
+			frappe.db.get_value("Email Template", "Job Offer", "subject")
+		),
+		message=frappe.render_template(
+			frappe.db.get_value("Email Template", "Job Offer", "response"),
+			email_context
+		),
+		args=email_context
+	)
+	frappe.msgprint("Job Offer Sent Successfully")
