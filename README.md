@@ -4,4 +4,4 @@ Recruitment
 
 #### License
 
-mit
+Propreitory
