@@ -29,7 +29,10 @@ fixtures = [{"dt":"Email Template","filters":[["name","IN",["Job Offer"]]]}]
 
 # include js in doctype views
 doctype_js = {
-	"Job Offer" : ["public/js/job_offer.js"]
+	"Job Offer" : ["public/js/job_offer.js"],
+	"Job Requisition" : ["public/js/job_requisition.js"],
+	"Job Applicant" : ["public/js/job_applicant.js"],
+	"Interview" : ["public/js/interview.js"],
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -165,9 +168,9 @@ website_context = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "recruitment.event.get_events"
-# }
+override_whitelisted_methods = {
+	"hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

@@ -1,4 +1,5 @@
 import frappe
+import json
 
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status,appl):
@@ -14,7 +15,16 @@ def send_job_offer(job_offer_url,candidate,mail_id):
 	email_context={"canditate":candidate,"job_offer_url":job_offer_url}
 	settings =  frappe.get_doc("Recruitment Settings")
 	job_offer_temp = settings.job_offer_template
+	jo_name = frappe.db.get_value("Job Offer",{"job_applicant":mail_id})
+	jo_doc = frappe.get_doc("Job Offer",jo_name)
+	output_pdf = frappe.get_print("Job Offer", jo_name, "Job Offer", doc=jo_doc, as_pdf = True, output = None)
+	pdf_attachment = {
+    'fname':jo_name+'.pdf',  # Name of the file
+    'fcontent': output_pdf,  # Byte content of the file
+    'content_type': 'application/pdf'  # Content type of the file
+}
 	frappe.sendmail(
+		attachments=[pdf_attachment],
 		recipients=[mail_id],
 		subject=frappe.render_template(
 			frappe.db.get_value("Email Template", job_offer_temp, "subject")
