@@ -5,10 +5,15 @@ import json
 def job_offer_update(status,appl):
 	jo_id = frappe.db.get_value("Job Offer",{"job_applicant":appl})
 	settings = frappe.get_doc("Recruitment Settings")
+	
+	return {"jo_id":jo_id,"webform":settings.employee_onboarding_webform}
+
+@frappe.whitelist(allow_guest=True)
+def submit_docs(status,appl):
+	jo_id = frappe.db.get_value("Job Offer",{"job_applicant":appl})
 	frappe.db.set_value('Job Offer',jo_id, {'status': status,'docstatus':1})
 	job_applicant=frappe.db.get_value("Job Offer",jo_id,"job_applicant")
 	frappe.db.set_value("Job Applicant",job_applicant,"status",status)
-	return {"jo_id":jo_id,"webform":settings.employee_onboarding_webform}
 
 @frappe.whitelist()
 def send_job_offer(job_offer_url,candidate,mail_id):

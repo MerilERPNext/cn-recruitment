@@ -5,7 +5,6 @@ from hrms.hr.doctype.employee_onboarding.employee_onboarding import EmployeeOnbo
 
 @frappe.whitelist()
 def make_employee(source_name, target_doc=None):
-	frappe.msgprint("here")
 	doc = frappe.get_doc("Employee Onboarding", source_name)
 	EmployeeOnboarding.validate_employee_creation(doc)
 
@@ -14,7 +13,7 @@ def make_employee(source_name, target_doc=None):
 		target.status = "Active"
 	field_map = {}
 	settings = frappe.get_doc('Recruitment Settings')
-	for field in settings.mapping_fields:
+	for field in settings["mapping_fields"]:
 		field_map[field.employee_onboarding]=field.employee
 	doc = get_mapped_doc(
 		"Employee Onboarding",

@@ -12,8 +12,8 @@ def make_employee(source_name, target_doc=None):
 		target.personal_email = frappe.db.get_value("Job Applicant", source.job_applicant, "email_id")
 		target.status = "Active"
 	field_map = {}
-	settings = frappe.get_doc('Recruitment Settings')
-	for field in settings.mapping_fields:
+	settings = frappe.get_doc('Recruitment Settings').as_dict()
+	for field in settings["mapping_fields"]:
 		field_map[field.employee_onboarding]=field.employee
 	doc = get_mapped_doc(
 		"Employee Onboarding",

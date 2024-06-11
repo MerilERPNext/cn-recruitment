@@ -13,11 +13,6 @@
 {% endif %}
 
 <script>
-	 
-		$('.datepicker').datepicker({
-			format: 'dd-mm-yyyy'
-		});
- 
 	function rejectoffer() {
     let text = "Are you sure you want to reject this job offer?";
     if (confirm(text)) {
@@ -35,6 +30,9 @@
         .then(data => {
 			alert("Thank you for considering us, and we wish you the best in your future endeavors.")
 			document.getElementById("operations").style.display = "none";
+			fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.submit_docs?status=Rejected&appl='+appl, {
+				method: 'POST',
+			})
         })
         .catch(error => {
             console.error('There was a problem with your fetch operation:', error);
@@ -55,6 +53,15 @@ function accept(){
 	})
 	.then(data => {
 		window.location.href = window.location.origin+"/"+data.message.webform+"/new?job_offer="+data.message.jo_id+"&job_applicant="+appl;
+		fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl='+appl, {
+			method: 'POST',
+		})
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('Network response was not ok');
+			}
+			return response.json();
+		})
 	})
 	.catch(error => {
 		console.error('There was a problem with your fetch operation:', error);

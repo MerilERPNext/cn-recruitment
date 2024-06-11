@@ -1,6 +1,6 @@
 frappe.ui.form.on("Job Requisition", {
     refresh: function(frm){
-		//if(frm.doc.status=="Awaiting Response"){
+		if(frm.doc.status=="Open & Approved"){
 			  frm.add_custom_button(__('Job Opening'), function(){
 				frappe.call({
 					method: "recruitment.customizations.job_requisition.job_requisition.generate_job_opening",
@@ -13,6 +13,6 @@ frappe.ui.form.on("Job Requisition", {
 				});
 
 			},__("Create"));
-		//}
+		}
     }
 })
