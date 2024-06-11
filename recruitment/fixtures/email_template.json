@@ -1,0 +1,12 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2024-06-11 16:45:13.451678",
+  "name": "Job Offer",
+  "response": "<div class=\"ql-editor read-mode\"><p>Dear {{canditate}},</p><p>\tWe are pleased to offer you a position at our company. Please review the job offer at the following link:</p><p>\t{{job_offer_url}}</p><p><br></p><p>Thank You,</p><p>Hybrow Labs Team</p></div>",
+  "response_html": null,
+  "subject": "Your Offer from Hybrowlabs Technologies",
+  "use_html": 0
+ }
+]

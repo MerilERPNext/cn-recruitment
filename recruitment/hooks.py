@@ -23,13 +23,19 @@ app_license = "mit"
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
-fixtures = [{"dt":"Email Template","filters":[["name","IN",["Job Offer"]]]}]
+fixtures = [
+    {"dt": "Email Template", "filters": [["name", "IN", ["Job Offer"]]]},
+    {"dt": "Purpose of Travel", "filters": [["name", "IN", ["Interview"]]]},
+]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
 doctype_js = {
-	"Job Offer" : ["public/js/job_offer.js"]
+    "Job Offer": ["public/js/job_offer.js"],
+    "Job Requisition": ["public/js/job_requisition.js"],
+    "Job Applicant": ["public/js/job_applicant.js"],
+    "Interview": ["public/js/interview.js"],
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -57,9 +63,7 @@ doctype_js = {
 # automatically create page for each record of this doctype
 website_generators = ["Web Page"]
 
-website_context = {
-    "job_offer": "recruitment.www.get_context"
-}
+website_context = {"job_offer": "recruitment.www.get_context"}
 
 # Jinja
 # ----------
@@ -165,9 +169,9 @@ website_context = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "recruitment.event.get_events"
-# }
+override_whitelisted_methods = {
+    "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
@@ -232,4 +236,3 @@ website_context = {
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-
