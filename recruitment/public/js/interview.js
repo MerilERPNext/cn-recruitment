@@ -1,6 +1,6 @@
 frappe.ui.form.on("Interview", {
     refresh: function(frm){
-		if(frm.doc.status=="Cleared" && frm.doc.docstatus=="1"){
+		if(frm.doc.status=="Pending"){
 			  frm.add_custom_button(__('Travel Request'), function(){
 				frappe.call({
 					method: "recruitment.customizations.interview.interview.generate_travel_request",
