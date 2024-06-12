@@ -26,7 +26,7 @@ def generate_job_opening(job_requisition):
 				if job_title:
 					new_ja.job_title = job_title
 				else:
-					job_title=frappe.db.get_value("Job Opening",{"job_requisition":job_requisition})
+					job_title=frappe.db.get_value("Job Opening",{"job_requisition":job_requisition},["name"])
 				new_ja.designation = jr_doc.designation
 				new_ja.status="Open"
 				new_ja.custom_shortlisted_by_hiring_manager="Yes"
