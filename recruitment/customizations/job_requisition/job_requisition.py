@@ -11,6 +11,7 @@ def generate_job_opening(job_requisition):
 		new_jo.designation = jr_doc.designation
 		new_jo.company=jr_doc.company
 		new_jo.description = jr_doc.description
+		new_jo.closes_on = jr_doc.expected_by
 		new_jo.publish=1
 		new_jo.job_requisition=job_requisition
 		new_jo.save()
