@@ -37,7 +37,6 @@ def generate_travel_request(interview_id):
             ["employee_name"],
         )
     )
-	
 	tr_doc.description = description
     if emp_id:
         tr_doc.employee = emp_id
