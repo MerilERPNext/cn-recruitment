@@ -22,21 +22,21 @@ def generate_travel_request(interview_id):
                 "Employee", {"user_id": inter.interviewer}, ["employee_name"]
             )
         )
-    # description = (
-    #     "Applicant Name: "
-    #     + str(
-    #         frappe.db.get_value("Job Applicant", in_doc.job_applicant, "applicant_name")
-    #     )
-    #     + "\nInterview Date: "
-    #     + str(in_doc.scheduled_on)
-    #     + "\nCreated By: "
-    #     + frappe.db.get_value(
-    #         "Employee",
-    #         {"user_id": cur_user},
-    #         ["employee_name"],
-    #     )
-    # )
-    tr_doc.description = ""
+    description = (
+        "Applicant Name: "
+        + str(
+            frappe.db.get_value("Job Applicant", in_doc.job_applicant, "applicant_name")
+        )
+        + "\nInterview Date: "
+        + str(in_doc.scheduled_on)
+        + "\nCreated By: "
+        + frappe.db.get_value(
+            "Employee",
+            {"user_id": cur_user},
+            ["employee_name"],
+        )
+    )
+    tr_doc.description = description
     if emp_id:
         tr_doc.employee = emp_id
         tr_doc.save()
