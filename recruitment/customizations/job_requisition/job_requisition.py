@@ -18,7 +18,7 @@ def generate_job_opening(job_requisition):
 		frappe.msgprint("Job Opening Created Successfully!")
 		job_title =  new_jo.name
 	for can in jr_doc["custom_shortlist_by_hiring_manager"]:
-		if can.status=="Approve":
+		if can.status=="Approved":
 			if not frappe.db.exists("Job Applicant", {"applicant_name":can.name_of_candidate,"email_id":can.email_id}, cache=True):
 				new_ja = frappe.new_doc("Job Applicant")
 				new_ja.applicant_name=can.name_of_candidate
