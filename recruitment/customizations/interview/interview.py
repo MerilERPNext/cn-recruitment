@@ -30,8 +30,6 @@ def generate_travel_request(interview_id):
         )
         + "\nInterview Date: "
         + str(in_doc.scheduled_on)
-        + "\nInterviewer Name: "
-        + ", ".join(interviewers)
         + "\nCreated By: "
         + frappe.db.get_value(
             "Employee",
@@ -39,7 +37,9 @@ def generate_travel_request(interview_id):
             ["employee_name"],
         )
     )
-    tr_doc.description = description
+	if len(interviewers)>0:
+		tr_doc.description = description+ "\nInterviewer Name: "
+        + ", ".join(interviewers)
     if emp_id:
         tr_doc.employee = emp_id
         tr_doc.save()
