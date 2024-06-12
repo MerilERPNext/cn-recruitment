@@ -22,7 +22,6 @@ def generate_travel_request(interview_id):
                 "Employee", {"user_id": inter.interviewer}, ["employee_name"]
             )
         )
-
     description = (
         "Applicant Name: "
         + str(
@@ -37,10 +36,10 @@ def generate_travel_request(interview_id):
             ["employee_name"],
         )
     )
-	tr_doc.description = description
+    tr_doc.description = description
     if emp_id:
         tr_doc.employee = emp_id
         tr_doc.save()
         frappe.msgprint("Travel Request Created Succefully!")
-	else:
-		frappe.msgprint("User Administartor can't create Travel Request")
+    else:
+        frappe.msgprint("User Administrator can't create Travel Request")
