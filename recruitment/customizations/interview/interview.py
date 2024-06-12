@@ -42,4 +42,4 @@ def generate_travel_request(interview_id):
         tr_doc.save()
         frappe.msgprint("Travel Request Created Succefully!")
     else:
-        frappe.msgprint("User Administartor can't create Travel Request")
+        frappe.msgprint("User Administrator can't create Travel Request")
