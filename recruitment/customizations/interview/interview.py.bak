@@ -38,8 +38,9 @@ def generate_travel_request(interview_id):
         )
     )
 	if len(interviewers)>0:
-		tr_doc.description = description+ "\nInterviewer Name: "
+		description = description+ "\nInterviewer Name: "
         + ", ".join(interviewers)
+	tr_doc.description = description
     if emp_id:
         tr_doc.employee = emp_id
         tr_doc.save()
