@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class RecruitmentSettings(Document):
+class CandidateList(Document):
 	pass
