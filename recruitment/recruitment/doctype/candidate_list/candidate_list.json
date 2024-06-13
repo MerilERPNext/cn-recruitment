@@ -1,7 +1,15 @@
 {
  "actions": [],
  "allow_rename": 1,
+<<<<<<< HEAD
  "creation": "2024-06-06 17:34:21.986866",
+=======
+<<<<<<< HEAD
+ "creation": "2024-06-06 17:34:21.986866",
+=======
+ "creation": "2024-06-11 15:55:13.953168",
+>>>>>>> dab322cb5c7273ab5ee8bbcc7102beda4f54594e
+>>>>>>> 4552f31145f99b9ab0755e8d07dcb8d2c4948b54
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -13,7 +21,16 @@
   "location",
   "remark",
   "resume_attach",
+<<<<<<< HEAD
   "status"
+=======
+<<<<<<< HEAD
+  "status"
+=======
+  "status",
+  "email_id"
+>>>>>>> dab322cb5c7273ab5ee8bbcc7102beda4f54594e
+>>>>>>> 4552f31145f99b9ab0755e8d07dcb8d2c4948b54
  ],
  "fields": [
   {
@@ -72,12 +89,31 @@
    "in_list_view": 1,
    "label": "Status",
    "options": "Approved\nRejected\nHold"
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+  },
+  {
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "label": "Email ID"
+>>>>>>> dab322cb5c7273ab5ee8bbcc7102beda4f54594e
+>>>>>>> 4552f31145f99b9ab0755e8d07dcb8d2c4948b54
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
+<<<<<<< HEAD
  "modified": "2024-06-06 17:41:34.068110",
+=======
+<<<<<<< HEAD
+ "modified": "2024-06-06 17:41:34.068110",
+=======
+ "modified": "2024-06-11 15:57:35.507337",
+>>>>>>> dab322cb5c7273ab5ee8bbcc7102beda4f54594e
+>>>>>>> 4552f31145f99b9ab0755e8d07dcb8d2c4948b54
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Candidate List",

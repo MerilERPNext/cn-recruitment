@@ -1,12 +1,11 @@
 frappe.ui.form.on("Job Offer", {
-    refresh: function(frm){
+    on_save: function(frm){
 		if(frm.doc.status=="Awaiting Response"){
 			  frm.add_custom_button(__('Send Job Offer'), function(){
-				//window.location.href = window.location.origin+"/appl="+frm.doc.job_applicant;
 				frappe.call({
 					method: "recruitment.job_offer_utils.send_job_offer",
 					args:{
-						"job_offer_url": window.location.origin+"/job_offer/appl="+frm.doc.job_applicant,
+						"job_offer_url": window.location.origin+"/job_offer?appl="+frm.doc.job_applicant,
 						"candidate":frm.doc.applicant_name,
 						"mail_id":frm.doc.job_applicant
 					},

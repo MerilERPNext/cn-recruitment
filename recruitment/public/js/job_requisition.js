@@ -14,5 +14,15 @@ frappe.ui.form.on("Job Requisition", {
 
 			},__("Create"));
 		}
+<<<<<<< HEAD
+=======
+		frm.set_query("custom_salary", function() {
+        return {
+            "filters": {
+                "disabled": 0,
+            }
+        };
+    });
+>>>>>>> 4552f31145f99b9ab0755e8d07dcb8d2c4948b54
     }
 })
