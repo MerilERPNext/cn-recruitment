@@ -24,6 +24,7 @@ app_license = "mit"
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 fixtures = [
+<<<<<<< HEAD
     {"dt":"Email Template","filters":[["name","IN",["Job Offer"]]]},
     {"dt": "Custom Field", "filters": {"module": "Recruitment"}},
     {"dt": "DocType", "filters": {"module": "Recruitment"}},
@@ -32,13 +33,29 @@ fixtures = [
     ]
 
 
+=======
+    {"doctype": "Email Template", "filters": [["name", "IN", ["Job Offer"]]]},
+    {"doctype": "Purpose of Travel", "filters": [["name", "IN", ["Interview"]]]},
+	{
+        "doctype": "Custom Field",
+        "filters": [["Custom Field", "module", "=", "Recruitment"]],
+    }
+]
+>>>>>>> dab322cb5c7273ab5ee8bbcc7102beda4f54594e
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
 doctype_js = {
+<<<<<<< HEAD
 	"Job Offer" : ["public/js/job_offer.js"],
     "Job Applicant":["public/js/job_applicant.js"]
+=======
+    "Job Offer": ["public/js/job_offer.js"],
+    "Job Requisition": ["public/js/job_requisition.js"],
+    "Job Applicant": ["public/js/job_applicant.js"],
+    "Interview": ["public/js/interview.js"],
+>>>>>>> dab322cb5c7273ab5ee8bbcc7102beda4f54594e
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -66,9 +83,7 @@ doctype_js = {
 # automatically create page for each record of this doctype
 website_generators = ["Web Page"]
 
-website_context = {
-    "job_offer": "recruitment.www.get_context"
-}
+website_context = {"job_offer": "recruitment.www.get_context"}
 
 # Jinja
 # ----------
@@ -174,9 +189,9 @@ website_context = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "recruitment.event.get_events"
-# }
+override_whitelisted_methods = {
+    "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
@@ -241,4 +256,3 @@ website_context = {
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-

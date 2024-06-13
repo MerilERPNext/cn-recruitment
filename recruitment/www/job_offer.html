@@ -4,84 +4,15 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 </head>
-<div id="operations">
+<center><div id="operations" style="padding-top:20px">
 	<button type="button" class="btn btn-warning" id="reject" onclick="rejectoffer()">Reject</button>
 	<button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
-</div>
+</div></center>
 
-{% if letter_head and not no_letterhead -%}
-    <div class="letter-head">{{ letter_head }}</div>
-    <hr>
-{%- endif %}
-
-<div {% if terms_exist -%} class="page-break" {%- endif %}>
-<p>
-
-<!-- job offer content starts here, <br> is used to create new lines -->
-Date: {{ doc.offer_date }}
-<br><br>
-
-Dear {{ doc.applicant_name }}, 
-
-<br><br>
-
-We are pleased to appoint you in the services of {{ doc.company }} on the terms and conditions detailed in this letter.
-
-<br><br>
-
-Your designation shall be <b>{{ doc.designation }}</b>.
-
-<br><br>
-
-<!-- job offer terms and description from the table -->
-
-{%- if doc.offer_terms -%}
-    {%- for row in doc.offer_terms -%}
-        <b>{{ row.offer_term }}:</b> {{ row.value }}
-
-        <br>
-    {%- endfor -%}
-{%- endif -%}
-
-<br>
-
-<!-- job offer content continues -->
-
-
-Please read the detailed terms as below. If you have any queries, feel free to get in touch with us.
-We look forward to your long and fruitful career association with our organisation.
-If you decide to join us, 'Welcome to {{ doc.company }} !'
-
-<br><br>
-
-<p class="strong">
-
-Yours truly,
-
-<br><br><br><br>
-
-Authorized Signatory
-
-<br>
-
-{{ doc.company }}
-
-<!-- job offer content ends here -->
-
-</p>
-</div>
-
-<!-- job offer terms and conditions -->
-{% if terms_exist %}
-<div> {{ doc.terms }} </div>
+<div>{{frappe.get_print('Job Offer',doc,'Job Offer')}}</div>
 {% endif %}
 
 <script>
-	 
-		$('.datepicker').datepicker({
-			format: 'dd-mm-yyyy'
-		});
- 
 	function rejectoffer() {
     let text = "Are you sure you want to reject this job offer?";
     if (confirm(text)) {
@@ -99,6 +30,9 @@ Authorized Signatory
         .then(data => {
 			alert("Thank you for considering us, and we wish you the best in your future endeavors.")
 			document.getElementById("operations").style.display = "none";
+			fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.submit_docs?status=Rejected&appl='+appl, {
+				method: 'POST',
+			})
         })
         .catch(error => {
             console.error('There was a problem with your fetch operation:', error);
@@ -119,6 +53,15 @@ function accept(){
 	})
 	.then(data => {
 		window.location.href = window.location.origin+"/"+data.message.webform+"/new?job_offer="+data.message.jo_id+"&job_applicant="+appl;
+		fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl='+appl, {
+			method: 'POST',
+		})
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('Network response was not ok');
+			}
+			return response.json();
+		})
 	})
 	.catch(error => {
 		console.error('There was a problem with your fetch operation:', error);
