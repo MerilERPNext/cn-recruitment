@@ -23,13 +23,22 @@ app_license = "mit"
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
-fixtures = [{"dt":"Email Template","filters":[["name","IN",["Job Offer"]]]}]
+fixtures = [
+    {"dt":"Email Template","filters":[["name","IN",["Job Offer"]]]},
+    {"dt": "Custom Field", "filters": {"module": "Recruitment"}},
+    {"dt": "DocType", "filters": {"module": "Recruitment"}},
+
+    
+    ]
+
+
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
 doctype_js = {
-	"Job Offer" : ["public/js/job_offer.js"]
+	"Job Offer" : ["public/js/job_offer.js"],
+    "Job Applicant":["public/js/job_applicant.js"]
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
