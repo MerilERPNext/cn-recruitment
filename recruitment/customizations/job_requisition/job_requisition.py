@@ -1,5 +1,5 @@
 import frappe
-
+import json
 @frappe.whitelist()
 def generate_job_opening(job_requisition):
 	jr_doc = frappe.get_doc("Job Requisition",job_requisition).as_dict()
