@@ -14,6 +14,12 @@ def generate_job_opening(job_requisition):
 		new_jo.closes_on = jr_doc.expected_by
 		new_jo.publish=1
 		new_jo.job_requisition=job_requisition
+		for qu in new_jo.custom_qualifications:
+			row = new_jo.append('custom_qualifications', {})
+			row.schooluniversity = qu.schooluniversity
+			row.qualification = qu.qualification
+			row.level = qu.level
+			row.year_of_passing = qu.year_of_passing
 		new_jo.save()
 		frappe.msgprint("Job Opening Created Successfully!")
 		job_title =  new_jo.name
@@ -26,11 +32,10 @@ def generate_job_opening(job_requisition):
 				if job_title:
 					new_ja.job_title = job_title
 				else:
-					job_title=frappe.db.get_value("Job Opening",{"job_requisition":job_requisition})
+					new_ja.job_title=frappe.db.get_value("Job Opening",{"job_requisition":job_requisition},["name"])
 				new_ja.designation = jr_doc.designation
 				new_ja.status="Open"
 				new_ja.custom_shortlisted_by_hiring_manager="Yes"
 				new_ja.resume_attachment = can.resume_attach
 				new_ja.save()
 	frappe.msgprint("Job Applicants Created Successfully!")
-
