@@ -1,5 +1,4 @@
 import frappe
-import json
 
 @frappe.whitelist()
 def generate_job_opening(job_requisition):
