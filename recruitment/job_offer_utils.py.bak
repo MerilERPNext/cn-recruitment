@@ -1,40 +1,47 @@
 import frappe
-import json
+
 
 @frappe.whitelist(allow_guest=True)
-def job_offer_update(status,appl):
-	jo_id = frappe.db.get_value("Job Offer",{"job_applicant":appl})
-	settings = frappe.get_doc("Recruitment Settings")
-	job_applicant=frappe.db.get_value("Job Offer",jo_id,"job_applicant")
-	return {"jo_id":jo_id,"webform":settings.employee_onboarding_webform}
+def job_offer_update(status, appl):
+    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+    settings = frappe.get_doc("Recruitment Settings")
+
+    return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
+
 
 @frappe.whitelist(allow_guest=True)
-def submit_docs(status,appl):
-	frappe.db.set_value('Job Offer',jo_id, {'status': status,'docstatus':1})
-	frappe.db.set_value("Job Applicant",job_applicant,"status",status)
+def submit_docs(status, appl):
+    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+    frappe.db.set_value("Job Offer", jo_id, {"status": status, "docstatus": 1})
+    job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
+    frappe.db.set_value("Job Applicant", job_applicant, "status", status)
+
+
 @frappe.whitelist()
-def send_job_offer(job_offer_url,candidate,mail_id):
-	email_context={"canditate":candidate,"job_offer_url":job_offer_url}
-	settings =  frappe.get_doc("Recruitment Settings")
-	job_offer_temp = settings.job_offer_template
-	jo_name = frappe.db.get_value("Job Offer",{"job_applicant":mail_id})
-	jo_doc = frappe.get_doc("Job Offer",jo_name)
-	output_pdf = frappe.get_print("Job Offer", jo_name, "Job Offer", doc=jo_doc, as_pdf = True, output = None)
-	pdf_attachment = {
-    'fname':jo_name+'.pdf',  # Name of the file
-    'fcontent': output_pdf,  # Byte content of the file
-    'content_type': 'application/pdf'  # Content type of the file
-}
-	frappe.sendmail(
-		attachments=[pdf_attachment],
-		recipients=[mail_id],
-		subject=frappe.render_template(
-			frappe.db.get_value("Email Template", job_offer_temp, "subject")
-		),
-		message=frappe.render_template(
-			frappe.db.get_value("Email Template", job_offer_temp, "response"),
-			email_context
-		),
-		args=email_context
-	)
-	frappe.msgprint("Job Offer Sent Successfully")
+def send_job_offer(job_offer_url, candidate, mail_id):
+    email_context = {"canditate": candidate, "job_offer_url": job_offer_url}
+    settings = frappe.get_doc("Recruitment Settings")
+    job_offer_temp = settings.job_offer_template
+    jo_name = frappe.db.get_value("Job Offer", {"job_applicant": mail_id})
+    jo_doc = frappe.get_doc("Job Offer", jo_name)
+    output_pdf = frappe.get_print(
+        "Job Offer", jo_name, "Job Offer", doc=jo_doc, as_pdf=True, output=None
+    )
+    pdf_attachment = {
+        "fname": jo_name + ".pdf",  # Name of the file
+        "fcontent": output_pdf,  # Byte content of the file
+        "content_type": "application/pdf",  # Content type of the file
+    }
+    frappe.sendmail(
+        attachments=[pdf_attachment],
+        recipients=[mail_id],
+        subject=frappe.render_template(
+            frappe.db.get_value("Email Template", job_offer_temp, "subject")
+        ),
+        message=frappe.render_template(
+            frappe.db.get_value("Email Template", job_offer_temp, "response"),
+            email_context,
+        ),
+        args=email_context,
+    )
+    frappe.msgprint("Job Offer Sent Successfully")

@@ -13,18 +13,20 @@
   {
    "fieldname": "employee_onboarding",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Employee Onboarding"
   },
   {
    "fieldname": "employee",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Employee"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-06-07 16:36:17.446745",
+ "modified": "2024-06-14 10:36:26.309979",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Fields Mapping",
