@@ -26,7 +26,7 @@ app_license = "mit"
 fixtures = [
     {"doctype": "Email Template", "filters": [["name", "IN", ["Job Offer"]]]},
     {"doctype": "Purpose of Travel", "filters": [["name", "IN", ["Interview"]]]},
-	 {
+	{
         "doctype": "Custom Field",
         "filters": [["Custom Field", "module", "=", "Recruitment"]],
     }
@@ -174,7 +174,8 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 # ------------------------------
 #
 override_whitelisted_methods = {
-    "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee"
+    "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee",
+	    "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening": "recruitment.customizations.job_requisition.job_requisition.make_job_opening"
 }
 #
 # each overriding function accepts a `data` argument;

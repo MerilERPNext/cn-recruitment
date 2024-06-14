@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-06-14 06:16:32.995776",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_8xqy",
+  "qualification",
+  "level",
+  "year_of_passing"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_8xqy",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "School/University"
+  },
+  {
+   "fieldname": "qualification",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Qualification"
+  },
+  {
+   "fieldname": "level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Level",
+   "options": "Graduate\nUnder-Graduate\nPHD"
+  },
+  {
+   "fieldname": "year_of_passing",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Year Of Passing"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-06-14 06:37:52.010674",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Qualifications",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

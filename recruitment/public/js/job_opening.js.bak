@@ -1,0 +1,19 @@
+frappe.ui.form.on("Job Opening", {
+    refresh: function(frm){
+	frm.set_query("custom_division", function() {
+        return {
+            "filters": {
+                "is_group": 1,
+            }
+        };
+    });
+	frm.set_query("department", function() {
+        return {
+            "filters": {
+                "is_group": 0,
+				"parent_department":frm.doc.custom_division
+            }
+        };
+    });
+    }
+})

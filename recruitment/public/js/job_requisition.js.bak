@@ -14,10 +14,25 @@ frappe.ui.form.on("Job Requisition", {
 
 			},__("Create"));
 		}
-		frm.set_query("salary", function() {
+		frm.set_query("custom_salary", function() {
         return {
             "filters": {
                 "disabled": 0,
+            }
+        };
+    });
+	frm.set_query("custom_division", function() {
+        return {
+            "filters": {
+                "is_group": 1,
+            }
+        };
+    });
+	frm.set_query("department", function() {
+        return {
+            "filters": {
+                "is_group": 0,
+				"parent_department":frm.doc.custom_division
             }
         };
     });
