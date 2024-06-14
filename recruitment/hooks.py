@@ -38,6 +38,7 @@ fixtures = [
 doctype_js = {
     "Job Offer": ["public/js/job_offer.js"],
     "Job Requisition": ["public/js/job_requisition.js"],
+	"Job Opening": ["public/js/job_opening.js"],
     "Job Applicant": ["public/js/job_applicant.js"],
     "Interview": ["public/js/interview.js"],
 }
@@ -174,7 +175,8 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 # ------------------------------
 #
 override_whitelisted_methods = {
-    "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee"
+    "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee",
+	    "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening": "recruitment.customizations.job_requisition.job_requisition.make_job_opening"
 }
 #
 # each overriding function accepts a `data` argument;

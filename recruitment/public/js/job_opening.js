@@ -1,26 +1,17 @@
-frappe.ui.form.on("Job Requisition", {
+frappe.ui.form.on("Job Opening", {
     refresh: function(frm){
-		if(frm.doc.status=="Open & Approved"){
-			  /*frm.add_custom_button(__('Job Opening'), function(){
+		frm.add_custom_button(__('Job Applicant'), function(){
 				frappe.call({
-					method: "recruitment.customizations.job_requisition.job_requisition.generate_job_opening",
+					method: "recruitment.customizations.job_opening.job_opening.generate_job_applicant",
 					args:{
-						"job_requisition": frm.doc.name
+						"docname": frm.doc.name
 					},
 					callback: function(r) {
 						// code snippet
 					}
 				});
 
-			},__("Create"));*/
-		}
-		frm.set_query("custom_salary", function() {
-        return {
-            "filters": {
-                "disabled": 0,
-            }
-        };
-    });
+			},__("Create"));
 	frm.set_query("custom_division", function() {
         return {
             "filters": {
