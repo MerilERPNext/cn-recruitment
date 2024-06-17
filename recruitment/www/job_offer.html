@@ -10,6 +10,8 @@
 </div></center>
 
 <div>{{frappe.get_print('Job Offer',doc)}}</div>
+{% else %}
+	<div><center><h1>You have already accept or reject the Offer Letter</h1></center></div>
 {% endif %}
 
 <script>

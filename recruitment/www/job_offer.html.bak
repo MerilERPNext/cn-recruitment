@@ -9,7 +9,9 @@
 	<button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
 </div></center>
 
-<div>{{frappe.get_print('Job Offer',doc,'Job Offer')}}</div>
+<div>{{frappe.get_print('Job Offer',doc)}}</div>
+{% else %}
+	<div><center><b>You have already accept or reject the Offer Letter</b></center></div>
 {% endif %}
 
 <script>
