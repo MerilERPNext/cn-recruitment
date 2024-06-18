@@ -1,0 +1,43 @@
+# Copyright (c) 2024, Prathamesh Jadhav and contributors
+# For license information, please see license.txt
+
+import frappe
+
+
+def execute(filters=None):
+	columns, data = [], []
+	get_report_data()
+	return columns, data
+
+def get_report_data():
+	column_array = ["POSTING TITLE:DATA:180"]
+	hp_data_qry = frappe.db.sql("""select ja.designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja group by ja.status""",as_dict=True)
+	columns = ['POSTING TITLE']
+
+	# Initialize a dictionary to store the result
+	result_dict = {}
+	for entry in hp_data_qry:
+		columns.append(entry['status'])
+		if entry['status']+":DATA:150" not in column_array:
+			column_array.append(entry['status']+":DATA:150")
+	# Process each dictionary in the list
+	for entry in hp_data_qry:
+		designation = entry['designation']
+		status = entry['status']
+		count = entry['count']
+		
+		if designation not in result_dict:
+			result_dict[designation] = {status: count}
+		else:
+			result_dict[designation][status] = count
+
+	# Create the final array
+	final_result = []
+	for designation, counts in result_dict.items():
+		result_row = [designation]
+		for col in columns[1:]:  # Skip 'POSTING TITLE'
+			result_row.append(counts.get(col, 0))
+		final_result.append(result_row)
+
+	frappe.msgprint(str(final_result))
+	return {"columns":column_array,"data":final_result}
