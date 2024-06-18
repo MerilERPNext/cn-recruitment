@@ -1,14 +1,8 @@
 frappe.ui.form.on("Job Applicant", {
     refresh: function(frm)
 		{
-
-
         if (!frm.is_new())
             {
-                
-
-
-
         let crm_notes = `
             <div class="notes-section col-xs-12">
                 <div class="new-btn pb-3">
