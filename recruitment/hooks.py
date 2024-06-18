@@ -24,8 +24,7 @@ app_license = "mit"
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 fixtures =  [{
-        "doctype": "Workflow",
-        "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
+        "doctype": "Workflow State"
     }]
 
 # include js in page
