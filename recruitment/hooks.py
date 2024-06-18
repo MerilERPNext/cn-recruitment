@@ -24,14 +24,8 @@ app_license = "mit"
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 fixtures = [
-    {"doctype": "Email Template", "filters": [["name", "IN", ["Job Offer"]]]},
-    {"doctype": "Purpose of Travel", "filters": [["name", "IN", ["Interview"]]]},
-	{
-        "doctype": "Custom Field",
-        "filters": [["Custom Field", "module", "=", "Recruitment"]],
-    },
-	{"doctype": "Role", "filters": [["name", "IN", ["Job Recruiter","Hiring Manager"]]]},
-	{"doctype": "Custom DocPerm"}
+   
+	{"doctype": "Workflow", "filters": [["name", "IN", ["Submit To Hiring Manager"]]]}
 ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
