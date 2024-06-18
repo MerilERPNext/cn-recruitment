@@ -31,6 +31,7 @@ fixtures = [
         "filters": [["Custom Field", "module", "=", "Recruitment"]],
     },
 	{"doctype": "Role", "filters": [["name", "IN", ["Job Recruiter","Hiring Manager"]]]},
+	{"doctype": "Custom DocPerm"}
 ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
