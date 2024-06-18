@@ -1,7 +1,7 @@
 frappe.ui.form.on("Job Requisition", {
     refresh: function(frm){
 		if(frm.doc.status=="Open & Approved"){
-			  frm.add_custom_button(__('Job Opening'), function(){
+			  /*frm.add_custom_button(__('Job Opening'), function(){
 				frappe.call({
 					method: "recruitment.customizations.job_requisition.job_requisition.generate_job_opening",
 					args:{
@@ -12,7 +12,7 @@ frappe.ui.form.on("Job Requisition", {
 					}
 				});
 
-			},__("Create"));
+			},__("Create"));*/
 		}
 		frm.set_query("custom_salary", function() {
         return {

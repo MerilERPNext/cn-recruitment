@@ -1,0 +1,26 @@
+# Copyright (c) 2024, Prathamesh Jadhav and contributors
+# For license information, please see license.txt
+
+import frappe
+from frappe.model.document import Document
+
+
+class SubmitToHiringManager(Document):
+	pass
+
+@frappe.whitelist()
+def generate_job_applicant(docname):
+	jo_doc = frappe.get_doc("Submit To Hiring Manager",docname).as_dict()
+	for can in jo_doc["shortlisted_candidate"]:
+		if can.status=="Approved":
+			if not frappe.db.exists("Job Applicant", {"applicant_name":can.first_name,"email_id":can.email_id}, cache=True):
+				new_ja = frappe.new_doc("Job Applicant")
+				new_ja.applicant_name=can.first_name
+				new_ja.email_id = can.email_id
+				new_ja.job_title = docname
+				new_ja.status="Open"
+				new_ja.custom_shortlisted_by_hiring_manager="Yes"
+				new_ja.resume_attachment = can.resume
+				new_ja.custom_expected_doj = can.expected_doj
+				new_ja.save()
+	frappe.msgprint("Job Applicants Created Successfully!")

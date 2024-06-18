@@ -1,0 +1,65 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-06-17 18:34:14.619955",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "first_name",
+  "last_name",
+  "email_id",
+  "expected_doj",
+  "resume",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "resume",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Resume"
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First Name"
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Approved\nPending\nReject"
+  },
+  {
+   "fieldname": "expected_doj",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Expected DOJ",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-06-18 07:02:09.013862",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "STHM Candidate",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

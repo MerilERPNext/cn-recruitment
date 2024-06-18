@@ -89,7 +89,22 @@ frappe.ui.form.on("Job Applicant", {
                     fieldname: 'comment_type',
                     fieldtype: 'Select',
                     label: 'Comment Type',
-                    options:["Recruitment","CTC Discussion","Educational Qualification Discussion"]
+                    options:[
+								"Candidate Response",
+								"Call",
+								"CTC Confirmation",
+								"CTC approvals",
+								"Interview comments and approvals",
+								"Notice period buy out approval",
+								"Notice Period approval",
+								"Personal Interaction",
+								"Zoom call",
+								"Interview Schedule",
+								"CTC Discussion",
+								"Others",
+								"Interviewer Feedback",
+								"General Review"
+							]
                 },
                 {
                     fieldname: 'notes',
