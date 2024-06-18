@@ -25,7 +25,12 @@ def execute(filters=None):
 	"""
 
 	data = frappe.db.sql(sql_query, as_dict=True)
-	data =  [[d["Source"], d["Count"]] for d in data]
+
+	mydataset = {"values": [d["Count"] for d in data]}
+
+	chart = {'data': {'labels': [d["Source"] for d in data], 'datasets': [mydataset]}, 'type': 'bar'}
+
+	data = columns, [[d["Source"], d["Count"]] for d in data], None, chart, None
 
 	
-	return  columns,data
+	return  data

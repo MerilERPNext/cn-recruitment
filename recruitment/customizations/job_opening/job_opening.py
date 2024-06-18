@@ -4,6 +4,7 @@ import frappe
 @frappe.whitelist()
 def generate_job_applicant(docname):
 	jo_doc = frappe.get_doc("Job Opening",docname).as_dict()
+	app_cnt = 0
 	for can in jo_doc["custom_shortlisted_by_hiring_manager"]:
 		if can.status=="Approved":
 			if not frappe.db.exists("Job Applicant", {"applicant_name":can.name_of_candidate,"email_id":can.email_id}, cache=True):
@@ -16,4 +17,8 @@ def generate_job_applicant(docname):
 				new_ja.custom_shortlisted_by_hiring_manager="Yes"
 				new_ja.resume_attachment = can.resume_attach
 				new_ja.save()
-	frappe.msgprint("Job Applicants Created Successfully!")
+				app_cnt+=1
+	if app_cnt>0:
+		frappe.msgprint("Job Applicants Created Successfully!")
+	else:
+		frappe.msgprint("Job Applicants Has Been Already Created!")

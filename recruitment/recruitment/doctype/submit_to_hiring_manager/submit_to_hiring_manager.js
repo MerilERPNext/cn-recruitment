@@ -4,7 +4,7 @@
 frappe.ui.form.on("Submit To Hiring Manager", {
 	refresh(frm) {
 		if(frm.doc.workflow_state == "Approved"){
-			frm.add_custom_button(__('Submit to Hiring Manager'), function() {
+			frm.add_custom_button(__('Generate Job Applicants'), function() {
 				frappe.call({
 					method: "recruitment.recruitment.doctype.submit_to_hiring_manager.submit_to_hiring_manager.generate_job_applicant",
 					args:{

@@ -14,15 +14,12 @@ def execute(filters=None):
 def get_report_data():
 	column_array = ["POSTING TITLE:DATA:180"]
 	hp_data_qry = frappe.db.sql("""select ja.designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja group by ja.status""",as_dict=True)
-	columns = ['POSTING TITLE']
-
-	# Initialize a dictionary to store the result
+	
+	select_options = frappe.db.get_value("Property Setter",{"doc_type":"Job Applicant","field_name":"status"},["value"])
+	options_list = select_options.split("\n")
+	for cl in options_list:
+		column_array.append(cl+":Data:150")
 	result_dict = {}
-	for entry in hp_data_qry:
-		columns.append(entry['status'])
-		if entry['status']+":DATA:150" not in column_array:
-			column_array.append(entry['status']+":DATA:150")
-	# Process each dictionary in the list
 	for entry in hp_data_qry:
 		designation = entry['designation']
 		status = entry['status']
@@ -32,12 +29,10 @@ def get_report_data():
 			result_dict[designation] = {status: count}
 		else:
 			result_dict[designation][status] = count
-
-	# Create the final array
 	final_result = []
 	for designation, counts in result_dict.items():
 		result_row = [designation]
-		for col in columns[1:]:  # Skip 'POSTING TITLE'
+		for col in options_list:
 			result_row.append(counts.get(col, 0))
 		final_result.append(result_row)
 	return {"columns":column_array,"data":final_result}

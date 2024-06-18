@@ -23,7 +23,11 @@ app_license = "mit"
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
-fixtures = [{"doctype": "Property Setter"}]
+fixtures =  [{
+        "doctype": "Workflow",
+        "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
+    }]
+
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
