@@ -5,23 +5,20 @@ import frappe
 
 
 def execute(filters=None):
-
-
 	columns = [
    
-    ("Source") + "::300",
-    ("Count") + "::300",
+			("Source") + "::300",
+			("Count") + "::300",
 		]
 
 	sql_query = """
 		SELECT
-			source AS Source,
-			
+			COALESCE(source, 'Not defined') AS Source,
 			COUNT(*) AS Count
 		FROM
 			`tabJob Applicant`
 		GROUP BY
-			source
+			COALESCE(source, 'Not defined');
 	"""
 
 	data = frappe.db.sql(sql_query, as_dict=True)
