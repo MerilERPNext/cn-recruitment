@@ -16,7 +16,6 @@ frappe.ui.form.on("Job Opening", {
 			};
 		});
     },
-
 	after_save: function(frm){
 		frappe.call({
 			method: "recruitment.customizations.job_opening.job_opening.generate_job_applicant",

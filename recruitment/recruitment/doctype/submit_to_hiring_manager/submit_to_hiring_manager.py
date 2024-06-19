@@ -28,3 +28,23 @@ def generate_job_applicant(docname):
 		frappe.msgprint("Job Applicants Created Successfully!")
 	else:
 		frappe.msgprint("Job Applicants has been already created!")
+
+@frappe.whitelist()
+def get_hiring_managers():
+    hiring_managers = frappe.db.sql("""
+        SELECT
+            DISTINCT tabUser.name
+        FROM
+            `tabHas Role`
+        JOIN
+            `tabUser` ON `tabHas Role`.parent = `tabUser`.name
+        WHERE
+            `tabHas Role`.role = 'Hiring Manager'
+            AND `tabUser`.enabled = 1
+    """, as_list=True)
+    
+    # Flatten the list of lists to a single list of user names
+    hiring_managers = [user[0] for user in hiring_managers]
+    
+    return hiring_managers
+

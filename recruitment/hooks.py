@@ -23,8 +23,8 @@ app_license = "mit"
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
-fixtures =  [{
-        "doctype": "Custom DocPerm"
+fixtures =   [{
+        "doctype": "Custom HTML Block"
     }]
 
 # include js in page
@@ -113,9 +113,9 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
+permission_query_conditions = {
+	"Submit To Hiring Manager": "recruitment.permissions.sthm_query",
+}
 #
 # has_permission = {
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",

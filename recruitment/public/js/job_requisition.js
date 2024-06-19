@@ -1,9 +1,11 @@
 frappe.ui.form.on("Job Requisition", {
     refresh: function(frm){
-		if (frappe.user.has_role("Hiring Manager")) {
+		if (frappe.user.has_role("Recruiter Admin")) {
             frm.set_df_property('custom_assign_to_recruiter', 'hidden', 0); 
+			frm.set_df_property('status', 'hidden', 0); 
         } else {
             frm.set_df_property('custom_assign_to_recruiter', 'hidden', 1);
+			frm.set_df_property('status', 'hidden', 1);
         }
 		 /*if(frm.doc.status=="Open & Approved"){
 			 frm.add_custom_button(__('Job Opening'), function(){

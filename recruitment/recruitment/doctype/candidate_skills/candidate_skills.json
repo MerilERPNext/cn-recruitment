@@ -12,6 +12,7 @@
   {
    "fieldname": "skill",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Skill",
    "options": "Skill"
   }
@@ -19,7 +20,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-06-18 06:14:46.012247",
+ "modified": "2024-06-19 12:12:32.297923",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Candidate Skills",
