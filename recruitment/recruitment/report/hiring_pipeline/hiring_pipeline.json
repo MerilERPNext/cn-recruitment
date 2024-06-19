@@ -10,7 +10,7 @@
  "is_standard": "Yes",
  "letter_head": "Minix",
  "letterhead": null,
- "modified": "2024-06-18 11:53:38.592259",
+ "modified": "2024-06-19 08:34:10.304207",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Hiring Pipeline",
@@ -25,6 +25,9 @@
   },
   {
    "role": "Job Recruiter"
+  },
+  {
+   "role": "Hiring Manager"
   }
  ]
 }

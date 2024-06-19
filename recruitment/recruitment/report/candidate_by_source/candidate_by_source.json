@@ -10,9 +10,9 @@
  "is_standard": "Yes",
  "letter_head": "Meril",
  "letterhead": null,
- "modified": "2024-06-17 18:55:30.117403",
+ "modified": "2024-06-19 08:36:00.063084",
  "modified_by": "Administrator",
- "module": "recruitment",
+ "module": "Recruitment",
  "name": "Candidate By Source",
  "owner": "Administrator",
  "prepared_report": 0,
@@ -24,6 +24,12 @@
  "roles": [
   {
    "role": "HR User"
+  },
+  {
+   "role": "Hiring Manager"
+  },
+  {
+   "role": "Job Recruiter"
   }
  ]
 }

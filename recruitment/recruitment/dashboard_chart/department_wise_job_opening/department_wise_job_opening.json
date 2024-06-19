@@ -1,0 +1,33 @@
+{
+ "chart_name": "Department Wise Job Opening",
+ "chart_type": "Report",
+ "creation": "2024-06-19 09:16:36.223924",
+ "custom_options": "{\"x_field\": \"department\", \"chart_type\": \"Bar\", \"y_axis_fields\": [{\"idx\": 1, \"__islocal\": true, \"y_field\": \"count\", \"color\": \"#EC864B\", \"name\": \"row 1\"}], \"y_fields\": [\"count\"], \"colors\": [\"#EC864B\"]}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "filters_json": "{}",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 0,
+ "is_standard": 1,
+ "modified": "2024-06-19 09:16:36.441607",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Department Wise Job Opening",
+ "number_of_groups": 0,
+ "owner": "Administrator",
+ "report_name": "Department Wise Job Opening",
+ "roles": [],
+ "time_interval": "Yearly",
+ "timeseries": 0,
+ "timespan": "Last Year",
+ "type": "Bar",
+ "use_report_chart": 0,
+ "x_field": "department",
+ "y_axis": [
+  {
+   "color": "#EC864B",
+   "y_field": "count"
+  }
+ ]
+}

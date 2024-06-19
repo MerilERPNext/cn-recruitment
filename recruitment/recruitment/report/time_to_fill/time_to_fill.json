@@ -10,7 +10,7 @@
  "is_standard": "Yes",
  "letter_head": "Minix",
  "letterhead": null,
- "modified": "2024-06-17 16:31:28.012184",
+ "modified": "2024-06-19 08:35:47.910231",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Time To Fill",
@@ -24,7 +24,10 @@
    "role": "HR User"
   },
   {
-   "role": "Guest"
+   "role": "Hiring Manager"
+  },
+  {
+   "role": "Job Recruiter"
   }
  ]
 }

@@ -11,9 +11,9 @@
  "json": "{}",
  "letter_head": "Meril",
  "letterhead": null,
- "modified": "2024-06-18 12:58:47.934788",
+ "modified": "2024-06-19 08:33:52.905457",
  "modified_by": "Administrator",
- "module": "recruitment",
+ "module": "Recruitment",
  "name": "Job Opening Or MPR",
  "owner": "Administrator",
  "prepared_report": 0,
@@ -26,6 +26,9 @@
   },
   {
    "role": "Job Recruiter"
+  },
+  {
+   "role": "Hiring Manager"
   }
  ]
 }

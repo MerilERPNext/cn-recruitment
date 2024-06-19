@@ -10,7 +10,7 @@
  "is_standard": "Yes",
  "letter_head": "Minix",
  "letterhead": null,
- "modified": "2024-06-18 11:19:32.451206",
+ "modified": "2024-06-19 08:34:24.371074",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Active Interviews",
@@ -34,6 +34,9 @@
   },
   {
    "role": "Job Recruiter"
+  },
+  {
+   "role": "Hiring Manager"
   }
  ]
 }

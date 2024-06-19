@@ -1,0 +1,33 @@
+{
+ "cards": [],
+ "charts": [
+  {
+   "chart": "Candidate By Source",
+   "width": "Half"
+  },
+  {
+   "chart": "Status Wise Job Openings",
+   "width": "Half"
+  },
+  {
+   "chart": "Job Opening Or MPR Owner",
+   "width": "Half"
+  },
+  {
+   "chart": "Department Wise Job Opening",
+   "width": "Half"
+  }
+ ],
+ "creation": "2024-06-19 09:04:02.943471",
+ "dashboard_name": "Recruitment V2",
+ "docstatus": 0,
+ "doctype": "Dashboard",
+ "idx": 0,
+ "is_default": 0,
+ "is_standard": 1,
+ "modified": "2024-06-19 09:16:36.606871",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Recruitment V2",
+ "owner": "Administrator"
+}
