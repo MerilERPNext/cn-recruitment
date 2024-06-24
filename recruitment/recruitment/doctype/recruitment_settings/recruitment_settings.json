@@ -5,7 +5,6 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "print_format",
   "job_offer_template",
   "employee_onboarding_webform",
   "mapping_fields"
@@ -28,18 +27,12 @@
    "fieldtype": "Table",
    "label": "Mapping Fields",
    "options": "Fields Mapping"
-  },
-  {
-   "fieldname": "print_format",
-   "fieldtype": "Link",
-   "label": "Print Format",
-   "options": "Print Format"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-06-14 10:37:38.673557",
+ "modified": "2024-06-20 06:46:14.877324",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",

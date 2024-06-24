@@ -115,6 +115,7 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 
 permission_query_conditions = {
 	"Submit To Hiring Manager": "recruitment.permissions.sthm_query",
+	"Job Requisition":"recruitment.permissions.jr_query",
 }
 #
 # has_permission = {

@@ -24,8 +24,7 @@ app_license = "mit"
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 fixtures =   [{
-        "doctype": "Workspace",
-        "filters": [["Workspace", "name", "=", "Recruitment"]],
+        "doctype": "Custom HTML Block"
     }]
 
 # include js in page
@@ -116,6 +115,7 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 
 permission_query_conditions = {
 	"Submit To Hiring Manager": "recruitment.permissions.sthm_query",
+	#"Job Requisition":"recruitment.permissions.jr_query",
 }
 #
 # has_permission = {

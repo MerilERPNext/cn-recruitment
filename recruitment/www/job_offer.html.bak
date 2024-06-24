@@ -1,4 +1,8 @@
 {%if doc %}
+	
+	{% if frappe.db.get_value('Job Offer', doc, 'custom_jo_expiry_date').strftime('%Y-%m-%d') < frappe.utils.today()%}
+		<div><center><h1>Your Offer Letter Has Been Expired. Please Contact HR Department.</h1></center></div>
+	{% else %}
 <head>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -11,7 +15,8 @@
 
 <div>{{frappe.get_print('Job Offer',doc)}}</div>
 {% else %}
-	<div><center><b>You have already accept or reject the Offer Letter</b></center></div>
+	<div><center><h1>You have already accept or reject the Offer Letter</h1></center></div>
+{% endif %}
 {% endif %}
 
 <script>
