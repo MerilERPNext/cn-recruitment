@@ -19,7 +19,7 @@ def get_report_data():
         ELSE CONCAT(DATEDIFF(CURDATE(), jo.closes_on), ' days delayed')
     END AS delay
 	
-	from `tabJob Opening` as jo JOIN `tabJob Applicant` as ja on ja.job_title = jo.name group by jo.designation order by jo.designation""",as_dict=True)
+	from `tabJob Opening` as jo JOIN `tabJob Applicant` as ja on ja.job_title = jo.name and jo.status ='Open' group by jo.designation order by jo.designation""",as_dict=True)
 	for data_dict in data_qry:
 		final_data.append(list(data_dict.values()))
 	return final_data
