@@ -30,7 +30,12 @@ def make_job_opening(source_name, target_doc=None):
 			"field_map": {
 				"*": "*"
 			},
-			
+			"Qualifications": {
+				"doctype": "Qualifications",
+			},
+			"field_map": {
+				"*": "*"
+			},
 		},
 		
 		target_doc,
@@ -85,3 +90,27 @@ def generate_job_opening(job_requisition):
 				new_ja.resume_attachment = can.resume_attach
 				new_ja.save()
 	frappe.msgprint("Job Applicants Created Successfully!")
+
+@frappe.whitelist()
+def assign_task(reference_doctype, reference_name, assign_to, description=""):
+	existing_todo = frappe.get_all('ToDo', filters={
+        'reference_type': reference_doctype,
+        'reference_name': reference_name,
+        'status': 'Open'
+    })
+	for todo in existing_todo:
+		frappe.delete_doc('ToDo', todo.name, ignore_permissions=True)
+	todo = frappe.get_doc({
+        'doctype': 'ToDo',
+        'allocated_to': assign_to,
+        'reference_type': reference_doctype,
+        'reference_name': reference_name,
+        'description': description,
+        'status': 'Open',
+        'priority': 'Medium'
+    })
+    # Insert the ToDo document into the database
+    todo.insert(ignore_permissions=True)
+    # Commit the transaction
+    frappe.db.commit()
+

@@ -48,13 +48,14 @@
    "fieldname": "job_title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Job Title"
+   "label": "Job Title",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-06-19 15:24:28.116792",
+ "modified": "2024-06-25 11:02:43.667643",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Submit To Hiring Manager",
