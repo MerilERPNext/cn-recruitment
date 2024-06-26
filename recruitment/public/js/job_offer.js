@@ -7,7 +7,9 @@ frappe.ui.form.on("Job Offer", {
 					args:{
 						"job_offer_url": window.location.origin+"/job_offer?appl="+frm.doc.job_applicant,
 						"candidate":frm.doc.applicant_name,
-						"mail_id":frm.doc.job_applicant
+						"mail_id":frm.doc.job_applicant,
+						"company":frm.doc.company,
+						"designation":frm.doc.designation
 					},
 					callback: function(r) {
 						// code snippet

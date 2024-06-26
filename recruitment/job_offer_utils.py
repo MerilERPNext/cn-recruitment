@@ -18,8 +18,8 @@ def submit_docs(status, appl):
 
 
 @frappe.whitelist()
-def send_job_offer(job_offer_url, candidate, mail_id):
-    email_context = {"canditate": candidate, "job_offer_url": job_offer_url}
+def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
+    email_context = {"canditate": candidate, "job_offer_url": job_offer_url,"company":company,"designation":designation}
     settings = frappe.get_doc("Recruitment Settings")
     job_offer_temp = settings.job_offer_template
     jo_name = frappe.db.get_value("Job Offer", {"job_applicant": mail_id})
@@ -37,7 +37,8 @@ def send_job_offer(job_offer_url, candidate, mail_id):
         attachments=[pdf_attachment],
         recipients=[mail_id],
         subject=frappe.render_template(
-            frappe.db.get_value("Email Template", job_offer_temp, "subject")
+            frappe.db.get_value("Email Template", job_offer_temp, "subject"),
+			email_context,
         ),
         message=frappe.render_template(
             frappe.db.get_value("Email Template", job_offer_temp, "response"),

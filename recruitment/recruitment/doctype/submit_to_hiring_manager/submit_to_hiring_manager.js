@@ -10,6 +10,22 @@ frappe.ui.form.on("Submit To Hiring Manager", {
                 }
             };
         };
+		 frappe.call({
+            method: 'frappe.client.get',
+            args: {
+                doctype: 'User',
+                name: frappe.session.user
+            },
+            callback: function(r) {
+                if (r.message) {
+                    let roles = r.message.roles.map(role => role.role);
+                    if (!roles.includes('Hiring Manager')) {
+                        frm.fields_dict['shortlisted_candidate'].grid.fields_map['status'].hidden = 1;
+                        frm.fields_dict['shortlisted_candidate'].grid.refresh();
+                    }
+                }
+            }
+        });
 		if(frm.doc.workflow_state == "Approved" && frappe.user.has_role("Job Recruiter")){
 			frm.add_custom_button(__('Generate Job Applicants'), function() {
 				frappe.call({
@@ -38,24 +54,5 @@ frappe.ui.form.on("Submit To Hiring Manager", {
                 }
             }
         });
-	},
-	onload: function(frm) {
-        // Check if the user has the 'Hiring Manager' role
-        frappe.call({
-            method: 'frappe.client.get',
-            args: {
-                doctype: 'User',
-                name: frappe.session.user
-            },
-            callback: function(r) {
-                if (r.message) {
-                    let roles = r.message.roles.map(role => role.role);
-                    if (!roles.includes('Hiring Manager')) {
-                        frm.fields_dict['shortlisted_candidate'].grid.fields_map['status'].hidden = 1;
-                        frm.fields_dict['shortlisted_candidate'].grid.refresh();
-                    }
-                }
-            }
-        });
-    }
+	}
 });
