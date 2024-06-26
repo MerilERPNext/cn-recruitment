@@ -25,6 +25,12 @@ app_license = "mit"
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 fixtures =   [{
         "doctype": "Custom HTML Block"
+    },{
+        "doctype": "Custom DocPerm"
+    },{
+        "doctype": "Email Template"
+    },{
+        "doctype": "Funnel"
     },]
 
 # include js in page

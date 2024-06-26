@@ -63,7 +63,6 @@ frappe.ui.form.on("Job Requisition", {
 					"description":"Please Do The Needful"
 				},
 				callback: function(r) {
-					frm.refresh()
 				}
 			});
 		}

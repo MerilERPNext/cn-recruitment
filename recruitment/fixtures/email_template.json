@@ -2,11 +2,61 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
-  "modified": "2024-06-11 16:45:13.451678",
-  "name": "Job Offer",
-  "response": "<div class=\"ql-editor read-mode\"><p>Dear {{canditate}},</p><p>\tWe are pleased to offer you a position at our company. Please review the job offer at the following link:</p><p>\t{{job_offer_url}}</p><p><br></p><p>Thank You,</p><p>Hybrow Labs Team</p></div>",
+  "modified": "2024-05-22 15:25:09.161794",
+  "name": "Dispatch Notification",
+  "response": "<h1>Dispatch Notification</h1>\n<h3>Details:</h3>\n<table class=\"table table-bordered small\" style=\"max-width: 500px;\">\n    <tbody>\n        <tr>\n            <td>Customer's Name</td>\n            <td>{{ customer }}</td>\n        </tr>\n        <tr>\n            <td>Contact's Name</td>\n            <td>{{ first_name }} {{ last_name }}</td>\n        </tr>\n        <tr>\n            <td>Address Name</td>\n            <td>{{ address }}</td>\n        </tr>\n        <tr>\n            <td>Address Details</td>\n            <td>{{ customer_address }}</td>\n        </tr>\n        <tr>\n            <td>Order Number</td>\n            <td>{{ delivery_note }}</td>\n        </tr>\n        <tr>\n            <td>Order Total</td>\n            <td>{{ grand_total }}</td>\n        </tr>\n        <tr>\n            <td>Departure Time</td>\n            <td>{{ departure_time }}</td>\n        </tr>\n        <tr>\n            <td>Estimated Arrival</td>\n            <td>{{ estimated_arrival }}</td>\n        </tr>\n        <tr>\n            <td>Driver's Name</td>\n            <td>{{ driver_name }}</td>\n        </tr>\n        <tr>\n            <td>Driver's Number</td>\n            <td>{{ cell_number }}</td>\n        </tr>\n        <tr>\n            <td>Vehicle Number</td>\n            <td>{{ vehicle }}</td>\n        </tr>\n    </tbody>\n</table>\n",
   "response_html": null,
-  "subject": "Your Offer from Hybrowlabs Technologies",
+  "subject": "Your order is out for delivery!",
   "use_html": 0
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2024-06-26 07:52:22.176071",
+  "name": "Job Offer",
+  "response": "<div class=\"ql-editor read-mode\"><p>Dear {{canditate}},</p><p><span style=\"color: rgb(68, 68, 68);\">Congratulations and welcome to {{company}}.You have been selected for the job -&nbsp;{{designation}}.</span></p><p><span style=\"color: rgb(68, 68, 68);\">Please click the link below to view your offer letter. Click the 'Accept' button if you're taking up the offer.&nbsp;</span></p><p>{{job_offer_url}}</p><p><br></p><p>Thank You,</p><p>{{company}} Team</p></div>",
+  "response_html": null,
+  "subject": "Offer of Employment with {{company}}",
+  "use_html": 0
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2024-06-26 15:32:37.231219",
+  "name": "Recruiter Admin To Recruiter",
+  "response": null,
+  "response_html": "Dear <b>{{frappe.db.get_value(\"User\",doc.custom_assign_to_recruiter,\"full_name\")}}</b>,<br>\nNew MPR - <b>{{doc.name}}</b> has been assigned to you.<br><br>\n<table border=\"1\">\n    <tr>\n        <td>MPR ID</td>\n        <td><a href =\"/app/job-requisition/{{doc.name}}\">{{doc.name}}</a></td>\n    </tr>\n    <tr>\n        <td>Created By</td>\n        <td>{{frappe.db.get_value(\"User\",doc.owner,\"full_name\")}}</td>\n    </tr>\n   \n    <tr>\n        <td>Company</td>\n        <td>{{doc.company}}</td>\n    </tr>\n    <tr>\n        <td>Hiring Manager</td>\n        <td>{{frappe.db.get_value(\"User\",doc.owner,\"full_name\")}}</td>\n    </tr>\n    <tr>\n        <td>Posting Title</td>\n        <td>{{doc.designation}}</td>\n    </tr>\n    <tr>\n        <td>Number of Positions</td>\n        <td>{{doc.no_of_positions}}</td>\n    </tr>\n    <tr>\n        <td>Date of Requisition</td>\n        <td>{{doc.posting_date}}</td>\n    </tr>\n    <tr>\n        <td>How the vacancy has arisen?</td>\n        <td>{{doc.custom_how_the_vacancy_as_arisen}}</td>\n    </tr>\n</table><br>\n\nRegards,<br>\nRecruit Admin",
+  "subject": "New MPR Request - {{doc.name}} - {{doc.designation}}",
+  "use_html": 1
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2024-06-26 12:18:46.107136",
+  "name": "Interview Candidate",
+  "response": null,
+  "response_html": "Hello <b>{{frappe.db.get_value(\"Job Applicant\",doc.job_applicant,\"applicant_name\")}}</b><br>\n<p>We are pleased to let you know that you have been scheduled an interview. This is in reference to the <b>{{doc.designation}}</b> position from {{frappe.db.get_value(\"Job Opening\",doc.job_opening,\"company\")}}.</p>\n<p>The interview details are as follows:</p>\n<hr>\nInterview Name : <b>{{doc.name}}</b><br>\n{% if doc.interview_round == \"Zoom\"%}\nZoom Link : <a href=\"{{doc.custom_zoom_link}}\"></a><br>\nZoom Password : {{doc.custom_zoom_password}}<br>\n{% endif %}\n{% set get_datetime = frappe.utils.get_datetime %}\n{% set formatdate = frappe.utils.formatdate %}\n{% set format_time = frappe.utils.format_time %}\n{% set scheduled_date = formatdate(get_datetime(doc.scheduled_on), \"MMMM dd, yyyy\") %}\n{% set from_time = format_time(get_datetime(doc.from_time), \"hh:mm a\") %}\nInterview Date & Time: {{ scheduled_date }} {{ from_time }}<br>\nInterviewer : {{doc.interview_details | map(attribute=\"interviewer\") | join(', ') }}<br>\nHr Manager: {{frappe.db.get_value(\"User\",frappe.db.get_value(\"Job Requisition\",frappe.db.get_value(\"Job Opening\",doc.job_opening,\"job_requisition\"),\"custom_assign_to_recruiter\"),\"full_name\")}}<br>\n<p>Kindly mark your presence 10 minutes prior to the interview time.<br>\nThanks in advance.\n</p>",
+  "subject": "Interview details for the position of {{doc.designation}}",
+  "use_html": 1
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2024-06-26 12:58:18.690232",
+  "name": "Interviewer Email",
+  "response": null,
+  "response_html": "Hello Sir/Madam,<br>\n<p>This is to notify that you have been scheduled to conduct an interview session for <b>{{frappe.db.get_value(\"Job Applicant\",doc.job_applicant,\"applicant_name\")}}</b>\nfor the position of <b>{{doc.designation}}</b>. </p>\n<p>The interview details are as follows: </p>\n<hr>\nCompany : {{frappe.db.get_value(\"Job Opening\",doc.job_opening,\"company\")}}<br>\nInterview Type : {{doc.interview_round}}<br>\n{% set get_datetime = frappe.utils.get_datetime %}\n{% set formatdate = frappe.utils.formatdate %}\n{% set format_time = frappe.utils.format_time %}\n{% set scheduled_date = formatdate(get_datetime(doc.scheduled_on), \"MMMM dd, yyyy\") %}\n{% set from_time = format_time(get_datetime(doc.from_time), \"hh:mm a\") %}\nInterview Date & Time: {{ scheduled_date }} {{ from_time }}<br>\nDepartment Name : {{frappe.db.get_value(\"Job Opening\",doc.job_opening,\"department\")}}<br>\nHr Manager: {{frappe.db.get_value(\"User\",frappe.db.get_value(\"Job Requisition\",frappe.db.get_value(\"Job Opening\",doc.job_opening,\"job_requisition\"),\"custom_assign_to_recruiter\"),\"full_name\")}}<br>\n{% if doc.interview_round == \"Zoom\"%}\nZoom Link : <a href=\"{{doc.custom_zoom_link}}\"></a><br>\nZoom Password : {{doc.custom_zoom_password}}<br>\n{% endif %}\n<p>Please be sure to complete assessment comment on how the interview went on, using the button below. </p>\n<a href=\"/app/interview-feedback?interview=doc.name\">Link to submit Feedback</a><br>\n<p>Regards,</p><br>\n{{frappe.db.get_value(\"Job Opening\",doc.job_opening,\"company\")}} Team",
+  "subject": "Interview details for the position of {{doc.designation}}",
+  "use_html": 1
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2024-06-26 15:38:10.721983",
+  "name": "Submit To Hiring Manager",
+  "response": null,
+  "response_html": "Dear Sir/Madam,<br>\nWe have enclosed details of for the position of <b><a href=\"/app/submit-to-hiring-manager/{{doc.name}}\">{{doc.job_title}}</a></b> for your review.<br>\n<table border=\"1\">\n     <tr>\n        <td>Candidate Name</td>\n    </tr>\n    {% for can in doc.shortlisted_candidate %}\n        <tr>\n            <td>{{can.first_name}} {{can.last_name}}</td>\n        </tr>\n    {% endfor %}\n</table>",
+  "subject": "New prospective candidate's details for {{doc.job_title}}",
+  "use_html": 1
  }
 ]

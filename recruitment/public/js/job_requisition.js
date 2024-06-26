@@ -66,5 +66,29 @@ frappe.ui.form.on("Job Requisition", {
 				}
 			});
 		}
-	}
+	},
+	designation(frm){
+    if(frm.doc.designation){
+
+        frappe.call({
+            method: "frappe.client.get",
+            args: {
+                doctype: "Designation",
+                name: frm.doc.designation,
+                async: true
+            },
+            callback: (rs) => {
+                let res = rs.message.skills;
+                let crops = []
+
+                for (var index in res) {         
+                    crops.push(res[index]);
+                }
+
+                frm.set_value("custom_skills", crops);
+                refresh_field('custom_skills');
+            }
+        });
+    }
+},
 })
