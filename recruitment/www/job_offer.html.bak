@@ -1,23 +1,32 @@
-{%if doc %}
-	
-	{% if frappe.db.get_value('Job Offer', doc, 'custom_jo_expiry_date').strftime('%Y-%m-%d') < frappe.utils.today()%}
-		<div><center><h1>Your Offer Letter Has Been Expired. Please Contact HR Department.</h1></center></div>
-	{% else %}
-<head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-</head>
-<center><div id="operations" style="padding-top:20px">
-	<button type="button" class="btn btn-warning" id="reject" onclick="rejectoffer()">Reject</button>
-	<button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
-</div></center>
-
-<div>{{frappe.get_print('Job Offer',doc)}}</div>
+{% if doc %}
+    {% if frappe.db.get_value('Job Offer', doc, 'custom_jo_expiry_date').strftime('%Y-%m-%d') < frappe.utils.today() %}
+        <div>
+            <center>
+                <h1>Your Offer Letter Has Expired. Please Contact the HR Department.</h1>
+            </center>
+        </div>
+    {% else %}
+        <head>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+            <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+        </head>
+        <center>
+            <div id="operations" style="padding-top:20px">
+                <button type="button" class="btn btn-warning" id="reject" onclick="rejectoffer()">Reject</button>
+                <button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
+            </div>
+        </center>
+        <div>{{ frappe.get_print('Job Offer', doc) }}</div>
+    {% endif %}
 {% else %}
-	<div><center><h1>You have already accept or reject the Offer Letter</h1></center></div>
+    <div>
+        <center>
+            <h1>You have already accepted or rejected the Offer Letter.</h1>
+        </center>
+    </div>
 {% endif %}
-{% endif %}
+
 
 <script>
 	function rejectoffer() {
@@ -60,7 +69,7 @@ function accept(){
 	})
 	.then(data => {
 		window.location.href = window.location.origin+"/"+data.message.webform+"/new?job_offer="+data.message.jo_id+"&job_applicant="+appl;
-		fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl='+appl, {
+		fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl='+appl+"&url="+window.location.origin, {
 			method: 'POST',
 		})
 		.then(response => {
@@ -68,6 +77,7 @@ function accept(){
 				throw new Error('Network response was not ok');
 			}
 			return response.json();
+			console.log("called")
 		})
 	})
 	.catch(error => {

@@ -3,18 +3,33 @@ import frappe
 
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl):
-    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-    settings = frappe.get_doc("Recruitment Settings")
-
-    return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
+	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+	settings = frappe.get_doc("Recruitment Settings")
+	return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
 
 
 @frappe.whitelist(allow_guest=True)
-def submit_docs(status, appl):
-    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-    frappe.db.set_value("Job Offer", jo_id, {"status": status, "docstatus": 1})
-    job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
-    frappe.db.set_value("Job Applicant", job_applicant, "status", status)
+def submit_docs(status, appl,url=None):
+	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+	settings = frappe.get_doc("Recruitment Settings")
+	frappe.db.set_value("Job Offer", jo_id, {"status": status, "docstatus": 1})
+	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
+	frappe.db.set_value("Job Applicant", job_applicant, "status", status)
+	if status == "Accepted":
+		wf_url = url+"/"+settings.employee_onboarding_webform+"/new?job_offer="+jo_id+"&job_applicant="+appl
+		email_context = {"url":wf_url,"name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"applicant_name"),"company":frappe.db.get_value("Job Offer", {"job_applicant": appl},"company"),"designation":frappe.db.get_value("Job Offer", {"job_applicant": appl},"designation")}
+		frappe.sendmail(
+			recipients=[job_applicant],
+			subject=frappe.render_template(
+				frappe.db.get_value("Email Template", "Employee Onboarding", "subject"),
+				email_context,
+			),
+			message=frappe.render_template(
+				frappe.db.get_value("Email Template", "Employee Onboarding", "response_html"),
+				email_context,
+			),
+			args=email_context,
+		)
 
 
 @frappe.whitelist()
@@ -47,3 +62,4 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
         args=email_context,
     )
     frappe.msgprint("Job Offer Sent Successfully")
+	

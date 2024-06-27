@@ -31,6 +31,10 @@ fixtures =   [{
         "doctype": "Email Template"
     },{
         "doctype": "Funnel"
+    },
+	{
+        "doctype": "Workspace",
+        "filters": [["Workspace", "name", "=", "Recruitment"]],
     },]
 
 # include js in page

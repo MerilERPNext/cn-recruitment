@@ -58,5 +58,15 @@
   "response_html": "Dear Sir/Madam,<br>\nWe have enclosed details of for the position of <b><a href=\"/app/submit-to-hiring-manager/{{doc.name}}\">{{doc.job_title}}</a></b> for your review.<br>\n<table border=\"1\">\n     <tr>\n        <td>Candidate Name</td>\n    </tr>\n    {% for can in doc.shortlisted_candidate %}\n        <tr>\n            <td>{{can.first_name}} {{can.last_name}}</td>\n        </tr>\n    {% endfor %}\n</table>",
   "subject": "New prospective candidate's details for {{doc.job_title}}",
   "use_html": 1
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2024-06-27 07:00:51.143183",
+  "name": "Employee Onboarding",
+  "response": null,
+  "response_html": "Dear <b>{{applicant_name}}</b>,<br>\n\nCongratulations once again on your successful selection for the position of {{designation}} at {{company}} We are excited to have you join our team.<br><br>\n\nAs part of our onboarding process, we require you to complete a form with some essential information. Please find the link to the form below:<br>\n\n{{url}}<br><br>\n\nKindly complete and submit the form. If you have any questions or need assistance while filling out the form, do not hesitate to contact us <br><br>\n\nWe look forward to welcoming you to the team!<br><br>\n\nBest regards,<br>\n\n{{company}} Team",
+  "subject": "Action Required: Complete Your Onboarding Process",
+  "use_html": 1
  }
 ]
