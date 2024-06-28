@@ -3,6 +3,7 @@
 
 frappe.ui.form.on("Submit To Hiring Manager", {
 	refresh(frm) {
+        console.log(frm.doc)
 		frm.fields_dict['shortlisted_candidate'].grid.fields_map['status'].get_query = function() {
             return {
                 filters: {
