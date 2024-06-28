@@ -52,10 +52,10 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
-  "modified": "2024-06-26 15:38:10.721983",
+  "modified": "2024-06-28 10:13:06.072648",
   "name": "Submit To Hiring Manager",
   "response": null,
-  "response_html": "Dear Sir/Madam,<br>\nWe have enclosed details of for the position of <b><a href=\"/app/submit-to-hiring-manager/{{doc.name}}\">{{doc.job_title}}</a></b> for your review.<br>\n<table border=\"1\">\n     <tr>\n        <td>Candidate Name</td>\n    </tr>\n    {% for can in doc.shortlisted_candidate %}\n        <tr>\n            <td>{{can.first_name}} {{can.last_name}}</td>\n        </tr>\n    {% endfor %}\n</table>",
+  "response_html": "Dear Sir/Madam,<br>\nWe have enclosed details of for the position of <b><a href=\"/app/submit-to-hiring-manager/{{doc.name}}\">{{doc.job_title}}</a></b> for your review.<br>\n<table border=\"1\">\n     <tr>\n        <td>Candidate Name</td>\n        <td>Resume Template</td>\n    </tr>\n    {% for can in doc.shortlisted_candidate %}\n        <tr>\n            <td>{{can.first_name}} {{can.last_name}}</td>\n        </tr>\n        <tr>\n            <td><a href={{can.resume}}>Click Here For Resume</a></td>\n        </tr>\n    {% endfor %}\n</table>",
   "subject": "New prospective candidate's details for {{doc.job_title}}",
   "use_html": 1
  },
