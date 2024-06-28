@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2024-06-14 06:14:21.288002",
+ "creation": "2024-06-27 20:43:57.084323",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -23,7 +23,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-06-14 06:15:24.607725",
+ "modified": "2024-06-27 20:44:38.048058",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Salary Range",
