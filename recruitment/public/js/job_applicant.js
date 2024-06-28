@@ -223,34 +223,7 @@ frappe.ui.form.on("Job Applicant", {
 
                     });
                 });
-                frm.add_custom_button(__('MAT'), function(){
-                    const url = 'http://imat.merillifeweb.com/NewUser.asmx/CreateUser';
-
-                    const params = {
-                        NM: (frm.doc.applicant_name).split(' ')[0],
-                        LN: (frm.doc.applicant_name).split(' ')[1],
-                        EL:frm.doc.email_id,
-                        CN:frm.doc.owner
-                    };
-
-                    const formData = new URLSearchParams(params);
-
-                    fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: formData,
-                    })
-                    .then(response => response.json()) 
-                    .then(data => {
-                        frappe.msgprint("Mail Has Been Sent To The Candidate")
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                    });
-
-                }, __("Create Assessment"));
+                
 
 
             }        
