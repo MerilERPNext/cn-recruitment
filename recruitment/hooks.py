@@ -30,7 +30,8 @@ fixtures =   [{
     },{
         "doctype": "Email Template"
     },{
-        "doctype": "Funnel"
+        "doctype": "Property Setter",
+         "filters": [["Property Setter", "doc_type", "=", "Job Opening"]],
     },
 	{
         "doctype": "Workspace",
