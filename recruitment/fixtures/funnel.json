@@ -6,7 +6,7 @@
   "funnel_access": [],
   "funnel_definition": [
    {
-    "data": "{\"doctype\":\"Submit To Hiring Manager\",\"action\":\"after_insert\",\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "data": "{\"doctype\":\"Submit To Hiring Manager\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"workflow_state\"}",
     "element_type": "Trigger",
     "id": "UQLvoUKJm1pOFr5pJIRtG",
     "parent": "Submit To Hiring Manager",
@@ -20,13 +20,13 @@
     "type": "document_event_trigger"
    },
    {
-    "data": "{\"email_account\":\"Prathamjadhav052\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":false,\"submit\":true,\"recipients\":\"{{doc.assigned_to}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Submit To Hiring Manager\",\"createNewEmailTemplate\":false,\"email_subject\":\"\",\"variable_path_for_output\":\"\"}",
+    "data": "{\"email_account\":\"Prathamjadhav15\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":false,\"submit\":true,\"recipients\":\"{{doc.assigned_to}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Submit To Hiring Manager\",\"createNewEmailTemplate\":false,\"email_subject\":\"\",\"variable_path_for_output\":\"\"}",
     "element_type": "Action",
     "id": "hnW9HUoq7L9lIZaW9rPyw",
     "parent": "Submit To Hiring Manager",
     "parentfield": "funnel_definition",
     "parenttype": "Funnel",
-    "position": "{\"x\":660,\"y\":120}",
+    "position": "{\"x\":555,\"y\":195}",
     "source": null,
     "sourcehandle": null,
     "target": null,
@@ -34,26 +34,54 @@
     "type": "send_mail"
    },
    {
+    "data": "{\"node_label\":\"Check Workflow State\",\"use_python_expression\":true,\"submit\":true,\"expression\":\"doc =  variables[\\\"doc\\\"]\\nif doc[\\\"workflow_state\\\"] == \\\"Submit To HIring Manager\\\":\\n    return True\\nreturn False\",\"filters\":[],\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "IpELMg-EcSIyf2gAZEgHS",
+    "parent": "Submit To Hiring Manager",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":555,\"y\":75}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "var_filter"
+   },
+   {
     "data": null,
     "element_type": "edge",
-    "id": "reactflow__edge-UQLvoUKJm1pOFr5pJIRtGoutput-hnW9HUoq7L9lIZaW9rPywinput",
+    "id": "reactflow__edge-IpELMg-EcSIyf2gAZEgHSyes-hnW9HUoq7L9lIZaW9rPywinput",
+    "parent": "Submit To Hiring Manager",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": null,
+    "source": "IpELMg-EcSIyf2gAZEgHS",
+    "sourcehandle": "yes",
+    "target": "hnW9HUoq7L9lIZaW9rPyw",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": null,
+    "element_type": "edge",
+    "id": "reactflow__edge-UQLvoUKJm1pOFr5pJIRtGoutput-IpELMg-EcSIyf2gAZEgHSinput",
     "parent": "Submit To Hiring Manager",
     "parentfield": "funnel_definition",
     "parenttype": "Funnel",
     "position": null,
     "source": "UQLvoUKJm1pOFr5pJIRtG",
     "sourcehandle": "output",
-    "target": "hnW9HUoq7L9lIZaW9rPyw",
+    "target": "IpELMg-EcSIyf2gAZEgHS",
     "targethandle": "input",
     "type": "smoothstep"
    }
   ],
   "funnel_name": "Submit To Hiring Manager",
-  "modified": "2024-06-26 13:09:42.296488",
+  "modified": "2024-07-01 14:15:27.356191",
   "name": "Submit To Hiring Manager",
   "status": "published",
   "variable_list": "[]",
-  "viewport": "{\"x\":10,\"y\":200,\"zoom\":1}"
+  "viewport": "{\"x\":-230.22746497629117,\"y\":188.478069488973,\"zoom\":0.6896804609135303}"
  },
  {
   "archived": 0,
