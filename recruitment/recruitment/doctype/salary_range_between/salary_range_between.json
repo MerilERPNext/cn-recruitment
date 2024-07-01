@@ -1,18 +1,20 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2024-06-27 20:43:57.084323",
+ "autoname": "field:salary_range",
+ "creation": "2024-07-01 10:35:24.838803",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "range",
+  "salary_range",
   "disabled"
  ],
  "fields": [
   {
-   "fieldname": "range",
+   "fieldname": "salary_range",
    "fieldtype": "Data",
-   "label": "Range"
+   "label": "Salary Range",
+   "unique": 1
   },
   {
    "default": "0",
@@ -23,10 +25,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-06-27 20:44:38.048058",
+ "modified": "2024-07-01 10:36:03.711112",
  "modified_by": "Administrator",
  "module": "Recruitment",
- "name": "Salary Range",
+ "name": "Salary Range Between",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

@@ -13,7 +13,7 @@ def execute(filters=None):
 
 def get_report_data():
 	column_array = ["POSTING TITLE:DATA:180"]
-	hp_data_qry = frappe.db.sql("""select ja.designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja group by ja.status,ja.designation""",as_dict=True)
+	hp_data_qry = frappe.db.sql("""select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo where jo.name = ja.job_title group by ja.status,jo.designation""",as_dict=True)
 	
 	select_options = frappe.db.get_value("Property Setter",{"doc_type":"Job Applicant","field_name":"status"},["value"])
 	options_list = select_options.split("\n")

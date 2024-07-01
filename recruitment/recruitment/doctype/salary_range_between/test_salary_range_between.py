@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestSalaryRange(FrappeTestCase):
+class TestSalaryRangeBetween(FrappeTestCase):
 	pass

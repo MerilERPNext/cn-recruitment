@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class SalaryRange(Document):
+class SalaryRangeBetween(Document):
 	pass
