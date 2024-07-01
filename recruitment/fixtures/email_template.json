@@ -4,7 +4,7 @@
   "doctype": "Email Template",
   "modified": "2024-06-29 23:17:24.544768",
   "name": "Leave Approval Notification",
-  "response": "<h1>Leave Application Notification</h1>\n<h3>Details:</h3>\n\n\t<table class=\"table table-bordered small\" style=\"max-width: 500px;\">\n\t\t<tr>\n\t\t\t<td>Employee</td>\n\t\t\t<td>{{employee_name}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Leave Type</td>\n\t\t\t<td>{{leave_type}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>From Date</td>\n\t\t\t<td>{{from_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>To Date</td>\n\t\t\t<td>{{to_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Status</td>\n\t\t\t<td>{{status}}</td>\n\t\t</tr>\n\t</table>\n\n\t{% set doc_link = frappe.utils.get_url_to_form('Leave Application', name) %}\n\n\t<br><br>\n\t<a class=\"btn btn-primary\" href=\"{{ doc_link }}\" target=\"_blank\">{{ _('Open Now') }}</a>",
+  "response": "<h1>Leave Application Notification</h1>\n<h3>Details:</h3>\n\n\t<table class=\"table table-bordered small\" style=\"max-width: 500px;\">\n\t\t<tbody><tr>\n\t\t\t<td>Employee</td>\n\t\t\t<td>{{employee_name}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Leave Type</td>\n\t\t\t<td>{{leave_type}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>From Date</td>\n\t\t\t<td>{{from_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>To Date</td>\n\t\t\t<td>{{to_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Status</td>\n\t\t\t<td>{{status}}</td>\n\t\t</tr>\n\t</tbody></table>\n\n\t{% set doc_link = frappe.utils.get_url_to_form('Leave Application', name) %}\n\n\t<br><br>\n\t<a class=\"btn btn-primary\" href=\"{{ doc_link }}\" target=\"_blank\">{{ _('Open Now') }}</a>",
   "response_html": null,
   "subject": "Leave Approval Notification",
   "use_html": 0
@@ -14,7 +14,7 @@
   "doctype": "Email Template",
   "modified": "2024-06-29 23:17:24.547554",
   "name": "Leave Status Notification",
-  "response": "<h1>Leave Application Notification</h1>\n<h3>Details:</h3>\n\n\t<table class=\"table table-bordered small\" style=\"max-width: 500px;\">\n\t\t<tr>\n\t\t\t<td>Employee</td>\n\t\t\t<td>{{employee_name}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Leave Type</td>\n\t\t\t<td>{{leave_type}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>From Date</td>\n\t\t\t<td>{{from_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>To Date</td>\n\t\t\t<td>{{to_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Status</td>\n\t\t\t<td>{{status}}</td>\n\t\t</tr>\n\t</table>\n\n\t{% set doc_link = frappe.utils.get_url_to_form('Leave Application', name) %}\n\n\t<br><br>\n\t<a class=\"btn btn-primary\" href=\"{{ doc_link }}\" target=\"_blank\">{{ _('Open Now') }}</a>",
+  "response": "<h1>Leave Application Notification</h1>\n<h3>Details:</h3>\n\n\t<table class=\"table table-bordered small\" style=\"max-width: 500px;\">\n\t\t<tbody><tr>\n\t\t\t<td>Employee</td>\n\t\t\t<td>{{employee_name}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Leave Type</td>\n\t\t\t<td>{{leave_type}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>From Date</td>\n\t\t\t<td>{{from_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>To Date</td>\n\t\t\t<td>{{to_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Status</td>\n\t\t\t<td>{{status}}</td>\n\t\t</tr>\n\t</tbody></table>\n\n\t{% set doc_link = frappe.utils.get_url_to_form('Leave Application', name) %}\n\n\t<br><br>\n\t<a class=\"btn btn-primary\" href=\"{{ doc_link }}\" target=\"_blank\">{{ _('Open Now') }}</a>",
   "response_html": null,
   "subject": "Leave Status Notification",
   "use_html": 0
@@ -102,10 +102,10 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
-  "modified": "2024-06-28 10:13:06.072648",
+  "modified": "2024-07-01 13:49:50.719759",
   "name": "Submit To Hiring Manager",
   "response": null,
-  "response_html": "Dear Sir/Madam,<br>\nWe have enclosed details of for the position of <b><a href=\"/app/submit-to-hiring-manager/{{doc.name}}\">{{doc.job_title}}</a></b> for your review.<br>\n<table border=\"1\">\n     <tr>\n        <td>Candidate Name</td>\n        <td>Resume Template</td>\n    </tr>\n    {% for can in doc.shortlisted_candidate %}\n        <tr>\n            <td>{{can.first_name}} {{can.last_name}}</td>\n        </tr>\n        <tr>\n            <td><a href={{can.resume}}>Click Here For Resume</a></td>\n        </tr>\n    {% endfor %}\n</table>",
+  "response_html": "Dear Sir/Madam,<br>\nWe have enclosed details of for the position of <b><a href=\"/app/submit-to-hiring-manager/{{doc.name}}\">{{doc.job_title}}</a></b> for your review.<br>\n<table border=\"1\">\n     <tr>\n        <td>Candidate Name</td>\n        <td>Resume Template</td>\n    </tr>\n    {% for can in doc.shortlisted_candidate %}\n        <tr>\n            <td>{{can.first_name}} {{can.last_name}}</td>\n            <td><a href={{can.resume}}>Click Here For Resume</a></td>\n        </tr>\n    {% endfor %}\n</table>",
   "subject": "New prospective candidate's details for {{doc.job_title}}",
   "use_html": 1
  },

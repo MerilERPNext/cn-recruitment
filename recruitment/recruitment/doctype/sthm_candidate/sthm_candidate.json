@@ -40,7 +40,6 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Status",
    "options": "Approved\nPending\nReject"
   },
@@ -59,7 +58,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-06-28 10:11:15.897891",
+ "modified": "2024-07-01 13:54:22.234140",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "STHM Candidate",

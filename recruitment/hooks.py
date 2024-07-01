@@ -29,6 +29,9 @@ fixtures =   [{
         "doctype": "Custom DocPerm"
     },{
         "doctype": "Email Template"
+    },
+    {
+        "doctype": "Recruitment Settings"
     },{
         "doctype": "Property Setter",
          "filters": [["Property Setter", "doc_type", "=", "Job Opening"]],
