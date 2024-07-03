@@ -13,7 +13,17 @@ def execute(filters=None):
 
 def get_report_data():
 	column_array = ["POSTING TITLE:DATA:180"]
-	hp_data_qry = frappe.db.sql("""select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo where jo.name = ja.job_title group by ja.status,jo.designation""",as_dict=True)
+	current_user = frappe.session.user
+	roles = frappe.get_roles(current_user)
+	sql_qry = None
+	if "Hiring Manager" in roles:
+		sql_qry = """select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo, `tabJob Requisition` as jr where jo.name = ja.job_title and jr.name = jo.job_requisition and jr.owner = '"""+current_user+"""' group by ja.status,jo.designation"""
+	if "Job Recruiter" in roles:
+		sql_qry = """select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo, `tabJob Requisition` as jr where jo.name = ja.job_title and ja.owner = '"""+current_user+"""' group by ja.status,jo.designation"""
+	if "Recruiter Admin" in roles:
+		sql_qry = """select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo where jo.name = ja.job_title group by ja.status,jo.designation"""
+	hp_data_qry = frappe.db.sql(sql_qry,as_dict=True)
+	
 	
 	select_options = frappe.db.get_value("Property Setter",{"doc_type":"Job Applicant","field_name":"status"},["value"])
 	options_list = select_options.split("\n")

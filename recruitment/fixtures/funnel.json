@@ -250,5 +250,103 @@
   "status": "published",
   "variable_list": "[]",
   "viewport": "{\"x\":-229.06222990279514,\"y\":48.09563830858485,\"zoom\":0.7946739787591491}"
+ },
+ {
+  "archived": 0,
+  "docstatus": 0,
+  "doctype": "Funnel",
+  "funnel_access": [],
+  "funnel_definition": [
+   {
+    "data": "{\"node_label\":\"Reject Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Rejected\\\")\\n\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "PBI_hnWlHj2kf3-yZW3Iw",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":-75,\"y\":165}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "exec_python"
+   },
+   {
+    "data": "{\"node_label\":\"Accept Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Accepted\\\")\\n\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "6nxH47fTyeK8cv1Oc6ONX",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":270,\"y\":165}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "exec_python"
+   },
+   {
+    "data": "{\"submit\":true,\"doctype\":\"Job Offer\"}",
+    "element_type": "Trigger",
+    "id": "aYz2R6GmmwLOYdt4MWtvU",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":-75,\"y\":-60}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "reject_jo"
+   },
+   {
+    "data": "{\"submit\":true,\"variable_path_for_output\":\"\",\"doctype\":\"Job Offer\"}",
+    "element_type": "Trigger",
+    "id": "V12ZrXcE43-_mIlJdE0Hb",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":270,\"y\":-60}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "accept_jo"
+   },
+   {
+    "data": null,
+    "element_type": "edge",
+    "id": "reactflow__edge-V12ZrXcE43-_mIlJdE0Hboutput-6nxH47fTyeK8cv1Oc6ONXinput",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": null,
+    "source": "V12ZrXcE43-_mIlJdE0Hb",
+    "sourcehandle": "output",
+    "target": "6nxH47fTyeK8cv1Oc6ONX",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": null,
+    "element_type": "edge",
+    "id": "reactflow__edge-aYz2R6GmmwLOYdt4MWtvUoutput-PBI_hnWlHj2kf3-yZW3Iwinput",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": null,
+    "source": "aYz2R6GmmwLOYdt4MWtvU",
+    "sourcehandle": "output",
+    "target": "PBI_hnWlHj2kf3-yZW3Iw",
+    "targethandle": "input",
+    "type": "smoothstep"
+   }
+  ],
+  "funnel_name": "Submit Job Offer",
+  "modified": "2024-07-02 13:52:24.735119",
+  "name": "Submit Job Offer",
+  "status": "published",
+  "variable_list": "[]",
+  "viewport": "{\"x\":427.7905911977482,\"y\":231.3854141209858,\"zoom\":1.0281138266560665}"
  }
 ]

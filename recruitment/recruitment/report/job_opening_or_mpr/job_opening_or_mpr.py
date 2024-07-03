@@ -18,6 +18,7 @@ def execute(filters=None):
 				COUNT(*) AS Count
 			FROM
 				`tabJob Requisition`
+			where `tabJob Requisition`.`owner`='"""+frappe.session.user+"""'
 			GROUP BY
 				requested_by
 		"""

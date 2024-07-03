@@ -1,20 +1,27 @@
 import frappe
+from nextai.funnel.custom_trigger import trigger_event
 
 
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl):
-	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-	settings = frappe.get_doc("Recruitment Settings")
-	return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
+    print("status",status," appl: ",appl)
+    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+    settings = frappe.get_doc("Recruitment Settings")
+    jo_doc = frappe.get_doc("Job Offer",jo_id)
+    if status == "Accepted":
+        trigger_event(doc=jo_doc, event_name="accept_jo")
+    else:
+        trigger_event(doc=jo_doc, event_name="reject_jo")
+    return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
 
 
 @frappe.whitelist(allow_guest=True)
 def submit_docs(status, appl,url=None):
 	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
 	settings = frappe.get_doc("Recruitment Settings")
-	frappe.db.set_value("Job Offer", jo_id, {"status": status, "docstatus": 1})
+	#frappe.db.set_value("Job Offer", jo_id, {"status": status, "docstatus": 1})
 	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
-	frappe.db.set_value("Job Applicant", job_applicant, "status", status)
+	# frappe.db.set_value("Job Applicant", job_applicant, "status", status)
 	if status == "Accepted":
 		wf_url = url+"/"+settings.employee_onboarding_webform+"/new?job_offer="+jo_id+"&job_applicant="+appl
 		email_context = {"url":wf_url,"name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"applicant_name"),"company":frappe.db.get_value("Job Offer", {"job_applicant": appl},"company"),"designation":frappe.db.get_value("Job Offer", {"job_applicant": appl},"designation")}

@@ -57,6 +57,7 @@ doctype_js = {
 	"Job Opening": ["public/js/job_opening.js"],
     "Job Applicant": ["public/js/job_applicant.js"],
     "Interview": ["public/js/interview.js"],
+    "User": ["public/js/user.js"],
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -136,6 +137,7 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 permission_query_conditions = {
 	"Submit To Hiring Manager": "recruitment.permissions.sthm_query",
 	"Job Requisition":"recruitment.permissions.jr_query",
+    "Job Applicant":"recruitment.permissions.ja_query"
 }
 #
 # has_permission = {
