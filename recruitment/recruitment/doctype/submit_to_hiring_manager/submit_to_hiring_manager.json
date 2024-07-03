@@ -10,8 +10,7 @@
   "job_title",
   "assigned_to",
   "shortlisted_candidate",
-  "amended_from",
-  "workflow_state"
+  "amended_from"
  ],
  "fields": [
   {
@@ -51,18 +50,12 @@
    "in_list_view": 1,
    "label": "Job Title",
    "read_only": 1
-  },
-  {
-   "fieldname": "workflow_state",
-   "fieldtype": "Link",
-   "label": "Workflow State",
-   "options": "Workflow State"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-07-03 11:26:54.114882",
+ "modified": "2024-07-03 15:53:02.692357",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Submit To Hiring Manager",
