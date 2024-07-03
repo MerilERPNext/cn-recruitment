@@ -38,10 +38,6 @@ fixtures =   [{
         "doctype": "Property Setter",
          "filters": [["Property Setter", "doc_type", "=", "Job Opening"]],
     },
-	{
-        "doctype": "Workspace",
-        "filters": [["Workspace", "name", "=", "Recruitment"]],
-    },
     {
         "doctype": "Custom Field",
         "filters": [["Custom Field", "module", "=", "Recruitment"]],

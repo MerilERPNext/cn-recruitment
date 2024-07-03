@@ -258,7 +258,7 @@
   "funnel_access": [],
   "funnel_definition": [
    {
-    "data": "{\"node_label\":\"Reject Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Rejected\\\")\\n\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "data": "{\"node_label\":\"Reject Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Rejected\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"docstatus\\\",1)\\n\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
     "element_type": "Action",
     "id": "PBI_hnWlHj2kf3-yZW3Iw",
     "parent": "Submit Job Offer",
@@ -272,7 +272,7 @@
     "type": "exec_python"
    },
    {
-    "data": "{\"node_label\":\"Accept Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Accepted\\\")\\n\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "data": "{\"node_label\":\"Accept Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Accepted\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"docstatus\\\",1)\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
     "element_type": "Action",
     "id": "6nxH47fTyeK8cv1Oc6ONX",
     "parent": "Submit Job Offer",
@@ -343,10 +343,122 @@
    }
   ],
   "funnel_name": "Submit Job Offer",
-  "modified": "2024-07-02 13:52:24.735119",
+  "modified": "2024-07-03 16:59:33.551063",
   "name": "Submit Job Offer",
   "status": "published",
   "variable_list": "[]",
   "viewport": "{\"x\":427.7905911977482,\"y\":231.3854141209858,\"zoom\":1.0281138266560665}"
+ },
+ {
+  "archived": 0,
+  "docstatus": 0,
+  "doctype": "Funnel",
+  "funnel_access": [],
+  "funnel_definition": [
+   {
+    "data": "{\"doctype\":\"Job Offer\",\"action\":\"on_update\",\"submit\":true,\"updated_field\":\"status\"}",
+    "element_type": "Trigger",
+    "id": "WHY4hkAF1ezQ7pKm115jd",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":600,\"y\":-45}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "document_event_trigger"
+   },
+   {
+    "data": "{\"node_label\":\"Check Is Status Accepted\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nsite_url = frappe.utils.get_url()\\nurl = site_url+\\\"/\\\"+\\\"employee-onboarding/new?job_applicant=\\\"+doc.job_applicant+\\\"&job_offer=\\\"+doc.name\\nvariables[\\\"url\\\"] = url\\nvariables[\\\"applicant_name\\\"]=doc.applicant_name\\nvariables[\\\"designation\\\"]=doc.designation\\nvariables[\\\"company\\\"]=doc.company\\n\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "z1Wg1WXx7_Jqt75L1qZRX",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":525,\"y\":105}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "exec_python"
+   },
+   {
+    "data": "{\"node_label\":\"Filter Status\",\"use_python_expression\":true,\"submit\":true,\"expression\":\"doc = variables.get(\\\"doc\\\")\\nif doc.status == \\\"Accepted\\\":\\n    return True\\nreturn False\"}",
+    "element_type": "Action",
+    "id": "9YjMNaYNaSLfhVdkAA3AH",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":570,\"y\":30}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "var_filter"
+   },
+   {
+    "data": null,
+    "element_type": "edge",
+    "id": "reactflow__edge-WHY4hkAF1ezQ7pKm115jdoutput-9YjMNaYNaSLfhVdkAA3AHinput",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": null,
+    "source": "WHY4hkAF1ezQ7pKm115jd",
+    "sourcehandle": "output",
+    "target": "9YjMNaYNaSLfhVdkAA3AH",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": "{\"email_account\":\"Prathamjadhav15\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"{{doc.job_applicant}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Employee Onboarding\",\"createNewEmailTemplate\":false}",
+    "element_type": "Action",
+    "id": "Mo9LuWqDmrCsIuxg8egLw",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":645,\"y\":255}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "send_mail"
+   },
+   {
+    "data": null,
+    "element_type": "edge",
+    "id": "reactflow__edge-9YjMNaYNaSLfhVdkAA3AHyes-z1Wg1WXx7_Jqt75L1qZRXinput",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": null,
+    "source": "9YjMNaYNaSLfhVdkAA3AH",
+    "sourcehandle": "yes",
+    "target": "z1Wg1WXx7_Jqt75L1qZRX",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": null,
+    "element_type": "edge",
+    "id": "reactflow__edge-z1Wg1WXx7_Jqt75L1qZRXoutput-Mo9LuWqDmrCsIuxg8egLwinput",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": null,
+    "source": "z1Wg1WXx7_Jqt75L1qZRX",
+    "sourcehandle": "output",
+    "target": "Mo9LuWqDmrCsIuxg8egLw",
+    "targethandle": "input",
+    "type": "smoothstep"
+   }
+  ],
+  "funnel_name": "Employee Onboarding Mail",
+  "modified": "2024-07-03 17:16:16.596825",
+  "name": "Employee Onboarding Mail",
+  "status": "published",
+  "variable_list": "[]",
+  "viewport": "{\"x\":-373.9675308633773,\"y\":191.92984852611448,\"zoom\":1.7411011265922482}"
  }
 ]
