@@ -20,7 +20,7 @@ def get_report_data():
 		sql_qry = """select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo, `tabJob Requisition` as jr where jo.name = ja.job_title and jr.name = jo.job_requisition and jr.owner = '"""+current_user+"""' group by ja.status,jo.designation"""
 	if "Job Recruiter" in roles:
 		sql_qry = """select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo, `tabJob Requisition` as jr where jo.name = ja.job_title and ja.owner = '"""+current_user+"""' group by ja.status,jo.designation"""
-	if "Recruiter Admin" in roles:
+	if "Administrator" in roles or "Recruiter Admin" in roles:
 		sql_qry = """select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo where jo.name = ja.job_title group by ja.status,jo.designation"""
 	hp_data_qry = frappe.db.sql(sql_qry,as_dict=True)
 	

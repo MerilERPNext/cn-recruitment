@@ -23,18 +23,43 @@ def execute(filters=None):
 
 	]
 
-
-	sql_query = """
-			SELECT
-				Status,
-				COUNT(*) AS Count
-			FROM
-				`tabJob Opening`
-			GROUP BY
-				status
-		
-	"""
-
+	current_user = frappe.session.user
+	roles = frappe.get_roles(current_user)
+	if "Hiring Manager" in roles:
+		sql_query = """
+				SELECT
+					jo.Status,
+					COUNT(*) AS Count
+				FROM
+					`tabJob Opening` as jo JOIN `tabJob Requisition` as jr on jr.name = jo.job_requisition
+				WHERE jr.owner ='"""+current_user+"""'
+				GROUP BY
+					status
+			
+		"""
+	if "Job Recruiter" in roles:
+		sql_query = """
+				SELECT
+					jo.Status,
+					COUNT(*) AS Count
+				FROM
+					`tabJob Opening` as jo
+				WHERE jo.owner ='"""+current_user+"""'
+				GROUP BY
+					status
+			
+		"""
+	if "Recruiter Admin" in roles:
+		sql_query = """
+				SELECT
+					jo.Status,
+					COUNT(*) AS Count
+				FROM
+					`tabJob Opening` as jo
+				GROUP BY
+					status
+			
+		"""
 
 	data = frappe.db.sql(sql_query, as_dict=True)
 

@@ -10,16 +10,40 @@ def execute(filters=None):
 			("Source") + "::300",
 			("Count") + "::300",
 		]
-
-	sql_query = """
-		SELECT
-			COALESCE(source, 'Not defined') AS Source,
-			COUNT(*) AS Count
-		FROM
-			`tabJob Applicant`
-		GROUP BY
-			COALESCE(source, 'Not defined');
-	"""
+	current_user = frappe.session.user
+	roles = frappe.get_roles(current_user)
+	if "Hiring Manager" in roles:
+		sql_query = """
+			SELECT
+				COALESCE(ja.source, 'Not defined') AS Source,
+				COUNT(*) AS Count
+			FROM
+				`tabJob Applicant` as ja,`tabJob Opening` as jo, `tabJob Requisition` as jr where jo.name = ja.job_title
+				 and jr.name = jo.job_requisition and jr.owner = '"""+current_user+"""' 
+			GROUP BY
+				COALESCE(ja.source, 'Not defined');
+		"""
+	if "Job Recruiter" in roles:
+		sql_query = """
+			SELECT
+				COALESCE(ja.source, 'Not defined') AS Source,
+				COUNT(*) AS Count
+			FROM
+				`tabJob Applicant` as ja,`tabJob Opening` as jo where jo.name = ja.job_title
+				 and jo.owner = '"""+current_user+"""' 
+			GROUP BY
+				COALESCE(ja.source, 'Not defined');
+		"""
+	if "Recruiter Admin" in roles:
+		sql_query = """
+			SELECT
+				COALESCE(ja.source, 'Not defined') AS Source,
+				COUNT(*) AS Count
+			FROM
+				`tabJob Applicant` as ja
+			GROUP BY
+				COALESCE(ja.source, 'Not defined');
+		"""
 
 	data = frappe.db.sql(sql_query, as_dict=True)
 	data =  [[d["Source"], d["Count"]] for d in data]

@@ -11,15 +11,38 @@ def execute(filters=None):
 
 def get_report_data():
 	final_data = []
-	data_qry = frappe.db.sql("""select Distinct(jo.designation),COUNT(ja.name) as count,
-    DATEDIFF(CURDATE(), jo.posted_on) AS time_to_fill,
-	DATEDIFF(CURDATE(), jo.custom_approved_on) AS time_to_fill_ap,
-    CASE
-        WHEN CURDATE() < jo.closes_on THEN 'On Track'
-        ELSE CONCAT(DATEDIFF(CURDATE(), jo.closes_on), ' days delayed')
-    END AS delay
-	
-	from `tabJob Opening` as jo JOIN `tabJob Applicant` as ja on ja.job_title = jo.name and jo.status ='Open' group by jo.designation order by jo.designation""",as_dict=True)
+	current_user = frappe.session.user
+	roles = frappe.get_roles(current_user)
+	if "Hiring Manager" in roles:
+		data_qry = frappe.db.sql("""select Distinct(jo.designation),COUNT(ja.name) as count,
+		DATEDIFF(jo.closes_on, jo.posted_on) AS time_to_fill,
+		DATEDIFF(jo.closes_on, jo.custom_approved_on) AS time_to_fill_ap,
+		CASE
+			WHEN CURDATE() < jo.closes_on THEN 'On Track'
+			ELSE CONCAT(DATEDIFF(CURDATE(), jo.closes_on), ' days delayed')
+		END AS delay
+		
+		from `tabJob Opening` as jo JOIN `tabJob Applicant` as ja on ja.job_title = jo.name JOIN `tabJob Requisition` as jr on jo.job_requisition = jr.name and jo.status ='Open' and jr.owner = '"""+current_user+"""' group by jo.designation order by jo.designation""",as_dict=True)
+	if "Job Recruiter" in roles:
+		data_qry = frappe.db.sql("""select Distinct(jo.designation),COUNT(ja.name) as count,
+		DATEDIFF(jo.closes_on, jo.posted_on) AS time_to_fill,
+		DATEDIFF(jo.closes_on, jo.custom_approved_on) AS time_to_fill_ap,
+		CASE
+			WHEN CURDATE() < jo.closes_on THEN 'On Track'
+			ELSE CONCAT(DATEDIFF(CURDATE(), jo.closes_on), ' days delayed')
+		END AS delay
+		
+		from `tabJob Opening` as jo JOIN `tabJob Applicant` as ja on ja.job_title = jo.name and jo.status ='Open' and jo.owner = '"""+current_user+"""' group by jo.designation order by jo.designation""",as_dict=True)
+	if "Recruiter Admin" in roles:
+		data_qry = frappe.db.sql("""select Distinct(jo.designation),COUNT(ja.name) as count,
+		DATEDIFF(jo.closes_on, jo.posted_on) AS time_to_fill,
+		DATEDIFF(jo.closes_on, jo.custom_approved_on) AS time_to_fill_ap,
+		CASE
+			WHEN CURDATE() < jo.closes_on THEN 'On Track'
+			ELSE CONCAT(DATEDIFF(CURDATE(), jo.closes_on), ' days delayed')
+		END AS delay
+		
+		from `tabJob Opening` as jo JOIN `tabJob Applicant` as ja on ja.job_title = jo.name and jo.status ='Open' group by jo.designation order by jo.designation""",as_dict=True)
 	for data_dict in data_qry:
 		final_data.append(list(data_dict.values()))
 	return final_data
