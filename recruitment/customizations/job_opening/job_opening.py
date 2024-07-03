@@ -20,5 +20,4 @@ def generate_job_applicant(docname):
 				app_cnt+=1
 	if app_cnt>0:
 		frappe.msgprint("Job Applicants Created Successfully!")
-	else:
-		frappe.msgprint("Job Applicants Has Been Already Created!")
+	
