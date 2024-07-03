@@ -15,7 +15,7 @@
             <div id="operations" style="padding-top:20px">
                 <button type="button" class="btn btn-warning" id="reject" onclick="rejectoffer()">Reject</button>
                 <button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
-            </div>
+            </div><br>
         </center>
         <div>{{ frappe.get_print('Job Offer', doc) }}</div>
     {% endif %}
@@ -29,6 +29,8 @@
 
 
 <script>
+    $(".action-banner").hide();
+    
 	function rejectoffer() {
     let text = "Are you sure you want to reject this job offer?";
     if (confirm(text)) {
