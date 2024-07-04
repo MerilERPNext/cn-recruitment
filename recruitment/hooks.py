@@ -41,6 +41,10 @@ fixtures =   [{
     {
         "doctype": "Custom Field",
         "filters": [["Custom Field", "module", "=", "Recruitment"]],
+    },
+    {
+        "doctype": "Workspace",
+        "filters": [["Workspace", "name", "=", "Recruitment"]],
     }]
 
 # include js in page
