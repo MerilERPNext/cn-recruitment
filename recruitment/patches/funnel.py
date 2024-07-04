@@ -474,10 +474,8 @@ def set_email_account():
                 node_data = frappe.parse_json(f_dict["data"])
                 node_data["email_account"] = default_email_account
                 f_dict["data"] = frappe.json.dumps(node_data)
-    print(default_email_account)
 def execute():
     set_email_account()
-    
     for d in data:
         if not frappe.db.exists("Funnel",d.get("name")):
             frappe.get_doc(d).insert(ignore_permissions = True)
