@@ -353,7 +353,7 @@
     "type": "Link"
    }
   ],
-  "modified": "2024-07-04 14:39:18.460742",
+  "modified": "2024-07-04 16:37:11.925542",
   "module": "HR",
   "name": "Recruitment",
   "number_cards": [],
@@ -366,7 +366,7 @@
     "parent": "Recruitment",
     "parentfield": "quick_lists",
     "parenttype": "Workspace",
-    "quick_list_filter": "[[\"Submit To Hiring Manager\",\"workflow_state\",\"=\",\"Submit To HIring Manager\",false]]"
+    "quick_list_filter": "[[\"Submit To Hiring Manager\",\"workflow_state\",\"=\",\"Approved\",false]]"
    },
    {
     "document_type": "Interview",
