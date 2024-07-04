@@ -79,7 +79,6 @@ data = [
    }
   ],
   "funnel_name": "Submit To Hiring Manager",
-  "modified": "2024-07-01 14:15:27.356191",
   "name": "Submit To Hiring Manager",
   "status": "published",
   "variable_list": "[]",
@@ -135,7 +134,6 @@ data = [
    }
   ],
   "funnel_name": "Job Requisition",
-  "modified": "2024-06-27 20:50:24.960190",
   "name": "Job Requisition",
   "status": "published",
   "variable_list": "[]",
@@ -247,7 +245,6 @@ data = [
    }
   ],
   "funnel_name": "Interview Candidate Email",
-  "modified": "2024-06-26 15:04:00.596807",
   "name": "Interview Candidate Email",
   "status": "published",
   "variable_list": "[]",
@@ -345,7 +342,6 @@ data = [
    }
   ],
   "funnel_name": "Submit Job Offer",
-  "modified": "2024-07-03 16:59:33.551063",
   "name": "Submit Job Offer",
   "status": "published",
   "variable_list": "[]",
@@ -457,7 +453,7 @@ data = [
    }
   ],
   "funnel_name": "Employee Onboarding Mail",
-  "modified": "2024-07-03 17:16:16.596825",
+  
   "name": "Employee Onboarding Mail",
   "status": "published",
   "variable_list": "[]",
