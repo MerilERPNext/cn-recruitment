@@ -21,7 +21,7 @@ def make_job_opening(source_name, target_doc=None):
 				"designation": "designation",
 				"name": "job_requisition",
 				"department": "department",
-				"no_of_positions": "vacancies",
+				"custom_no_of_positions": "no_of_positions",
 				"custom_shortlist_by_hiring_manager":"custom_shortlisted_by_hiring_manager"
 			},
 			"Candidate List": {
