@@ -38,6 +38,7 @@
    "label": "Last Name"
   },
   {
+   "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
@@ -58,7 +59,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-07-01 13:54:22.234140",
+ "modified": "2024-07-04 16:29:20.921037",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "STHM Candidate",
