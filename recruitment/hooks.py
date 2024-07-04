@@ -45,6 +45,10 @@ fixtures =   [{
     {
         "doctype": "Workspace",
         "filters": [["Workspace", "name", "=", "Recruitment"]],
+    },
+    {
+        "doctype": "Workflow",
+        "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
     }]
 
 # include js in page
