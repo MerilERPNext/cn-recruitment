@@ -12,6 +12,7 @@ def execute(filters=None):
 		]
 	current_user = frappe.session.user
 	roles = frappe.get_roles(current_user)
+	sql_qry=None
 	if "Hiring Manager" in roles:
 		sql_query = """
 			SELECT
