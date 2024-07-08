@@ -34,7 +34,7 @@ fixtures =   [{
         "doctype": "Recruitment Settings"
     },{
         "doctype": "Property Setter",
-         "filters": [["Property Setter", "doc_type", "=", "Job Opening"]],
+         "filters": [["Property Setter", "module", "=", "Recruitment"]],
     },
     {
         "doctype": "Custom Field",
