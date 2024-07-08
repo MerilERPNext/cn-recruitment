@@ -14,7 +14,7 @@ frappe.ui.form.on("Job Requisition", {
 			 cur_frm.set_value("requested_by", values.name);
 		})	
 		}
-		cur_frm.set_value("status", "Open & Approved");
+		//cur_frm.set_value("status", "Open & Approved");
 		 /*if(frm.doc.status=="Open & Approved"){
 			 frm.add_custom_button(__('Job Opening'), function(){
 				frappe.call({
@@ -91,4 +91,9 @@ frappe.ui.form.on("Job Requisition", {
         });
     }
 },
+custom_assign_to_recruiter(frm){
+    if(frm.doc.custom_assign_to_recruiter){
+		cur_frm.set_value("status", "Recruiter Assigned")
+	}
+}
 })

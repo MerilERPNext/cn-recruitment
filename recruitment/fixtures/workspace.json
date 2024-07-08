@@ -353,7 +353,7 @@
     "type": "Link"
    }
   ],
-  "modified": "2024-07-04 16:37:11.925542",
+  "modified": "2024-07-08 12:21:09.862344",
   "module": "HR",
   "name": "Recruitment",
   "number_cards": [],
@@ -367,6 +367,14 @@
     "parentfield": "quick_lists",
     "parenttype": "Workspace",
     "quick_list_filter": "[[\"Submit To Hiring Manager\",\"workflow_state\",\"=\",\"Approved\",false]]"
+   },
+   {
+    "document_type": "Job Requisition",
+    "label": "Job Requisition",
+    "parent": "Recruitment",
+    "parentfield": "quick_lists",
+    "parenttype": "Workspace",
+    "quick_list_filter": "[]"
    },
    {
     "document_type": "Interview",
@@ -383,14 +391,6 @@
     "parentfield": "quick_lists",
     "parenttype": "Workspace",
     "quick_list_filter": "[[\"Submit To Hiring Manager\",\"workflow_state\",\"=\",\"Submit To HIring Manager\",false]]"
-   },
-   {
-    "document_type": "Job Requisition",
-    "label": "Job Requisition",
-    "parent": "Recruitment",
-    "parentfield": "quick_lists",
-    "parenttype": "Workspace",
-    "quick_list_filter": "[[\"Job Requisition\",\"status\",\"=\",\"Open & Approved\",false]]"
    }
   ],
   "restrict_to_domain": null,
