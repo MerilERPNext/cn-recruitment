@@ -24,7 +24,7 @@ def ja_query(user):
 	if not user:
 		user = frappe.session.user
 	roles = frappe.get_roles(user)
-	if frappe.session.user != "Administrator":
+	if frappe.session.user != "Administrator" or "System Manager" not in roles:
 		if "Job Recruiter" in roles:
 			return "(`tabJob Applicant`.owner = {user})".format(user=frappe.db.escape(user))
 		if "Hiring Manager" in frappe.get_roles(user):
