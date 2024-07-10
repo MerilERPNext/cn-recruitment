@@ -10,6 +10,8 @@ def sthm_query(user):
 			return "(`tabSubmit To Hiring Manager`.assigned_to = {user})".format(user=frappe.db.escape(user))
 		if "Job Recruiter" in roles:
 			return "(`tabSubmit To Hiring Manager`.owner = {user})".format(user=frappe.db.escape(user))
+	return ""
+	
 def jr_query(user):
 	if not user:
 		user = frappe.session.user
@@ -19,6 +21,7 @@ def jr_query(user):
 			return "(`tabJob Requisition`.custom_assign_to_recruiter = {user})".format(user=frappe.db.escape(user))
 		if "Hiring Manager" in roles:
 			return "(`tabJob Requisition`.owner = {user})".format(user=frappe.db.escape(user))
+	return ""
 
 def ja_query(user):
 	if not user:
