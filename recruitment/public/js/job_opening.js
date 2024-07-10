@@ -26,5 +26,12 @@ frappe.ui.form.on("Job Opening", {
 				// code snippet
 			}
 		});
+		if (frm.is_new()) {
+            // Perform actions only if the document is new
+            frappe.db.set_value('Job Requisition', frm.doc.job_requisition, 'status', 'Job Opening Created')
+			.then(r => {
+				
+			})
+        }
 	}
 })

@@ -3,6 +3,11 @@ frappe.ui.form.on("Job Applicant", {
 		{
         if (!frm.is_new())
             {
+                if (frappe.user.has_role("Hr Group Admin")) {
+                    frm.add_custom_button(__("Request For Offer"), function(){
+                        //perform desired action such as routing to new form or fetching etc.
+                      });
+                }
         let crm_notes = `
             <div class="notes-section col-xs-12">
                 <div class="new-btn pb-3">
