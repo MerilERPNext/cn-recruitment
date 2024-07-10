@@ -28,6 +28,8 @@ fixtures =   [{
     },{
         "doctype": "Custom DocPerm"
     },{
+        "doctype": "Funnel"
+    },{
         "doctype": "Email Template"
     },
     {

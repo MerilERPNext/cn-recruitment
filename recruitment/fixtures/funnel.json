@@ -460,5 +460,61 @@
   "status": "published",
   "variable_list": "[]",
   "viewport": "{\"x\":-373.9675308633773,\"y\":191.92984852611448,\"zoom\":1.7411011265922482}"
+ },
+ {
+  "archived": 0,
+  "docstatus": 0,
+  "doctype": "Funnel",
+  "funnel_access": [],
+  "funnel_definition": [
+   {
+    "data": "{\"doctype\":\"Job Offer\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"status\"}",
+    "element_type": "Trigger",
+    "id": "xdqzCqKvNcte8sFyc5Vm4",
+    "parent": "Job Applicant Offer Status",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":480,\"y\":-60}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "document_event_trigger"
+   },
+   {
+    "data": "{\"node_label\":\"Job Applicant Offer Status\",\"python_code\":\"doc = variables[\\\"doc\\\"]\\nif doc[\\\"status\\\"] == \\\"Accepted\\\":\\n\\tfrappe.db.set_value(\\\"Job Applicant\\\",doc[\\\"job_applicant\\\"],\\\"status\\\",\\\"Offer Accepted\\\")\\nif doc[\\\"status\\\"] == \\\"Rejected\\\":\\n\\tfrappe.db.set_value(\\\"Job Applicant\\\",doc[\\\"job_applicant\\\"],\\\"status\\\",\\\"Offer Rejected\\\")\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "ryKM4YgtBNm9hPMf42uVY",
+    "parent": "Job Applicant Offer Status",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":480,\"y\":90}",
+    "source": null,
+    "sourcehandle": null,
+    "target": null,
+    "targethandle": null,
+    "type": "exec_python"
+   },
+   {
+    "data": null,
+    "element_type": "edge",
+    "id": "reactflow__edge-xdqzCqKvNcte8sFyc5Vm4output-ryKM4YgtBNm9hPMf42uVYinput",
+    "parent": "Job Applicant Offer Status",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": null,
+    "source": "xdqzCqKvNcte8sFyc5Vm4",
+    "sourcehandle": "output",
+    "target": "ryKM4YgtBNm9hPMf42uVY",
+    "targethandle": "input",
+    "type": "smoothstep"
+   }
+  ],
+  "funnel_name": "Job Applicant Offer Status",
+  "modified": "2024-07-10 15:02:51.000133",
+  "name": "Job Applicant Offer Status",
+  "status": "published",
+  "variable_list": "[]",
+  "viewport": "{\"x\":10,\"y\":200,\"zoom\":1}"
  }
 ]
