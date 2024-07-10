@@ -21,7 +21,7 @@ def jr_query(user):
 			return "(`tabJob Requisition`.custom_assign_to_recruiter = {user})".format(user=frappe.db.escape(user))
 		if "Hiring Manager" in roles:
 			return "(`tabJob Requisition`.owner = {user})".format(user=frappe.db.escape(user))
-	return ""
+	return "1 = 1"
 
 def ja_query(user):
 	if not user:
