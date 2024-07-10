@@ -35,7 +35,7 @@ def execute(filters=None):
 			GROUP BY
 				COALESCE(ja.source, 'Not defined');
 		"""
-	if "Administrator" in roles "System Manager" in roles or "Recruiter Admin" in roles:
+	if "Administrator" in roles or "System Manager" in roles or "Recruiter Admin" in roles:
 		sql_query = """
 			SELECT
 				COALESCE(ja.source, 'Not defined') AS Source,
