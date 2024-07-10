@@ -33,7 +33,7 @@ def get_report_data():
 		END AS delay
 		
 		from `tabJob Opening` as jo JOIN `tabJob Applicant` as ja on ja.job_title = jo.name and jo.status ='Open' and jo.owner = '"""+current_user+"""' group by jo.designation order by jo.designation""",as_dict=True)
-	if "Recruiter Admin" in roles:
+	if "Administrator" in roles or "System Manager" in roles or "Recruiter Admin" in roles:
 		data_qry = frappe.db.sql("""select Distinct(jo.designation),COUNT(ja.name) as count,
 		DATEDIFF(jo.closes_on, jo.posted_on) AS time_to_fill,
 		DATEDIFF(jo.closes_on, jo.custom_approved_on) AS time_to_fill_ap,

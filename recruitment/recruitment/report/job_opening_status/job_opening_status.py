@@ -50,7 +50,7 @@ def execute(filters=None):
 					status
 			
 		"""
-	if "Recruiter Admin" in roles:
+	if "Administrator" in roles or "System Manager" in roles or "Recruiter Admin" in roles:
 		sql_query = """
 				SELECT
 					jo.Status,
