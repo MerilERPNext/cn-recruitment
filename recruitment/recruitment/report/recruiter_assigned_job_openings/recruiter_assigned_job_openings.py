@@ -27,7 +27,8 @@ def get_report_data():
 	jo_recruiter_data = frappe.db.sql("select u.full_name as recruiter,jo.status, count(jo.status) as status_cnt from `tabJob Opening`as jo,`tabJob Requisition` as jr,`tabUser` as u where jr.name = jo.job_requisition and u.name = jr.custom_assign_to_recruiter group by jr.custom_assign_to_recruiter,jo.status",as_dict=True)
 	recruiter_status_counts = {}
 	for recruit_nm in recruiter_full_names:
-		recruiter_status_counts[recruit_nm] = {status: 0 for status in options_list}
+		if recruit_nm != "Administrator":
+			recruiter_status_counts[recruit_nm] = {status: 0 for status in options_list}
 	for item in jo_recruiter_data:
 		recruiter = item['recruiter']
 		status = item['status']
