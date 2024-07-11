@@ -33,22 +33,6 @@
  },
  {
   "default_value": null,
-  "doc_type": "Job Opening",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocType",
-  "field_name": null,
-  "is_system_generated": 0,
-  "modified": "2024-07-11 13:12:41.477864",
-  "module": null,
-  "name": "Job Opening-main-field_order",
-  "property": "field_order",
-  "property_type": "Data",
-  "row_name": null,
-  "value": "[\"job_details_section\", \"job_title\", \"designation\", \"custom_how_the_vacancy_as_arisen\", \"custom_replaced_with\", \"custom_skills\", \"column_break_5\", \"status\", \"custom_approved_on\", \"posted_on\", \"closes_on\", \"closed_on\", \"section_break_nngy\", \"company\", \"custom_division\", \"department\", \"column_break_dxpv\", \"employment_type\", \"location\", \"references_section\", \"staffing_plan\", \"planned_vacancies\", \"job_requisition\", \"vacancies\", \"section_break_6\", \"publish\", \"route\", \"publish_applications_received\", \"column_break_12\", \"job_application_route\", \"section_break_14\", \"description\", \"custom_reason_for_requesting\", \"custom_sample_resume_link\", \"section_break_16\", \"currency\", \"lower_range\", \"upper_range\", \"column_break_20\", \"salary_per\", \"publish_salary_range\", \"custom_candidate_list_\", \"custom_shortlisted_by_hiring_manager\", \"custom_requirement\", \"custom__employee_type\", \"custom_location\", \"custom_preferred_company\", \"custom_column_break_vrkvr\", \"custom_work_experience\", \"custom_salary\", \"custom_preferred_notice_period\", \"custom_section_break_fcekl\", \"custom_qualifications\"]"
- },
- {
-  "default_value": null,
   "doc_type": "Job Offer",
   "docstatus": 0,
   "doctype": "Property Setter",
@@ -2097,22 +2081,6 @@
  },
  {
   "default_value": null,
-  "doc_type": "Job Opening",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocType",
-  "field_name": null,
-  "is_system_generated": 0,
-  "modified": "2024-07-11 13:12:41.431602",
-  "module": null,
-  "name": "Job Opening-main-links_order",
-  "property": "links_order",
-  "property_type": "Small Text",
-  "row_name": null,
-  "value": "[\"gq9em1tmgk\"]"
- },
- {
-  "default_value": null,
   "doc_type": "Employee Onboarding",
   "docstatus": 0,
   "doctype": "Property Setter",
@@ -2190,5 +2158,37 @@
   "property_type": "Text",
   "row_name": null,
   "value": "Pending\nOpen & Approved\nJob Opening Created\nIn-Progress\nRejected\nFilled\nOn Hold\nCancelled"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Job Opening",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocType",
+  "field_name": null,
+  "is_system_generated": 0,
+  "modified": "2024-07-11 16:27:30.942408",
+  "module": null,
+  "name": "Job Opening-main-field_order",
+  "property": "field_order",
+  "property_type": "Data",
+  "row_name": null,
+  "value": "[\"job_details_section\", \"job_title\", \"designation\", \"custom_how_the_vacancy_as_arisen\", \"custom_replaced_with\", \"custom_skills\", \"column_break_5\", \"status\", \"custom_approved_on\", \"posted_on\", \"closes_on\", \"closed_on\", \"section_break_nngy\", \"company\", \"custom_division\", \"department\", \"column_break_dxpv\", \"employment_type\", \"location\", \"references_section\", \"staffing_plan\", \"planned_vacancies\", \"job_requisition\", \"vacancies\", \"section_break_6\", \"publish\", \"route\", \"publish_applications_received\", \"column_break_12\", \"job_application_route\", \"section_break_14\", \"description\", \"custom_reason_for_requesting\", \"custom_sample_resume_link\", \"section_break_16\", \"currency\", \"lower_range\", \"upper_range\", \"column_break_20\", \"salary_per\", \"publish_salary_range\", \"custom_candidate_list_\", \"custom_shortlisted_by_hiring_manager\", \"custom_requirement\", \"custom__employee_type\", \"custom_location\", \"custom_column_break_vrkvr\", \"custom_work_experience\", \"custom_salary\", \"custom_preferred_notice_period\", \"custom_section_break_fcekl\", \"custom_qualifications\"]"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Job Opening",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocType",
+  "field_name": null,
+  "is_system_generated": 0,
+  "modified": "2024-07-11 16:27:31.075609",
+  "module": null,
+  "name": "Job Opening-main-links_order",
+  "property": "links_order",
+  "property_type": "Small Text",
+  "row_name": null,
+  "value": "[\"gq9em1tmgk\"]"
  }
 ]
