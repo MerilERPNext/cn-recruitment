@@ -4,9 +4,13 @@ frappe.ui.form.on("Job Applicant", {
         if (!frm.is_new())
             {
                 if (frappe.user.has_role("Hr Group Admin")) {
-                    frm.add_custom_button(__("Request For Offer"), function(){
-                        
-                      });
+                    // frm.add_custom_button(__("Request For Offer"), function(){
+                    //     frappe.call('recruitment.job_offer_utils.request_for_offer', {
+                    //         jo_id:frm.doc.name
+                    //     }).then(r => {
+                    //         console.log(r.message)
+                    //     })
+                    // });
                 }
         let crm_notes = `
             <div class="notes-section col-xs-12">

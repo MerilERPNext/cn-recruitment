@@ -1,10 +1,10 @@
 import frappe
 from nextai.funnel.custom_trigger import trigger_event
+import json
 
 
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl):
-    print("status",status," appl: ",appl)
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     settings = frappe.get_doc("Recruitment Settings")
     jo_doc = frappe.get_doc("Job Offer",jo_id)
@@ -13,6 +13,11 @@ def job_offer_update(status, appl):
     else:
         trigger_event(doc=jo_doc, event_name="reject_jo")
     return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
+
+@frappe.whitelist()
+def request_for_offer(jo_id):
+    doc_data = frappe.get_doc("Job Applicant",jo_id)
+    trigger_event(doc=doc_data, event_name="send_mail_to_group_admin")
 
 
 @frappe.whitelist(allow_guest=True)

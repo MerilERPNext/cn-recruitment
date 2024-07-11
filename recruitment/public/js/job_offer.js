@@ -18,5 +18,17 @@ frappe.ui.form.on("Job Offer", {
 
 			});
 		}
-    }
+    },
+	// after_save(frm){
+	// 	frappe.call({
+	// 		method: "recruitment.job_offer_utils.job_offer_update",
+	// 		args:{
+	// 			"status": frm.doc.status,
+	// 			"appl":frm.doc.job_applicant
+	// 		},
+	// 		callback: function(r) {
+	// 			// code snippet
+	// 		}
+	// 	});
+	// }
 })

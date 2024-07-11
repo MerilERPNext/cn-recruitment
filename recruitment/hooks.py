@@ -30,13 +30,15 @@ fixtures =   [{
     },{
         "doctype": "Funnel"
     },{
+        "doctype": "Funnel Node"
+    }
+    ,{
         "doctype": "Email Template"
     },
     {
         "doctype": "Recruitment Settings"
     },{
-        "doctype": "Property Setter",
-         "filters": [["Property Setter", "module", "=", "Recruitment"]],
+        "doctype": "Property Setter"
     },
     {
         "doctype": "Custom Field",

@@ -44,3 +44,4 @@ def get_report_data():
 		for recruiter in recruiter_status_counts
 	]
 	return {"columns":column_array,"data":result}
+

@@ -90,10 +90,5 @@ frappe.ui.form.on("Job Requisition", {
             }
         });
     }
-},
-custom_assign_to_recruiter(frm){
-    if(frm.doc.custom_assign_to_recruiter){
-		cur_frm.set_value("status", "Recruiter Assigned")
-	}
 }
 })
