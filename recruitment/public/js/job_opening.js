@@ -15,6 +15,7 @@ frappe.ui.form.on("Job Opening", {
 				}
 			};
 		});
+		
     },
 	after_save: function(frm){
 		frappe.call({

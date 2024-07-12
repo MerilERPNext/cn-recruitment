@@ -53,5 +53,16 @@ frappe.ui.form.on("Interview", {
 
 			},__("Create"));
 		}
-    }
+    },
+	after_save(frm){
+		frappe.call({
+			method: "recruitment.customizations.interview.interview.share_job_opening",
+			args:{
+				"docname": frm.doc.name
+			},
+			callback: function(r) {
+				// code snippet
+			}
+		});
+	}
 })

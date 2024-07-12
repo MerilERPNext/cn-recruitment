@@ -43,3 +43,17 @@ def generate_travel_request(interview_id):
         frappe.msgprint("Travel Request Created Succefully!")
     else:
         frappe.msgprint("User Administrator can't create travel request")
+
+@frappe.whitelist()
+def share_job_opening(docname):
+    inter_doc = frappe.get_doc("Interview",docname)
+    for inter in inter_doc.interview_details:
+        if not frappe.db.exists("DocShare", {"user": inter.interviewer,"share_doctype":"Job Opening","share_name":inter_doc.job_opening}):
+            DocShare = frappe.new_doc("DocShare")
+            DocShare.user = inter.interviewer
+            DocShare.share_doctype = "Job Opening"
+            DocShare.share_name = inter_doc.job_opening
+            DocShare.read = 1
+            DocShare.notify_by_email = 1
+            DocShare.save()
+
