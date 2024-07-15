@@ -2,10 +2,10 @@ frappe.ui.form.on("Interview", {
     refresh: function(frm){
 		if (frm.is_new()){
 			let currentTime = new Date();
-			frm.set_value("from_time", currentTime);
+			frm.set_value("from_time", formattime(currentTime));
 			refresh_field('from_time');
 			let laterTime = new Date(currentTime.getTime() + (1 * 60 + 30) * 60 * 1000);
-			frm.set_value("to_time", laterTime);
+			frm.set_value("to_time", formattime(laterTime));
 			refresh_field('to_time');
 		}
 		if(frm.doc.status=="Pending"){
@@ -66,3 +66,15 @@ frappe.ui.form.on("Interview", {
 		});
 	}
 })
+function formattime(isoTimestamp){
+	const date = new Date(isoTimestamp);
+
+	const istDate = new Date(date.getTime());
+
+	const hours = istDate.getHours().toString().padStart(2, '0');
+	const minutes = istDate.getMinutes().toString().padStart(2, '0');
+	const seconds = istDate.getSeconds().toString().padStart(2, '0');
+	
+	const time = `${hours}:${minutes}:${seconds}`;
+	return time
+}
