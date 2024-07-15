@@ -106,7 +106,8 @@ frappe.ui.form.on("Job Applicant", {
 								"CTC Discussion",
 								"Others",
 								"Interviewer Feedback",
-								"General Review"
+								"General Review",
+                                "Management Approval"
 							]
                 },
                 {
