@@ -26,7 +26,8 @@ app_license = "mit"
 fixtures =   [{
         "doctype": "Custom HTML Block"
     },{
-        "doctype": "Custom DocPerm"
+        "doctype": "Custom DocPerm",
+        "filters": [["Custom DocPerm", "role", "IN", ["Hiring Manager","Job Recruiter","Recruiter Admin"]]],
     },{
         "doctype": "Funnel"
     },{
