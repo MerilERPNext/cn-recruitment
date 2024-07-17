@@ -41,6 +41,11 @@
   "ifsc_code",
   "cancelled_chequepass_book",
   "hand_over_by_employee_tab",
+  "hand_over_things",
+  "if_company_car",
+  "car_number",
+  "upload_rc_book_copy",
+  "hand_over_remarks",
   "tab_break_9b3u",
   "pclaptop",
   "asset_form",
@@ -95,7 +100,41 @@
   "datetime",
   "travel_desk_remarks",
   "travel_desk_added_by",
-  "amended_from"
+  "finance_and_accounts_tab",
+  "any_loan_against_salary",
+  "any_advance_paid",
+  "iternational_team_deduction",
+  "multi_line",
+  "finance_datetime",
+  "faddedby",
+  "credit_control_and_distribution_incase_of_sales_employee_tab",
+  "pending_collection",
+  "noc_from_customers",
+  "cc_remarks",
+  "cc_datetime",
+  "cc_added_by",
+  "division_wise_status_tab",
+  "d_reporting_manager",
+  "d_s_reporting_manager",
+  "it",
+  "it_email",
+  "erp",
+  "hr_admin",
+  "finance_and_accounts",
+  "travel_desk",
+  "credit_control",
+  "hr",
+  "d_access_card",
+  "f_and_f_statement",
+  "access_card_tab",
+  "a_is_access_card",
+  "a_access_card",
+  "a_remarks",
+  "f_and_f_statement_tab",
+  "kindly_upload_f_and_f_statement",
+  "final_approval",
+  "f_and_f_statement_sent",
+  "forwarded_to_accounts_team"
  ],
  "fields": [
   {
@@ -580,19 +619,220 @@
    "options": "Employee"
   },
   {
-   "fieldname": "amended_from",
+   "fieldname": "finance_and_accounts_tab",
+   "fieldtype": "Tab Break",
+   "label": "Finance and Accounts"
+  },
+  {
+   "default": "0",
+   "fieldname": "any_loan_against_salary",
+   "fieldtype": "Check",
+   "label": "Any Loan Against salary"
+  },
+  {
+   "default": "0",
+   "fieldname": "any_advance_paid",
+   "fieldtype": "Check",
+   "label": "Any Advance paid and remain unsettled"
+  },
+  {
+   "default": "0",
+   "fieldname": "iternational_team_deduction",
+   "fieldtype": "Check",
+   "label": "Incase International Team \u2013 Deduction to be made for Business Kit, Trolley Bag , mobile instrument etc, if any"
+  },
+  {
+   "fieldname": "multi_line",
+   "fieldtype": "Small Text",
+   "label": "Multi Line"
+  },
+  {
+   "fieldname": "finance_datetime",
+   "fieldtype": "Datetime",
+   "label": "DateTime"
+  },
+  {
+   "fieldname": "faddedby",
    "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "No Dues Clearance",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
+   "label": "FAddedby",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "credit_control_and_distribution_incase_of_sales_employee_tab",
+   "fieldtype": "Tab Break",
+   "label": "Credit Control and Distribution (Incase of Sales Employee)"
+  },
+  {
+   "default": "0",
+   "fieldname": "pending_collection",
+   "fieldtype": "Check",
+   "label": "Pending Collection, Other Account Receivable Issues and Distributor Issues, \u2018C\u2019 Form, if any"
+  },
+  {
+   "default": "0",
+   "fieldname": "noc_from_customers",
+   "fieldtype": "Check",
+   "label": "NOC from Customers, Distributors, (as applicable)"
+  },
+  {
+   "fieldname": "cc_remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "cc_datetime",
+   "fieldtype": "Datetime",
+   "label": "DateTime"
+  },
+  {
+   "fieldname": "cc_added_by",
+   "fieldtype": "Link",
+   "label": "Added By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "division_wise_status_tab",
+   "fieldtype": "Tab Break",
+   "label": "Division wise status"
+  },
+  {
+   "fieldname": "d_reporting_manager",
+   "fieldtype": "Link",
+   "label": "Reporting Manager",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "d_s_reporting_manager",
+   "fieldtype": "Data",
+   "label": "Senior Reporting Manager"
+  },
+  {
+   "fieldname": "it",
+   "fieldtype": "Data",
+   "label": "IT"
+  },
+  {
+   "fieldname": "it_email",
+   "fieldtype": "Data",
+   "label": "IT (Email)"
+  },
+  {
+   "fieldname": "erp",
+   "fieldtype": "Data",
+   "label": "ERP"
+  },
+  {
+   "fieldname": "hr_admin",
+   "fieldtype": "Data",
+   "label": "HR Admin"
+  },
+  {
+   "fieldname": "finance_and_accounts",
+   "fieldtype": "Data",
+   "label": "Finance and Accounts"
+  },
+  {
+   "fieldname": "travel_desk",
+   "fieldtype": "Data",
+   "label": "Travel Desk"
+  },
+  {
+   "fieldname": "credit_control",
+   "fieldtype": "Data",
+   "label": "Credit Control"
+  },
+  {
+   "fieldname": "hr",
+   "fieldtype": "Data",
+   "label": "HR"
+  },
+  {
+   "fieldname": "d_access_card",
+   "fieldtype": "Data",
+   "label": "Access Card"
+  },
+  {
+   "fieldname": "f_and_f_statement",
+   "fieldtype": "Data",
+   "label": "F and F Statement"
+  },
+  {
+   "fieldname": "access_card_tab",
+   "fieldtype": "Tab Break",
+   "label": "Access Card"
+  },
+  {
+   "default": "0",
+   "fieldname": "a_is_access_card",
+   "fieldtype": "Check",
+   "label": "Is Access Card"
+  },
+  {
+   "fieldname": "a_access_card",
+   "fieldtype": "Data",
+   "label": "Access Card"
+  },
+  {
+   "fieldname": "a_remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "f_and_f_statement_tab",
+   "fieldtype": "Tab Break",
+   "label": "F and F Statement"
+  },
+  {
+   "fieldname": "kindly_upload_f_and_f_statement",
+   "fieldtype": "Attach",
+   "label": "Kindly Upload F and F Statement"
+  },
+  {
+   "fieldname": "final_approval",
+   "fieldtype": "Date",
+   "label": "Final Approval"
+  },
+  {
+   "fieldname": "f_and_f_statement_sent",
+   "fieldtype": "Date",
+   "label": "F and F Statement Sent"
+  },
+  {
+   "fieldname": "forwarded_to_accounts_team",
+   "fieldtype": "Date",
+   "label": "Forwarded to Accounts Team"
+  },
+  {
+   "default": "0",
+   "fieldname": "if_company_car",
+   "fieldtype": "Check",
+   "label": "If Company Car"
+  },
+  {
+   "fieldname": "car_number",
+   "fieldtype": "Data",
+   "label": "Car Number"
+  },
+  {
+   "fieldname": "upload_rc_book_copy",
+   "fieldtype": "Attach",
+   "label": "Upload RC Book Copy"
+  },
+  {
+   "fieldname": "hand_over_remarks",
+   "fieldtype": "Data",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "hand_over_things",
+   "fieldtype": "Table",
+   "label": "List of Things Handed Over to Section Incharge",
+   "options": "Hand Over Assests"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-17 08:43:50.900802",
+ "modified": "2024-07-17 11:12:05.974278",
  "modified_by": "Administrator",
  "module": "Employee Separation",
  "name": "No Dues Clearance",
