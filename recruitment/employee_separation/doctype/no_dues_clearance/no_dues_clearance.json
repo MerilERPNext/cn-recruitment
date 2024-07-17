@@ -1,0 +1,617 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-07-17 08:05:27.457006",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_lqbx",
+  "employee_code",
+  "department",
+  "date_of_joining",
+  "resigned_on",
+  "company_name",
+  "division",
+  "location",
+  "column_break_8zwa",
+  "name_of_employee",
+  "designation",
+  "employee_type",
+  "last_working_date",
+  "number_of_days_served",
+  "reporting_to",
+  "senior_reporting_manager",
+  "personal_email",
+  "expenses_and_advances_tab",
+  "any_pending_expenses",
+  "column_break_3pft",
+  "any_pending_advance_settlement",
+  "contact_details_tab",
+  "status",
+  "email_id",
+  "pan_card_no",
+  "attach_pan_card",
+  "aadhar_card_no",
+  "address_of_communication",
+  "cell_no",
+  "bank_details_tab",
+  "name_in_the_bank",
+  "bank_name",
+  "account_no",
+  "ifsc_code",
+  "cancelled_chequepass_book",
+  "hand_over_by_employee_tab",
+  "tab_break_9b3u",
+  "pclaptop",
+  "asset_form",
+  "remarks",
+  "added_by",
+  "it_section_email_id_tab",
+  "company_email_id",
+  "forwarded_to",
+  "it_remarks",
+  "it_added_by",
+  "erp_tab",
+  "erp_id_disabled",
+  "erp_remarks",
+  "erp_added_by",
+  "secondary_reporting_manager_tab",
+  "secondary_manager_remarks",
+  "secondary_manager_added_by",
+  "reporting_manager_tab",
+  "notice_period",
+  "reporting_manager_remarks",
+  "keys_for_drawers_cabinets_etc",
+  "mobile_phonesim_card",
+  "sim_card_no",
+  "mobile_phone",
+  "reporting_manager_email_id",
+  "plant_hr_tab",
+  "uniforms_helmet",
+  "uniform_no_of_pairs",
+  "helmet",
+  "is_id_card",
+  "id_card",
+  "is_access_card",
+  "access_card",
+  "plant_hr_remarks",
+  "plant_hr_added_by",
+  "hr_and_administration_tab",
+  "attach_leave_balance",
+  "attach_attendance",
+  "attendance",
+  "print_out_of_report",
+  "current_leave_balance",
+  "locked_pl_leaves_days",
+  "hr_remarks",
+  "hr_added_by",
+  "travel_desk_tab",
+  "type_of_travel",
+  "any_flight_tickets_booked",
+  "hotel_reservations_made",
+  "visa_application_status",
+  "travel_related_arrangements",
+  "company_car",
+  "datetime",
+  "travel_desk_remarks",
+  "travel_desk_added_by",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_lqbx",
+   "fieldtype": "Tab Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "employee_code",
+   "fieldtype": "Link",
+   "label": "Employee Code",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Unit/Department",
+   "options": "Department"
+  },
+  {
+   "fieldname": "date_of_joining",
+   "fieldtype": "Date",
+   "label": "Date Of Joining"
+  },
+  {
+   "fieldname": "resigned_on",
+   "fieldtype": "Date",
+   "label": "Resigned On"
+  },
+  {
+   "fieldname": "company_name",
+   "fieldtype": "Link",
+   "label": "Company Name",
+   "options": "Company"
+  },
+  {
+   "fieldname": "division",
+   "fieldtype": "Link",
+   "label": "Division",
+   "options": "Department"
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "column_break_8zwa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "name_of_employee",
+   "fieldtype": "Data",
+   "label": "Name of Employee"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "employee_type",
+   "fieldtype": "Link",
+   "label": "Employee Type",
+   "options": "Employment Type"
+  },
+  {
+   "fieldname": "last_working_date",
+   "fieldtype": "Date",
+   "label": "Last working date"
+  },
+  {
+   "fieldname": "number_of_days_served",
+   "fieldtype": "Int",
+   "label": "Number of Days Served"
+  },
+  {
+   "fieldname": "reporting_to",
+   "fieldtype": "Link",
+   "label": "Reporting to",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "senior_reporting_manager",
+   "fieldtype": "Link",
+   "label": "Senior Reporting Manager",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "personal_email",
+   "fieldtype": "Data",
+   "label": "Personal Email"
+  },
+  {
+   "fieldname": "expenses_and_advances_tab",
+   "fieldtype": "Tab Break",
+   "label": "Expenses and Advances"
+  },
+  {
+   "default": "0",
+   "fieldname": "any_pending_expenses",
+   "fieldtype": "Check",
+   "label": "Any Pending Expenses?"
+  },
+  {
+   "fieldname": "column_break_3pft",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "any_pending_advance_settlement",
+   "fieldtype": "Check",
+   "label": "Any Pending Advance Settlement?"
+  },
+  {
+   "fieldname": "contact_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Contact Details"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "label": "Status"
+  },
+  {
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "label": "Email ID"
+  },
+  {
+   "fieldname": "pan_card_no",
+   "fieldtype": "Data",
+   "label": "PAN Card No"
+  },
+  {
+   "fieldname": "attach_pan_card",
+   "fieldtype": "Attach",
+   "label": "Attach PAN Card"
+  },
+  {
+   "fieldname": "aadhar_card_no",
+   "fieldtype": "Data",
+   "label": "Aadhar Card No"
+  },
+  {
+   "fieldname": "address_of_communication",
+   "fieldtype": "Small Text",
+   "label": "Address of communication"
+  },
+  {
+   "fieldname": "cell_no",
+   "fieldtype": "Data",
+   "label": "Cell No"
+  },
+  {
+   "fieldname": "bank_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Bank Details"
+  },
+  {
+   "fieldname": "name_in_the_bank",
+   "fieldtype": "Data",
+   "label": "Name in the bank"
+  },
+  {
+   "fieldname": "bank_name",
+   "fieldtype": "Data",
+   "label": "Bank Name"
+  },
+  {
+   "fieldname": "account_no",
+   "fieldtype": "Data",
+   "label": "Account No"
+  },
+  {
+   "fieldname": "ifsc_code",
+   "fieldtype": "Data",
+   "label": "IFSC Code"
+  },
+  {
+   "fieldname": "cancelled_chequepass_book",
+   "fieldtype": "Attach",
+   "label": "Cancelled Cheque/Pass Book"
+  },
+  {
+   "fieldname": "hand_over_by_employee_tab",
+   "fieldtype": "Tab Break",
+   "label": "Hand Over by Employee"
+  },
+  {
+   "fieldname": "tab_break_9b3u",
+   "fieldtype": "Tab Break",
+   "label": "IT Section (Asset transfer form mandatory to be attached)"
+  },
+  {
+   "default": "0",
+   "fieldname": "pclaptop",
+   "fieldtype": "Check",
+   "label": "PC/Laptop"
+  },
+  {
+   "fieldname": "asset_form",
+   "fieldtype": "Attach",
+   "label": "Asset Form"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "added_by",
+   "fieldtype": "Link",
+   "label": "Added By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "it_section_email_id_tab",
+   "fieldtype": "Tab Break",
+   "label": "IT section (Email ID)"
+  },
+  {
+   "fieldname": "company_email_id",
+   "fieldtype": "Select",
+   "label": "Company Email ID",
+   "options": "Forwarded to\nDeleted\nOther"
+  },
+  {
+   "fieldname": "forwarded_to",
+   "fieldtype": "Link",
+   "label": "Forwarded to",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "it_remarks",
+   "fieldtype": "Small Text",
+   "label": "IT Remarks"
+  },
+  {
+   "fieldname": "it_added_by",
+   "fieldtype": "Link",
+   "label": "IT Added By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "erp_tab",
+   "fieldtype": "Tab Break",
+   "label": "ERP"
+  },
+  {
+   "default": "0",
+   "fieldname": "erp_id_disabled",
+   "fieldtype": "Check",
+   "label": "ERP id disabled"
+  },
+  {
+   "fieldname": "erp_remarks",
+   "fieldtype": "Small Text",
+   "label": "ERP Remarks"
+  },
+  {
+   "fieldname": "erp_added_by",
+   "fieldtype": "Link",
+   "label": "ERP Added By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "secondary_reporting_manager_tab",
+   "fieldtype": "Tab Break",
+   "label": "Secondary Reporting Manager"
+  },
+  {
+   "fieldname": "secondary_manager_remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "secondary_manager_added_by",
+   "fieldtype": "Link",
+   "label": "Added By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "reporting_manager_tab",
+   "fieldtype": "Tab Break",
+   "label": "Reporting Manager"
+  },
+  {
+   "fieldname": "notice_period",
+   "fieldtype": "Select",
+   "label": "Notice Period",
+   "options": "To be Deducted\nTo be Waived Off"
+  },
+  {
+   "fieldname": "reporting_manager_remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "default": "0",
+   "fieldname": "keys_for_drawers_cabinets_etc",
+   "fieldtype": "Check",
+   "label": "Keys for drawers, Cabinets, etc.,"
+  },
+  {
+   "default": "0",
+   "fieldname": "mobile_phonesim_card",
+   "fieldtype": "Check",
+   "label": "Mobile Phone/SIM Card"
+  },
+  {
+   "fieldname": "sim_card_no",
+   "fieldtype": "Data",
+   "label": "Sim Card No."
+  },
+  {
+   "fieldname": "mobile_phone",
+   "fieldtype": "Data",
+   "label": "Mobile Phone"
+  },
+  {
+   "fieldname": "reporting_manager_email_id",
+   "fieldtype": "Select",
+   "label": "Email id",
+   "options": "Delete\nForward"
+  },
+  {
+   "fieldname": "plant_hr_tab",
+   "fieldtype": "Tab Break",
+   "label": "Plant HR"
+  },
+  {
+   "default": "0",
+   "fieldname": "uniforms_helmet",
+   "fieldtype": "Check",
+   "label": "Uniforms/ Helmet"
+  },
+  {
+   "fieldname": "uniform_no_of_pairs",
+   "fieldtype": "Int",
+   "label": "Uniform No. of Pairs "
+  },
+  {
+   "fieldname": "helmet",
+   "fieldtype": "Int",
+   "label": "Helmet"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_id_card",
+   "fieldtype": "Check",
+   "label": "Is ID Card"
+  },
+  {
+   "fieldname": "id_card",
+   "fieldtype": "Data",
+   "label": "ID Card"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_access_card",
+   "fieldtype": "Check",
+   "label": "Is Access Card"
+  },
+  {
+   "fieldname": "access_card",
+   "fieldtype": "Data",
+   "label": "Access Card"
+  },
+  {
+   "fieldname": "plant_hr_remarks",
+   "fieldtype": "Data",
+   "label": "Plant HR Remarks"
+  },
+  {
+   "fieldname": "plant_hr_added_by",
+   "fieldtype": "Link",
+   "label": "Plant HR Added By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "hr_and_administration_tab",
+   "fieldtype": "Tab Break",
+   "label": "HR and Administration"
+  },
+  {
+   "fieldname": "attach_leave_balance",
+   "fieldtype": "Attach",
+   "label": "Attach Leave Balance"
+  },
+  {
+   "fieldname": "attach_attendance",
+   "fieldtype": "Attach",
+   "label": "Attach Attendance"
+  },
+  {
+   "default": "0",
+   "fieldname": "attendance",
+   "fieldtype": "Check",
+   "label": "Attendance (last 3 months \u2013 reconciliation of advance days)"
+  },
+  {
+   "fieldname": "print_out_of_report",
+   "fieldtype": "Attach",
+   "label": "Print out of report"
+  },
+  {
+   "fieldname": "current_leave_balance",
+   "fieldtype": "Data",
+   "label": "Current Leave balance"
+  },
+  {
+   "fieldname": "locked_pl_leaves_days",
+   "fieldtype": "Data",
+   "label": "Locked PL leaves days"
+  },
+  {
+   "fieldname": "hr_remarks",
+   "fieldtype": "Data",
+   "label": "HR Remarks"
+  },
+  {
+   "fieldname": "hr_added_by",
+   "fieldtype": "Link",
+   "label": "HR Added By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "travel_desk_tab",
+   "fieldtype": "Tab Break",
+   "label": "Travel Desk"
+  },
+  {
+   "fieldname": "type_of_travel",
+   "fieldtype": "Select",
+   "label": "Type of Travel"
+  },
+  {
+   "default": "0",
+   "fieldname": "any_flight_tickets_booked",
+   "fieldtype": "Check",
+   "label": "Any flight tickets booked (Upcoming or Pending)"
+  },
+  {
+   "default": "0",
+   "fieldname": "hotel_reservations_made",
+   "fieldtype": "Check",
+   "label": "Hotel reservations made (upcoming or pending)"
+  },
+  {
+   "fieldname": "visa_application_status",
+   "fieldtype": "Data",
+   "label": "Status of any visa applications or processes underway"
+  },
+  {
+   "fieldname": "travel_related_arrangements",
+   "fieldtype": "Data",
+   "label": "Any other travel-related arrangements or obligations."
+  },
+  {
+   "default": "0",
+   "fieldname": "company_car",
+   "fieldtype": "Check",
+   "label": "Company Car (if any)"
+  },
+  {
+   "fieldname": "datetime",
+   "fieldtype": "Datetime",
+   "label": "DateTime"
+  },
+  {
+   "fieldname": "travel_desk_remarks",
+   "fieldtype": "Small Text",
+   "label": "Travel Desk Remarks"
+  },
+  {
+   "fieldname": "travel_desk_added_by",
+   "fieldtype": "Link",
+   "label": "Travel Desk Added by",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "No Dues Clearance",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-07-17 08:43:50.900802",
+ "modified_by": "Administrator",
+ "module": "Employee Separation",
+ "name": "No Dues Clearance",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
