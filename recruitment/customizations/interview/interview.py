@@ -44,6 +44,7 @@ def generate_travel_request(interview_id):
     else:
         frappe.msgprint("User Administrator can't create travel request")
 
+
 @frappe.whitelist()
 def share_job_opening(docname):
     inter_doc = frappe.get_doc("Interview",docname)
