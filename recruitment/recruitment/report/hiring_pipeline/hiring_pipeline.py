@@ -16,7 +16,7 @@ def get_report_data():
 	current_user = frappe.session.user
 	roles = frappe.get_roles(current_user)
 	sql_qry = None
-	if "System Manager" in roles or "Recruiter Admin" in roles:
+	if "System Manager" in roles or "Recruiter Admin" in roles or "HR User" in roles:
 		sql_qry = """select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo where jo.name = ja.job_title group by ja.status,jo.job_title"""
 	elif current_user == "Administrator":
 		sql_qry = """select jo.job_title as designation,ja.status,count(ja.name) as count from `tabJob Applicant` as ja,`tabJob Opening` as jo where jo.name = ja.job_title group by ja.status,jo.job_title"""

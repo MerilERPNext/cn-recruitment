@@ -8,9 +8,11 @@ def job_offer_update(status, appl):
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     settings = frappe.get_doc("Recruitment Settings")
     jo_doc = frappe.get_doc("Job Offer",jo_id)
+    frappe.msgprint(status)
     if status == "Accepted":
+        frappe.msgprint("Trigger")
         trigger_event(doc=jo_doc, event_name="accept_jo")
-    else:
+    if status == "Rejected":
         trigger_event(doc=jo_doc, event_name="reject_jo")
     return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
 

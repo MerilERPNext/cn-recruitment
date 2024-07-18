@@ -19,16 +19,30 @@ frappe.ui.form.on("Job Offer", {
 			});
 		}
     },
-	// after_save(frm){
-	// 	frappe.call({
-	// 		method: "recruitment.job_offer_utils.job_offer_update",
-	// 		args:{
-	// 			"status": frm.doc.status,
-	// 			"appl":frm.doc.job_applicant
-	// 		},
-	// 		callback: function(r) {
-	// 			// code snippet
-	// 		}
-	// 	});
-	// }
+	after_save(frm){
+		if (frm.doc.status == "Accepted"){
+			frappe.call({
+				method: "recruitment.job_offer_utils.job_offer_update",
+				args:{
+					"status": "Accepted",
+					"appl":frm.doc.job_applicant
+				},
+				callback: function(r) {
+					// code snippet
+				}
+			});
+		}
+		if (frm.doc.status == "Rejected"){
+			frappe.call({
+				method: "recruitment.job_offer_utils.job_offer_update",
+				args:{
+					"status": "Rejected",
+					"appl":frm.doc.job_applicant
+				},
+				callback: function(r) {
+					// code snippet
+				}
+			});
+		}
+	}
 })
