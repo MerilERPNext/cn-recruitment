@@ -26,13 +26,6 @@
   "content": "[{\"id\":\"apsU3P_cF6\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Approval Pending From Management\",\"col\":12}},{\"id\":\"gKd_6sCqWu\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Hiring-Pipeline\",\"col\":12}},{\"id\":\"eOdf5Y58ew\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Recruiter Job Opening Count\",\"col\":12}},{\"id\":\"oJHmRuCMi4\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Status Wise Job Openings\",\"col\":6}},{\"id\":\"GJMAZoxYzX\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Candidate By Source\",\"col\":6}},{\"id\":\"WGii_SQJh8\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Job Opening/MPR Owner\",\"col\":12}},{\"id\":\"ew0RV3ruOa\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Time-To-Fill\",\"col\":12}},{\"id\":\"B0A1wqOP8R\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Interviews (This Week)\",\"col\":6}},{\"id\":\"rCuQFPnlQR\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Department-Wise-Openings\",\"col\":6}},{\"id\":\"5dI3z9pt5U\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Job Requisition\",\"col\":6}},{\"id\":\"_sV_ZmEfDM\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Pending Approval From Hiring Manager\",\"col\":6}},{\"id\":\"_uUrX91cXy\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Approved Submit To Hiring Manager\",\"col\":6}},{\"id\":\"zpglZJBmNY\",\"type\":\"quick_list\",\"data\":{\"quick_list_name\":\"Approval Pending From Management \",\"col\":6}},{\"id\":\"xepXoykemN\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"LMnFL-FVNb\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Opening\",\"col\":3}},{\"id\":\"BOczA5gAXn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Applicant\",\"col\":3}},{\"id\":\"h6LkcOPQpV\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Offer\",\"col\":3}},{\"id\":\"TrRgFLeATn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"VqqHZk5Ymw\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"BSfCSxeOZN\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"ouzRaGAJJl\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Masters &amp; Reports</b></span>\",\"col\":12}},{\"id\":\"0akZyj1E4k\",\"type\":\"card\",\"data\":{\"card_name\":\"Jobs\",\"col\":4}},{\"id\":\"3Q-ITUYR-W\",\"type\":\"card\",\"data\":{\"card_name\":\"Interviews\",\"col\":4}},{\"id\":\"06gIuB5svR\",\"type\":\"card\",\"data\":{\"card_name\":\"Appointment\",\"col\":4}},{\"id\":\"Q4msp7F8vF\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
   "custom_blocks": [
    {
-    "custom_block_name": "Approval Pending From Management",
-    "label": "Approval Pending From Management",
-    "parent": "Recruitment",
-    "parentfield": "custom_blocks",
-    "parenttype": "Workspace"
-   },
-   {
     "custom_block_name": "Recruiter Job Opening Count",
     "label": "Recruiter Job Opening Count",
     "parent": "Recruitment",
@@ -360,7 +353,7 @@
     "type": "Link"
    }
   ],
-  "modified": "2024-07-15 18:03:12.334992",
+  "modified": "2024-07-18 14:30:50.060349",
   "module": "HR",
   "name": "Recruitment",
   "number_cards": [],
