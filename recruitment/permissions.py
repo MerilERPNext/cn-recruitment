@@ -6,7 +6,7 @@ def sthm_query(user):
 		user = frappe.session.user
 	roles = frappe.get_roles(user)
 	if frappe.session.user != "Administrator":
-		if "System Manager" in roles or "Recruiter Admin" in roles:
+		if "System Manager" in roles or "Recruiter Admin" in roles or "HR User" in roles:
 			return "1 = 1"
 		else:
 			if "Hiring Manager" in roles:
@@ -21,7 +21,7 @@ def jr_query(user):
 		user = frappe.session.user
 	roles = frappe.get_roles(user)
 	if frappe.session.user != "Administrator":
-		if "System Manager" in roles or "Recruiter Admin" in roles:
+		if "System Manager" in roles or "Recruiter Admin" in roles or "HR User" in roles:
 			return "1 = 1"
 		else:		
 			if "Job Recruiter" in roles:
@@ -36,7 +36,7 @@ def ja_query(user):
 		user = frappe.session.user
 	roles = frappe.get_roles(user)
 	if frappe.session.user != "Administrator":
-		if "System Manager" in roles or "Recruiter Admin" in roles:
+		if "System Manager" in roles or "Recruiter Admin" in roles or "HR User" in roles:
 			return "1 = 1"
 		else:
 			if "Job Recruiter" in roles:
@@ -59,7 +59,7 @@ def jo_query(user):
 		user = frappe.session.user
 	roles = frappe.get_roles(user)
 	if frappe.session.user != "Administrator":
-		if "System Manager" in roles or "Recruiter Admin" in roles:
+		if "System Manager" in roles or "Recruiter Admin" in roles or "HR User" in roles:
 			return "1 = 1"
 		else:
 			if "Job Recruiter" in roles:
