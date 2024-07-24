@@ -73,4 +73,16 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
         args=email_context,
     )
     frappe.msgprint("Job Offer Sent Successfully")
-	
+    communication_doc = frappe.new_doc("Communication")
+    communication_doc.subject = frappe.render_template(
+            frappe.db.get_value("Email Template", job_offer_temp, "subject"),
+			email_context,
+        )
+    communication_doc.content = frappe.render_template(
+            frappe.db.get_value("Email Template", job_offer_temp, "response"),
+            email_context,
+        )
+    communication_doc.reference_doctype = "Job Offer"
+    communication_doc.reference_name = jo_name
+    communication_doc.recipients = mail_id+","
+    communication_doc.save()

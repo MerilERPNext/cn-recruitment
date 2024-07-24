@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "field:employee_code",
  "creation": "2024-07-17 08:05:27.457006",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -46,7 +47,7 @@
   "car_number",
   "upload_rc_book_copy",
   "hand_over_remarks",
-  "tab_break_9b3u",
+  "it_section_tab",
   "pclaptop",
   "asset_form",
   "remarks",
@@ -107,7 +108,7 @@
   "multi_line",
   "finance_datetime",
   "faddedby",
-  "credit_control_and_distribution_incase_of_sales_employee_tab",
+  "ccad_tab",
   "pending_collection",
   "noc_from_customers",
   "cc_remarks",
@@ -146,15 +147,19 @@
    "fieldname": "employee_code",
    "fieldtype": "Link",
    "label": "Employee Code",
-   "options": "Employee"
+   "options": "Employee",
+   "unique": 1
   },
   {
+   "fetch_from": "employee_code.department",
    "fieldname": "department",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Unit/Department",
    "options": "Department"
   },
   {
+   "fetch_from": "employee_code.date_of_joining",
    "fieldname": "date_of_joining",
    "fieldtype": "Date",
    "label": "Date Of Joining"
@@ -165,6 +170,7 @@
    "label": "Resigned On"
   },
   {
+   "fetch_from": "employee_code.company",
    "fieldname": "company_name",
    "fieldtype": "Link",
    "label": "Company Name",
@@ -187,17 +193,21 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "employee_code.employee_name",
    "fieldname": "name_of_employee",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Name of Employee"
   },
   {
+   "fetch_from": "employee_code.designation",
    "fieldname": "designation",
    "fieldtype": "Link",
    "label": "Designation",
    "options": "Designation"
   },
   {
+   "fetch_from": "employee_code.employment_type",
    "fieldname": "employee_type",
    "fieldtype": "Link",
    "label": "Employee Type",
@@ -206,12 +216,15 @@
   {
    "fieldname": "last_working_date",
    "fieldtype": "Date",
-   "label": "Last working date"
+   "in_list_view": 1,
+   "label": "Last working date",
+   "read_only": 1
   },
   {
    "fieldname": "number_of_days_served",
    "fieldtype": "Int",
-   "label": "Number of Days Served"
+   "label": "Number of Days Served",
+   "read_only": 1
   },
   {
    "fieldname": "reporting_to",
@@ -327,11 +340,6 @@
    "label": "Hand Over by Employee"
   },
   {
-   "fieldname": "tab_break_9b3u",
-   "fieldtype": "Tab Break",
-   "label": "IT Section (Asset transfer form mandatory to be attached)"
-  },
-  {
    "default": "0",
    "fieldname": "pclaptop",
    "fieldtype": "Check",
@@ -354,6 +362,7 @@
    "options": "Employee"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit IT\")",
    "fieldname": "it_section_email_id_tab",
    "fieldtype": "Tab Break",
    "label": "IT section (Email ID)"
@@ -382,6 +391,7 @@
    "options": "Employee"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit IT\")",
    "fieldname": "erp_tab",
    "fieldtype": "Tab Break",
    "label": "ERP"
@@ -464,9 +474,10 @@
    "options": "Delete\nForward"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit HR\")",
    "fieldname": "plant_hr_tab",
    "fieldtype": "Tab Break",
-   "label": "Plant HR"
+   "label": "HR Plant"
   },
   {
    "default": "0",
@@ -518,6 +529,7 @@
    "options": "Employee"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit HR\")",
    "fieldname": "hr_and_administration_tab",
    "fieldtype": "Tab Break",
    "label": "HR and Administration"
@@ -565,6 +577,7 @@
    "options": "Employee"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit Travel Desk\")",
    "fieldname": "travel_desk_tab",
    "fieldtype": "Tab Break",
    "label": "Travel Desk"
@@ -619,6 +632,7 @@
    "options": "Employee"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit Travel Account\")",
    "fieldname": "finance_and_accounts_tab",
    "fieldtype": "Tab Break",
    "label": "Finance and Accounts"
@@ -656,11 +670,6 @@
    "fieldtype": "Link",
    "label": "FAddedby",
    "options": "Employee"
-  },
-  {
-   "fieldname": "credit_control_and_distribution_incase_of_sales_employee_tab",
-   "fieldtype": "Tab Break",
-   "label": "Credit Control and Distribution (Incase of Sales Employee)"
   },
   {
    "default": "0",
@@ -757,6 +766,7 @@
    "label": "F and F Statement"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit IT\")",
    "fieldname": "access_card_tab",
    "fieldtype": "Tab Break",
    "label": "Access Card"
@@ -778,6 +788,7 @@
    "label": "Remarks"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit HR\")",
    "fieldname": "f_and_f_statement_tab",
    "fieldtype": "Tab Break",
    "label": "F and F Statement"
@@ -828,14 +839,26 @@
    "fieldtype": "Table",
    "label": "List of Things Handed Over to Section Incharge",
    "options": "Hand Over Assests"
+  },
+  {
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit IT\")",
+   "fieldname": "it_section_tab",
+   "fieldtype": "Tab Break",
+   "label": "IT Section (Asset transfer form mandatory to be attached)"
+  },
+  {
+   "fieldname": "ccad_tab",
+   "fieldtype": "Tab Break",
+   "label": "Credit Control and Distribution (Incase of Sales Employee)"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-17 11:12:05.974278",
+ "modified": "2024-07-23 17:33:01.532678",
  "modified_by": "Administrator",
  "module": "Employee Separation",
  "name": "No Dues Clearance",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
