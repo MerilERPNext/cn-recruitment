@@ -632,7 +632,7 @@
    "options": "Employee"
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit Travel Account\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit Account\")",
    "fieldname": "finance_and_accounts_tab",
    "fieldtype": "Tab Break",
    "label": "Finance and Accounts"
@@ -854,7 +854,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-23 17:33:01.532678",
+ "modified": "2024-07-24 12:01:50.601844",
  "modified_by": "Administrator",
  "module": "Employee Separation",
  "name": "No Dues Clearance",
