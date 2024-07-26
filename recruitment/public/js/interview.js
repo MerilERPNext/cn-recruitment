@@ -87,3 +87,19 @@ function formattime(isoTimestamp){
 	const time = `${hours}:${minutes}:${seconds}`;
 	return time
 }
+frappe.ui.form.on('Interview Detail', {
+	interview_details_remove: function(frm, cdt, cdn) {
+		// let row = locals[cdt][cdn];
+        console.log(frm.doc.name)
+		frappe.db.get_list('User Permission', {
+			fields: ['name'],
+			filters: {"allow":"Interview","for_value":frm.doc.name}
+		}).then(records => {
+			records.forEach(element => {
+				frappe.db.delete_doc("User Permission",element.name)
+			});
+		})
+		
+        // frappe.db.delete_doc("User Permission",{"allow":"Interview","for_value":frm.doc.name})
+	}
+})
