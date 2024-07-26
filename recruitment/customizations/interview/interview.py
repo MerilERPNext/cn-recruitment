@@ -58,3 +58,21 @@ def share_job_opening(docname):
             DocShare.notify_by_email = 1
             DocShare.save()
 
+@frappe.whitelist()
+def share_job_applicants(docname):
+    inter_doc = frappe.get_doc("Interview",docname)
+    for inter in inter_doc.interview_details:
+        user = frappe.get_doc("User", inter.interviewer)
+        if not any(role.role == "Interviewer" for role in user.get("roles")):
+            user.append("roles", {
+                "role": "Interviewer"
+            })
+            user.save()
+            frappe.db.commit()
+        if not frappe.db.exists("User Permission", {"user": inter.interviewer,"allow":"Interview","for_value":docname}):
+            DocShare = frappe.new_doc("User Permission")
+            DocShare.user = inter.interviewer
+            DocShare.allow = "Interview"
+            DocShare.for_value = docname
+            DocShare.apply_to_all_doctypes = 0
+            DocShare.save()

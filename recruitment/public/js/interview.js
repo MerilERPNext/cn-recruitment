@@ -64,6 +64,15 @@ frappe.ui.form.on("Interview", {
 				// code snippet
 			}
 		});
+		frappe.call({
+			method: "recruitment.customizations.interview.interview.share_job_applicants",
+			args:{
+				"docname": frm.doc.name
+			},
+			callback: function(r) {
+				// code snippet
+			}
+		});
 	}
 })
 function formattime(isoTimestamp){

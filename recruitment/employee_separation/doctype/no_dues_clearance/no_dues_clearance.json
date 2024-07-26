@@ -78,8 +78,6 @@
   "helmet",
   "is_id_card",
   "id_card",
-  "is_access_card",
-  "access_card",
   "plant_hr_remarks",
   "plant_hr_added_by",
   "hr_and_administration_tab",
@@ -121,6 +119,7 @@
   "it_email",
   "erp",
   "hr_admin",
+  "column_break_uaff",
   "finance_and_accounts",
   "travel_desk",
   "credit_control",
@@ -223,18 +222,23 @@
   {
    "fieldname": "number_of_days_served",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Number of Days Served",
    "read_only": 1
   },
   {
+   "fetch_from": "employee_code.reports_to",
    "fieldname": "reporting_to",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Reporting to",
    "options": "Employee"
   },
   {
+   "fetch_from": "reporting_to.reports_to",
    "fieldname": "senior_reporting_manager",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Senior Reporting Manager",
    "options": "Employee"
   },
@@ -358,11 +362,12 @@
   {
    "fieldname": "added_by",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Added By",
-   "options": "Employee"
+   "options": "User"
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit IT\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit ERP\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "it_section_email_id_tab",
    "fieldtype": "Tab Break",
    "label": "IT section (Email ID)"
@@ -387,11 +392,12 @@
   {
    "fieldname": "it_added_by",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "IT Added By",
-   "options": "Employee"
+   "options": "User"
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit IT\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit ERP\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "erp_tab",
    "fieldtype": "Tab Break",
    "label": "ERP"
@@ -410,10 +416,12 @@
   {
    "fieldname": "erp_added_by",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "ERP Added By",
-   "options": "Employee"
+   "options": "User"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Reporting Manager\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "secondary_reporting_manager_tab",
    "fieldtype": "Tab Break",
    "label": "Secondary Reporting Manager"
@@ -426,10 +434,13 @@
   {
    "fieldname": "secondary_manager_added_by",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Added By",
-   "options": "Employee"
+   "options": "User",
+   "read_only": 1
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Reporting Manager\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "reporting_manager_tab",
    "fieldtype": "Tab Break",
    "label": "Reporting Manager"
@@ -474,7 +485,7 @@
    "options": "Delete\nForward"
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit HR\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit HR\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "plant_hr_tab",
    "fieldtype": "Tab Break",
    "label": "HR Plant"
@@ -486,11 +497,13 @@
    "label": "Uniforms/ Helmet"
   },
   {
+   "depends_on": "eval:doc.uniforms_helmet==1",
    "fieldname": "uniform_no_of_pairs",
    "fieldtype": "Int",
    "label": "Uniform No. of Pairs "
   },
   {
+   "depends_on": "eval:doc.uniforms_helmet==1",
    "fieldname": "helmet",
    "fieldtype": "Int",
    "label": "Helmet"
@@ -502,34 +515,26 @@
    "label": "Is ID Card"
   },
   {
+   "depends_on": "eval:doc.is_id_card==1",
    "fieldname": "id_card",
    "fieldtype": "Data",
    "label": "ID Card"
   },
   {
-   "default": "0",
-   "fieldname": "is_access_card",
-   "fieldtype": "Check",
-   "label": "Is Access Card"
-  },
-  {
-   "fieldname": "access_card",
-   "fieldtype": "Data",
-   "label": "Access Card"
-  },
-  {
    "fieldname": "plant_hr_remarks",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Plant HR Remarks"
   },
   {
    "fieldname": "plant_hr_added_by",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Plant HR Added By",
-   "options": "Employee"
+   "options": "User",
+   "read_only": 1
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit HR\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit HR\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "hr_and_administration_tab",
    "fieldtype": "Tab Break",
    "label": "HR and Administration"
@@ -567,17 +572,19 @@
   },
   {
    "fieldname": "hr_remarks",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "HR Remarks"
   },
   {
    "fieldname": "hr_added_by",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "HR Added By",
-   "options": "Employee"
+   "options": "User",
+   "read_only": 1
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit Travel Desk\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit Travel Desk\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "travel_desk_tab",
    "fieldtype": "Tab Break",
    "label": "Travel Desk"
@@ -585,7 +592,8 @@
   {
    "fieldname": "type_of_travel",
    "fieldtype": "Select",
-   "label": "Type of Travel"
+   "label": "Type of Travel",
+   "options": "Flight\nTrain\nBus\nNone"
   },
   {
    "default": "0",
@@ -618,7 +626,8 @@
   {
    "fieldname": "datetime",
    "fieldtype": "Datetime",
-   "label": "DateTime"
+   "label": "DateTime",
+   "read_only": 1
   },
   {
    "fieldname": "travel_desk_remarks",
@@ -628,11 +637,13 @@
   {
    "fieldname": "travel_desk_added_by",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Travel Desk Added by",
-   "options": "Employee"
+   "options": "User",
+   "read_only": 1
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit Account\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit Account\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "finance_and_accounts_tab",
    "fieldtype": "Tab Break",
    "label": "Finance and Accounts"
@@ -668,8 +679,10 @@
   {
    "fieldname": "faddedby",
    "fieldtype": "Link",
-   "label": "FAddedby",
-   "options": "Employee"
+   "ignore_user_permissions": 1,
+   "label": "Added by",
+   "options": "User",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -696,77 +709,94 @@
   {
    "fieldname": "cc_added_by",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Added By",
-   "options": "Employee"
+   "options": "User",
+   "read_only": 1
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"HR User\")",
    "fieldname": "division_wise_status_tab",
    "fieldtype": "Tab Break",
    "label": "Division wise status"
   },
   {
+   "default": "Pending",
    "fieldname": "d_reporting_manager",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Reporting Manager",
-   "options": "Employee"
+   "options": "Pending\nApproved\nRejected"
   },
   {
+   "default": "Pending",
    "fieldname": "d_s_reporting_manager",
-   "fieldtype": "Data",
-   "label": "Senior Reporting Manager"
+   "fieldtype": "Select",
+   "label": "Senior Reporting Manager",
+   "options": "Pending\nApproved\nRejected"
   },
   {
    "fieldname": "it",
-   "fieldtype": "Data",
-   "label": "IT"
+   "fieldtype": "Select",
+   "label": "IT Asset",
+   "options": "Pending\nApproved\nRejected"
   },
   {
    "fieldname": "it_email",
-   "fieldtype": "Data",
-   "label": "IT (Email)"
+   "fieldtype": "Select",
+   "label": "IT (Email)",
+   "options": "Pending\nApproved\nRejected"
   },
   {
    "fieldname": "erp",
-   "fieldtype": "Data",
-   "label": "ERP"
+   "fieldtype": "Select",
+   "label": "ERP",
+   "options": "Pending\nApproved\nRejected"
   },
   {
    "fieldname": "hr_admin",
-   "fieldtype": "Data",
-   "label": "HR Admin"
+   "fieldtype": "Select",
+   "label": "HR Admin",
+   "options": "Pending\nApproved\nRejected"
   },
   {
+   "default": "Pending",
    "fieldname": "finance_and_accounts",
-   "fieldtype": "Data",
-   "label": "Finance and Accounts"
+   "fieldtype": "Select",
+   "label": "Finance and Accounts",
+   "options": "Pending\nApproved\nRejected"
   },
   {
    "fieldname": "travel_desk",
-   "fieldtype": "Data",
-   "label": "Travel Desk"
+   "fieldtype": "Select",
+   "label": "Travel Desk",
+   "options": "Pending\nApproved\nRejected"
   },
   {
    "fieldname": "credit_control",
-   "fieldtype": "Data",
-   "label": "Credit Control"
+   "fieldtype": "Select",
+   "label": "Credit Control",
+   "options": "Pending\nApproved\nRejected"
   },
   {
    "fieldname": "hr",
-   "fieldtype": "Data",
-   "label": "HR"
+   "fieldtype": "Select",
+   "label": "HR",
+   "options": "Pending\nApproved\nRejected"
   },
   {
    "fieldname": "d_access_card",
-   "fieldtype": "Data",
-   "label": "Access Card"
+   "fieldtype": "Select",
+   "label": "Access Card",
+   "options": "Pending\nApproved\nRejected"
   },
   {
    "fieldname": "f_and_f_statement",
-   "fieldtype": "Data",
-   "label": "F and F Statement"
+   "fieldtype": "Select",
+   "label": "F and F Statement",
+   "options": "Pending\nApproved\nRejected"
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit IT\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit Access Card\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "access_card_tab",
    "fieldtype": "Tab Break",
    "label": "Access Card"
@@ -778,6 +808,7 @@
    "label": "Is Access Card"
   },
   {
+   "depends_on": "eval:doc.a_is_access_card==1",
    "fieldname": "a_access_card",
    "fieldtype": "Data",
    "label": "Access Card"
@@ -788,7 +819,7 @@
    "label": "Remarks"
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit HR\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit HR\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "f_and_f_statement_tab",
    "fieldtype": "Tab Break",
    "label": "F and F Statement"
@@ -841,20 +872,25 @@
    "options": "Hand Over Assests"
   },
   {
-   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit IT\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"Employee Exit IT\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "it_section_tab",
    "fieldtype": "Tab Break",
    "label": "IT Section (Asset transfer form mandatory to be attached)"
   },
   {
+   "depends_on": "eval:frappe.user_roles.includes(\"Credit Control & Distribution\")||frappe.user_roles.includes(\"HR User\")",
    "fieldname": "ccad_tab",
    "fieldtype": "Tab Break",
    "label": "Credit Control and Distribution (Incase of Sales Employee)"
+  },
+  {
+   "fieldname": "column_break_uaff",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-24 12:01:50.601844",
+ "modified": "2024-07-26 13:02:58.819325",
  "modified_by": "Administrator",
  "module": "Employee Separation",
  "name": "No Dues Clearance",
