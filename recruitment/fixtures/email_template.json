@@ -2,6 +2,26 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "modified": "2024-07-23 14:31:51.293976",
+  "name": "No Dues Clearance",
+  "response": null,
+  "response_html": "Dear {{emp_name}},\n\nI hope this email finds you well.\n\nAs part of our exit process, we require all employees to fill out a basic data form to ensure a smooth no dues clearance procedure. Kindly complete the form at the provided link below:\n\n{{url}}\n\nPlease ensure that all fields are filled accurately to avoid any delays in the clearance process. If you have any questions or need assistance, do not hesitate to reach out to the HR department.\n\nThank you for your cooperation.",
+  "subject": "Request to Fill Out Basic Data for No Dues Clearance",
+  "use_html": 1
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2024-07-24 11:53:39.285188",
+  "name": "Exit Interview",
+  "response": null,
+  "response_html": "Dear {{emp_name}},\n\nAs you are approaching your last working day with {{company}}, we kindly request you to complete an exit interview form. Your feedback is invaluable to us and helps us improve our processes.\n\nPlease click on the following link to fill out the form:\n\n{{url}}\n\nWe appreciate your time and effort in completing this form.\n\nThank you for your contributions to the team. We wish you all the best in your future endeavors.\n\nBest regards,\n{{company}}\n",
+  "subject": "Exit Interview Form - {{company}}",
+  "use_html": 1
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
   "modified": "2024-02-07 13:01:17.259367",
   "name": "Purchase Reconciliation",
   "response": "Hello,<br><br>We have made a purchase reconciliation for the period {{ inward_supply_from_date }} to {{ inward_supply_to_date }} for purchases made by {{ company }} from you.<br><br>You are requested to kindly make necessary corrections to the GST Portal on your end if required. The attached sheet is for your reference.",
