@@ -16,7 +16,6 @@ def job_offer_update(status, appl):
 
 @frappe.whitelist()
 def request_for_offer(jo_id):
-    
     doc_data = frappe.get_doc("Job Applicant",jo_id)
     trigger_event(doc=doc_data, event_name="send_mail_to_group_admin")
 
