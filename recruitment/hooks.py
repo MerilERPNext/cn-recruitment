@@ -51,7 +51,10 @@ fixtures =   [{
         "doctype": "Workflow",
         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
     }]
-
+# fixtures = [{
+#     "doctype": "Web Form",
+#     "filters": [["Web Form", "name", "=", "employee-onboarding"]],
+# }]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
