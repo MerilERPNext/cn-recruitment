@@ -23,38 +23,38 @@ app_license = "mit"
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
-fixtures =   [{
-        "doctype": "Custom HTML Block"
-    },{
-        "doctype": "Custom DocPerm",
-        "filters": [["Custom DocPerm", "role", "IN", ["Hiring Manager","Job Recruiter","Recruiter Admin"]]],
-    },{
-        "doctype": "Funnel Node"
-    }
-    ,{
-        "doctype": "Email Template"
-    },
-    {
-        "doctype": "Recruitment Settings"
-    },{
-        "doctype": "Property Setter"
-    },
-    {
-        "doctype": "Custom Field",
-        "filters": [["Custom Field", "module", "=", "Recruitment"]],
-    },
-    {
+# fixtures =   [{
+#         "doctype": "Custom HTML Block"
+#     },{
+#         "doctype": "Custom DocPerm",
+#         "filters": [["Custom DocPerm", "role", "IN", ["Hiring Manager","Job Recruiter","Recruiter Admin"]]],
+#     },{
+#         "doctype": "Funnel Node"
+#     }
+#     ,{
+#         "doctype": "Email Template"
+#     },
+#     {
+#         "doctype": "Recruitment Settings"
+#     },{
+#         "doctype": "Property Setter"
+#     },
+#     {
+#         "doctype": "Custom Field",
+#         "filters": [["Custom Field", "module", "=", "Recruitment"]],
+#     },
+#     {
+#         "doctype": "Workspace",
+#         "filters": [["Workspace", "name", "=", "Recruitment"]],
+#     },
+#     {
+#         "doctype": "Workflow",
+#         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
+#     }]
+fixtures = [{
         "doctype": "Workspace",
         "filters": [["Workspace", "name", "=", "Recruitment"]],
-    },
-    {
-        "doctype": "Workflow",
-        "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
     }]
-# fixtures = [{
-#     "doctype": "Web Form",
-#     "filters": [["Web Form", "name", "=", "employee-onboarding"]],
-# }]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
