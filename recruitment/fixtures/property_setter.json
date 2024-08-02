@@ -29,7 +29,7 @@
   "property": "options",
   "property_type": "Text",
   "row_name": null,
-  "value": "Open\nIn-Progress\nRejected\nHold\nAccepted\nScreening\nInterview\nOffered\nOffer Accepted\nOffer Rejected\nHired\nOthers"
+  "value": "Open\nIn-Progress\nCall For Interview\nRejected\nHold\nAccepted\nScreening\nInterview\nOffered\nOffer Accepted\nOffer Rejected\nHired\nOthers"
  },
  {
   "default_value": null,

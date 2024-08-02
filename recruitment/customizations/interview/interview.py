@@ -58,6 +58,14 @@ def share_job_opening(docname):
             DocShare.notify_by_email = 1
             DocShare.save()
 
+            intDocShare = frappe.new_doc("DocShare")
+            intDocShare.user = inter.interviewer
+            intDocShare.share_doctype = "Interview"
+            intDocShare.share_name = docname
+            intDocShare.read = 1
+            intDocShare.notify_by_email = 1
+            intDocShare.save()
+
 @frappe.whitelist()
 def share_job_applicants(docname):
     inter_doc = frappe.get_doc("Interview",docname)
