@@ -1,5 +1,6 @@
 frappe.ui.form.on("Employee Onboarding", {
 	validate: function(frm) {
+       
         var mobile_pattern = /^[0-9]{10}$/;
         if (frm.doc.mobile && !mobile_pattern.test(frm.doc.custom_personal_contact_no)) {
             frappe.msgprint(__('Please enter a valid 10-digit mobile number'));
@@ -15,10 +16,15 @@ frappe.ui.form.on("Employee Onboarding", {
             frappe.msgprint(__('Please enter a valid 12-digit Aadhaar card number'));
             frappe.validated = false;
         }
-		var pincode_pattern = /^[0-9]{6}$/;
-        if (frm.doc.custom_pin && !pincode_pattern.test(frm.doc.custom_pin)) {
-            frappe.msgprint(__('Please enter a valid 6-digit pincode number'));
-            frappe.validated = false;
-        }
-    }
+    },
+	custom_have_applied_for_pan(frm){
+		if(frm.doc.custom_have_applied_for_pan==1){
+			frm.set_df_property('custom_upload_pan_card', 'hidden', 1);
+			frm.set_df_property('custom_pan_card_number', 'hidden', 1);
+		}
+		else{
+			frm.set_df_property('custom_upload_pan_card', 'hidden', 0);
+			frm.set_df_property('custom_pan_card_number', 'hidden', 0);
+		}
+	}
 })
