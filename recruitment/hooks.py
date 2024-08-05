@@ -66,6 +66,7 @@ doctype_js = {
     "Job Applicant": ["public/js/job_applicant.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
+    "Employee Onboarding":["public/js/employee_onboarding.js"],
    
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -143,12 +144,7 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 # -----------
 # Permissions evaluated in scripted ways
 
-permission_query_conditions = {
-	"Submit To Hiring Manager": "recruitment.permissions.sthm_query",
-	"Job Requisition":"recruitment.permissions.jr_query",
-    "Job Applicant":"recruitment.permissions.ja_query",
-    "Job Opening":"recruitment.permissions.jo_query",
-}
+
 #
 # has_permission = {
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",

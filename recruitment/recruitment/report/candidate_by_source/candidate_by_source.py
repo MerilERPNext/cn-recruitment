@@ -10,45 +10,18 @@ def execute(filters=None):
 			("Source") + "::300",
 			("Count") + "::300",
 		]
-	current_user = frappe.session.user
-	roles = frappe.get_roles(current_user)
-	sql_query=None
-	if "Hiring Manager" in roles:
-		sql_query = """
-			SELECT
-				COALESCE(ja.source, 'Not defined') AS Source,
-				COUNT(*) AS Count
-			FROM
-				`tabJob Applicant` as ja,`tabJob Opening` as jo, `tabJob Requisition` as jr where jo.name = ja.job_title
-				 and jr.name = jo.job_requisition and jr.owner = '"""+current_user+"""' 
-			GROUP BY
-				COALESCE(ja.source, 'Not defined');
-		"""
-	if "Job Recruiter" in roles:
-		sql_query = """
-			SELECT
-				COALESCE(ja.source, 'Not defined') AS Source,
-				COUNT(*) AS Count
-			FROM
-				`tabJob Applicant` as ja,`tabJob Opening` as jo where jo.name = ja.job_title
-				 and jo.owner = '"""+current_user+"""' 
-			GROUP BY
-				COALESCE(ja.source, 'Not defined');
-		"""
-	if current_user == "Administrator" or "System Manager" in roles or "Recruiter Admin" in roles or "HR User" in roles:
-		sql_query = """
-			SELECT
-				COALESCE(ja.source, 'Not defined') AS Source,
-				COUNT(*) AS Count
-			FROM
-				`tabJob Applicant` as ja
-			GROUP BY
-				COALESCE(ja.source, 'Not defined');
-		"""
+	job_applicants = frappe.db.get_list('Job Applicant', fields=['source'])
+	source_counts = {}
 
-	data = frappe.db.sql(sql_query, as_dict=True)
-	data =  [[d["Source"], d["Count"]] for d in data]
-
+	for applicant in job_applicants:
+		source = applicant.source if applicant.source else 'Not defined'
+		if source in source_counts:
+			source_counts[source] += 1
+		else:
+			source_counts[source] = 1
+	result = [{'Source': key, 'Count': value} for key, value in source_counts.items()]
+	
+	data =  [[d["Source"], d["Count"]] for d in result]
 	
 	return  columns,data
 
