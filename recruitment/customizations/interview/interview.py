@@ -57,7 +57,8 @@ def share_job_opening(docname):
             DocShare.read = 1
             DocShare.notify_by_email = 1
             DocShare.save()
-
+        
+        if not frappe.db.exists("DocShare", {"user": inter.interviewer,"share_doctype":"Interview","share_name":docname}):
             intDocShare = frappe.new_doc("DocShare")
             intDocShare.user = inter.interviewer
             intDocShare.share_doctype = "Interview"

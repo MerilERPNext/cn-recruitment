@@ -16,6 +16,11 @@ frappe.ui.form.on("Employee Onboarding", {
             frappe.msgprint(__('Please enter a valid 12-digit Aadhaar card number'));
             frappe.validated = false;
         }
+		var pincode_pattern = /^[0-9]{6}$/;
+        if (frm.doc.pincode && !pincode_pattern.test(frm.doc.pincode)) {
+            frappe.msgprint(__('Please enter a valid 6-digit pincode number'));
+            frappe.validated = false;
+        }
     },
 	custom_have_applied_for_pan(frm){
 		if(frm.doc.custom_have_applied_for_pan==1){
