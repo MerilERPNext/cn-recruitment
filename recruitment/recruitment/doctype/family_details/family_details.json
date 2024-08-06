@@ -55,12 +55,14 @@
   {
    "fieldname": "blood_group",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Blood Group",
    "options": "A+\nA-\nB+\nB-\nAB+\nAB-\nO+\nO-"
   },
   {
    "fieldname": "nationality",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Nationality"
   },
   {
@@ -73,7 +75,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-08-06 10:39:56.189192",
+ "modified": "2024-08-06 12:26:10.023656",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Family Details",
