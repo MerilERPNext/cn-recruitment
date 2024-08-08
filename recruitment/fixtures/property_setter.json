@@ -397,7 +397,7 @@
   "property": "permlevel",
   "property_type": "Int",
   "row_name": null,
-  "value": "1"
+  "value": "0"
  },
  {
   "default_value": null,
@@ -781,7 +781,7 @@
   "property": "permlevel",
   "property_type": "Int",
   "row_name": null,
-  "value": "1"
+  "value": "0"
  },
  {
   "default_value": null,

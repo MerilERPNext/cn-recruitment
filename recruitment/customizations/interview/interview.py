@@ -69,6 +69,7 @@ def share_job_opening(docname):
 
 @frappe.whitelist()
 def share_job_applicants(docname):
+    frappe.set_user("Administrator")
     inter_doc = frappe.get_doc("Interview",docname)
     for inter in inter_doc.interview_details:
         user = frappe.get_doc("User", inter.interviewer)
