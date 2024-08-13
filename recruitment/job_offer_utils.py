@@ -90,3 +90,6 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
     communication_doc.recipients = mail_id+","
     communication_doc.save()
     frappe.db.set_value("Job Applicant",mail_id,"status","Offered")
+
+
+
