@@ -12,7 +12,7 @@ def execute(filters=None):
 	return columns, data
 
 def get_report_data():
-	column_array = ["POSTING TITLE:DATA:180"]
+	column_array = ["POSTING TITLE:DATA:180","TOTAL CANDIDATES:INT:100"]
 
 	# SQL equivalent Frappe ORM to fetch the job title, status, and count of job applicants
 	job_applicants = frappe.db.get_list('Job Applicant', 
@@ -46,13 +46,22 @@ def get_report_data():
 			result_dict[designation] = {status: count}
 		else:
 			result_dict[designation][status] = count
-
+	
 	# Prepare the final result list
 	final_result = []
 	for designation, counts in result_dict.items():
 		result_row = [designation]
+		
+		# Compute the sum of the values in the counts dictionary
+		total_count = sum(counts.values())
+		
+		# Append the total_count to the 2nd index of result_row
+		result_row.append(total_count)
+		
+		# Append counts for each option in options_list, defaulting to 0 if the option is not in counts
 		for col in options_list:
 			result_row.append(counts.get(col, 0))
+		
+		# Add the result_row to the final_result list
 		final_result.append(result_row)
-
 	return {"columns":column_array,"data":final_result}

@@ -18,9 +18,9 @@ def execute(filters=None):
 				COUNT(*) AS Count
 			FROM
 				`tabJob Requisition`
-			where `tabJob Requisition`.`owner`='"""+frappe.session.user+"""'
+			
 			GROUP BY
-				requested_by
+				requested_by_name
 		"""
 
 	data = frappe.db.sql(sql_query, as_dict=True)
