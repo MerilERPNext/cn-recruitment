@@ -47,6 +47,7 @@ def generate_travel_request(interview_id):
 
 @frappe.whitelist()
 def share_job_opening(docname):
+    frappe.set_user("Administrator")
     inter_doc = frappe.get_doc("Interview",docname)
     for inter in inter_doc.interview_details:
         if not frappe.db.exists("DocShare", {"user": inter.interviewer,"share_doctype":"Job Opening","share_name":inter_doc.job_opening}):
