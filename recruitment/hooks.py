@@ -52,9 +52,9 @@ app_license = "mit"
 #         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
 #     }]
 fixtures = [{
-        "doctype": "Funnel",
-        "filters": [["Funnel", "name", "=", "Send Job Offer"]],
-    },]
+        "doctype": "Workspace",
+        "filters": [["Workspace", "name", "=", "Recruitment"]],
+    }]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
@@ -62,12 +62,12 @@ fixtures = [{
 doctype_js = {
     "Job Offer": ["public/js/job_offer.js"],
     "Job Requisition": ["public/js/job_requisition.js"],
-	"Job Opening": ["public/js/job_opening.js"],
+    "Job Opening": ["public/js/job_opening.js"],
     "Job Applicant": ["public/js/job_applicant.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
     "Employee Onboarding":["public/js/employee_onboarding.js"],
-   
+   "Employee Separation":["public/js/employee_separation.js"],
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
