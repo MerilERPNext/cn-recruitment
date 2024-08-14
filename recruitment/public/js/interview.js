@@ -55,15 +55,15 @@ frappe.ui.form.on("Interview", {
 		}
     },
 	after_save(frm){
-		frappe.call({
-			method: "recruitment.customizations.interview.interview.share_job_opening",
-			args:{
-				"docname": frm.doc.name
-			},
-			callback: function(r) {
-				// code snippet
-			}
-		});
+		// frappe.call({
+		// 	method: "recruitment.customizations.interview.interview.share_job_opening",
+		// 	args:{
+		// 		"docname": frm.doc.name
+		// 	},
+		// 	callback: function(r) {
+		// 		// code snippet
+		// 	}
+		// });
 		frappe.call({
 			method: "recruitment.customizations.interview.interview.share_job_applicants",
 			args:{
