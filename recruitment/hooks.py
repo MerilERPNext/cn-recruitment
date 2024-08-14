@@ -52,8 +52,8 @@ app_license = "mit"
 #         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
 #     }]
 fixtures = [{
-        "doctype": "Workspace",
-        "filters": [["Workspace", "name", "=", "Recruitment"]],
+        "doctype": "Funnel",
+        "filters": [["Funnel", "name", "=", "Send Job Offer"]],
     },]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
