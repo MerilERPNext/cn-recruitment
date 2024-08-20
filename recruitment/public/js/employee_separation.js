@@ -1,16 +1,23 @@
 frappe.ui.form.on("Employee Separation", {
-    validate:function(frm){
+    before_save:function(frm){
         if(frm.is_new()){
-            d = new Date(frm.doc.custom_resignation_date);
-            if (frm.doc.custom_employment_type=="Full-time"){
-                d.setDate(d.getDate() + 60);
+            if (!frm.doc.boarding_begins_on) {
+                let resignationDate = new Date(frm.doc.custom_resignation_date);
+                frappe.db.get_value('Employment Type', frm.doc.custom_employment_type, 'custom_notice_period_days')
+                .then(r => {
+                    let noticePeriodDays = r.message.custom_notice_period_days;
+                    resignationDate.setDate(resignationDate.getDate() + noticePeriodDays);
+                    let lastWorkingDate = resignationDate.toISOString().split('T')[0];
+                    frm.set_value('custom_last_working_date', lastWorkingDate);
+                    frm.set_value('custom_actual_last_working_date', lastWorkingDate);
+                    resignationDate.setDate(resignationDate.getDate() - 2);
+                    let boardingDate = resignationDate.toISOString().split('T')[0];
+                    frm.set_value('boarding_begins_on', boardingDate);
+                    frm.save_or_update();
+                    $('.modal-content').hide();
+                });
             }
-            if (frm.doc.custom_employment_type=="Probation"){
-                d.setDate(d.getDate() + 7);
-            }
-            let formattedDate = d.toISOString().split('T')[0]   ;
-            frm.set_value('custom_last_working_date',formattedDate);
-            frm.set_value('custom_actual_last_working_date', formattedDate);
+            
         }
         else{
             if(frm.doc.custom_manual_relieving_date){
