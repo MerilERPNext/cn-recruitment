@@ -1,11 +1,544 @@
 import frappe
 
+data = [
+ {
+  "archived": 0,
+  "docstatus": 0,
+  "doctype": "Funnel",
+  "funnel_access": [],
+  "funnel_definition": [
+   {
+    "data": "{\"doctype\":\"Submit To Hiring Manager\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"workflow_state\"}",
+    "element_type": "Trigger",
+    "id": "UQLvoUKJm1pOFr5pJIRtG",
+    "parent": "Submit To Hiring Manager",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":555,\"y\":-30}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "document_event_trigger"
+   },
+   {
+    "data": "{\"email_account\":\"Prathamjadhav15\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":false,\"submit\":true,\"recipients\":\"{{doc.assigned_to}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Submit To Hiring Manager\",\"createNewEmailTemplate\":false,\"email_subject\":\"\",\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "hnW9HUoq7L9lIZaW9rPyw",
+    "parent": "Submit To Hiring Manager",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":555,\"y\":195}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "send_mail"
+   },
+   {
+    "data": "{\"node_label\":\"Check Workflow State\",\"use_python_expression\":true,\"submit\":true,\"expression\":\"doc =  variables[\\\"doc\\\"]\\nif doc[\\\"workflow_state\\\"] == \\\"Submit To HIring Manager\\\":\\n    return True\\nreturn False\",\"filters\":[],\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "IpELMg-EcSIyf2gAZEgHS",
+    "parent": "Submit To Hiring Manager",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":555,\"y\":75}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "var_filter"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-IpELMg-EcSIyf2gAZEgHSyes-hnW9HUoq7L9lIZaW9rPywinput",
+    "parent": "Submit To Hiring Manager",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "IpELMg-EcSIyf2gAZEgHS",
+    "sourcehandle": "yes",
+    "target": "hnW9HUoq7L9lIZaW9rPyw",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-UQLvoUKJm1pOFr5pJIRtGoutput-IpELMg-EcSIyf2gAZEgHSinput",
+    "parent": "Submit To Hiring Manager",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "UQLvoUKJm1pOFr5pJIRtG",
+    "sourcehandle": "output",
+    "target": "IpELMg-EcSIyf2gAZEgHS",
+    "targethandle": "input",
+    "type": "smoothstep"
+   }
+  ],
+  "funnel_name": "Submit To Hiring Manager",
+  "modified": "2024-07-01 14:15:27.356191",
+  "name": "Submit To Hiring Manager",
+  "status": "published",
+  "variable_list": "[]",
+  "viewport": "{\"x\":-230.22746497629117,\"y\":188.478069488973,\"zoom\":0.6896804609135303}"
+ },
+ {
+  "archived": 0,
+  "docstatus": 0,
+  "doctype": "Funnel",
+  "funnel_access": [],
+  "funnel_definition": [
+   {
+    "data": "{\"doctype\":\"Job Requisition\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"custom_assign_to_recruiter\"}",
+    "element_type": "Trigger",
+    "id": "GhyfRwwszEahxNZRw32Gx",
+    "parent": "Job Requisition",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":60,\"y\":-15}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "document_event_trigger"
+   },
+   {
+    "data": "{\"email_account\":\"Prathamjadhav052\",\"select_template\":true,\"email_subject\":\" New MPR - {{doc.designation}} - {{doc.company}}\",\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"{{doc.custom_assign_to_recruiter}}\",\"cc\":\"\",\"bcc\":\"\",\"email_content\":\"<p>Dear&nbsp;Sir/Madam,&nbsp;</p><p>New&nbsp;MPR&nbsp;-&nbsp; {{doc.name}} request&nbsp;has&nbsp;been received.&nbsp;</p><p>MPR&nbsp;ID: {{doc.name}}</p><p>Created&nbsp;By: {{doc.created_by}}</p><p>Company: {{doc.company}}</p><p>Hiring&nbsp;Manager: {{doc.requested_by_name}}</p><p>Posting&nbsp;Title: {{doc.designation}}</p><p>Number&nbsp;of&nbsp;Positions: {{doc.no_of_positions}}</p><p>Date&nbsp;of&nbsp;Requisition: {{doc.posting_date}}</p><p>How&nbsp;the&nbsp;vacancy&nbsp;has&nbsp;arisen?: {{doc.custom_how_the_vacancy_as_arisen}}</p><p>Days&nbsp;to&nbsp;fill&nbsp;position: {{doc.time_to_fill}}</p><p>Kindly&nbsp;assign&nbsp;recruiter&nbsp;user&nbsp;to&nbsp;this&nbsp;job&nbsp;opening.&nbsp;</p><p>Regards,&nbsp;</p><p>Recruit&nbsp;Team&nbsp;</p>\",\"email_template\":\"Recruiter Admin To Recruiter\",\"createNewEmailTemplate\":false}",
+    "element_type": "Action",
+    "id": "xM6Wh21MRyQCl-zjswotv",
+    "parent": "Job Requisition",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":60,\"y\":195}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "send_mail"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-GhyfRwwszEahxNZRw32Gxoutput-xM6Wh21MRyQCl-zjswotvinput",
+    "parent": "Job Requisition",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "GhyfRwwszEahxNZRw32Gx",
+    "sourcehandle": "output",
+    "target": "xM6Wh21MRyQCl-zjswotv",
+    "targethandle": "input",
+    "type": "smoothstep"
+   }
+  ],
+  "funnel_name": "Job Requisition",
+  "modified": "2024-06-27 20:50:24.960190",
+  "name": "Job Requisition",
+  "status": "published",
+  "variable_list": "[]",
+  "viewport": "{\"x\":243.42093796816198,\"y\":139.51588517550914,\"zoom\":0.9927215878280669}"
+ },
+ {
+  "archived": 0,
+  "docstatus": 0,
+  "doctype": "Funnel",
+  "funnel_access": [],
+  "funnel_definition": [
+   {
+    "data": "{\"doctype\":\"Interview\",\"action\":\"after_insert\",\"submit\":true,\"updated_field\":\"job_applicant\",\"variable_path_for_output\":\"\"}",
+    "element_type": "Trigger",
+    "id": "MV8yMemUl0e7mrZYUCNQS",
+    "parent": "Interview Candidate Email",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":705,\"y\":-45}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "document_event_trigger"
+   },
+   {
+    "data": "{\"email_account\":\"Prathamjadhav052\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"{{doc.job_applicant}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Interview Candidate\",\"createNewEmailTemplate\":false}",
+    "element_type": "Action",
+    "id": "fI5n8-RxVi5_o6HYuhUIa",
+    "parent": "Interview Candidate Email",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":720,\"y\":150}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "send_mail"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-MV8yMemUl0e7mrZYUCNQSoutput-fI5n8-RxVi5_o6HYuhUIainput",
+    "parent": "Interview Candidate Email",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "MV8yMemUl0e7mrZYUCNQS",
+    "sourcehandle": "output",
+    "target": "fI5n8-RxVi5_o6HYuhUIa",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": "{\"email_account\":\"Prathamjadhav052\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"{{recepients}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Interviewer Email\",\"createNewEmailTemplate\":false}",
+    "element_type": "Action",
+    "id": "y5l_YE-pspnpTxzF0wjOd",
+    "parent": "Interview Candidate Email",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":720,\"y\":345}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "send_mail"
+   },
+   {
+    "data": "{\"node_label\":\"\",\"python_code\":\"interviewers = []\\ndoc =  variables[\\\"doc\\\"]\\nfor inter in doc[\\\"interview_details\\\"]:\\n    interviewers.append(inter.interviewer)\\nvariables[\\\"recepients\\\"] =','.join(interviewers)\\n\",\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "UhuJl3AyWztn-GsZiWIfN",
+    "parent": "Interview Candidate Email",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":720,\"y\":240}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "exec_python"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-fI5n8-RxVi5_o6HYuhUIaoutput-UhuJl3AyWztn-GsZiWIfNinput",
+    "parent": "Interview Candidate Email",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "fI5n8-RxVi5_o6HYuhUIa",
+    "sourcehandle": "output",
+    "target": "UhuJl3AyWztn-GsZiWIfN",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-UhuJl3AyWztn-GsZiWIfNoutput-y5l_YE-pspnpTxzF0wjOdinput",
+    "parent": "Interview Candidate Email",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "UhuJl3AyWztn-GsZiWIfN",
+    "sourcehandle": "output",
+    "target": "y5l_YE-pspnpTxzF0wjOd",
+    "targethandle": "input",
+    "type": "smoothstep"
+   }
+  ],
+  "funnel_name": "Interview Candidate Email",
+  "modified": "2024-06-26 15:04:00.596807",
+  "name": "Interview Candidate Email",
+  "status": "published",
+  "variable_list": "[]",
+  "viewport": "{\"x\":-229.06222990279514,\"y\":48.09563830858485,\"zoom\":0.7946739787591491}"
+ },
+ {
+  "archived": 0,
+  "docstatus": 0,
+  "doctype": "Funnel",
+  "funnel_access": [],
+  "funnel_definition": [
+   {
+    "data": "{\"node_label\":\"Reject Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Rejected\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"docstatus\\\",1)\\n\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "PBI_hnWlHj2kf3-yZW3Iw",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":-75,\"y\":165}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "exec_python"
+   },
+   {
+    "data": "{\"node_label\":\"Accept Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Accepted\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"docstatus\\\",1)\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "6nxH47fTyeK8cv1Oc6ONX",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":270,\"y\":165}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "exec_python"
+   },
+   {
+    "data": "{\"submit\":true,\"doctype\":\"Job Offer\"}",
+    "element_type": "Trigger",
+    "id": "aYz2R6GmmwLOYdt4MWtvU",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":-75,\"y\":-60}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "reject_jo"
+   },
+   {
+    "data": "{\"submit\":true,\"variable_path_for_output\":\"\",\"doctype\":\"Job Offer\"}",
+    "element_type": "Trigger",
+    "id": "V12ZrXcE43-_mIlJdE0Hb",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":270,\"y\":-60}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "accept_jo"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-V12ZrXcE43-_mIlJdE0Hboutput-6nxH47fTyeK8cv1Oc6ONXinput",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "V12ZrXcE43-_mIlJdE0Hb",
+    "sourcehandle": "output",
+    "target": "6nxH47fTyeK8cv1Oc6ONX",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-aYz2R6GmmwLOYdt4MWtvUoutput-PBI_hnWlHj2kf3-yZW3Iwinput",
+    "parent": "Submit Job Offer",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "aYz2R6GmmwLOYdt4MWtvU",
+    "sourcehandle": "output",
+    "target": "PBI_hnWlHj2kf3-yZW3Iw",
+    "targethandle": "input",
+    "type": "smoothstep"
+   }
+  ],
+  "funnel_name": "Submit Job Offer",
+  "modified": "2024-07-03 16:59:33.551063",
+  "name": "Submit Job Offer",
+  "status": "published",
+  "variable_list": "[]",
+  "viewport": "{\"x\":427.7905911977482,\"y\":231.3854141209858,\"zoom\":1.0281138266560665}"
+ },
+ {
+  "archived": 0,
+  "docstatus": 0,
+  "doctype": "Funnel",
+  "funnel_access": [],
+  "funnel_definition": [
+   {
+    "data": "{\"doctype\":\"Job Offer\",\"action\":\"on_update\",\"submit\":true,\"updated_field\":\"status\"}",
+    "element_type": "Trigger",
+    "id": "WHY4hkAF1ezQ7pKm115jd",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":600,\"y\":-45}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "document_event_trigger"
+   },
+   {
+    "data": "{\"node_label\":\"Check Is Status Accepted\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nsite_url = frappe.utils.get_url()\\nurl = site_url+\\\"/\\\"+\\\"employee-onboarding/new?job_applicant=\\\"+doc.job_applicant+\\\"&job_offer=\\\"+doc.name\\nvariables[\\\"url\\\"] = url\\nvariables[\\\"applicant_name\\\"]=doc.applicant_name\\nvariables[\\\"designation\\\"]=doc.designation\\nvariables[\\\"company\\\"]=doc.company\\n\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "z1Wg1WXx7_Jqt75L1qZRX",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":525,\"y\":105}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "exec_python"
+   },
+   {
+    "data": "{\"node_label\":\"Filter Status\",\"use_python_expression\":true,\"submit\":true,\"expression\":\"doc = variables.get(\\\"doc\\\")\\nif doc.status == \\\"Accepted\\\":\\n    return True\\nreturn False\"}",
+    "element_type": "Action",
+    "id": "9YjMNaYNaSLfhVdkAA3AH",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":570,\"y\":30}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "var_filter"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-WHY4hkAF1ezQ7pKm115jdoutput-9YjMNaYNaSLfhVdkAA3AHinput",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "WHY4hkAF1ezQ7pKm115jd",
+    "sourcehandle": "output",
+    "target": "9YjMNaYNaSLfhVdkAA3AH",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": "{\"email_account\":\"Prathamjadhav15\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"{{doc.job_applicant}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Employee Onboarding\",\"createNewEmailTemplate\":false}",
+    "element_type": "Action",
+    "id": "Mo9LuWqDmrCsIuxg8egLw",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":645,\"y\":255}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "send_mail"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-9YjMNaYNaSLfhVdkAA3AHyes-z1Wg1WXx7_Jqt75L1qZRXinput",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "9YjMNaYNaSLfhVdkAA3AH",
+    "sourcehandle": "yes",
+    "target": "z1Wg1WXx7_Jqt75L1qZRX",
+    "targethandle": "input",
+    "type": "smoothstep"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-z1Wg1WXx7_Jqt75L1qZRXoutput-Mo9LuWqDmrCsIuxg8egLwinput",
+    "parent": "Employee Onboarding Mail",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "z1Wg1WXx7_Jqt75L1qZRX",
+    "sourcehandle": "output",
+    "target": "Mo9LuWqDmrCsIuxg8egLw",
+    "targethandle": "input",
+    "type": "smoothstep"
+   }
+  ],
+  "funnel_name": "Employee Onboarding Mail",
+  "modified": "2024-07-03 17:16:16.596825",
+  "name": "Employee Onboarding Mail",
+  "status": "published",
+  "variable_list": "[]",
+  "viewport": "{\"x\":-373.9675308633773,\"y\":191.92984852611448,\"zoom\":1.7411011265922482}"
+ },
+ {
+  "archived": 0,
+  "docstatus": 0,
+  "doctype": "Funnel",
+  "funnel_access": [],
+  "funnel_definition": [
+   {
+    "data": "{\"doctype\":\"Job Offer\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"status\"}",
+    "element_type": "Trigger",
+    "id": "xdqzCqKvNcte8sFyc5Vm4",
+    "parent": "Job Applicant Offer Status",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":480,\"y\":-60}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "document_event_trigger"
+   },
+   {
+    "data": "{\"node_label\":\"Job Applicant Offer Status\",\"python_code\":\"doc = variables[\\\"doc\\\"]\\nif doc[\\\"status\\\"] == \\\"Accepted\\\":\\n\\tfrappe.db.set_value(\\\"Job Applicant\\\",doc[\\\"job_applicant\\\"],\\\"status\\\",\\\"Offer Accepted\\\")\\nif doc[\\\"status\\\"] == \\\"Rejected\\\":\\n\\tfrappe.db.set_value(\\\"Job Applicant\\\",doc[\\\"job_applicant\\\"],\\\"status\\\",\\\"Offer Rejected\\\")\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
+    "element_type": "Action",
+    "id": "ryKM4YgtBNm9hPMf42uVY",
+    "parent": "Job Applicant Offer Status",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": "{\"x\":480,\"y\":90}",
+    "source": None,
+    "sourcehandle": None,
+    "target": None,
+    "targethandle": None,
+    "type": "exec_python"
+   },
+   {
+    "data": None,
+    "element_type": "edge",
+    "id": "reactflow__edge-xdqzCqKvNcte8sFyc5Vm4output-ryKM4YgtBNm9hPMf42uVYinput",
+    "parent": "Job Applicant Offer Status",
+    "parentfield": "funnel_definition",
+    "parenttype": "Funnel",
+    "position": None,
+    "source": "xdqzCqKvNcte8sFyc5Vm4",
+    "sourcehandle": "output",
+    "target": "ryKM4YgtBNm9hPMf42uVY",
+    "targethandle": "input",
+    "type": "smoothstep"
+   }
+  ],
+  "funnel_name": "Job Applicant Offer Status",
+  "modified": "2024-07-10 15:02:51.000133",
+  "name": "Job Applicant Offer Status",
+  "status": "published",
+  "variable_list": "[]",
+  "viewport": "{\"x\":10,\"y\":200,\"zoom\":1}"
+ }
+]
+
+def set_email_account():
+    default_email_account = frappe.db.get_value("Email Account",{"default_outgoing":1})
+    for funnel_dict in data:
+        funnel_definition = funnel_dict["funnel_definition"]
+        for f_dict in funnel_definition:
+            if f_dict["type"] == "send_mail":
+                node_data = frappe.parse_json(f_dict["data"])
+                node_data["email_account"] = default_email_account
+                f_dict["data"] = frappe.json.dumps(node_data)
 def execute():
     funnels = frappe.get_all("Funnel", fields=["name"])
     for funnel in funnels:
         funnel_doc = frappe.get_doc("Funnel", funnel["name"])
         updated = False  # Track if any changes are made
-
+        if not frappe.db.exists("Funnel",funnel["name"]):
+            funnel_doc.insert(ignore_permissions = True)
+            frappe.db.commit()
+            print(f"Created new Funnel: {funnel["name"]}")
         for fd in funnel_doc.funnel_definition:
             if fd.type == "send_mail":
                 node_data = frappe.parse_json(fd.data)
