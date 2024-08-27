@@ -1845,7 +1845,7 @@
    "field_name": "status",
    "idx": 0,
    "is_system_generated": 0,
-   "modified": "2024-08-27 16:43:44.068602",
+   "modified": "2024-08-27 17:23:13.329300",
    "modified_by": "Administrator",
    "module": "Recruitment",
    "name": "Job Applicant-status-options",
@@ -1853,7 +1853,7 @@
    "property": "options",
    "property_type": "Text",
    "row_name": null,
-   "value": "Open\nIn-Progress\nRejected\nHold\nAccepted\nScreening\nInterview\nOffered\nOffer Accepted\nOffer Rejected\nHired\nOthers\nManagement Approval Pending"
+   "value": "Open\nIn-Progress\nRejected\nHold\nAccepted\nScreening\nInterview\nOffered\nOffer Accepted\nOffer Rejected\nHired\nOthers\nManagement Approval Pending\nHR Head Approval Pending"
   },
   {
    "_assign": null,
