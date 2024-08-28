@@ -75,7 +75,6 @@ frappe.ui.form.on("Job Applicant", {
                             
                             
                             <td style="width:5%"><button class="edit-note-btn btn btn-sm btn-primary" data-note="${note.note}"><svg class="icon icon-sm"><use xlink:href="#icon-edit"></use></svg></button></td>
-                            <td style="width:5%"><button class="delete-note-btn btn btn-sm btn-primary" data-note="${note.note}"><svg class="icon icon-sm"><use xlink:href="#icon-delete"></use></svg></button></td>
 
                         </tr>
 
@@ -83,6 +82,7 @@ frappe.ui.form.on("Job Applicant", {
                 allNotesSection.appendChild(noteDiv);
             });
         }
+    // <td style="width:5%"><button class="delete-note-btn btn btn-sm btn-primary" data-note="${note.note}"><svg class="icon icon-sm"><use xlink:href="#icon-delete"></use></svg></button></td>
 
         let newNoteBtn = frm.get_field("custom_notes_html").wrapper.querySelector('.new-note-btn');
         newNoteBtn.addEventListener('click', () => {
