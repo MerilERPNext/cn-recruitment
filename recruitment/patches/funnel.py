@@ -896,44 +896,7 @@ data = [
   "assistant_form_fields": None,
   "docstatus": 0,
   "doctype": "Funnel",
-  "funnel_access": [
-   {
-    "can_execute": 1,
-    "can_modify": 0,
-    "can_view": 1,
-    "parent": "Request For Job Offer",
-    "parentfield": "funnel_access",
-    "parenttype": "Funnel",
-    "role": "Hiring Manager"
-   },
-   {
-    "can_execute": 1,
-    "can_modify": 0,
-    "can_view": 1,
-    "parent": "Request For Job Offer",
-    "parentfield": "funnel_access",
-    "parenttype": "Funnel",
-    "role": "Recruiter Admin"
-   },
-   {
-    "can_execute": 1,
-    "can_modify": 0,
-    "can_view": 1,
-    "parent": "Request For Job Offer",
-    "parentfield": "funnel_access",
-    "parenttype": "Funnel",
-    "role": "Job Recruiter"
-   },
-   {
-    "can_execute": 1,
-    "can_modify": 0,
-    "can_view": 1,
-    "parent": "Request For Job Offer",
-    "parentfield": "funnel_access",
-    "parenttype": "Funnel",
-    "role": "Hr Group Admin"
-   }
-  ],
+  "funnel_access": [],
   "funnel_definition": [
    {
     "data": "{\"name_of_action\":\"Request For Job Offer\",\"page_type\":\"doctype\",\"node_label\":\"Request For Job Offer\",\"submit\":true,\"doctype\":\"Job Applicant\"}",
@@ -1852,24 +1815,7 @@ data = [
   "docstatus": 0,
   "doctype": "Funnel",
   "funnel_access": [
-   {
-    "can_execute": 1,
-    "can_modify": 1,
-    "can_view": 1,
-    "parent": "Send Job Offer",
-    "parentfield": "funnel_access",
-    "parenttype": "Funnel",
-    "role": "Recruiter Admin"
-   },
-   {
-    "can_execute": 1,
-    "can_modify": 1,
-    "can_view": 1,
-    "parent": "Send Job Offer",
-    "parentfield": "funnel_access",
-    "parenttype": "Funnel",
-    "role": "Job Recruiter"
-   }
+   
   ],
   "funnel_definition": [
    {
