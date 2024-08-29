@@ -52,7 +52,8 @@ app_license = "mit"
 #         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
 #     }]
 fixtures = [{
-        "doctype": "Funnel"
+        "doctype": "Funnel Node",
+        "filters": [["Funnel Node", "name", "IN", ["send_no_dues_mail","update_offer_status","reject_jo","accept_jo"]]],
     }]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
