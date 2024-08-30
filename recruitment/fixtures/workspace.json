@@ -504,13 +504,6 @@
   "content": "[{\"id\":\"jdw6OnLSDr\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Pending Approval From Management <br></b></span>\",\"col\":12}},{\"id\":\"lc_i7537vb\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Approval Pending From Management\",\"col\":12}},{\"id\":\"E-fNFU1SM9\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Hiring Pipeline <br></b></span>\",\"col\":12}},{\"id\":\"EPb_zcYY-Y\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Hiring-Pipeline\",\"col\":12}},{\"id\":\"EW0nSIHLFk\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Recruiter Wise Job Opening <br></b></span>\",\"col\":12}},{\"id\":\"Pcr4rl7rYT\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Recruiter Job Opening Count\",\"col\":12}}]",
   "custom_blocks": [
    {
-    "custom_block_name": "Approval Pending From Management",
-    "label": "Approval Pending From Management",
-    "parent": "Management",
-    "parentfield": "custom_blocks",
-    "parenttype": "Workspace"
-   },
-   {
     "custom_block_name": "Hiring-Pipeline",
     "label": "Hiring-Pipeline",
     "parent": "Management",
