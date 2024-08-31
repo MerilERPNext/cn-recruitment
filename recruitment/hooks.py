@@ -68,6 +68,7 @@ doctype_js = {
     "User": ["public/js/user.js"],
     "Employee Onboarding":["public/js/employee_onboarding.js"],
    "Employee Separation":["public/js/employee_separation.js"],
+   "Employee Promotion":["public/js/employee_promotion.js"],
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -168,13 +169,12 @@ permission_query_conditions = {
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Salary Structure Assignment": {
+		"on_submit": "recruitment.customizations.salary_structure_assignment.salary_structure_assignment.on_submit",
+		
+	}
+}
 
 # Scheduled Tasks
 # ---------------
