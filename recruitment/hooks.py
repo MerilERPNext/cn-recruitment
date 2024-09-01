@@ -173,7 +173,12 @@ doc_events = {
 	"Salary Structure Assignment": {
 		"on_submit": "recruitment.customizations.salary_structure_assignment.salary_structure_assignment.on_submit",
 		
-	}
+	},
+    "Employee Promotion": {
+		"on_submit": "recruitment.customizations.employee_promotion.employee_promotion.on_submit",
+		
+	},
+
 }
 
 # Scheduled Tasks
