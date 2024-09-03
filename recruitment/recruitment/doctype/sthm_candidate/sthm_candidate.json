@@ -53,7 +53,7 @@
   },
   {
    "fieldname": "linkedin_id",
-   "fieldtype": "Data",
+   "fieldtype": "Attach",
    "in_list_view": 1,
    "label": "LinkedIn Id"
   }
@@ -61,7 +61,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-07-05 11:07:07.422724",
+ "modified": "2024-09-03 12:57:42.248621",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "STHM Candidate",
