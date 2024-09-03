@@ -178,7 +178,9 @@ doc_events = {
 		"on_submit": "recruitment.customizations.employee_promotion.employee_promotion.on_submit",
 		
 	},
-
+     "Interview": {
+        "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
+    },
 }
 
 # Scheduled Tasks

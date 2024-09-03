@@ -85,3 +85,31 @@ def share_job_applicants(docname):
             DocShare.for_value = docname
             DocShare.apply_to_all_doctypes = 0
             DocShare.save()
+
+@frappe.whitelist()
+def check_feedback_of_previous_interview(self, method):
+    interviews = frappe.get_all("Interview", filters={"job_applicant": self.job_applicant}, pluck="name")    
+    for interview in interviews:
+        interview_doc = frappe.get_doc("Interview", interview)        
+        for interviewer in interview_doc.interview_details:
+            if not frappe.db.exists("Interview Feedback", {"interview": interview, "interviewer": interviewer.interviewer}):
+                frappe.throw(
+                    f"Please provide feedback for Interview: {frappe.utils.get_link_to_form('Interview', interview)} by {interviewer.interviewer}"
+                )
+
+@frappe.whitelist()
+def get_interview_feedback_records(job_applicant):
+    interview_feedback_records=[]
+    interviews= frappe.get_all("Interview", filters={"job_applicant": job_applicant}, pluck="name")
+    for interview in interviews:
+        interview_feedbacks = frappe.get_all("Interview Feedback", filters={"interview": interview}, pluck="name")
+        for interview_feedback in interview_feedbacks:
+            feedback_doc=frappe.get_doc("Interview Feedback", interview_feedback)
+            interview_feedback_records.append({
+                "interviewer": feedback_doc.interviewer,
+                "interview_round": feedback_doc.interview_round,
+                "average_rating": feedback_doc.average_rating,
+                "feedback": feedback_doc.feedback
+            })
+    return interview_feedback_records
+        
