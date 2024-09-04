@@ -257,7 +257,7 @@ frappe.ui.form.on("Job Applicant", {
                                     <th style="width: 12%" class="text-left">Date</th>
                                     <th style="width: 12%" class="text-left">Status</th>
                                     <th style="width: 14%" class="text-left">Rating</th>
-                                    <th style="width: 12%" class="text-left">Action</th>
+                                    <th style="width: 12%" class="text-left"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -290,7 +290,7 @@ frappe.ui.form.on("Job Applicant", {
                                     </div>
                                 </td>
                                 <td class="text-left">
-                                    <button class="btn btn-primary btn-sm" data-interview="${key}">View Feedback</button>
+                                    <button class="btn btn-primary btn-sm" data-interview="${key}">Details</button>
                                 </td>
                             </tr>
                         `;
