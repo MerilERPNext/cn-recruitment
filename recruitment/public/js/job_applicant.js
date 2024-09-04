@@ -1,5 +1,6 @@
 frappe.ui.form.on("Job Applicant", {
   refresh: function (frm) {
+    frm.events.make_dashboard(frm);
     if (!frm.is_new()) {
       if (frappe.user.has_role("Hr Group Admin")) {
         // frm.add_custom_button(__("Request For Offer"), function(){
@@ -235,6 +236,147 @@ frappe.ui.form.on("Job Applicant", {
         });
     }
   },
+  make_dashboard: function (frm) {
+    frappe.call({
+        method: "hrms.hr.doctype.job_applicant.job_applicant.get_interview_details",
+        args: {
+            job_applicant: frm.doc.name,
+        },
+        callback: function (r) {
+            if (r.message) {
+                let data = r.message.interviews;
+                let number_of_stars = r.message.stars;
+
+                if (Object.keys(data).length > 0) {
+                    let table = `
+                        <table class="table table-bordered small">
+                            <thead>
+                                <tr>
+                                    <th style="width: 14%" class="text-left">Interview</th>
+                                    <th style="width: 16%" class="text-left">Interview Round</th>
+                                    <th style="width: 12%" class="text-left">Date</th>
+                                    <th style="width: 12%" class="text-left">Status</th>
+                                    <th style="width: 14%" class="text-left">Rating</th>
+                                    <th style="width: 12%" class="text-left">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    for (const [key, value] of Object.entries(data)) {
+                        let row = `
+                            <tr>
+                                <td class="text-left">${key}</td>
+                                <td class="text-left">${value["interview_round"]}</td>
+                                <td class="text-left">${frappe.datetime.str_to_user(value["scheduled_on"])}</td>
+                                <td class="text-left">${value["status"]}</td>
+                                <td class="text-left">
+                                    <div class="rating">
+                        `;
+
+                        for (let i = 1; i <= number_of_stars; i++) {
+                            let right_class = i <= value["average_rating"] ? 'star-click' : '';
+                            let left_class = (i <= value["average_rating"]) || ((i - 0.5) == value["average_rating"]) ? 'star-click' : '';
+
+                            row += `
+                                <svg class="icon icon-md" data-rating="${i}" viewBox="0 0 24 24" fill="none">
+                                    <path class="right-half ${right_class}" d="M11.9987 3.00011C12.177 3.00011 12.3554 3.09303 12.4471 3.27888L14.8213 8.09112C14.8941 8.23872 15.0349 8.34102 15.1978 8.3647L20.5069 9.13641C20.917 9.19602 21.0807 9.69992 20.7841 9.9892L16.9421 13.7354C16.8243 13.8503 16.7706 14.0157 16.7984 14.1779L17.7053 19.4674C17.7753 19.8759 17.3466 20.1874 16.9798 19.9945L12.2314 17.4973C12.1586 17.459 12.0786 17.4398 11.9987 17.4398V3.00011Z" fill="var(--star-fill)" stroke="var(--star-fill)"/>
+                                    <path class="left-half ${left_class}" d="M11.9987 3.00011C11.8207 3.00011 11.6428 3.09261 11.5509 3.27762L9.15562 8.09836C9.08253 8.24546 8.94185 8.34728 8.77927 8.37075L3.42887 9.14298C3.01771 9.20233 2.85405 9.70811 3.1525 9.99707L7.01978 13.7414C7.13858 13.8564 7.19283 14.0228 7.16469 14.1857L6.25116 19.4762C6.18071 19.8842 6.6083 20.1961 6.97531 20.0045L11.7672 17.5022C11.8397 17.4643 11.9192 17.4454 11.9987 17.4454V3.00011Z" fill="var(--star-fill)" stroke="var(--star-fill)"/>
+                                </svg>
+                            `;
+                        }
+
+                        row += `
+                                    </div>
+                                </td>
+                                <td class="text-left">
+                                    <button class="btn btn-primary btn-sm" data-interview="${key}">View Feedback</button>
+                                </td>
+                            </tr>
+                        `;
+                        table += row;
+                    }
+
+                    table += `
+                            </tbody>
+                        </table>
+                    `;
+
+                    $(frm.fields_dict.custom_interview_feedback.wrapper).html(table);
+
+                    // Attach click event to buttons
+                    $(frm.fields_dict.custom_interview_feedback.wrapper).find('button').on('click', function () {
+                        let interview_id = $(this).data('interview');
+                        show_feedback(interview_id);
+                    });
+
+                } else {
+                    $(frm.fields_dict.custom_interview_feedback.wrapper).html('<p style="margin-top: 30px;">No Interview has been scheduled.</p>');
+                }
+            }
+        },
+    });
+
+    function show_feedback(interview_id) {
+      frappe.call({
+          method: "recruitment.customizations.interview.interview.get_interview_feedback_records",
+          args: {
+              interview_id: interview_id,
+          },
+          callback: function (r) {
+              if (r.message && r.message.length > 0) {
+                  let feedback_table = `
+                      <table class="table table-bordered small" style="margin-top: 20px; width: 100%;">
+                          <thead>
+                              <tr>
+                                  <th style="width: 20%; text-align: left;">Interviewer</th>
+                                  <th style="width: 60%; text-align: left;">Feedback</th>
+                                  <th style="width: 20%; text-align: left;">Creation Time</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                  `;
+                  
+                  r.message.forEach(feedback => {
+                      feedback_table += `
+                          <tr>
+                              <td style="text-align: left;">${feedback.interviewer}</td>
+                              <td style="text-align: left;">${feedback.feedback}</td>
+                              <td style="text-align: left;">${frappe.datetime.str_to_user(feedback.creation)}</td>
+                          </tr>
+                      `;
+                  });
+                  
+                  feedback_table += `
+                          </tbody>
+                      </table>
+                  `;
+                  
+                  // Use a custom dialog for more control over styling
+                  const dialog = new frappe.ui.Dialog({
+                      title: `Feedback for Interview: ${interview_id}`,
+                      size: 'large',
+                      fields: [
+                          {
+                              fieldtype: 'HTML',
+                              fieldname: 'feedback_table',
+                              options: feedback_table
+                          }
+                      ]
+                  });
+                  
+                  dialog.show();
+              } else {
+                  frappe.msgprint({
+                      title: `Feedback for Interview: ${interview_id}`,
+                      message: '<p>No feedback available for this interview.</p>',
+                  });
+              }
+          },
+      });
+  }
+  
+},
 });
 frappe.ui.form.on("Job Applicant Notes", {
   custom_notes_add: function (frm, cdt, cdn) {
