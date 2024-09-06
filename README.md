@@ -1,6 +1,6 @@
 ## Recruitment
 
-Recruitment
+Recruitment App
 
 #### License
 
