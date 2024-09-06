@@ -6,7 +6,19 @@ from frappe.model.document import Document
 
 
 class SubmitToHiringManager(Document):
-	pass
+	def validate(self):
+		all_approved = True
+		all_rejected = True
+
+		# Replace 'child_table_name' with your actual child table field name
+		for row in self.shortlisted_candidate:
+			if row.status == 'Pending':
+				all_approved = False
+		
+		if all_approved:
+			self.is_approvable = 1
+		else:
+			self.is_approvable = 0
 
 @frappe.whitelist()
 def generate_job_applicant(docname):

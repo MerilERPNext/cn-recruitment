@@ -10,7 +10,8 @@
   "job_title",
   "assigned_to",
   "shortlisted_candidate",
-  "amended_from"
+  "amended_from",
+  "is_approvable"
  ],
  "fields": [
   {
@@ -50,12 +51,19 @@
    "in_list_view": 1,
    "label": "Job Title",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_approvable",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Approvable"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-07-03 15:53:02.692357",
+ "modified": "2024-09-06 15:48:25.411220",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Submit To Hiring Manager",
