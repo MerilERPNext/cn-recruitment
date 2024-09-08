@@ -5,6 +5,7 @@ data = [
     # submit to hiring manager
     {
         "name": "Submit To Hiring Manager",
+        "docstatus": 0,
         "idx": 0,
         "archived": 0,
         "funnel_name": "Submit To Hiring Manager",
@@ -13,10 +14,10 @@ data = [
         "viewport": '{"x":-230.22746497629117,"y":188.478069488973,"zoom":0.6896804609135303}',
         "variable_list": "[]",
         "doctype": "Funnel",
-        "funnel_access": [],
         "funnel_definition": [
             {
                 "name": "poe9j4essb",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Submit To Hiring Manager","action":"on_update","submit":true,"variable_path_for_output":"","updated_field":"workflow_state"}',
                 "position": '{"x":555,"y":-30}',
@@ -30,6 +31,7 @@ data = [
             },
             {
                 "name": "poe94nl2un",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"bcc": "", "cc": "", "createNewEmailTemplate": false, "email_account": "Email Linking", "email_subject": "", "email_template": "Submit To Hiring Manager", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{doc.assigned_to}}", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
                 "position": '{"x":555,"y":195}',
@@ -43,6 +45,7 @@ data = [
             },
             {
                 "name": "poe9duluh2",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"node_label":"Check Workflow State","use_python_expression":true,"submit":true,"expression":"doc =  variables[\\"doc\\"]\\nif doc[\\"workflow_state\\"] == \\"Submit To HIring Manager\\":\\n    return True\\nreturn False","filters":[],"variable_path_for_output":""}',
                 "position": '{"x":555,"y":75}',
@@ -56,6 +59,7 @@ data = [
             },
             {
                 "name": "poe91aj5u7",
+                "docstatus": 0,
                 "idx": 4,
                 "type": "smoothstep",
                 "id": "reactflow__edge-IpELMg-EcSIyf2gAZEgHSyes-hnW9HUoq7L9lIZaW9rPywinput",
@@ -71,6 +75,7 @@ data = [
             },
             {
                 "name": "poe9vnv3ea",
+                "docstatus": 0,
                 "idx": 5,
                 "type": "smoothstep",
                 "id": "reactflow__edge-UQLvoUKJm1pOFr5pJIRtGoutput-IpELMg-EcSIyf2gAZEgHSinput",
@@ -85,10 +90,12 @@ data = [
                 "doctype": "Funnel Definition",
             },
         ],
+        "funnel_access": [],
     },
     # employee onboarding mail
     {
         "name": "Employee Onboarding Mail",
+        "docstatus": 0,
         "idx": 0,
         "archived": 0,
         "funnel_name": "Employee Onboarding Mail",
@@ -101,6 +108,7 @@ data = [
         "funnel_definition": [
             {
                 "name": "poe9lm2qe2",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Job Offer","action":"on_update","submit":true,"updated_field":"status"}',
                 "position": '{"x":600,"y":-45}',
@@ -114,6 +122,7 @@ data = [
             },
             {
                 "name": "poe9dpot7h",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"node_label":"Check Is Status Accepted","python_code":"doc = variables.get(\\"doc\\")\\nsite_url = frappe.utils.get_url()\\nurl = site_url+\\"/\\"+\\"employee-onboarding/new?job_applicant=\\"+doc.job_applicant+\\"&job_offer=\\"+doc.name\\nvariables[\\"url\\"] = url\\nvariables[\\"applicant_name\\"]=doc.applicant_name\\nvariables[\\"designation\\"]=doc.designation\\nvariables[\\"company\\"]=doc.company\\n","skip_queue_and_execute_immediately":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":525,"y":105}',
@@ -127,6 +136,7 @@ data = [
             },
             {
                 "name": "poe9c74jmn",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"node_label":"Filter Status","use_python_expression":true,"submit":true,"expression":"doc = variables.get(\\"doc\\")\\nif doc.status == \\"Accepted\\":\\n    return True\\nreturn False"}',
                 "position": '{"x":570,"y":30}',
@@ -140,6 +150,7 @@ data = [
             },
             {
                 "name": "poe93l93uh",
+                "docstatus": 0,
                 "idx": 4,
                 "type": "smoothstep",
                 "id": "reactflow__edge-WHY4hkAF1ezQ7pKm115jdoutput-9YjMNaYNaSLfhVdkAA3AHinput",
@@ -155,6 +166,7 @@ data = [
             },
             {
                 "name": "poe9hn0lln",
+                "docstatus": 0,
                 "idx": 5,
                 "data": '{"bcc": "", "cc": "", "createNewEmailTemplate": false, "email_account": "Email Linking", "email_template": "Employee Onboarding", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{doc.job_applicant}}", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
                 "position": '{"x":645,"y":255}',
@@ -168,6 +180,7 @@ data = [
             },
             {
                 "name": "poe9fiehgm",
+                "docstatus": 0,
                 "idx": 6,
                 "type": "smoothstep",
                 "id": "reactflow__edge-9YjMNaYNaSLfhVdkAA3AHyes-z1Wg1WXx7_Jqt75L1qZRXinput",
@@ -183,6 +196,7 @@ data = [
             },
             {
                 "name": "poe99eecdo",
+                "docstatus": 0,
                 "idx": 7,
                 "type": "smoothstep",
                 "id": "reactflow__edge-z1Wg1WXx7_Jqt75L1qZRXoutput-Mo9LuWqDmrCsIuxg8egLwinput",
@@ -201,44 +215,20 @@ data = [
     # employee separation
     {
         "name": "Employee Separation",
+        "docstatus": 0,
         "idx": 0,
         "archived": 0,
         "funnel_name": "Employee Separation",
         "funnel_type": "Private",
         "status": "published",
-        "viewport": '{"x":-593.1116028555903,"y":-133.51141937584737,"zoom":0.6130174300265782}',
+        "viewport": '{"x":-701.3620162829195,"y":221.97158403186552,"zoom":0.5}',
         "variable_list": "[]",
+        "assistant_form_fields": "{}",
         "doctype": "Funnel",
-        "funnel_access": [],
         "funnel_definition": [
             {
-                "name": "poedq51un1",
-                "idx": 1,
-                "data": '{"doc_type":"Employee Separation","doc_name":"{{doc.name}}","user_id":"{{doc.custom_reporting_manager_email}}","submit":true,"variable_path_for_output":"","role_approval":false,"open_chatnext_assistant":false}',
-                "position": '{"x":-300,"y":-15}',
-                "type": "chatnext_assistant_document_approval",
-                "id": "wlTm0f_62NQaPxgiHortK",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedv298ni",
-                "idx": 2,
-                "data": '{"doctype":"Employee Separation","action":"after_insert","submit":true,"variable_path_for_output":""}',
-                "position": '{"x":-300,"y":-150}',
-                "type": "document_event_trigger",
-                "id": "E9qCpzIS5PuaQqBgg6m_m",
-                "element_type": "Trigger",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poedfuq24a",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"doctype":"Employee Exit Interview","action":"after_insert","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1050,"y":-165}',
@@ -251,20 +241,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poedr7c5ak",
-                "idx": 4,
-                "data": '{"doc_type":"Employee Separation","doc_name":"{{doc.name}}","user_id":"{{doc.custom_secondary_reporting_email}}","submit":true,"variable_path_for_output":"","role_approval":false,"open_chatnext_assistant":false}',
-                "position": '{"x":-300,"y":135}',
-                "type": "chatnext_assistant_document_approval",
-                "id": "BaibRL2axkEkiA8lKZpze",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poedcilcc1",
+                "docstatus": 0,
                 "idx": 5,
                 "data": '{"interval":"every_day","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":675,"y":-180}',
@@ -278,6 +256,7 @@ data = [
             },
             {
                 "name": "poed0t93rc",
+                "docstatus": 0,
                 "idx": 6,
                 "data": '{"node_label":"Employee List","python_code":"formatted_date = frappe.utils.today()\\nvariables[\\"results\\"]=frappe.db.sql(\\"\\"\\"\\n        SELECT es.employee,es.name\\n        FROM `tabEmployee Separation` AS es \\n        WHERE es.boarding_begins_on = %s\\n    \\"\\"\\", formatted_date, as_dict=True)","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":675,"y":-60}',
@@ -290,20 +269,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poed8238d0",
-                "idx": 7,
-                "data": '{"bcc": "", "cc": "", "createNewEmailTemplate": false, "email_account": "Email Linking", "email_subject": "", "email_template": "No Dues Clearance", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{emp_mail}}", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
-                "position": '{"x":30,"y":510}',
-                "type": "send_mail",
-                "id": "bba7MCTV1X3N73sLju5sG",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poedfbmcjl",
+                "docstatus": 0,
                 "idx": 8,
                 "data": '{"array_json":"{{results | json}}","array_element_variable":"employee","submit":true}',
                 "position": '{"x":675,"y":60}',
@@ -317,6 +284,7 @@ data = [
             },
             {
                 "name": "poedn7725s",
+                "docstatus": 0,
                 "idx": 9,
                 "data": '{"doctype":"No Dues Clearance","action":"after_insert","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":2985,"y":-30}',
@@ -330,6 +298,7 @@ data = [
             },
             {
                 "name": "poedm01bnl",
+                "docstatus": 0,
                 "idx": 10,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"prathamjadhav052@gmail.com","submit":true,"variable_path_for_output":"","role_approval":true,"open_chatnext_assistant":false,"role_name":"Employee Exit HR Plant"}',
                 "position": '{"x":2475,"y":105}',
@@ -343,6 +312,7 @@ data = [
             },
             {
                 "name": "poed1d9ml9",
+                "docstatus": 0,
                 "idx": 11,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"prathamjadhav052@gmail.com","submit":true,"variable_path_for_output":"","role_approval":true,"open_chatnext_assistant":false,"role_name":"Employee Exit HR"}',
                 "position": '{"x":1770,"y":1545}',
@@ -356,6 +326,7 @@ data = [
             },
             {
                 "name": "poed7rbn0b",
+                "docstatus": 0,
                 "idx": 12,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"prathamjadhav052@gmail.com","submit":true,"variable_path_for_output":"","role_approval":true,"open_chatnext_assistant":false,"role_name":"Employee Exit Travel Desk"}',
                 "position": '{"x":3180,"y":90}',
@@ -369,6 +340,7 @@ data = [
             },
             {
                 "name": "poedogqddn",
+                "docstatus": 0,
                 "idx": 13,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"prathamjadhav052@gmail.com","submit":true,"variable_path_for_output":"","role_approval":true,"open_chatnext_assistant":false,"role_name":"Employee Exit Asset"}',
                 "position": '{"x":2040,"y":120}',
@@ -382,6 +354,7 @@ data = [
             },
             {
                 "name": "poedf9k3lj",
+                "docstatus": 0,
                 "idx": 14,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"prathamjadhav052@gmail.com","submit":true,"variable_path_for_output":"","role_approval":true,"open_chatnext_assistant":false,"role_name":"Employee Exit ERP"}',
                 "position": '{"x":3765,"y":90}',
@@ -395,6 +368,7 @@ data = [
             },
             {
                 "name": "poedbkv0qa",
+                "docstatus": 0,
                 "idx": 15,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"prathamjadhav052@gmail.com","submit":true,"variable_path_for_output":"","role_approval":true,"open_chatnext_assistant":false,"role_name":"Employee Exit Access card"}',
                 "position": '{"x":2850,"y":210}',
@@ -408,6 +382,7 @@ data = [
             },
             {
                 "name": "poede5krjg",
+                "docstatus": 0,
                 "idx": 16,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"prathamjadhav052@gmail.com","submit":true,"variable_path_for_output":"","role_approval":true,"open_chatnext_assistant":false,"role_name":"Employee Exit Account"}',
                 "position": '{"x":1380,"y":1680}',
@@ -421,6 +396,7 @@ data = [
             },
             {
                 "name": "poedf29697",
+                "docstatus": 0,
                 "idx": 17,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"{{doc.r_added_by}}","submit":true,"variable_path_for_output":"","role_approval":false,"open_chatnext_assistant":false,"role_name":"Employee Exit HR"}',
                 "position": '{"x":1950,"y":870}',
@@ -434,6 +410,7 @@ data = [
             },
             {
                 "name": "poedoahal7",
+                "docstatus": 0,
                 "idx": 18,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"prathamjadhav052@gmail.com","submit":true,"variable_path_for_output":"","role_approval":true,"open_chatnext_assistant":false,"role_name":"Credit Control & Distribution"}',
                 "position": '{"x":4455,"y":180}',
@@ -447,6 +424,7 @@ data = [
             },
             {
                 "name": "poed9p00r1",
+                "docstatus": 0,
                 "idx": 19,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","user_id":"{{doc.secondary_manager_added_by}}","submit":true,"variable_path_for_output":"","role_approval":false,"open_chatnext_assistant":false,"role_name":"Employee Exit HR"}',
                 "position": '{"x":1770,"y":1080}',
@@ -459,33 +437,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poedlajmbj",
-                "idx": 20,
-                "data": '{"node_label":"Employee Details","python_code":"doc = variables[\\"doc\\"]\\nfrappe.db.set_value(\\"Employee Separation\\",doc.name,\\"boarding_status\\",\\"Reporting Manager Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
-                "position": '{"x":-525,"y":75}',
-                "type": "exec_python",
-                "id": "fGG7sUXwF-KC6adtIXoX3",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poed2p2dup",
-                "idx": 21,
-                "data": '{"node_label":"Employee Details","python_code":"doc = variables[\\"doc\\"]\\nfrappe.db.set_value(\\"Employee Separation\\",doc.name,\\"boarding_status\\",\\"Sr. Reporting Manager Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
-                "position": '{"x":150,"y":165}',
-                "type": "exec_python",
-                "id": "_1QNDumPylnfX_gEEIvqZ",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poedvtp3gj",
+                "docstatus": 0,
                 "idx": 22,
                 "data": '{"node_label":"Employee Details","python_code":"es_doc_name = frappe.db.get_value(\\"Employee Separation\\",{\\"employee\\":variables[\\"doc\\"][\\"name\\"]})\\nfrappe.db.set_value(\\"Employee Separation\\",es_doc_name,\\"boarding_status\\",\\"Exit Interview Completed\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1050,"y":-60}',
@@ -498,46 +451,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poed9v4u3d",
-                "idx": 23,
-                "data": '{"node_label":"Employee Details","python_code":"doc = variables[\\"doc\\"]\\nfrappe.db.set_value(\\"Employee Separation\\",doc.name,\\"boarding_status\\",\\"Sr. Reporting Manager Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
-                "position": '{"x":-315,"y":285}',
-                "type": "exec_python",
-                "id": "J1Z-hu_OEkSwY5uNU_nrB",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedkkp4ad",
-                "idx": 24,
-                "data": '{"node_label":"Employee Details","python_code":"variables[\\"emp_mail\\"] = frappe.db.get_value(\\"Employee\\",variables[\\"employee\\"][\\"employee\\"],\\"prefered_email\\")\\nsite_url = frappe.utils.get_url()\\nurl = site_url+\\"/\\"+\\"no-dues-clearance/new?employee_code=\\"+variables[\\"employee\\"][\\"employee\\"]\\nvariables[\\"url\\"] = url\\nvariables[\\"emp_name\\"]=frappe.db.get_value(\\"Employee\\",variables[\\"employee\\"][\\"employee\\"],\\"employee_name\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
-                "position": '{"x":30,"y":390}',
-                "type": "exec_python",
-                "id": "x7qpoATVA-zPBkSD1HZ3i",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedltbso6",
-                "idx": 25,
-                "data": '{"node_label":"Employee Details","python_code":"doc = variables[\\"doc\\"]\\nfrappe.db.set_value(\\"Employee Separation\\",doc.name,\\"boarding_status\\",\\"Reporting Manager Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
-                "position": '{"x":15,"y":-90}',
-                "type": "exec_python",
-                "id": "vwFUiYiSDktVr-ZBal0Kk",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poed2s1utm",
+                "docstatus": 0,
                 "idx": 26,
                 "data": '{"node_label":"Employee Details","python_code":"variables[\\"emp_mail\\"] = frappe.db.get_value(\\"Employee Separation\\",{\\"employee\\":variables[\\"employee\\"][\\"employee\\"]},\\"custom_personal_email_id\\")\\nsite_url = frappe.utils.get_url()\\nurl = site_url+\\"/\\"+\\"exit-interview/new?employee_code=\\"+variables[\\"employee\\"][\\"employee\\"]\\nvariables[\\"url\\"] = url\\nvariables[\\"company\\"]=frappe.db.get_value(\\"Employee\\",variables[\\"employee\\"][\\"employee\\"],\\"company\\")\\nvariables[\\"emp_name\\"]=frappe.db.get_value(\\"Employee\\",variables[\\"employee\\"][\\"employee\\"],\\"employee_name\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":675,"y":165}',
@@ -550,7 +465,22 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poednidufh",
+                "name": "7lh5beoejs",
+                "docstatus": 0,
+                "idx": 27,
+                "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"it\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
+                "position": '{"x":2430,"y":255}',
+                "type": "exec_python",
+                "id": "EgIyCvmMp5E7LrA6FZvpL",
+                "element_type": "Action",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
+                "name": "7lh5oarrm5",
+                "docstatus": 0,
                 "idx": 27,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"it\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1785,"y":225}',
@@ -563,7 +493,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poed6jos09",
+                "name": "7lh5rhn3h7",
+                "docstatus": 0,
                 "idx": 28,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"it\\",\\"Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":2100,"y":225}',
@@ -576,7 +507,22 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh5vfpa5d",
+                "docstatus": 0,
+                "idx": 28,
+                "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"it\\",\\"Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
+                "position": '{"x":2655,"y":180}',
+                "type": "exec_python",
+                "id": "dcPT5aIhHXP2f9RhSdtyM",
+                "element_type": "Action",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poeddklt3b",
+                "docstatus": 0,
                 "idx": 29,
                 "data": '{"doc_type":"No Dues Clearance","doc_name":"{{doc.name}}","role_approval":true,"open_chatnext_assistant":false,"submit":true,"variable_path_for_output":"","role_name":"HR Group Head"}',
                 "position": '{"x":1770,"y":1440}',
@@ -590,6 +536,7 @@ data = [
             },
             {
                 "name": "poedtuepqg",
+                "docstatus": 0,
                 "idx": 30,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"d_access_card\\",\\"Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":3015,"y":405}',
@@ -603,6 +550,7 @@ data = [
             },
             {
                 "name": "poed0l509j",
+                "docstatus": 0,
                 "idx": 31,
                 "type": "smoothstep",
                 "id": "reactflow__edge-bU95RN04CbP4FRFS3btn9output-36aOEmFfTs54lrHwBoQC7input",
@@ -618,6 +566,7 @@ data = [
             },
             {
                 "name": "poedphacq2",
+                "docstatus": 0,
                 "idx": 32,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"d_access_card\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":2580,"y":360}',
@@ -630,22 +579,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poedvbhr7a",
-                "idx": 33,
-                "type": "smoothstep",
-                "id": "reactflow__edge-E9qCpzIS5PuaQqBgg6m_moutput-wlTm0f_62NQaPxgiHortKinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "wlTm0f_62NQaPxgiHortK",
-                "sourcehandle": "output",
-                "source": "E9qCpzIS5PuaQqBgg6m_m",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poeduthdp9",
+                "docstatus": 0,
                 "idx": 34,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"credit_control\\",\\"Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":4770,"y":150}',
@@ -658,37 +593,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poedhju96s",
-                "idx": 35,
-                "type": "smoothstep",
-                "id": "reactflow__edge-x7qpoATVA-zPBkSD1HZ3ioutput-bba7MCTV1X3N73sLju5sGinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "bba7MCTV1X3N73sLju5sG",
-                "sourcehandle": "output",
-                "source": "x7qpoATVA-zPBkSD1HZ3i",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poed3eo54b",
-                "idx": 36,
-                "type": "smoothstep",
-                "id": "reactflow__edge-wlTm0f_62NQaPxgiHortKapproved-BaibRL2axkEkiA8lKZpzeinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "BaibRL2axkEkiA8lKZpze",
-                "sourcehandle": "approved",
-                "source": "wlTm0f_62NQaPxgiHortK",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poeda5cmmj",
+                "docstatus": 0,
                 "idx": 37,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"credit_control\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":4455,"y":300}',
@@ -702,6 +608,7 @@ data = [
             },
             {
                 "name": "poedl8e3uv",
+                "docstatus": 0,
                 "idx": 38,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"erp\\",\\"Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":4140,"y":195}',
@@ -715,6 +622,7 @@ data = [
             },
             {
                 "name": "poedthuib5",
+                "docstatus": 0,
                 "idx": 39,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"erp\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":3765,"y":195}',
@@ -727,7 +635,22 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh5p8qjs7",
+                "docstatus": 0,
+                "idx": 40,
+                "data": '{"submit":true}',
+                "position": '{"x":2820,"y":675}',
+                "type": "wait_for_nodes_to_complete",
+                "id": "5MdavXYaD-m-9P96vxDQl",
+                "element_type": "Action",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poed7e3to2",
+                "docstatus": 0,
                 "idx": 40,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"finance_and_accounts\\",\\"Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1515,"y":1845}',
@@ -741,6 +664,7 @@ data = [
             },
             {
                 "name": "poedljaq9b",
+                "docstatus": 0,
                 "idx": 41,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"finance_and_accounts\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1200,"y":1845}',
@@ -754,6 +678,7 @@ data = [
             },
             {
                 "name": "poedf38m7e",
+                "docstatus": 0,
                 "idx": 42,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"travel_desk\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":3435,"y":195}',
@@ -767,6 +692,7 @@ data = [
             },
             {
                 "name": "poedqli47f",
+                "docstatus": 0,
                 "idx": 43,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"travel_desk\\",\\"Approved\\")\\nfrappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"status\\",\\"In-Progress\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":3180,"y":285}',
@@ -780,6 +706,7 @@ data = [
             },
             {
                 "name": "poedct0cba",
+                "docstatus": 0,
                 "idx": 44,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"hr\\",\\"Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":2040,"y":1620}',
@@ -793,6 +720,7 @@ data = [
             },
             {
                 "name": "poed4hqegj",
+                "docstatus": 0,
                 "idx": 45,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"d_reporting_manager\\",\\"Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":2400,"y":945}',
@@ -806,6 +734,7 @@ data = [
             },
             {
                 "name": "poed42uq37",
+                "docstatus": 0,
                 "idx": 46,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"d_s_reporting_manager\\",\\"Rejected\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1920,"y":1215}',
@@ -819,6 +748,7 @@ data = [
             },
             {
                 "name": "poed5cicv6",
+                "docstatus": 0,
                 "idx": 47,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"hr\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1770,"y":1725}',
@@ -832,6 +762,7 @@ data = [
             },
             {
                 "name": "poedplb31h",
+                "docstatus": 0,
                 "idx": 48,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"d_s_reporting_manager\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1575,"y":1260}',
@@ -845,6 +776,7 @@ data = [
             },
             {
                 "name": "poedkfpiaj",
+                "docstatus": 0,
                 "idx": 49,
                 "data": '{"node_label":"","python_code":"frappe.db.set_value(\\"No Dues Clearance\\",variables[\\"doc\\"][\\"name\\"],\\"d_reporting_manager\\",\\"Approved\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":2220,"y":1080}',
@@ -858,8 +790,9 @@ data = [
             },
             {
                 "name": "poed5o2af2",
+                "docstatus": 0,
                 "idx": 50,
-                "data": '{"bcc": "", "cc": "", "createNewEmailTemplate": false, "email_account": "Email Linking", "email_subject": "", "email_template": "Exit Interview", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{emp_mail}}", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
+                "data": '{"bcc":"","cc":"","createNewEmailTemplate":false,"email_account":"Email Linking","email_subject":"","email_template":"Exit Interview","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{emp_mail}}","select_template":true,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":675,"y":300}',
                 "type": "send_mail",
                 "id": "XdnAVIyT8ng3MUMM95MJr",
@@ -870,72 +803,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poed72um5k",
-                "idx": 51,
-                "data": '{"bcc": "", "cc": "", "createNewEmailTemplate": false, "email_account": "Email Linking", "email_content": "<p>Dear Sir/Madam,</p><p>Your Resignation Has Been Rejected.Please Contact HR Department</p>", "email_subject": "Resignation Application Rejected", "email_template": "Exit Interview", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{doc.custom_personal_email_id}}", "select_template": false, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
-                "position": '{"x":0,"y":60}',
-                "type": "send_mail",
-                "id": "NQFsuFEvoIZ0W4yFYdqRk",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedmurfdn",
-                "idx": 52,
-                "data": '{"bcc": "", "cc": "", "createNewEmailTemplate": false, "email_account": "Email Linking", "email_content": "<p>Dear Sir/Madam,</p><p>Your Resignation Has Been Rejected.Please Contact HR Department</p>", "email_subject": "Resignation Application Rejected", "email_template": "Exit Interview", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{doc.custom_personal_email_id}}", "select_template": false, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
-                "position": '{"x":-45,"y":225}',
-                "type": "send_mail",
-                "id": "HQ_ojugLA6vcNjIw_1Boz",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poednpak4o",
-                "idx": 53,
-                "data": '{"interval":"every_day","submit":true,"variable_path_for_output":""}',
-                "position": '{"x":2130,"y":420}',
-                "type": "cron_node",
-                "id": "Wr7ZUgFsQymOhY7kWNZig",
-                "element_type": "Trigger",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedhukk28",
-                "idx": 54,
-                "data": '{"node_label":"Get Approved NDC","python_code":"emp_list = frappe.db.get_all(\\"No Dues Clearance\\",{\\"status\\":\\"In-Progress\\"})\\napproval_fields = [\\"it\\",\\"hr\\",\\"d_access_card\\",\\"travel_desk\\",\\"erp\\",\\"credit_control\\"]\\napp_emp_list = []\\nfor emp in emp_list:\\n    approval_count = 0\\n    ndc_doc = frappe.get_doc(\\"No Dues Clearance\\",emp.name).as_dict()\\n    for field in approval_fields:\\n        if ndc_doc[field]==\\"Approved\\":\\n            approval_count=approval_count+1\\n    if len(approval_fields)==approval_count:\\n        app_emp_list.append(emp.name)\\nvariables[\\"results\\"]=app_emp_list","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
-                "position": '{"x":2130,"y":540}',
-                "type": "exec_python",
-                "id": "4F-erI4dN_GVfWIT8MEth",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedaoot38",
-                "idx": 55,
-                "data": '{"array_json":"{{results | json}}","array_element_variable":"employee","submit":true,"variable_path_for_output":""}',
-                "position": '{"x":2130,"y":645}',
-                "type": "split_array",
-                "id": "tckxZ6pn8e0vPe1qM0PB_",
-                "element_type": "Action",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poedaf4obr",
+                "docstatus": 0,
                 "idx": 56,
                 "data": '{"node_label":"NDC Doc","python_code":"variables[\\"doc\\"]=frappe.get_doc(\\"No Dues Clearance\\",variables[\\"employee\\"]).as_dict()\\n","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":2130,"y":750}',
@@ -949,6 +818,7 @@ data = [
             },
             {
                 "name": "poeddset97",
+                "docstatus": 0,
                 "idx": 57,
                 "data": '{"node_label":"","use_python_expression":true,"submit":true,"expression":"doc =  variables[\\"doc\\"]\\nif doc[\\"department\\"] == \\"Sales\\":\\n    return True\\nreturn False","variable_path_for_output":""}',
                 "position": '{"x":4440,"y":90}',
@@ -961,37 +831,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poedfc3uqd",
-                "idx": 58,
-                "type": "smoothstep",
-                "id": "reactflow__edge-BaibRL2axkEkiA8lKZpzerejected-HQ_ojugLA6vcNjIw_1Bozinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "HQ_ojugLA6vcNjIw_1Boz",
-                "sourcehandle": "rejected",
-                "source": "BaibRL2axkEkiA8lKZpze",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedgp0vq2",
-                "idx": 59,
-                "type": "smoothstep",
-                "id": "reactflow__edge-wlTm0f_62NQaPxgiHortKrejected-NQFsuFEvoIZ0W4yFYdqRkinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "NQFsuFEvoIZ0W4yFYdqRk",
-                "sourcehandle": "rejected",
-                "source": "wlTm0f_62NQaPxgiHortK",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poedc33fei",
+                "docstatus": 0,
                 "idx": 60,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Li3myOxhJ6zmbrEJUMcSHrejected-Rhz1X-rmMlxTzh5o_N4P5input",
@@ -1007,6 +848,7 @@ data = [
             },
             {
                 "name": "poed147964",
+                "docstatus": 0,
                 "idx": 61,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Li3myOxhJ6zmbrEJUMcSHapproved-olk4b23fEYVVP1LMPUFc4input",
@@ -1022,6 +864,7 @@ data = [
             },
             {
                 "name": "poed55fap3",
+                "docstatus": 0,
                 "idx": 62,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Li3myOxhJ6zmbrEJUMcSHapproved-Ag0nbXECNsMGROFT2vxxzinput",
@@ -1037,6 +880,7 @@ data = [
             },
             {
                 "name": "poeddltam3",
+                "docstatus": 0,
                 "idx": 63,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Ag0nbXECNsMGROFT2vxxzapproved-QuiGI8LBwmo24zY7Jgjtdinput",
@@ -1052,6 +896,7 @@ data = [
             },
             {
                 "name": "poed3d3c5f",
+                "docstatus": 0,
                 "idx": 64,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Ag0nbXECNsMGROFT2vxxzrejected-oOqK_xr0Dbovt3xr2Mji6input",
@@ -1067,6 +912,7 @@ data = [
             },
             {
                 "name": "poedn3f9ef",
+                "docstatus": 0,
                 "idx": 65,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Ag0nbXECNsMGROFT2vxxzapproved-qu2utOHq-FrwOncu2uO3Cinput",
@@ -1082,6 +928,7 @@ data = [
             },
             {
                 "name": "poedvcrdsd",
+                "docstatus": 0,
                 "idx": 66,
                 "type": "smoothstep",
                 "id": "reactflow__edge-qu2utOHq-FrwOncu2uO3Capproved-KU6GMkFGRadrfytAB59D2input",
@@ -1097,6 +944,7 @@ data = [
             },
             {
                 "name": "poed04q5p6",
+                "docstatus": 0,
                 "idx": 67,
                 "type": "smoothstep",
                 "id": "reactflow__edge-7284W2mv5gAn9xUvddQMUoutput-bU95RN04CbP4FRFS3btn9input",
@@ -1112,6 +960,7 @@ data = [
             },
             {
                 "name": "poedv7rqjn",
+                "docstatus": 0,
                 "idx": 68,
                 "type": "smoothstep",
                 "id": "reactflow__edge-KU6GMkFGRadrfytAB59D2approved-AhVrdzYENzrC9Qo3nGu1Rinput",
@@ -1127,6 +976,7 @@ data = [
             },
             {
                 "name": "poed09b41h",
+                "docstatus": 0,
                 "idx": 69,
                 "type": "smoothstep",
                 "id": "reactflow__edge-KU6GMkFGRadrfytAB59D2rejected-V2Msx3OxvloegCURvPcxwinput",
@@ -1142,6 +992,7 @@ data = [
             },
             {
                 "name": "poedf1n1q1",
+                "docstatus": 0,
                 "idx": 70,
                 "type": "smoothstep",
                 "id": "reactflow__edge-dXGe6bUAQ-INE8Z4-UuuYrejected-ZNdOaekkkJUJTPUIIqDU5input",
@@ -1157,6 +1008,7 @@ data = [
             },
             {
                 "name": "poeds80ugl",
+                "docstatus": 0,
                 "idx": 71,
                 "type": "smoothstep",
                 "id": "reactflow__edge-dXGe6bUAQ-INE8Z4-UuuYapproved-HFU8N91bUTj1S2ZtyTUTAinput",
@@ -1172,6 +1024,7 @@ data = [
             },
             {
                 "name": "poedk9780u",
+                "docstatus": 0,
                 "idx": 72,
                 "type": "smoothstep",
                 "id": "reactflow__edge-AdGsQxCDUmMe1oFf9vxSSapproved-VtHhJQjZLDucXX8ohxStlinput",
@@ -1187,6 +1040,7 @@ data = [
             },
             {
                 "name": "poedhaupat",
+                "docstatus": 0,
                 "idx": 73,
                 "type": "smoothstep",
                 "id": "reactflow__edge-AdGsQxCDUmMe1oFf9vxSSrejected-_orTh64c1tf__a3Dq4SaXinput",
@@ -1201,67 +1055,8 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
-                "name": "poedhqk2k2",
-                "idx": 74,
-                "type": "smoothstep",
-                "id": "reactflow__edge-wlTm0f_62NQaPxgiHortKapproved-fGG7sUXwF-KC6adtIXoX3input",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "fGG7sUXwF-KC6adtIXoX3",
-                "sourcehandle": "approved",
-                "source": "wlTm0f_62NQaPxgiHortK",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poediqj78o",
-                "idx": 75,
-                "type": "smoothstep",
-                "id": "reactflow__edge-BaibRL2axkEkiA8lKZpzeapproved-J1Z-hu_OEkSwY5uNU_nrBinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "J1Z-hu_OEkSwY5uNU_nrB",
-                "sourcehandle": "approved",
-                "source": "BaibRL2axkEkiA8lKZpze",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedgdsphe",
-                "idx": 76,
-                "type": "smoothstep",
-                "id": "reactflow__edge-BaibRL2axkEkiA8lKZpzerejected-_1QNDumPylnfX_gEEIvqZinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "_1QNDumPylnfX_gEEIvqZ",
-                "sourcehandle": "rejected",
-                "source": "BaibRL2axkEkiA8lKZpze",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poed3bqc2d",
-                "idx": 77,
-                "type": "smoothstep",
-                "id": "reactflow__edge-wlTm0f_62NQaPxgiHortKrejected-vwFUiYiSDktVr-ZBal0Kkinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "vwFUiYiSDktVr-ZBal0Kk",
-                "sourcehandle": "rejected",
-                "source": "wlTm0f_62NQaPxgiHortK",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
                 "name": "poed14lttj",
+                "docstatus": 0,
                 "idx": 78,
                 "type": "smoothstep",
                 "id": "reactflow__edge-cbzt9bsoyKuSeTWIiCZeloutput-0ro9_bgYuXdJgZi03sralinput",
@@ -1277,6 +1072,7 @@ data = [
             },
             {
                 "name": "poedfvmqju",
+                "docstatus": 0,
                 "idx": 79,
                 "type": "smoothstep",
                 "id": "reactflow__edge-n-7dgpBbcUYdAcR8XpvFYoutput-dXGe6bUAQ-INE8Z4-UuuYinput",
@@ -1292,6 +1088,7 @@ data = [
             },
             {
                 "name": "poedi60uk7",
+                "docstatus": 0,
                 "idx": 80,
                 "type": "smoothstep",
                 "id": "reactflow__edge-n-7dgpBbcUYdAcR8XpvFYoutput-PTmvDkrIMC4RzqPe2CtU5input",
@@ -1306,7 +1103,24 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh5jqm07p",
+                "docstatus": 0,
+                "idx": 81,
+                "type": "smoothstep",
+                "id": "reactflow__edge-j6S0SFaRgRKJ0qhk9oDeaapproved-EgIyCvmMp5E7LrA6FZvpLinput",
+                "element_type": "edge",
+                "targethandle": "input",
+                "target": "EgIyCvmMp5E7LrA6FZvpL",
+                "sourcehandle": "approved",
+                "source": "j6S0SFaRgRKJ0qhk9oDea",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poedp49k09",
+                "docstatus": 0,
                 "idx": 81,
                 "type": "smoothstep",
                 "id": "reactflow__edge-HvJKfUu54q2qe-PBFnCn6approved-3kYAiAz565h5kdfUCVGF4input",
@@ -1321,7 +1135,24 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh51si5t6",
+                "docstatus": 0,
+                "idx": 82,
+                "type": "smoothstep",
+                "id": "reactflow__edge-j6S0SFaRgRKJ0qhk9oDearejected-dcPT5aIhHXP2f9RhSdtyMinput",
+                "element_type": "edge",
+                "targethandle": "input",
+                "target": "dcPT5aIhHXP2f9RhSdtyM",
+                "sourcehandle": "rejected",
+                "source": "j6S0SFaRgRKJ0qhk9oDea",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poedvfa1io",
+                "docstatus": 0,
                 "idx": 82,
                 "type": "smoothstep",
                 "id": "reactflow__edge-PTmvDkrIMC4RzqPe2CtU5yes-zzyCO0fIPEg1BTxvK7JcGinput",
@@ -1336,7 +1167,24 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh5jem0pf",
+                "docstatus": 0,
+                "idx": 83,
+                "type": "smoothstep",
+                "id": "reactflow__edge-okqjRmopXmwPUKDKOahFUoutput-5MdavXYaD-m-9P96vxDQlinput",
+                "element_type": "edge",
+                "targethandle": "input",
+                "target": "5MdavXYaD-m-9P96vxDQl",
+                "sourcehandle": "output",
+                "source": "okqjRmopXmwPUKDKOahFU",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poedl265au",
+                "docstatus": 0,
                 "idx": 83,
                 "type": "smoothstep",
                 "id": "reactflow__edge-HvJKfUu54q2qe-PBFnCn6rejected-nSguv31maF_mc_qkuTJaYinput",
@@ -1351,7 +1199,24 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh58nbr4m",
+                "docstatus": 0,
+                "idx": 84,
+                "type": "smoothstep",
+                "id": "reactflow__edge-EgIyCvmMp5E7LrA6FZvpLoutput-5MdavXYaD-m-9P96vxDQlinput",
+                "element_type": "edge",
+                "targethandle": "input",
+                "target": "5MdavXYaD-m-9P96vxDQl",
+                "sourcehandle": "output",
+                "source": "EgIyCvmMp5E7LrA6FZvpL",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poedc1vnb2",
+                "docstatus": 0,
                 "idx": 84,
                 "type": "smoothstep",
                 "id": "reactflow__edge-KU6GMkFGRadrfytAB59D2approved-HvJKfUu54q2qe-PBFnCn6input",
@@ -1366,7 +1231,24 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh551sjvp",
+                "docstatus": 0,
+                "idx": 85,
+                "type": "smoothstep",
+                "id": "reactflow__edge-VtHhJQjZLDucXX8ohxStloutput-5MdavXYaD-m-9P96vxDQlinput",
+                "element_type": "edge",
+                "targethandle": "input",
+                "target": "5MdavXYaD-m-9P96vxDQl",
+                "sourcehandle": "output",
+                "source": "VtHhJQjZLDucXX8ohxStl",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poedeau3n5",
+                "docstatus": 0,
                 "idx": 85,
                 "type": "smoothstep",
                 "id": "reactflow__edge-36aOEmFfTs54lrHwBoQC7output-qGSiUAfdQRBlzLucjsNz7input",
@@ -1381,7 +1263,24 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh5dt5l42",
+                "docstatus": 0,
+                "idx": 86,
+                "type": "smoothstep",
+                "id": "reactflow__edge-HFU8N91bUTj1S2ZtyTUTAoutput-5MdavXYaD-m-9P96vxDQlinput",
+                "element_type": "edge",
+                "targethandle": "input",
+                "target": "5MdavXYaD-m-9P96vxDQl",
+                "sourcehandle": "output",
+                "source": "HFU8N91bUTj1S2ZtyTUTA",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poedumu60c",
+                "docstatus": 0,
                 "idx": 86,
                 "type": "smoothstep",
                 "id": "reactflow__edge-qGSiUAfdQRBlzLucjsNz7output-XdnAVIyT8ng3MUMM95MJrinput",
@@ -1396,7 +1295,24 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh5ogb29r",
+                "docstatus": 0,
+                "idx": 87,
+                "type": "smoothstep",
+                "id": "reactflow__edge-y4JcIpWEu66OVyAgYwVgcoutput-5MdavXYaD-m-9P96vxDQlinput",
+                "element_type": "edge",
+                "targethandle": "input",
+                "target": "5MdavXYaD-m-9P96vxDQl",
+                "sourcehandle": "output",
+                "source": "y4JcIpWEu66OVyAgYwVgc",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poedn5bp7t",
+                "docstatus": 0,
                 "idx": 87,
                 "type": "smoothstep",
                 "id": "reactflow__edge-n-7dgpBbcUYdAcR8XpvFYoutput-j6S0SFaRgRKJ0qhk9oDeainput",
@@ -1411,7 +1327,24 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh5s3hjfr",
+                "docstatus": 0,
+                "idx": 88,
+                "type": "smoothstep",
+                "id": "reactflow__edge-FvncIwa2CSLs0VUhmF49Youtput-5MdavXYaD-m-9P96vxDQlinput",
+                "element_type": "edge",
+                "targethandle": "input",
+                "target": "5MdavXYaD-m-9P96vxDQl",
+                "sourcehandle": "output",
+                "source": "FvncIwa2CSLs0VUhmF49Y",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poedltik2v",
+                "docstatus": 0,
                 "idx": 88,
                 "type": "smoothstep",
                 "id": "reactflow__edge-n-7dgpBbcUYdAcR8XpvFYoutput-AdGsQxCDUmMe1oFf9vxSSinput",
@@ -1426,7 +1359,24 @@ data = [
                 "doctype": "Funnel Definition",
             },
             {
+                "name": "7lh5hph6ft",
+                "docstatus": 0,
+                "idx": 89,
+                "type": "smoothstep",
+                "id": "reactflow__edge-5MdavXYaD-m-9P96vxDQloutput-gQdtqpJzhPb5zBpOQ_iBJinput",
+                "element_type": "edge",
+                "targethandle": "input",
+                "target": "gQdtqpJzhPb5zBpOQ_iBJ",
+                "sourcehandle": "output",
+                "source": "5MdavXYaD-m-9P96vxDQl",
+                "parent": "Employee Separation",
+                "parentfield": "funnel_definition",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Definition",
+            },
+            {
                 "name": "poedi372mm",
+                "docstatus": 0,
                 "idx": 89,
                 "type": "smoothstep",
                 "id": "reactflow__edge-n-7dgpBbcUYdAcR8XpvFYoutput-Sh4aBSCKuAaU0H_BtMmoPinput",
@@ -1442,6 +1392,7 @@ data = [
             },
             {
                 "name": "poedcpj75s",
+                "docstatus": 0,
                 "idx": 90,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Sh4aBSCKuAaU0H_BtMmoPrejected-0MO9kyirq38Acue_VqUzNinput",
@@ -1457,6 +1408,7 @@ data = [
             },
             {
                 "name": "poed39rg0c",
+                "docstatus": 0,
                 "idx": 91,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Sh4aBSCKuAaU0H_BtMmoPapproved-okqjRmopXmwPUKDKOahFUinput",
@@ -1472,6 +1424,7 @@ data = [
             },
             {
                 "name": "poed8o5hij",
+                "docstatus": 0,
                 "idx": 92,
                 "type": "smoothstep",
                 "id": "reactflow__edge-n-7dgpBbcUYdAcR8XpvFYoutput-yusJ3Q5uQKoBYBIvqgoyRinput",
@@ -1487,6 +1440,7 @@ data = [
             },
             {
                 "name": "poed9tjhiu",
+                "docstatus": 0,
                 "idx": 93,
                 "type": "smoothstep",
                 "id": "reactflow__edge-yusJ3Q5uQKoBYBIvqgoyRapproved-y4JcIpWEu66OVyAgYwVgcinput",
@@ -1502,6 +1456,7 @@ data = [
             },
             {
                 "name": "poed1i1arm",
+                "docstatus": 0,
                 "idx": 94,
                 "type": "smoothstep",
                 "id": "reactflow__edge-yusJ3Q5uQKoBYBIvqgoyRrejected-feSI8Qk4GZ-6fZnwSdJ9dinput",
@@ -1517,6 +1472,7 @@ data = [
             },
             {
                 "name": "poediren0p",
+                "docstatus": 0,
                 "idx": 95,
                 "type": "smoothstep",
                 "id": "reactflow__edge-zzyCO0fIPEg1BTxvK7JcGrejected-Y0vJbKedjl4uUpXJ6GHOminput",
@@ -1532,6 +1488,7 @@ data = [
             },
             {
                 "name": "poedlsr0d3",
+                "docstatus": 0,
                 "idx": 96,
                 "type": "smoothstep",
                 "id": "reactflow__edge-zzyCO0fIPEg1BTxvK7JcGapproved-FvncIwa2CSLs0VUhmF49Yinput",
@@ -1547,6 +1504,7 @@ data = [
             },
             {
                 "name": "poedngpg2v",
+                "docstatus": 0,
                 "idx": 97,
                 "type": "smoothstep",
                 "id": "reactflow__edge-gQdtqpJzhPb5zBpOQ_iBJoutput-Li3myOxhJ6zmbrEJUMcSHinput",
@@ -1560,56 +1518,13 @@ data = [
                 "parenttype": "Funnel",
                 "doctype": "Funnel Definition",
             },
-            {
-                "name": "poedli4db0",
-                "idx": 98,
-                "type": "smoothstep",
-                "id": "reactflow__edge-tckxZ6pn8e0vPe1qM0PB_output-gQdtqpJzhPb5zBpOQ_iBJinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "gQdtqpJzhPb5zBpOQ_iBJ",
-                "sourcehandle": "output",
-                "source": "tckxZ6pn8e0vPe1qM0PB_",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedbh97n9",
-                "idx": 99,
-                "type": "smoothstep",
-                "id": "reactflow__edge-Wr7ZUgFsQymOhY7kWNZigoutput-4F-erI4dN_GVfWIT8MEthinput",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "4F-erI4dN_GVfWIT8MEth",
-                "sourcehandle": "output",
-                "source": "Wr7ZUgFsQymOhY7kWNZig",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
-            {
-                "name": "poedm8h5o2",
-                "idx": 100,
-                "type": "smoothstep",
-                "id": "reactflow__edge-4F-erI4dN_GVfWIT8MEthoutput-tckxZ6pn8e0vPe1qM0PB_input",
-                "element_type": "edge",
-                "targethandle": "input",
-                "target": "tckxZ6pn8e0vPe1qM0PB_",
-                "sourcehandle": "output",
-                "source": "4F-erI4dN_GVfWIT8MEth",
-                "parent": "Employee Separation",
-                "parentfield": "funnel_definition",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Definition",
-            },
         ],
+        "funnel_access": [],
     },
     # job applicant approval management
     {
         "name": "Job Applicant-Approval Management Funnels",
+        "docstatus": 0,
         "idx": 0,
         "archived": 0,
         "funnel_name": "Job Applicant-Approval Management Funnels",
@@ -1619,35 +1534,10 @@ data = [
         "variable_list": "[]",
         "assistant_form_fields": "{}",
         "doctype": "Funnel",
-        "funnel_access": [
-            {
-                "name": "hcskua3v1p",
-                "idx": 1,
-                "role": "Recruitment User",
-                "can_execute": 1,
-                "can_modify": 0,
-                "can_view": 0,
-                "parent": "Job Applicant-Approval Management Funnels",
-                "parentfield": "funnel_access",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Access",
-            },
-            {
-                "name": "hcskgh2a09",
-                "idx": 2,
-                "role": "Recruiter Admin",
-                "can_execute": 0,
-                "can_modify": 0,
-                "can_view": 0,
-                "parent": "Job Applicant-Approval Management Funnels",
-                "parentfield": "funnel_access",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Access",
-            },
-        ],
         "funnel_definition": [
             {
                 "name": "0g7gfih4jj",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"node_label":"Job Applicant Offer Status","python_code":"doc = variables[\\"doc\\"]\\nif doc[\\"status\\"] == \\"Accepted\\":\\n\\tfrappe.db.set_value(\\"Job Applicant\\",doc[\\"job_applicant\\"],\\"status\\",\\"Offer Accepted\\")\\nif doc[\\"status\\"] == \\"Rejected\\":\\n\\tfrappe.db.set_value(\\"Job Applicant\\",doc[\\"job_applicant\\"],\\"status\\",\\"Offer Rejected\\")","skip_queue_and_execute_immediately":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1785,"y":960}',
@@ -1661,6 +1551,7 @@ data = [
             },
             {
                 "name": "0g7gjs3582",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"name_of_action":"Get Applicant Details","page_type":"doctype","node_label":"Get Applicant Details","submit":true,"doctype":"Job Applicant"}',
                 "position": '{"x":-1215,"y":795}',
@@ -1674,6 +1565,7 @@ data = [
             },
             {
                 "name": "hcsk795bt1",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"name_of_action":"Request Approval from Management","page_type":"doctype","node_label":"Request Approval from Management","submit":true,"doctype":"Job Applicant","variable_path_for_output":"","show_as_button":true,"button_label":"Request Management Approval"}',
                 "position": '{"x":-150,"y":-390}',
@@ -1687,6 +1579,7 @@ data = [
             },
             {
                 "name": "0g7g4f017t",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"submit":true,"doctype":"Job Offer","variable_path_for_output":""}',
                 "position": '{"x":-1785,"y":840}',
@@ -1700,6 +1593,7 @@ data = [
             },
             {
                 "name": "0g7guvc8bq",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"selectFunnel":"Job Applicant Details","variablesJson":"{\\"doc_data\\": {{doc_json}}}","multiple_usage":true,"variable":"link","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1215,"y":945}',
@@ -1713,6 +1607,7 @@ data = [
             },
             {
                 "name": "hcskudpekp",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"name_of_action":"Request Approval From HR Head","page_type":"doctype","node_label":"Request Approval From HR Head","submit":true,"doctype":"Job Applicant","variable_path_for_output":"","show_as_button":true,"button_label":"Request approval from HR Head "}',
                 "position": '{"x":-1485,"y":-315}',
@@ -1726,8 +1621,9 @@ data = [
             },
             {
                 "name": "0g7g96hslu",
+                "docstatus": 0,
                 "idx": 3,
-                "data": '{"attach_print":false,"bcc":"","cc":"","docname":"{{docname}}","doctype":"Job Applicant","email_account":"Email Linking","email_content":"<p>Dear{{doc[\\"applicant_name\\"]}},</p><p>To proceed with your application, we kindly request you to provide some additional information. Please fill out the form at the following link:</p><p>{{link}}</p><p>Your prompt response will help us move forward with your application. If you have any questions or need assistance, feel free to reach out.</p><p>Thank you for your cooperation.</p><p>Best regards,</p><p>ChatNext Assistant </p>","email_subject":"Request for Additional Information","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{doc[\\"email_id\\"]}}","select_template":false,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
+                "data": '{"attach_print": false, "bcc": "", "cc": "", "docname": "{{docname}}", "doctype": "Job Applicant", "email_account": "Email Linking", "email_content": "<p>Dear{{doc[\\"applicant_name\\"]}},</p><p>To proceed with your application, we kindly request you to provide some additional information. Please fill out the form at the following link:</p><p>{{link}}</p><p>Your prompt response will help us move forward with your application. If you have any questions or need assistance, feel free to reach out.</p><p>Thank you for your cooperation.</p><p>Best regards,</p><p>ChatNext Assistant </p>", "email_subject": "Request for Additional Information", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{doc[\\"email_id\\"]}}", "select_template": false, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
                 "position": '{"x":-1215,"y":1005}',
                 "type": "send_mail",
                 "id": "QaEj0QudGeoKk_MmPXOwv",
@@ -1739,6 +1635,7 @@ data = [
             },
             {
                 "name": "hcskgatpbd",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"doc_type":"Job Applicant","doc_name":"{{doc.name}}","role_approval":true,"open_chatnext_assistant":true,"submit":true,"variable_path_for_output":"","role_name":"Recruitment User","user_id":"","required_fields":""}',
                 "position": '{"x":-1485,"y":45}',
@@ -1752,6 +1649,7 @@ data = [
             },
             {
                 "name": "0g7gbhsi25",
+                "docstatus": 0,
                 "idx": 4,
                 "type": "smoothstep",
                 "id": "zo3kt37U0Eyr5e0TrnfAX",
@@ -1767,6 +1665,7 @@ data = [
             },
             {
                 "name": "0g7gq5ls67",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"message":"Mail Send Successfully","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1215,"y":1110}',
@@ -1780,6 +1679,7 @@ data = [
             },
             {
                 "name": "hcskr1fp6m",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"node_label":"Rejected By Management 1","python_code":"doc = variables.get(\\"doc\\")\\nmanagement_name=frappe.db.get_value(\\"User\\", variables.get(\\"trigger_user_id\\"), \\"full_name\\")\\nvariables[\\"management_name\\"]=management_name\\nfrappe.db.set_value(\\"Job Applicant\\",doc.name,\\"status\\",\\"Rejected\\")\\n","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":255,"y":30}',
@@ -1793,6 +1693,7 @@ data = [
             },
             {
                 "name": "0g7gvd9no9",
+                "docstatus": 0,
                 "idx": 5,
                 "data": '{"node_label":"Dict to Str","python_code":"variables[\\"doc_json\\"]=json.dumps(variables[\\"doc\\"],default=str)\\n","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1215,"y":870}',
@@ -1806,6 +1707,7 @@ data = [
             },
             {
                 "name": "hcsksn4jtd",
+                "docstatus": 0,
                 "idx": 5,
                 "data": '{"node_label":"Rejected By HR Head","python_code":"doc = variables.get(\\"doc\\")\\nhr_head_name=frappe.db.get_value(\\"User\\", variables.get(\\"trigger_user_id\\"), \\"full_name\\")\\nvariables[\\"hr_head_name\\"]=hr_head_name\\nfrappe.db.set_value(\\"Job Applicant\\",doc.name,\\"status\\",\\"Rejected\\")\\n","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1170,"y":105}',
@@ -1819,6 +1721,7 @@ data = [
             },
             {
                 "name": "0g7g49154d",
+                "docstatus": 0,
                 "idx": 6,
                 "type": "smoothstep",
                 "id": "LjjuoUPdoP_Edwqr7075m",
@@ -1834,6 +1737,7 @@ data = [
             },
             {
                 "name": "hcskg78og4",
+                "docstatus": 0,
                 "idx": 6,
                 "data": '{"node_label":"Rejected By Management 2","python_code":"doc = variables.get(\\"doc\\")\\nmanagement_name=frappe.db.get_value(\\"User\\", variables.get(\\"trigger_user_id\\"), \\"full_name\\")\\nvariables[\\"management_name\\"]=management_name\\nfrappe.db.set_value(\\"Job Applicant\\",doc.name,\\"status\\",\\"Rejected\\")\\n","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":195,"y":285}',
@@ -1847,6 +1751,7 @@ data = [
             },
             {
                 "name": "0g7gkv63e2",
+                "docstatus": 0,
                 "idx": 7,
                 "type": "smoothstep",
                 "id": "i6qVLz4mhu3oUlp4yisrD",
@@ -1862,6 +1767,7 @@ data = [
             },
             {
                 "name": "hcsk40enka",
+                "docstatus": 0,
                 "idx": 7,
                 "data": '{"doc_type":"Job Applicant","doc_name":"{{doc.name}}","role_approval":false,"user_id":"kunj.naik@minix.co.in","open_chatnext_assistant":true,"submit":true,"variable_path_for_output":"","required_fields":""}',
                 "position": '{"x":-150,"y":60}',
@@ -1875,6 +1781,7 @@ data = [
             },
             {
                 "name": "0g7gmeope8",
+                "docstatus": 0,
                 "idx": 8,
                 "type": "smoothstep",
                 "id": "i0aZ1KJBWdwHYS-tqUg_X",
@@ -1890,6 +1797,7 @@ data = [
             },
             {
                 "name": "hcskf3qq0b",
+                "docstatus": 0,
                 "idx": 8,
                 "data": '{"doc_type":"Job Applicant","doc_name":"{{doc.name}}","role_approval":false,"user_id":"shahbaz.bilakhia@m3investment.co.in","open_chatnext_assistant":true,"submit":true,"variable_path_for_output":"","required_fields":""}',
                 "position": '{"x":-150,"y":240}',
@@ -1903,6 +1811,7 @@ data = [
             },
             {
                 "name": "0g7gdi0va6",
+                "docstatus": 0,
                 "idx": 9,
                 "type": "smoothstep",
                 "id": "FBJv_B1vXyNlVslwqQE3W",
@@ -1918,8 +1827,9 @@ data = [
             },
             {
                 "name": "hcskruufp5",
+                "docstatus": 0,
                 "idx": 9,
-                "data": '{"attach_print":false,"bcc":"","cc":"","docname":"{{doc.name}}","doctype":"Job Applicant","email_account":"Email Linking","email_content":"<p>Dear {{recruiter_name}},</p><p>The job applicant {{applicant_name}} has been reviewed and unfortunately, they have been rejected by the HR Head.</p><p>You can view the details of the rejection and the applicant\'s profile by following this link:{{url}}</p><p>Thanks &amp; Regards,</p><p>{{hr_head_name}}</p>","email_subject":"Job Applicant Rejection Notification","link_doctype":true,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{trigger_user_id}}","select_template":false,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":"","attach_prints":false}',
+                "data": '{"attach_print": false, "bcc": "", "cc": "", "docname": "{{doc.name}}", "doctype": "Job Applicant", "email_account": "Email Linking", "email_content": "<p>Dear {{recruiter_name}},</p><p>The job applicant {{applicant_name}} has been reviewed and unfortunately, they have been rejected by the HR Head.</p><p>You can view the details of the rejection and the applicant\'s profile by following this link:{{url}}</p><p>Thanks &amp; Regards,</p><p>{{hr_head_name}}</p>", "email_subject": "Job Applicant Rejection Notification", "link_doctype": true, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{trigger_user_id}}", "select_template": false, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": "", "attach_prints": false}',
                 "position": '{"x":-1170,"y":270}',
                 "type": "send_mail",
                 "id": "0ji98EKdWORtmdXG-HeP-",
@@ -1931,6 +1841,7 @@ data = [
             },
             {
                 "name": "hcsk5bs9dn",
+                "docstatus": 0,
                 "idx": 10,
                 "data": '{"node_label":"Generate Applicant Url","python_code":"doc = variables.get(\\"doc\\")\\nrecruiter_name=frappe.db.get_value(\\"User\\", variables.get(\\"trigger_user_id\\"), \\"full_name\\")\\nvariables[\\"recruiter_name\\"]=recruiter_name\\nfrappe.db.set_value(\\"Job Applicant\\",doc.name,\\"status\\",\\"Management-1 Approval Pending\\")\\nsite_url=frappe.utils.get_url()\\nurl=site_url+\\"/app/job-applicant/\\"+doc.name\\nvariables[\\"url\\"] = url\\n\\n","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-150,"y":-195}',
@@ -1944,6 +1855,7 @@ data = [
             },
             {
                 "name": "hcsk77qmcp",
+                "docstatus": 0,
                 "idx": 11,
                 "data": '{"node_label":"Generate Applicant Url","python_code":"doc = variables.get(\\"doc\\")\\nrecruiter_name=frappe.db.get_value(\\"User\\", variables.get(\\"trigger_user_id\\"), \\"full_name\\")\\nvariables[\\"recruiter_name\\"]=recruiter_name\\nfrappe.db.set_value(\\"Job Applicant\\",doc.name,\\"status\\",\\"Offer to be Sent\\")\\nsite_url=frappe.utils.get_url()\\nurl=site_url+\\"/app/job-applicant/\\"+doc.name\\nvariables[\\"url\\"] = url\\n\\n","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":825,"y":-135}',
@@ -1957,6 +1869,7 @@ data = [
             },
             {
                 "name": "0g7gcmmg9l",
+                "docstatus": 0,
                 "idx": 12,
                 "data": '{"name_of_action":"Fill detail from resume","page_type":"doctype","node_label":"Fill detail from resume","submit":true,"variable_path_for_output":"","doctype":"Job Applicant"}',
                 "position": '{"x":-450,"y":885}',
@@ -1970,6 +1883,7 @@ data = [
             },
             {
                 "name": "hcskf618a5",
+                "docstatus": 0,
                 "idx": 12,
                 "data": '{"node_label":"Generate Applicant Url","python_code":"doc = variables.get(\\"doc\\")\\nsite_url=frappe.utils.get_url()\\nurl=site_url+\\"/app/job-applicant/\\"+doc.name\\nhr_heads = frappe.db.sql(\\"\\"\\"\\nSELECT user.name,user.full_name\\nFROM `tabUser` user\\nJOIN `tabHas Role` has_role ON has_role.parent = user.name\\nWHERE has_role.role = %s\\n\\"\\"\\", (\\"HR Head\\",), as_dict=True)\\nmails = \',\'.join([item[\'name\'] for item in hr_heads])\\nhr_head_names = \',\'.join([item[\'full_name\'] for item in hr_heads])\\nrecruiter_name=frappe.db.get_value(\\"User\\", variables.get(\\"trigger_user_id\\"), \\"full_name\\")\\nvariables[\\"url\\"] = url\\nvariables[\\"hr_heads_str\\"]=mails\\nvariables[\\"hr_head_names\\"]=hr_head_names\\nvariables[\\"recruiter_id\\"]=variables.get(\\"trigger_user_id\\")\\nvariables[\\"recruiter_name\\"]=recruiter_name\\nfrappe.db.set_value(\\"Job Applicant\\",doc.name,\\"status\\",\\"HR Head Approval Pending\\")\\n\\n\\n","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1485,"y":-225}',
@@ -1983,6 +1897,7 @@ data = [
             },
             {
                 "name": "0g7g5rv1b8",
+                "docstatus": 0,
                 "idx": 13,
                 "data": '{"file_url_path":"{{resume_path}}","ocr_variable":"file_data","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-795,"y":1035}',
@@ -1996,8 +1911,9 @@ data = [
             },
             {
                 "name": "hcsk1rufo0",
+                "docstatus": 0,
                 "idx": 13,
-                "data": '{"attach_print":false,"bcc":"","cc":"","docname":"{{doc.name}}","doctype":"Job Applicant","email_account":"Email Linking","email_content":"<p>Dear {{recruiter_name}},</p><p>The job applicant {{doc.applicant_name}} has been reviewed and unfortunately, they have been rejected by the 1st Approval of Management.</p><p>You can view the details of the rejection and the applicant\'s profile by following this link:{{url}}</p><p>Thanks &amp; Regards,</p><p>{{management_name}}</p>","email_subject":"Job Applicant Rejection Notification","link_doctype":true,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{trigger_user_id}}","select_template":false,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":"","attach_prints":false}',
+                "data": '{"attach_print": false, "bcc": "", "cc": "", "docname": "{{doc.name}}", "doctype": "Job Applicant", "email_account": "Email Linking", "email_content": "<p>Dear {{recruiter_name}},</p><p>The job applicant {{doc.applicant_name}} has been reviewed and unfortunately, they have been rejected by the 1st Approval of Management.</p><p>You can view the details of the rejection and the applicant\'s profile by following this link:{{url}}</p><p>Thanks &amp; Regards,</p><p>{{management_name}}</p>", "email_subject": "Job Applicant Rejection Notification", "link_doctype": true, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{trigger_user_id}}", "select_template": false, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": "", "attach_prints": false}',
                 "position": '{"x":255,"y":165}',
                 "type": "send_mail",
                 "id": "56vHx59-7ux9GSvgH1vU2",
@@ -2009,8 +1925,9 @@ data = [
             },
             {
                 "name": "hcskgl25ng",
+                "docstatus": 0,
                 "idx": 14,
-                "data": '{"attach_print":false,"bcc":"","cc":"","docname":"{{doc.name}}","doctype":"Job Applicant","email_account":"Email Linking","email_content":"<p>Dear {{recruiter_name}},</p><p>The job applicant {{doc.applicant_name}} has been reviewed and unfortunately, they have been rejected by the 2nd Approval of Management.</p><p>You can view the details of the rejection and the applicant\'s profile by following this link:{{url}}</p><p>Thanks &amp; Regards,</p><p>{{management_name}}</p>","email_subject":"Job Applicant Rejection Notification","link_doctype":true,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{trigger_user_id}}","select_template":false,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":"","attach_prints":false}',
+                "data": '{"attach_print": false, "bcc": "", "cc": "", "docname": "{{doc.name}}", "doctype": "Job Applicant", "email_account": "Email Linking", "email_content": "<p>Dear {{recruiter_name}},</p><p>The job applicant {{doc.applicant_name}} has been reviewed and unfortunately, they have been rejected by the 2nd Approval of Management.</p><p>You can view the details of the rejection and the applicant\'s profile by following this link:{{url}}</p><p>Thanks &amp; Regards,</p><p>{{management_name}}</p>", "email_subject": "Job Applicant Rejection Notification", "link_doctype": true, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{trigger_user_id}}", "select_template": false, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": "", "attach_prints": false}',
                 "position": '{"x":195,"y":450}',
                 "type": "send_mail",
                 "id": "UM0Dl3g-J4oyuuqyM5HZW",
@@ -2022,6 +1939,7 @@ data = [
             },
             {
                 "name": "hcskqmrfob",
+                "docstatus": 0,
                 "idx": 15,
                 "data": '{"message":"Thanks! I have requested for approval","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-150,"y":-300}',
@@ -2035,6 +1953,7 @@ data = [
             },
             {
                 "name": "hcskbsclpd",
+                "docstatus": 0,
                 "idx": 16,
                 "data": '{"message":"Thanks! I have requested for approval to {{hr_head_names}}","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1485,"y":-135}',
@@ -2048,6 +1967,7 @@ data = [
             },
             {
                 "name": "0g7givcvc5",
+                "docstatus": 0,
                 "idx": 17,
                 "data": '{"doctype":"Job Applicant","doc_variable":"ocr_json_data","submit":true,"variable_path_for_output":"","doctype_data":"{{file_data}}\\n\\nAnd protfolio link in the \'resume_link\' field\\nAnd also identify programing language user has proficient in, and return that data in the \'tag\' field.","select_doctype_fields":["applicant_name","email_id","phone_number","resume_attachment","resume_link","custom_linkedin_url","custom_gender","custom_home_town","custom_total_experience","custom_current_company_name","custom_current_designation","custom_address","custom_martial_status","custom_headline"]}',
                 "position": '{"x":-795,"y":1095}',
@@ -2061,8 +1981,9 @@ data = [
             },
             {
                 "name": "hcskickfr4",
+                "docstatus": 0,
                 "idx": 17,
-                "data": '{"attach_print":false,"bcc":"","cc":"","docname":"{{doc.name}}","doctype":"Job Applicant","email_account":"Email Linking","email_content":"<p>Dear Recruiter,</p><p>The job applicant {{doc.applicant_name}} has been reviewed and approved by the Management.</p><p>You can view the details of the approval and the applicant\'s profile by following this link: {{url}}.</p><p>Thanks &amp; Regards,<br>Management</p><p></p><p></p>","email_subject":"Job Applicant Approval Notification","link_doctype":true,"recepients":[{"recepientField":"","recipient":"","cc":""}],"recipients":"ami.rughani@merillife.com","select_template":true,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":"","attach_prints":false,"email_template":"Post Approval of Management","createNewEmailTemplate":false}',
+                "data": '{"attach_print": false, "bcc": "", "cc": "", "docname": "{{doc.name}}", "doctype": "Job Applicant", "email_account": "Email Linking", "email_content": "<p>Dear Recruiter,</p><p>The job applicant {{doc.applicant_name}} has been reviewed and approved by the Management.</p><p>You can view the details of the approval and the applicant\'s profile by following this link: {{url}}.</p><p>Thanks &amp; Regards,<br>Management</p><p></p><p></p>", "email_subject": "Job Applicant Approval Notification", "link_doctype": true, "recepients": [{"recepientField": "", "recipient": "", "cc": ""}], "recipients": "ami.rughani@merillife.com", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": "", "attach_prints": false, "email_template": "Post Approval of Management", "createNewEmailTemplate": false}',
                 "position": '{"x":-150,"y":615}',
                 "type": "send_mail",
                 "id": "autHh_HekbcqkTL1h9t50",
@@ -2074,6 +1995,7 @@ data = [
             },
             {
                 "name": "0g7gdev8ht",
+                "docstatus": 0,
                 "idx": 18,
                 "data": '{"node_label":"Update Job Applicant","submit":true,"docTypeJson":"{{json_data}}","variable_path_for_output":"updated_job_applicant"}',
                 "position": '{"x":-795,"y":1380}',
@@ -2087,6 +2009,7 @@ data = [
             },
             {
                 "name": "hcskq2klr6",
+                "docstatus": 0,
                 "idx": 18,
                 "data": '{"message":"Thanks, I have passed it forward for the subsequent approvals.","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-480,"y":120}',
@@ -2100,6 +2023,7 @@ data = [
             },
             {
                 "name": "hcskh6crj1",
+                "docstatus": 0,
                 "idx": 19,
                 "data": '{"message":"Thanks, I have passed it forward for the subsequent approvals.","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-150,"y":330}',
@@ -2113,6 +2037,7 @@ data = [
             },
             {
                 "name": "hcskfoc3td",
+                "docstatus": 0,
                 "idx": 20,
                 "data": '{"message":"Thanks, I have passed it forward for the subsequent approvals.","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1485,"y":165}',
@@ -2126,6 +2051,7 @@ data = [
             },
             {
                 "name": "hcskb2v2ve",
+                "docstatus": 0,
                 "idx": 21,
                 "type": "smoothstep",
                 "id": "reactflow__edge-fOA2MQvk4Lcd84RZfKjzzrejected-wtn0owg_LbeH57ij9aUu0input",
@@ -2141,6 +2067,7 @@ data = [
             },
             {
                 "name": "0g7gp7hs2j",
+                "docstatus": 0,
                 "idx": 22,
                 "data": '{"node_label":"Create Job Applicant","submit":true,"variable_path_for_output":"created_job_applicant","docTypeJson":"{{json_data}}"}',
                 "position": '{"x":-150,"y":1305}',
@@ -2154,8 +2081,9 @@ data = [
             },
             {
                 "name": "hcskgmf5uc",
+                "docstatus": 0,
                 "idx": 22,
-                "data": '{"email_account":"Email Linking","select_template":true,"send_to_assigned_users":false,"recepients":[{"recepientField":"","recipient":"","cc":""}],"link_doctype":true,"attach_prints":false,"submit":true,"variable_path_for_output":"","recipients":"kunj.naik@minix.co.in","cc":"","bcc":"","email_template":"Pre Approval of Management","createNewEmailTemplate":false,"doctype":"Job Applicant","docname":"{{doc.name}}","email_subject":""}',
+                "data": '{"email_account": "Email Linking", "select_template": true, "send_to_assigned_users": false, "recepients": [{"recepientField": "", "recipient": "", "cc": ""}], "link_doctype": true, "attach_prints": false, "submit": true, "variable_path_for_output": "", "recipients": "kunj.naik@minix.co.in", "cc": "", "bcc": "", "email_template": "Pre Approval of Management", "createNewEmailTemplate": false, "doctype": "Job Applicant", "docname": "{{doc.name}}", "email_subject": ""}',
                 "position": '{"x":-150,"y":-75}',
                 "type": "send_mail",
                 "id": "ngLHDkBaDEw2u3dy_PRLs",
@@ -2167,6 +2095,7 @@ data = [
             },
             {
                 "name": "0g7gmoe0nj",
+                "docstatus": 0,
                 "idx": 23,
                 "data": '{"doctype":"{{doctype}}","docname":"{{docname}}","tags":"{{tag_data}}","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-795,"y":1305}',
@@ -2180,8 +2109,9 @@ data = [
             },
             {
                 "name": "hcskjli9rn",
+                "docstatus": 0,
                 "idx": 23,
-                "data": '{"email_account":"Email Linking","select_template":true,"send_to_assigned_users":false,"recepients":[{"recepientField":"","recipient":"","cc":""}],"link_doctype":true,"attach_prints":false,"submit":true,"variable_path_for_output":"","recipients":"ami.rughani@merillife.com","cc":"","bcc":"","email_template":"Request to Offer Admin","createNewEmailTemplate":false,"doctype":"Job Applicant","docname":"{{doc.name}}","email_subject":""}',
+                "data": '{"email_account": "Email Linking", "select_template": true, "send_to_assigned_users": false, "recepients": [{"recepientField": "", "recipient": "", "cc": ""}], "link_doctype": true, "attach_prints": false, "submit": true, "variable_path_for_output": "", "recipients": "ami.rughani@merillife.com", "cc": "", "bcc": "", "email_template": "Request to Offer Admin", "createNewEmailTemplate": false, "doctype": "Job Applicant", "docname": "{{doc.name}}", "email_subject": ""}',
                 "position": '{"x":825,"y":-45}',
                 "type": "send_mail",
                 "id": "oh4OZG2JKd7R7fe-HF-uI",
@@ -2193,6 +2123,7 @@ data = [
             },
             {
                 "name": "0g7gl7kgnp",
+                "docstatus": 0,
                 "idx": 24,
                 "data": '{"doctype":"Job Applicant","action":"after_insert","submit":true}',
                 "position": '{"x":-795,"y":885}',
@@ -2206,8 +2137,9 @@ data = [
             },
             {
                 "name": "hcskldonr2",
+                "docstatus": 0,
                 "idx": 24,
-                "data": '{"email_account":"Email Linking","select_template":true,"send_to_assigned_users":false,"recepients":[{"recepientField":"","recipient":"","cc":""}],"link_doctype":true,"attach_prints":false,"submit":true,"variable_path_for_output":"","recipients":"shahbaz.bilakhia@m3investment.co.in","cc":"","bcc":"","email_template":"Pre Approval of Management","createNewEmailTemplate":false,"doctype":"Job Applicant","docname":"{{doc.name}}","email_subject":""}',
+                "data": '{"email_account": "Email Linking", "select_template": true, "send_to_assigned_users": false, "recepients": [{"recepientField": "", "recipient": "", "cc": ""}], "link_doctype": true, "attach_prints": false, "submit": true, "variable_path_for_output": "", "recipients": "shahbaz.bilakhia@m3investment.co.in", "cc": "", "bcc": "", "email_template": "Pre Approval of Management", "createNewEmailTemplate": false, "doctype": "Job Applicant", "docname": "{{doc.name}}", "email_subject": ""}',
                 "position": '{"x":-480,"y":300}',
                 "type": "send_mail",
                 "id": "xYNYEezsrbCtknazHaSn9",
@@ -2219,8 +2151,9 @@ data = [
             },
             {
                 "name": "hcsk60dbla",
+                "docstatus": 0,
                 "idx": 25,
-                "data": '{"email_account":"Email Linking","select_template":true,"send_to_assigned_users":false,"recepients":[{"recepientField":"","recipient":"","cc":""}],"link_doctype":true,"attach_prints":false,"submit":true,"variable_path_for_output":"","recipients":"{{hr_heads_str}}","cc":"","bcc":"","email_template":"Pre Approval of HR Head","createNewEmailTemplate":false,"doctype":"Job Applicant","docname":"{{doc.name}}","email_subject":""}',
+                "data": '{"email_account": "Email Linking", "select_template": true, "send_to_assigned_users": false, "recepients": [{"recepientField": "", "recipient": "", "cc": ""}], "link_doctype": true, "attach_prints": false, "submit": true, "variable_path_for_output": "", "recipients": "{{hr_heads_str}}", "cc": "", "bcc": "", "email_template": "Pre Approval of HR Head", "createNewEmailTemplate": false, "doctype": "Job Applicant", "docname": "{{doc.name}}", "email_subject": ""}',
                 "position": '{"x":-1485,"y":-30}',
                 "type": "send_mail",
                 "id": "xZfgUlcFEnx3QxN3V0DKd",
@@ -2232,6 +2165,7 @@ data = [
             },
             {
                 "name": "0g7giu88l4",
+                "docstatus": 0,
                 "idx": 26,
                 "data": '{"node_label":"Check Action Type","python_code":"# do required updates\\n# update variable e.g.\\n# variables[\\"test\\"] = \\"test\\"\\n\\nis_update = variables.get(\\"is_update\\")\\n\\nif is_update:\\n    return False\\n\\nreturn True\\n\\n","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-435,"y":1215}',
@@ -2245,6 +2179,7 @@ data = [
             },
             {
                 "name": "hcsk1ki78c",
+                "docstatus": 0,
                 "idx": 26,
                 "data": '{"message":"Thanks! I have marked the candidate as rejected and informed the concerned recruiter.","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1170,"y":180}',
@@ -2258,6 +2193,7 @@ data = [
             },
             {
                 "name": "hcskn4gtt1",
+                "docstatus": 0,
                 "idx": 27,
                 "data": '{"message":"Thanks! I have marked the candidate as rejected and informed the concerned recruiter.","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":195,"y":360}',
@@ -2271,6 +2207,7 @@ data = [
             },
             {
                 "name": "0g7gam9vqp",
+                "docstatus": 0,
                 "idx": 28,
                 "data": '{"node_label":"Tag extractions","python_code":"cur_data = json.dumps(variables.get(\\"ocr_json_data\\"), indent=2)\\nrefined_data = json.loads(cur_data)\\n\\nvariables[\\"tag_data\\"] = refined_data.get(\\"tag\\") or []\\n\\nrefined_data_copy = refined_data.copy()\\nfor att in refined_data_copy:\\n    if not refined_data_copy[att] or att == \\"tag\\":\\n       del refined_data[att]  # Delete the attribute from refined_data\\n\\nvariables[\\"refined_data\\"] = json.dumps(refined_data, indent=2)","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-795,"y":1155}',
@@ -2284,6 +2221,7 @@ data = [
             },
             {
                 "name": "hcsk3kj9tt",
+                "docstatus": 0,
                 "idx": 28,
                 "data": '{"message":"Thanks! I have marked the candidate as rejected and informed the concerned recruiter.","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":255,"y":105}',
@@ -2297,6 +2235,7 @@ data = [
             },
             {
                 "name": "0g7g8lo7d3",
+                "docstatus": 0,
                 "idx": 29,
                 "data": '{"node_label":"Json Correction","python_code":"cur_data = variables.get(\\"refined_data\\")\\njson_data = json.loads(cur_data)\\ndoc = variables.get(\\"doc\\")\\n\\ndoctype = doc.doctype\\ndocname = doc.name\\n\\njson_data_copy = json_data.copy()\\n\\nkeys_to_delete = [\\"resume_attachment\\", \\"status\\"]\\n\\nfor key in list(json_data_copy.keys()):\\n    if key in keys_to_delete:\\n       del json_data_copy[key]\\n\\njson_data_copy[\\"doctype\\"] = doctype\\njson_data_copy[\\"name\\"] = docname\\n\\nvariables[\\"doctype\\"] = doctype\\nvariables[\\"docname\\"] = docname\\n\\nvariables[\\"json_data\\"] = json.dumps(json_data_copy, indent=2)","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-795,"y":1230}',
@@ -2310,6 +2249,7 @@ data = [
             },
             {
                 "name": "hcsk03n45t",
+                "docstatus": 0,
                 "idx": 29,
                 "type": "smoothstep",
                 "id": "reactflow__edge-fOA2MQvk4Lcd84RZfKjzzapproved-Fw6qG4d4BYQ9qOaSXdTn2input",
@@ -2325,6 +2265,7 @@ data = [
             },
             {
                 "name": "0g7g555qn2",
+                "docstatus": 0,
                 "idx": 30,
                 "data": '{"node_label":"Json Correction","python_code":"cur_data = variables.get(\\"refined_data\\")\\njson_data = json.loads(cur_data)\\n\\ndoctype = variables.get(\\"doctype\\")\\ndocname = variables.get(\\"docname\\")\\n\\njson_data_copy = json_data.copy()\\n\\nkeys_to_delete = [\\"resume_attachment\\", \\"status\\"]\\n\\nfor key in list(json_data_copy.keys()):\\n    if key in keys_to_delete:\\n       del json_data_copy[key]\\n\\njson_data_copy[\\"doctype\\"] = doctype\\njson_data_copy[\\"docname\\"] = docname\\n\\nvariables[\\"json_data\\"] = json.dumps(json_data_copy, indent=2)","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-435,"y":1305}',
@@ -2338,8 +2279,9 @@ data = [
             },
             {
                 "name": "hcskr217c1",
+                "docstatus": 0,
                 "idx": 30,
-                "data": '{"email_account":"Email Linking","select_template":true,"send_to_assigned_users":false,"recepients":[{"recepientField":"","recipient":"","cc":""}],"link_doctype":true,"attach_prints":false,"submit":true,"variable_path_for_output":"","recipients":"{{trigger_user_id}}","cc":"","bcc":"","email_template":"Post HR Head Approval","createNewEmailTemplate":false,"doctype":"Job Applicant","docname":"{{doc.name}}","email_subject":""}',
+                "data": '{"email_account": "Email Linking", "select_template": true, "send_to_assigned_users": false, "recepients": [{"recepientField": "", "recipient": "", "cc": ""}], "link_doctype": true, "attach_prints": false, "submit": true, "variable_path_for_output": "", "recipients": "{{trigger_user_id}}", "cc": "", "bcc": "", "email_template": "Post HR Head Approval", "createNewEmailTemplate": false, "doctype": "Job Applicant", "docname": "{{doc.name}}", "email_subject": ""}',
                 "position": '{"x":-1485,"y":405}',
                 "type": "send_mail",
                 "id": "zG4rvxRlZnCnb5WZ6tVOI",
@@ -2351,6 +2293,7 @@ data = [
             },
             {
                 "name": "hcske05cl6",
+                "docstatus": 0,
                 "idx": 31,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Fw6qG4d4BYQ9qOaSXdTn2rejected-NKey_hibe1jC7zh29lAGeinput",
@@ -2366,6 +2309,7 @@ data = [
             },
             {
                 "name": "0g7gpqrea1",
+                "docstatus": 0,
                 "idx": 32,
                 "data": '{"node_label":"Get resume path","python_code":"doc = variables.get(\\"doc\\")\\n\\nresume_attachments = doc.resume_attachment\\n\\nvariables[\\"resume_path\\"] = resume_attachments \\n\\n","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-795,"y":945}',
@@ -2379,6 +2323,7 @@ data = [
             },
             {
                 "name": "hcskpsftig",
+                "docstatus": 0,
                 "idx": 32,
                 "data": '{"node_label":"Approved BY HR Head","python_code":"doc = variables.get(\\"doc\\")\\nmanagement_name=frappe.db.get_value(\\"User\\", variables.get(\\"trigger_user_id\\"), \\"full_name\\")\\nvariables[\\"management_name\\"]=management_name\\nfrappe.db.set_value(\\"Job Applicant\\",doc.name,\\"status\\",\\"Management Approval-2 Pending\\")\\napplicant_doc=frappe.get_doc(\\"Job Applicant\\",doc.name)\\nchild = applicant_doc.append(\'custom_crm_note\', {})\\nchild.note =variables.get(\\"1st_management_review\\")\\nchild.added_by = variables.get(\\"user_id\\")\\nchild.added_on = frappe.utils.now_datetime()\\nchild.custom_comment_type = \\"Management-1 Review\\"\\napplicant_doc.save()","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-480,"y":240}',
@@ -2392,6 +2337,7 @@ data = [
             },
             {
                 "name": "0g7g7qmuqg",
+                "docstatus": 0,
                 "idx": 33,
                 "data": '{"node_label":"Get resume path","python_code":"doc = variables.get(\\"doc\\")\\n\\nresume_attachments = doc.resume_attachment\\n\\nvariables[\\"resume_path\\"] = resume_attachments \\n\\n","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-450,"y":945}',
@@ -2405,6 +2351,7 @@ data = [
             },
             {
                 "name": "hcsk150olk",
+                "docstatus": 0,
                 "idx": 33,
                 "data": '{"node_label":"Approved BY HR Head","python_code":"doc = variables.get(\\"doc\\")\\nmanagement_name=frappe.db.get_value(\\"User\\", variables.get(\\"trigger_user_id\\"), \\"full_name\\")\\nvariables[\\"management_name\\"]=management_name\\nfrappe.db.set_value(\\"Job Applicant\\",doc.name,\\"status\\",\\"Management-2 Approved\\")\\napplicant_doc=frappe.get_doc(\\"Job Applicant\\",doc.name)\\nchild = applicant_doc.append(\'custom_crm_note\', {})\\nchild.note =variables.get(\\"2nd_management_review\\")\\nchild.added_by = variables.get(\\"user_id\\")\\nchild.added_on = frappe.utils.now_datetime()\\nchild.custom_comment_type = \\"Management-2 Review\\"\\napplicant_doc.save()","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-150,"y":525}',
@@ -2418,6 +2365,7 @@ data = [
             },
             {
                 "name": "hcskiqcr18",
+                "docstatus": 0,
                 "idx": 34,
                 "data": '{"node_label":"Approved BY HR Head","python_code":"doc = variables.get(\\"doc\\")\\nhr_head_name=frappe.db.get_value(\\"User\\", variables.get(\\"trigger_user_id\\"), \\"full_name\\")\\nvariables[\\"hr_head_name\\"]=hr_head_name\\nfrappe.db.set_value(\\"Job Applicant\\",doc.name,\\"status\\",\\"HR Head Approved\\")\\napplicant_doc=frappe.get_doc(\\"Job Applicant\\",doc.name)\\nchild = applicant_doc.append(\'custom_crm_note\', {})\\nchild.note =variables.get(\\"hr_head_review\\")\\nchild.added_by = variables.get(\\"user_id\\")\\nchild.added_on = frappe.utils.now_datetime()\\nchild.custom_comment_type = \\"HR Head Review\\"\\napplicant_doc.save()","skip_queue_and_execute_immediately":true,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1485,"y":315}',
@@ -2431,6 +2379,7 @@ data = [
             },
             {
                 "name": "hcsk9cd2pb",
+                "docstatus": 0,
                 "idx": 35,
                 "data": '{"question":"Could you share your comments/thoughts?","answer_var":"hr_head_review","validate_answer":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-1485,"y":240}',
@@ -2444,6 +2393,7 @@ data = [
             },
             {
                 "name": "0g7g9sq4jn",
+                "docstatus": 0,
                 "idx": 36,
                 "data": '{"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-165,"y":1215}',
@@ -2457,6 +2407,7 @@ data = [
             },
             {
                 "name": "hcsk32j8ph",
+                "docstatus": 0,
                 "idx": 36,
                 "data": '{"question":"Could you share your comments/thoughts?","answer_var":"1st_management_review","validate_answer":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-480,"y":180}',
@@ -2470,6 +2421,7 @@ data = [
             },
             {
                 "name": "0g7gd2p9b9",
+                "docstatus": 0,
                 "idx": 37,
                 "type": "smoothstep",
                 "id": "vqd5w-Ke1khJvC3EUyuRe",
@@ -2485,6 +2437,7 @@ data = [
             },
             {
                 "name": "hcskbvpuht",
+                "docstatus": 0,
                 "idx": 37,
                 "data": '{"question":"Could you share your comments/thoughts?","answer_var":"2nd_management_review","validate_answer":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-150,"y":420}',
@@ -2498,6 +2451,7 @@ data = [
             },
             {
                 "name": "0g7g6k11f0",
+                "docstatus": 0,
                 "idx": 38,
                 "type": "smoothstep",
                 "id": "pMR5l2Nw0HKeCfiUtugdC",
@@ -2513,6 +2467,7 @@ data = [
             },
             {
                 "name": "hcskeaeknj",
+                "docstatus": 0,
                 "idx": 38,
                 "type": "smoothstep",
                 "id": "reactflow__edge-_i9S2SIqxpM-Nvbo7oYT9output-8xHBllHM1JzZYYCwqApHLinput",
@@ -2528,6 +2483,7 @@ data = [
             },
             {
                 "name": "0g7gc0rq68",
+                "docstatus": 0,
                 "idx": 39,
                 "type": "smoothstep",
                 "id": "nQ9wb7up-RhLEWCA8Th6X",
@@ -2543,6 +2499,7 @@ data = [
             },
             {
                 "name": "hcsk6e2iad",
+                "docstatus": 0,
                 "idx": 39,
                 "type": "smoothstep",
                 "id": "reactflow__edge-8xHBllHM1JzZYYCwqApHLoutput-Q0JNPJ6MFS9jocJkZGEyUinput",
@@ -2558,6 +2515,7 @@ data = [
             },
             {
                 "name": "0g7g3lhq0h",
+                "docstatus": 0,
                 "idx": 40,
                 "type": "smoothstep",
                 "id": "qWBKkiV-WVrvhXXHHd6sr",
@@ -2573,6 +2531,7 @@ data = [
             },
             {
                 "name": "hcsk72lnqv",
+                "docstatus": 0,
                 "idx": 40,
                 "data": '{"name_of_action":"Offer Request","page_type":"doctype","node_label":"Offer Request","submit":true,"variable_path_for_output":"","doctype":"Job Applicant","show_as_button":false}',
                 "position": '{"x":825,"y":-360}',
@@ -2586,6 +2545,7 @@ data = [
             },
             {
                 "name": "0g7gkgte03",
+                "docstatus": 0,
                 "idx": 41,
                 "type": "smoothstep",
                 "id": "-pT2zYxLqEO-LxWmbj5PA",
@@ -2601,6 +2561,7 @@ data = [
             },
             {
                 "name": "hcsk755oi8",
+                "docstatus": 0,
                 "idx": 41,
                 "data": '{"message":"Thanks, I have passed it forward for the subsequent approvals.","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":825,"y":-240}',
@@ -2614,6 +2575,7 @@ data = [
             },
             {
                 "name": "0g7g194qfp",
+                "docstatus": 0,
                 "idx": 42,
                 "type": "smoothstep",
                 "id": "DpiSYdC7FA0rAkfbJQQRi",
@@ -2629,6 +2591,7 @@ data = [
             },
             {
                 "name": "hcska147su",
+                "docstatus": 0,
                 "idx": 42,
                 "type": "smoothstep",
                 "id": "reactflow__edge-X8GmmFoBklHUMVCv0O7kkoutput-56vHx59-7ux9GSvgH1vU2input",
@@ -2644,6 +2607,7 @@ data = [
             },
             {
                 "name": "0g7gm632s1",
+                "docstatus": 0,
                 "idx": 43,
                 "type": "smoothstep",
                 "id": "KUxwdHk6c_kv2h2uQPc6C",
@@ -2659,6 +2623,7 @@ data = [
             },
             {
                 "name": "hcsk54b915",
+                "docstatus": 0,
                 "idx": 43,
                 "type": "smoothstep",
                 "id": "reactflow__edge-j2ZAjTgbemqa3DKbJ605Houtput-UM0Dl3g-J4oyuuqyM5HZWinput",
@@ -2674,6 +2639,7 @@ data = [
             },
             {
                 "name": "0g7ga9v339",
+                "docstatus": 0,
                 "idx": 44,
                 "type": "smoothstep",
                 "id": "mpBzH20_ES5n9I21glzNQ",
@@ -2689,6 +2655,7 @@ data = [
             },
             {
                 "name": "hcskkfva98",
+                "docstatus": 0,
                 "idx": 44,
                 "type": "smoothstep",
                 "id": "reactflow__edge-fOA2MQvk4Lcd84RZfKjzzapproved-t4b5h21osodNfX-DjsJ1Oinput",
@@ -2704,6 +2671,7 @@ data = [
             },
             {
                 "name": "0g7g2q2rle",
+                "docstatus": 0,
                 "idx": 45,
                 "type": "smoothstep",
                 "id": "5J74HlSVp2rceK9sAJTmx",
@@ -2719,6 +2687,7 @@ data = [
             },
             {
                 "name": "hcsk6ufcnk",
+                "docstatus": 0,
                 "idx": 45,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Fw6qG4d4BYQ9qOaSXdTn2approved-BOKypOu4BPwiRjhzFj4dminput",
@@ -2734,6 +2703,7 @@ data = [
             },
             {
                 "name": "0g7gu5r04v",
+                "docstatus": 0,
                 "idx": 46,
                 "type": "smoothstep",
                 "id": "QTqVXdwrlNPQX_l7UlUow",
@@ -2749,6 +2719,7 @@ data = [
             },
             {
                 "name": "hcsk7b3d5h",
+                "docstatus": 0,
                 "idx": 46,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Q0JNPJ6MFS9jocJkZGEyUoutput-ngLHDkBaDEw2u3dy_PRLsinput",
@@ -2764,6 +2735,7 @@ data = [
             },
             {
                 "name": "hcsk179g0c",
+                "docstatus": 0,
                 "idx": 47,
                 "type": "smoothstep",
                 "id": "reactflow__edge-xZfgUlcFEnx3QxN3V0DKdoutput-Heer4_ZEhKF_GNX0LSX8-input",
@@ -2779,6 +2751,7 @@ data = [
             },
             {
                 "name": "hcskhvh87q",
+                "docstatus": 0,
                 "idx": 48,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Heer4_ZEhKF_GNX0LSX8-approved-0OkHoaURgzCcTgX74_cgQinput",
@@ -2794,6 +2767,7 @@ data = [
             },
             {
                 "name": "hcskpcdlvj",
+                "docstatus": 0,
                 "idx": 49,
                 "type": "smoothstep",
                 "id": "reactflow__edge-ngLHDkBaDEw2u3dy_PRLsoutput-fOA2MQvk4Lcd84RZfKjzzinput",
@@ -2809,6 +2783,7 @@ data = [
             },
             {
                 "name": "hcsks0ebo6",
+                "docstatus": 0,
                 "idx": 50,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Qlfb-DWCHemqGF2li-Mcaoutput-gkhvZR_f08usCeCFprGGDinput",
@@ -2824,6 +2799,7 @@ data = [
             },
             {
                 "name": "hcsk7aboq3",
+                "docstatus": 0,
                 "idx": 51,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Heer4_ZEhKF_GNX0LSX8-rejected-Ez7WMeI_2r83yx6P0d8Mcinput",
@@ -2839,6 +2815,7 @@ data = [
             },
             {
                 "name": "hcskke883s",
+                "docstatus": 0,
                 "idx": 52,
                 "type": "smoothstep",
                 "id": "reactflow__edge-0OkHoaURgzCcTgX74_cgQoutput-Qlfb-DWCHemqGF2li-Mcainput",
@@ -2854,6 +2831,7 @@ data = [
             },
             {
                 "name": "hcsknt024r",
+                "docstatus": 0,
                 "idx": 53,
                 "type": "smoothstep",
                 "id": "reactflow__edge-PFkIkkF4QtsKUZKLnykeVoutput-azAD9674lyPIKq3q4IFr7input",
@@ -2869,6 +2847,7 @@ data = [
             },
             {
                 "name": "hcsk8lgq39",
+                "docstatus": 0,
                 "idx": 54,
                 "type": "smoothstep",
                 "id": "reactflow__edge-gkhvZR_f08usCeCFprGGDoutput-zG4rvxRlZnCnb5WZ6tVOIinput",
@@ -2884,6 +2863,7 @@ data = [
             },
             {
                 "name": "hcskmlmaq2",
+                "docstatus": 0,
                 "idx": 55,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Wlv__KryhTVoEsYWVjF-Goutput-8UarR3ia_nV186WiKw5lainput",
@@ -2899,6 +2879,7 @@ data = [
             },
             {
                 "name": "hcsk8locvt",
+                "docstatus": 0,
                 "idx": 56,
                 "type": "smoothstep",
                 "id": "reactflow__edge-BxSAiNVL6YkvAN4jTHckKoutput-0ji98EKdWORtmdXG-HeP-input",
@@ -2914,6 +2895,7 @@ data = [
             },
             {
                 "name": "hcskpmr8po",
+                "docstatus": 0,
                 "idx": 57,
                 "type": "smoothstep",
                 "id": "reactflow__edge-Ez7WMeI_2r83yx6P0d8Mcoutput-BxSAiNVL6YkvAN4jTHckKinput",
@@ -2929,6 +2911,7 @@ data = [
             },
             {
                 "name": "hcskcu01e2",
+                "docstatus": 0,
                 "idx": 58,
                 "type": "smoothstep",
                 "id": "reactflow__edge-t4b5h21osodNfX-DjsJ1Ooutput-PFkIkkF4QtsKUZKLnykeVinput",
@@ -2944,6 +2927,7 @@ data = [
             },
             {
                 "name": "hcsknnd53r",
+                "docstatus": 0,
                 "idx": 59,
                 "type": "smoothstep",
                 "id": "reactflow__edge-teOBb40ye1HBQNLYvIcZAoutput-rbPee3mTxr5-uYQGL5w7dinput",
@@ -2959,6 +2943,7 @@ data = [
             },
             {
                 "name": "hcsk2iudtk",
+                "docstatus": 0,
                 "idx": 60,
                 "type": "smoothstep",
                 "id": "reactflow__edge-azAD9674lyPIKq3q4IFr7output-xYNYEezsrbCtknazHaSn9input",
@@ -2974,6 +2959,7 @@ data = [
             },
             {
                 "name": "hcsk5t4bfm",
+                "docstatus": 0,
                 "idx": 61,
                 "type": "smoothstep",
                 "id": "reactflow__edge-rbPee3mTxr5-uYQGL5w7doutput-X9nUxnHKYlR5S6vNeEnlNinput",
@@ -2989,6 +2975,7 @@ data = [
             },
             {
                 "name": "hcsk6ilb0j",
+                "docstatus": 0,
                 "idx": 62,
                 "type": "smoothstep",
                 "id": "reactflow__edge-tbnJ0XTplcvjwVgmSdvcRoutput-G8ewY5iEvrgIk_2md6NFrinput",
@@ -3004,6 +2991,7 @@ data = [
             },
             {
                 "name": "hcsk4nfgj2",
+                "docstatus": 0,
                 "idx": 63,
                 "type": "smoothstep",
                 "id": "reactflow__edge-BOKypOu4BPwiRjhzFj4dmoutput-Wlv__KryhTVoEsYWVjF-Ginput",
@@ -3019,6 +3007,7 @@ data = [
             },
             {
                 "name": "hcsk700i1o",
+                "docstatus": 0,
                 "idx": 64,
                 "type": "smoothstep",
                 "id": "reactflow__edge-X9nUxnHKYlR5S6vNeEnlNoutput-xZfgUlcFEnx3QxN3V0DKdinput",
@@ -3034,6 +3023,7 @@ data = [
             },
             {
                 "name": "hcskgt4si5",
+                "docstatus": 0,
                 "idx": 65,
                 "type": "smoothstep",
                 "id": "reactflow__edge-G8ewY5iEvrgIk_2md6NFroutput-WlL6CqWunUolSvCiVCx_Iinput",
@@ -3049,6 +3039,7 @@ data = [
             },
             {
                 "name": "hcskrhsnbf",
+                "docstatus": 0,
                 "idx": 66,
                 "type": "smoothstep",
                 "id": "reactflow__edge-8UarR3ia_nV186WiKw5laoutput-autHh_HekbcqkTL1h9t50input",
@@ -3064,6 +3055,7 @@ data = [
             },
             {
                 "name": "hcsk62lvin",
+                "docstatus": 0,
                 "idx": 67,
                 "type": "smoothstep",
                 "id": "reactflow__edge-WlL6CqWunUolSvCiVCx_Ioutput-oh4OZG2JKd7R7fe-HF-uIinput",
@@ -3079,6 +3071,7 @@ data = [
             },
             {
                 "name": "hcsk53f12i",
+                "docstatus": 0,
                 "idx": 68,
                 "type": "smoothstep",
                 "id": "reactflow__edge-wtn0owg_LbeH57ij9aUu0output-X8GmmFoBklHUMVCv0O7kkinput",
@@ -3094,6 +3087,7 @@ data = [
             },
             {
                 "name": "hcskoie86s",
+                "docstatus": 0,
                 "idx": 69,
                 "type": "smoothstep",
                 "id": "reactflow__edge-NKey_hibe1jC7zh29lAGeoutput-j2ZAjTgbemqa3DKbJ605Hinput",
@@ -3108,10 +3102,39 @@ data = [
                 "doctype": "Funnel Definition",
             },
         ],
+        "funnel_access": [
+            {
+                "name": "hcskua3v1p",
+                "docstatus": 0,
+                "idx": 1,
+                "role": "Recruitment User",
+                "can_execute": 1,
+                "can_modify": 0,
+                "can_view": 0,
+                "parent": "Job Applicant-Approval Management Funnels",
+                "parentfield": "funnel_access",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Access",
+            },
+            {
+                "name": "hcskgh2a09",
+                "docstatus": 0,
+                "idx": 2,
+                "role": "Recruiter Admin",
+                "can_execute": 0,
+                "can_modify": 0,
+                "can_view": 0,
+                "parent": "Job Applicant-Approval Management Funnels",
+                "parentfield": "funnel_access",
+                "parenttype": "Funnel",
+                "doctype": "Funnel Access",
+            },
+        ],
     },
     # job applicant public funnel
     {
         "name": "Job Applicant Public Funnel",
+        "docstatus": 0,
         "idx": 0,
         "archived": 0,
         "funnel_name": "Job Applicant Public Funnel",
@@ -3121,10 +3144,10 @@ data = [
         "variable_list": "[]",
         "assistant_form_fields": "{}",
         "doctype": "Funnel",
-        "funnel_access": [],
         "funnel_definition": [
             {
                 "name": "poeeoljkk9",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"name_of_action":"Fill Your Details","node_label":"Fill Your Details","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":435,"y":-30}',
@@ -3138,6 +3161,7 @@ data = [
             },
             {
                 "name": "poeetmjb10",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"is_dynamic_form":false,"selected_form":{"name":"39059cilou","label":"Job Applicant"},"prefill_data":"{{doc_json}}","answer_var":"applicant_details","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":450,"y":180}',
@@ -3151,6 +3175,7 @@ data = [
             },
             {
                 "name": "poeeatcvj8",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"node_label":"Update Job Applicant","python_code":"applicant_details = variables[\\"applicant_details\\"]\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"email_id\\",applicant_details[\\"email_id\\"])\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"applicant_name\\",applicant_details[\\"applicant_name\\"])\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"custom_applicant_last_name_\\",applicant_details[\\"custom_applicant_last_name_\\"])\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"custom_gender\\",applicant_details[\\"custom_gender\\"].capitalize())\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"custom_marital_status\\",applicant_details[\\"custom_marital_status\\"].capitalize())\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"phone_number\\",applicant_details[\\"phone_number\\"])\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"job_title\\",applicant_details[\\"job_title\\"])\\ndesignation = frappe.db.get_value(\\"Job Opening\\",applicant_details[\\"job_title\\"],\\"designation\\")\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"designation\\",designation)\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"lower_range\\",applicant_details[\\"lower_range\\"])\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"upper_range\\",applicant_details[\\"upper_range\\"])\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"custom_previous_salary\\",applicant_details[\\"custom_previous_salary\\"])\\nfrappe.db.set_value(\\"Job Applicant\\",applicant_details[\\"email_id\\"],\\"custom_expected_doj\\",applicant_details[\\"custom_expected_doj\\"].split(\'T\')[0])\\n\\n\\n\\n","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"Administrator","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":450,"y":270}',
@@ -3164,6 +3189,7 @@ data = [
             },
             {
                 "name": "poeek51j2b",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"node_label":"Dict to Str","python_code":"variables[\\"doc_json\\"]=json.dumps(variables[\\"doc_data\\"],default=str)\\n","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":450,"y":75}',
@@ -3177,6 +3203,7 @@ data = [
             },
             {
                 "name": "poeevmhvla",
+                "docstatus": 0,
                 "idx": 5,
                 "type": "smoothstep",
                 "id": "reactflow__edge-sz0Hqwcej_8RP64eNoH-Voutput-VZLalxIWsyLJ6V_kgoPb0input",
@@ -3192,6 +3219,7 @@ data = [
             },
             {
                 "name": "poee1p32vu",
+                "docstatus": 0,
                 "idx": 6,
                 "type": "smoothstep",
                 "id": "reactflow__edge-0iIb_6gzXhdQ4LPHoL2Dcoutput-0KXFb9Ia5N5vcJAbYH08iinput",
@@ -3207,6 +3235,7 @@ data = [
             },
             {
                 "name": "poeek4chcr",
+                "docstatus": 0,
                 "idx": 7,
                 "type": "smoothstep",
                 "id": "reactflow__edge-0KXFb9Ia5N5vcJAbYH08ioutput-sz0Hqwcej_8RP64eNoH-Vinput",
@@ -3221,10 +3250,12 @@ data = [
                 "doctype": "Funnel Definition",
             },
         ],
+        "funnel_access": [],
     },
     # job opening & requistion funnel
     {
         "name": "Job Opening/ Requisition Funnel",
+        "docstatus": 0,
         "idx": 0,
         "archived": 0,
         "funnel_name": "Job Opening/ Requisition Funnel",
@@ -3234,9 +3265,11 @@ data = [
         "variable_list": "[]",
         "assistant_form_fields": "{}",
         "doctype": "Funnel",
+        "funnel_access": [],
         "funnel_definition": [
             {
                 "name": "9e1n1h0bks",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Job Opening","action":"on_update","submit":true,"variable_path_for_output":"","updated_field":"status"}',
                 "position": '{"x":1185,"y":-75}',
@@ -3250,6 +3283,7 @@ data = [
             },
             {
                 "name": "9e1n3gsgut",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Interview","action":"after_insert","submit":true}',
                 "position": '{"x":270,"y":270}',
@@ -3263,6 +3297,7 @@ data = [
             },
             {
                 "name": "9e1n5gvikq",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Job Opening","action":"on_update","submit":true,"variable_path_for_output":"","updated_field":"status"}',
                 "position": '{"x":300.822245186738,"y":-114.16755646394648}',
@@ -3276,6 +3311,7 @@ data = [
             },
             {
                 "name": "9e1n0t4c12",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"doctype":"Job Requisition","action":"on_update","submit":true,"variable_path_for_output":"","updated_field":"custom_assign_to_recruiter"}',
                 "position": '{"x":1185,"y":150}',
@@ -3289,6 +3325,7 @@ data = [
             },
             {
                 "name": "9e1nncdv03",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"node_label":"Share Job Opening","python_code":"inter_doc = variables[\\"doc\\"]\\n    for inter in inter_doc.interview_details:\\n        if not frappe.db.exists(\\"DocShare\\", {\\"user\\": inter.interviewer,\\"share_doctype\\":\\"Job Opening\\",\\"share_name\\":inter_doc.job_opening}):\\n            DocShare = frappe.new_doc(\\"DocShare\\")\\n            DocShare.user = inter.interviewer\\n            DocShare.share_doctype = \\"Job Opening\\"\\n            DocShare.share_name = inter_doc.job_opening\\n            DocShare.read = 1\\n            DocShare.notify_by_email = 1\\n            DocShare.save()","skip_queue_and_execute_immediately":false,"submit":true}',
                 "position": '{"x":270,"y":360}',
@@ -3302,6 +3339,7 @@ data = [
             },
             {
                 "name": "9e1np73lk4",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"doctype":"Job Requisition","action":"on_update","submit":true,"variable_path_for_output":"","updated_field":"custom_assign_to_recruiter"}',
                 "position": '{"x":630,"y":-120}',
@@ -3315,6 +3353,7 @@ data = [
             },
             {
                 "name": "9e1nr58po0",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"bcc": "", "cc": "", "createNewEmailTemplate": false, "email_account": "Email Linking", "email_content": "<p>Dear&nbsp;Sir/Madam,&nbsp;</p><p>New&nbsp;MPR&nbsp;-&nbsp; {{doc.name}} request&nbsp;has&nbsp;been received.&nbsp;</p><p>MPR&nbsp;ID: {{doc.name}}</p><p>Created&nbsp;By: {{doc.created_by}}</p><p>Company: {{doc.company}}</p><p>Hiring&nbsp;Manager: {{doc.requested_by_name}}</p><p>Posting&nbsp;Title: {{doc.designation}}</p><p>Number&nbsp;of&nbsp;Positions: {{doc.no_of_positions}}</p><p>Date&nbsp;of&nbsp;Requisition: {{doc.posting_date}}</p><p>How&nbsp;the&nbsp;vacancy&nbsp;has&nbsp;arisen?: {{doc.custom_how_the_vacancy_as_arisen}}</p><p>Days&nbsp;to&nbsp;fill&nbsp;position: {{doc.time_to_fill}}</p><p>Kindly&nbsp;assign&nbsp;recruiter&nbsp;user&nbsp;to&nbsp;this&nbsp;job&nbsp;opening.&nbsp;</p><p>Regards,&nbsp;</p><p>Recruit&nbsp;Team&nbsp;</p>", "email_subject": " New MPR - {{doc.designation}} - {{doc.company}}", "email_template": "Recruiter Admin To Recruiter", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{doc.custom_assign_to_recruiter}}", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
                 "position": '{"x":1185,"y":360}',
@@ -3328,6 +3367,7 @@ data = [
             },
             {
                 "name": "9e1nt8nt73",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"bcc": "", "cc": "", "createNewEmailTemplate": false, "email_account": "Email Linking", "email_content": "<p>Dear&nbsp;Sir/Madam,&nbsp;</p><p>New&nbsp;MPR&nbsp;-&nbsp; {{doc.name}} request&nbsp;has&nbsp;been received.&nbsp;</p><p>MPR&nbsp;ID: {{doc.name}}</p><p>Created&nbsp;By: {{doc.created_by}}</p><p>Company: {{doc.company}}</p><p>Hiring&nbsp;Manager: {{doc.requested_by_name}}</p><p>Posting&nbsp;Title: {{doc.designation}}</p><p>Number&nbsp;of&nbsp;Positions: {{doc.no_of_positions}}</p><p>Date&nbsp;of&nbsp;Requisition: {{doc.posting_date}}</p><p>How&nbsp;the&nbsp;vacancy&nbsp;has&nbsp;arisen?: {{doc.custom_how_the_vacancy_as_arisen}}</p><p>Days&nbsp;to&nbsp;fill&nbsp;position: {{doc.time_to_fill}}</p><p>Kindly&nbsp;assign&nbsp;recruiter&nbsp;user&nbsp;to&nbsp;this&nbsp;job&nbsp;opening.&nbsp;</p><p>Regards,&nbsp;</p><p>Recruit&nbsp;Team&nbsp;</p>", "email_subject": " New MPR - {{doc.designation}} - {{doc.company}}", "email_template": "Recruiter Admin To Recruiter", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{doc.custom_assign_to_recruiter}}", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
                 "position": '{"x":630,"y":90}',
@@ -3341,6 +3381,7 @@ data = [
             },
             {
                 "name": "9e1na72f17",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"node_label":"Update Status","python_code":"doc = variables[\\"doc\\"]\\nfrappe.db.set_value(\\"Job Requisition\\",doc.name,\\"status\\",\\"Open & Approved\\")","skip_queue_and_execute_immediately":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1185,"y":255}',
@@ -3354,6 +3395,7 @@ data = [
             },
             {
                 "name": "9e1nioocoo",
+                "docstatus": 0,
                 "idx": 3,
                 "type": "smoothstep",
                 "id": "rZJT_4VeeJi3MqcKoREVf",
@@ -3369,6 +3411,7 @@ data = [
             },
             {
                 "name": "9e1njml9oo",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"node_label":"Update Status","python_code":"doc = variables[\\"doc\\"]\\nfrappe.db.set_value(\\"Job Requisition\\",doc.name,\\"status\\",\\"Open & Approved\\")","skip_queue_and_execute_immediately":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":630,"y":-15}',
@@ -3382,6 +3425,7 @@ data = [
             },
             {
                 "name": "9e1n1230tb",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"node_label":"Update Status","python_code":"doc = variables[\\"doc\\"]\\nif doc.status == \\"In-Progress\\":\\n\\tfrappe.db.set_value(\\"Job Requisition\\",doc.job_requisition,\\"status\\",doc.status)\\nif doc.status == \\"Close\\":\\n\\tfrappe.db.set_value(\\"Job Requisition\\",doc.job_requisition,\\"status\\",\\"Filled\\")","skip_queue_and_execute_immediately":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1185,"y":15}',
@@ -3395,6 +3439,7 @@ data = [
             },
             {
                 "name": "9e1n6q40bo",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"node_label":"Update Status","python_code":"doc = variables[\\"doc\\"]\\nif doc.status == \\"In-Progress\\":\\n\\tfrappe.db.set_value(\\"Job Requisition\\",doc.job_requisition,\\"status\\",doc.status)\\nif doc.status == \\"Close\\":\\n\\tfrappe.db.set_value(\\"Job Requisition\\",doc.job_requisition,\\"status\\",\\"Filled\\")","skip_queue_and_execute_immediately":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":300,"y":0}',
@@ -3408,6 +3453,7 @@ data = [
             },
             {
                 "name": "9e1nololu2",
+                "docstatus": 0,
                 "idx": 5,
                 "type": "smoothstep",
                 "id": "wu6kyziIr6XFZ2Ucnr1sS",
@@ -3423,6 +3469,7 @@ data = [
             },
             {
                 "name": "9e1nvs7s5q",
+                "docstatus": 0,
                 "idx": 5,
                 "type": "smoothstep",
                 "id": "sx1Ol6-zaFLs7eU5WEUFY",
@@ -3438,6 +3485,7 @@ data = [
             },
             {
                 "name": "9e1nc39p0n",
+                "docstatus": 0,
                 "idx": 6,
                 "type": "smoothstep",
                 "id": "DFgYkkGfmSJent0uxQY-5",
@@ -3453,6 +3501,7 @@ data = [
             },
             {
                 "name": "9e1ngiulsp",
+                "docstatus": 0,
                 "idx": 6,
                 "type": "smoothstep",
                 "id": "AbIg0aR--C4T8a3w989Dl",
@@ -3468,6 +3517,7 @@ data = [
             },
             {
                 "name": "9e1n87a9oh",
+                "docstatus": 0,
                 "idx": 8,
                 "type": "smoothstep",
                 "id": "ia0a3Xgrpl89TO0igwdzV",
@@ -3483,6 +3533,7 @@ data = [
             },
             {
                 "name": "9e1nrbockb",
+                "docstatus": 0,
                 "idx": 15,
                 "type": "smoothstep",
                 "id": "reactflow__edge-dKkhrpWeHLUN-vQrQ5YYloutput-rB9BHDYadrWvSXPE-jfJXinput",
@@ -3497,11 +3548,11 @@ data = [
                 "doctype": "Funnel Definition",
             },
         ],
-        "funnel_access": [],
     },
     # interview & interview feedback funnel
     {
         "name": "Interview & Interview Feedback Funnel",
+        "docstatus": 0,
         "idx": 0,
         "archived": 0,
         "funnel_name": "Interview & Interview Feedback Funnel",
@@ -3515,6 +3566,7 @@ data = [
         "funnel_definition": [
             {
                 "name": "0ohiq1vou7",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Interview","action":"after_insert","submit":true,"updated_field":"job_applicant","variable_path_for_output":""}',
                 "position": '{"x":1440,"y":90}',
@@ -3528,6 +3580,7 @@ data = [
             },
             {
                 "name": "9gev8a1g0q",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Interview Feedback","action":"on_submit","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":660,"y":-90}',
@@ -3541,6 +3594,7 @@ data = [
             },
             {
                 "name": "9gevd4ldth",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Interview","action":"after_insert","submit":true}',
                 "position": '{"x":290,"y":-100}',
@@ -3554,6 +3608,7 @@ data = [
             },
             {
                 "name": "9gevp9c7jf",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Interview","action":"after_insert","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1035,"y":15}',
@@ -3567,8 +3622,9 @@ data = [
             },
             {
                 "name": "0ohi80sloi",
+                "docstatus": 0,
                 "idx": 2,
-                "data": '{"bcc":"","cc":"","createNewEmailTemplate":false,"email_account":"Minix Info","email_template":"Interview Candidate","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{doc.job_applicant}}","select_template":true,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
+                "data": '{"bcc":"","cc":"","createNewEmailTemplate":false,"email_account":"Email Linking","email_template":"Interview Candidate","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{doc.job_applicant}}","select_template":true,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1440,"y":210}',
                 "type": "send_mail",
                 "id": "PweXkxOigZhMwKJZLBDf1",
@@ -3580,6 +3636,7 @@ data = [
             },
             {
                 "name": "9gev4lepth",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"bcc":"","cc":"","email_account":"Email Linking","email_content":"<p>your interview is sceduled</p>","email_subject":"interview round","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{reciepient}}","select_template":false,"send_to_assigned_users":false,"submit":true}',
                 "position": '{"x":1035,"y":195}',
@@ -3593,6 +3650,7 @@ data = [
             },
             {
                 "name": "9gev64p387",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"node_label":"Update Status As Interview","python_code":"doc = variables[\\"doc\\"]\\nfrappe.db.set_value(\\"Job Applicant\\",doc[\\"job_applicant\\"],\\"status\\",\\"Interview\\")","skip_queue_and_execute_immediately":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":290,"y":-10}',
@@ -3606,6 +3664,7 @@ data = [
             },
             {
                 "name": "9gevq8dmse",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"bcc":"","cc":"","email_account":"Email Linking","email_content":"<p>interview Feedback Submitted {{doc.status}}</p>","email_subject":"interview Feedback","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{reciepient}}","select_template":false,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":660,"y":165}',
@@ -3619,6 +3678,7 @@ data = [
             },
             {
                 "name": "0ohidjuf3k",
+                "docstatus": 0,
                 "idx": 3,
                 "type": "smoothstep",
                 "id": "w8ErmClYO0TrPO0saoS6J",
@@ -3634,6 +3694,7 @@ data = [
             },
             {
                 "name": "9gevb79ati",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"node_label":"Details of applicant","python_code":"doc = variables.get(\\"doc\\")\\nvariables[\\"reciepient\\"] = doc.interviewer\\n","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":660,"y":45}',
@@ -3647,6 +3708,7 @@ data = [
             },
             {
                 "name": "9gevf3ktjg",
+                "docstatus": 0,
                 "idx": 3,
                 "type": "smoothstep",
                 "id": "byOsal7ERN7kMoa2bY1Cm",
@@ -3662,6 +3724,7 @@ data = [
             },
             {
                 "name": "9gevhuejq8",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"node_label":"Details of applicant","python_code":"doc = variables.get(\\"doc\\")\\nvariables[\\"reciepient\\"] = doc.job_applicant\\n","submit":true}',
                 "position": '{"x":1035,"y":105}',
@@ -3675,8 +3738,9 @@ data = [
             },
             {
                 "name": "0ohipicpta",
+                "docstatus": 0,
                 "idx": 4,
-                "data": '{"bcc":"","cc":"","createNewEmailTemplate":false,"email_account":"Minix Info","email_template":"Interviewer Email","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{recepients}}","select_template":true,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
+                "data": '{"bcc":"","cc":"","createNewEmailTemplate":false,"email_account":"Email Linking","email_template":"Interviewer Email","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{recepients}}","select_template":true,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1440,"y":405}',
                 "type": "send_mail",
                 "id": "ZsUqGVXqxMSoyUL7D6iTA",
@@ -3688,6 +3752,7 @@ data = [
             },
             {
                 "name": "9gevrnibgm",
+                "docstatus": 0,
                 "idx": 4,
                 "type": "smoothstep",
                 "id": "JLjITq2Xp9hK4bdeRDsJ8",
@@ -3703,6 +3768,7 @@ data = [
             },
             {
                 "name": "9gevrr76b0",
+                "docstatus": 0,
                 "idx": 4,
                 "type": "smoothstep",
                 "id": "kyYLv_kqRadY_gPw_BJfF",
@@ -3718,6 +3784,7 @@ data = [
             },
             {
                 "name": "0ohis2e0d1",
+                "docstatus": 0,
                 "idx": 5,
                 "data": '{"node_label":"","python_code":"interviewers = []\\ndoc =  variables[\\"doc\\"]\\nfor inter in doc[\\"interview_details\\"]:\\n    interviewers.append(inter.interviewer)\\nvariables[\\"recepients\\"] =\',\'.join(interviewers)\\n","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1440,"y":300}',
@@ -3731,6 +3798,7 @@ data = [
             },
             {
                 "name": "9gev8q89kg",
+                "docstatus": 0,
                 "idx": 5,
                 "type": "smoothstep",
                 "id": "naI4S6Jg8uBZbU2bXBSDD",
@@ -3746,6 +3814,7 @@ data = [
             },
             {
                 "name": "9gevtikeq1",
+                "docstatus": 0,
                 "idx": 5,
                 "type": "smoothstep",
                 "id": "boBQXk18OuuLBBMazf42-",
@@ -3761,6 +3830,7 @@ data = [
             },
             {
                 "name": "0ohi9hjct3",
+                "docstatus": 0,
                 "idx": 6,
                 "type": "smoothstep",
                 "id": "_asFfGL4QQUcOMN8UF5Df",
@@ -3776,6 +3846,7 @@ data = [
             },
             {
                 "name": "0ohiegakta",
+                "docstatus": 0,
                 "idx": 7,
                 "type": "smoothstep",
                 "id": "p_82EAPFSUu-tB_aegNZo",
@@ -3794,6 +3865,7 @@ data = [
     # job offer accept/reject funnel
     {
         "name": "Job Offer Accept/Reject Funnel",
+        "docstatus": 0,
         "idx": 0,
         "archived": 0,
         "funnel_name": "Job Offer Accept/Reject Funnel",
@@ -3803,9 +3875,11 @@ data = [
         "variable_list": "[]",
         "assistant_form_fields": "{}",
         "doctype": "Funnel",
+        "funnel_access": [],
         "funnel_definition": [
             {
                 "name": "8uk43b60mk",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"message":"Following is the Job Offer","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1020,"y":-45}',
@@ -3819,6 +3893,7 @@ data = [
             },
             {
                 "name": "8uk4ofi55q",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"name_of_action":"Send Job Offer","page_type":"doctype","node_label":"Send Job Offer","submit":true,"variable_path_for_output":"","doctype":"Job Offer"}',
                 "position": '{"x":660,"y":-75}',
@@ -3832,6 +3907,7 @@ data = [
             },
             {
                 "name": "99dc3n5ooq",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"node_label":"Reject Job Offer","python_code":"doc = variables.get(\\"doc\\")\\nfrappe.db.set_value(\\"Job Offer\\",doc.name,\\"status\\",\\"Rejected\\")\\nfrappe.db.set_value(\\"Job Offer\\",doc.name,\\"docstatus\\",1)\\nfrappe.db.set_value(\\"Job Applicant\\",doc.job_applicant,\\"status\\",\\"Offer Rejected\\")","skip_queue_and_execute_immediately":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-405,"y":540}',
@@ -3845,6 +3921,7 @@ data = [
             },
             {
                 "name": "99dc7dmkv2",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Job Offer","action":"on_update","submit":true,"variable_path_for_output":"","updated_field":""}',
                 "position": '{"x":-150,"y":-240}',
@@ -3858,6 +3935,7 @@ data = [
             },
             {
                 "name": "99dc890oh7",
+                "docstatus": 0,
                 "idx": 1,
                 "data": '{"doctype":"Job Offer","action":"on_update","submit":true,"updated_field":"status"}',
                 "position": '{"x":-555,"y":-270}',
@@ -3871,6 +3949,7 @@ data = [
             },
             {
                 "name": "8uk41iu6p7",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"node_label":"Generate Attachment","python_code":"variables[\\"company\\"]=variables[\\"doc\\"][\\"company\\"]\\nvariables[\\"designation\\"]=variables[\\"doc\\"][\\"designation\\"]\\nvariables[\\"job_offer_url\\"] = frappe.utils.get_url()+\\"/job_offer?appl=\\"+variables[\\"doc\\"][\\"job_applicant\\"]\\nvariables[\\"canditate\\"]=variables[\\"doc\\"][\\"applicant_name\\"]\\nvariables[\\"joining_date\\"]=frappe.db.get_value(\\"Job Applicant\\",variables[\\"doc\\"][\\"job_applicant\\"],\\"custom_expected_doj\\")\\nvariables[\\"shift\\"]=variables[\\"doc\\"][\\"custom_shift\\"]\\nvariables[\\"salary\\"]=variables[\\"doc\\"][\\"custom_ctc_per_annum\\"]\\nreporting_person = frappe.db.get_value(\\"Job Applicant\\",variables[\\"doc\\"][\\"job_applicant\\"],\\"custom_reporting_head\\")\\nvariables[\\"reporting_person\\"]=frappe.db.get_value(\\"Employee\\",reporting_person,\\"employee_name\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":305,"y":-100}',
@@ -3884,8 +3963,9 @@ data = [
             },
             {
                 "name": "8uk4b1rqoc",
+                "docstatus": 0,
                 "idx": 2,
-                "data": '{"attach_print": true, "bcc": "", "cc": "", "createNewEmailTemplate": false, "docname": "{{doc.name}}", "doctype": "Job Offer", "email_account": "Email Linking", "email_subject": "", "email_template": "Job Offer", "link_doctype": true, "print_format": "Job Offer Minix", "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{doc.applicant_email}}", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
+                "data": '{"attach_print":true,"bcc":"","cc":"","createNewEmailTemplate":false,"docname":"{{doc.name}}","doctype":"Job Offer","email_account":"Email Linking","email_subject":"","email_template":"Job Offer","link_doctype":true,"print_format":"Job Offer Minix","recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{doc.applicant_email}}","select_template":true,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1170,"y":405}',
                 "type": "send_mail",
                 "id": "WbNDvHYCjouQiv2zVJCSa",
@@ -3897,6 +3977,7 @@ data = [
             },
             {
                 "name": "99dc5nbf9p",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"node_label":"Process data","python_code":"doc = variables.get(\\"doc\\")\\nvariables[\\"reciepient\\"] = doc.job_applicant\\n","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-555,"y":-60}',
@@ -3910,8 +3991,9 @@ data = [
             },
             {
                 "name": "99dcjepj5i",
+                "docstatus": 0,
                 "idx": 2,
-                "data": '{"bcc": "", "cc": "", "email_account": "Email Linking", "email_content": "<p>Job Offer&nbsp;</p>", "email_subject": "Job Offer\\u00a0Status", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{recipients}}", "select_template": false, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
+                "data": '{"bcc":"","cc":"","email_account":"Email Linking","email_content":"<p>Job Offer&nbsp;</p>","email_subject":"Job Offer\\u00a0Status","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{recipients}}","select_template":false,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-155.0854466160033,"y":42.76542717526206}',
                 "type": "send_mail",
                 "id": "NuqR2a2inMkCW-1mG5onm",
@@ -3923,6 +4005,7 @@ data = [
             },
             {
                 "name": "99dcjoreqd",
+                "docstatus": 0,
                 "idx": 2,
                 "data": '{"node_label":"Accept Job Offer","python_code":"doc = variables.get(\\"doc\\")\\nfrappe.db.set_value(\\"Job Offer\\",doc.name,\\"status\\",\\"Accepted\\")\\n\\nfrappe.db.set_value(\\"Job Applicant\\",doc.job_applicant,\\"status\\",\\"Offer Accepted\\")","skip_queue_and_execute_immediately":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":0,"y":525}',
@@ -3936,6 +4019,7 @@ data = [
             },
             {
                 "name": "8uk43ho1ge",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"selectDoctype":"Job Offer","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1020,"y":-120}',
@@ -3949,6 +4033,7 @@ data = [
             },
             {
                 "name": "8uk474jdo2",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"node_label":"Generate Attachment","python_code":"variables[\\"company\\"]=variables[\\"doc\\"][\\"company\\"]\\nvariables[\\"designation\\"]=variables[\\"doc\\"][\\"designation\\"]\\nvariables[\\"job_offer_url\\"] = frappe.utils.get_url()+\\"/job_offer?appl=\\"+variables[\\"doc\\"][\\"job_applicant\\"]\\nvariables[\\"canditate\\"]=variables[\\"doc\\"][\\"applicant_name\\"]\\nvariables[\\"joining_date\\"]=frappe.db.get_value(\\"Job Applicant\\",variables[\\"doc\\"][\\"job_applicant\\"],\\"custom_expected_doj\\")\\nreporting_person = frappe.db.get_value(\\"Job Applicant\\",variables[\\"doc\\"][\\"job_applicant\\"],\\"custom_reporting_head\\")\\nvariables[\\"reporting_person\\"]=frappe.db.get_value(\\"Employee\\",reporting_person,\\"employee_name\\")","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":660,"y":150}',
@@ -3962,6 +4047,7 @@ data = [
             },
             {
                 "name": "99dc13hhdc",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"submit":true,"doctype":"Job Offer"}',
                 "position": '{"x":-405,"y":450}',
@@ -3975,6 +4061,7 @@ data = [
             },
             {
                 "name": "99dct3v581",
+                "docstatus": 0,
                 "idx": 3,
                 "data": '{"node_label":"","use_python_expression":true,"submit":true,"variable_path_for_output":"","expression":"doc=variables.get(\\"doc\\")\\nif doc.status==\\"Rejected\\":\\n    return True\\nreturn False"}',
                 "position": '{"x":-155.0854466160033,"y":-137.23457282473794}',
@@ -3988,8 +4075,9 @@ data = [
             },
             {
                 "name": "99dcuudaa5",
+                "docstatus": 0,
                 "idx": 3,
-                "data": '{"bcc": "", "cc": "", "email_account": "Email Linking", "email_content": "<p>test</p>", "email_subject": "Testing", "link_doctype": false, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "{{reciepient}}", "select_template": false, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
+                "data": '{"bcc":"","cc":"","email_account":"Email Linking","email_content":"<p>test</p>","email_subject":"Testing","link_doctype":false,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"{{reciepient}}","select_template":false,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-555,"y":15}',
                 "type": "send_mail",
                 "id": "_36DC7mHye6UFFaVQcivU",
@@ -4001,6 +4089,7 @@ data = [
             },
             {
                 "name": "8uk4a2qitm",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"message":"Sending Job Offer","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":660,"y":30}',
@@ -4014,6 +4103,7 @@ data = [
             },
             {
                 "name": "8uk4g78srp",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"doctype":"Job Offer","docname":"{{doc.name}}","variable_path":"print_url","submit":true,"variable_path_for_output":"","print_format":"Job Offer 2"}',
                 "position": '{"x":1020,"y":15}',
@@ -4027,6 +4117,7 @@ data = [
             },
             {
                 "name": "99dc0c449t",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"node_label":"","use_python_expression":true,"submit":true,"expression":"doc=variables.get(\\"doc\\")\\nif doc.status==\\"Accepted\\":\\n    return True\\nreturn False","filters":[],"variable_path_for_output":""}',
                 "position": '{"x":-555,"y":-165}',
@@ -4040,6 +4131,7 @@ data = [
             },
             {
                 "name": "99dc0i3tfm",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"node_label":"","python_code":"doc=variables.get(\\"doc\\")\\ninterviews = frappe.db.get_value(\\"Interview\\", {\\"job_applicant\\": doc.job_applicant, \\"docstatus\\": [\\"!=\\", 2]}, pluck=\\"name\\")\\nemails = frappe.get_all(\\"Interview Detail\\", {\\"parenttype\\":\\"Interview\\",\\"parent\\": interviews}, pluck=\\"interviewer\\")\\n\\nvariables[\\"recipients\\"] = \\", \\".join(set(emails))","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":-155.0854466160033,"y":-47.23457282473794}',
@@ -4053,6 +4145,7 @@ data = [
             },
             {
                 "name": "99dc6oeomj",
+                "docstatus": 0,
                 "idx": 4,
                 "data": '{"submit":true,"variable_path_for_output":"","doctype":"Job Offer"}',
                 "position": '{"x":0,"y":435}',
@@ -4066,6 +4159,7 @@ data = [
             },
             {
                 "name": "8uk4bskrf6",
+                "docstatus": 0,
                 "idx": 5,
                 "data": '{"file_path":"{{print_url}}","open_file_doc":false,"enable_download":true,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1020,"y":90}',
@@ -4079,8 +4173,9 @@ data = [
             },
             {
                 "name": "8uk4ookf6e",
+                "docstatus": 0,
                 "idx": 5,
-                "data": '{"attach_print": false, "bcc": "", "cc": "", "createNewEmailTemplate": false, "docname": "{{doc.name}}", "doctype": "Job Offer", "email_account": "Email Linking", "email_subject": "", "email_template": "Walnut Job Offer", "link_doctype": true, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "prathamjadhav052@gmail.com", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
+                "data": '{"attach_print":false,"bcc":"","cc":"","createNewEmailTemplate":false,"docname":"{{doc.name}}","doctype":"Job Offer","email_account":"Email Linking","email_subject":"","email_template":"Walnut Job Offer","link_doctype":true,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"prathamjadhav052@gmail.com","select_template":true,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":290,"y":5}',
                 "type": "send_mail",
                 "id": "_zLDDjVEZK047P-55GfPi",
@@ -4092,6 +4187,7 @@ data = [
             },
             {
                 "name": "99dc566u1d",
+                "docstatus": 0,
                 "idx": 5,
                 "type": "smoothstep",
                 "id": "gH5UaT9lxcYdrOsLNdCXz",
@@ -4107,6 +4203,7 @@ data = [
             },
             {
                 "name": "99dcjj3d9u",
+                "docstatus": 0,
                 "idx": 5,
                 "type": "smoothstep",
                 "id": "0sHi3Kyhe7kE5ZB8oP047",
@@ -4122,8 +4219,9 @@ data = [
             },
             {
                 "name": "8uk4dbh84b",
+                "docstatus": 0,
                 "idx": 6,
-                "data": '{"attach_print": false, "bcc": "", "cc": "", "createNewEmailTemplate": false, "docname": "{{doc.name}}", "doctype": "Job Offer", "email_account": "Email Linking", "email_subject": "", "email_template": "Job Offer", "link_doctype": true, "recepients": [{"cc": "", "recepientField": "", "recipient": ""}], "recipients": "prathamjadhav052@gmail.com", "select_template": true, "send_to_assigned_users": false, "submit": true, "variable_path_for_output": ""}',
+                "data": '{"attach_print":false,"bcc":"","cc":"","createNewEmailTemplate":false,"docname":"{{doc.name}}","doctype":"Job Offer","email_account":"Email Linking","email_subject":"","email_template":"Job Offer","link_doctype":true,"recepients":[{"cc":"","recepientField":"","recipient":""}],"recipients":"prathamjadhav052@gmail.com","select_template":true,"send_to_assigned_users":false,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":660,"y":240}',
                 "type": "send_mail",
                 "id": "oJWXgkTW5fmIAGHvPMgQO",
@@ -4135,6 +4233,7 @@ data = [
             },
             {
                 "name": "8uk4i5g2kq",
+                "docstatus": 0,
                 "idx": 6,
                 "data": '{"question":"Please confirm do you wish to send the Job Offer","options":[{"option":"Yes","key":""},{"option":"No, I want to review"}],"answer_var":"job_offer_confirmation","reply_if_wrong_option_received":"please select from the options","node_label":"Please confirm do you wish to send the Job Offer","output_handles_array_field":"options","output_handle_key_field":"option","submit":true}',
                 "position": '{"x":1020,"y":150}',
@@ -4148,6 +4247,7 @@ data = [
             },
             {
                 "name": "99dcj4k63o",
+                "docstatus": 0,
                 "idx": 6,
                 "type": "smoothstep",
                 "id": "WWlyopMiJGNvXqCpzzONr",
@@ -4163,6 +4263,7 @@ data = [
             },
             {
                 "name": "99dcqnkr74",
+                "docstatus": 0,
                 "idx": 6,
                 "type": "smoothstep",
                 "id": "GzWAn-eiRpkijjwk8fnZ9",
@@ -4178,6 +4279,7 @@ data = [
             },
             {
                 "name": "99dcvraj4h",
+                "docstatus": 0,
                 "idx": 6,
                 "type": "smoothstep",
                 "id": "BWHXejkYjd-sPWvPhuypg",
@@ -4193,6 +4295,7 @@ data = [
             },
             {
                 "name": "8uk45dfmtm",
+                "docstatus": 0,
                 "idx": 7,
                 "data": '{"selectDoctype":"Job Offer","submit":true}',
                 "position": '{"x":165,"y":165}',
@@ -4206,6 +4309,7 @@ data = [
             },
             {
                 "name": "8uk4ckedhm",
+                "docstatus": 0,
                 "idx": 7,
                 "data": '{"message":"Yeah! I have initiated the sending. The system will send the job offer shortly.","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1185,"y":525}',
@@ -4219,6 +4323,7 @@ data = [
             },
             {
                 "name": "99dcei8t9b",
+                "docstatus": 0,
                 "idx": 7,
                 "type": "smoothstep",
                 "id": "W5dCA_Mg48PYz3ger7sUh",
@@ -4234,6 +4339,7 @@ data = [
             },
             {
                 "name": "99dcf2vunq",
+                "docstatus": 0,
                 "idx": 7,
                 "type": "smoothstep",
                 "id": "oIpiUPLK3a4uZUQrI1m5U",
@@ -4249,6 +4355,7 @@ data = [
             },
             {
                 "name": "8uk41tguqe",
+                "docstatus": 0,
                 "idx": 8,
                 "data": '{"node_label":"Applicant Details","python_code":"variables[\\"company\\"]=variables[\\"doc\\"][\\"company\\"]\\nvariables[\\"designation\\"]=variables[\\"doc\\"][\\"designation\\"]\\nvariables[\\"job_offer_url\\"] = frappe.utils.get_url()+\\"/job_offer?appl=\\"+variables[\\"doc\\"][\\"job_applicant\\"]\\nvariables[\\"canditate\\"]=variables[\\"doc\\"][\\"applicant_name\\"]","skip_queue_and_execute_immediately":false,"execute_current_node_as_user":"","submit":true,"variable_path_for_output":""}',
                 "position": '{"x":1125,"y":300}',
@@ -4262,6 +4369,7 @@ data = [
             },
             {
                 "name": "8uk4jr1mss",
+                "docstatus": 0,
                 "idx": 8,
                 "data": '{"file_path":"/private/files/Prathamesh.pdf","open_file_doc":true,"enable_download":true,"submit":true,"variable_path_for_output":""}',
                 "position": '{"x":270,"y":270}',
@@ -4275,6 +4383,7 @@ data = [
             },
             {
                 "name": "99dcafts9f",
+                "docstatus": 0,
                 "idx": 8,
                 "type": "smoothstep",
                 "id": "7V15TmcZAuc1zQCaOUNt5",
@@ -4290,6 +4399,7 @@ data = [
             },
             {
                 "name": "8uk4e2atqb",
+                "docstatus": 0,
                 "idx": 9,
                 "type": "smoothstep",
                 "id": "6eYON2xKO7RqhroMhZcfD",
@@ -4305,6 +4415,7 @@ data = [
             },
             {
                 "name": "8uk4pk4tu9",
+                "docstatus": 0,
                 "idx": 9,
                 "type": "smoothstep",
                 "id": "Ue6vHWA1dttRCfzDAIoWk",
@@ -4320,6 +4431,7 @@ data = [
             },
             {
                 "name": "99dc4rhk4u",
+                "docstatus": 0,
                 "idx": 9,
                 "type": "smoothstep",
                 "id": "B9FbvkX6GxuBJkIrFcgBi",
@@ -4335,6 +4447,7 @@ data = [
             },
             {
                 "name": "8uk4qugl05",
+                "docstatus": 0,
                 "idx": 10,
                 "type": "smoothstep",
                 "id": "cEfIPJmwRPIwxzRexyc_O",
@@ -4350,6 +4463,7 @@ data = [
             },
             {
                 "name": "8uk4rk66lv",
+                "docstatus": 0,
                 "idx": 10,
                 "type": "smoothstep",
                 "id": "CS94NoQskeKu0r0sQA9pG",
@@ -4365,6 +4479,7 @@ data = [
             },
             {
                 "name": "8uk412g00g",
+                "docstatus": 0,
                 "idx": 11,
                 "type": "smoothstep",
                 "id": "L2U9Q5shN_u2vXX1ZFQFL",
@@ -4380,6 +4495,7 @@ data = [
             },
             {
                 "name": "8uk4kbuibf",
+                "docstatus": 0,
                 "idx": 11,
                 "type": "smoothstep",
                 "id": "Sw2zfu1JRQtK-M7ZmYWAc",
@@ -4395,6 +4511,7 @@ data = [
             },
             {
                 "name": "8uk40vqvpt",
+                "docstatus": 0,
                 "idx": 12,
                 "type": "smoothstep",
                 "id": "IDRApGl4GVMr8A4RGrpLJ",
@@ -4410,6 +4527,7 @@ data = [
             },
             {
                 "name": "8uk429e74d",
+                "docstatus": 0,
                 "idx": 12,
                 "type": "smoothstep",
                 "id": "c8aHlMb1S7x5f_fSjOgpi",
@@ -4425,6 +4543,7 @@ data = [
             },
             {
                 "name": "8uk4972e5e",
+                "docstatus": 0,
                 "idx": 13,
                 "type": "smoothstep",
                 "id": "gTKBw8dx1cENpIHcnBnjN",
@@ -4440,6 +4559,7 @@ data = [
             },
             {
                 "name": "8uk4o76lfm",
+                "docstatus": 0,
                 "idx": 13,
                 "type": "smoothstep",
                 "id": "FMvfvUixhvD4_eNz0gAEY",
@@ -4455,6 +4575,7 @@ data = [
             },
             {
                 "name": "8uk4dp182t",
+                "docstatus": 0,
                 "idx": 14,
                 "type": "smoothstep",
                 "id": "5H8Ha9gtAUJAM5winq0yF",
@@ -4470,6 +4591,7 @@ data = [
             },
             {
                 "name": "8uk4nnkbda",
+                "docstatus": 0,
                 "idx": 15,
                 "type": "smoothstep",
                 "id": "7THStJOuqkvm9DEARG7tj",
@@ -4484,7 +4606,6 @@ data = [
                 "doctype": "Funnel Definition",
             },
         ],
-        "funnel_access": [],
     },
 ]
 
