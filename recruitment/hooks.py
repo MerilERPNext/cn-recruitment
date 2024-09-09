@@ -53,8 +53,8 @@ app_license = "mit"
 #     }]
 fixtures = [
     {
-        "doctype": "Workflow",
-        "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
+        "doctype": "Property Setter",
+        "filters": [["Property Setter", "module", "=", "Recruitment"]],
     }
     # {
     #     "doctype": "Custom Field",
