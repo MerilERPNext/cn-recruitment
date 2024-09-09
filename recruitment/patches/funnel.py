@@ -4974,10 +4974,12 @@ def set_email_account():
     for funnel_dict in data:
         funnel_definition = funnel_dict["funnel_definition"]
         for f_dict in funnel_definition:
-            if f_dict["type"] == "send_mail":
-                node_data = frappe.parse_json(f_dict["data"])
-                node_data["email_account"] = default_email_account
-                f_dict["data"] = frappe.json.dumps(node_data)
+            if "type" in f_dict:
+                if f_dict["type"] == "send_mail":
+                    node_data = frappe.parse_json(f_dict["data"])
+                    node_data["email_account"] = default_email_account
+                    f_dict["data"] = frappe.json.dumps(node_data)
+
 
 
 def execute():
