@@ -4981,7 +4981,6 @@ def set_email_account():
                     f_dict["data"] = frappe.json.dumps(node_data)
 
 
-
 def execute():
     set_email_account()
     for d in data:
