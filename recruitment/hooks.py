@@ -56,10 +56,7 @@ fixtures = [
         "doctype": "Property Setter",
         "filters": [["Property Setter", "module", "=", "Recruitment"]],
     }
-    # {
-    #     "doctype": "Custom Field",
-    #     "filters": [["Custom Field", "module", "=", "Recruitment"]],
-    # },
+    
     ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
