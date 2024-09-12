@@ -53,8 +53,8 @@ app_license = "mit"
 #     }]
 fixtures = [
     {
-        "doctype": "Property Setter",
-        "filters": [["Property Setter", "module", "=", "Recruitment"]],
+        "doctype": "Role",
+        "filters": [["Role", "name", "IN", ["Recruitment User","Recruiter Admin"]]],
     }
     
     ]
