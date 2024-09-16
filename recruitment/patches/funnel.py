@@ -3460,32 +3460,7 @@ data = [
             },
         ],
         "funnel_access": [
-            {
-                "name": "hcskua3v1p",
-                "docstatus": 0,
-                "idx": 1,
-                "role": "Recruitment User",
-                "can_execute": 1,
-                "can_modify": 0,
-                "can_view": 0,
-                "parent": "Job Applicant-Approval Funnels",
-                "parentfield": "funnel_access",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Access",
-            },
-            {
-                "name": "hcskgh2a09",
-                "docstatus": 0,
-                "idx": 2,
-                "role": "Recruiter Admin",
-                "can_execute": 0,
-                "can_modify": 0,
-                "can_view": 0,
-                "parent": "Job Applicant-Approval Funnels",
-                "parentfield": "funnel_access",
-                "parenttype": "Funnel",
-                "doctype": "Funnel Access",
-            },
+            
         ],
     },
     # job applicant public funnel
