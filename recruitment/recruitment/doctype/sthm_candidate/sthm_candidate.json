@@ -24,19 +24,22 @@
    "fieldname": "resume",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "Resume"
+   "label": "Resume",
+   "reqd": 1
   },
   {
    "fieldname": "first_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "First Name"
+   "label": "First Name",
+   "reqd": 1
   },
   {
    "fieldname": "last_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Last Name"
+   "label": "Last Name",
+   "reqd": 1
   },
   {
    "default": "Pending",
@@ -53,15 +56,16 @@
   },
   {
    "fieldname": "linkedin_id",
-   "fieldtype": "Attach",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "LinkedIn Id"
+   "label": "LinkedIn Id",
+   "options": "URL"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-09-03 12:57:42.248621",
+ "modified": "2024-09-17 15:04:24.776418",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "STHM Candidate",
