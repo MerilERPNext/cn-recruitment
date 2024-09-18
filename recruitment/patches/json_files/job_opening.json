@@ -1,6 +1,8 @@
 {
   "name": "Job Opening/ Requisition Funnels",
   "owner": "Administrator",
+  "modified": "2024-09-18 11:57:29.663767",
+  "modified_by": "Administrator",
   "docstatus": 0,
   "idx": 30,
   "archived": 0,
@@ -11,11 +13,12 @@
   "variable_list": "[]",
   "assistant_form_fields": "{}",
   "doctype": "Funnel",
-  "funnel_access": [],
   "funnel_definition": [
     {
       "name": "1rt9emjju2",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Submit To Hiring Manager\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"workflow_state\"}",
@@ -31,6 +34,8 @@
     {
       "name": "kek889r1mi",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Interview\",\"action\":\"after_insert\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -46,6 +51,8 @@
     {
       "name": "kek8cib2o8",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Job Opening\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"status\"}",
@@ -61,6 +68,8 @@
     {
       "name": "kek8qfg9ob",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Job Opening\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"status\"}",
@@ -76,6 +85,8 @@
     {
       "name": "tbrksn93le",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Job Requisition\",\"action\":\"after_insert\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -91,6 +102,8 @@
     {
       "name": "1rt95dnikq",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"bcc\":\"\",\"cc\":\"\",\"createNewEmailTemplate\":false,\"email_account\":\"Yaswanthkumar9390\",\"email_subject\":\"\",\"email_template\":\"Submit To Hiring Manager\",\"link_doctype\":false,\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"{{doc.assigned_to}}\",\"select_template\":true,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"attach_prints\":false}",
@@ -106,6 +119,8 @@
     {
       "name": "kek8grusad",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"bcc\":\"\",\"cc\":\"\",\"createNewEmailTemplate\":false,\"email_account\":null,\"email_content\":\"<p>Dear&nbsp;Sir/Madam,&nbsp;</p><p>New&nbsp;MPR&nbsp;-&nbsp; {{doc.name}} request&nbsp;has&nbsp;been received.&nbsp;</p><p>MPR&nbsp;ID: {{doc.name}}</p><p>Created&nbsp;By: {{doc.created_by}}</p><p>Company: {{doc.company}}</p><p>Hiring&nbsp;Manager: {{doc.requested_by_name}}</p><p>Posting&nbsp;Title: {{doc.designation}}</p><p>Number&nbsp;of&nbsp;Positions: {{doc.no_of_positions}}</p><p>Date&nbsp;of&nbsp;Requisition: {{doc.posting_date}}</p><p>How&nbsp;the&nbsp;vacancy&nbsp;has&nbsp;arisen?: {{doc.custom_how_the_vacancy_as_arisen}}</p><p>Days&nbsp;to&nbsp;fill&nbsp;position: {{doc.time_to_fill}}</p><p>Kindly&nbsp;assign&nbsp;recruiter&nbsp;user&nbsp;to&nbsp;this&nbsp;job&nbsp;opening.&nbsp;</p><p>Regards,&nbsp;</p><p>Recruit&nbsp;Team&nbsp;</p>\",\"email_subject\":\" New MPR - {{doc.designation}} - {{doc.company}}\",\"email_template\":\"Recruiter Admin To Recruiter 1\",\"link_doctype\":false,\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"{{doc.custom_assign_to_recruiter}}\",\"select_template\":true,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"attach_prints\":false}",
@@ -121,6 +136,8 @@
     {
       "name": "kek8ho2ahn",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"doctype\":\"Job Requisition\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"custom_assign_to_recruiter\"}",
@@ -136,6 +153,8 @@
     {
       "name": "kek8tj52np",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"node_label\":\"Share Job Opening\",\"python_code\":\"inter_doc = variables[\\\"doc\\\"]\\n    for inter in inter_doc.interview_details:\\n        if not frappe.db.exists(\\\"DocShare\\\", {\\\"user\\\": inter.interviewer,\\\"share_doctype\\\":\\\"Job Opening\\\",\\\"share_name\\\":inter_doc.job_opening}):\\n            DocShare = frappe.new_doc(\\\"DocShare\\\")\\n            DocShare.user = inter.interviewer\\n            DocShare.share_doctype = \\\"Job Opening\\\"\\n            DocShare.share_name = inter_doc.job_opening\\n            DocShare.read = 1\\n            DocShare.notify_by_email = 1\\n            DocShare.save()\",\"skip_queue_and_execute_immediately\":false,\"submit\":true}",
@@ -151,6 +170,8 @@
     {
       "name": "tbrkk69514",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"node_label\":\"Generate Hiring Url\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nsite_url=frappe.utils.get_url()\\nurl=site_url+\\\"/app/job-applicant/\\\"+doc.name\\nhiring_manager_name=frappe.db.get_value(\\\"User\\\", doc.owner, \\\"full_name\\\")\\nhr_heads = frappe.db.sql(\\\"\\\"\\\"\\nSELECT user.name, user.full_name\\nFROM `tabUser` user\\nJOIN `tabHas Role` has_role ON has_role.parent = user.name\\nWHERE has_role.role = %s\\n\\\"\\\"\\\", (\\\"Recruiter Admin\\\",), as_dict=True)\\nfiltered_hr_heads = [item for item in hr_heads if item['name'] != 'Administrator']\\nmails = ','.join([item['name'] for item in filtered_hr_heads])\\nvariables[\\\"url\\\"]=url\\nvariables[\\\"recruiter_head_mails\\\"]=mails\\nvariables[\\\"hiring_manager_name\\\"]=hiring_manager_name\",\"skip_queue_and_execute_immediately\":true,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -166,6 +187,8 @@
     {
       "name": "1rt941jcmf",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"node_label\":\"Check Workflow State\",\"use_python_expression\":true,\"submit\":true,\"expression\":\"doc =  variables[\\\"doc\\\"]\\nif doc[\\\"workflow_state\\\"] == \\\"Submit To HIring Manager\\\":\\n    return True\\nreturn False\",\"filters\":[],\"variable_path_for_output\":\"\"}",
@@ -181,6 +204,8 @@
     {
       "name": "kek8ltirjp",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"node_label\":\"Update Status\",\"python_code\":\"doc = variables[\\\"doc\\\"]\\nfrappe.db.set_value(\\\"Job Requisition\\\",doc.name,\\\"status\\\",\\\"Open & Approved\\\")\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"execute_current_node_as_user\":\"\"}",
@@ -196,6 +221,8 @@
     {
       "name": "kek8tbor4g",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "type": "smoothstep",
@@ -213,6 +240,8 @@
     {
       "name": "tbrkf46ju5",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"email_account\":\"Minix Info\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":true,\"attach_prints\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"{{recruiter_head_mails}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Hiring Manager To Recruiter Admin\",\"createNewEmailTemplate\":false,\"doctype\":\"Job Requisition\",\"docname\":\"{{doc.name}}\",\"email_subject\":\"\"}",
@@ -228,6 +257,8 @@
     {
       "name": "1rt9tbplla",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "type": "smoothstep",
@@ -245,6 +276,8 @@
     {
       "name": "kek8gq87i1",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "data": "{\"node_label\":\"Update Status\",\"python_code\":\"doc = variables[\\\"doc\\\"]\\nif doc.status == \\\"In-Progress\\\":\\n\\tfrappe.db.set_value(\\\"Job Requisition\\\",doc.job_requisition,\\\"status\\\",doc.status)\\nif doc.status == \\\"Close\\\":\\n\\tfrappe.db.set_value(\\\"Job Requisition\\\",doc.job_requisition,\\\"status\\\",\\\"Filled\\\")\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"execute_current_node_as_user\":\"\"}",
@@ -260,6 +293,8 @@
     {
       "name": "kek8jf2kea",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "data": "{\"node_label\":\"Update Status\",\"python_code\":\"doc = variables[\\\"doc\\\"]\\nif doc.status == \\\"In-Progress\\\":\\n\\tfrappe.db.set_value(\\\"Job Requisition\\\",doc.job_requisition,\\\"status\\\",doc.status)\\nif doc.status == \\\"Close\\\":\\n\\tfrappe.db.set_value(\\\"Job Requisition\\\",doc.job_requisition,\\\"status\\\",\\\"Filled\\\")\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"execute_current_node_as_user\":\"\"}",
@@ -275,6 +310,8 @@
     {
       "name": "tbrk2q56n0",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "type": "smoothstep",
@@ -292,6 +329,8 @@
     {
       "name": "1rt9anu13a",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "type": "smoothstep",
@@ -309,6 +348,8 @@
     {
       "name": "kek8nlou61",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "type": "smoothstep",
@@ -326,6 +367,8 @@
     {
       "name": "tbrkktrdfb",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "type": "smoothstep",
@@ -343,6 +386,8 @@
     {
       "name": "kek88pfbpp",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "type": "smoothstep",
@@ -360,6 +405,8 @@
     {
       "name": "kek8t25u9c",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "type": "smoothstep",
@@ -377,6 +424,8 @@
     {
       "name": "kek87ck7ml",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.663767",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 8,
       "type": "smoothstep",
@@ -391,5 +440,6 @@
       "parenttype": "Funnel",
       "doctype": "Funnel Definition"
     }
-  ]
+  ],
+  "funnel_access": []
 }
