@@ -1,6 +1,8 @@
 {
   "name": "Interview & Feedback Funnel",
   "owner": "Administrator",
+  "modified": "2024-09-18 11:57:29.829896",
+  "modified_by": "Administrator",
   "docstatus": 0,
   "idx": 0,
   "archived": 0,
@@ -11,11 +13,12 @@
   "variable_list": "[]",
   "assistant_form_fields": "{}",
   "doctype": "Funnel",
-  "funnel_access": [],
   "funnel_definition": [
     {
       "name": "kek93gv7bh",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Interview\",\"action\":\"after_insert\",\"submit\":true,\"updated_field\":\"job_applicant\",\"variable_path_for_output\":\"\"}",
@@ -31,6 +34,8 @@
     {
       "name": "kek969jhqe",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Interview Feedback\",\"action\":\"on_submit\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -46,6 +51,8 @@
     {
       "name": "kek9c3e5op",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Interview\",\"action\":\"after_insert\",\"submit\":true}",
@@ -61,6 +68,8 @@
     {
       "name": "kek9d7j9b5",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Interview\",\"action\":\"after_insert\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -76,6 +85,8 @@
     {
       "name": "kek9b6o56k",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"node_label\":\"Update Status As Interview\",\"python_code\":\"doc = variables[\\\"doc\\\"]\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc[\\\"job_applicant\\\"],\\\"status\\\",\\\"Interview\\\")\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -91,6 +102,8 @@
     {
       "name": "kek9bgm4fj",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"bcc\": \"\", \"cc\": \"\", \"email_account\": null, \"email_content\": \"<p>interview Feedback Submitted {{doc.status}}</p>\", \"email_subject\": \"interview Feedback\", \"link_doctype\": false, \"recepients\": [{\"cc\": \"\", \"recepientField\": \"\", \"recipient\": \"\"}], \"recipients\": \"{{reciepient}}\", \"select_template\": false, \"send_to_assigned_users\": false, \"submit\": true, \"variable_path_for_output\": \"\"}",
@@ -106,6 +119,8 @@
     {
       "name": "kek9g4qgq4",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"bcc\": \"\", \"cc\": \"\", \"email_account\": null, \"email_content\": \"<p>your interview is sceduled</p>\", \"email_subject\": \"interview round\", \"link_doctype\": false, \"recepients\": [{\"cc\": \"\", \"recepientField\": \"\", \"recipient\": \"\"}], \"recipients\": \"{{reciepient}}\", \"select_template\": false, \"send_to_assigned_users\": false, \"submit\": true}",
@@ -121,6 +136,8 @@
     {
       "name": "kek9vi9dou",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"bcc\": \"\", \"cc\": \"\", \"createNewEmailTemplate\": false, \"email_account\": null, \"email_template\": \"Interview Candidate\", \"link_doctype\": false, \"recepients\": [{\"cc\": \"\", \"recepientField\": \"\", \"recipient\": \"\"}], \"recipients\": \"{{doc.job_applicant}}\", \"select_template\": true, \"send_to_assigned_users\": false, \"submit\": true, \"variable_path_for_output\": \"\"}",
@@ -136,6 +153,8 @@
     {
       "name": "kek97q0jnj",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "type": "smoothstep",
@@ -153,6 +172,8 @@
     {
       "name": "kek9d848rs",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "type": "smoothstep",
@@ -170,6 +191,8 @@
     {
       "name": "kek9naiv7f",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"node_label\":\"Details of applicant\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nvariables[\\\"reciepient\\\"] = doc.job_applicant\\n\",\"submit\":true}",
@@ -185,6 +208,8 @@
     {
       "name": "kek9u145s2",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"node_label\":\"Details of applicant\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nvariables[\\\"reciepient\\\"] = doc.interviewer\\n\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -200,6 +225,8 @@
     {
       "name": "kek9eq9ks5",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "type": "smoothstep",
@@ -217,6 +244,8 @@
     {
       "name": "kek9t7acsn",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "data": "{\"bcc\": \"\", \"cc\": \"\", \"createNewEmailTemplate\": false, \"email_account\": null, \"email_template\": \"Interviewer Email\", \"link_doctype\": false, \"recepients\": [{\"cc\": \"\", \"recepientField\": \"\", \"recipient\": \"\"}], \"recipients\": \"{{recepients}}\", \"select_template\": true, \"send_to_assigned_users\": false, \"submit\": true, \"variable_path_for_output\": \"\"}",
@@ -232,6 +261,8 @@
     {
       "name": "kek9v1n9sl",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "type": "smoothstep",
@@ -249,6 +280,8 @@
     {
       "name": "kek92q1366",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "data": "{\"node_label\":\"\",\"python_code\":\"interviewers = []\\ndoc =  variables[\\\"doc\\\"]\\nfor inter in doc[\\\"interview_details\\\"]:\\n    interviewers.append(inter.interviewer)\\nvariables[\\\"recepients\\\"] =','.join(interviewers)\\n\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -264,6 +297,8 @@
     {
       "name": "kek93mq2b9",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "type": "smoothstep",
@@ -281,6 +316,8 @@
     {
       "name": "kek9ig19lf",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "type": "smoothstep",
@@ -298,6 +335,8 @@
     {
       "name": "kek92ogvr4",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "type": "smoothstep",
@@ -315,6 +354,8 @@
     {
       "name": "kek9kbfuds",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:29.829896",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 7,
       "type": "smoothstep",
@@ -329,5 +370,6 @@
       "parenttype": "Funnel",
       "doctype": "Funnel Definition"
     }
-  ]
+  ],
+  "funnel_access": []
 }

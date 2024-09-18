@@ -1,6 +1,8 @@
 {
   "name": "Job Applicant-Approval Funnels",
   "owner": "Administrator",
+  "modified": "2024-09-18 11:57:30.360880",
+  "modified_by": "Administrator",
   "docstatus": 0,
   "idx": 95,
   "archived": 0,
@@ -11,40 +13,12 @@
   "variable_list": "[]",
   "assistant_form_fields": "{}",
   "doctype": "Funnel",
-  "funnel_access": [
-    {
-      "name": "kek71i4v3u",
-      "owner": "Administrator",
-      "docstatus": 0,
-      "idx": 1,
-      "role": "Recruitment User",
-      "can_execute": 1,
-      "can_modify": 0,
-      "can_view": 0,
-      "parent": "Job Applicant-Approval Funnels",
-      "parentfield": "funnel_access",
-      "parenttype": "Funnel",
-      "doctype": "Funnel Access"
-    },
-    {
-      "name": "kek70tmnp6",
-      "owner": "Administrator",
-      "docstatus": 0,
-      "idx": 2,
-      "role": "Recruiter Admin",
-      "can_execute": 0,
-      "can_modify": 0,
-      "can_view": 0,
-      "parent": "Job Applicant-Approval Funnels",
-      "parentfield": "funnel_access",
-      "parenttype": "Funnel",
-      "doctype": "Funnel Access"
-    }
-  ],
   "funnel_definition": [
     {
       "name": "kek7mmu3cs",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"name_of_action\":\"Get Applicant Details\",\"page_type\":\"doctype\",\"node_label\":\"Get Applicant Details\",\"submit\":true,\"doctype\":\"Job Applicant\",\"variable_path_for_output\":\"\"}",
@@ -60,6 +34,8 @@
     {
       "name": "kek7p1k9pn",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"name_of_action\":\"Request Approval from Management\",\"page_type\":\"doctype\",\"node_label\":\"Request Approval from Management\",\"submit\":true,\"doctype\":\"Job Applicant\",\"variable_path_for_output\":\"\",\"show_as_button\":true,\"button_label\":\"Request Management Approval\"}",
@@ -75,6 +51,8 @@
     {
       "name": "kek7p69re8",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"node_label\":\"Job Applicant Offer Status\",\"python_code\":\"doc = variables[\\\"doc\\\"]\\nif doc[\\\"status\\\"] == \\\"Accepted\\\":\\n\\tfrappe.db.set_value(\\\"Job Applicant\\\",doc[\\\"job_applicant\\\"],\\\"status\\\",\\\"Offer Accepted\\\")\\nif doc[\\\"status\\\"] == \\\"Rejected\\\":\\n\\tfrappe.db.set_value(\\\"Job Applicant\\\",doc[\\\"job_applicant\\\"],\\\"status\\\",\\\"Offer Rejected\\\")\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"execute_current_node_as_user\":\"\"}",
@@ -90,6 +68,8 @@
     {
       "name": "kek77o14k4",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"name_of_action\":\"Request Approval From HR Head\",\"page_type\":\"doctype\",\"node_label\":\"Request Approval From HR Head\",\"submit\":true,\"doctype\":\"Job Applicant\",\"variable_path_for_output\":\"\",\"show_as_button\":true,\"button_label\":\"Request approval from HR Head \"}",
@@ -105,6 +85,8 @@
     {
       "name": "kek7lfeaft",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"submit\":true,\"doctype\":\"Job Offer\",\"variable_path_for_output\":\"\"}",
@@ -120,6 +102,8 @@
     {
       "name": "kek7ocnk2o",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"selectFunnel\":\"Job Applicant Details\",\"variablesJson\":\"{\\\"doc_data\\\": {{doc_json}}}\",\"multiple_usage\":true,\"variable\":\"link\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -135,6 +119,8 @@
     {
       "name": "kek75tmhv8",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"attach_print\":false,\"bcc\":\"\",\"cc\":\"\",\"docname\":\"{{docname}}\",\"doctype\":\"Job Applicant\",\"email_account\":null,\"email_content\":\"<p>Dear{{doc[\\\"applicant_name\\\"]}},</p><p>To proceed with your application, we kindly request you to provide some additional information. Please fill out the form at the following link:</p><p>{{link}}</p><p>Your prompt response will help us move forward with your application. If you have any questions or need assistance, feel free to reach out.</p><p>Thank you for your cooperation.</p><p>Best regards,</p><p>ChatNext Assistant </p>\",\"email_subject\":\"Request for Additional Information\",\"link_doctype\":false,\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"{{doc[\\\"email_id\\\"]}}\",\"select_template\":false,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"attach_prints\":false}",
@@ -150,6 +136,8 @@
     {
       "name": "kek7v9nr5r",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"doc_type\":\"Job Applicant\",\"doc_name\":\"{{doc.name}}\",\"role_approval\":true,\"open_chatnext_assistant\":true,\"submit\":true,\"variable_path_for_output\":\"\",\"role_name\":\"Recruitment User\",\"user_id\":\"\",\"required_fields\":\"\"}",
@@ -165,6 +153,8 @@
     {
       "name": "kek733capd",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "data": "{\"message\":\"Mail Send Successfully\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -180,6 +170,8 @@
     {
       "name": "kek7uehm9m",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "type": "smoothstep",
@@ -197,6 +189,8 @@
     {
       "name": "kek7cjdsut",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "data": "{\"node_label\":\"Dict to Str\",\"python_code\":\"variables[\\\"doc_json\\\"]=json.dumps(variables[\\\"doc\\\"],default=str)\\n\",\"skip_queue_and_execute_immediately\":false,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -212,6 +206,8 @@
     {
       "name": "kek7skm0m2",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "data": "{\"node_label\":\"Rejected By HR Head\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nhr_head_name=frappe.db.get_value(\\\"User\\\", variables.get(\\\"trigger_user_id\\\"), \\\"full_name\\\")\\nvariables[\\\"hr_head_name\\\"]=hr_head_name\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc.name,\\\"status\\\",\\\"Rejected\\\")\\n\",\"skip_queue_and_execute_immediately\":true,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -227,6 +223,8 @@
     {
       "name": "kek704sqau",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "type": "smoothstep",
@@ -244,6 +242,8 @@
     {
       "name": "kek7p0h5is",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "data": "{\"node_label\":\"Rejected By Management \",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nmanagement_name=frappe.db.get_value(\\\"User\\\", variables.get(\\\"trigger_user_id\\\"), \\\"full_name\\\")\\nvariables[\\\"management_name\\\"]=management_name\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc.name,\\\"status\\\",\\\"Rejected\\\")\\n\",\"skip_queue_and_execute_immediately\":true,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -259,6 +259,8 @@
     {
       "name": "kek7ghoora",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 7,
       "data": "{\"doc_type\":\"Job Applicant\",\"doc_name\":\"{{doc.name}}\",\"role_approval\":false,\"user_id\":\"kunj.naik@minix.co.in\",\"open_chatnext_assistant\":true,\"submit\":true,\"variable_path_for_output\":\"\",\"required_fields\":\"\"}",
@@ -274,6 +276,8 @@
     {
       "name": "kek7h98gtr",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 7,
       "type": "smoothstep",
@@ -291,6 +295,8 @@
     {
       "name": "kek70rokpj",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 8,
       "type": "smoothstep",
@@ -308,6 +314,8 @@
     {
       "name": "kek79s04mi",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 9,
       "data": "{\"attach_print\":false,\"bcc\":\"\",\"cc\":\"\",\"docname\":\"{{doc.name}}\",\"doctype\":\"Job Applicant\",\"email_account\":null,\"email_content\":\"<p>Dear {{recruiter_name}},</p><p>The job applicant {{applicant_name}} has been reviewed and unfortunately, they have been rejected by the HR Head.</p><p>You can view the details of the rejection and the applicant's profile by following this link:{{url}}</p><p>Thanks &amp; Regards,</p><p>{{hr_head_name}}</p>\",\"email_subject\":\"Job Applicant Rejection Notification\",\"link_doctype\":true,\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"{{trigger_user_id}}\",\"select_template\":false,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"attach_prints\":false}",
@@ -323,6 +331,8 @@
     {
       "name": "kek7sii9rr",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 9,
       "type": "smoothstep",
@@ -340,6 +350,8 @@
     {
       "name": "kek77bdiht",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 10,
       "data": "{\"node_label\":\"Generate Applicant Url\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nmangement_email= variables[\\\"management_email\\\"][\\\"select\\\"]\\nmangement_name = frappe.db.get_value(\\\"User\\\", mangement_email, \\\"full_name\\\")\\nrecruiter_name=frappe.db.get_value(\\\"User\\\", variables.get(\\\"trigger_user_id\\\"), \\\"full_name\\\")\\nvariables[\\\"recruiter_name\\\"]=recruiter_name\\nvariables[\\\"management_name\\\"]=mangement_name\\nvariables[\\\"management_email\\\"]=mangement_email\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc.name,\\\"status\\\",\\\"Management Approval Pending\\\")\\nsite_url=frappe.utils.get_url()\\nurl=site_url+\\\"/app/job-applicant/\\\"+doc.name\\nvariables[\\\"url\\\"] = url\\napplicant_doc=frappe.get_doc(\\\"Job Applicant\\\",doc.name)\\nchild = applicant_doc.append('custom_crm_note', {})\\nchild.note =\\\"Request To Management Approval\\\"\\nchild.added_by = variables.get(\\\"trigger_user_id\\\")\\nchild.added_on = frappe.utils.now_datetime()\\nchild.custom_comment_type = \\\"Recruiter Request To Management Approval\\\"\\napplicant_doc.save()\",\"skip_queue_and_execute_immediately\":true,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -355,6 +367,8 @@
     {
       "name": "kek7o0nscq",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 11,
       "data": "{\"node_label\":\"Generate Applicant Url\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nrecruiter_name=frappe.db.get_value(\\\"User\\\", variables.get(\\\"trigger_user_id\\\"), \\\"full_name\\\")\\nvariables[\\\"recruiter_name\\\"]=recruiter_name\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc.name,\\\"status\\\",\\\"Offer to be Sent\\\")\\nsite_url=frappe.utils.get_url()\\nurl=site_url+\\\"/app/job-applicant/\\\"+doc.name\\nvariables[\\\"url\\\"] = url\\n\\n\",\"skip_queue_and_execute_immediately\":true,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -370,6 +384,8 @@
     {
       "name": "kek7l612iu",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 12,
       "data": "{\"node_label\":\"Generate Applicant Url\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nsite_url=frappe.utils.get_url()\\nurl=site_url+\\\"/app/job-applicant/\\\"+doc.name\\nhr_heads = frappe.db.sql(\\\"\\\"\\\"\\nSELECT user.name,user.full_name\\nFROM `tabUser` user\\nJOIN `tabHas Role` has_role ON has_role.parent = user.name\\nWHERE has_role.role = %s\\n\\\"\\\"\\\", (\\\"HR Head\\\",), as_dict=True)\\nfiltered_hr_heads = [item for item in hr_heads if item['name'] != 'Administrator']\\nmails = ','.join([item['name'] for item in hr_heads])\\nhr_head_names = ','.join([item['full_name'] for item in hr_heads])\\nrecruiter_name=frappe.db.get_value(\\\"User\\\", variables.get(\\\"trigger_user_id\\\"), \\\"full_name\\\")\\nvariables[\\\"url\\\"] = url\\nvariables[\\\"hr_heads_str\\\"]=mails\\nvariables[\\\"hr_head_names\\\"]=hr_head_names\\nvariables[\\\"recruiter_id\\\"]=variables.get(\\\"trigger_user_id\\\")\\nvariables[\\\"recruiter_name\\\"]=recruiter_name\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc.name,\\\"status\\\",\\\"HR Head Approval Pending\\\")\",\"skip_queue_and_execute_immediately\":true,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -385,6 +401,8 @@
     {
       "name": "kek7lrsmj3",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 12,
       "data": "{\"name_of_action\":\"Fill detail from resume\",\"page_type\":\"doctype\",\"node_label\":\"Fill detail from resume\",\"submit\":true,\"variable_path_for_output\":\"\",\"doctype\":\"Job Applicant\"}",
@@ -400,6 +418,8 @@
     {
       "name": "kek77l4ubh",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 13,
       "data": "{\"file_url_path\":\"{{resume_path}}\",\"ocr_variable\":\"file_data\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -415,6 +435,8 @@
     {
       "name": "kek7lb61db",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 14,
       "data": "{\"attach_print\":false,\"bcc\":\"\",\"cc\":\"\",\"docname\":\"{{doc.name}}\",\"doctype\":\"Job Applicant\",\"email_account\":\"\",\"email_content\":\"<p>Dear {{recruiter_name}},</p><p>The job applicant {{doc.applicant_name}} has been reviewed and unfortunately, they have been rejected by the 2nd Approval of Management.</p><p>You can view the details of the rejection and the applicant's profile by following this link:{{url}}</p><p>Thanks &amp; Regards,</p><p>{{management_name}}</p>\",\"email_subject\":\"Job Applicant Rejection Notification\",\"link_doctype\":true,\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"{{trigger_user_id}}\",\"select_template\":false,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"attach_prints\":false}",
@@ -430,6 +452,8 @@
     {
       "name": "kek7kf0lku",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 15,
       "data": "{\"message\":\"Thanks! I have requested for approval\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -445,6 +469,8 @@
     {
       "name": "kek76oap6g",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 16,
       "data": "{\"message\":\"Thanks! I have requested for approval to {{hr_head_names}}\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -460,6 +486,8 @@
     {
       "name": "kek7q62amf",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 17,
       "data": "{\"attach_print\":false,\"bcc\":\"\",\"cc\":\"\",\"docname\":\"{{doc.name}}\",\"doctype\":\"Job Applicant\",\"email_account\":\"\",\"email_content\":\"<p>Dear Recruiter,</p><p>The job applicant {{doc.applicant_name}} has been reviewed and approved by the Management.</p><p>You can view the details of the approval and the applicant's profile by following this link: {{url}}.</p><p>Thanks &amp; Regards,<br>Management</p><p></p><p></p>\",\"email_subject\":\"Job Applicant Approval Notification\",\"link_doctype\":true,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"recipients\":\"ami.rughani@merillife.com\",\"select_template\":true,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"attach_prints\":false,\"email_template\":\"Post Approval of Management\",\"createNewEmailTemplate\":false}",
@@ -475,6 +503,8 @@
     {
       "name": "kek7smu9nn",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 17,
       "data": "{\"doctype\":\"Job Applicant\",\"doc_variable\":\"ocr_json_data\",\"submit\":true,\"variable_path_for_output\":\"\",\"doctype_data\":\"{{file_data}}\\n\\nAnd protfolio link in the 'resume_link' field\\nAnd also identify programing language user has proficient in, and return that data in the 'tag' field.\",\"select_doctype_fields\":[\"applicant_name\",\"email_id\",\"phone_number\",\"resume_attachment\",\"resume_link\",\"custom_linkedin_url\",\"custom_gender\",\"custom_home_town\",\"custom_total_experience\",\"custom_current_company_name\",\"custom_current_designation\",\"custom_address\",\"custom_martial_status\",\"custom_headline\"]}",
@@ -490,6 +520,8 @@
     {
       "name": "kek79tnp2r",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 18,
       "data": "{\"node_label\":\"Update Job Applicant\",\"submit\":true,\"docTypeJson\":\"{{json_data}}\",\"variable_path_for_output\":\"updated_job_applicant\"}",
@@ -505,6 +537,8 @@
     {
       "name": "kek73k5lji",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 19,
       "data": "{\"message\":\"Thanks, I have passed it forward for the subsequent approvals.\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -520,6 +554,8 @@
     {
       "name": "kek7jt7jhf",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 20,
       "data": "{\"message\":\"Thanks, I have passed it forward for the subsequent approvals.\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -535,6 +571,8 @@
     {
       "name": "kek7tcav4v",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 22,
       "data": "{\"email_account\":\"\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":true,\"attach_prints\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"{{management_email}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Pre Approval of Management\",\"createNewEmailTemplate\":false,\"doctype\":\"Job Applicant\",\"docname\":\"{{doc.name}}\",\"email_subject\":\"\"}",
@@ -550,6 +588,8 @@
     {
       "name": "kek7vbcjjt",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 22,
       "data": "{\"node_label\":\"Create Job Applicant\",\"submit\":true,\"variable_path_for_output\":\"created_job_applicant\",\"docTypeJson\":\"{{json_data}}\"}",
@@ -565,6 +605,8 @@
     {
       "name": "kek7ajubsk",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 23,
       "data": "{\"doctype\":\"{{doctype}}\",\"docname\":\"{{docname}}\",\"tags\":\"{{tag_data}}\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -580,6 +622,8 @@
     {
       "name": "kek7c34ejd",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 23,
       "data": "{\"email_account\":null,\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":true,\"attach_prints\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"ami.rughani@merillife.com\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Request to Offer Admin\",\"createNewEmailTemplate\":false,\"doctype\":\"Job Applicant\",\"docname\":\"{{doc.name}}\",\"email_subject\":\"\"}",
@@ -595,6 +639,8 @@
     {
       "name": "kek7to46pq",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 24,
       "data": "{\"doctype\":\"Job Applicant\",\"action\":\"after_insert\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -610,6 +656,8 @@
     {
       "name": "kek7fpd8fk",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 25,
       "data": "{\"email_account\":\"\",\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":true,\"attach_prints\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"{{hr_heads_str}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Pre Approval of HR Head\",\"createNewEmailTemplate\":false,\"doctype\":\"Job Applicant\",\"docname\":\"{{doc.name}}\",\"email_subject\":\"\"}",
@@ -625,6 +673,8 @@
     {
       "name": "kek7cug84h",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 26,
       "data": "{\"message\":\"Thanks! I have marked the candidate as rejected and informed the concerned recruiter.\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -640,6 +690,8 @@
     {
       "name": "kek7snlgae",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 26,
       "data": "{\"node_label\":\"Check Action Type\",\"python_code\":\"# do required updates\\n# update variable e.g.\\n# variables[\\\"test\\\"] = \\\"test\\\"\\n\\nis_update = variables.get(\\\"is_update\\\")\\n\\nif is_update:\\n    return False\\n\\nreturn True\\n\\n\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -655,6 +707,8 @@
     {
       "name": "kek7jmul8n",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 27,
       "data": "{\"message\":\"Thanks! I have marked the candidate as rejected and informed the concerned recruiter.\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -670,6 +724,8 @@
     {
       "name": "kek7n19cuf",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 28,
       "data": "{\"node_label\":\"Tag extractions\",\"python_code\":\"cur_data = json.dumps(variables.get(\\\"ocr_json_data\\\"), indent=2)\\nrefined_data = json.loads(cur_data)\\n\\nvariables[\\\"tag_data\\\"] = refined_data.get(\\\"tag\\\") or []\\n\\nrefined_data_copy = refined_data.copy()\\nfor att in refined_data_copy:\\n    if not refined_data_copy[att] or att == \\\"tag\\\":\\n       del refined_data[att]  # Delete the attribute from refined_data\\n\\nvariables[\\\"refined_data\\\"] = json.dumps(refined_data, indent=2)\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -685,6 +741,8 @@
     {
       "name": "kek7ge6j9j",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 29,
       "data": "{\"node_label\":\"Json Correction\",\"python_code\":\"cur_data = variables.get(\\\"refined_data\\\")\\njson_data = json.loads(cur_data)\\ndoc = variables.get(\\\"doc\\\")\\n\\ndoctype = doc.doctype\\ndocname = doc.name\\n\\njson_data_copy = json_data.copy()\\n\\nkeys_to_delete = [\\\"resume_attachment\\\", \\\"status\\\"]\\n\\nfor key in list(json_data_copy.keys()):\\n    if key in keys_to_delete:\\n       del json_data_copy[key]\\n\\njson_data_copy[\\\"doctype\\\"] = doctype\\njson_data_copy[\\\"name\\\"] = docname\\n\\nvariables[\\\"doctype\\\"] = doctype\\nvariables[\\\"docname\\\"] = docname\\n\\nvariables[\\\"json_data\\\"] = json.dumps(json_data_copy, indent=2)\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -700,6 +758,8 @@
     {
       "name": "kek7iq55ak",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 30,
       "data": "{\"email_account\":null,\"select_template\":true,\"send_to_assigned_users\":false,\"recepients\":[{\"recepientField\":\"\",\"recipient\":\"\",\"cc\":\"\"}],\"link_doctype\":true,\"attach_prints\":false,\"submit\":true,\"variable_path_for_output\":\"\",\"recipients\":\"{{trigger_user_id}}\",\"cc\":\"\",\"bcc\":\"\",\"email_template\":\"Post HR Head Approval\",\"createNewEmailTemplate\":false,\"doctype\":\"Job Applicant\",\"docname\":\"{{doc.name}}\",\"email_subject\":\"\"}",
@@ -715,6 +775,8 @@
     {
       "name": "kek7rmbf7d",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 30,
       "data": "{\"node_label\":\"Json Correction\",\"python_code\":\"cur_data = variables.get(\\\"refined_data\\\")\\njson_data = json.loads(cur_data)\\n\\ndoctype = variables.get(\\\"doctype\\\")\\ndocname = variables.get(\\\"docname\\\")\\n\\njson_data_copy = json_data.copy()\\n\\nkeys_to_delete = [\\\"resume_attachment\\\", \\\"status\\\"]\\n\\nfor key in list(json_data_copy.keys()):\\n    if key in keys_to_delete:\\n       del json_data_copy[key]\\n\\njson_data_copy[\\\"doctype\\\"] = doctype\\njson_data_copy[\\\"docname\\\"] = docname\\n\\nvariables[\\\"json_data\\\"] = json.dumps(json_data_copy, indent=2)\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -730,6 +792,8 @@
     {
       "name": "kek7jf8o3f",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 32,
       "data": "{\"node_label\":\"Get resume path\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\n\\nresume_attachments = doc.resume_attachment\\n\\nvariables[\\\"resume_path\\\"] = resume_attachments \\n\\n\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -745,6 +809,8 @@
     {
       "name": "kek72njt3f",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 33,
       "data": "{\"node_label\":\"Get resume path\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\n\\nresume_attachments = doc.resume_attachment\\n\\nvariables[\\\"resume_path\\\"] = resume_attachments \\n\\n\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -760,6 +826,8 @@
     {
       "name": "kek7qjim26",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 33,
       "data": "{\"node_label\":\"Approved BY Management\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nmanagement_name=frappe.db.get_value(\\\"User\\\", variables.get(\\\"trigger_user_id\\\"), \\\"full_name\\\")\\nvariables[\\\"management_name\\\"]=management_name\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc.name,\\\"status\\\",\\\"Management Approved\\\")\\napplicant_doc=frappe.get_doc(\\\"Job Applicant\\\",doc.name)\\nchild = applicant_doc.append('custom_crm_note', {})\\nchild.note =variables.get(\\\"management_review\\\")\\nchild.added_by = variables.get(\\\"user_id\\\")\\nchild.added_on = frappe.utils.now_datetime()\\nchild.custom_comment_type = \\\"Management Review\\\"\\napplicant_doc.save()\",\"skip_queue_and_execute_immediately\":true,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -775,6 +843,8 @@
     {
       "name": "kek7ue4559",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 34,
       "data": "{\"node_label\":\"Approved BY HR Head\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nhr_head_name=frappe.db.get_value(\\\"User\\\", variables.get(\\\"trigger_user_id\\\"), \\\"full_name\\\")\\nvariables[\\\"hr_head_name\\\"]=hr_head_name\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc.name,\\\"status\\\",\\\"HR Head Approved\\\")\\napplicant_doc=frappe.get_doc(\\\"Job Applicant\\\",doc.name)\\nchild = applicant_doc.append('custom_crm_note', {})\\nchild.note =variables.get(\\\"hr_head_review\\\")\\nchild.added_by = variables.get(\\\"user_id\\\")\\nchild.added_on = frappe.utils.now_datetime()\\nchild.custom_comment_type = \\\"HR Head Review\\\"\\napplicant_doc.save()\",\"skip_queue_and_execute_immediately\":true,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -790,6 +860,8 @@
     {
       "name": "kek7ehnp0g",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 35,
       "data": "{\"question\":\"Could you share your comments/thoughts?\",\"answer_var\":\"hr_head_review\",\"validate_answer\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -805,6 +877,8 @@
     {
       "name": "kek76u5vgb",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 36,
       "data": "{\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -820,6 +894,8 @@
     {
       "name": "kek7927p7v",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 37,
       "type": "smoothstep",
@@ -837,6 +913,8 @@
     {
       "name": "kek7dff921",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 37,
       "data": "{\"question\":\"Could you share your comments?\",\"answer_var\":\"management_review\",\"validate_answer\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -852,6 +930,8 @@
     {
       "name": "kek7td4q0v",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 38,
       "type": "smoothstep",
@@ -869,6 +949,8 @@
     {
       "name": "kek7f7ccv9",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 39,
       "type": "smoothstep",
@@ -886,6 +968,8 @@
     {
       "name": "kek706ja8e",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 40,
       "type": "smoothstep",
@@ -903,6 +987,8 @@
     {
       "name": "kek7f88kbq",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 40,
       "data": "{\"name_of_action\":\"Offer Request\",\"page_type\":\"doctype\",\"node_label\":\"Offer Request\",\"submit\":true,\"variable_path_for_output\":\"\",\"doctype\":\"Job Applicant\",\"show_as_button\":false}",
@@ -918,6 +1004,8 @@
     {
       "name": "kek7bqgc48",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 41,
       "data": "{\"message\":\"Thanks, I have passed it forward for the subsequent approvals.\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -933,6 +1021,8 @@
     {
       "name": "kek7mim4ej",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 41,
       "type": "smoothstep",
@@ -950,6 +1040,8 @@
     {
       "name": "kek79pe36j",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 42,
       "type": "smoothstep",
@@ -967,6 +1059,8 @@
     {
       "name": "kek7b12n17",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 43,
       "type": "smoothstep",
@@ -984,6 +1078,8 @@
     {
       "name": "kek7s20ji6",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 43,
       "type": "smoothstep",
@@ -1001,6 +1097,8 @@
     {
       "name": "kek7tc0nmb",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 44,
       "type": "smoothstep",
@@ -1018,6 +1116,8 @@
     {
       "name": "kek78tmms3",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 45,
       "type": "smoothstep",
@@ -1035,6 +1135,8 @@
     {
       "name": "kek7dqvgdn",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 46,
       "type": "smoothstep",
@@ -1052,6 +1154,8 @@
     {
       "name": "kek7qahq0e",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 46,
       "type": "smoothstep",
@@ -1069,6 +1173,8 @@
     {
       "name": "kek7p0er1m",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 47,
       "type": "smoothstep",
@@ -1086,6 +1192,8 @@
     {
       "name": "kek7ra99s3",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 48,
       "type": "smoothstep",
@@ -1103,6 +1211,8 @@
     {
       "name": "kek7ge4nvo",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 49,
       "type": "smoothstep",
@@ -1120,6 +1230,8 @@
     {
       "name": "kek7omgd37",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 50,
       "type": "smoothstep",
@@ -1137,6 +1249,8 @@
     {
       "name": "kek7df61ag",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 51,
       "type": "smoothstep",
@@ -1154,6 +1268,8 @@
     {
       "name": "kek7odeql7",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 52,
       "type": "smoothstep",
@@ -1171,6 +1287,8 @@
     {
       "name": "kek7eph3pm",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 54,
       "type": "smoothstep",
@@ -1188,6 +1306,8 @@
     {
       "name": "kek7j28dt4",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 55,
       "type": "smoothstep",
@@ -1205,6 +1325,8 @@
     {
       "name": "kek7dfp5sh",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 56,
       "type": "smoothstep",
@@ -1222,6 +1344,8 @@
     {
       "name": "kek7fbkjg8",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 57,
       "type": "smoothstep",
@@ -1239,6 +1363,8 @@
     {
       "name": "p50u3fk4q3",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 58,
       "data": "{\"is_dynamic_form\":false,\"selected_form\":{\"name\":\"n6or1e6rfp\",\"label\":\"Job Applicant Management Approval\"},\"prefill_data\":\"\",\"answer_var\":\"management_email\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -1254,6 +1380,8 @@
     {
       "name": "kek70ti9bf",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 59,
       "type": "smoothstep",
@@ -1271,6 +1399,8 @@
     {
       "name": "kek7ttrq31",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 61,
       "type": "smoothstep",
@@ -1288,6 +1418,8 @@
     {
       "name": "kek757f8cg",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 62,
       "type": "smoothstep",
@@ -1305,6 +1437,8 @@
     {
       "name": "kek7l83mrq",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 63,
       "type": "smoothstep",
@@ -1322,6 +1456,8 @@
     {
       "name": "kek7prpk83",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 64,
       "type": "smoothstep",
@@ -1339,6 +1475,8 @@
     {
       "name": "kek7hotsqn",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 65,
       "type": "smoothstep",
@@ -1356,6 +1494,8 @@
     {
       "name": "kek7nbba86",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 66,
       "type": "smoothstep",
@@ -1373,6 +1513,8 @@
     {
       "name": "kek7gpr7gp",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 67,
       "type": "smoothstep",
@@ -1390,6 +1532,8 @@
     {
       "name": "kek7g367ae",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 69,
       "type": "smoothstep",
@@ -1407,6 +1551,8 @@
     {
       "name": "srakui6gfa",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 91,
       "type": "smoothstep",
@@ -1424,6 +1570,8 @@
     {
       "name": "sraklugqdv",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 92,
       "type": "smoothstep",
@@ -1441,6 +1589,8 @@
     {
       "name": "srak99tg9v",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 93,
       "type": "smoothstep",
@@ -1458,6 +1608,8 @@
     {
       "name": "p50ui3vru6",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 106,
       "type": "smoothstep",
@@ -1475,6 +1627,8 @@
     {
       "name": "p50u7a2o8c",
       "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 107,
       "type": "smoothstep",
@@ -1488,6 +1642,40 @@
       "parentfield": "funnel_definition",
       "parenttype": "Funnel",
       "doctype": "Funnel Definition"
+    }
+  ],
+  "funnel_access": [
+    {
+      "name": "kek71i4v3u",
+      "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
+      "docstatus": 0,
+      "idx": 1,
+      "role": "Recruitment User",
+      "can_execute": 1,
+      "can_modify": 0,
+      "can_view": 0,
+      "parent": "Job Applicant-Approval Funnels",
+      "parentfield": "funnel_access",
+      "parenttype": "Funnel",
+      "doctype": "Funnel Access"
+    },
+    {
+      "name": "kek70tmnp6",
+      "owner": "Administrator",
+      "modified": "2024-09-18 11:57:30.360880",
+      "modified_by": "Administrator",
+      "docstatus": 0,
+      "idx": 2,
+      "role": "Recruiter Admin",
+      "can_execute": 0,
+      "can_modify": 0,
+      "can_view": 0,
+      "parent": "Job Applicant-Approval Funnels",
+      "parentfield": "funnel_access",
+      "parenttype": "Funnel",
+      "doctype": "Funnel Access"
     }
   ]
 }
