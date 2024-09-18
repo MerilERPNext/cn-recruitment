@@ -11,7 +11,7 @@ def create_or_update(json_file_path):
 
     doc_name = json_data["name"]
     doc_doctype = json_data["doctype"]
-    del json_data["modified"]
+    # del json_data["modified"]
 
     # check if already exists in database
     exists = frappe.db.exists(doc_doctype, doc_name)
