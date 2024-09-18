@@ -1,26 +1,8 @@
 import frappe
-import datetime
+import json
 from os import path
-from recruitment.patches.create_or_update import create_or_update
 
-
-def set_email_account():
-    default_email_account = frappe.db.get_value(
-        "Email Account", {"default_outgoing": 1}
-    )
-    for funnel_dict in data:
-        funnel_definition = funnel_dict["funnel_definition"]
-        for f_dict in funnel_definition:
-            if "type" in f_dict:
-                if f_dict["type"] == "send_mail":
-                    node_data = frappe.parse_json(f_dict["data"])
-                    node_data["email_account"] = default_email_account
-                    f_dict["data"] = frappe.json.dumps(node_data)
-
-
-def execute():
-    try:
-        funnel_json_files = [
+funnel_json_files = [
             "job_opening.json",
             "interview.json",
             "job_offer.json",
@@ -28,8 +10,30 @@ def execute():
             "job_applicant.json",
             "job_applicant_public.json",
         ]
-        for json_file in funnel_json_files:
-            json_file_path = path.join(path.dirname(__file__), "json_files", json_file)
-            create_or_update(json_file_path)
-    except Exception as e:
-        frappe.log_error(e)
+data=[]
+for json_file in funnel_json_files:
+    json_file_path = path.join(
+        path.dirname(__file__), "json_files", json_file
+    )
+    json_file = open(json_file_path, "r")
+    json_data = json.load(json_file)
+    json_file.close()
+    data.append(json_data)
+
+def execute():
+    for d in data:
+        if not frappe.db.exists("Funnel", d.get("name")):
+            frappe.get_doc(d).insert(ignore_permissions=True)
+        else:
+            funnel_doc = frappe.get_doc("Funnel", d.get("name"))
+            defination_jsons=d.get("funnel_definition")
+            d.pop("funnel_definition")
+            funnel_doc.update(d)
+            funnel_doc.funnel_definition=[]
+            for defination_json in defination_jsons:
+                defination_json.pop("name")
+                def_doc = frappe.new_doc("Funnel Definition")
+                def_doc.update(defination_json)
+                funnel_doc.funnel_definition.append(def_doc)
+            funnel_doc.flags.ignore_version = True
+            funnel_doc.save()
