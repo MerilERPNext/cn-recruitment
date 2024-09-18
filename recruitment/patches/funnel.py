@@ -19,9 +19,14 @@ def set_email_account():
 
 
 def execute():
-    funnel_json_files=["job_opening.json","interview.json","job_offer.json","employee_onboarding.json","job_applicant.json","job_applicant_public.json"]
+    funnel_json_files = [
+        "job_opening.json",
+        "interview.json",
+        "job_offer.json",
+        "employee_onboarding.json",
+        "job_applicant.json",
+        "job_applicant_public.json",
+    ]
     for json_file in funnel_json_files:
-        json_file_path = path.join(
-            path.dirname(__file__), "json_files", json_file
-        )
-        create_or_update(json_file_path) 
+        json_file_path = path.join(path.dirname(__file__), "json_files", json_file)
+        create_or_update(json_file_path)
