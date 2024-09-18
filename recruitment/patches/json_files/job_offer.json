@@ -1,7 +1,6 @@
 {
   "name": "Job Offer Accept/Reject Funnels",
   "owner": "Administrator",
-  "modified_by": "Administrator",
   "docstatus": 0,
   "idx": 0,
   "archived": 0,
@@ -17,7 +16,6 @@
     {
       "name": "keka1cirtd",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Job Offer\",\"action\":\"on_update\",\"submit\":true,\"variable_path_for_output\":\"\",\"updated_field\":\"\"}",
@@ -33,7 +31,6 @@
     {
       "name": "kekahghp6m",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"doctype\":\"Job Offer\",\"action\":\"on_update\",\"submit\":true,\"updated_field\":\"status\"}",
@@ -49,7 +46,6 @@
     {
       "name": "kekahpvlis",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"message\":\"Following is the Job Offer\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -65,7 +61,6 @@
     {
       "name": "kekap19b7c",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"node_label\":\"Reject Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Rejected\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"docstatus\\\",1)\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc.job_applicant,\\\"status\\\",\\\"Offer Rejected\\\")\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -81,7 +76,6 @@
     {
       "name": "kekavg70io",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 1,
       "data": "{\"name_of_action\":\"Send Job Offer\",\"page_type\":\"doctype\",\"node_label\":\"Send Job Offer\",\"submit\":true,\"variable_path_for_output\":\"\",\"doctype\":\"Job Offer\"}",
@@ -97,7 +91,6 @@
     {
       "name": "kekaigrq06",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"bcc\":\"\",\"cc\":\"\",\"email_account\":null,\"email_content\":\"<p>Job Offer&nbsp;</p>\",\"email_subject\":\"Job Offer\\u00a0Status\",\"link_doctype\":false,\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"{{recipients}}\",\"select_template\":false,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -113,7 +106,6 @@
     {
       "name": "kekajh0jpb",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"node_label\":\"Generate Attachment\",\"python_code\":\"variables[\\\"company\\\"]=variables[\\\"doc\\\"][\\\"company\\\"]\\nvariables[\\\"designation\\\"]=variables[\\\"doc\\\"][\\\"designation\\\"]\\nvariables[\\\"job_offer_url\\\"] = frappe.utils.get_url()+\\\"/job_offer?appl=\\\"+variables[\\\"doc\\\"][\\\"job_applicant\\\"]\\nvariables[\\\"canditate\\\"]=variables[\\\"doc\\\"][\\\"applicant_name\\\"]\\nvariables[\\\"joining_date\\\"]=frappe.db.get_value(\\\"Job Applicant\\\",variables[\\\"doc\\\"][\\\"job_applicant\\\"],\\\"custom_expected_doj\\\")\\nvariables[\\\"shift\\\"]=variables[\\\"doc\\\"][\\\"custom_shift\\\"]\\nvariables[\\\"salary\\\"]=variables[\\\"doc\\\"][\\\"custom_ctc_per_annum\\\"]\\nreporting_person = frappe.db.get_value(\\\"Job Applicant\\\",variables[\\\"doc\\\"][\\\"job_applicant\\\"],\\\"custom_reporting_head\\\")\\nvariables[\\\"reporting_person\\\"]=frappe.db.get_value(\\\"Employee\\\",reporting_person,\\\"employee_name\\\")\",\"skip_queue_and_execute_immediately\":false,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -129,7 +121,6 @@
     {
       "name": "kekao0ktqt",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"node_label\":\"Accept Job Offer\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nfrappe.db.set_value(\\\"Job Offer\\\",doc.name,\\\"status\\\",\\\"Accepted\\\")\\n\\nfrappe.db.set_value(\\\"Job Applicant\\\",doc.job_applicant,\\\"status\\\",\\\"Offer Accepted\\\")\",\"skip_queue_and_execute_immediately\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -145,7 +136,6 @@
     {
       "name": "kekascaokf",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"node_label\":\"Process data\",\"python_code\":\"doc = variables.get(\\\"doc\\\")\\nvariables[\\\"reciepient\\\"] = doc.job_applicant\\n\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -161,7 +151,6 @@
     {
       "name": "kekaslp7be",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 2,
       "data": "{\"attach_print\":true,\"bcc\":\"\",\"cc\":\"\",\"createNewEmailTemplate\":false,\"docname\":\"{{doc.name}}\",\"doctype\":\"Job Offer\",\"email_account\":null,\"email_subject\":\"\",\"email_template\":\"Job Offer\",\"link_doctype\":true,\"print_format\":\"Job Offer Minix\",\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"{{doc.applicant_email}}\",\"select_template\":true,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -177,7 +166,6 @@
     {
       "name": "keka1j9s01",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"selectDoctype\":\"Job Offer\",\"submit\":true,\"variable_path_for_output\":\"\",\"change_submit_button_label\":false}",
@@ -193,7 +181,6 @@
     {
       "name": "kekaaeh5ve",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"submit\":true,\"doctype\":\"Job Offer\"}",
@@ -209,7 +196,6 @@
     {
       "name": "kekafr9l93",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"bcc\":\"\",\"cc\":\"\",\"email_account\":null,\"email_content\":\"<p>test</p>\",\"email_subject\":\"Testing\",\"link_doctype\":false,\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"{{reciepient}}\",\"select_template\":false,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -225,7 +211,6 @@
     {
       "name": "kekahuf4ir",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"node_label\":\"Generate Attachment\",\"python_code\":\"variables[\\\"company\\\"]=variables[\\\"doc\\\"][\\\"company\\\"]\\nvariables[\\\"designation\\\"]=variables[\\\"doc\\\"][\\\"designation\\\"]\\nvariables[\\\"job_offer_url\\\"] = frappe.utils.get_url()+\\\"/job_offer?appl=\\\"+variables[\\\"doc\\\"][\\\"job_applicant\\\"]\\nvariables[\\\"canditate\\\"]=variables[\\\"doc\\\"][\\\"applicant_name\\\"]\\nvariables[\\\"joining_date\\\"]=frappe.db.get_value(\\\"Job Applicant\\\",variables[\\\"doc\\\"][\\\"job_applicant\\\"],\\\"custom_expected_doj\\\")\\nreporting_person = frappe.db.get_value(\\\"Job Applicant\\\",variables[\\\"doc\\\"][\\\"job_applicant\\\"],\\\"custom_reporting_head\\\")\\nvariables[\\\"reporting_person\\\"]=frappe.db.get_value(\\\"Employee\\\",reporting_person,\\\"employee_name\\\")\",\"skip_queue_and_execute_immediately\":false,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -241,7 +226,6 @@
     {
       "name": "kekat43e66",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 3,
       "data": "{\"node_label\":\"\",\"use_python_expression\":true,\"submit\":true,\"variable_path_for_output\":\"\",\"expression\":\"doc=variables.get(\\\"doc\\\")\\nif doc.status==\\\"Rejected\\\":\\n    return True\\nreturn False\"}",
@@ -257,7 +241,6 @@
     {
       "name": "kekag3jkjn",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "data": "{\"message\":\"Sending Job Offer\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -273,7 +256,6 @@
     {
       "name": "kekajckcgb",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "data": "{\"doctype\":\"Job Offer\",\"docname\":\"{{doc.name}}\",\"variable_path\":\"print_url\",\"submit\":true,\"variable_path_for_output\":\"\",\"print_format\":\"Job Offer 2\"}",
@@ -289,7 +271,6 @@
     {
       "name": "kekaqttlnk",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "data": "{\"submit\":true,\"variable_path_for_output\":\"\",\"doctype\":\"Job Offer\"}",
@@ -305,7 +286,6 @@
     {
       "name": "kekatchcs0",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "data": "{\"node_label\":\"\",\"python_code\":\"doc=variables.get(\\\"doc\\\")\\ninterviews = frappe.db.get_value(\\\"Interview\\\", {\\\"job_applicant\\\": doc.job_applicant, \\\"docstatus\\\": [\\\"!=\\\", 2]}, pluck=\\\"name\\\")\\nemails = frappe.get_all(\\\"Interview Detail\\\", {\\\"parenttype\\\":\\\"Interview\\\",\\\"parent\\\": interviews}, pluck=\\\"interviewer\\\")\\n\\nvariables[\\\"recipients\\\"] = \\\", \\\".join(set(emails))\",\"submit\":true,\"variable_path_for_output\":\"\",\"skip_queue_and_execute_immediately\":false,\"execute_current_node_as_user\":\"\"}",
@@ -321,7 +301,6 @@
     {
       "name": "kekaud4h9o",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 4,
       "data": "{\"node_label\":\"\",\"use_python_expression\":true,\"submit\":true,\"expression\":\"doc=variables.get(\\\"doc\\\")\\nif doc.status==\\\"Accepted\\\":\\n    return True\\nreturn False\",\"filters\":[],\"variable_path_for_output\":\"\"}",
@@ -337,7 +316,6 @@
     {
       "name": "keka3sjbri",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "data": "{\"attach_print\":false,\"bcc\":\"\",\"cc\":\"\",\"createNewEmailTemplate\":false,\"docname\":\"{{doc.name}}\",\"doctype\":\"Job Offer\",\"email_account\":null,\"email_subject\":\"\",\"email_template\":\"Walnut Job Offer\",\"link_doctype\":true,\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"prathamjadhav052@gmail.com\",\"select_template\":true,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -353,7 +331,6 @@
     {
       "name": "keka49ncpf",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "type": "smoothstep",
@@ -371,7 +348,6 @@
     {
       "name": "kekaiuoqan",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "data": "{\"file_path\":\"{{print_url}}\",\"open_file_doc\":false,\"enable_download\":true,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -387,7 +363,6 @@
     {
       "name": "kekajtdjni",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 5,
       "type": "smoothstep",
@@ -405,7 +380,6 @@
     {
       "name": "keka4oq8an",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "type": "smoothstep",
@@ -423,7 +397,6 @@
     {
       "name": "kekajl2a4r",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "data": "{\"attach_print\":false,\"bcc\":\"\",\"cc\":\"\",\"createNewEmailTemplate\":false,\"docname\":\"{{doc.name}}\",\"doctype\":\"Job Offer\",\"email_account\":null,\"email_subject\":\"\",\"email_template\":\"Job Offer\",\"link_doctype\":true,\"recepients\":[{\"cc\":\"\",\"recepientField\":\"\",\"recipient\":\"\"}],\"recipients\":\"prathamjadhav052@gmail.com\",\"select_template\":true,\"send_to_assigned_users\":false,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -439,7 +412,6 @@
     {
       "name": "kekam0ina2",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "type": "smoothstep",
@@ -457,7 +429,6 @@
     {
       "name": "kekaob0nvf",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "data": "{\"question\":\"Please confirm do you wish to send the Job Offer\",\"options\":[{\"option\":\"Yes\",\"key\":\"\"},{\"option\":\"No, I want to review\"}],\"answer_var\":\"job_offer_confirmation\",\"reply_if_wrong_option_received\":\"please select from the options\",\"node_label\":\"Please confirm do you wish to send the Job Offer\",\"output_handles_array_field\":\"options\",\"output_handle_key_field\":\"option\",\"submit\":true}",
@@ -473,7 +444,6 @@
     {
       "name": "kekaukda9m",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 6,
       "type": "smoothstep",
@@ -491,7 +461,6 @@
     {
       "name": "keka2taerj",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 7,
       "data": "{\"selectDoctype\":\"Job Offer\",\"submit\":true}",
@@ -507,7 +476,6 @@
     {
       "name": "keka8v98ck",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 7,
       "type": "smoothstep",
@@ -525,7 +493,6 @@
     {
       "name": "kekagb9npt",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 7,
       "type": "smoothstep",
@@ -543,7 +510,6 @@
     {
       "name": "kekakscn6e",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 7,
       "data": "{\"message\":\"Yeah! I have initiated the sending. The system will send the job offer shortly.\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -559,7 +525,6 @@
     {
       "name": "keka7c2ec0",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 8,
       "data": "{\"file_path\":\"/private/files/Prathamesh.pdf\",\"open_file_doc\":true,\"enable_download\":true,\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -575,7 +540,6 @@
     {
       "name": "keka82lh7d",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 8,
       "data": "{\"node_label\":\"Applicant Details\",\"python_code\":\"variables[\\\"company\\\"]=variables[\\\"doc\\\"][\\\"company\\\"]\\nvariables[\\\"designation\\\"]=variables[\\\"doc\\\"][\\\"designation\\\"]\\nvariables[\\\"job_offer_url\\\"] = frappe.utils.get_url()+\\\"/job_offer?appl=\\\"+variables[\\\"doc\\\"][\\\"job_applicant\\\"]\\nvariables[\\\"canditate\\\"]=variables[\\\"doc\\\"][\\\"applicant_name\\\"]\",\"skip_queue_and_execute_immediately\":false,\"execute_current_node_as_user\":\"\",\"submit\":true,\"variable_path_for_output\":\"\"}",
@@ -591,7 +555,6 @@
     {
       "name": "kekav745md",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 8,
       "type": "smoothstep",
@@ -609,7 +572,6 @@
     {
       "name": "keka7ep9g9",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 9,
       "type": "smoothstep",
@@ -627,7 +589,6 @@
     {
       "name": "keka9mf3sq",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 9,
       "type": "smoothstep",
@@ -645,7 +606,6 @@
     {
       "name": "kekaeet009",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 9,
       "type": "smoothstep",
@@ -663,7 +623,6 @@
     {
       "name": "kekabnea43",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 10,
       "type": "smoothstep",
@@ -681,7 +640,6 @@
     {
       "name": "kekai7qkn1",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 10,
       "type": "smoothstep",
@@ -699,7 +657,6 @@
     {
       "name": "kekad4joqi",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 11,
       "type": "smoothstep",
@@ -717,7 +674,6 @@
     {
       "name": "kekadj6i52",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 11,
       "type": "smoothstep",
@@ -735,7 +691,6 @@
     {
       "name": "keka4g07d6",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 12,
       "type": "smoothstep",
@@ -753,7 +708,6 @@
     {
       "name": "kekacskh0f",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 12,
       "type": "smoothstep",
@@ -771,7 +725,6 @@
     {
       "name": "keka6uv8u0",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 13,
       "type": "smoothstep",
@@ -789,7 +742,6 @@
     {
       "name": "kekakspq4j",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 13,
       "type": "smoothstep",
@@ -807,7 +759,6 @@
     {
       "name": "kekapo43oj",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 14,
       "type": "smoothstep",
@@ -825,7 +776,6 @@
     {
       "name": "kekabi5617",
       "owner": "Administrator",
-      "modified_by": "Administrator",
       "docstatus": 0,
       "idx": 15,
       "type": "smoothstep",
