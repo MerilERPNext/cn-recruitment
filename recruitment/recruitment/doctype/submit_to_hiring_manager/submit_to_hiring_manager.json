@@ -42,7 +42,8 @@
    "fieldname": "assigned_to",
    "fieldtype": "Link",
    "label": "Assigned To Hiring Manager",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   },
   {
    "fetch_from": "job_opening.job_title",
@@ -63,7 +64,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-09-06 15:48:25.411220",
+ "modified": "2024-09-19 10:48:53.507878",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Submit To Hiring Manager",
