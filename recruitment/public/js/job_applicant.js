@@ -236,6 +236,7 @@ frappe.ui.form.on("Job Applicant", {
         });
     }
   },
+
   make_dashboard: function (frm) {
     frappe.call({
         method: "hrms.hr.doctype.job_applicant.job_applicant.get_interview_details",
