@@ -6,23 +6,18 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "section_break_8xqy",
+  "schooluniversity",
   "qualification",
   "level",
   "year_of_passing"
  ],
  "fields": [
   {
-   "fieldname": "section_break_8xqy",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "School/University"
-  },
-  {
    "fieldname": "qualification",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Qualification"
+   "label": "Qualification",
+   "reqd": 1
   },
   {
    "fieldname": "level",
@@ -36,12 +31,18 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Year Of Passing"
+  },
+  {
+   "fieldname": "schooluniversity",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "School/University"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-06-14 06:37:52.010674",
+ "modified": "2024-09-21 00:51:45.315612",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Qualifications",

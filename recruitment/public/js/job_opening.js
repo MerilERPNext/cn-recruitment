@@ -34,5 +34,34 @@ frappe.ui.form.on("Job Opening", {
 				
 			})
         }
-	}
+	},
+	job_requisition: function (frm) {
+		if (frm.doc.job_requisition) {
+		  frappe.call({
+			method:
+			  "recruitment.customizations.job_opening.job_opening.get_job_title",
+			args: {
+			  job_requisition: frm.doc.job_requisition,
+			},
+			callback: function (r) {
+			  if (r.message) {
+				frm.clear_table("custom_qualifications");
+	
+				r.message.forEach(function (row) {
+				  var new_row = frm.add_child("custom_qualifications");
+				  new_row.schooluniversity = row.schooluniversity;
+				  new_row.qualification = row.qualification;
+				  new_row.level=row.level;
+				  new_row.year_of_passing = row.year_of_passing;
+				});
+	
+				frm.refresh_field("custom_qualifications");
+			  }
+			},
+		  });
+		} else {
+		  frm.clear_table("custom_qualifications");
+		  frm.refresh_field("custom_qualifications");
+		}
+	  }
 })

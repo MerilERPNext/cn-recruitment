@@ -106,6 +106,7 @@ def get_interview_feedback_records(interview_id):
         interview_feedback_records.append({
             "interviewer": feedback_doc.interviewer,
             "feedback": feedback_doc.feedback,
+            "result": feedback_doc.result,
             "creation": feedback_doc.creation
         })
     return interview_feedback_records

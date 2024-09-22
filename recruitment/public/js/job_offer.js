@@ -44,5 +44,12 @@ frappe.ui.form.on("Job Offer", {
 				}
 			});
 		}
+	},
+	custom_ctc_per_annum:function(frm){
+		if(frm.doc.custom_ctc_per_annum){
+			frm.set_value("custom_ctc_per_month", Math.round(frm.doc.custom_ctc_per_annum / 12));
+		}else{
+			frm.set_value("custom_ctc_per_month",null)
+		}
 	}
 })
