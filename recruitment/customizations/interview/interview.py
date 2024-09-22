@@ -111,3 +111,18 @@ def get_interview_feedback_records(interview_id):
         })
     return interview_feedback_records
         
+doc = variables.get("doc")
+site_url=frappe.utils.get_url()
+url=site_url+"/app/employee-onboarding/"+doc.name
+hr_onboard_heads = frappe.db.sql("""
+SELECT user.name,user.full_name
+FROM `tabUser` user
+JOIN `tabHas Role` has_role ON has_role.parent = user.name
+WHERE has_role.role = %s
+""", ("HR Onboard Team",), as_dict=True)
+filtered_hr_onboard = [item for item in hr_onboard_heads if item['name'] != 'Administrator']
+mails = ','.join([item['name'] for item in filtered_hr_onboard])
+hr_onboard_names = ','.join([item['full_name'] for item in filtered_hr_onboard])
+variables["url"] = url
+variables["hr_onboard_str"]=mails
+variables["hr_onboard_names"]=hr_onboard_names
