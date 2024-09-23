@@ -236,6 +236,7 @@ frappe.ui.form.on("Job Applicant", {
         });
     }
   },
+
   make_dashboard: function (frm) {
     frappe.call({
         method: "hrms.hr.doctype.job_applicant.job_applicant.get_interview_details",
@@ -331,6 +332,7 @@ frappe.ui.form.on("Job Applicant", {
                               <tr>
                                   <th style="width: 20%; text-align: left;">Interviewer</th>
                                   <th style="width: 60%; text-align: left;">Feedback</th>
+                                  <th style="width: 20%; text-align: left;">Status</th>
                                   <th style="width: 20%; text-align: left;">Creation Time</th>
                               </tr>
                           </thead>
@@ -342,6 +344,7 @@ frappe.ui.form.on("Job Applicant", {
                           <tr>
                               <td style="text-align: left;">${feedback.interviewer}</td>
                               <td style="text-align: left;">${feedback.feedback}</td>
+                              <td style="text-align: left;">${feedback.result}</td> 
                               <td style="text-align: left;">${frappe.datetime.str_to_user(feedback.creation)}</td>
                           </tr>
                       `;

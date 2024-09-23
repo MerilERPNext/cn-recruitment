@@ -21,8 +21,17 @@ def generate_job_applicant(docname):
 	if app_cnt>0:
 		frappe.msgprint("Job Applicants Created Successfully!")
 
-	
-
-
-		
-	
+#this function will get the qualification table values
+@frappe.whitelist()
+def get_job_title(job_requisition):
+	job_requisition_doc = frappe.get_doc("Job Requisition", job_requisition)    
+	custom_qualifications = []
+	if job_requisition_doc.custom_qualifications:
+		for qualification in job_requisition_doc.custom_qualifications:
+			custom_qualifications.append({
+				"schooluniversity": qualification.schooluniversity, 
+				"qualification": qualification.qualification,
+				"level": qualification.level,
+				"year_of_passing": qualification.year_of_passing
+			})
+	return custom_qualifications

@@ -34,6 +34,8 @@ def generate_job_applicant(docname):
 				new_ja.status="Open"
 				new_ja.custom_shortlisted_by_hiring_manager="Yes"
 				new_ja.resume_attachment = can.resume
+				new_ja.custom_recruiter=jo_doc.owner
+				new_ja.custom_recruit__hiring_manager=jo_doc.assigned_to
 				new_ja.save()
 				job_app+=1
 	if job_app>0:
