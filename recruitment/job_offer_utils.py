@@ -16,8 +16,8 @@ def job_offer_update(status, appl):
     if status == "Rejected":
         frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
         frappe.db.set_value("Job Applicant",appl,"status","Offer Rejected")
-    jo_doc.submit()
         # trigger_event(doc=jo_doc, event_name="reject_jo")
+    frappe.db.set_value("Job Offer",jo_doc,"docstatus",1)
     return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
 
 @frappe.whitelist()

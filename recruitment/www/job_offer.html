@@ -1,3 +1,5 @@
+{{doc}}
+{{status}}
 {% if doc %}
     {% if frappe.db.get_value('Job Offer', doc, 'custom_jo_expiry_date').strftime('%Y-%m-%d') < frappe.utils.today() %}
         <div>

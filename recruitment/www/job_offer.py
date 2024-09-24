@@ -10,3 +10,4 @@ def get_context(context):
 		context.doc =jo_id
 	else:
 		context.status = status
+	print(context.doc)
