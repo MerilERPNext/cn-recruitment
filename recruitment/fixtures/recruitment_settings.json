@@ -2,7 +2,7 @@
  {
   "docstatus": 0,
   "doctype": "Recruitment Settings",
-  "employee_onboarding_webform": "employee-onboarding",
+  "employee_onboarding_webform": null,
   "job_offer_template": "Job Offer",
   "mapping_fields": [
    {
