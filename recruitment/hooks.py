@@ -53,9 +53,9 @@ app_license = "mit"
 #     }]
 fixtures = [
     {
-        "doctype": "Role",
-        "filters": [["Role", "name", "IN", ["Recruitment User","Recruiter Admin"]]],
-    }
+         "doctype": "Workspace",
+         "filters": [["Workspace", "name", "=", "Recruitment"]],
+	},
     
     ]
 # include js in page
