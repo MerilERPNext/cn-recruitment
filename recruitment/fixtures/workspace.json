@@ -391,14 +391,6 @@
     "parentfield": "quick_lists",
     "parenttype": "Workspace",
     "quick_list_filter": "{\"scheduled_on\":[\"Timespan\",\"this week\"],\"docstatus\":[\"!=\",\"2\"]}"
-   },
-   {
-    "document_type": "Submit To Hiring Manager",
-    "label": "Pending Approval From Hiring Manager",
-    "parent": "Recruitment",
-    "parentfield": "quick_lists",
-    "parenttype": "Workspace",
-    "quick_list_filter": "[[\"Submit To Hiring Manager\",\"workflow_state\",\"=\",\"Submit To HIring Manager\",false]]"
    }
   ],
   "restrict_to_domain": null,
