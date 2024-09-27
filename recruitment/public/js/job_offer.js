@@ -51,5 +51,17 @@ frappe.ui.form.on("Job Offer", {
 		}else{
 			frm.set_value("custom_ctc_per_month",null)
 		}
-	}
+	},
+	job_applicant: function(frm) {
+		if (frm.doc.job_applicant) {
+			frappe.db.get_value("Job Applicant", frm.doc.job_applicant, "custom_ctc_finalized")
+				.then(r => {
+					if (r && r.message) {
+						frm.set_value("custom_ctc_per_annum", r.message.custom_ctc_finalized);
+					}
+				});
+		} else {
+			frm.set_value("custom_ctc_per_annum", null);
+		}
+	}	
 })
