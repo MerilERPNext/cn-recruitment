@@ -93,9 +93,10 @@ def check_feedback_of_previous_interview(self, method):
         interview_doc = frappe.get_doc("Interview", interview)        
         for interviewer in interview_doc.interview_details:
             if not frappe.db.exists("Interview Feedback", {"interview": interview, "interviewer": interviewer.interviewer,"job_applicant":self.job_applicant}):
-                frappe.throw(
-                    f"Please provide feedback for Interview: {frappe.utils.get_link_to_form('Interview', interview)} by {interviewer.interviewer}"
-                )
+                pass
+                # frappe.throw(
+                #     f"Please provide feedback for Interview: {frappe.utils.get_link_to_form('Interview', interview)} by {interviewer.interviewer}"
+                # )
 
 @frappe.whitelist()
 def get_interview_feedback_records(interview_id):
