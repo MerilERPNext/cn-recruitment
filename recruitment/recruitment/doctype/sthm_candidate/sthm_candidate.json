@@ -46,7 +46,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Approved\nPending\nReject"
+   "options": "Select\nPending\nReject"
   },
   {
    "depends_on": "eval:doc.status==\"Reject\"",
