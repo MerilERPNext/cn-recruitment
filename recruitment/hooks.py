@@ -184,6 +184,10 @@ doc_events = {
      "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
     },
+     "Job Applicant": {
+        "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
+    },
+    
 }
 
 # Scheduled Tasks
