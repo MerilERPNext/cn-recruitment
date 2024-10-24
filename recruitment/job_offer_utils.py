@@ -12,12 +12,14 @@ def job_offer_update(status, appl):
     if status == "Accepted":
         frappe.db.set_value("Job Offer",jo_id,"status","Accepted")
         frappe.db.set_value("Job Applicant",appl,"status","Offer Accepted")
+        frappe.db.set_value("Job Offer",jo_doc,"docstatus",1)
         # trigger_event(doc=jo_doc, event_name="accept_jo")
     if status == "Rejected":
         frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
         frappe.db.set_value("Job Applicant",appl,"status","Offer Rejected")
+        frappe.db.set_value("Job Offer",jo_doc,"docstatus",1)
         # trigger_event(doc=jo_doc, event_name="reject_jo")
-    frappe.db.set_value("Job Offer",jo_doc,"docstatus",1)
+    
     return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
 
 @frappe.whitelist()

@@ -23,7 +23,7 @@ def make_job_opening(source_name, target_doc=None):
 				"department": "department",
 				"custom_preffered_companies":"custom_preffered_company",
 				"custom_location":"custom_location",
-				"custom_shortlist_by_hiring_manager":"custom_shortlisted_by_hiring_manager"
+				"custom_shortlist_by_hiring_manager":"custom_shortlisted_by_hiring_manager",
 			},
 			"Candidate List": {
 				"doctype": "Candidate List",

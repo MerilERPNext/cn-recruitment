@@ -38,26 +38,12 @@ frappe.ui.form.on("Submit To Hiring Manager", {
 });
 
 function updateStatusFieldProperties(frm) {
-    // Get the current user roles
-    frappe.call({
-        method: 'frappe.client.get',
-        args: {
-            doctype: 'User',
-            name: frappe.session.user
-        },
-        callback: function(r) {
-            if (r.message) {
-                let roles = r.message.roles.map(role => role.role);
-                let isJobRecruiter = roles.includes('Job Recruiter');
-
-                if (isJobRecruiter && frm.doc.workflow_state !== 'Approved') {
+    let isJobRecruiter = frappe.user.has_role('Job Recruiter');
+		if (isJobRecruiter && frm.doc.workflow_state !== 'Approved') {
                     frm.fields_dict.shortlisted_candidate.grid.toggle_enable('status', false);
-                } else {
-                    frm.fields_dict.shortlisted_candidate.grid.toggle_enable('status', true);
-                }
-                frm.fields_dict['shortlisted_candidate'].grid.refresh();
-            }
+        } else {
+            frm.fields_dict.shortlisted_candidate.grid.toggle_enable('status', true);
         }
-    });
+        frm.fields_dict['shortlisted_candidate'].grid.refresh();
     
 }
