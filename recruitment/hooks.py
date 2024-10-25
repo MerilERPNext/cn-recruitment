@@ -56,7 +56,11 @@ fixtures = [
          "doctype": "Workspace",
          "filters": [["Workspace", "name", "=", "Recruitment"]],
 	},
-    
+   
+    {
+        "dt":"Custom Field",
+        "filters":[["module","=","Recruitment"]]
+    }
     ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
@@ -183,10 +187,24 @@ doc_events = {
 	},
      "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
+        "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+    },
+    "Job Offer":{
+         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+    },
+    "Employee":{
+        "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee"
     },
      "Job Applicant": {
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
     },
+    "Appointment Letter":{
+         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+    },
+    "Employee Onboarding":{
+         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+    },
+    
     
 }
 

@@ -25,12 +25,27 @@ def validate_applicant(job_applicant):
 
 def validate_blacklist(self,method):
     if self.phone_number:
-        status=frappe.db.get_value("Job Applicant",{"phone_number":self.phone_number},"status")
-        if status=="Blacklisted":
-            self.status="Blacklisted"
+        blacklist=frappe.db.get_value("Job Applicant",{"phone_number":self.phone_number},"custom_blacklist")
+        if blacklist:
+            self.custom_blacklist=1
     elif self.email_id:
-        status=frappe.db.get_value("Job Applicant",{"email_id":self.email_id},"status")
-        if status=="Blacklisted":
-            self.status="Blacklisted"
+        blacklist=frappe.db.get_value("Job Applicant",{"email_id":self.email_id},"custom_blacklist")
+        if blacklist:
+            self.custom_blacklist=1
 
 
+
+
+def validation_blacklist_on_doctypes(self,method):
+    if self.job_applicant:
+        doc=frappe.get_doc("Job Applicant",self.job_applicant)
+        if doc.custom_blacklist:
+            frappe.throw("The Applicant Is Blacklisted.So You Cannot Create {0} ".format(self.doctype))
+
+def validate_blacklist_employee(self,method):
+    mno=frappe.db.get_all("Job Applicant",{"phone_number":self.cell_number},["name"])
+    if mno:
+        frappe.throw("This Candidate Is Blacklisted")
+    email=frappe.db.get_all("Job Applicant",{"phone_number":self.personal_email},["name"])
+    if email:
+        frappe.throw("This Candidate Is Blacklisted")
