@@ -24,6 +24,8 @@ def make_job_opening(source_name, target_doc=None):
 				"custom_preffered_companies":"custom_preffered_company",
 				"custom_location":"custom_location",
 				"custom_shortlist_by_hiring_manager":"custom_shortlisted_by_hiring_manager",
+				"custom_grade":"custom_grade",
+				"reason_for_requesting":"custom_reason_for_requesting"
 			},
 			"Candidate List": {
 				"doctype": "Candidate List",
