@@ -382,7 +382,7 @@ frappe.ui.form.on("Job Applicant", {
   
 },
 create_custom_buttons: function (frm) {
-  if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted") {
+  if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted" && !frm.doc.custom_blacklist) {
     frm.add_custom_button(
       __("Interview"),
       function () {
@@ -415,7 +415,7 @@ create_custom_buttons: function (frm) {
     );
   }
 
-  if (!frm.doc.__islocal && frm.doc.status == "Accepted") {
+  if (!frm.doc.__islocal && frm.doc.status == "Accepted" && !frm.doc.custom_blacklist) {
     if (frm.doc.__onload && frm.doc.__onload.job_offer) {
       $('[data-doctype="Employee Onboarding"]').find("button").show();
       $('[data-doctype="Job Offer"]').find("button").hide();
