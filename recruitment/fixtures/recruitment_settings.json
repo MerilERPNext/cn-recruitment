@@ -3,7 +3,7 @@
   "docstatus": 0,
   "doctype": "Recruitment Settings",
   "employee_onboarding_webform": null,
-  "job_offer_template": "Job Offer",
+  "job_offer_template": null,
   "mapping_fields": [
    {
     "employee": "first_name",
