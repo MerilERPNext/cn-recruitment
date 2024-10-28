@@ -57,34 +57,21 @@ def share_job_opening(docname):
             DocShare.read = 1
             DocShare.notify_by_email = 1
             DocShare.save()
-        
+            
+@frappe.whitelist()
+def assign_interviews_to_interviewer(docname):
+     inter_doc = frappe.get_doc("Interview",docname)
+     for inter in inter_doc.interview_details:
         if not frappe.db.exists("DocShare", {"user": inter.interviewer,"share_doctype":"Interview","share_name":docname}):
             intDocShare = frappe.new_doc("DocShare")
             intDocShare.user = inter.interviewer
             intDocShare.share_doctype = "Interview"
             intDocShare.share_name = docname
             intDocShare.read = 1
+            intDocShare.write=1
             intDocShare.notify_by_email = 1
             intDocShare.save()
 
-@frappe.whitelist()
-def share_job_applicants(docname):
-    inter_doc = frappe.get_doc("Interview",docname)
-    for inter in inter_doc.interview_details:
-        user = frappe.get_doc("User", inter.interviewer)
-        if not any(role.role == "Interviewer" for role in user.get("roles")):
-            user.append("roles", {
-                "role": "Interviewer"
-            })
-            user.save()
-            frappe.db.commit()
-        if not frappe.db.exists("User Permission", {"user": inter.interviewer,"allow":"Interview","for_value":docname}):
-            DocShare = frappe.new_doc("User Permission")
-            DocShare.user = inter.interviewer
-            DocShare.allow = "Interview"
-            DocShare.for_value = docname
-            DocShare.apply_to_all_doctypes = 0
-            DocShare.save()
 
 @frappe.whitelist()
 def check_feedback_of_previous_interview(self, method):
