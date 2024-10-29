@@ -21,6 +21,7 @@ def validate_applicant(job_applicant):
                 em.append(i.name)
             if em:
                 return em
+    return False
 
 
 def validate_blacklist(self,method):
