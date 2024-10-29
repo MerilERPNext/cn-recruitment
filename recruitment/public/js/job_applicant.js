@@ -1,6 +1,42 @@
 frappe.ui.form.on("Job Applicant", {
   refresh: function (frm) {
-    frm.events.create_custom_buttons(frm);
+    // frm.events.create_custom_buttons(frm);
+    frm.remove_custom_button('Interview', 'Create');
+    if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted") {
+      frm.add_custom_button(
+        __("Interview"),
+        function () {
+          frappe.call({
+            method:"recruitment.customizations.job_applicant.validate_applicant",
+            args:{
+              "job_applicant":frm.doc.name
+            },
+            callback:function(r){ 
+              console.log("message:",r.message)
+              if(r.message){
+                let links_text = "";
+              links_text=`<a href="/app/job-applicant/${r.message[0]}">${r.message[0]}</a>`
+                
+                links_text = `<ul>${links_text}</ul>`;
+                let confirm_message = __("Duplicate {0} {1} is Present. You Want To Continue?", [
+                  __("Job Applicant").bold(),
+                 links_text
+                ]);
+                frappe.confirm(__(confirm_message), () => {
+                  frm.events.create_dialog(frm);
+                },() => {
+                  
+                })
+              }else{
+                frm.events.create_dialog(frm);
+              }
+            }
+          })
+          
+        },
+        __("Create"),
+      );
+    }
     frm.events.make_dashboard(frm);
     if (!frm.is_new()) {
       if (frappe.user.has_role("Hr Group Admin")) {
