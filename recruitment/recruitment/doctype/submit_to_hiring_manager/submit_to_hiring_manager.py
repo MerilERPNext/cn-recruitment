@@ -25,7 +25,7 @@ def generate_job_applicant(docname):
 	jo_doc = frappe.get_doc("Submit To Hiring Manager",docname).as_dict()
 	job_app = 0
 	for can in jo_doc["shortlisted_candidate"]:
-		if can.status=="Select":
+		if can.status=="Select" or can.status=="Selected":
 			if not frappe.db.exists("Job Applicant", {"applicant_name":can.first_name,"email_id":can.email_id}, cache=True):
 				new_ja = frappe.new_doc("Job Applicant")
 				new_ja.applicant_name=can.first_name
