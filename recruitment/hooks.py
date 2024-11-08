@@ -52,10 +52,10 @@ app_include_css = "/assets/recruitment/css/job_applicant.css"
 #         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
 #     }]
 fixtures = [
-    {
-         "doctype": "Workspace",
-         "filters": [["Workspace", "name", "=", "Recruitment"]],
-	},
+    # {
+    #      "doctype": "Workspace",
+    #      "filters": [["Workspace", "name", "=", "Recruitment"]],
+	# },
    
     {
         "dt":"Custom Field",
