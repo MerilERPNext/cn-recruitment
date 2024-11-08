@@ -34,6 +34,18 @@ frappe.ui.form.on("Employee Separation", {
             }
         }
     },
+    custom_resignation_date(frm){
+        if(frm?.doc?.custom_resignation_date && frm?.doc?.custom_employment_type){
+            var d2 = new Date(frm?.doc?.custom_resignation_date);
+            frappe.db.get_value('Employment Type', frm?.doc?.custom_employment_type, 'custom_notice_period_days').then(r => {
+                d2.setDate(d2.getDate() + r.message.custom_notice_period_days);
+                var formatted_date2 = d2.toISOString().split('T')[0];
+                frm.set_value('custom_last_working_date', formatted_date2);
+            })
+        }else{
+            frm.set_value('custom_last_working_date', "");
+        }
+    },
     custom_actual_last_working_date(frm){
         if(frm.doc.custom_actual_last_working_date){
             var d2 = new Date(frm.doc.custom_actual_last_working_date);
