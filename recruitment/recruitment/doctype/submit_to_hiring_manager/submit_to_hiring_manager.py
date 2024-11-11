@@ -36,6 +36,10 @@ def generate_job_applicant(docname):
 				new_ja.resume_attachment = can.resume
 				new_ja.custom_recruiter=jo_doc.owner
 				new_ja.custom_recruit__hiring_manager=jo_doc.assigned_to
+				if can.custom_current_company:
+					new_ja.custom_current_employer = can.custom_current_company
+				if can.custom_notice_period:
+					new_ja.custom_notice_period_in_days = can.custom_notice_period
 				new_ja.save()
 				job_app+=1
 	if job_app>0:
