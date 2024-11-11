@@ -27,7 +27,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Relationship",
-   "options": "Father\nMother\nBrother\nSister\nSpouse"
+   "options": "Father\nMother\nBrother\nSister\nSpouse\nChild"
   },
   {
    "fieldname": "dob",
@@ -75,7 +75,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-08-06 12:26:10.023656",
+ "modified": "2024-11-07 18:05:51.659322",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Family Details",
