@@ -1,4 +1,22 @@
 frappe.ui.form.on("Employee Separation", {
+    refresh: function(frm) {
+        if (frappe.session.user !== "Administrator" && frm.is_new()) {
+            frappe.call({
+              method: "frappe.client.get_value",
+              args: {
+                doctype: "Employee",
+                filters: { user_id: frappe.session.user },
+                fieldname: "name",
+              },
+              callback: (r) => {
+                if (r.message) {
+                    console.log(r.message);
+                  frm.set_value("employee", r.message.name);
+                }
+              },
+            });
+        }      
+    },
     before_save:function(frm){
         if(frm.is_new()){
             if (!frm.doc.boarding_begins_on) {
@@ -60,21 +78,21 @@ frappe.ui.form.on("Employee Separation", {
         }
     }
 });
-function get_last_working_date(employee){
-    frappe.db.get_value('Employee', employee, 'employment_type')
-    .then(r => {
-        var formattedDate;
-        if(r.message.employment_type=="Full-time"){
-            d = new Date();
-            d.setDate(d.getDate() + 60);
-            formattedDate = d.toISOString().split('T')[0];
-        }
-        else{
-            d = new Date();
-            d.setDate(d.getDate() + 7);
-            formattedDate = d.toISOString().split('T')[0];
-        }
-        console.log(r.message.employment_type)
-        return formattedDate
-    })
-}
+// function get_last_working_date(employee){
+//     frappe.db.get_value('Employee', employee, 'employment_type')
+//     .then(r => {
+//         var formattedDate;
+//         if(r.message.employment_type=="Full-time"){
+//             d = new Date();
+//             d.setDate(d.getDate() + 60);
+//             formattedDate = d.toISOString().split('T')[0];
+//         }
+//         else{
+//             d = new Date();
+//             d.setDate(d.getDate() + 7);
+//             formattedDate = d.toISOString().split('T')[0];
+//         }
+//         console.log(r.message.employment_type)
+//         return formattedDate
+//     })
+// }
