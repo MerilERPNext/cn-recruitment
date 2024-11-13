@@ -653,7 +653,7 @@
    "columns": 0,
    "creation": "2024-11-13 13:35:48.553175",
    "default": null,
-   "depends_on": "eval:frappe.user_roles.includes(\"HR User\")",
+   "depends_on": "eval:frappe.user_roles.includes(\"HR Head\")",
    "description": null,
    "docstatus": 0,
    "dt": "Employee Separation",
