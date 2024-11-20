@@ -73,7 +73,7 @@ doctype_js = {
     "Job Applicant": ["public/js/job_applicant.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
-    "Employee Onboarding":["public/js/employee_onboarding.js"],
+    "Employee Onboarding":["public/js/employee_onboarding.js","public/js/emp_OB_verification_table.js"],
    "Employee Separation":["public/js/employee_separation.js"],
    "Employee Promotion":["public/js/employee_promotion.js"],
 }
