@@ -383,7 +383,7 @@ frappe.ui.form.on("Job Applicant", {
                               <td style="text-align: left;">${feedback.interviewer}</td>
                               <td style="text-align: left;">${feedback.feedback}</td>
                               <td style="text-align: left;">${feedback.result}</td> 
-                              <td style="text-align: left;">${frappe.datetime.str_to_user(feedback.creation)}</td>
+                              <td style="text-align: left;">${feedback.creation !== "N/A" ? frappe.datetime.str_to_user(feedback.creation) : "N/A"}</td>
                           </tr>
                       `;
                   });
@@ -393,7 +393,6 @@ frappe.ui.form.on("Job Applicant", {
                       </table>
                   `;
                   
-                  // Use a custom dialog for more control over styling
                   const dialog = new frappe.ui.Dialog({
                       title: `Feedback for Interview: ${interview_id}`,
                       size: 'large',
@@ -416,6 +415,7 @@ frappe.ui.form.on("Job Applicant", {
           },
       });
   }
+  
   
 },
 create_custom_buttons: function (frm) {

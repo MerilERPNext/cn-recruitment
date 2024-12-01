@@ -72,15 +72,33 @@ def check_feedback_of_previous_interview(self, method):
 
 @frappe.whitelist()
 def get_interview_feedback_records(interview_id):
-    interview_feedback_records=[]
+    interview_feedback_records = []
+    
+    # Fetch submitted feedbacks
     interview_feedbacks = frappe.get_all("Interview Feedback", filters={"interview": interview_id}, pluck="name")
     for interview_feedback in interview_feedbacks:
-        feedback_doc=frappe.get_doc("Interview Feedback", interview_feedback)
+        feedback_doc = frappe.get_doc("Interview Feedback", interview_feedback)
         interview_feedback_records.append({
             "interviewer": feedback_doc.interviewer,
             "feedback": feedback_doc.feedback,
             "result": feedback_doc.result,
             "creation": feedback_doc.creation
         })
+    
+    # If no feedback records found, fetch interviewers and mark them as pending
+    if not interview_feedback_records:
+        interview = frappe.get_doc("Interview", interview_id)
+        assigned_interviewers = [
+            row.custom_full_name for row in interview.interview_details
+        ]
+        for interviewer_name in assigned_interviewers:
+            interview_feedback_records.append({
+                "interviewer": interviewer_name,
+                "feedback": "Pending",
+                "result": "Pending",
+                "creation": "N/A"
+            })
+    
     return interview_feedback_records
+
         
