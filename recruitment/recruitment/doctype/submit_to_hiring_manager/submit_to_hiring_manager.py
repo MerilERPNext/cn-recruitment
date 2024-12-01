@@ -29,6 +29,7 @@ def generate_job_applicant(docname):
 			if not frappe.db.exists("Job Applicant", {"applicant_name":can.first_name,"email_id":can.email_id}, cache=True):
 				new_ja = frappe.new_doc("Job Applicant")
 				new_ja.applicant_name=can.first_name
+				new_ja.custom_applicant_last_name_ = can.last_name
 				new_ja.email_id = can.email_id
 				new_ja.job_title = jo_doc.job_opening
 				new_ja.status="Open"
