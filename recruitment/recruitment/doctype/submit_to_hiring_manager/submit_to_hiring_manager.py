@@ -41,6 +41,8 @@ def generate_job_applicant(docname):
 					new_ja.custom_current_employer = can.custom_current_company
 				if can.custom_notice_period:
 					new_ja.custom_notice_period_in_days = can.custom_notice_period
+				if can.custom_current_ctc:
+					new_ja.custom_current_salaryctc = can.custom_current_ctc
 				new_ja.save()
 				job_app+=1
 	if job_app>0:
