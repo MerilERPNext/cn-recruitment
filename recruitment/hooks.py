@@ -10,7 +10,7 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/recruitment/css/recruitment.css"
+app_include_css = "/assets/recruitment/css/job_applicant.css"
 # app_include_js = "/assets/recruitment/js/recruitment.js"
 
 # include js, css files in header of web template
@@ -52,10 +52,10 @@ app_license = "mit"
 #         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
 #     }]
 fixtures = [
-    {
-         "doctype": "Workspace",
-         "filters": [["Workspace", "name", "=", "Recruitment"]],
-	},
+    # {
+    #      "doctype": "Workspace",
+    #      "filters": [["Workspace", "name", "=", "Recruitment"]],
+	# },
    
     {
         "dt":"Custom Field",
@@ -73,7 +73,7 @@ doctype_js = {
     "Job Applicant": ["public/js/job_applicant.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
-    "Employee Onboarding":["public/js/employee_onboarding.js"],
+    "Employee Onboarding":["public/js/employee_onboarding.js","public/js/emp_OB_verification_table.js"],
    "Employee Separation":["public/js/employee_separation.js"],
    "Employee Promotion":["public/js/employee_promotion.js"],
 }

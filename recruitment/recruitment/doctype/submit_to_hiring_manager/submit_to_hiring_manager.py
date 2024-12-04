@@ -25,10 +25,11 @@ def generate_job_applicant(docname):
 	jo_doc = frappe.get_doc("Submit To Hiring Manager",docname).as_dict()
 	job_app = 0
 	for can in jo_doc["shortlisted_candidate"]:
-		if can.status=="Select":
+		if can.status=="Select" or can.status=="Selected":
 			if not frappe.db.exists("Job Applicant", {"applicant_name":can.first_name,"email_id":can.email_id}, cache=True):
 				new_ja = frappe.new_doc("Job Applicant")
 				new_ja.applicant_name=can.first_name
+				new_ja.custom_applicant_last_name_ = can.last_name
 				new_ja.email_id = can.email_id
 				new_ja.job_title = jo_doc.job_opening
 				new_ja.status="Open"
@@ -36,6 +37,12 @@ def generate_job_applicant(docname):
 				new_ja.resume_attachment = can.resume
 				new_ja.custom_recruiter=jo_doc.owner
 				new_ja.custom_recruit__hiring_manager=jo_doc.assigned_to
+				if can.custom_current_company:
+					new_ja.custom_current_employer = can.custom_current_company
+				if can.custom_notice_period:
+					new_ja.custom_notice_period_in_days = can.custom_notice_period
+				if can.custom_current_ctc:
+					new_ja.custom_current_salaryctc = can.custom_current_ctc
 				new_ja.save()
 				job_app+=1
 	if job_app>0:

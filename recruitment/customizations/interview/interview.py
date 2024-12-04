@@ -57,34 +57,6 @@ def share_job_opening(docname):
             DocShare.read = 1
             DocShare.notify_by_email = 1
             DocShare.save()
-        
-        if not frappe.db.exists("DocShare", {"user": inter.interviewer,"share_doctype":"Interview","share_name":docname}):
-            intDocShare = frappe.new_doc("DocShare")
-            intDocShare.user = inter.interviewer
-            intDocShare.share_doctype = "Interview"
-            intDocShare.share_name = docname
-            intDocShare.read = 1
-            intDocShare.notify_by_email = 1
-            intDocShare.save()
-
-@frappe.whitelist()
-def share_job_applicants(docname):
-    inter_doc = frappe.get_doc("Interview",docname)
-    for inter in inter_doc.interview_details:
-        user = frappe.get_doc("User", inter.interviewer)
-        if not any(role.role == "Interviewer" for role in user.get("roles")):
-            user.append("roles", {
-                "role": "Interviewer"
-            })
-            user.save()
-            frappe.db.commit()
-        if not frappe.db.exists("User Permission", {"user": inter.interviewer,"allow":"Interview","for_value":docname}):
-            DocShare = frappe.new_doc("User Permission")
-            DocShare.user = inter.interviewer
-            DocShare.allow = "Interview"
-            DocShare.for_value = docname
-            DocShare.apply_to_all_doctypes = 0
-            DocShare.save()
 
 @frappe.whitelist()
 def check_feedback_of_previous_interview(self, method):
@@ -100,15 +72,33 @@ def check_feedback_of_previous_interview(self, method):
 
 @frappe.whitelist()
 def get_interview_feedback_records(interview_id):
-    interview_feedback_records=[]
+    interview_feedback_records = []
+    
+    # Fetch submitted feedbacks
     interview_feedbacks = frappe.get_all("Interview Feedback", filters={"interview": interview_id}, pluck="name")
     for interview_feedback in interview_feedbacks:
-        feedback_doc=frappe.get_doc("Interview Feedback", interview_feedback)
+        feedback_doc = frappe.get_doc("Interview Feedback", interview_feedback)
         interview_feedback_records.append({
             "interviewer": feedback_doc.interviewer,
             "feedback": feedback_doc.feedback,
             "result": feedback_doc.result,
             "creation": feedback_doc.creation
         })
+    
+    # If no feedback records found, fetch interviewers and mark them as pending
+    if not interview_feedback_records:
+        interview = frappe.get_doc("Interview", interview_id)
+        assigned_interviewers = [
+            row.custom_full_name for row in interview.interview_details
+        ]
+        for interviewer_name in assigned_interviewers:
+            interview_feedback_records.append({
+                "interviewer": interviewer_name,
+                "feedback": "Pending",
+                "result": "Pending",
+                "creation": "N/A"
+            })
+    
     return interview_feedback_records
+
         

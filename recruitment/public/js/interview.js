@@ -53,7 +53,14 @@ frappe.ui.form.on("Interview", {
 
 			},__("Create"));
 		}
-    }
+    },
+	// after_save(frm){
+	// 	frappe.call('recruitment.customizations.interview.interview.assign_interviews_to_interviewer', {
+	// 		docname: frm.doc.name
+	// 	   }).then(r => {
+	// 		console.log(r.message)
+	// 	   })
+	// }
 })
 function formattime(isoTimestamp){
 	const date = new Date(isoTimestamp);

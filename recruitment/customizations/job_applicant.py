@@ -1,12 +1,14 @@
 
 
 import frappe
+from frappe.utils import add_days, today
 
 @frappe.whitelist()
 def validate_applicant(job_applicant):
     if job_applicant:
         doc=frappe.get_doc("Job Applicant",job_applicant)
-        mno=frappe.db.get_all("Job Applicant",{"phone_number":doc.phone_number,"name":["!=",job_applicant]},["name"])
+        date_365_days_ago = add_days(today(), -365)
+        mno=frappe.db.get_all("Job Applicant",{"phone_number":doc.phone_number,"name":["!=",job_applicant],"creation": [">=", date_365_days_ago]},["name"])
         if len(mno)>1:
             mobile=[]
             for i in mno:
@@ -14,13 +16,14 @@ def validate_applicant(job_applicant):
             if mobile:
                 return mobile
         else:
-            email=frappe.db.get_all("Job Applicant",{"email_id":doc.email_id,"name":["!=",job_applicant]},["name"])
+            email=frappe.db.get_all("Job Applicant",{"email_id":doc.email_id,"name":["!=",job_applicant],"creation": [">=", date_365_days_ago]},["name"])
            
             em=[]
             for i in email:
                 em.append(i.name)
             if em:
                 return em
+    return False
 
 
 def validate_blacklist(self,method):
