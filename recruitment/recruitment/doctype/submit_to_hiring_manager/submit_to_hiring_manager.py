@@ -43,6 +43,30 @@ def generate_job_applicant(docname):
 					new_ja.custom_notice_period_in_days = can.custom_notice_period
 				if can.custom_current_ctc:
 					new_ja.custom_current_salaryctc = can.custom_current_ctc
+				if can.custom_expected_ctc:
+					new_ja.upper_range = can.custom_expected_ctc
+				if can.custom_current_location:
+					new_ja.custom_current_location = can.custom_current_location
+				if can.custom_years_of_experience:
+					new_ja.custom_total_experience_in_years = can.custom_years_of_experience
+				if can.custom_relevant_years_of_experience:
+					new_ja.custom_relevant_experience = can.custom_relevant_years_of_experience
+				if can.custom_higher_education:
+					new_ja.custom_highest_qualification = can.custom_higher_education
+				if can.custom_source:
+					new_ja.custom_source_sthm = can.custom_source
+				if can.custom_referred_by:
+					new_ja.custom_referred_by = can.custom_referred_by
+				if can.linkedin_id:
+					new_ja.custom_linkedin_id = can.linkedin_id
+				if can.custom_recruiters_comment:
+					child = new_ja.append('custom_crm_note', {})
+					child.note = can.custom_recruiters_comment
+					child.added_by = can.owner
+					child.added_on = frappe.utils.now_datetime()
+					child.custom_comment_type = "Recruiter's Comment"
+
+
 				new_ja.save()
 				job_app+=1
 	if job_app>0:
