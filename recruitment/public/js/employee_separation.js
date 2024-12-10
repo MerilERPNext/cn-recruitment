@@ -88,16 +88,24 @@ frappe.ui.form.on("Employee Separation", {
             frm.set_value('custom_manual_relieving_date', "");
         }
     },
-    custom_manual_relieving_date(frm){
-        if(frm.doc.custom_manual_relieving_date){
-            console.log("custom_manual_relieving_date")
-            var d2 = new Date(frm.doc.custom_manual_relieving_date);
+    custom_manual_relieving_date(frm) {
+        if (frm.doc.custom_manual_relieving_date) {
+            console.log("custom_manual_relieving_date");
+            let d2 = new Date(frm.doc.custom_manual_relieving_date);
             d2.setDate(d2.getDate());
-            var formatted_date2 = d2.toISOString().split('T')[0];
+            let formatted_date2 = d2.toISOString().split('T')[0];
             frm.set_value('custom_actual_last_working_date', formatted_date2);
+    
+            let custom_resignation_date = new Date(frm.doc.custom_resignation_date);
+    
+            // Calculate the difference in days
+            let timeDifference = d2 - custom_resignation_date; // Difference in milliseconds
+            let daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)); // Convert to days
+    
+            frm.set_value('custom_number_days_served', daysDifference);
+    
             let custom_last_working_date = new Date(frm.doc.custom_last_working_date);
-            let custom_resignation_date=new Date(frm.doc.custom_resignation_date);
-            frm.set_value('custom_number_days_served', d2.getDate() - custom_resignation_date.getDate());
+    
             // Compare dates and set values for notice period fields
             if (custom_last_working_date > d2) {
                 frm.set_value("custom_notice_period_to_be_waved_off", 1);
@@ -106,18 +114,18 @@ frappe.ui.form.on("Employee Separation", {
                 frm.set_value("custom_notice_period_to_be_waved_off", 0);
                 frm.set_value("custom_notice_period_served_", 1);
             }
-        }else{
-            var d2 = new Date(frm.doc.custom_last_working_date);
+        } else {
+            let d2 = new Date(frm.doc.custom_last_working_date);
             d2.setDate(d2.getDate());
-            var formatted_date2 = d2.toISOString().split('T')[0];
+            let formatted_date2 = d2.toISOString().split('T')[0];
             frm.set_value('custom_actual_last_working_date', formatted_date2);
             frm.set_value("custom_notice_period_to_be_waved_off", 0);
             frm.set_value("custom_notice_period_served_", 0);
-            frm.set_value("custom_reason","")
-            frm.set_value("custom_number_days_served","");
-            frm.set_value("custom_remarks_for_short_notice_period_to_be_deducted","")
+            frm.set_value("custom_reason", "");
+            frm.set_value("custom_number_days_served", "");
+            frm.set_value("custom_remarks_for_short_notice_period_to_be_deducted", "");
         }
-    }
+    }    
     // custom_last_working_date(frm){
     //     if(frm.doc.custom_last_working_date){
     //         frm.set_value('custom_actual_last_working_date', frm.doc.custom_last_working_date);
