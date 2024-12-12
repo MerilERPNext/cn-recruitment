@@ -23,7 +23,7 @@ app_include_css = "/assets/recruitment/css/job_applicant.css"
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
-# fixtures =   [{
+fixtures =   [
 #         "doctype": "Custom HTML Block"
 #     },{
 #         "doctype": "Custom DocPerm",
@@ -39,10 +39,10 @@ app_include_css = "/assets/recruitment/css/job_applicant.css"
 #     },{
 #         "doctype": "Property Setter"
 #     },
-#     {
-#         "doctype": "Custom Field",
-#         "filters": [["Custom Field", "module", "=", "Recruitment"]],
-#     },
+    {
+        "doctype": "Custom Field",
+        "filters": [["Custom Field", "module", "=", "Recruitment"]],
+    },
 #     {
 #         "doctype": "Workspace",
 #         "filters": [["Workspace", "name", "=", "Recruitment"]],
@@ -50,7 +50,7 @@ app_include_css = "/assets/recruitment/css/job_applicant.css"
 #     {
 #         "doctype": "Workflow",
 #         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
-#     }]
+    ]
 fixtures = [
     # {
     #      "doctype": "Workspace",
@@ -190,7 +190,10 @@ doc_events = {
         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
     },
     "Job Offer":{
-         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+		"before_save":"recruitment.job_offer_utils.calculate_salary_structure"
+
+
     },
     "Employee":{
         "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee"
