@@ -100,7 +100,7 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
 
 @frappe.whitelist()
 def calculate_salary_structure(self,method=None):
-    if self.custom_salary_structure and self.custom_base_salary:
+    if self.custom_employee_salary_structure and self.custom_base_salary:
         rec_setting=frappe.get_doc("Recruitment Settings")
         ssa= frappe.db.get_value("Salary Structure Assignment",{"name":rec_setting.dummy_salary_structure_assignment},["name"])
         if ssa:
@@ -112,7 +112,7 @@ def calculate_salary_structure(self,method=None):
             self.custom_earnings=[]
             self.custom_deduction=[]
             make_salary_slip(self,self.custom_employee_salary_structure,target_doc=None,
-            employee=self.custom_employee,
+            employee=doc.employee,
             posting_date=None,
             as_print=False,
             print_format=None,
