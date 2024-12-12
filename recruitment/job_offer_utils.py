@@ -100,24 +100,25 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
 
 @frappe.whitelist()
 def calculate_salary_structure(self,method=None):
-    rec_setting=frappe.get_doc("Recruitment Settings")
-    ssa= frappe.db.get_value("Salary Structure Assignment",{"name":rec_setting.dummy_salary_structure_assignment},["name"])
-    if ssa:
-        doc=frappe.get_doc("Salary Structure Assignment",ssa)
-        doc.salary_structure=self.custom_employee_salary_structure
-        doc.base=self.custom_base_salary
-        doc.income_tax_slab=self.custom_income_tax_slab
-        doc.save()
-        self.custom_earnings=[]
-        self.custom_deduction=[]
-        make_salary_slip(self,self.custom_employee_salary_structure,target_doc=None,
-        employee=self.custom_employee,
-        posting_date=None,
-        as_print=False,
-        print_format=None,
-        for_preview=0,)
-    else:
-        frappe.throw("No Salary Structure")
+    if self.custom_salary_structure and self.custom_base_salary:
+        rec_setting=frappe.get_doc("Recruitment Settings")
+        ssa= frappe.db.get_value("Salary Structure Assignment",{"name":rec_setting.dummy_salary_structure_assignment},["name"])
+        if ssa:
+            doc=frappe.get_doc("Salary Structure Assignment",ssa)
+            doc.salary_structure=self.custom_employee_salary_structure
+            doc.base=self.custom_base_salary
+            doc.income_tax_slab=self.custom_income_tax_slab
+            doc.save()
+            self.custom_earnings=[]
+            self.custom_deduction=[]
+            make_salary_slip(self,self.custom_employee_salary_structure,target_doc=None,
+            employee=self.custom_employee,
+            posting_date=None,
+            as_print=False,
+            print_format=None,
+            for_preview=0,)
+        else:
+            frappe.throw("No Salary Structure")
 
 
 @frappe.whitelist()
