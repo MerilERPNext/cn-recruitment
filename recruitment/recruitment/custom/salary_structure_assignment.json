@@ -47,7 +47,7 @@
    "is_system_generated": 0,
    "modified": "2024-08-21 12:40:57.229895",
    "modified_by": "Administrator",
-   "module": "cn-indian-payroll",
+   "module": null,
    "name": "Salary Structure Assignment-income_tax_slab-allow_on_submit",
    "owner": "Administrator",
    "parent": null,
