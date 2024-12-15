@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "document",
+  "attachments",
   "status"
  ],
  "fields": [
@@ -23,12 +24,20 @@
    "in_list_view": 1,
    "label": "Status",
    "options": "Pending\nApproved\nRejected"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attachments",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Attachments",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-09-10 14:47:16.262897",
+ "modified": "2024-12-14 12:03:30.780725",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Onboarding Document Verification",

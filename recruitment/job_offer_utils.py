@@ -11,18 +11,31 @@ def job_offer_update(status, appl):
     frappe.set_user('Administrator')
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     settings = frappe.get_doc("Recruitment Settings")
-    if status == "Accepted":
-        frappe.db.set_value("Job Offer",jo_id,"status","Accepted")
-        frappe.db.set_value("Job Applicant",appl,"status","Offer Accepted")
+    
+    if jo_id:
+        job_offer = frappe.get_doc("Job Offer", jo_id)
+        job_applicant = frappe.get_doc("Job Applicant", appl)
         
-        # trigger_event(doc=jo_doc, event_name="accept_jo")
-    if status == "Rejected":
-        frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
-        frappe.db.set_value("Job Applicant",appl,"status","Offer Rejected")
-    frappe.db.set_value("Job Offer",jo_id,"docstatus",1)
-        # trigger_event(doc=jo_doc, event_name="reject_jo")
+        if status == "Accepted":
+            job_offer.status = "Accepted"
+            job_applicant.status = "Offer Accepted"
+            if not settings.employee_onboarding_webform:
+                job_offer.docstatus = 1
+                job_offer.save()
+                job_applicant.save()
+                return {"jo_id": jo_id, "message": "Thank you for accepting the offer."}
+        
+        if status == "Rejected":
+            job_offer.status = "Rejected"
+            job_applicant.status = "Offer Rejected"
+        
+        job_offer.docstatus = 1
+        job_offer.save()
+        job_applicant.save()
     
     return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
+
+
 
 @frappe.whitelist()
 def request_for_offer(jo_id):

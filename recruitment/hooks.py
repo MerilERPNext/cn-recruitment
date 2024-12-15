@@ -205,7 +205,8 @@ doc_events = {
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
     },
     "Employee Onboarding":{
-         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+         "after_insert": "recruitment.customizations.employee_onboarding.document_verification.populate_verification_documents"
     },
     
     
