@@ -191,7 +191,7 @@ doc_events = {
     },
     "Job Offer":{
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-		"before_save":"recruitment.job_offer_utils.calculate_salary_structure"
+		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure"
 
 
     },
