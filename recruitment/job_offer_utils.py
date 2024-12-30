@@ -11,18 +11,37 @@ def job_offer_update(status, appl):
     frappe.set_user('Administrator')
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     settings = frappe.get_doc("Recruitment Settings")
-    if status == "Accepted":
-        frappe.db.set_value("Job Offer",jo_id,"status","Accepted")
-        frappe.db.set_value("Job Applicant",appl,"status","Offer Accepted")
-        
-        # trigger_event(doc=jo_doc, event_name="accept_jo")
-    if status == "Rejected":
-        frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
-        frappe.db.set_value("Job Applicant",appl,"status","Offer Rejected")
-    frappe.db.set_value("Job Offer",jo_id,"docstatus",1)
-        # trigger_event(doc=jo_doc, event_name="reject_jo")
     
-    return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
+    # Check if employee_onboarding_webform is set, else use None
+    webform = settings.employee_onboarding_webform or None
+
+    if status == "Accepted":
+        frappe.db.set_value("Job Offer", jo_id, "status", "Accepted")
+        frappe.db.set_value("Job Applicant", appl, "status", "Offer Accepted")
+        
+        if webform:
+            # If webform is set, return the URL for the webform
+            return {"jo_id": jo_id, "webform": webform}
+        else:
+            thank_you_url = "/accepted.html?job_offer=" + jo_id + "&job_applicant=" + appl
+            return {"jo_id": jo_id, "webform": thank_you_url}
+    
+    if status == "Rejected":
+        frappe.db.set_value("Job Offer", jo_id, "status", "Rejected")
+        frappe.db.set_value("Job Applicant", appl, "status", "Offer Rejected")
+
+        if webform:
+            # If webform is set, return the URL for the webform
+            return {"jo_id": jo_id, "webform": webform}
+        else:
+            # If webform is not set, return the relative URL to the "Rejection" page
+            rejected_url = "/rejected.html?job_offer=" + jo_id + "&job_applicant=" + appl
+            return {"jo_id": jo_id, "webform": rejected_url}
+    
+    frappe.db.set_value("Job Offer", jo_id, "docstatus", 1)
+
+    return {"jo_id": jo_id, "webform": webform}
+
 
 @frappe.whitelist()
 def request_for_offer(jo_id):
@@ -31,25 +50,43 @@ def request_for_offer(jo_id):
 
 
 @frappe.whitelist(allow_guest=True)
-def submit_docs(status, appl,url=None):
-	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-	settings = frappe.get_doc("Recruitment Settings")
-	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
-	if status == "Accepted":
-		wf_url = url+"/"+settings.employee_onboarding_webform+"/new?job_offer="+jo_id+"&job_applicant="+appl
-		email_context = {"url":wf_url,"name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"applicant_name"),"company":frappe.db.get_value("Job Offer", {"job_applicant": appl},"company"),"designation":frappe.db.get_value("Job Offer", {"job_applicant": appl},"designation")}
-		frappe.sendmail(
-			recipients=[job_applicant],
-			subject=frappe.render_template(
-				frappe.db.get_value("Email Template", "Employee Onboarding", "subject"),
-				email_context,
-			),
-			message=frappe.render_template(
-				frappe.db.get_value("Email Template", "Employee Onboarding", "response_html"),
-				email_context,
-			),
-			args=email_context,
-		)
+def submit_docs(status, appl, url=None):
+    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+    settings = frappe.get_doc("Recruitment Settings")
+    
+    # Get the employee onboarding webform if available
+    webform = settings.employee_onboarding_webform or None
+    job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
+    
+    if status == "Accepted":
+        if webform:
+            # If the webform is set, create the URL for the webform
+            wf_url = url + "/" + webform + "/new?job_offer=" + jo_id + "&job_applicant=" + appl
+            email_context = {"url": wf_url, "name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "applicant_name"), "company": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "company"), "designation": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "designation")}
+            frappe.sendmail(
+                recipients=[job_applicant],
+                subject=frappe.render_template(
+                    frappe.db.get_value("Email Template", "Employee Onboarding", "subject"),
+                    email_context,
+                ),
+                message=frappe.render_template(
+                    frappe.db.get_value("Email Template", "Employee Onboarding", "response_html"),
+                    email_context,
+                ),
+                args=email_context,
+            )
+        else:
+            # If the webform is not set, send a simple thank you message instead
+            email_context = {"applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "applicant_name")}
+            frappe.sendmail(
+                recipients=[job_applicant],
+                subject="Thank You for Accepting the Job Offer",
+                message="Thank you for accepting the job offer. We look forward to working with you.",
+                args=email_context,
+            )
+            # Return the "Thank you" message for the web page
+            thank_you_url = "/accepted.html?job_offer=" + jo_id + "&job_applicant=" + appl
+            return {"jo_id": jo_id, "webform": "Thank you for accepting the job offer"}
 
 
 @frappe.whitelist()
