@@ -12,8 +12,14 @@ def job_offer_update(status, appl):
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     settings = frappe.get_doc("Recruitment Settings")
     if status == "Accepted":
-        frappe.db.set_value("Job Offer",jo_id,"status","Accepted")
-        frappe.db.set_value("Job Applicant",appl,"status","Offer Accepted")
+        offer_doc=frappe.get_doc("Job Offer",jo_id)
+        offer_doc.status="Accepted"
+        offer_doc.save()
+        appl_doc=frappe.get_doc("Job Applicant",appl)
+        appl_doc.status="Offer Accepted"
+        appl_doc.save()
+        # frappe.db.set_value("Job Offer",jo_id,"status","Accepted")
+        # frappe.db.set_value("Job Applicant",appl,"status","Offer Accepted")
         
         # trigger_event(doc=jo_doc, event_name="accept_jo")
     if status == "Rejected":

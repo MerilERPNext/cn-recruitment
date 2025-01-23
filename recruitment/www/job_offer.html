@@ -75,6 +75,8 @@ function accept(){
 	})
 	.then(data => {
 		window.location.href = window.location.origin+"/"+data.message.webform+"/new?job_offer="+data.message.jo_id+"&job_applicant="+appl;
+        alert("Thank you for accepting the Job Offer. our team will contact you soon.")
+        window.location.reload();
 		fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl='+appl+"&url="+window.location.origin, {
 			method: 'POST',
 		})
