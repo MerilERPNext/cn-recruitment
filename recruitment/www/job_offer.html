@@ -29,68 +29,102 @@
     </div>
 {% endif %}
 
-
-
 <script>
     $(".action-banner").hide();
-    
-	function rejectoffer() {
-    let text = "Are you sure you want to reject this job offer?";
-    if (confirm(text)) {
-		let queryParams = new URLSearchParams(window.location.search);
-		let appl = queryParams.get('appl');
-        fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.job_offer_update?status=Rejected&&appl='+appl, {
-			 method: 'POST',
+
+    async function getJobOfferStatus() {
+        let queryParams = new URLSearchParams(window.location.search);
+        let appl = queryParams.get('appl');
+
+        try {
+            let response = await fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.get_job_offer_status?appl=' + appl);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            let data = await response.json();
+            return data.message.status; // Expected to return 'Accepted' or 'Rejected'
+        } catch (error) {
+            console.error('Error fetching job offer status:', error);
+            return null;
+        }
+    }
+
+    async function rejectoffer() {
+        let status = await getJobOfferStatus();
+        if (status === "Accepted" || status === "Rejected") {
+            showAlreadyProcessedMessage();
+            return;
+        }
+
+        let text = "Are you sure you want to reject this job offer?";
+        if (confirm(text)) {
+            let queryParams = new URLSearchParams(window.location.search);
+            let appl = queryParams.get('appl');
+
+            fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?status=Rejected&appl=' + appl, {
+                method: 'POST',
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert("Thank you for considering us, and we wish you the best in your future endeavors.");
+                showAlreadyProcessedMessage();
+                fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.submit_docs?status=Rejected&appl=' + appl, {
+                    method: 'POST',
+                });
+            })
+            .catch(error => {
+                console.error('There was a problem with your fetch operation:', error);
+            });
+        }
+    }
+
+    async function accept() {
+        let status = await getJobOfferStatus();
+        if (status === "Accepted" || status === "Rejected") {
+            showAlreadyProcessedMessage();
+            return;
+        }
+
+        let queryParams = new URLSearchParams(window.location.search);
+        let appl = queryParams.get('appl');
+
+        fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?status=Accepted&appl=' + appl, {
+            method: 'POST',
         })
         .then(response => {
-            console.log(response)
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             return response.json();
         })
         .then(data => {
-			alert("Thank you for considering us, and we wish you the best in your future endeavors.")
-			document.getElementById("operations").style.display = "none";
-			fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.submit_docs?status=Rejected&appl='+appl, {
-				method: 'POST',
-			})
+            alert("Thank you for accepting the Job Offer. Our team will contact you soon.");
+            window.location.href = window.location.origin + "/" + data.message.webform + "/new?job_offer=" + data.message.jo_id + "&job_applicant=" + appl;
+
+            fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl=' + appl + "&url=" + window.location.origin, {
+                method: 'POST',
+            });
         })
         .catch(error => {
             console.error('There was a problem with your fetch operation:', error);
         });
     }
-}
-function accept(){
-	let queryParams = new URLSearchParams(window.location.search);
-	let appl = queryParams.get('appl');
-	fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.job_offer_update?status=Accepted&appl='+appl, {
-		 method: 'POST',
-	})
-	.then(response => {
-		if (!response.ok) {
-			throw new Error('Network response was not ok');
-		}
-		return response.json();
-	})
-	.then(data => {
-		window.location.href = window.location.origin+"/"+data.message.webform+"/new?job_offer="+data.message.jo_id+"&job_applicant="+appl;
-        alert("Thank you for accepting the Job Offer. our team will contact you soon.")
-        // window.location.reload();
-		fetch(window.location.origin+'/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl='+appl+"&url="+window.location.origin, {
-			method: 'POST',
-		})
-		.then(response => {
-			if (!response.ok) {
-				throw new Error('Network response was not ok');
-			}
-			console.log("called")
-			return response.json();
-			
-		})
-	})
-	.catch(error => {
-		console.error('There was a problem with your fetch operation:', error);
-	});
-}
+
+    function showAlreadyProcessedMessage() {
+        document.getElementById("operations").style.display = "none";
+        document.body.innerHTML = '<center><h1>You have already accepted or rejected the Offer Letter.</h1></center>';
+    }
+
+    // Check status on page load and update UI accordingly
+    window.onload = async function () {
+        let status = await getJobOfferStatus();
+        if (status === "Accepted" || status === "Rejected") {
+            showAlreadyProcessedMessage();
+        }
+    };
 </script>
