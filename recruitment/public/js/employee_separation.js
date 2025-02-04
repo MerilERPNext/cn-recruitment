@@ -108,11 +108,11 @@ frappe.ui.form.on("Employee Separation", {
     
             // Compare dates and set values for notice period fields
             if (custom_last_working_date > d2) {
-                frm.set_value("custom_notice_period_to_be_waved_off", 1);
-                frm.set_value("custom_notice_period_served_", 0);
+                // frm.set_value("custom_notice_period_to_be_waved_off", 1);
+                // frm.set_value("custom_notice_period_served_", 0);
             } else if (custom_last_working_date < d2) {
-                frm.set_value("custom_notice_period_to_be_waved_off", 0);
-                frm.set_value("custom_notice_period_served_", 1);
+                // frm.set_value("custom_notice_period_to_be_waved_off", 0);
+                // frm.set_value("custom_notice_period_served_", 1);
             }
         } else {
             let d2 = new Date(frm.doc.custom_last_working_date);
@@ -120,7 +120,7 @@ frappe.ui.form.on("Employee Separation", {
             let formatted_date2 = d2.toISOString().split('T')[0];
             frm.set_value('custom_actual_last_working_date', formatted_date2);
             frm.set_value("custom_notice_period_to_be_waved_off", 0);
-            frm.set_value("custom_notice_period_served_", 0);
+            // frm.set_value("custom_notice_period_served_", 0);
             frm.set_value("custom_reason", "");
             frm.set_value("custom_number_days_served", "");
             frm.set_value("custom_remarks_for_short_notice_period_to_be_deducted", "");

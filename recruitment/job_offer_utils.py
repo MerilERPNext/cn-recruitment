@@ -7,6 +7,13 @@ from frappe.utils import cint
 
 
 @frappe.whitelist(allow_guest=True)
+def get_job_offer_status(appl):
+    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+    if not jo_id:
+        return {"status": None}
+    status = frappe.db.get_value("Job Offer", jo_id, "status")
+    return {"status": status}
+@frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl):
     frappe.set_user('Administrator')
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
@@ -16,8 +23,14 @@ def job_offer_update(status, appl):
     webform = settings.employee_onboarding_webform or None
 
     if status == "Accepted":
-        frappe.db.set_value("Job Offer", jo_id, "status", "Accepted")
-        frappe.db.set_value("Job Applicant", appl, "status", "Offer Accepted")
+        offer_doc=frappe.get_doc("Job Offer",jo_id)
+        offer_doc.status="Accepted"
+        offer_doc.save()
+        appl_doc=frappe.get_doc("Job Applicant",appl)
+        appl_doc.status="Offer Accepted"
+        appl_doc.save()
+        # frappe.db.set_value("Job Offer",jo_id,"status","Accepted")
+        # frappe.db.set_value("Job Applicant",appl,"status","Offer Accepted")
         
         if webform:
             # If webform is set, return the URL for the webform
