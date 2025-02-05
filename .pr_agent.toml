@@ -1,0 +1,4 @@
+[pr_description]
+generate_ai_title=true
+[pr_code_suggestions]
+demand_code_suggestions_self_review = true
