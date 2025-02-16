@@ -5,7 +5,6 @@
 </head>
 
 {% if doc %}
-    {% set expiry_date = frappe.db.get_value('Job Offer', doc, 'custom_jo_expiry_date') %}
     {% if expiry_date and expiry_date.strftime('%Y-%m-%d') < frappe.utils.today() %}
         <div>
             <center>
@@ -19,7 +18,7 @@
                 <button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
             </div><br>
         </center>
-        <div>{{ frappe.get_print('Job Offer', doc) }}</div>
+        <div>{{ print }}</div>
     {% endif %}
 {% else %}
     <div>
