@@ -1,9 +1,7 @@
 [pr_description]
 max_ai_calls=6
-
-
-[pr_description]
 generate_ai_title=true
+
 [pr_code_suggestions]
 demand_code_suggestions_self_review = true
 [pr_update_changelog] # /update_changelog #
