@@ -18,7 +18,7 @@
                 <button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
             </div><br>
         </center>
-        <div>{{ print }}</div>
+        <div>{{ print | e }}</div>
     {% endif %}
 {% else %}
     <div>
