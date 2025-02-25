@@ -32,6 +32,8 @@ def update_rejected_documents(variables):
 
     # Fetch the Employee Onboarding document
     onboarding_doc = frappe.get_doc(doc_data["doctype"], doc_data["name"])
+    onboarding_doc.flags.ignore_validate_update_after_submit = True
+    onboarding_doc.flags.ignore_permissions = True
 
     # Update Child Table (custom_documents_for_verification)
     for document in onboarding_doc.get("custom_documents_for_verification", []):
