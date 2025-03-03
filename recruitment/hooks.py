@@ -191,26 +191,37 @@ doc_events = {
     },
     "Job Offer":{
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure"
-
-
+		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure",
+        "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
+        "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
     },
     "Employee":{
-        "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee"
+        "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee",
+        "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
+        "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
+
     },
      "Job Applicant": {
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
+        "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
+        "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
+
     },
     "Appointment Letter":{
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
     },
     "Employee Onboarding":{
-         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+         "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
+        "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
     },
-    
-    
+    "Job Requisition": {
+        "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
+        "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
+    }   
 }
 
+# apps/recruitment/recruitment/recruitment/hooks.py
 # Scheduled Tasks
 # ---------------
 
