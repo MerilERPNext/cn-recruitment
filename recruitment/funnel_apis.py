@@ -17,7 +17,7 @@ def save_document_attachment(doc, field_name, document_data):
             dt=doc['doctype'],
             dn=doc['name'],
             df=field_name,
-            is_private=1
+            is_private=0
         )
         return saved_file.file_url
     return None
