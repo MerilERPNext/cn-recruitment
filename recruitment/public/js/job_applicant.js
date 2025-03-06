@@ -718,3 +718,25 @@ frappe.ui.form.on("Job Applicant Notes", {
     cur_frm.refresh_field("custom_notes");
   },
 });
+
+
+frappe.ui.form.on("Job Applicant", {
+  custom_job_requisition: function(frm) {
+      if (frm.doc.custom_job_requisition) {
+          frappe.call({
+              method: "recruitment.auto_fetch_fields.job_requisition_fields",
+              args: {
+                  job_requisition: frm.doc.custom_job_requisition  
+              },
+              callback: function(r) {
+                  if (r.message) {
+                      $.each(r.message, function(field, value) {
+                          frm.set_value(field, value);
+                      });
+                  }
+              }
+          });
+      }
+  }
+});
+

@@ -23,6 +23,33 @@ def job_applicant_fields(job_applicant):
 
 
 @frappe.whitelist()
+def job_requisition_fields(job_requisition):
+    job_requisition_doc = frappe.get_doc("Job Requisition", job_requisition)
+    recruitment_settings = frappe.get_doc("Recruitment Settings")
+
+    mappings = [
+        entry for entry in recruitment_settings.recruitment_tool
+        if entry.source_doctype == "Job Requisition" and entry.target_doctype == "Job Applicant"
+    ]
+
+    job_applicant_data = {}
+
+    for mapping in mappings:
+        try:
+            source_field = mapping.source_field.split(" (")[1].split(")")[0]
+            target_field = mapping.target_field.split(" (")[1].split(")")[0]
+
+            if hasattr(job_requisition_doc, source_field):
+                job_applicant_data[target_field] = getattr(job_requisition_doc, source_field)
+
+        except IndexError:
+            frappe.log_error(f"Field mapping error in Recruitment Settings: {mapping.source_field} → {mapping.target_field}")
+
+    return job_applicant_data
+
+
+
+@frappe.whitelist()
 def employee_fetch_fields(employee_onboarding):
     onboarding_doc = frappe.get_doc("Employee Onboarding", employee_onboarding)
     recruitment_settings = frappe.get_doc("Recruitment Settings")
@@ -38,7 +65,6 @@ def employee_fetch_fields(employee_onboarding):
         if value is not None:
             setattr(employee_doc, target_field, value)
     return employee_doc.as_dict()
-
 
 
 
