@@ -1,16 +1,28 @@
 frappe.ui.form.on('Recruitment Settings', {
     refresh: function(frm) {
-        // Apply filter for source_doctype in the child table
-        frm.fields_dict['recruitment_tool'].grid.get_field('source_doctype').get_query = function() {
+        frm.fields_dict['recruitment_tool'].grid.get_field('source_field').get_query = function() {
             return {
-                filters: [
-                    ['name', 'in', ['Job Requisition', 'Job Applicant', 'Job Offer', 'Employee Onboarding', 'Employee']]
-                ]
+                query: 'recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.get_source_fields',
+                filters: {
+                    doctype: frm.doc.name
+                }
             };
         };
+        if (frm.doc.source_doctype) {
+            frappe.call({
+                method: "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.get_doctype_fields",
+                args: {
+                    doctype: frm.doc.name
+                },
+                callback: function(r) {
+                    if (r.message) {
+                        frm.fields_dict['recruitment_tool'].grid.get_field('source_field').options = r.message;
+                    }
+                }
+            });
+        }
     }
 });
-
 
 frappe.ui.form.on('Recruitment Settings', {
     onload: function(frm) {

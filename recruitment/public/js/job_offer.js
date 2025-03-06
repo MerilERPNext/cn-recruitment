@@ -54,6 +54,21 @@ frappe.ui.form.on("Job Offer", {
 	},
 	job_applicant: function(frm) {
 		if (frm.doc.job_applicant) {
+			if(frm.doc.job_applicant){
+				frappe.call({
+					method: "recruitment.auto_fetch_fields.job_applicant_fields",
+					args: {
+						"job_applicant": frm.doc.job_applicant,
+					},
+					callback: function(r) {
+						if (r.message) {
+							frm.set_value(r.message);
+							// var doclist = frappe.model.sync(r.message);
+							// frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+						}
+					}
+				});
+			}
 			frappe.db.get_value("Job Applicant", frm.doc.job_applicant, "custom_ctc_finalized")
 				.then(r => {
 					if (r && r.message) {

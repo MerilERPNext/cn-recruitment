@@ -1,4 +1,30 @@
 frappe.ui.form.on("Employee Onboarding", {
+    refresh: function (frm) {
+        if (!frm.doc.employee && frm.doc.docstatus === 1) {
+            frm.remove_custom_button("Employee", "Create");
+
+            frm.add_custom_button(
+                __("Create Employee"),
+                () => frm.events.create_employee(frm),  
+                __("Create")
+            );
+            frm.page.set_inner_btn_group_as_primary(__("Create"));
+        }
+    },
+
+    create_employee(frm) {
+        frappe.call({
+            method: "recruitment.auto_fetch_fields.employee_fetch_fields",
+            args: { employee_onboarding: frm.doc.name },
+            callback: function (r) {
+                if (r.message) {
+                    let doclist = frappe.model.sync(r.message);
+                    frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+                }
+            },
+        });
+    },
+
 	validate: function(frm) {
        
         var mobile_pattern = /^[0-9]{10}$/;
