@@ -1,6 +1,6 @@
 frappe.ui.form.on("Employee Onboarding", {
     refresh: function (frm) {
-        if (!frm.doc.employee && frm.doc.docstatus === 1) {
+        if (!frm.doc.employee) {
             frm.remove_custom_button("Employee", "Create");
 
             frm.add_custom_button(

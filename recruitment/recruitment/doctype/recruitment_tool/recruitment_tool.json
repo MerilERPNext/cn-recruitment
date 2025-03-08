@@ -10,9 +10,7 @@
   "source_field",
   "target_doctype",
   "target_field",
-  "fetch_trigger_field",
   "column_break_ntqm",
-  "fetch_on_creation",
   "fetch_on_update"
  ],
  "fields": [
@@ -50,27 +48,14 @@
    "label": "Target Field"
   },
   {
-   "fieldname": "fetch_trigger_field",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Fetch Trigger Field"
-  },
-  {
    "fieldname": "column_break_ntqm",
    "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "fetch_on_creation",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Fetch on Creation"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-02-22 18:23:00.904697",
+ "modified": "2025-03-07 11:41:07.713277",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Tool",
