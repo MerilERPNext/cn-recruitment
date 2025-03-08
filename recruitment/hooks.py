@@ -193,26 +193,29 @@ doc_events = {
     "Job Offer":{
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
 		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure"
-
-
+        
     },
     "Employee":{
         "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee"
+    
     },
      "Job Applicant": {
-        "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
+        "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
+
     },
-    "Appointment Letter":{
+    "Appointment Letter":{ 
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+
     },
     "Employee Onboarding":{
+
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
          "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents"
     },
-    
-    
+      
 }
 
+# apps/recruitment/recruitment/recruitment/hooks.py
 # Scheduled Tasks
 # ---------------
 

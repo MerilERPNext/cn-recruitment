@@ -1,0 +1,99 @@
+import frappe
+from frappe.model.mapper import get_mapped_doc
+
+@frappe.whitelist()
+def job_applicant_fields(job_applicant):
+    job_applicant_doc = frappe.get_doc("Job Applicant", job_applicant)
+    recruitment_settings = frappe.get_doc("Recruitment Settings")
+
+    mappings = [
+        entry for entry in recruitment_settings.recruitment_tool
+        if entry.source_doctype == "Job Applicant" and entry.target_doctype == "Job Offer"
+    ]
+
+    job_offer_data = {}
+    
+    for mapping in mappings:
+        source_field = mapping.source_field.split(" (")[1].split(")")[0]
+        target_field = mapping.target_field.split(" (")[1].split(")")[0]
+
+        if hasattr(job_applicant_doc, source_field):
+            job_offer_data[target_field] = getattr(job_applicant_doc, source_field)
+
+    return job_offer_data
+
+
+@frappe.whitelist()
+def job_requisition_fields(job_requisition):
+    job_requisition_doc = frappe.get_doc("Job Requisition", job_requisition)
+    recruitment_settings = frappe.get_doc("Recruitment Settings")
+
+    mappings = [
+        entry for entry in recruitment_settings.recruitment_tool
+        if entry.source_doctype == "Job Requisition" and entry.target_doctype == "Job Applicant"
+    ]
+
+    job_applicant_data = {}
+
+    for mapping in mappings:
+        try:
+            source_field = mapping.source_field.split(" (")[1].split(")")[0]
+            target_field = mapping.target_field.split(" (")[1].split(")")[0]
+
+            if hasattr(job_requisition_doc, source_field):
+                job_applicant_data[target_field] = getattr(job_requisition_doc, source_field)
+
+        except IndexError:
+            frappe.log_error(f"Field mapping error in Recruitment Settings: {mapping.source_field} → {mapping.target_field}")
+
+    return job_applicant_data
+
+
+
+@frappe.whitelist()
+def make_employee(source_name, target_doc=None):
+    doc = frappe.get_doc("Employee Onboarding", source_name)
+    settings = frappe.get_doc("Recruitment Settings")
+
+    # Fetch field mappings from recruitment settings
+    field_map = {
+        entry.source_field.split(" (")[1].split(")")[0]: entry.target_field.split(" (")[1].split(")")[0]
+        for entry in settings.recruitment_tool
+        if entry.source_doctype == "Employee Onboarding" and entry.target_doctype == "Employee"
+    }
+
+    def set_missing_values(source, target):
+        target.personal_email = frappe.db.get_value("Job Applicant", source.job_applicant, "email_id")
+        target.status = "Active"
+
+        # Apply dynamic field mapping
+        for source_field, target_field in field_map.items():
+            value = getattr(source, source_field, None)
+            if value is not None:
+                setattr(target, target_field, value)
+
+    # Generate mapped Employee document
+    employee_doc = get_mapped_doc(
+        "Employee Onboarding",
+        source_name,
+        {
+            "Employee Onboarding": {
+                "doctype": "Employee",
+                "field_map": field_map,
+            }
+        },
+        target_doc,
+        set_missing_values,
+    )
+
+    return employee_doc
+
+
+
+
+
+
+
+
+                                                                                      
+

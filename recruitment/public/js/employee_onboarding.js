@@ -1,4 +1,30 @@
 frappe.ui.form.on("Employee Onboarding", {
+    refresh: function (frm) {
+        if (!frm.doc.employee) {
+            frm.remove_custom_button("Employee", "Create");
+
+            frm.add_custom_button(
+                __("Create Employee"),
+                () => frm.events.create_employee(frm),  
+                __("Create")
+            );
+            frm.page.set_inner_btn_group_as_primary(__("Create"));
+        }
+    },
+
+    create_employee(frm) {
+        frappe.call({
+            method: "recruitment.auto_fetch_fields.make_employee",  // Update this path as per your setup
+            args: { source_name: frm.doc.name },
+            callback: function (r) {
+                if (r.message) {
+                    frappe.model.sync(r.message);
+                    frappe.set_route("Form", r.message.doctype, r.message.name);
+                }
+            },
+        });
+    },
+
 	validate: function(frm) {
        
         var mobile_pattern = /^[0-9]{10}$/;

@@ -8,6 +8,7 @@
   "job_offer_template",
   "employee_onboarding_webform",
   "mapping_fields",
+  "recruitment_tool",
   "dummy_salary_structure_assignment"
  ],
  "fields": [
@@ -34,12 +35,18 @@
    "fieldtype": "Link",
    "label": "Dummy Salary Structure Assignment",
    "options": "Salary Structure Assignment"
+  },
+  {
+   "fieldname": "recruitment_tool",
+   "fieldtype": "Table",
+   "label": "Recruitment Tool",
+   "options": "Recruitment Tool"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-12-11 14:23:44.378471",
+ "modified": "2025-02-18 20:42:53.836134",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",
