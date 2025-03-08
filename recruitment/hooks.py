@@ -191,34 +191,26 @@ doc_events = {
     },
     "Job Offer":{
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure",
-        # "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
-        # "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
+		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure"
+        
     },
     "Employee":{
-        "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee",
-        # "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
-        # "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
-
+        "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee"
+    
     },
      "Job Applicant": {
-        "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
-        # "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
-        # "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
+        "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
 
     },
-    "Appointment Letter":{
+    "Appointment Letter":{ 
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+
     },
     "Employee Onboarding":{
-         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-        #  "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
-        # "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
+         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+
     },
-    # "Job Requisition": {
-    #     "after_insert": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_after_insert",
-    #     "before_save": "recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.map_fields_before_save"
-    # }   
+      
 }
 
 # apps/recruitment/recruitment/recruitment/hooks.py
