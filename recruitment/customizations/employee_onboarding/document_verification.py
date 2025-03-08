@@ -1,20 +1,36 @@
 import frappe
 
-def populate_verification_documents(doc, method):
+def update_verification_documents(doc, method):
     fields = frappe.get_meta("Employee Onboarding").fields
 
+    # Fetch all attachment fields from the Employee Onboarding doctype
     attachment_fields = [
         field for field in fields if field.fieldtype in ["Attach", "Attach Image"] and not field.hidden
     ]
+    existing_docs = {row.fieldname: row for row in doc.get("custom_documents_for_verification", [])}
 
-    # Populate the child table with document details and their actual attachments
     for field in attachment_fields:
-        attachment_value = doc.get(field.fieldname) 
-        doc.append("custom_documents_for_verification", {
-            "document": field.label,  # Use the field label as the document name
-            "fieldname": field.fieldname,  # Store the actual fieldname of the attachment field
-            "attachments": attachment_value or "",  # Add the attachment file path or leave empty if none
-            "status": "Pending"  # Default status
-        })
+        fieldname = field.fieldname
+        attachment_value = doc.get(fieldname)  
 
-    doc.save()
+        if fieldname in existing_docs:
+            child_row = existing_docs[fieldname]
+            if child_row.attachments != attachment_value:
+                child_row.attachments = attachment_value or ""  
+                child_row.status = "Pending"  
+        else:
+            # If it's a new attachment, add it to the child table
+            doc.append("custom_documents_for_verification", {
+                "document": field.label,
+                "fieldname": fieldname,
+                "attachments": attachment_value or "",
+                "status": "Pending"
+            })
+    
+    # Instead of removing rows, just clear the attachment field when it's empty
+    for row in doc.get("custom_documents_for_verification", []):
+        if not doc.get(row.fieldname):  
+            row.attachments = ""  
+            row.status = "Pending"
+
+

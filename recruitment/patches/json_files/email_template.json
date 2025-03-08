@@ -1,0 +1,22 @@
+[
+    {
+     "docstatus": 0,
+     "doctype": "Email Template",
+     "modified": "2025-02-27 00:55:16.582739",
+     "name": "Rejected Document Resubmission",
+     "response": null,
+     "response_html": "<!DOCTYPE html>\n<html>\n<head>\n    <title>Action Required: Re-upload Onboarding Documents</title>\n</head>\n<body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <p>Dear <b>{{ applicant_name }}</b>,</p>\n\n    <p>We appreciate your effort in completing the onboarding process for <b>{{ company }}</b>. However, some documents were rejected and need to be re-uploaded.</p>\n\n    <p>Please click the link below to re-submit your documents:</p>\n    <p><a href=\"{{ link }}\" target=\"_blank\" style=\"color: #007bff; font-weight: bold;\">Re-upload Documents</a></p>\n\n    {% if note %}\n    <p><b>Note:</b> {{ note }}</p>\n    {% endif %}\n\n    <p>If you have any questions or need further clarification, please contact our HR team at:</p>\n    <p><strong>HR Contact:</strong> {{ job_offer_owner_email }}</p>\n\n    <p>We appreciate your cooperation and look forward to completing your onboarding smoothly.</p>\n\n    <p>Best regards,</p>\n    <p><b>HR Team</b></p>\n</body>\n</html>\n",
+     "subject": "{{onboarding_resubmission_subject}}",
+     "use_html": 1
+    },
+    {
+     "docstatus": 0,
+     "doctype": "Email Template",
+     "modified": "2025-02-27 12:27:21.042821",
+     "name": "document resubmitted",
+     "response": null,
+     "response_html": "<p>Dear Sir/Madam,</p>\n\n<p>The candidate <b>{{ applicant_name }}</b> has successfully submitted the required documents for onboarding at <b>{{ company }}</b>.</p>\n\n<p>You can review the submitted documents using the link below:</p>\n\n<p><a href=\"{{ onboarding_link }}\" style=\"color: blue; font-weight: bold;\">View Onboarding Documents</a></p>\n\n<p>Best Regards,</p>\n<p>Your HR Team</p>\n",
+     "subject": "Document Resubmission",
+     "use_html": 1
+    }
+   ]

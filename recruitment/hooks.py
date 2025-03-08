@@ -76,6 +76,7 @@ doctype_js = {
     "Employee Onboarding":["public/js/employee_onboarding.js","public/js/emp_OB_verification_table.js"],
    "Employee Separation":["public/js/employee_separation.js"],
    "Employee Promotion":["public/js/employee_promotion.js"],
+   "Employee":["public/js/employee.js"],
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -206,7 +207,7 @@ doc_events = {
     },
     "Employee Onboarding":{
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-         "after_insert": "recruitment.customizations.employee_onboarding.document_verification.populate_verification_documents"
+         "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents"
     },
     
     
