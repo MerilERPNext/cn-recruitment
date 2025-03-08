@@ -1,4 +1,5 @@
 import frappe
+from frappe.model.mapper import get_mapped_doc
 
 @frappe.whitelist()
 def job_applicant_fields(job_applicant):
@@ -50,21 +51,42 @@ def job_requisition_fields(job_requisition):
 
 
 @frappe.whitelist()
-def employee_fetch_fields(employee_onboarding):
-    onboarding_doc = frappe.get_doc("Employee Onboarding", employee_onboarding)
-    recruitment_settings = frappe.get_doc("Recruitment Settings")
-    mappings = {
+def make_employee(source_name, target_doc=None):
+    doc = frappe.get_doc("Employee Onboarding", source_name)
+    settings = frappe.get_doc("Recruitment Settings")
+
+    # Fetch field mappings from recruitment settings
+    field_map = {
         entry.source_field.split(" (")[1].split(")")[0]: entry.target_field.split(" (")[1].split(")")[0]
-        for entry in recruitment_settings.recruitment_tool
+        for entry in settings.recruitment_tool
         if entry.source_doctype == "Employee Onboarding" and entry.target_doctype == "Employee"
     }
-    employee_doc = frappe.new_doc("Employee")
 
-    for source_field, target_field in mappings.items():
-        value = getattr(onboarding_doc, source_field, None)
-        if value is not None:
-            setattr(employee_doc, target_field, value)
-    return employee_doc.as_dict()
+    def set_missing_values(source, target):
+        target.personal_email = frappe.db.get_value("Job Applicant", source.job_applicant, "email_id")
+        target.status = "Active"
+
+        # Apply dynamic field mapping
+        for source_field, target_field in field_map.items():
+            value = getattr(source, source_field, None)
+            if value is not None:
+                setattr(target, target_field, value)
+
+    # Generate mapped Employee document
+    employee_doc = get_mapped_doc(
+        "Employee Onboarding",
+        source_name,
+        {
+            "Employee Onboarding": {
+                "doctype": "Employee",
+                "field_map": field_map,
+            }
+        },
+        target_doc,
+        set_missing_values,
+    )
+
+    return employee_doc
 
 
 

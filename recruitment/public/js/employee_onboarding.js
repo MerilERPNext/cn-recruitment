@@ -14,12 +14,12 @@ frappe.ui.form.on("Employee Onboarding", {
 
     create_employee(frm) {
         frappe.call({
-            method: "recruitment.auto_fetch_fields.employee_fetch_fields",
-            args: { employee_onboarding: frm.doc.name },
+            method: "recruitment.auto_fetch_fields.make_employee",  // Update this path as per your setup
+            args: { source_name: frm.doc.name },
             callback: function (r) {
                 if (r.message) {
-                    let doclist = frappe.model.sync(r.message);
-                    frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+                    frappe.model.sync(r.message);
+                    frappe.set_route("Form", r.message.doctype, r.message.name);
                 }
             },
         });
