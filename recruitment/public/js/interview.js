@@ -1,13 +1,13 @@
 frappe.ui.form.on("Interview", {
     refresh: function(frm){
-		if (frm.is_new()){
-			let currentTime = new Date();
-			frm.set_value("from_time", formattime(currentTime));
-			refresh_field('from_time');
-			let laterTime = new Date(currentTime.getTime() + (1 * 60 + 30) * 60 * 1000);
-			frm.set_value("to_time", formattime(laterTime));
-			refresh_field('to_time');
-		}
+		// if (frm.is_new()){
+		// 	let currentTime = new Date();
+		// 	frm.set_value("from_time", formattime(currentTime));
+		// 	refresh_field('from_time');
+		// 	let laterTime = new Date(currentTime.getTime() + (1 * 60 + 30) * 60 * 1000);
+		// 	frm.set_value("to_time", formattime(laterTime));
+		// 	refresh_field('to_time');
+		// }
 		if(frm.doc.status=="Pending"){
 			  frm.add_custom_button(__('Travel Request'), function(){
 				//frappe.msgprint("Page Will Redirect In 6 Seconds.Please Wait")

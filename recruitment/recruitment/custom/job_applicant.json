@@ -920,7 +920,7 @@
    "label": "Expected DOJ",
    "length": 0,
    "link_filters": null,
-   "mandatory_depends_on": null,
+   "mandatory_depends_on": "eval: doc.custom_ctc_finalized",
    "modified": "2024-06-14 15:01:47.789356",
    "modified_by": "Administrator",
    "module": null,

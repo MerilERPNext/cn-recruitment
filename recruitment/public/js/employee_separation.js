@@ -1,155 +1,76 @@
 frappe.ui.form.on("Employee Separation", {
-    refresh: function(frm) {
+    refresh: function (frm) {
         if (frappe.session.user !== "Administrator" && frm.is_new()) {
             frappe.call({
-              method: "frappe.client.get_value",
-              args: {
-                doctype: "Employee",
-                filters: { user_id: frappe.session.user },
-                fieldname: "name",
-              },
-              callback: (r) => {
-                if (r.message) {
-                    console.log(r.message);
-                  frm.set_value("employee", r.message.name);
-                }
-              },
+                method: "frappe.client.get_value",
+                args: {
+                    doctype: "Employee",
+                    filters: { user_id: frappe.session.user },
+                    fieldname: "name",
+                },
+                callback: function (r) {
+                    if (r.message) {
+                        frm.set_value("employee", r.message.name);
+                    }
+                },
             });
-        }      
+        }
     },
-    before_save:function(frm){
-        if(frm.is_new()){
-            if (!frm.doc.boarding_begins_on) {
-                let resignationDate = new Date(frm.doc.custom_resignation_date);
-                frappe.db.get_value('Employment Type', frm.doc.custom_employment_type, 'custom_notice_period_days')
-                .then(r => {
-                    let noticePeriodDays = r.message.custom_notice_period_days;
-                    resignationDate.setDate(resignationDate.getDate() + noticePeriodDays);
-                    let lastWorkingDate = resignationDate.toISOString().split('T')[0];
-                    frm.set_value('custom_last_working_date', lastWorkingDate);
-                    frm.set_value('custom_actual_last_working_date', lastWorkingDate);
-                    resignationDate.setDate(resignationDate.getDate() - 2);
-                    let boardingDate = resignationDate.toISOString().split('T')[0];
-                    frm.set_value('boarding_begins_on', boardingDate);
-                    frm.save_or_update();
-                    $('.modal-content').hide();
-                });
+    custom_actual_last_working_date: async function (frm) {
+        if (frm.doc.custom_actual_last_working_date) {
+            let boardingDate = frappe.datetime.add_days(frm.doc.custom_actual_last_working_date, -2);
+
+            if (frm.doc.employee) {
+                // Call Frappe API to check holidays
+                let newBoardingDate = await check_and_adjust_holiday(boardingDate, frm.doc.employee);
+                frm.set_value("boarding_begins_on", newBoardingDate);
+            } else {
+               frm.set_value("boarding_begins_on", boardingDate);
             }
-            if(frm?.doc?.custom_resignation_date && frm?.doc?.custom_employment_type){
-                var d2 = new Date(frm?.doc?.custom_resignation_date);
-                frappe.db.get_value('Employment Type', frm?.doc?.custom_employment_type, 'custom_notice_period_days').then(r => {
-                    d2.setDate(d2.getDate() + r.message.custom_notice_period_days);
-                    var formatted_date2 = d2.toISOString().split('T')[0];
-                    frm.set_value('custom_last_working_date', formatted_date2);
-                    frm.set_value('custom_actual_last_working_date', formatted_date2);
-                })
-            }else{
-                frm.set_value('custom_last_working_date', "");
-            }  
-            
-        }
-        // else{
-        //     if(frm.doc.custom_manual_relieving_date){
-        //         var d2 = new Date(frm.doc.custom_manual_relieving_date);
-        //         d2.setDate(d2.getDate());
-        //         var formatted_date2 = d2.toISOString().split('T')[0];
-        //         frm.set_value('custom_actual_last_working_date', formatted_date2);
-        //     }
-        //     else{
-        //         var d2 = new Date(frm.doc.custom_last_working_date);
-        //         d2.setDate(d2.getDate());
-        //         var formatted_date2 = d2.toISOString().split('T')[0];
-        //         frm.set_value('custom_actual_last_working_date', formatted_date2);
-        //     }
-        // }
-    },
-    custom_resignation_date(frm){
-        if(frm?.doc?.custom_resignation_date && frm?.doc?.custom_employment_type){
-            var d2 = new Date(frm?.doc?.custom_resignation_date);
-            frappe.db.get_value('Employment Type', frm?.doc?.custom_employment_type, 'custom_notice_period_days').then(r => {
-                d2.setDate(d2.getDate() + r.message.custom_notice_period_days);
-                var formatted_date2 = d2.toISOString().split('T')[0];
-                frm.set_value('custom_last_working_date', formatted_date2);
-            })
-        }else{
-            frm.set_value('custom_last_working_date', "");
         }
     },
-    custom_actual_last_working_date(frm){
-        if(frm.doc.custom_actual_last_working_date){
-            var d2 = new Date(frm.doc.custom_actual_last_working_date);
-            d2.setDate(d2.getDate()-2);
-            var formatted_date2 = d2.toISOString().split('T')[0];
-            frm.set_value('boarding_begins_on', formatted_date2);
-        } 
-    },
-    custom_manual_relieving(frm){
-        if(frm.doc.custom_manual_relieving==0){
-            frm.set_value('custom_manual_relieving_date', "");
+
+    custom_manual_relieving: function (frm) {
+        if (frm.doc.custom_manual_relieving == 0) {
+            frm.set_value("custom_manual_relieving_date", "");
         }
     },
-    custom_manual_relieving_date(frm) {
+
+    custom_manual_relieving_date: function (frm) {
         if (frm.doc.custom_manual_relieving_date) {
-            console.log("custom_manual_relieving_date");
-            let d2 = new Date(frm.doc.custom_manual_relieving_date);
-            d2.setDate(d2.getDate());
-            let formatted_date2 = d2.toISOString().split('T')[0];
-            frm.set_value('custom_actual_last_working_date', formatted_date2);
-    
-            let custom_resignation_date = new Date(frm.doc.custom_resignation_date);
-    
-            // Calculate the difference in days
-            let timeDifference = d2 - custom_resignation_date; // Difference in milliseconds
-            let daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)); // Convert to days
-    
-            frm.set_value('custom_number_days_served', daysDifference);
-    
-            let custom_last_working_date = new Date(frm.doc.custom_last_working_date);
-    
-            // Compare dates and set values for notice period fields
-            if (custom_last_working_date > d2) {
-                // frm.set_value("custom_notice_period_to_be_waved_off", 1);
-                // frm.set_value("custom_notice_period_served_", 0);
-            } else if (custom_last_working_date < d2) {
-                // frm.set_value("custom_notice_period_to_be_waved_off", 0);
-                // frm.set_value("custom_notice_period_served_", 1);
-            }
+            frappe.call({
+                method: "recruitment.www.job_offer.custom_manual_relieving_date",
+                args:{doc: frm.doc},
+                callback: function (r) {
+                    if (r.message) {
+                        console.log(r.message)
+                        frm.set_value("custom_actual_last_working_date", r.message.relieving_date);
+                        frm.set_value("custom_number_days_served", r.message.days_served);
+                        frm.set_value("custom_exceeding_noof_days", r.message.days_exceeded === 0 ? "" : r.message.days_exceeded);
+                        frm.set_value("custom_notice_period_served_", r.message.custom_notice_period_served);
+                    }
+                }
+            })
         } else {
-            let d2 = new Date(frm.doc.custom_last_working_date);
-            d2.setDate(d2.getDate());
-            let formatted_date2 = d2.toISOString().split('T')[0];
-            frm.set_value('custom_actual_last_working_date', formatted_date2);
-            frm.set_value("custom_notice_period_to_be_waved_off", 0);
-            // frm.set_value("custom_notice_period_served_", 0);
-            frm.set_value("custom_reason", "");
+            frm.set_value("custom_actual_last_working_date", frm.doc.custom_last_working_date);
             frm.set_value("custom_number_days_served", "");
-            frm.set_value("custom_remarks_for_short_notice_period_to_be_deducted", "");
+            frm.set_value("custom_exceeding_noof_days", "");
+            frm.set_value("custom_notice_period_served_","");
         }
-    }    
-    // custom_last_working_date(frm){
-    //     if(frm.doc.custom_last_working_date){
-    //         frm.set_value('custom_actual_last_working_date', frm.doc.custom_last_working_date);
-    //         frm.save()
-    //     }else{
-    //         frm.set_value('custom_actual_last_working_date', "");
-    //     }
-    // }
+    }
 });
-// function get_last_working_date(employee){
-//     frappe.db.get_value('Employee', employee, 'employment_type')
-//     .then(r => {
-//         var formattedDate;
-//         if(r.message.employment_type=="Full-time"){
-//             d = new Date();
-//             d.setDate(d.getDate() + 60);
-//             formattedDate = d.toISOString().split('T')[0];
-//         }
-//         else{
-//             d = new Date();
-//             d.setDate(d.getDate() + 7);
-//             formattedDate = d.toISOString().split('T')[0];
-//         }
-//         console.log(r.message.employment_type)
-//         return formattedDate
-//     })
-// }
+
+// Function to check holidays and adjust date
+async function check_and_adjust_holiday(date, employee) {
+    let newDate = date;
+
+    while (true) {
+        let response = await frappe.call({
+            method: "recruitment.www.job_offer.get_next_working_day",
+            args: { date: frappe.datetime.obj_to_str(newDate), employee: employee }
+        });
+        if (response.message) {
+            return response.message
+        }
+    }
+}

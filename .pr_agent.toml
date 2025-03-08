@@ -1,0 +1,15 @@
+[pr_description]
+max_ai_calls=6
+generate_ai_title=true
+
+[pr_code_suggestions]
+demand_code_suggestions_self_review = true
+[pr_update_changelog] # /update_changelog #
+push_changelog_changes=true
+add_pr_link=true
+
+[pr_add_docs] # /add_docs #
+extra_instructions = ""
+docs_style = "Sphinx" # "Google Style with Args, Returns, Attributes...etc", "Numpy Style", "Sphinx Style", "PEP257", "reStructuredText"
+file = ""              # in case there are several components with the same name, you can specify the relevant file
+class_name = ""        # in case there are several methods with the same name in the same file, you can specify the relevant class name

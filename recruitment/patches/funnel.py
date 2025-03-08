@@ -9,6 +9,8 @@ funnel_json_files = [
             "employee_onboarding.json",
             "job_applicant.json",
             "job_applicant_public.json",
+            "doc_verification.json",
+            "email_template.json"
         ]
 data=[]
 for json_file in funnel_json_files:
