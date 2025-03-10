@@ -104,10 +104,11 @@ def update_employee_fields(doc, event=None):
         employee_doc = frappe.get_doc("Employee", onboarding_doc.employee)
         settings = frappe.get_doc("Recruitment Settings")
 
+        # Fetch field mappings only where fetch_on_update is checked
         field_map = {
             entry.source_field.split(" (")[1].split(")")[0]: entry.target_field.split(" (")[1].split(")")[0]
             for entry in settings.recruitment_tool
-            if entry.source_doctype == "Employee Onboarding" and entry.target_doctype == "Employee"
+            if entry.source_doctype == "Employee Onboarding" and entry.target_doctype == "Employee"and entry.fetch_on_update  
         }
 
         employee_meta = frappe.get_meta("Employee")
@@ -121,6 +122,7 @@ def update_employee_fields(doc, event=None):
             else:
                 single_field_mappings[source_field] = target_field  # Single fields
 
+        # mapped single fields
         if single_field_mappings:
             update_dict = {
                 target_field: getattr(onboarding_doc, source_field, None)
@@ -132,12 +134,11 @@ def update_employee_fields(doc, event=None):
 
         employee_doc.reload()
 
+        # mapped child tables 
         for onboarding_child, employee_child in child_table_mappings.items():
             if employee_meta.get_field(employee_child):
-                # Clear existing child table data
                 employee_doc.set(employee_child, [])
 
-                # Fetch and append child table data dynamically
                 for child_row in onboarding_doc.get(onboarding_child, []):
                     new_row = employee_doc.append(employee_child, {})
                     for field in child_row.as_dict():
