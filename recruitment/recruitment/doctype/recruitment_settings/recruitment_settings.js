@@ -107,7 +107,6 @@ frappe.ui.form.on('Recruitment Tool', {
     target_doctype: function(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
 
-        // Agar source_field set hai, to uska fieldtype fetch karein
         if (row.source_field) {
             frappe.call({
                 method: 'recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.get_fieldtype',
@@ -125,7 +124,6 @@ frappe.ui.form.on('Recruitment Tool', {
                 }
             });
         } else {
-            // Agar source_field select nahi hai, to sare fields dikhao
             set_field_options(frm, cdt, cdn, 'target_doctype', 'target_field');
         }
     }
