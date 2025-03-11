@@ -83,17 +83,25 @@ def make_employee(source_name, target_doc=None):
         set_missing_values,
     )
 
-    if not employee_doc:
-        frappe.throw("Error: Employee document was not created")
-    try:
-        employee_doc.save(ignore_permissions=True)  
-    except Exception as e:
-        frappe.throw(f"Failed to save Employee: {str(e)}")
-
-    frappe.db.set_value("Employee Onboarding", source_name, "employee", employee_doc.name)
-
     return employee_doc
 
+
+def link_employee_to_onboarding(doc, method):
+    """Link Employee to Employee Onboarding only after Employee is saved"""
+    if not doc.job_applicant:
+        return
+
+    employee_onboarding = frappe.get_all(
+        "Employee Onboarding",
+        filters={
+            "job_applicant": doc.job_applicant,
+            "docstatus": ["in", ["0", "1"]],  # Draft or Submitted
+        },
+    )
+
+    if employee_onboarding:
+        onboarding = frappe.get_doc("Employee Onboarding", employee_onboarding[0].name)
+        onboarding.db_set("employee", doc.name)  # Update only after Employee is saved
 
 
 @frappe.whitelist()
