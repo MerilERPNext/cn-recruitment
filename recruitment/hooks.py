@@ -196,7 +196,8 @@ doc_events = {
         
     },
     "Employee":{
-        "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee"
+        "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee",
+        "after_insert":"recruitment.auto_fetch_fields.link_employee_to_onboarding"
     
     },
      "Job Applicant": {
@@ -210,7 +211,8 @@ doc_events = {
     "Employee Onboarding":{
 
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-         "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents"
+         "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
+        "on_update": "recruitment.auto_fetch_fields.update_employee_fields"
     },
       
 }

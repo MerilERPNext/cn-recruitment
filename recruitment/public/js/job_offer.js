@@ -19,6 +19,31 @@ frappe.ui.form.on("Job Offer", {
 	// 		});
 	// 	}
     // },
+    offer_date: function(frm) {
+        frm.trigger("filter_jo_expiry_date");
+    },
+	refresh: function(frm) {
+		frm.trigger("filter_jo_expiry_date");
+	},
+    filter_jo_expiry_date: function(frm) {
+        if (frm.doc.offer_date) {
+            let minDate = frappe.datetime.str_to_obj(frm.doc.offer_date);
+            let datepicker = frm.fields_dict.custom_jo_expiry_date?.datepicker;
+
+            if (datepicker) {
+                datepicker.update({
+                    minDate: minDate
+                });
+            }
+            if (
+                frm.doc.custom_jo_expiry_date &&
+                frm.doc.custom_jo_expiry_date < frm.doc.offer_date
+            ) {
+                frappe.msgprint(__('Job Expiry Date must be on or after Offer Date'));
+                frm.set_value("custom_jo_expiry_date", null);
+            }
+        }
+    },
 	after_save(frm){
 		if (frm.doc.status == "Accepted"){
 			frappe.call({
