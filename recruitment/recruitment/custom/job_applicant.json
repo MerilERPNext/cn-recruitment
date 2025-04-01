@@ -2753,7 +2753,7 @@
    "property": "options",
    "property_type": "Text",
    "row_name": null,
-   "value": "Open\nIn-Progress\nRejected\nHold\nAccepted\nCall For Interview\nScreening\nInterview\nOffered\nOffer Accepted\nOffer Rejected\nHired\nOthers\nHR Head Approval Pending\nHR Head Approved\nManagement Approval Pending\nManagement Approved\nOffer to be Sent"
+   "value": "Open\nIn-Progress\nRejected\nHold\nCold\nAccepted\nCall For Interview\nScreening\nInterview\nOffered\nOffer Accepted\nOffer Rejected\nHired\nOthers\nHR Head Approval Pending\nHR Head Approved\nManagement Approval Pending\nManagement Approved\nOffer to be Sent"
   },
   {
    "_assign": null,
