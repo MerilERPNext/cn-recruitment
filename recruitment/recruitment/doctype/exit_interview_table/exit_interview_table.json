@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-04-03 17:45:55.410147",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "label",
+  "type",
+  "options",
+  "data"
+ ],
+ "fields": [
+  {
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Label"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "\nRating\nSelect\nData\nSection"
+  },
+  {
+   "fieldname": "options",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Options",
+   "mandatory_depends_on": "eval:doc.type==\"Select\""
+  },
+  {
+   "fieldname": "data",
+   "fieldtype": "Small Text",
+   "label": "Data"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-04-03 18:00:39.687385",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Exit Interview Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
