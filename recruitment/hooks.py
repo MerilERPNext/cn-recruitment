@@ -221,23 +221,15 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"recruitment.tasks.all"
-# 	],
-# 	"daily": [
-# 		"recruitment.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"recruitment.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"recruitment.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"recruitment.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+    "cron": {
+        "59 23 * * *": [
+            "recruitment.customizations.employee_separation.task_reassignment.reassign_employee_separation_tasks",
+            "recruitment.customizations.employee_onboarding.overide_class.reassign_tasks" 
+        ]
+    }
+}
+
 
 # Testing
 # -------
