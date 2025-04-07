@@ -59,3 +59,86 @@ frappe.ui.form.on("Employee Onboarding", {
 		}
 	}
 })
+
+
+frappe.ui.form.on('Employee Onboarding', {
+    refresh: function (frm) {
+        if (frm.doc.docstatus === 0) {
+            let all_tasks_created = frm.doc.activities && frm.doc.activities.every(activity => activity.task);
+
+            if (!frm.doc.project || !all_tasks_created) {
+                frm.add_custom_button(__('Create Onboarding Tasks'), function () {
+                    let project_message = frm.doc.project
+                        ? __('Project is already created.')
+                        : __('Project will be created.');
+
+                    let tasks_to_create = frm.doc.activities.filter(activity => !activity.task);
+
+                    let task_table_html = tasks_to_create.length > 0
+                        ? `<table class="table table-bordered" style="margin-top: 10px;">
+                            <thead>
+                                <tr>
+                                    <th>Activity Name</th>
+                                    <th>User</th>
+                                    <th>Begin On (Days)</th>
+                                    <th>Duration (Days)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tasks_to_create.map(activity => `
+                                    <tr>
+                                        <td>${activity.activity_name || '-'}</td>
+                                        <td>${activity.user || '-'}</td>
+                                        <td>${activity.begin_on || '-'}</td>
+                                        <td>${activity.duration || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>`
+                        : `<div><strong>${__('All tasks are already created.')}</strong></div>`;
+
+                    let d = new frappe.ui.Dialog({
+                        title: __('Confirmation'),
+                        size: 'large',
+                        fields: [
+                            {
+                                fieldname: 'project_info',
+                                fieldtype: 'HTML',
+                                options: `<div><strong>${project_message}</strong></div>`,
+                            },
+                            {
+                                fieldname: 'task_info',
+                                fieldtype: 'HTML',
+                                options: tasks_to_create.length > 0
+                                    ? `<div><strong>${__('Tasks to be created:')}</strong></div>${task_table_html}`
+                                    : `<div><strong>${__('All tasks are already created.')}</strong></div>`,
+                            }
+                        ],
+                        primary_action_label: __('Proceed'),
+                        primary_action: function () {
+                            frappe.call({
+                                method: 'recruitment.customizations.employee_onboarding.overide_class.manually_create_onboarding_tasks',
+                                args: {
+                                    onboarding_name: frm.doc.name,
+                                },
+                                callback: function (r) {
+                                    if (!r.exc) {
+                                        frappe.msgprint(__('Tasks and Project created successfully.'));
+                                        frm.reload_doc();
+                                    }
+                                }
+                            });
+                            d.hide();
+                        },
+                        secondary_action_label: __('Cancel'),
+                        secondary_action: function () {
+                            d.hide();
+                        }
+                    });
+
+                    d.show();
+                });
+            }
+        }
+    }
+});
