@@ -8,6 +8,7 @@
  "field_order": [
   "label",
   "type",
+  "is_collapsible",
   "options",
   "data"
  ],
@@ -23,7 +24,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Type",
-   "options": "\nRating\nSelect\nData\nSection"
+   "options": "\nRating\nSelect\nData\nSection",
+   "sort_options": 1
   },
   {
    "fieldname": "options",
@@ -36,12 +38,19 @@
    "fieldname": "data",
    "fieldtype": "Small Text",
    "label": "Data"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.type==\"Section\"",
+   "fieldname": "is_collapsible",
+   "fieldtype": "Check",
+   "label": "is collapsible"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-04-03 18:00:39.687385",
+ "modified": "2025-04-04 17:23:06.368651",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Exit Interview Table",

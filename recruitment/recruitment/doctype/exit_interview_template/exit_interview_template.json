@@ -7,6 +7,7 @@
  "field_order": [
   "title",
   "questionaire",
+  "preview_section",
   "preview"
  ],
  "fields": [
@@ -26,11 +27,16 @@
    "fieldname": "preview",
    "fieldtype": "HTML",
    "label": "Preview"
+  },
+  {
+   "fieldname": "preview_section",
+   "fieldtype": "Section Break",
+   "label": "Preview"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-03 18:26:39.258741",
+ "modified": "2025-04-04 17:08:02.082804",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Exit Interview Template",
