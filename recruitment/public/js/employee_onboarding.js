@@ -61,6 +61,7 @@ frappe.ui.form.on("Employee Onboarding", {
 })
 
 
+
 frappe.ui.form.on('Employee Onboarding', {
     refresh: function (frm) {
         if (frm.doc.docstatus === 0) {
@@ -142,3 +143,4 @@ frappe.ui.form.on('Employee Onboarding', {
         }
     }
 });
+

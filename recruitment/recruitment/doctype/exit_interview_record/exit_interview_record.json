@@ -1,0 +1,113 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2024-07-23 19:23:29.696613",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+     "details_section",
+     "employee_code",
+     "employee_name",
+     "department",
+     "column_break_lezi",
+     "designation",
+     "email_id",
+     "reason_for_leaving",
+     "interview_questions_section",
+     "exit_interview_template",
+     "exit_interview_table",
+     "form"
+    ],
+    "fields": [
+     {
+      "fieldname": "employee_code",
+      "fieldtype": "Link",
+      "label": "Employee Code",
+      "options": "Employee"
+     },
+     {
+      "fieldname": "employee_name",
+      "fieldtype": "Data",
+      "label": "Employee Name"
+     },
+     {
+      "fieldname": "department",
+      "fieldtype": "Link",
+      "label": "Department",
+      "options": "Department"
+     },
+     {
+      "fieldname": "designation",
+      "fieldtype": "Link",
+      "label": "Designation",
+      "options": "Designation"
+     },
+     {
+      "fieldname": "email_id",
+      "fieldtype": "Data",
+      "label": "Email ID"
+     },
+     {
+      "fieldname": "reason_for_leaving",
+      "fieldtype": "Select",
+      "label": "Reason For Leaving",
+      "options": "Resignation\nTermination\nRetirement\nDismissal"
+     },
+     {
+      "fieldname": "details_section",
+      "fieldtype": "Section Break",
+      "label": "Details"
+     },
+     {
+      "fieldname": "column_break_lezi",
+      "fieldtype": "Column Break"
+     },
+     {
+      "fieldname": "interview_questions_section",
+      "fieldtype": "Section Break",
+      "label": "Interview Questions"
+     },
+     {
+      "fieldname": "exit_interview_template",
+      "fieldtype": "Link",
+      "label": "Exit Interview Template",
+      "options": "Exit Interview Template"
+     },
+     {
+      "fieldname": "exit_interview_table",
+      "fieldtype": "Table",
+      "hidden": 1,
+      "label": "Exit Interview Table",
+      "options": "Exit Interview Table"
+     },
+     {
+      "fieldname": "form",
+      "fieldtype": "HTML",
+      "label": "Form"
+     }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2025-04-04 18:19:08.981962",
+    "modified_by": "Administrator",
+    "module": "Recruitment",
+    "name": "Exit Interview Record",
+    "owner": "Administrator",
+    "permissions": [
+     {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+     }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+   }
