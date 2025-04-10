@@ -5,31 +5,18 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "details_section",
   "employee_code",
   "employee_name",
   "department",
+  "column_break_lezi",
   "designation",
   "email_id",
   "reason_for_leaving",
-  "please_answer_the_below_questions_section",
-  "primary_reason",
-  "satisfying_about_job",
-  "frustrating_about_job",
-  "policies_made_work_difficult",
-  "any_return_chances",
-  "recommend_to_friend",
-  "can_company_stop",
-  "how_would_you_rate_the_following_section",
-  "cooperation_within_your_team",
-  "cooperation_with_other_departments",
-  "personal_job_training",
-  "equipment_provided",
-  "companys_performance_review_system",
-  "companys_new_employee_orientation_program",
-  "rate_of_pay_for_job",
-  "career_developmentadvancement_opportunities",
-  "physical_working_conditions",
-  "comments"
+  "interview_questions_section",
+  "exit_interview_template",
+  "exit_interview_table",
+  "form"
  ],
  "fields": [
   {
@@ -67,114 +54,41 @@
    "options": "Resignation\nTermination\nRetirement\nDismissal"
   },
   {
-   "fieldname": "please_answer_the_below_questions_section",
+   "fieldname": "details_section",
    "fieldtype": "Section Break",
-   "label": "Please Answer The Below Questions"
+   "label": "Details"
   },
   {
-   "fieldname": "primary_reason",
-   "fieldtype": "Select",
-   "label": "What are your primary reason for leaving? ",
-   "options": "Health Issue\nFamily Reason\nFurther Studies\nBetter Prospects/Salary"
+   "fieldname": "column_break_lezi",
+   "fieldtype": "Column Break"
   },
   {
-   "fieldname": "satisfying_about_job",
-   "fieldtype": "Small Text",
-   "label": "What did you find most satisfying about your job?"
-  },
-  {
-   "fieldname": "frustrating_about_job",
-   "fieldtype": "Small Text",
-   "label": "What did you find most frustrating about your job?"
-  },
-  {
-   "fieldname": "policies_made_work_difficult",
-   "fieldtype": "Small Text",
-   "label": "Were there any company policies or procedures that made your work more difficult?"
-  },
-  {
-   "fieldname": "any_return_chances",
-   "fieldtype": "Small Text",
-   "label": "Would you consider returning to this company in future? Why?"
-  },
-  {
-   "fieldname": "recommend_to_friend",
-   "fieldtype": "Small Text",
-   "label": "Would you recommend this company to a friend as a good place to work?"
-  },
-  {
-   "fieldname": "can_company_stop",
-   "fieldtype": "Small Text",
-   "label": "Is there anything the company could have done to prevent you from leaving?"
-  },
-  {
-   "fieldname": "how_would_you_rate_the_following_section",
+   "fieldname": "interview_questions_section",
    "fieldtype": "Section Break",
-   "label": "How would you rate the following?"
+   "label": "Interview Questions"
   },
   {
-   "fieldname": "cooperation_within_your_team",
-   "fieldtype": "Select",
-   "label": "Cooperation within your team",
-   "options": "Excellent\nGood\nFair\nPoor"
+   "fieldname": "exit_interview_template",
+   "fieldtype": "Link",
+   "label": "Exit Interview Template",
+   "options": "Exit Interview Template"
   },
   {
-   "fieldname": "cooperation_with_other_departments",
-   "fieldtype": "Select",
-   "label": "Cooperation with other departments",
-   "options": "Excellent\nGood\nFair\nPoor"
+   "fieldname": "exit_interview_table",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Exit Interview Table",
+   "options": "Exit Interview Table"
   },
   {
-   "fieldname": "personal_job_training",
-   "fieldtype": "Select",
-   "label": "Personal job training",
-   "options": "Excellent\nGood\nFair\nPoor"
-  },
-  {
-   "fieldname": "equipment_provided",
-   "fieldtype": "Select",
-   "label": "Equipment Provided",
-   "options": "Excellent\nGood\nFair\nPoor"
-  },
-  {
-   "fieldname": "companys_performance_review_system",
-   "fieldtype": "Select",
-   "label": "Company's performance review system",
-   "options": "Excellent\nGood\nFair\nPoor"
-  },
-  {
-   "fieldname": "companys_new_employee_orientation_program",
-   "fieldtype": "Select",
-   "label": "Company's new employee orientation program",
-   "options": "Excellent\nGood\nFair\nPoor"
-  },
-  {
-   "fieldname": "rate_of_pay_for_job",
-   "fieldtype": "Select",
-   "label": "Rate of pay for job",
-   "options": "Excellent\nGood\nFair\nPoor"
-  },
-  {
-   "fieldname": "career_developmentadvancement_opportunities",
-   "fieldtype": "Select",
-   "label": "Career Development/advancement opportunities",
-   "options": "Excellent\nGood\nFair\nPoor"
-  },
-  {
-   "fieldname": "physical_working_conditions",
-   "fieldtype": "Select",
-   "label": "Physical working conditions",
-   "options": "Excellent\nGood\nFair\nPoor"
-  },
-  {
-   "fieldname": "comments",
-   "fieldtype": "Small Text",
-   "label": "Comments"
+   "fieldname": "form",
+   "fieldtype": "HTML",
+   "label": "Form"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-07-24 07:47:16.704486",
+ "modified": "2025-04-04 18:19:08.981962",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Exit Interview",

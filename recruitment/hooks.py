@@ -168,11 +168,6 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 # DocType Class
 # ---------------
 # Override standard doctype classes
-
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
-
 # Document Events
 # ---------------
 # Hook on document methods and events
