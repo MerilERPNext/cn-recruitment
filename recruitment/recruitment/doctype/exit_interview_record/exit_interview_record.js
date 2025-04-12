@@ -1,26 +1,24 @@
 frappe.ui.form.on('Exit Interview Record', {
     exit_interview_template: function (frm) {
         if (!frm.doc.exit_interview_template) {
-            // Clear table + HTML if no template selected
             frm.set_value('exit_interview_table', []);
             frm.refresh_field('exit_interview_table');
-    
+
             const wrapper = frm.fields_dict.form?.$wrapper;
             if (wrapper) wrapper.empty();
-    
+
             return;
         }
-    
-        // Else load template and populate
+
         frappe.db.get_doc('Exit Interview Template', frm.doc.exit_interview_template).then(template => {
             if (!template || !template.questionaire) return;
-    
+
             frm.set_value('exit_interview_table', []);
             frm.refresh_field('exit_interview_table');
-    
+
             const wrapper = frm.fields_dict.form?.$wrapper;
             if (wrapper) wrapper.empty();
-    
+
             template.questionaire.forEach(row => {
                 const newRow = frm.add_child('exit_interview_table');
                 newRow.label = row.label;
@@ -28,22 +26,34 @@ frappe.ui.form.on('Exit Interview Record', {
                 newRow.options = row.options;
                 newRow.is_collapsible = row.is_collapsible;
                 newRow.data = row.data;
+                newRow.mandatory = row.mandatory; 
             });
-    
+
             frm.refresh_field('exit_interview_table');
             render_exit_form(frm);
         });
     },
-    
 
     refresh: function (frm) {
         render_exit_form(frm);
     },
 
     validate: function (frm) {
-        // Clear form preview if table is empty
         if (!frm.doc.exit_interview_table || frm.doc.exit_interview_table.length === 0) {
             frm.fields_dict.form.$wrapper.empty();
+        }
+
+        // ✅ throw if mandatory fields are missing
+        let missing_fields = [];
+
+        (frm.doc.exit_interview_table || []).forEach(row => {
+            if (row.mandatory && !row.data) {
+                missing_fields.push(row.label);
+            }
+        });
+
+        if (missing_fields.length) {
+            frappe.throw(__('Please fill the following mandatory fields:<br><ul><li>' + missing_fields.join('</li><li>') + '</li></ul>'));
         }
     }
 });
@@ -122,6 +132,11 @@ function render_exit_form(frm) {
             .eit-toggle.collapsed {
                 transform: rotate(90deg);
             }
+
+            .reqd {
+                color: red;
+                font-weight: bold;
+            }
         </style>
     `;
 
@@ -129,6 +144,7 @@ function render_exit_form(frm) {
 
     rows.forEach((row, index) => {
         const value = row.data || '';
+        const isMandatory = row.mandatory;
 
         if (row.type === "Section") {
             if (openSection) html += `</div>`;
@@ -153,8 +169,8 @@ function render_exit_form(frm) {
             if (row.type === "Data") {
                 fieldHtml = `
                     <div class="eit-question">
-                        <label>${row.label}</label>
-                        <input type="text" data-index="${index}" class="exit-data" value="${value}" />
+                        <label>${row.label}${isMandatory ? ' <span class="reqd">*</span>' : ''}</label>
+                        <input type="text" data-index="${index}" class="exit-data" value="${value}" style="${isMandatory && !value ? 'border: 1px solid red;' : ''}" />
                     </div>
                 `;
             } else if (row.type === "Rating") {
@@ -170,8 +186,8 @@ function render_exit_form(frm) {
                 const valueId = `slider_value_${index}`;
                 fieldHtml = `
                     <div class="eit-question">
-                        <label>${row.label}</label>
-                        <input type="range" min="${min}" max="${max}" value="${sliderVal}" data-index="${index}" class="exit-slider" />
+                        <label>${row.label}${isMandatory ? ' <span class="reqd">*</span>' : ''}</label>
+                        <input type="range" min="${min}" max="${max}" value="${sliderVal}" data-index="${index}" class="exit-slider" style="${isMandatory && !value ? 'border: 1px solid red;' : ''}" />
                         <div class="eit-rating-meta">
                             Selected: <span id="${valueId}">${sliderVal}</span> (${min} to ${max})
                         </div>
@@ -184,8 +200,8 @@ function render_exit_form(frm) {
                 }).join('');
                 fieldHtml = `
                     <div class="eit-question">
-                        <label>${row.label}</label>
-                        <select data-index="${index}" class="exit-select">${options}</select>
+                        <label>${row.label}${isMandatory ? ' <span class="reqd">*</span>' : ''}</label>
+                        <select data-index="${index}" class="exit-select" style="${isMandatory && !value ? 'border: 1px solid red;' : ''}">${options}</select>
                     </div>
                 `;
             }
@@ -197,7 +213,6 @@ function render_exit_form(frm) {
     if (openSection) html += `</div>`;
     wrapper.html(html);
 
-    // Input Handlers with frm.dirty()
     wrapper.find('.exit-data').on('input', function () {
         const index = $(this).data('index');
         frm.doc.exit_interview_table[index].data = $(this).val();
@@ -221,7 +236,6 @@ function render_exit_form(frm) {
 
 frappe.ui.form.on("Exit Interview Record", {
 	onload: function (frm) {
-		// Get current logged-in user's employee record
 		frappe.call({
 			method: "frappe.client.get_list",
 			args: {
