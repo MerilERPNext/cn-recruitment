@@ -77,6 +77,7 @@ doctype_js = {
    "Employee Separation":["public/js/employee_separation.js"],
    "Employee Promotion":["public/js/employee_promotion.js"],
    "Employee":["public/js/employee.js"],
+   "Exit Interview":["public/js/exit_interview.js"],
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}

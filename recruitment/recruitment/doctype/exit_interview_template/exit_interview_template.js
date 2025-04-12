@@ -71,6 +71,11 @@ frappe.ui.form.on('Exit Interview Template', {
                             .eit-toggle.collapsed {
                                 transform: rotate(90deg);
                             }
+
+                            .reqd {
+                                color: red;
+                                font-weight: bold;
+                            }
                         </style>
                     `;
 
@@ -96,12 +101,13 @@ frappe.ui.form.on('Exit Interview Template', {
                             }
                         } else {
                             let fieldHtml = '';
+                            const isMandatory = row.mandatory;
 
                             if (row.type === "Data") {
                                 fieldHtml = `
                                     <div class="eit-question">
-                                        <label>${row.label}</label>
-                                        <input type="text" />
+                                        <label>${row.label}${isMandatory ? ' <span class="reqd">*</span>' : ''}</label>
+                                        <input type="text" style="${isMandatory ? 'border: 1px solid red;' : ''}" />
                                     </div>
                                 `;
                             } else if (row.type === "Rating") {
@@ -117,9 +123,10 @@ frappe.ui.form.on('Exit Interview Template', {
                                 const valueId = `slider_value_${index}`;
                                 fieldHtml = `
                                     <div class="eit-question">
-                                        <label>${row.label}</label>
+                                        <label>${row.label}${isMandatory ? ' <span class="reqd">*</span>' : ''}</label>
                                         <input type="range" id="${sliderId}" min="${min}" max="${max}" value="${min}"
-                                            oninput="document.getElementById('${valueId}').innerText = this.value" />
+                                            oninput="document.getElementById('${valueId}').innerText = this.value"
+                                            style="${isMandatory ? 'border: 1px solid red;' : ''}" />
                                         <div class="eit-rating-meta">
                                             Selected: <span id="${valueId}">${min}</span> (${min} to ${max})
                                         </div>
@@ -129,8 +136,8 @@ frappe.ui.form.on('Exit Interview Template', {
                                 const options = row.options.split('\n').map(opt => `<option value="${opt.trim()}">${opt.trim()}</option>`).join('');
                                 fieldHtml = `
                                     <div class="eit-question">
-                                        <label>${row.label}</label>
-                                        <select>${options}</select>
+                                        <label>${row.label}${isMandatory ? ' <span class="reqd">*</span>' : ''}</label>
+                                        <select style="${isMandatory ? 'border: 1px solid red;' : ''}">${options}</select>
                                     </div>
                                 `;
                             }
