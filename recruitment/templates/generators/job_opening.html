@@ -65,9 +65,13 @@
                         <div class="ml-5">
                             <div class="text-secondary text-uppercase" style="font-size: 11px">{{ _("Location") }}</div>
                             <div class="font-weight-bold">
-                                <a href="{{ custom_google_map_link }}" target="_blank" style="text-decoration: none; color: inherit;">
-                                    {{ location }}
-                                </a>
+                                {% if custom_google_map_link %}
+								<a href="{{ custom_google_map_link }}" target="_blank" style="text-decoration: none; color: inherit;">
+									{{ location }}
+								</a>
+								{% else %}
+								{{ location }}
+								{% endif %}
                             </div>
                         </div>
                     </div>
