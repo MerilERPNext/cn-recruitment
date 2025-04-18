@@ -186,6 +186,9 @@ doc_events = {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
     },
+    "Interview Feedback": {
+        "on_submit": "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback"
+    },
     "Job Offer":{
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
 		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure"
