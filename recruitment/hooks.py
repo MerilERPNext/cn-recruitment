@@ -240,7 +240,8 @@ override_whitelisted_methods = {
 	    "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening": "recruitment.customizations.job_requisition.job_requisition.make_job_opening"
 }
 override_doctype_class = {
-    "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding"
+    "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",
+    "Job Opening": "recruitment.customizations.job_opening.class_override.CustomJobOpening"
 }
 #
 # each overriding function accepts a `data` argument;
