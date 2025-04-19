@@ -70,7 +70,7 @@ doctype_js = {
     "Job Offer": ["public/js/job_offer.js"],
     "Job Requisition": ["public/js/job_requisition.js"],
     "Job Opening": ["public/js/job_opening.js"],
-    "Job Applicant": ["public/js/job_applicant.js"],
+    "Job Applicant": ["public/js/job_applicant.js","public/js/job_applicant_substatus_filter.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
     "Employee Onboarding":["public/js/employee_onboarding.js","public/js/emp_OB_verification_table.js"],
