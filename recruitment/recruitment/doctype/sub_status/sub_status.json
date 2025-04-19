@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-04-19 12:53:47.060320",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "parent_status",
+  "sub_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "parent_status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Parent Status",
+   "reqd": 1
+  },
+  {
+   "description": "Precaution:\nEnter each Sub Status on a new line.\nMake sure all Sub Status values added here are also included in the respective DocType\u2019s Sub Status options.",
+   "fieldname": "sub_status",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Sub Status",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-04-19 13:04:56.105295",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Sub Status",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "parent_status"
+}

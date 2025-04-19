@@ -1,0 +1,90 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:31:47.117539",
+  "name": "t1ftg3jf30",
+  "parent_status": "Open",
+  "sub_status": "Awaiting Initial Screening\nGet Pending Info\nWaiting for Response\nWithdrawn by Candidate\nNo Response – Screening\nEligibility Issue"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:32:17.813013",
+  "name": "tb2k9b7jhe",
+  "parent_status": "Screening",
+  "sub_status": "Screening in Progress\nScreening Completed\nFailed Screening\nMisconduct\nFraudulent Documents"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:32:52.238148",
+  "name": "tlqs4j0ng2",
+  "parent_status": "Shortlisted",
+  "sub_status": "Awaiting Interview Scheduling\nHR Shortlisted\nManager Shortlisted\nJob Recruiter Shortlisted\nScreening Approved"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:33:14.835663",
+  "name": "tsss4avlc3",
+  "parent_status": "Interview",
+  "sub_status": "Interview Invite Sent\nInterview Scheduled\nRound 1 Scheduled\nRound 2 Scheduled\nAssignment Round Scheduled\nAssignment Submitted\nGroup Interview Scheduling\nGroup Interview Conducted\nInterview Completed\nRescheduled\nAwaiting Interviewer Availability\nAdditional Interview Needed\nInterview No-Show\nInterview Rejected\nCandidate Withdrew\nNo Response – Interview"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:33:40.413371",
+  "name": "u4sollce71",
+  "parent_status": "Decision Pending",
+  "sub_status": "Waiting Internally\nWaiting on Candidate\nNegotiation\nPending HR Head Approval\nPending HOD Approval\nPending Management Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:34:21.763795",
+  "name": "uhpfcsp8p0",
+  "parent_status": "Offered",
+  "sub_status": "Offer to be Sent\nOffer in Progress\nNegotiation\nOffer Accepted\nOffer Rejected\nDeclined – Compensation\nDeclined – Other Offer\nDeclined – Personal Reasons\nNo Response – Offer\nOffer Rescinded"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:34:42.258957",
+  "name": "uo6gr12brl",
+  "parent_status": "Hired",
+  "sub_status": "Pending Start Date\nOnboarding in Progress\nJoined"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:35:02.991911",
+  "name": "uulesbjvna",
+  "parent_status": "Rejected",
+  "sub_status": "Rejected in HR Screening\nRejected in 1st Round\nRejected in 2nd Round\nRejected in Assessment\nRejected in Management Round\nRejected by HR Head\nRejected by HOD"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:36:09.029877",
+  "name": "vja25a96g9",
+  "parent_status": "Hold",
+  "sub_status": "CTC Concerns\nInterviewer on Fence\nTech Stack Mismatch\nExperience Not Matching\nRole Closed\nInternal Priority Change"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:36:29.167123",
+  "name": "vpjt9lbnuf",
+  "parent_status": "Cold",
+  "sub_status": "No Response – Screening\nNo Response – Interview\nCandidate Withdrew\nAnother Offer\nSalary Issue\nWithdrawn by Candidate"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2025-04-19 13:36:57.247345",
+  "name": "02cgsum0tu",
+  "parent_status": "Others",
+  "sub_status": "Misconduct\nFraudulent Documents\nManual Review Needed"
+ }
+]
