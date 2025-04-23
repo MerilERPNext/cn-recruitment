@@ -9,7 +9,9 @@
   "employee_onboarding_webform",
   "mapping_fields",
   "recruitment_tool",
-  "dummy_salary_structure_assignment"
+  "dummy_salary_structure_assignment",
+  "interview_settings_section",
+  "authorized_feedback_roles"
  ],
  "fields": [
   {
@@ -41,12 +43,24 @@
    "fieldtype": "Table",
    "label": "Recruitment Tool",
    "options": "Recruitment Tool"
+  },
+  {
+   "description": "Select the roles that are permitted to submit interview feedback even if they are not listed as interviewers for the round.",
+   "fieldname": "authorized_feedback_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Authorized Roles for Feedback Submission",
+   "options": "Roles"
+  },
+  {
+   "fieldname": "interview_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Interview Settings"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-18 20:42:53.836134",
+ "modified": "2025-04-22 11:56:49.445951",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",
