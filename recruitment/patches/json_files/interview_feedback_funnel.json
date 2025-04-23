@@ -238,7 +238,7 @@
     "type": "chatnext_assistant_message"
    },
    {
-    "data": "{\"node_label\":\"Create Interview Feedback\",\"submit\":true,\"variable_path_for_output\":\"interview_feedback_doc\",\"docTypeJson\":\"{\\n  \\\"doctatus\\\": 1,\\n  \\\"interview\\\": \\\"{{interview_info.interview}}\\\",\\n  \\\"interviewer\\\": \\\"{{real_interviewer}}\\\",\\n  \\\"result\\\": \\\"{{interview_feedback_information.result}}\\\",\\n  \\\"feedback\\\": \\\"{{interview_feedback_information.feedback}}\\\",\\n  \\\"doctype\\\": \\\"Interview Feedback\\\",\\n  \\\"skill_assessment\\\": {{skill_rating}},\\n  \\\"custom_feedback_given_by\\\": \\\"{{trigger_user_id}}\\\"\\n}\\n\",\"execute_current_node_as_user\":\"{{real_interviewer}}\"}",
+    "data": "{\"node_label\":\"Create Interview Feedback\",\"submit\":true,\"variable_path_for_output\":\"interview_feedback_doc\",\"docTypeJson\":\"{\\n  \\\"docstatus\\\": 1,\\n  \\\"interview\\\": \\\"{{interview_info.interview}}\\\",\\n  \\\"interviewer\\\": \\\"{{real_interviewer}}\\\",\\n  \\\"result\\\": \\\"{{interview_feedback_information.result}}\\\",\\n  \\\"feedback\\\": \\\"{{interview_feedback_information.feedback}}\\\",\\n  \\\"doctype\\\": \\\"Interview Feedback\\\",\\n  \\\"skill_assessment\\\": {{skill_rating}},\\n  \\\"custom_feedback_given_by\\\": \\\"{{trigger_user_id}}\\\"\\n}\\n\",\"execute_current_node_as_user\":\"{{real_interviewer}}\"}",
     "element_type": "Action",
     "id": "ECx86A87QUH9JbBZciBHq",
     "position": "{\"x\":2100,\"y\":120}",
@@ -249,7 +249,7 @@
     "type": "create_doctype"
    },
    {
-    "data": "{\"node_label\":\"Create Interview Feedback\",\"submit\":true,\"variable_path_for_output\":\"interview_feedback_doc\",\"docTypeJson\":\"{\\\"doctatus\\\":1,\\n  \\\"interview\\\": \\\"{{interview_info.interview}}\\\",\\n  \\\"interviewer\\\": \\\"{{user_id}}\\\",\\n  \\\"result\\\": \\\"{{interview_feedback_information.result}}\\\",\\n  \\\"feedback\\\": \\\"{{interview_feedback_information.feedback}}\\\",\\n  \\\"doctype\\\": \\\"Interview Feedback\\\",\\n  \\\"skill_assessment\\\": {{skill_rating}}\\n}\",\"execute_current_node_as_user\":\"\"}",
+    "data": "{\"node_label\":\"Create Interview Feedback\",\"submit\":true,\"variable_path_for_output\":\"interview_feedback_doc\",\"docTypeJson\":\"{\\\"docstatus\\\":1,\\n  \\\"interview\\\": \\\"{{interview_info.interview}}\\\",\\n  \\\"interviewer\\\": \\\"{{user_id}}\\\",\\n  \\\"result\\\": \\\"{{interview_feedback_information.result}}\\\",\\n  \\\"feedback\\\": \\\"{{interview_feedback_information.feedback}}\\\",\\n  \\\"doctype\\\": \\\"Interview Feedback\\\",\\n  \\\"skill_assessment\\\": {{skill_rating}}\\n}\",\"execute_current_node_as_user\":\"\"}",
     "element_type": "Action",
     "id": "_HXtNHqDA5G7_i4ji5Qb0",
     "position": "{\"x\":1800,\"y\":60}",
