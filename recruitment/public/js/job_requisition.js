@@ -105,6 +105,19 @@ frappe.ui.form.on('Job Requisition', {
             if (!template || !template.jd_details) return;
 
             frm.set_value('custom_jd_details', []);
+            
+            if (template.skills && template.skills.length > 0) {
+                frm.set_value('custom_skills', []);
+            
+                template.skills.forEach(row => {
+                    if (row.skill) {
+                        let child = frm.add_child('custom_skills');
+                        child.skill = row.skill;
+                    }
+                });
+            
+                frm.refresh_field('custom_skills');
+            }
 
             template.jd_details.forEach(row => {
                 const new_row = frm.add_child('custom_jd_details');
@@ -113,6 +126,7 @@ frappe.ui.form.on('Job Requisition', {
             });
 
             frm.refresh_field('custom_jd_details');
+            frm.refresh_field('custom_skills');
 
             setTimeout(() => {
                 render_jd_live_preview(frm);
