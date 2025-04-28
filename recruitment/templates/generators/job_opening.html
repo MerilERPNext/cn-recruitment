@@ -207,19 +207,32 @@
 
 	{%- if description -%}<p>{{ description }}</p>{% endif %}
 	{%- if jd_details -%}
-  <div class="mt-5">
-    <h3 class="mb-4">Job Description:</h3>
-    <div class="row">
-      {% for jd in jd_details %}
-        <div class="col-md-4 mb-4">
-          <div class="card p-3 h-100">
-            <h5 class="font-weight-bold">{{ jd.label }}</h5>
-            <p>{{ jd.description }}</p>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  </div>
+	<div class="mt-5">
+		<h3 class="mb-4">Job Description:</h3>
+	  
+		{% for jd in jd_details %}
+		  {% if jd.label %}
+			<h4 class="font-weight-bold mt-4">{{ jd.label }}</h4>
+		  {% endif %}
+	  
+		  {% if jd.description %}
+			{% set lines = jd.description.split('\n') %}
+			{% if lines|length > 1 %}
+			  <ul style="padding-left: 1.5rem; margin-top: 0.5rem;">
+				{% for line in lines %}
+				  {% if line.strip() %}
+					<li style="margin-bottom: 0.5rem;">{{ line.strip() }}</li>
+				  {% endif %}
+				{% endfor %}
+			  </ul>
+			{% else %}
+			  <p style="margin-top: 0.5rem;">{{ jd.description }}</p>
+			{% endif %}
+		  {% endif %}
+		{% endfor %}
+	  </div>
+	  
+	  
 {%- endif -%}
 
 	<!-- Mobile Apply Now Button -->
