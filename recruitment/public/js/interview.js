@@ -88,3 +88,56 @@ frappe.ui.form.on('Interview Detail', {
         // frappe.db.delete_doc("User Permission",{"allow":"Interview","for_value":frm.doc.name})
 	}
 })
+
+
+frappe.ui.form.on('Interview', {
+    refresh: function(frm) {
+        if (!frm.is_new()) {
+
+            // Button: Connect Google Account
+            frm.add_custom_button('Connect Google Account', () => {
+                window.location.href = `/api/method/recruitment.api.google_auth.start_google_auth?user=${frappe.session.user}`;
+            });
+
+            // Button: Schedule Google Meet
+            frm.add_custom_button('Schedule Google Meet', () => {
+                frappe.call({
+                    method: 'recruitment.api.google_meeting.schedule_meeting',
+                    args: { interview_id: frm.doc.name },
+                    callback: function(r) {
+                        if (r.message) {
+                            frappe.msgprint(`Google Meet scheduled: <a href="${r.message}" target="_blank">${r.message}</a>`);
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            });
+
+            // Button: Reschedule Google Meet
+            if (frm.doc.google_event_id) {
+                frm.add_custom_button('Reschedule Google Meet', () => {
+                    frappe.call({
+                        method: 'recruitment.api.google_meeting.reschedule_meeting',
+                        args: { interview_id: frm.doc.name },
+                        callback: function(r) {
+                            frappe.msgprint('Google Meet rescheduled.');
+                            frm.reload_doc();
+                        }
+                    });
+                });
+
+                // Button: Cancel Google Meet
+                frm.add_custom_button('Cancel Google Meet', () => {
+                    frappe.call({
+                        method: 'recruitment.api.google_meeting.cancel_meeting',
+                        args: { interview_id: frm.doc.name },
+                        callback: function(r) {
+                            frappe.msgprint('Google Meet canceled.');
+                            frm.reload_doc();
+                        }
+                    });
+                });
+            }
+        }
+    }
+});
