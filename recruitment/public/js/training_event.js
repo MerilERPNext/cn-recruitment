@@ -86,6 +86,8 @@ frappe.ui.form.on('Training Event', {
                             let row = frm.add_child('custom_day_wise_plan');
                             row.day_number = d.day_number;
                             row.training_material = d.training_material;
+                            row.course_link = d.course_link;
+                            row.attachment = d.attachment;
                             row.material_type = d.material_type;
                             row.session_duration = d.session_duration;
                             row.is_mandatory = d.is_mandatory;
