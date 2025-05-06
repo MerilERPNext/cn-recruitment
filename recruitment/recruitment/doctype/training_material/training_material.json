@@ -1,0 +1,117 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:course_code",
+ "creation": "2025-05-06 10:18:53.074292",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "details_section",
+  "course_name",
+  "course_link",
+  "estimated_duration",
+  "column_break_giqa",
+  "course_code",
+  "material_type",
+  "is_mandatory",
+  "active",
+  "section_break_lwwg",
+  "attachment",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "course_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_link",
+   "fieldtype": "Data",
+   "label": "Course Link",
+   "options": "URL"
+  },
+  {
+   "fieldname": "estimated_duration",
+   "fieldtype": "Time",
+   "label": "Estimated Duration"
+  },
+  {
+   "fieldname": "column_break_giqa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "course_code",
+   "fieldtype": "Data",
+   "label": "Course Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "material_type",
+   "fieldtype": "Select",
+   "label": "Material Type",
+   "options": "\nVideo\nDocument\nPresentation\nQuiz\nAssignment\nArticle\nPodcast\nInfographic\nExternal Link\nOther"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "label": "Is Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active"
+  },
+  {
+   "fieldname": "section_break_lwwg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Upload PDF, PPT, or reference material",
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-05-06 10:49:53.655814",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Training Material",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "course_code"
+}
