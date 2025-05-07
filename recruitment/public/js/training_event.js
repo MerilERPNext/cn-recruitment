@@ -91,38 +91,16 @@ frappe.ui.form.on('Training Event', {
                             row.material_type = d.material_type;
                             row.session_duration = d.session_duration;
                             row.is_mandatory = d.is_mandatory;
+                            row.status = d.status;
                         });
                         frm.refresh_field('custom_day_wise_plan');
                     }
                 }
             });
+        }else{
+            frm.clear_table('custom_day_wise_plan');
+            frm.refresh_field('custom_day_wise_plan');
         }
     }
 });
 
-frappe.ui.form.on('Training Event', {
-    onload_post_render(frm) {
-        frm.fields_dict.custom_day_wise_plan.grid.wrapper.on('mouseup', function() {
-            update_event_day_numbers(frm);
-        });
-    },
-    validate(frm) {
-        update_event_day_numbers(frm);
-    }
-});
-
-frappe.ui.form.on('Training Program Day Plan', {
-    training_material: function(frm, cdt, cdn) {
-        update_event_day_numbers(frm);
-    },
-    custom_day_wise_plan_add: function(frm, cdt, cdn) {
-        update_event_day_numbers(frm);
-    }
-});
-
-function update_event_day_numbers(frm) {
-    frm.doc.custom_day_wise_plan.forEach((row, index) => {
-        row.day_number = index + 1;
-    });
-    frm.refresh_field('custom_day_wise_plan');
-}
