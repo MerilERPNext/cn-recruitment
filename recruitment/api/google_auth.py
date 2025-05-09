@@ -2,15 +2,17 @@ import frappe
 import urllib.parse
 import requests
 from frappe.utils import now_datetime, add_to_date
+import datetime
 
-CLIENT_ID = "your-google-client-id"
-CLIENT_SECRET = "your-google-client-secret"
-SCOPES = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events"
+
+CLIENT_ID = "1070310945857-f62fvq1oku4fong8h2aer38ipbsd4qpp.apps.googleusercontent.com"
+CLIENT_SECRET = "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"
+SCOPES = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def start_google_auth(user):
-    site_url = frappe.utils.get_url()
+    site_url = "https://incubyte-uat.frappe.cloud"
     redirect_uri = f"{site_url}/api/method/recruitment.api.google_auth.google_auth_callback"
 
     auth_url = (
@@ -21,17 +23,16 @@ def start_google_auth(user):
         f"&access_type=offline&prompt=consent"
     )
 
-    frappe.cache().set_value(f"auth_user_{user}", user)
-
+    frappe.cache().set_value("auth_user", user)
     frappe.local.response["type"] = "redirect"
     frappe.local.response["location"] = auth_url
 
 @frappe.whitelist(allow_guest=True)
 def google_auth_callback(code=None):
-    site_url = frappe.utils.get_url()
+    site_url = "https://incubyte-uat.frappe.cloud"
     redirect_uri = f"{site_url}/api/method/recruitment.api.google_auth.google_auth_callback"
 
-    user = frappe.cache().get_value("auth_user_" + frappe.session.user)
+    user = "smriti@incubyte.co"
 
     data = {
         "code": code,
@@ -42,7 +43,6 @@ def google_auth_callback(code=None):
     }
 
     r = requests.post(TOKEN_URL, data=data).json()
-
     access_token = r.get("access_token")
     refresh_token = r.get("refresh_token")
     expires_in = r.get("expires_in")
@@ -54,15 +54,18 @@ def google_auth_callback(code=None):
 
     google_email = google_user_info.get("email")
 
-    doc = frappe.get_doc({
-        "doctype": "Google Token",
-        "user": user,
-        "google_email": google_email,
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_expiry": add_to_date(now_datetime(), seconds=expires_in),
-        "is_active": 1
-    })
+    doc = frappe.new_doc("Google Token")
+    doc.user = user
+    doc.google_email = google_email
+    doc.access_token = access_token
+    doc.refresh_token = refresh_token
+    doc.token_expiry = add_to_date(now_datetime(), seconds=expires_in)
+    doc.is_active = 1
+
+    frappe.log_error(f"prepared doc: {frappe.as_json(doc.as_dict())}", "Before Insert")
+
     doc.insert(ignore_permissions=True)
+
+    frappe.log_error(f"inserted doc: {frappe.as_json(doc.as_dict())}", "After Insert")
 
     return frappe.redirect_to_message("Google Connected", "Google Account linked successfully. You can now schedule meetings.")
