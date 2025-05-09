@@ -36,6 +36,7 @@
    "fieldname": "course_link",
    "fieldtype": "Data",
    "label": "Course Link",
+   "length": 500,
    "options": "URL"
   },
   {
@@ -90,7 +91,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-06 10:49:53.655814",
+ "modified": "2025-05-09 11:31:18.928267",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Training Material",
