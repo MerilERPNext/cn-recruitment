@@ -8,6 +8,11 @@
   "requested_by",
   "request_type",
   "status",
+  "column_break_wghu",
+  "department",
+  "designation",
+  "user_id",
+  "section_break_gdny",
   "employees",
   "purpose"
  ],
@@ -54,11 +59,43 @@
    "label": "Employees",
    "mandatory_depends_on": "eval:doc.request_type==\"Multi\"",
    "options": "Training Request Employee"
+  },
+  {
+   "fieldname": "column_break_wghu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "requested_by.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "fieldname": "section_break_gdny",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "requested_by.user_id",
+   "fieldname": "user_id",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "User ID",
+   "options": "User"
+  },
+  {
+   "fetch_from": "requested_by.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Designation",
+   "options": "Designation"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-12 13:25:56.486684",
+ "modified": "2025-05-12 15:17:18.260764",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Training Request",
