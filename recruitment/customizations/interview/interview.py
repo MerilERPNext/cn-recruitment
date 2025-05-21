@@ -1,5 +1,8 @@
+import requests
 import frappe
-
+from urllib.parse import urlencode
+from frappe.utils import now_datetime
+from datetime import timedelta
 
 @frappe.whitelist()
 def generate_travel_request(interview_id):
@@ -100,5 +103,118 @@ def get_interview_feedback_records(interview_id):
             })
     
     return interview_feedback_records
+
+        
+
+@frappe.whitelist()
+def get_teams_auth_url():
+    settings = frappe.get_single("Microsoft Teams App Settings")
+    params = {
+        "client_id": settings.client_id,
+        "response_type": "code",
+        "redirect_uri": settings.redirect_uri,
+        "response_mode": "query",
+        "scope": "offline_access User.Read Calendars.ReadWrite",
+        "state": frappe.session.user
+    }
+    auth_url = f"https://login.microsoftonline.com/{settings.tenant_id}/oauth2/v2.0/authorize?{urlencode(params)}"
+    return auth_url
+
+
+@frappe.whitelist(allow_guest=True)
+def teams_oauth_callback(code=None, state=None):
+    user = state
+    settings = frappe.get_single("Microsoft Teams App Settings")
+    token_url = f"https://login.microsoftonline.com/{settings.tenant_id}/oauth2/v2.0/token"
+    data = {
+        "client_id": settings.client_id,
+        "client_secret": settings.client_secret,
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": settings.redirect_uri
+    }
+    response = requests.post(token_url, data=data)
+    if response.status_code != 200:
+        frappe.throw(f"Token fetch failed: {response.text}")
+    res = response.json()
+    token_doc = frappe.get_doc({
+        "doctype": "Microsoft Teams User Token",
+        "user": user,
+        "access_token": res.get("access_token"),
+        "refresh_token": res.get("refresh_token"),
+        "token_expiry": now_datetime() + timedelta(seconds=res.get("expires_in"))
+    })
+    existing = frappe.db.exists("Microsoft Teams User Token", {"user": user})
+    if existing:
+        old = frappe.get_doc("Microsoft Teams User Token", existing)
+        old.access_token = token_doc.access_token
+        old.refresh_token = token_doc.refresh_token
+        old.token_expiry = token_doc.token_expiry
+        old.save(ignore_permissions=True)
+    else:
+        token_doc.insert(ignore_permissions=True)
+    return "Microsoft Teams authorized successfully."
+
+
+@frappe.whitelist()
+def schedule_teams_meeting(interview_id):
+    doc = frappe.get_doc("Interview", interview_id)
+    token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
+    if token_doc.token_expiry <= now_datetime():
+        refresh_access_token(frappe.session.user)
+        token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
+    headers = {
+        "Authorization": f"Bearer {token_doc.access_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "subject": f"Interview with {doc.candidate_name}",
+        "start": {
+            "dateTime": str(doc.custom_start_time),
+            "timeZone": "India Standard Time"
+        },
+        "end": {
+            "dateTime": str(doc.custom_end_time),
+            "timeZone": "India Standard Time"
+        },
+        "attendees": [
+            {
+                "emailAddress": {"address": doc.candidate_email},
+                "type": "required"
+            }
+        ],
+        "isOnlineMeeting": True,
+        "onlineMeetingProvider": "teamsForBusiness"
+    }
+    response = requests.post("https://graph.microsoft.com/v1.0/me/events", headers=headers, json=payload)
+    if response.status_code == 201:
+        join_url = response.json()["onlineMeeting"]["joinUrl"]
+        doc.db_set("custom_teams_meeting_link", join_url)
+        return join_url
+    else:
+        frappe.throw(f"Failed to create Teams meeting: {response.text}")
+
+
+def refresh_access_token(user):
+    settings = frappe.get_single("Microsoft Teams App Settings")
+    token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": user})
+    token_url = f"https://login.microsoftonline.com/{settings.tenant_id}/oauth2/v2.0/token"
+    data = {
+        "client_id": settings.client_id,
+        "client_secret": settings.client_secret,
+        "grant_type": "refresh_token",
+        "refresh_token": token_doc.refresh_token,
+        "redirect_uri": settings.redirect_uri
+    }
+    response = requests.post(token_url, data=data)
+    if response.status_code != 200:
+        frappe.throw(f"Token refresh failed: {response.text}")
+    res = response.json()
+    token_doc.access_token = res.get("access_token")
+    token_doc.refresh_token = res.get("refresh_token")
+    token_doc.token_expiry = now_datetime() + timedelta(seconds=res.get("expires_in"))
+    token_doc.save(ignore_permissions=True)
+
+
 
         

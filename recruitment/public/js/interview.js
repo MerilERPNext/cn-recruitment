@@ -88,3 +88,36 @@ frappe.ui.form.on('Interview Detail', {
         // frappe.db.delete_doc("User Permission",{"allow":"Interview","for_value":frm.doc.name})
 	}
 })
+
+
+frappe.ui.form.on('Interview', {
+    refresh(frm) {
+        frm.add_custom_button('Authorize Teams', () => {
+            frappe.call({
+                 method: "recruitment.customizations.interview.interview.get_teams_auth_url",
+                callback: function(r) {
+                    if (r.message) {
+                        window.open(r.message, '_blank');
+                    }
+                }
+            });
+        });
+    }
+});
+
+frappe.ui.form.on('Interview', {
+    refresh(frm) {
+        frm.add_custom_button('Schedule Teams Meeting', () => {
+            frappe.call({
+                method: "recruitment.customizations.interview.interview.schedule_teams_meeting",
+                args: { interview_id: frm.doc.name },
+                callback: function(r) {
+                    if (r.message) {
+                        frappe.msgprint(`Meeting Scheduled: <a href="${r.message}" target="_blank">Join</a>`);
+                        frm.reload_doc();
+                    }
+                }
+            });
+        });
+    }
+});
