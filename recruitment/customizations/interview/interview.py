@@ -125,7 +125,9 @@ def get_teams_auth_url():
 def teams_oauth_callback(code=None, state=None):
     user = state
     settings = frappe.get_single("Microsoft Teams App Settings")
+
     token_url = f"https://login.microsoftonline.com/{settings.tenant_id}/oauth2/v2.0/token"
+    
     data = {
         "client_id": settings.client_id,
         "client_secret": settings.client_secret,
@@ -133,10 +135,18 @@ def teams_oauth_callback(code=None, state=None):
         "code": code,
         "redirect_uri": settings.redirect_uri
     }
-    response = requests.post(token_url, data=data)
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    response = requests.post(token_url, data=data, headers=headers)
+
     if response.status_code != 200:
         frappe.throw(f"Token fetch failed: {response.text}")
+
     res = response.json()
+
     token_doc = frappe.get_doc({
         "doctype": "Microsoft Teams User Token",
         "user": user,
@@ -144,6 +154,7 @@ def teams_oauth_callback(code=None, state=None):
         "refresh_token": res.get("refresh_token"),
         "token_expiry": now_datetime() + timedelta(seconds=res.get("expires_in"))
     })
+
     existing = frappe.db.exists("Microsoft Teams User Token", {"user": user})
     if existing:
         old = frappe.get_doc("Microsoft Teams User Token", existing)
@@ -153,6 +164,7 @@ def teams_oauth_callback(code=None, state=None):
         old.save(ignore_permissions=True)
     else:
         token_doc.insert(ignore_permissions=True)
+
     return "Microsoft Teams authorized successfully."
 
 
@@ -206,7 +218,9 @@ def refresh_access_token(user):
         "refresh_token": token_doc.refresh_token,
         "redirect_uri": settings.redirect_uri
     }
-    response = requests.post(token_url, data=data)
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    response = requests.post(token_url, data=data, headers=headers)
+
     if response.status_code != 200:
         frappe.throw(f"Token refresh failed: {response.text}")
     res = response.json()
