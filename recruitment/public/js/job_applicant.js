@@ -740,60 +740,201 @@ frappe.ui.form.on("Job Applicant", {
   }
 });
 
+
 frappe.ui.form.on("Job Applicant", {
   refresh: function (frm) {
-    frm.events.render_applicant_history(frm);
-  },
+    if (!frm.doc.email_id && !frm.doc.phone_number) return;
 
-  render_applicant_history: function (frm) {
-    if (!frm.doc.email_id || !frm.doc.creation) return;
+    // prepare common filters
+    let base_filters = [
+      ["name", "!=", frm.doc.name]
+    ];
+
+    // add creation filter if not new
+    if (frm.doc.creation) {
+      base_filters.push(["creation", "<", frm.doc.creation]);
+    }
+
+    // Step 1: Check for both email + phone match
+    let both_filters = [
+      ...base_filters,
+      ["email_id", "=", frm.doc.email_id || ""],
+      ["phone_number", "=", frm.doc.phone_number || ""]
+    ];
 
     frappe.call({
       method: "frappe.client.get_list",
       args: {
         doctype: "Job Applicant",
-        filters: [
-          ["email_id", "=", frm.doc.email_id],
-          ["name", "!=", frm.doc.name],
-          ["job_title", "!=", frm.doc.job_title],
-          ["creation", "<", frm.doc.creation]
-        ],
-        fields: ["name", "job_title", "designation", "status", "creation"],
-        order_by: "creation desc"
+        filters: both_filters,
+        fields: ["name"]
       },
-      callback: function (r) {
-        if (!r.message || r.message.length === 0) {
-          frm.fields_dict.custom_applicant_history.$wrapper.html("");
-          return;
+      callback: function (res) {
+        if (res.message && res.message.length > 0) {
+          frm.dashboard.set_headline(`<span class="text-danger">⚠️ Duplicate found using Email and Phone Number.</span>`);
+        } else {
+          // Step 2: Check email only
+          if (frm.doc.email_id) {
+            let email_filters = [
+              ...base_filters,
+              ["email_id", "=", frm.doc.email_id]
+            ];
+            frappe.call({
+              method: "frappe.client.get_list",
+              args: {
+                doctype: "Job Applicant",
+                filters: email_filters,
+                fields: ["name"]
+              },
+              callback: function (emailRes) {
+                if (emailRes.message && emailRes.message.length > 0) {
+                  frm.dashboard.set_headline(`<span class="text-danger">⚠️ Duplicate found using Email ID.</span>`);
+                } else {
+                  // Step 3: Check phone only
+                  if (frm.doc.phone_number) {
+                    let phone_filters = [
+                      ...base_filters,
+                      ["phone_number", "=", frm.doc.phone_number]
+                    ];
+                    frappe.call({
+                      method: "frappe.client.get_list",
+                      args: {
+                        doctype: "Job Applicant",
+                        filters: phone_filters,
+                        fields: ["name"]
+                      },
+                      callback: function (phoneRes) {
+                        if (phoneRes.message && phoneRes.message.length > 0) {
+                          frm.dashboard.set_headline(`<span class="text-danger">⚠️ Duplicate found using Phone Number.</span>`);
+                        }
+                      }
+                    });
+                  }
+                }
+              }
+            });
+          }
         }
-
-        let html = `<div style="margin-bottom: 10px; font-weight: 600;">Previous Applications for Different Roles</div>
-        <table class="table table-bordered" style="margin-top: 10px;">
-          <thead>
-            <tr>
-              <th>Application ID</th>
-              <th>Designation</th>
-              <th>Job Title</th>
-              <th>Status</th>
-              <th>Applied On</th>
-            </tr>
-          </thead>
-          <tbody>`;
-
-        r.message.forEach(app => {
-          html += `<tr>
-            <td><a href="/app/job-applicant/${app.name}" target="_blank">${app.name}</a></td>
-            <td>${app.designation || "-"}</td>
-            <td>${app.job_title || "-"}</td>
-            <td>${app.status || "-"}</td>
-            <td>${frappe.datetime.str_to_user(app.creation)}</td>
-          </tr>`;
-        });
-
-        html += `</tbody></table>`;
-        frm.fields_dict.custom_applicant_history.$wrapper.html(html);
       }
     });
   }
 });
 
+frappe.ui.form.on("Job Applicant", {
+  refresh: function (frm) {
+    frm.events.render_applicant_history(frm);
+  },
+
+  email_id: function (frm) {
+    frm.events.render_applicant_history(frm);
+  },
+
+  phone_number: function (frm) {
+    frm.events.render_applicant_history(frm);
+  },
+
+  render_applicant_history: function (frm) {
+    if (!frm.doc.email_id && !frm.doc.phone_number) return;
+
+    let common_filters = [["name", "!=", frm.doc.name], ["job_title", "!=", frm.doc.job_title]];
+    if (frm.doc.creation) {
+      common_filters.push(["creation", "<", frm.doc.creation]);
+    }
+
+    let email_filters = frm.doc.email_id ? [...common_filters, ["email_id", "=", frm.doc.email_id]] : [];
+    let phone_filters = frm.doc.phone_number ? [...common_filters, ["phone_number", "=", frm.doc.phone_number]] : [];
+
+    let final_results = [];
+
+    const render = () => {
+      if (final_results.length === 0) {
+        frm.fields_dict.custom_applicant_history.$wrapper.html("");
+        return;
+      }
+
+      // remove duplicates
+      const seen = new Set();
+      const unique = final_results.filter(row => {
+        if (seen.has(row.name)) return false;
+        seen.add(row.name);
+        return true;
+      });
+
+      let html = `<div style="margin-bottom: 10px; font-weight: 600;">Previous Applications for Different Roles</div>
+      <table class="table table-bordered" style="margin-top: 10px;">
+        <thead>
+          <tr>
+            <th>Application ID</th>
+            <th>Designation</th>
+            <th>Job Title</th>
+            <th>Status</th>
+            <th>Applied On</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      unique.forEach(app => {
+        html += `<tr>
+          <td><a href="/app/job-applicant/${app.name}" target="_blank">${app.name}</a></td>
+          <td>${app.designation || "-"}</td>
+          <td>${app.job_title || "-"}</td>
+          <td>${app.status || "-"}</td>
+          <td>${frappe.datetime.str_to_user(app.creation)}</td>
+        </tr>`;
+      });
+
+      html += `</tbody></table>`;
+      frm.fields_dict.custom_applicant_history.$wrapper.html(html);
+    };
+
+    // Call for email
+    if (email_filters.length > 0) {
+      frappe.call({
+        method: "frappe.client.get_list",
+        args: {
+          doctype: "Job Applicant",
+          filters: email_filters,
+          fields: ["name", "job_title", "designation", "status", "creation"],
+          order_by: "creation desc"
+        },
+        callback: function (res) {
+          if (res.message) final_results.push(...res.message);
+
+          // Call for phone inside email callback to ensure order
+          if (phone_filters.length > 0) {
+            frappe.call({
+              method: "frappe.client.get_list",
+              args: {
+                doctype: "Job Applicant",
+                filters: phone_filters,
+                fields: ["name", "job_title", "designation", "status", "creation"],
+                order_by: "creation desc"
+              },
+              callback: function (res2) {
+                if (res2.message) final_results.push(...res2.message);
+                render();
+              }
+            });
+          } else {
+            render();
+          }
+        }
+      });
+    } else if (phone_filters.length > 0) {
+      // Only phone check
+      frappe.call({
+        method: "frappe.client.get_list",
+        args: {
+          doctype: "Job Applicant",
+          filters: phone_filters,
+          fields: ["name", "job_title", "designation", "status", "creation"],
+          order_by: "creation desc"
+        },
+        callback: function (res2) {
+          if (res2.message) final_results.push(...res2.message);
+          render();
+        }
+      });
+    }
+  }
+});
