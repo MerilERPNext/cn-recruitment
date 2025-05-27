@@ -740,3 +740,60 @@ frappe.ui.form.on("Job Applicant", {
   }
 });
 
+frappe.ui.form.on("Job Applicant", {
+  refresh: function (frm) {
+    frm.events.render_applicant_history(frm);
+  },
+
+  render_applicant_history: function (frm) {
+    if (!frm.doc.email_id || !frm.doc.creation) return;
+
+    frappe.call({
+      method: "frappe.client.get_list",
+      args: {
+        doctype: "Job Applicant",
+        filters: [
+          ["email_id", "=", frm.doc.email_id],
+          ["name", "!=", frm.doc.name],
+          ["job_title", "!=", frm.doc.job_title],
+          ["creation", "<", frm.doc.creation]
+        ],
+        fields: ["name", "job_title", "designation", "status", "creation"],
+        order_by: "creation desc"
+      },
+      callback: function (r) {
+        if (!r.message || r.message.length === 0) {
+          frm.fields_dict.custom_applicant_history.$wrapper.html("");
+          return;
+        }
+
+        let html = `<div style="margin-bottom: 10px; font-weight: 600;">Previous Applications for Different Roles</div>
+        <table class="table table-bordered" style="margin-top: 10px;">
+          <thead>
+            <tr>
+              <th>Application ID</th>
+              <th>Designation</th>
+              <th>Job Title</th>
+              <th>Status</th>
+              <th>Applied On</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        r.message.forEach(app => {
+          html += `<tr>
+            <td><a href="/app/job-applicant/${app.name}" target="_blank">${app.name}</a></td>
+            <td>${app.designation || "-"}</td>
+            <td>${app.job_title || "-"}</td>
+            <td>${app.status || "-"}</td>
+            <td>${frappe.datetime.str_to_user(app.creation)}</td>
+          </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        frm.fields_dict.custom_applicant_history.$wrapper.html(html);
+      }
+    });
+  }
+});
+
