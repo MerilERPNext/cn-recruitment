@@ -22,12 +22,12 @@
   },
   {
    "fieldname": "access_token",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Access Token"
   },
   {
    "fieldname": "refresh_token",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Refresh Token"
   },
   {
@@ -45,7 +45,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-17 20:35:13.536324",
+ "modified": "2025-05-28 11:57:13.742159",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Microsoft Teams User Token",

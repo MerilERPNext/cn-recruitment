@@ -164,6 +164,7 @@ def teams_oauth_callback(code=None, state=None):
         old.save(ignore_permissions=True)
     else:
         token_doc.insert(ignore_permissions=True)
+        frappe.db.commit()
 
     return "Microsoft Teams authorized successfully."
 
@@ -171,6 +172,8 @@ def teams_oauth_callback(code=None, state=None):
 @frappe.whitelist()
 def schedule_teams_meeting(interview_id):
     doc = frappe.get_doc("Interview", interview_id)
+    job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
+
     token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
     if token_doc.token_expiry <= now_datetime():
         refresh_access_token(frappe.session.user)
@@ -179,28 +182,34 @@ def schedule_teams_meeting(interview_id):
         "Authorization": f"Bearer {token_doc.access_token}",
         "Content-Type": "application/json"
     }
-    payload = {
-        "subject": f"Interview with {doc.candidate_name}",
-        "start": {
-            "dateTime": str(doc.custom_start_time),
-            "timeZone": "India Standard Time"
-        },
-        "end": {
-            "dateTime": str(doc.custom_end_time),
-            "timeZone": "India Standard Time"
-        },
-        "attendees": [
-            {
-                "emailAddress": {"address": doc.candidate_email},
+    
+    attendees = [{
+        "upn": job_applicant.email_id,
+        "type": "required"
+    }]
+
+    for row in doc.interview_details:
+        if row.interviewer:
+            attendees.append({
+                "upn": row.interviewer,
                 "type": "required"
-            }
-        ],
-        "isOnlineMeeting": True,
-        "onlineMeetingProvider": "teamsForBusiness"
+            })
+
+    payload = {
+        "startDateTime": str(doc.from_time),
+        "endDateTime": str(doc.to_time),
+        "subject": f"Interview with {job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}",
+        "participants": {
+            "attendees": attendees
+        }
     }
-    response = requests.post("https://graph.microsoft.com/v1.0/me/events", headers=headers, json=payload)
+
+    response = requests.post("https://graph.microsoft.com/v1.0/me/onlineMeetings", headers=headers, json=payload)
+
     if response.status_code == 201:
-        join_url = response.json()["onlineMeeting"]["joinUrl"]
+        join_url = response.json().get("joinUrl")
+        if not join_url:
+            frappe.throw("Meeting created but join URL not found.")
         doc.db_set("custom_teams_meeting_link", join_url)
         return join_url
     else:
