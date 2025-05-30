@@ -214,6 +214,9 @@ doc_events = {
          "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
         "on_update": "recruitment.auto_fetch_fields.update_employee_fields"
     },
+     "Employee Separation": {
+        "on_submit": "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date"
+    }
       
 }
 
