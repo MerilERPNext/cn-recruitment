@@ -8,7 +8,8 @@
   "client_id",
   "client_secret",
   "tenant_id",
-  "redirect_uri"
+  "redirect_uri",
+  "tenant_domain"
  ],
  "fields": [
   {
@@ -30,13 +31,18 @@
    "fieldname": "redirect_uri",
    "fieldtype": "Data",
    "label": "Redirect Uri"
+  },
+  {
+   "fieldname": "tenant_domain",
+   "fieldtype": "Data",
+   "label": "Tenant Domain"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-05-28 11:55:02.270035",
+ "modified": "2025-05-29 15:21:28.649171",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Microsoft Teams App Settings",

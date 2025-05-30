@@ -1,9 +1,11 @@
 import requests
 import frappe
 from urllib.parse import urlencode
-from frappe.utils import now_datetime
-from datetime import timedelta
-
+from frappe.utils import now_datetime,get_time,getdate
+from datetime import timedelta,datetime
+import json
+import jwt
+import pytz
 @frappe.whitelist()
 def generate_travel_request(interview_id):
     in_doc = frappe.get_doc("Interview", interview_id).as_dict()
@@ -170,51 +172,216 @@ def teams_oauth_callback(code=None, state=None):
 
 
 @frappe.whitelist()
-def schedule_teams_meeting(interview_id):
+def schedule_teams_meeting(interview_id):    
+
     doc = frappe.get_doc("Interview", interview_id)
     job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
-
     token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
+
     if token_doc.token_expiry <= now_datetime():
         refresh_access_token(frappe.session.user)
         token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
+
+    access_token = token_doc.access_token
+    if not access_token:
+        raise frappe.ValidationError("Access token is missing or empty.")
+
+    settings = frappe.get_single("Microsoft Teams App Settings")
+    allowed_domain = settings.tenant_domain  # e.g., '@incubyte.co'
+    tz = frappe.db.get_single_value("System Settings", "time_zone")
+
     headers = {
-        "Authorization": f"Bearer {token_doc.access_token}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "Prefer": f"outlook.timezone=\"{tz}\""
     }
-    
-    attendees = [{
-        "upn": job_applicant.email_id,
-        "type": "required"
-    }]
+
+    attendees = []
 
     for row in doc.interview_details:
-        if row.interviewer:
+        if row.interviewer and row.interviewer.endswith(allowed_domain):
             attendees.append({
                 "upn": row.interviewer,
-                "type": "required"
+                "role": "attendee"
             })
 
+    if frappe.session.user.endswith(allowed_domain):
+        attendees.append({
+            "upn": frappe.session.user,
+            "role": "attendee"
+        })
+
+    if job_applicant.email_id and job_applicant.email_id.endswith(allowed_domain):
+        attendees.append({
+            "upn": job_applicant.email_id,
+            "role": "attendee"
+        })
+
+    if not doc.from_time or not doc.to_time:
+        frappe.throw("Please set both From Time and To Time in the Interview.")
+
+    from_time = get_time(doc.from_time)
+    to_time = get_time(doc.to_time)
+    if not from_time or not to_time:
+        frappe.throw("Invalid time format in From Time or To Time.")
+
+    from_datetime = datetime.combine(doc.scheduled_on, from_time)
+    to_datetime = datetime.combine(doc.scheduled_on, to_time)
+    formatted_from = from_datetime.astimezone(pytz.timezone(tz)).isoformat()
+    formatted_to = to_datetime.astimezone(pytz.timezone(tz)).isoformat()
+
+    subject = f"Interview with {job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}"
+
     payload = {
-        "startDateTime": str(doc.from_time),
-        "endDateTime": str(doc.to_time),
-        "subject": f"Interview with {job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}",
+        "startDateTime": formatted_from,
+        "endDateTime": formatted_to,
+        "subject": subject,
         "participants": {
             "attendees": attendees
         }
     }
 
-    response = requests.post("https://graph.microsoft.com/v1.0/me/onlineMeetings", headers=headers, json=payload)
+    url = "https://graph.microsoft.com/v1.0/me/onlineMeetings"
+    response = requests.post(url, headers=headers, json=payload)
 
     if response.status_code == 201:
         join_url = response.json().get("joinUrl")
-        if not join_url:
-            frappe.throw("Meeting created but join URL not found.")
-        doc.db_set("custom_teams_meeting_link", join_url)
+        if join_url:
+            doc.db_set("custom_meet_link", join_url)
+
+            calendar_attendees = []
+            for a in attendees:
+                calendar_attendees.append({
+                    "emailAddress": {
+                        "address": a["upn"],
+                        "name": a["upn"]
+                    },
+                    "type": "required"
+                })
+
+            # Add job applicant to calendar even if not internal
+            if job_applicant.email_id and not job_applicant.email_id.endswith(allowed_domain):
+                calendar_attendees.append({
+                    "emailAddress": {
+                        "address": job_applicant.email_id,
+                        "name": f"{job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}"
+                    },
+                    "type": "required"
+                })
+
+            event_payload = {
+                "subject": subject,
+                "start": {
+                    "dateTime": formatted_from,
+                    "timeZone": tz
+                },
+                "end": {
+                    "dateTime": formatted_to,
+                    "timeZone": tz
+                },
+                "body": {
+                    "contentType": "HTML",
+                    "content": f"Join Teams Meeting: <a href='{join_url}'>{join_url}</a>"
+                },
+                "location": {
+                    "displayName": "Microsoft Teams"
+                },
+                "isOnlineMeeting": True,
+                "onlineMeetingProvider": "teamsForBusiness",
+                "attendees": calendar_attendees
+            }
+
+            calendar_url = "https://graph.microsoft.com/v1.0/me/events"
+            calendar_response = requests.post(calendar_url, headers=headers, json=event_payload)
+            if calendar_response.status_code in [200, 201]:
+                calendar_event_id = calendar_response.json().get("id")
+                if calendar_event_id:
+                    doc.db_set("custom_calendar_event_id", calendar_event_id)
+
         return join_url
     else:
-        frappe.throw(f"Failed to create Teams meeting: {response.text}")
+        frappe.local.response["http_status_code"] = 400
+        frappe.local.response["message"] = f"Failed to create Teams meeting: {response.text}"
+        return
 
+@frappe.whitelist()
+def reschedule_teams_meeting(interview_id, scheduled_on, from_time, to_time):
+
+    doc = frappe.get_doc("Interview", interview_id)
+
+    if not doc.custom_meet_link or not doc.custom_calendar_event_id:
+        frappe.throw("Missing meeting link or calendar event ID. Cannot reschedule.")
+
+    token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
+    if token_doc.token_expiry <= now_datetime():
+        refresh_access_token(frappe.session.user)
+        token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
+
+    access_token = token_doc.access_token
+    tz = frappe.utils.get_system_timezone()
+    timezone = pytz.timezone(tz)
+
+    from_dt = datetime.combine(getdate(scheduled_on), get_time(from_time)).astimezone(timezone).isoformat()
+    to_dt = datetime.combine(getdate(scheduled_on), get_time(to_time)).astimezone(timezone).isoformat()
+    job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
+    applicant_name = f"{job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}"
+
+    payload = {
+        "start": {
+            "dateTime": from_dt,
+            "timeZone": tz
+        },
+        "end": {
+            "dateTime": to_dt,
+            "timeZone": tz
+        },
+        "subject": f"Rescheduled Interview with {applicant_name}"
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    url = f"https://graph.microsoft.com/v1.0/me/events/{doc.custom_calendar_event_id}"
+
+    response = requests.patch(url, headers=headers, json=payload)
+
+    if response.status_code in [200, 202]:
+        return doc.custom_meet_link
+    else:
+        frappe.throw(f"Reschedule failed: {response.text}")
+
+@frappe.whitelist()
+def cancel_teams_meeting(interview_id):
+
+    doc = frappe.get_doc("Interview", interview_id)
+
+    if not doc.custom_calendar_event_id:
+        frappe.throw("No calendar event ID found to cancel.")
+
+    token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
+    if token_doc.token_expiry <= now_datetime():
+        refresh_access_token(frappe.session.user)
+        token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
+
+    access_token = token_doc.access_token
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+    }
+
+    url = f"https://graph.microsoft.com/v1.0/me/events/{doc.custom_calendar_event_id}"
+
+    response = requests.delete(url, headers=headers)
+
+    if response.status_code == 204:
+        # Clean up fields in Interview doc
+        doc.db_set("custom_meet_link", "")
+        doc.db_set("custom_calendar_event_id", "")
+        return "Meeting cancelled successfully."
+    else:
+        frappe.throw(f"Cancellation failed: {response.text}")
 
 def refresh_access_token(user):
     settings = frappe.get_single("Microsoft Teams App Settings")
