@@ -740,3 +740,15 @@ frappe.ui.form.on("Job Applicant", {
   }
 });
 
+frappe.ui.form.on('Job Applicant', {
+    refresh: function(frm) {
+        frappe.db.get_single_value('Recruitment Settings', 'activate_funnel_settings')
+            .then(value => {
+                if (!value) {
+                    $("[data-label='Get%20Basic%20Info']").hide();
+                }
+            });
+    }
+});
+
+

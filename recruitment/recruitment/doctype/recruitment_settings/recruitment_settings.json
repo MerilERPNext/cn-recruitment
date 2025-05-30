@@ -7,11 +7,15 @@
  "field_order": [
   "job_offer_template",
   "employee_onboarding_webform",
+  "activate_funnel_settings",
   "mapping_fields",
   "recruitment_tool",
   "dummy_salary_structure_assignment",
   "interview_settings_section",
-  "authorized_feedback_roles"
+  "authorized_feedback_roles",
+  "tab_break_owgg",
+  "basic_info_funnel",
+  "fetch_required_fields"
  ],
  "fields": [
   {
@@ -55,12 +59,35 @@
    "fieldname": "interview_settings_section",
    "fieldtype": "Section Break",
    "label": "Interview Settings"
+  },
+  {
+   "depends_on": "eval:doc.activate_funnel_settings",
+   "fieldname": "tab_break_owgg",
+   "fieldtype": "Tab Break",
+   "label": "Funnel Settings"
+  },
+  {
+   "fieldname": "basic_info_funnel",
+   "fieldtype": "Table",
+   "label": "Basic Info Funnel",
+   "options": "Job Applicant Form IO"
+  },
+  {
+   "fieldname": "fetch_required_fields",
+   "fieldtype": "Button",
+   "label": "Auto-fill Mandatory Fields"
+  },
+  {
+   "default": "0",
+   "fieldname": "activate_funnel_settings",
+   "fieldtype": "Check",
+   "label": "Activate Funnel Settings"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-04-22 11:56:49.445951",
+ "modified": "2025-05-30 17:54:03.965422",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",
@@ -77,6 +104,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

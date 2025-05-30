@@ -2,7 +2,36 @@ import frappe
 from frappe.model.document import Document
 
 class RecruitmentSettings(Document):
-    pass
+    def validate(self):
+        self.validate_duplicate_fields()
+
+    def validate_duplicate_fields(self):
+        if not self.basic_info_funnel:
+            return
+
+        field_map = {}
+        for row in self.basic_info_funnel:
+            if row.fieldname:
+                if row.fieldname in field_map:
+                    field_map[row.fieldname]["count"] += 1
+                else:
+                    field_map[row.fieldname] = {
+                        "count": 1,
+                        "label": row.field_label or row.fieldname
+                    }
+
+        duplicates = [
+            v["label"]
+            for k, v in field_map.items()
+            if v["count"] > 1
+        ]
+
+        if duplicates:
+            frappe.throw(
+                f"The following fields are repeated multiple times in Basic Info Funnel: <br><b>{', '.join(duplicates)}</b><br>Please remove duplicates."
+            )
+
+
 
 @frappe.whitelist()
 def get_doctype_fields(doctype_name):

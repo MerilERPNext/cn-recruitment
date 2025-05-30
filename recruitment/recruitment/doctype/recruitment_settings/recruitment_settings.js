@@ -130,3 +130,74 @@ frappe.ui.form.on('Recruitment Tool', {
 });
 
 
+frappe.ui.form.on('Recruitment Settings', {
+    onload(frm) {
+        setup_field_label_options(frm);
+    },
+    refresh(frm) {
+        setup_field_label_options(frm);
+    }
+});
+
+function setup_field_label_options(frm) {
+    frappe.model.with_doctype("Job Applicant", function () {
+        const job_fields = frappe.get_meta("Job Applicant").fields;
+
+        let label_to_fieldname = {};
+        let label_options = [];
+
+        job_fields.forEach(df => {
+            if (df.label && df.fieldname) {
+                label_to_fieldname[df.label] = df.fieldname;
+                label_options.push(df.label);
+            }
+        });
+
+        // Store mapping on form so child rows can access it
+        frm.label_to_fieldname_map = label_to_fieldname;
+
+        // Set options for all existing rows
+        frm.fields_dict.basic_info_funnel.grid.update_docfield_property(
+            "field_label",
+            "options",
+            label_options.join('\n')
+        );
+    });
+}
+
+frappe.ui.form.on('Job Applicant Form IO', {
+    field_label(frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        const label = row.field_label;
+        const map = frm.label_to_fieldname_map || {};
+        frappe.model.set_value(cdt, cdn, "fieldname", map[label] || "");
+    }
+});
+
+frappe.ui.form.on('Recruitment Settings', {
+    fetch_required_fields: function(frm) {
+        frappe.model.with_doctype("Job Applicant", () => {
+            const meta = frappe.get_meta("Job Applicant");
+
+            const mandatory_fields = meta.fields.filter(df => df.reqd && df.label && df.fieldname);
+
+            if (!mandatory_fields.length) {
+                frappe.msgprint("No mandatory fields found in Job Applicant.");
+                return;
+            }
+
+            // Clear existing rows if needed
+            frm.clear_table("basic_info_funnel");
+
+            mandatory_fields.forEach(df => {
+                const child = frm.add_child("basic_info_funnel");
+                child.field_label = df.label;
+                child.fieldname = df.fieldname;
+                child.is_mandatory = 1;
+            });
+
+            frm.refresh_field("basic_info_funnel");
+            frappe.msgprint(`${mandatory_fields.length} mandatory fields loaded.`);
+        });
+    }
+});
