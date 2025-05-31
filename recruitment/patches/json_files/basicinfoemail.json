@@ -1,0 +1,12 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2025-05-31 18:23:14.793626",
+  "name": "Request to Submit Your Basic Information",
+  "response": null,
+  "response_html": "<p>Dear Candidate,</p>\n\n<p>To proceed with your application, please fill out your basic information using the link below:</p>\n\n<p><a href=\"{{link}}\" target=\"_blank\">Click here to submit your basic details</a></p>\n\n<p>If you have any questions, feel free to reach out.</p>\n\n<p>Best regards,<br>HR Team</p>\n\n",
+  "subject": "Request to Submit Your Basic Information",
+  "use_html": 1
+ }
+]
