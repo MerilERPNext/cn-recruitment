@@ -110,7 +110,8 @@ frappe.ui.form.on('Interview', {
                 if (!token_exists) {
                     frm.add_custom_button('Authorize Teams', () => {
                         frappe.call({
-                            method: "recruitment.customizations.interview.interview.get_teams_auth_url",
+                           method: "recruitment.customizations.interview.interview.get_teams_auth_url",
+                            args: { interview_id: frm.doc.name },
                             callback: function(r) {
                                 if (r.message) {
                                     window.open(r.message, '_blank');
@@ -121,7 +122,7 @@ frappe.ui.form.on('Interview', {
                 }
 
                 // Show Schedule button only if no meeting is scheduled
-                if (token_exists && (!frm.doc.custom_meet_link || !frm.doc.custom_calendar_event_id)) {
+                if (token_exists && (!frm.doc.custom_zoom_link || !frm.doc.custom_calendar_event_id)) {
                     frm.add_custom_button('Schedule Teams Meeting', () => {
                         frappe.call({
                             method: "recruitment.customizations.interview.interview.schedule_teams_meeting",
@@ -137,7 +138,7 @@ frappe.ui.form.on('Interview', {
                 }
 
                 // Show Reschedule & Cancel if meeting already scheduled
-                if (frm.doc.custom_meet_link && frm.doc.custom_calendar_event_id) {
+                if (frm.doc.custom_zoom_link && frm.doc.custom_calendar_event_id) {
                     frm.add_custom_button('Reschedule Teams Meeting', () => {
                         let d = new frappe.ui.Dialog({
                             title: 'Reschedule Teams Meeting',

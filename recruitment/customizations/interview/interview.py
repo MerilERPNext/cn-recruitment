@@ -1,11 +1,14 @@
 import requests
 import frappe
+from frappe import _
 from urllib.parse import urlencode
 from frappe.utils import now_datetime,get_time,getdate
 from datetime import timedelta,datetime
 import json
 import jwt
 import pytz
+from frappe.utils.password import get_decrypted_password
+
 @frappe.whitelist()
 def generate_travel_request(interview_id):
     in_doc = frappe.get_doc("Interview", interview_id).as_dict()
@@ -109,15 +112,16 @@ def get_interview_feedback_records(interview_id):
         
 
 @frappe.whitelist()
-def get_teams_auth_url():
+def get_teams_auth_url(interview_id=None):
     settings = frappe.get_single("Microsoft Teams App Settings")
+    state = f"{frappe.session.user}|{interview_id}" if interview_id else frappe.session.user
     params = {
         "client_id": settings.client_id,
         "response_type": "code",
         "redirect_uri": settings.redirect_uri,
         "response_mode": "query",
         "scope": "offline_access User.Read Calendars.ReadWrite",
-        "state": frappe.session.user
+        "state": state
     }
     auth_url = f"https://login.microsoftonline.com/{settings.tenant_id}/oauth2/v2.0/authorize?{urlencode(params)}"
     return auth_url
@@ -126,13 +130,19 @@ def get_teams_auth_url():
 @frappe.whitelist(allow_guest=True)
 def teams_oauth_callback(code=None, state=None):
     user = state
+    interview_id = None
+
+    if "|" in state:
+        user, interview_id = state.split("|")
     settings = frappe.get_single("Microsoft Teams App Settings")
 
     token_url = f"https://login.microsoftonline.com/{settings.tenant_id}/oauth2/v2.0/token"
-    
+
+    client_secret = get_decrypted_password("Microsoft Teams App Settings", settings.name, "client_secret")
+
     data = {
         "client_id": settings.client_id,
-        "client_secret": settings.client_secret,
+        "client_secret": client_secret,
         "grant_type": "authorization_code",
         "code": code,
         "redirect_uri": settings.redirect_uri
@@ -168,7 +178,27 @@ def teams_oauth_callback(code=None, state=None):
         token_doc.insert(ignore_permissions=True)
         frappe.db.commit()
 
-    return "Microsoft Teams authorized successfully."
+
+    if interview_id:
+        redirect_url = f"/app/interview/{interview_id}"
+    else:
+        redirect_url = "/app/interview"
+
+    frappe.respond_as_web_page(
+        title=_("Microsoft Teams Authorized"),
+        html=f"""
+            <p> Microsoft Teams authorized successfully.</p>
+            <p>Redirecting to Interview page...</p>
+            <script>
+                setTimeout(function() {{
+                    window.location.href = "{redirect_url}";
+                }}, 1500);
+            </script>
+        """,
+        success=True,
+        http_status_code=200
+    )
+
 
 
 @frappe.whitelist()
@@ -187,7 +217,7 @@ def schedule_teams_meeting(interview_id):
         raise frappe.ValidationError("Access token is missing or empty.")
 
     settings = frappe.get_single("Microsoft Teams App Settings")
-    allowed_domain = settings.tenant_domain  # e.g., '@incubyte.co'
+    allowed_domain = settings.tenant_domain  
     tz = frappe.db.get_single_value("System Settings", "time_zone")
 
     headers = {
@@ -247,7 +277,10 @@ def schedule_teams_meeting(interview_id):
     if response.status_code == 201:
         join_url = response.json().get("joinUrl")
         if join_url:
-            doc.db_set("custom_meet_link", join_url)
+            short_url = shorten_url_tinyurl(join_url)
+            doc.db_set("custom_zoom_link", short_url)
+            doc.db_set("custom_meeting_status", "Scheduled")
+
 
             calendar_attendees = []
             for a in attendees:
@@ -309,7 +342,7 @@ def reschedule_teams_meeting(interview_id, scheduled_on, from_time, to_time):
 
     doc = frappe.get_doc("Interview", interview_id)
 
-    if not doc.custom_meet_link or not doc.custom_calendar_event_id:
+    if not doc.custom_zoom_link or not doc.custom_calendar_event_id:
         frappe.throw("Missing meeting link or calendar event ID. Cannot reschedule.")
 
     token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
@@ -348,7 +381,11 @@ def reschedule_teams_meeting(interview_id, scheduled_on, from_time, to_time):
     response = requests.patch(url, headers=headers, json=payload)
 
     if response.status_code in [200, 202]:
-        return doc.custom_meet_link
+        doc.db_set("scheduled_on", scheduled_on)
+        doc.db_set("from_time", from_time)
+        doc.db_set("to_time", to_time)
+        doc.db_set("custom_meeting_status", "Rescheduled")
+        return doc.custom_zoom_link
     else:
         frappe.throw(f"Reschedule failed: {response.text}")
 
@@ -377,8 +414,9 @@ def cancel_teams_meeting(interview_id):
 
     if response.status_code == 204:
         # Clean up fields in Interview doc
-        doc.db_set("custom_meet_link", "")
+        doc.db_set("custom_zoom_link", "")
         doc.db_set("custom_calendar_event_id", "")
+        doc.db_set("custom_meeting_status", "Cancelled")
         return "Meeting cancelled successfully."
     else:
         frappe.throw(f"Cancellation failed: {response.text}")
@@ -387,9 +425,10 @@ def refresh_access_token(user):
     settings = frappe.get_single("Microsoft Teams App Settings")
     token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": user})
     token_url = f"https://login.microsoftonline.com/{settings.tenant_id}/oauth2/v2.0/token"
+    client_secret = get_decrypted_password("Microsoft Teams App Settings", settings.name, "client_secret")
     data = {
         "client_id": settings.client_id,
-        "client_secret": settings.client_secret,
+        "client_secret": client_secret,
         "grant_type": "refresh_token",
         "refresh_token": token_doc.refresh_token,
         "redirect_uri": settings.redirect_uri
@@ -407,4 +446,11 @@ def refresh_access_token(user):
 
 
 
-        
+def shorten_url_tinyurl(long_url):
+    try:
+        response = requests.get("https://tinyurl.com/api-create.php", params={"url": long_url})
+        if response.status_code == 200:
+            return response.text
+    except Exception:
+        pass
+    return long_url 
