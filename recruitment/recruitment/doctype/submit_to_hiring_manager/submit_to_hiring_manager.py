@@ -45,8 +45,6 @@ def generate_job_applicant(docname):
 					new_ja.custom_current_salaryctc = can.custom_current_ctc
 				if can.custom_expected_ctc:
 					new_ja.upper_range = can.custom_expected_ctc
-				if can.custom_current_location:
-					new_ja.custom_current_location = can.custom_current_location
 				if can.custom_years_of_experience:
 					new_ja.custom_total_experience_in_years = can.custom_years_of_experience
 				if can.custom_relevant_years_of_experience:

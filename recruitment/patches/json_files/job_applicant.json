@@ -472,22 +472,6 @@
       "doctype": "Funnel Definition"
     },
     {
-      "name": "r62gfck34n",
-      "owner": "Administrator",
-      "modified_by": "Administrator",
-      "docstatus": 0,
-      "idx": 29,
-      "data": "{\"doctype\":\"Job Applicant\",\"doc_variable\":\"ocr_json_data\",\"submit\":true,\"variable_path_for_output\":\"\",\"doctype_data\":\"{{file_data}}\\n\\nAnd protfolio link in the 'resume_link' field\\nAnd also identify programing language user has proficient in, and return that data in the 'tag' field.\",\"select_doctype_fields\":[\"applicant_name\",\"email_id\",\"phone_number\",\"resume_attachment\",\"custom_linkedin_url\",\"custom_gender\",\"custom_home_town\",\"custom_total_experience\",\"custom_current_company_name\",\"custom_current_designation\",\"custom_address\",\"custom_martial_status\",\"custom_headline\",\"resume_link\"]}",
-      "position": "{\"x\":-795,\"y\":1095}",
-      "type": "data_to_doc",
-      "id": "uKAld08WvcxvrzERxzhlg",
-      "element_type": "Action",
-      "parent": "Job Applicant-Approval Funnels",
-      "parentfield": "funnel_definition",
-      "parenttype": "Funnel",
-      "doctype": "Funnel Definition"
-    },
-    {
       "name": "r62gklcvuk",
       "owner": "Administrator",
       "modified_by": "Administrator",
