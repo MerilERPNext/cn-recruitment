@@ -93,120 +93,127 @@ frappe.ui.form.on('Interview Detail', {
 frappe.ui.form.on('Interview', {
     refresh(frm) {
         frappe.call({
-            method: "frappe.client.get_value",
-            args: {
-                doctype: "Microsoft Teams User Token",
-                filters: { user: frappe.session.user },
-                fieldname: "name"
-            },
-            callback(r) {
-				console.log(r.message)
-				console.log(frappe.session.user)
-                const token_exists = !!(r.message && r.message.name);
-				
-				console.log(token_exists)
+            method: "recruitment.recruitment.doctype.microsoft_teams_app_settings.microsoft_teams_app_settings.is_teams_enabled",
+            callback(enabled_res) {
+                if (!enabled_res.message) return;
 
-                // Show Authorize button only if token doesn't exist
-                if (!token_exists) {
-                    frm.add_custom_button('Authorize Teams', () => {
-                        frappe.call({
-                           method: "recruitment.customizations.interview.interview.get_teams_auth_url",
-                            args: { interview_id: frm.doc.name },
-                            callback: function(r) {
-                                if (r.message) {
-                                    window.open(r.message, '_blank');
-                                }
-                            }
-                        });
-                    }, 'Teams Actions');
-                }
+                frappe.call({
+                    method: "frappe.client.get_value",
+                    args: {
+                        doctype: "Microsoft Teams User Token",
+                        filters: { user: frappe.session.user },
+                        fieldname: "name"
+                    },
+                    callback(r) {
+                        console.log(r.message)
+                        console.log(frappe.session.user)
+                        const token_exists = !!(r.message && r.message.name);
 
-                // Show Schedule button only if no meeting is scheduled
-                if (token_exists && (!frm.doc.custom_zoom_link || !frm.doc.custom_calendar_event_id)) {
-                    frm.add_custom_button('Schedule Teams Meeting', () => {
-                        frappe.call({
-                            method: "recruitment.customizations.interview.interview.schedule_teams_meeting",
-                            args: { interview_id: frm.doc.name },
-                            callback: function(r) {
-                                if (r.message) {
-                                    frappe.msgprint(`Meeting Scheduled: <a href="${r.message}" target="_blank">Join</a>`);
-                                    frm.reload_doc();
-                                }
-                            }
-                        });
-                    }, 'Teams Actions');
-                }
+                        console.log(token_exists)
 
-                // Show Reschedule & Cancel if meeting already scheduled
-                if (frm.doc.custom_zoom_link && frm.doc.custom_calendar_event_id) {
-                    frm.add_custom_button('Reschedule Teams Meeting', () => {
-                        let d = new frappe.ui.Dialog({
-                            title: 'Reschedule Teams Meeting',
-                            fields: [
-                                {
-                                    fieldname: 'scheduled_on',
-                                    fieldtype: 'Date',
-                                    label: 'New Scheduled On',
-                                    reqd: 1,
-                                    default: frm.doc.scheduled_on
-                                },
-                                {
-                                    fieldname: 'from_time',
-                                    fieldtype: 'Time',
-                                    label: 'New From Time',
-                                    reqd: 1,
-                                    default: frm.doc.from_time
-                                },
-                                {
-                                    fieldname: 'to_time',
-                                    fieldtype: 'Time',
-                                    label: 'New To Time',
-                                    reqd: 1,
-                                    default: frm.doc.to_time
-                                }
-                            ],
-                            primary_action_label: 'Reschedule',
-                            primary_action(values) {
-                                d.hide();
+                        // Show Authorize button only if token doesn't exist
+                        if (!token_exists) {
+                            frm.add_custom_button('Authorize Teams', () => {
                                 frappe.call({
-                                    method: "recruitment.customizations.interview.interview.reschedule_teams_meeting",
-                                    args: {
-                                        interview_id: frm.doc.name,
-                                        scheduled_on: values.scheduled_on,
-                                        from_time: values.from_time,
-                                        to_time: values.to_time
-                                    },
-                                    callback: function(r) {
-                                        if (r.message) {
-                                            frappe.msgprint(`Meeting Rescheduled: <a href="${r.message}" target="_blank">Join</a>`);
-                                            frm.reload_doc();
-                                        }
-                                    }
-                                });
-                            }
-                        });
-
-                        d.show();
-                    }, 'Teams Actions');
-
-                    frm.add_custom_button('Cancel Teams Meeting', () => {
-                        frappe.confirm(
-                            'Are you sure you want to cancel the meeting?',
-                            () => {
-                                frappe.call({
-                                    method: 'recruitment.customizations.interview.interview.cancel_teams_meeting',
+                                    method: "recruitment.customizations.interview.interview.get_teams_auth_url",
                                     args: { interview_id: frm.doc.name },
                                     callback: function(r) {
                                         if (r.message) {
-                                            frappe.msgprint(r.message);
+                                            window.open(r.message, '_blank');
+                                        }
+                                    }
+                                });
+                            }, 'Teams Actions');
+                        }
+
+                        // Show Schedule button only if no meeting is scheduled
+                        if (token_exists && (!frm.doc.custom_zoom_link || !frm.doc.custom_calendar_event_id)) {
+                            frm.add_custom_button('Schedule Teams Meeting', () => {
+                                frappe.call({
+                                    method: "recruitment.customizations.interview.interview.schedule_teams_meeting",
+                                    args: { interview_id: frm.doc.name },
+                                    callback: function(r) {
+                                        if (r.message) {
+                                            frappe.msgprint(`Meeting Scheduled: <a href="${r.message}" target="_blank">Join</a>`);
                                             frm.reload_doc();
                                         }
                                     }
                                 });
-                            }
-                        );
-                    }, 'Teams Actions');
-                }
+                            }, 'Teams Actions');
+                        }
+
+                        // Show Reschedule & Cancel if meeting already scheduled
+                        if (frm.doc.custom_zoom_link && frm.doc.custom_calendar_event_id) {
+                            frm.add_custom_button('Reschedule Teams Meeting', () => {
+                                let d = new frappe.ui.Dialog({
+                                    title: 'Reschedule Teams Meeting',
+                                    fields: [
+                                        {
+                                            fieldname: 'scheduled_on',
+                                            fieldtype: 'Date',
+                                            label: 'New Scheduled On',
+                                            reqd: 1,
+                                            default: frm.doc.scheduled_on
+                                        },
+                                        {
+                                            fieldname: 'from_time',
+                                            fieldtype: 'Time',
+                                            label: 'New From Time',
+                                            reqd: 1,
+                                            default: frm.doc.from_time
+                                        },
+                                        {
+                                            fieldname: 'to_time',
+                                            fieldtype: 'Time',
+                                            label: 'New To Time',
+                                            reqd: 1,
+                                            default: frm.doc.to_time
+                                        }
+                                    ],
+                                    primary_action_label: 'Reschedule',
+                                    primary_action(values) {
+                                        d.hide();
+                                        frappe.call({
+                                            method: "recruitment.customizations.interview.interview.reschedule_teams_meeting",
+                                            args: {
+                                                interview_id: frm.doc.name,
+                                                scheduled_on: values.scheduled_on,
+                                                from_time: values.from_time,
+                                                to_time: values.to_time
+                                            },
+                                            callback: function(r) {
+                                                if (r.message) {
+                                                    frappe.msgprint(`Meeting Rescheduled: <a href="${r.message}" target="_blank">Join</a>`);
+                                                    frm.reload_doc();
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+
+                                d.show();
+                            }, 'Teams Actions');
+
+                            frm.add_custom_button('Cancel Teams Meeting', () => {
+                                frappe.confirm(
+                                    'Are you sure you want to cancel the meeting?',
+                                    () => {
+                                        frappe.call({
+                                            method: 'recruitment.customizations.interview.interview.cancel_teams_meeting',
+                                            args: { interview_id: frm.doc.name },
+                                            callback: function(r) {
+                                                if (r.message) {
+                                                    frappe.msgprint(r.message);
+                                                    frm.reload_doc();
+                                                }
+                                            }
+                                        });
+                                    }
+                                );
+                            }, 'Teams Actions');
+                        }
+                    }
+                });
             }
         });
     }

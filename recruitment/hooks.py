@@ -61,6 +61,14 @@ fixtures = [
         "dt":"Custom Field",
         "filters":[["module","=","Recruitment"]]
     }
+    # {
+    #     "dt":"Funnel Node",
+    #     "filters":[["name","=","Send Teams Chat Message"]]
+    # }
+    #  {
+    #     "dt":"Client Script",
+    #     "filters":[["name","=","Authorize Teams"]]
+    # }
     ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}

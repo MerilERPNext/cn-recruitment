@@ -5,6 +5,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "enable",
   "client_id",
   "client_secret",
   "tenant_id",
@@ -36,13 +37,19 @@
    "fieldname": "tenant_domain",
    "fieldtype": "Data",
    "label": "Tenant Domain"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable",
+   "fieldtype": "Check",
+   "label": "Enable"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-06-05 10:41:03.211091",
+ "modified": "2025-06-12 14:45:42.542147",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Microsoft Teams App Settings",

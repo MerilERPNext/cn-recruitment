@@ -112,9 +112,14 @@ def get_interview_feedback_records(interview_id):
         
 
 @frappe.whitelist()
-def get_teams_auth_url(interview_id=None):
+def get_teams_auth_url(interview_id=None, user_id=None):
     settings = frappe.get_single("Microsoft Teams App Settings")
-    state = f"{frappe.session.user}|{interview_id}" if interview_id else frappe.session.user
+    if interview_id:
+        state = f"{frappe.session.user}|{interview_id}"
+    elif user_id:
+        state = user_id
+    else:
+        state = frappe.session.user
     params = {
         "client_id": settings.client_id,
         "response_type": "code",
@@ -178,11 +183,13 @@ def teams_oauth_callback(code=None, state=None):
         token_doc.insert(ignore_permissions=True)
         frappe.db.commit()
 
-
     if interview_id:
         redirect_url = f"/app/interview/{interview_id}"
     else:
-        redirect_url = "/app/interview"
+        redirect_url = f"/app/user/{user}"
+
+    if frappe.session.user == "Guest":
+        frappe.local.login_manager.login_as(user)
 
     frappe.respond_as_web_page(
         title=_("Microsoft Teams Authorized"),
