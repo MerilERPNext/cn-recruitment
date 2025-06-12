@@ -262,10 +262,12 @@ def schedule_teams_meeting(interview_id):
     if not from_time or not to_time:
         frappe.throw("Invalid time format in From Time or To Time.")
 
-    from_datetime = datetime.combine(doc.scheduled_on, from_time)
-    to_datetime = datetime.combine(doc.scheduled_on, to_time)
-    formatted_from = from_datetime.astimezone(pytz.timezone(tz)).isoformat()
-    formatted_to = to_datetime.astimezone(pytz.timezone(tz)).isoformat()
+    timezone = pytz.timezone(tz)
+    from_datetime = timezone.localize(datetime.combine(doc.scheduled_on, from_time))
+    to_datetime = timezone.localize(datetime.combine(doc.scheduled_on, to_time))
+    formatted_from = from_datetime.isoformat()
+    formatted_to = to_datetime.isoformat()
+
 
     subject = f"Interview with {job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}"
 
@@ -361,8 +363,9 @@ def reschedule_teams_meeting(interview_id, scheduled_on, from_time, to_time):
     tz = frappe.utils.get_system_timezone()
     timezone = pytz.timezone(tz)
 
-    from_dt = datetime.combine(getdate(scheduled_on), get_time(from_time)).astimezone(timezone).isoformat()
-    to_dt = datetime.combine(getdate(scheduled_on), get_time(to_time)).astimezone(timezone).isoformat()
+    from_dt = timezone.localize(datetime.combine(getdate(scheduled_on), get_time(from_time))).isoformat()
+    to_dt = timezone.localize(datetime.combine(getdate(scheduled_on), get_time(to_time))).isoformat()
+
     job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
     applicant_name = f"{job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}"
 
