@@ -139,3 +139,22 @@ frappe.ui.form.on("Exit Interview", {
     }
     
 });
+
+
+frappe.ui.form.on('Exit Interview', {
+    refresh(frm) {
+        setup_teams_buttons(frm, {
+    scheduled_on_field: 'date',
+    from_time_field: 'custom_from_time',
+    to_time_field: 'custom_to_time',
+    zoom_link_field: 'custom_meeting_link',
+    event_id_field: 'custom_calendar_event_id',
+    meeting_status_field: 'custom_meeting_status'
+}, {
+    candidate_email_field: 'email',
+    interviewers_field: 'interviewers',
+    interviewers_fieldtype: 'Table MultiSelect'
+});
+
+    }
+});

@@ -10,7 +10,8 @@
   "client_secret",
   "tenant_id",
   "redirect_uri",
-  "tenant_domain"
+  "tenant_domain",
+  "teams_email_template_mapping"
  ],
  "fields": [
   {
@@ -43,13 +44,19 @@
    "fieldname": "enable",
    "fieldtype": "Check",
    "label": "Enable"
+  },
+  {
+   "fieldname": "teams_email_template_mapping",
+   "fieldtype": "Table",
+   "label": "Teams Email Template Mapping",
+   "options": "Teams Email Template Mapping"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-06-12 14:45:42.542147",
+ "modified": "2025-06-18 20:23:21.283803",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Microsoft Teams App Settings",
@@ -66,6 +73,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

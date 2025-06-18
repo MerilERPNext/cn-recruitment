@@ -8,6 +8,7 @@ import json
 import jwt
 import pytz
 from frappe.utils.password import get_decrypted_password
+from frappe.utils import get_url_to_form
 
 @frappe.whitelist()
 def generate_travel_request(interview_id):
@@ -112,9 +113,11 @@ def get_interview_feedback_records(interview_id):
         
 
 @frappe.whitelist()
-def get_teams_auth_url(interview_id=None, user_id=None):
+def get_teams_auth_url(interview_id=None, user_id=None, doctype=None, docname=None):
     settings = frappe.get_single("Microsoft Teams App Settings")
-    if interview_id:
+    if user_id and doctype and docname:
+        state = f"{user_id}|{doctype}|{docname}"
+    elif interview_id:
         state = f"{frappe.session.user}|{interview_id}"
     elif user_id:
         state = user_id
@@ -134,15 +137,22 @@ def get_teams_auth_url(interview_id=None, user_id=None):
 
 @frappe.whitelist(allow_guest=True)
 def teams_oauth_callback(code=None, state=None):
-    user = state
     interview_id = None
+    doctype = None
+    docname = None
 
-    if "|" in state:
-        user, interview_id = state.split("|")
+    parts = state.split("|")
+
+    if len(parts) == 3:
+        user, doctype, docname = parts
+    elif len(parts) == 2:
+        user, interview_id = parts
+    else:
+        user = state
+
     settings = frappe.get_single("Microsoft Teams App Settings")
 
     token_url = f"https://login.microsoftonline.com/{settings.tenant_id}/oauth2/v2.0/token"
-
     client_secret = get_decrypted_password("Microsoft Teams App Settings", settings.name, "client_secret")
 
     data = {
@@ -153,11 +163,7 @@ def teams_oauth_callback(code=None, state=None):
         "redirect_uri": settings.redirect_uri
     }
 
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-
-    response = requests.post(token_url, data=data, headers=headers)
+    response = requests.post(token_url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
 
     if response.status_code != 200:
         frappe.throw(f"Token fetch failed: {response.text}")
@@ -183,19 +189,22 @@ def teams_oauth_callback(code=None, state=None):
         token_doc.insert(ignore_permissions=True)
         frappe.db.commit()
 
-    if interview_id:
-        redirect_url = f"/app/interview/{interview_id}"
+    if doctype and docname:
+        redirect_url = f"/app/{slugify_doctype(doctype)}/{docname}"
+    elif interview_id:
+        redirect_url = f"/app/{slugify_doctype('Interview')}/{interview_id}"
     else:
         redirect_url = f"/app/user/{user}"
 
     if frappe.session.user == "Guest":
         frappe.local.login_manager.login_as(user)
 
+    redirect_text = f"{doctype} document" if doctype else "Interview page"
     frappe.respond_as_web_page(
         title=_("Microsoft Teams Authorized"),
         html=f"""
             <p> Microsoft Teams authorized successfully.</p>
-            <p>Redirecting to Interview page...</p>
+            <p>Redirecting to {redirect_text}</p>
             <script>
                 setTimeout(function() {{
                     window.location.href = "{redirect_url}";
@@ -209,10 +218,13 @@ def teams_oauth_callback(code=None, state=None):
 
 
 @frappe.whitelist()
-def schedule_teams_meeting(interview_id):    
+def schedule_teams_meeting(doctype, docname, field_config, email_type="schedule", participant_config=None):
+    if isinstance(field_config, str):
+        field_config = json.loads(field_config)
+    if isinstance(participant_config, str):
+        participant_config = json.loads(participant_config)
 
-    doc = frappe.get_doc("Interview", interview_id)
-    job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
+    doc = frappe.get_doc(doctype, docname)
     token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
 
     if token_doc.token_expiry <= now_datetime():
@@ -233,126 +245,89 @@ def schedule_teams_meeting(interview_id):
         "Prefer": f"outlook.timezone=\"{tz}\""
     }
 
-    attendees = []
+    from_time = get_time(doc.get(field_config.get("from_time_field")))
+    to_time = get_time(doc.get(field_config.get("to_time_field")))
+    scheduled_on = doc.get(field_config.get("scheduled_on_field"))
 
-    for row in doc.interview_details:
-        if row.interviewer and row.interviewer.endswith(allowed_domain):
-            attendees.append({
-                "upn": row.interviewer,
-                "role": "attendee"
-            })
-
-    if frappe.session.user.endswith(allowed_domain):
-        attendees.append({
-            "upn": frappe.session.user,
-            "role": "attendee"
-        })
-
-    if job_applicant.email_id and job_applicant.email_id.endswith(allowed_domain):
-        attendees.append({
-            "upn": job_applicant.email_id,
-            "role": "attendee"
-        })
-
-    if not doc.from_time or not doc.to_time:
-        frappe.throw("Please set both From Time and To Time in the Interview.")
-
-    from_time = get_time(doc.from_time)
-    to_time = get_time(doc.to_time)
-    if not from_time or not to_time:
-        frappe.throw("Invalid time format in From Time or To Time.")
+    if not from_time or not to_time or not scheduled_on:
+        frappe.throw("Scheduled date and time fields must be filled.")
 
     timezone = pytz.timezone(tz)
-    from_datetime = timezone.localize(datetime.combine(doc.scheduled_on, from_time))
-    to_datetime = timezone.localize(datetime.combine(doc.scheduled_on, to_time))
+    from_datetime = timezone.localize(datetime.combine(scheduled_on, from_time))
+    to_datetime = timezone.localize(datetime.combine(scheduled_on, to_time))
     formatted_from = from_datetime.isoformat()
     formatted_to = to_datetime.isoformat()
 
+    email_templates = get_teams_email_templates(doctype)
+    context = build_dynamic_context(doc)
+    subject, content = render_email_template(email_templates.get(email_type), context)
+    print("===== Rendered Content =====")
+    print(content)
 
-    subject = f"Interview with {job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}"
+    calendar_attendees = get_participant_emails(doc, participant_config or {})
 
-    payload = {
-        "startDateTime": formatted_from,
-        "endDateTime": formatted_to,
+    event_payload = {
         "subject": subject,
-        "participants": {
-            "attendees": attendees
-        }
+        "start": {"dateTime": formatted_from, "timeZone": tz},
+        "end": {"dateTime": formatted_to, "timeZone": tz},
+        "body": {
+            "contentType": "HTML",
+            "content": frappe.utils.strip_html_tags(content) if "<" not in content else content
+        },
+        "location": {"displayName": "Microsoft Teams"},
+        "isOnlineMeeting": True,
+        "onlineMeetingProvider": "teamsForBusiness",
+        "attendees": [{
+            "emailAddress": {"address": a["email"], "name": a["name"]},
+            "type": a["type"]
+        } for a in calendar_attendees]
     }
 
-    url = "https://graph.microsoft.com/v1.0/me/onlineMeetings"
-    response = requests.post(url, headers=headers, json=payload)
+    calendar_url = "https://graph.microsoft.com/v1.0/me/events"
+    calendar_response = requests.post(calendar_url, headers=headers, json=event_payload)
 
-    if response.status_code == 201:
-        join_url = response.json().get("joinUrl")
+    if calendar_response.status_code in [200, 201]:
+        calendar_data = calendar_response.json()
+        join_url = calendar_data.get("onlineMeeting", {}).get("joinUrl")
+
         if join_url:
             short_url = shorten_url_tinyurl(join_url)
-            doc.db_set("custom_zoom_link", short_url)
-            doc.db_set("custom_meeting_status", "Scheduled")
-
-
-            calendar_attendees = []
-            for a in attendees:
-                calendar_attendees.append({
-                    "emailAddress": {
-                        "address": a["upn"],
-                        "name": a["upn"]
-                    },
-                    "type": "required"
-                })
-
-            # Add job applicant to calendar even if not internal
-            if job_applicant.email_id and not job_applicant.email_id.endswith(allowed_domain):
-                calendar_attendees.append({
-                    "emailAddress": {
-                        "address": job_applicant.email_id,
-                        "name": f"{job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}"
-                    },
-                    "type": "required"
-                })
-
-            event_payload = {
-                "subject": subject,
-                "start": {
-                    "dateTime": formatted_from,
-                    "timeZone": tz
-                },
-                "end": {
-                    "dateTime": formatted_to,
-                    "timeZone": tz
-                },
-                "body": {
-                    "contentType": "HTML",
-                    "content": f"Join Teams Meeting: <a href='{join_url}'>{join_url}</a>"
-                },
-                "location": {
-                    "displayName": "Microsoft Teams"
-                },
-                "isOnlineMeeting": True,
-                "onlineMeetingProvider": "teamsForBusiness",
-                "attendees": calendar_attendees
-            }
-
-            calendar_url = "https://graph.microsoft.com/v1.0/me/events"
-            calendar_response = requests.post(calendar_url, headers=headers, json=event_payload)
-            if calendar_response.status_code in [200, 201]:
-                calendar_event_id = calendar_response.json().get("id")
-                if calendar_event_id:
-                    doc.db_set("custom_calendar_event_id", calendar_event_id)
-
-        return join_url
+            doc.db_set(field_config.get("zoom_link_field"), short_url)
+            doc.db_set(field_config.get("meeting_status_field"), "Scheduled")
+            doc.db_set(field_config.get("event_id_field"), calendar_data.get("id"))
+            return short_url
+        else:
+            frappe.throw("Meeting created but joinUrl not found.")
     else:
-        frappe.local.response["http_status_code"] = 400
-        frappe.local.response["message"] = f"Failed to create Teams meeting: {response.text}"
-        return
+        frappe.throw(f"Failed to create Teams meeting: {calendar_response.text}")
 
 @frappe.whitelist()
-def reschedule_teams_meeting(interview_id, scheduled_on, from_time, to_time):
+def reschedule_teams_meeting(doctype, docname, field_config, scheduled_on, from_time, to_time):
+    if isinstance(field_config, str):
+        field_config = json.loads(field_config)
 
-    doc = frappe.get_doc("Interview", interview_id)
+    doc = frappe.get_doc(doctype, docname)
 
-    if not doc.custom_zoom_link or not doc.custom_calendar_event_id:
-        frappe.throw("Missing meeting link or calendar event ID. Cannot reschedule.")
+    if doc.get(field_config.get("event_id_field")):
+        cancel_teams_meeting(doctype, docname, field_config)
+
+    doc.db_set(field_config.get("scheduled_on_field"), scheduled_on)
+    doc.db_set(field_config.get("from_time_field"), from_time)
+    doc.db_set(field_config.get("to_time_field"), to_time)
+
+    return schedule_teams_meeting(doctype, docname, field_config, email_type="reschedule")
+
+
+@frappe.whitelist()
+def cancel_teams_meeting(doctype, docname, field_config):
+    if isinstance(field_config, str):
+        field_config = json.loads(field_config)
+
+    doc = frappe.get_doc(doctype, docname)
+    event_id = doc.get(field_config.get("event_id_field"))
+
+    if not event_id:
+        frappe.throw("No calendar event ID to cancel.")
 
     token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
     if token_doc.token_expiry <= now_datetime():
@@ -360,73 +335,27 @@ def reschedule_teams_meeting(interview_id, scheduled_on, from_time, to_time):
         token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
 
     access_token = token_doc.access_token
-    tz = frappe.utils.get_system_timezone()
-    timezone = pytz.timezone(tz)
-
-    from_dt = timezone.localize(datetime.combine(getdate(scheduled_on), get_time(from_time))).isoformat()
-    to_dt = timezone.localize(datetime.combine(getdate(scheduled_on), get_time(to_time))).isoformat()
-
-    job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
-    applicant_name = f"{job_applicant.applicant_name} {job_applicant.custom_applicant_last_name_ or ''}"
-
-    payload = {
-        "start": {
-            "dateTime": from_dt,
-            "timeZone": tz
-        },
-        "end": {
-            "dateTime": to_dt,
-            "timeZone": tz
-        },
-        "subject": f"Rescheduled Interview with {applicant_name}"
-    }
-
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-
-    url = f"https://graph.microsoft.com/v1.0/me/events/{doc.custom_calendar_event_id}"
-
-    response = requests.patch(url, headers=headers, json=payload)
-
-    if response.status_code in [200, 202]:
-        doc.db_set("scheduled_on", scheduled_on)
-        doc.db_set("from_time", from_time)
-        doc.db_set("to_time", to_time)
-        doc.db_set("custom_meeting_status", "Rescheduled")
-        return doc.custom_zoom_link
-    else:
-        frappe.throw(f"Reschedule failed: {response.text}")
-
-@frappe.whitelist()
-def cancel_teams_meeting(interview_id):
-
-    doc = frappe.get_doc("Interview", interview_id)
-
-    if not doc.custom_calendar_event_id:
-        frappe.throw("No calendar event ID found to cancel.")
-
-    token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
-    if token_doc.token_expiry <= now_datetime():
-        refresh_access_token(frappe.session.user)
-        token_doc = frappe.get_doc("Microsoft Teams User Token", {"user": frappe.session.user})
-
-    access_token = token_doc.access_token
-
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-    }
-
-    url = f"https://graph.microsoft.com/v1.0/me/events/{doc.custom_calendar_event_id}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    url = f"https://graph.microsoft.com/v1.0/me/events/{event_id}"
 
     response = requests.delete(url, headers=headers)
 
     if response.status_code == 204:
-        # Clean up fields in Interview doc
-        doc.db_set("custom_zoom_link", "")
-        doc.db_set("custom_calendar_event_id", "")
-        doc.db_set("custom_meeting_status", "Cancelled")
+        doc.db_set(field_config.get("zoom_link_field"), "")
+        doc.db_set(field_config.get("event_id_field"), "")
+        doc.db_set(field_config.get("meeting_status_field"), "Cancelled")
+
+        # Send Cancel Email if template exists
+        email_templates = get_teams_email_templates(doctype)
+        context = build_dynamic_context(doc)
+        subject, content = render_email_template(email_templates["cancel"], context)
+        if content:
+            frappe.sendmail(
+                recipients=[frappe.session.user],
+                subject=subject,
+                message=content
+            )
+
         return "Meeting cancelled successfully."
     else:
         frappe.throw(f"Cancellation failed: {response.text}")
@@ -464,3 +393,115 @@ def shorten_url_tinyurl(long_url):
     except Exception:
         pass
     return long_url 
+
+
+def get_teams_email_templates(doctype):
+    settings = frappe.get_single("Microsoft Teams App Settings")
+    for row in settings.get("teams_email_template_mapping", []):
+        if row.select_doctype == doctype:
+            return {
+                "schedule": row.schedule_email_template,
+                "reschedule": row.reschedule_email_template,
+                "cancel": row.cancel_email_template
+            }
+    return {"schedule": None, "reschedule": None, "cancel": None}
+
+def build_dynamic_context(doc):
+    context = {}
+    for field in doc.meta.fields:
+        context[field.fieldname] = doc.get(field.fieldname)
+    if getattr(doc, "job_applicant", None):
+        job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
+        for field in job_applicant.meta.fields:
+            context[f"job_applicant_{field.fieldname}"] = job_applicant.get(field.fieldname)
+    emp = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+    if emp:
+        emp_doc = frappe.get_doc("Employee", emp)
+        for field in emp_doc.meta.fields:
+            context[f"employee_{field.fieldname}"] = emp_doc.get(field.fieldname)
+    context["created_by"] = frappe.session.user
+    context["interview"] = doc.name
+    context["doctype"] = doc.doctype
+    context["name"] = doc.name
+    return context
+
+
+def render_email_template(template_name, context):
+    if not template_name:
+        doctype = context.get("doctype") or context.get("interview_doctype") or "Interview"
+        name = context.get("name") or context.get("interview") or ""
+        link = get_url_to_form(doctype, name)
+
+        subject = "Interview Scheduled"
+        html = f"""
+            Dear User,<br><br>
+            You have been scheduled to take an interview.<br>
+            For more details, visit: <a href="{link}">{name}</a><br><br>
+            Regards,<br>
+            HR Team
+        """
+        return subject, html
+
+    template_doc = frappe.get_doc("Email Template", template_name)
+    subject = frappe.render_template(template_doc.subject or "", context)
+    html = frappe.render_template(template_doc.response_html or "", context, is_path=False)
+    return subject, html
+
+
+def get_participant_emails(doc, participant_config):
+    participant_emails = []
+    domain = frappe.db.get_single_value("Microsoft Teams App Settings", "tenant_domain")
+
+    candidate_field = participant_config.get("candidate_email_field")
+    if candidate_field:
+        candidate_email = doc.get(candidate_field)
+        if candidate_email:
+            participant_emails.append({
+                "email": candidate_email,
+                "name": candidate_email,
+                "type": "required"
+            })
+
+    interviewer_field = participant_config.get("interviewers_field")
+    fieldtype = participant_config.get("interviewers_fieldtype")
+    if interviewer_field:
+        interviewers = doc.get(interviewer_field)
+        if fieldtype == "Table":
+            for row in interviewers:
+                user_id = row.get("interviewer")
+                email = user_id if "@" in user_id else frappe.db.get_value("User", user_id, "email")
+                if email:
+                    participant_emails.append({
+                        "email": email,
+                        "name": email,
+                        "type": "required"
+                    })
+        elif fieldtype == "Table MultiSelect":
+            for row in interviewers:
+                if hasattr(row, 'get') and callable(row.get):
+                    user_id = row.get("user")
+                elif hasattr(row, 'user'):
+                    user_id = row.user
+                else:
+                    user_id = row
+
+                if not user_id:
+                    continue
+
+                if isinstance(user_id, str) and "@" in user_id:
+                    email = user_id
+                else:
+                    email = frappe.db.get_value("User", user_id, "email")
+
+                if email:
+                    participant_emails.append({
+                        "email": email,
+                        "name": email,
+                        "type": "required"
+                    })
+                    
+
+    return participant_emails
+
+def slugify_doctype(doctype):
+    return doctype.lower().replace(" ", "-").replace("_", "-")
