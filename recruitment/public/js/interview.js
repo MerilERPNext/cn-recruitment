@@ -53,7 +53,20 @@ frappe.ui.form.on("Interview", {
 
 			},__("Create"));
 		}
-    },
+   
+	setup_teams_buttons(frm, {
+            scheduled_on_field: 'scheduled_on',
+            from_time_field: 'from_time',
+            to_time_field: 'to_time',
+            zoom_link_field: 'custom_zoom_link',
+            event_id_field: 'custom_calendar_event_id',
+            meeting_status_field: 'custom_meeting_status'
+        }, {
+            candidate_email_field: 'job_applicant',
+            interviewers_field: 'interview_details',
+            interviewers_fieldtype: 'Table'
+        });
+    }
 	// after_save(frm){
 	// 	frappe.call('recruitment.customizations.interview.interview.assign_interviews_to_interviewer', {
 	// 		docname: frm.doc.name
@@ -88,22 +101,3 @@ frappe.ui.form.on('Interview Detail', {
         // frappe.db.delete_doc("User Permission",{"allow":"Interview","for_value":frm.doc.name})
 	}
 })
-
-
-frappe.ui.form.on('Interview', {
-    refresh(frm) {
-        setup_teams_buttons(frm, {
-    scheduled_on_field: 'scheduled_on',
-    from_time_field: 'from_time',
-    to_time_field: 'to_time',
-    zoom_link_field: 'custom_zoom_link',
-    event_id_field: 'custom_calendar_event_id',
-    meeting_status_field: 'custom_meeting_status'
-}, {
-    candidate_email_field: 'job_applicant',
-    interviewers_field: 'interview_details',
-    interviewers_fieldtype: 'Table'
-});
-
-    }
-});

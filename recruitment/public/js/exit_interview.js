@@ -19,7 +19,6 @@ frappe.ui.form.on("Exit Interview", {
                     primary_action(values) {
                         frm.set_value("date", values.new_date);
                         frm.set_value("status", "Rescheduled");
-                        frm.set_value("workflow_state", "Rescheduled");
                         frm.save();
                         d.hide();
                     }
@@ -27,12 +26,6 @@ frappe.ui.form.on("Exit Interview", {
                 d.show();
             });
         }
-    }
-});
-
-frappe.ui.form.on("Exit Interview", {
-    refresh: function (frm) {
-        // Show button only if user is in the interviewers multiselect
         const current_user = frappe.session.user;
         const interviewers = frm.doc.interviewers || [];
 
@@ -45,6 +38,19 @@ frappe.ui.form.on("Exit Interview", {
 
         // Load comments if any
         frm.events.render_feedback_html(frm);
+
+        setup_teams_buttons(frm, {
+            scheduled_on_field: 'date',
+            from_time_field: 'custom_from_time',
+            to_time_field: 'custom_to_time',
+            zoom_link_field: 'custom_meeting_link',
+            event_id_field: 'custom_calendar_event_id',
+            meeting_status_field: 'custom_meeting_status'
+        }, {
+            candidate_email_field: 'email',
+            interviewers_field: 'interviewers',
+            interviewers_fieldtype: 'Table MultiSelect'
+        });
     },
 
     open_feedback_dialog: function (frm) {
@@ -138,23 +144,4 @@ frappe.ui.form.on("Exit Interview", {
         }
     }
     
-});
-
-
-frappe.ui.form.on('Exit Interview', {
-    refresh(frm) {
-        setup_teams_buttons(frm, {
-    scheduled_on_field: 'date',
-    from_time_field: 'custom_from_time',
-    to_time_field: 'custom_to_time',
-    zoom_link_field: 'custom_meeting_link',
-    event_id_field: 'custom_calendar_event_id',
-    meeting_status_field: 'custom_meeting_status'
-}, {
-    candidate_email_field: 'email',
-    interviewers_field: 'interviewers',
-    interviewers_fieldtype: 'Table MultiSelect'
-});
-
-    }
 });
