@@ -1,42 +1,42 @@
 frappe.ui.form.on("Job Applicant", {
   refresh: function (frm) {
     // frm.events.create_custom_buttons(frm);
-    frm.remove_custom_button('Interview', 'Create');
-    if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted") {
-      frm.add_custom_button(
-        __("Interview"),
-        function () {
-          frappe.call({
-            method:"recruitment.customizations.job_applicant.validate_applicant",
-            args:{
-              "job_applicant":frm.doc.name
-            },
-            callback:function(r){ 
-              console.log("message:",r.message)
-              if(r.message){
-                let links_text = "";
-              links_text=`<a href="/app/job-applicant/${r.message[0]}">${r.message[0]}</a>`
+    // frm.remove_custom_button('Interview', 'Create');
+    // if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted") {
+    //   frm.add_custom_button(
+    //     __("Interview"),
+    //     function () {
+    //       frappe.call({
+    //         method:"recruitment.customizations.job_applicant.validate_applicant",
+    //         args:{
+    //           "job_applicant":frm.doc.name
+    //         },
+    //         callback:function(r){ 
+    //           console.log("message:",r.message)
+    //           if(r.message){
+    //             let links_text = "";
+    //           links_text=`<a href="/app/job-applicant/${r.message[0]}">${r.message[0]}</a>`
                 
-                links_text = `<ul>${links_text}</ul>`;
-                let confirm_message = __("Duplicate {0} {1} is Present. You Want To Continue?", [
-                  __("Job Applicant").bold(),
-                 links_text
-                ]);
-                frappe.confirm(__(confirm_message), () => {
-                  frm.events.create_dialog(frm);
-                },() => {
+    //             links_text = `<ul>${links_text}</ul>`;
+    //             let confirm_message = __("Duplicate {0} {1} is Present. You Want To Continue?", [
+    //               __("Job Applicant").bold(),
+    //              links_text
+    //             ]);
+    //             frappe.confirm(__(confirm_message), () => {
+    //               frm.events.create_dialog(frm);
+    //             },() => {
                   
-                })
-              }else{
-                frm.events.create_dialog(frm);
-              }
-            }
-          })
+    //             })
+    //           }else{
+    //             frm.events.create_dialog(frm);
+    //           }
+    //         }
+    //       })
           
-        },
-        __("Create"),
-      );
-    }
+    //     },
+    //     __("Create"),
+    //   );
+    // }
     frm.events.make_dashboard(frm);
     if (!frm.is_new()) {
       if (frappe.user.has_role("Hr Group Admin")) {
@@ -272,7 +272,8 @@ frappe.ui.form.on("Job Applicant", {
           });
         });
     }
-    frm.events.applicant_datails(frm);
+    applicant_details(frm);
+    // frm.events.applicant_datails(frm);
   },
 
   make_dashboard: function (frm) {
@@ -418,89 +419,299 @@ frappe.ui.form.on("Job Applicant", {
   
   
 },
-create_custom_buttons: function (frm) {
-  if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted" && !frm.doc.custom_blacklist) {
-    frm.add_custom_button(
-      __("Interview"),
-      function () {
-        frappe.call({
-          method:"recruitment.customizations.job_applicant.validate_applicant",
-          args:{
-            "job_applicant":frm.doc.name
-          },
-          callback:function(r){
-            if(r.message){
-              let links_text = "";
-            links_text=`<a href="/app/job-applicant/${r.message[0]}">${r.message[0]}</a>`
+// create_custom_buttons: function (frm) {
+//   if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted" && !frm.doc.custom_blacklist) {
+//     frm.add_custom_button(
+//       __("Interview"),
+//       function () {
+//         frappe.call({
+//           method:"recruitment.customizations.job_applicant.validate_applicant",
+//           args:{
+//             "job_applicant":frm.doc.name
+//           },
+//           callback:function(r){
+//             if(r.message){
+//               let links_text = "";
+//             links_text=`<a href="/app/job-applicant/${r.message[0]}">${r.message[0]}</a>`
               
-              links_text = `<ul>${links_text}</ul>`;
-              let confirm_message = __("Duplicate {0} {1} is Present. You Want To Continue?", [
-                __("Job Applicant").bold(),
-               links_text
-              ]);
-              frappe.confirm(__(confirm_message), () => {
-                frm.events.create_dialog(frm);
-              },() => {
+//               links_text = `<ul>${links_text}</ul>`;
+//               let confirm_message = __("Duplicate {0} {1} is Present. You Want To Continue?", [
+//                 __("Job Applicant").bold(),
+//                links_text
+//               ]);
+//               frappe.confirm(__(confirm_message), () => {
+//                 frm.events.create_dialog(frm);
+//               },() => {
                 
-              })
-            }
-          }
-        })
+//               })
+//             }
+//           }
+//         })
         
-      },
-      __("Create"),
-    );
-  }
+//       },
+//       __("Create"),
+//     );
+//   }
 
-  if (!frm.doc.__islocal && frm.doc.status == "Accepted" && !frm.doc.custom_blacklist) {
-    if (frm.doc.__onload && frm.doc.__onload.job_offer) {
-      $('[data-doctype="Employee Onboarding"]').find("button").show();
-      $('[data-doctype="Job Offer"]').find("button").hide();
-      frm.add_custom_button(
-        __("Job Offer"),
-        function () {
-          frappe.set_route("Form", "Job Offer", frm.doc.__onload.job_offer);
-        },
-        __("View"),
-      );
-    } else {
-      $('[data-doctype="Employee Onboarding"]').find("button").hide();
-      $('[data-doctype="Job Offer"]').find("button").show();
-      frm.add_custom_button(
-        __("Job Offer"),
-        function () {
-          frappe.route_options = {
-            job_applicant: frm.doc.name,
-            applicant_name: frm.doc.applicant_name,
-            designation: frm.doc.job_opening || frm.doc.designation,
-          };
-          frappe.new_doc("Job Offer");
-        },
-        __("Create"),
-      );
-    }
-  }
-},
-create_dialog: function (frm) {
-  let d = new frappe.ui.Dialog({
-    title: "Enter Interview Round",
-    fields: [
-      {
-        label: "Interview Round",
-        fieldname: "interview_round",
-        fieldtype: "Link",
-        options: "Interview Round",
-      },
-    ],
-    primary_action_label: __("Create Interview"),
-    primary_action(values) {
-      frm.events.create_interview(frm, values);
-      d.hide();
-    },
-  });
-  d.show();
-},
-applicant_datails(frm) {
+//   if (!frm.doc.__islocal && frm.doc.status == "Accepted" && !frm.doc.custom_blacklist) {
+//     if (frm.doc.__onload && frm.doc.__onload.job_offer) {
+//       $('[data-doctype="Employee Onboarding"]').find("button").show();
+//       $('[data-doctype="Job Offer"]').find("button").hide();
+//       frm.add_custom_button(
+//         __("Job Offer"),
+//         function () {
+//           frappe.set_route("Form", "Job Offer", frm.doc.__onload.job_offer);
+//         },
+//         __("View"),
+//       );
+//     } else {
+//       $('[data-doctype="Employee Onboarding"]').find("button").hide();
+//       $('[data-doctype="Job Offer"]').find("button").show();
+//       frm.add_custom_button(
+//         __("Job Offer"),
+//         function () {
+//           frappe.route_options = {
+//             job_applicant: frm.doc.name,
+//             applicant_name: frm.doc.applicant_name,
+//             designation: frm.doc.job_opening || frm.doc.designation,
+//           };
+//           frappe.new_doc("Job Offer");
+//         },
+//         __("Create"),
+//       );
+//     }
+//   }
+// },
+// create_dialog: function (frm) {
+//   let d = new frappe.ui.Dialog({
+//     title: "Enter Interview Round",
+//     fields: [
+//       {
+//         label: "Interview Round",
+//         fieldname: "interview_round",
+//         fieldtype: "Link",
+//         options: "Interview Round",
+//       },
+//     ],
+//     primary_action_label: __("Create Interview"),
+//     primary_action(values) {
+//       frm.events.create_interview(frm, values);
+//       d.hide();
+//     },
+//   });
+//   d.show();
+// },
+// applicant_datails(frm) {
+//   frappe.require('recruitment.recruitment.public.css.job_applicant.css'); 
+//   let job_applicant_html = `
+//   <div class="section-heading">APPLICANT INFORMATION</div>
+// <table class="custom-table">
+//     <tr>
+//         <th>Applicant Name</th>
+//         <td>${frm.doc.applicant_name || '-'}</td>
+//         <th>Email ID</th>
+//         <td>${frm.doc.email_id || '-'}</td>
+//     </tr>
+//     <tr>
+//         <th>Phone Number</th>
+//         <td>${frm.doc.phone_number || '-'}</td>
+//         <th>Country</th>
+//         <td>${frm.doc.country || '-'}</td>
+//     </tr>
+//     <tr>
+//         <th>Job Title</th>
+//         <td>${frm.doc.job_title || '-'}</td>
+//         <th>Designation</th>
+//         <td>${frm.doc.designation || '-'}</td>
+//     </tr>
+//     <tr>
+//         <th>Status</th>
+//         <td>${frm.doc.status || '-'}</td>
+//         <th>Shortlisted by Hiring Manager</th>
+//         <td>${frm.doc.custom_shortlisted_by_hiring_manager || '-'}</td>
+//     </tr>
+//     <tr>
+//         <th>Expected Date of Joining</th>
+//         <td>${frm.doc.custom_expected_doj || '-'}</td>
+//         <th>Approval Pending from Management</th>
+//         <td><input type="checkbox" ${frm.doc.custom_approval_pending_from_management ? 'checked' : ''} disabled class="checkbox-disabled"></td>
+//     </tr>
+//     <tr>
+//         <th>Current Salary CTC</th>
+//         <td>${frm.doc.custom_current_salaryctc || '-'}</td>
+//         <th>CTC Finalized</th>
+//         <td>${frm.doc.custom_ctc_finalized || '-'}</td>
+//     </tr>
+// </table>
+
+//   <div class="section-heading">SOURCE AND RATING</div>
+//   <table class="custom-table">
+//       <tr>
+//           <th class="bold">Source</th>
+//           <td>${frm.doc.source || '-'}</td>
+//           <th class="bold">Source Name</th>
+//           <td>${frm.doc.source_name || '-'}</td>
+//       </tr>
+//       <tr>
+//           <th class="bold">Employee Referral</th>
+//           <td>${frm.doc.employee_referral || '-'}</td>
+//           <th class="bold">Applicant Rating</th>
+//           <td>${frm.doc.applicant_rating || '-'}</td>
+//       </tr>
+//       <tr>
+//           <th class="bold">Resume Attachment</th>
+//           <td>${frm.doc.resume_attachment ? `<a href="${frm.doc.resume_attachment}" target="_blank">Download</a>` : '-'}</td>
+//           <th class="bold">Resume Link</th>
+//           <td>${frm.doc.resume_link || '-'}</td>
+//       </tr>
+//   </table>
+//   `;
+
+//   // Fetch Interview Details
+//   frappe.call({
+//       method: 'frappe.client.get_list',
+//       args: {
+//           doctype: 'Interview',
+//           filters: {
+//               job_applicant: frm.doc.name
+//           },
+//           fields: [
+//               'custom_interview_type',
+//               'interview_round',
+//               'job_applicant',
+//               'status',
+//               'scheduled_on',
+//               'from_time',
+//               'to_time',
+//               'custom_interview_location',
+//               'custom_zoom_link',
+//               'custom_zoom_password'
+//           ]
+//       },
+//       callback: function(response) {
+//           if (response.message && response.message.length > 0) {
+//               let interviews = response.message;
+//               let interview_html = `<div class="section-heading">INTERVIEW DETAILS</div>`;
+
+//               interviews.forEach(function(interview) {
+//                   interview_html += `
+//                   <table class="custom-table">
+//                       <tr>
+//                           <th class="bold">Interview Type</th>
+//                           <td>${interview.custom_interview_type || '-'}</td>
+//                           <th class="bold">Interview Round</th>
+//                           <td>${interview.interview_round || '-'}</td>
+//                       </tr>
+//                       <tr>
+//                           <th class="bold">Job Applicant</th>
+//                           <td>${interview.job_applicant || '-'}</td>
+//                       </tr>
+//                       <tr>
+//                           <th class="bold">Status</th>
+//                           <td>${interview.status || '-'}</td>
+//                           <th class="bold">Scheduled On</th>
+//                           <td>${interview.scheduled_on || '-'}</td>
+//                       </tr>
+//                       <tr>
+//                           <th class="bold">From Time</th>
+//                           <td>${interview.from_time || '-'}</td>
+//                           <th class="bold">To Time</th>
+//                           <td>${interview.to_time || '-'}</td>
+//                       </tr>
+//                       <tr>
+//                           <th class="bold">Interview Location</th>
+//                           <td>${interview.custom_interview_location || '-'}</td>
+//                           <th class="bold">Zoom Link</th>
+//                           <td>${interview.custom_zoom_link || '-'}</td>
+//                       </tr>
+//                       <tr>
+//                           <th class="bold">Zoom Password</th>
+//                           <td>${interview.custom_zoom_password || '-'}</td>
+//                           <td colspan="2"></td>
+//                       </tr>
+//                   </table>
+//                   `;
+//               });
+
+//               job_applicant_html += interview_html;
+//           } else {
+//               job_applicant_html += `
+//               <div class="section-heading">INTERVIEW DETAILS</div>
+//               <table class="custom-table">
+//                   <tr>
+//                       <td colspan="4">No interview details available.</td>
+//                   </tr>
+//               </table>
+//               `;
+//           }
+
+//           // Fetch Interview Feedback
+//           frappe.call({
+//               method: 'frappe.client.get_list',
+//               args: {
+//                   doctype: 'Interview Feedback',
+//                   filters: {
+//                       job_applicant: frm.doc.name
+//                   },
+//                   fields: [
+//                       'interview',
+//                       'interview_round',
+//                       'job_applicant',
+//                       'interviewer',
+//                       'result',
+//                       'feedback'
+//                   ]
+//               },
+//               callback: function(response) {
+//                   if (response.message && response.message.length > 0) {
+//                       let feedbacks = response.message;
+//                       let feedback_html = `<div class="section-heading">INTERVIEW FEEDBACK</div>`;
+
+//                       feedbacks.forEach(function(feedback) {
+//                           feedback_html += `
+//                           <table class="custom-table">
+//                               <tr>
+//                                   <th class="bold">Interview</th>
+//                                   <td>${feedback.interview || '-'}</td>
+//                                   <th class="bold">Interview Round</th>
+//                                   <td>${feedback.interview_round || '-'}</td>
+//                               </tr>
+//                               <tr>
+//                                   <th class="bold">Job Applicant</th>
+//                                   <td>${feedback.job_applicant || '-'}</td>
+//                                   <th class="bold">Interviewer</th>
+//                                   <td>${feedback.interviewer || '-'}</td>
+//                               </tr>
+//                               <tr>
+//                                   <th class="bold">Result</th>
+//                                   <td>${feedback.result || '-'}</td>
+//                                   <th class="bold">Feedback</th>
+//                                   <td>${feedback.feedback || '-'}</td>
+//                               </tr>
+//                           </table>
+//                           `;
+//                       });
+
+//                       job_applicant_html += feedback_html;
+//                   } else {
+//                       job_applicant_html += `
+//                       <div class="section-heading">INTERVIEW FEEDBACK</div>
+//                       <table class="custom-table">
+//                           <tr>
+//                               <td colspan="4">No interview feedback available.</td>
+//                           </tr>
+//                       </table>
+//                       `;
+//                   }
+
+//                   frm.fields_dict.custom_custom_table.$wrapper.html(job_applicant_html);
+//               }
+//           });
+//       }
+//   });
+// }
+});
+function applicant_details(frm) {
   frappe.require('recruitment.recruitment.public.css.job_applicant.css'); 
   let job_applicant_html = `
   <div class="section-heading">APPLICANT INFORMATION</div>
@@ -703,13 +914,33 @@ applicant_datails(frm) {
                       `;
                   }
 
+                  // ✅ Inject tab3 route switcher here
+                  job_applicant_html += `
+                  <script>
+                      (function() {
+                          const route = window.location.pathname.split('/');
+                          if (route.includes('tab3')) {
+                              setTimeout(function() {
+                                  const tabLinks = document.querySelectorAll('.form-tabs .nav-link');
+                                  for (let link of tabLinks) {
+                                      if (link.textContent.trim() === "Tab 3") {
+                                          link.click();
+                                          break;
+                                      }
+                                  }
+                              }, 300);
+                          }
+                      })();
+                  </script>
+                  `;
+
+                  // Finally set the HTML content
                   frm.fields_dict.custom_custom_table.$wrapper.html(job_applicant_html);
               }
           });
       }
   });
 }
-});
 frappe.ui.form.on("Job Applicant Notes", {
   custom_notes_add: function (frm, cdt, cdn) {
     var child = locals[cdt][cdn];
@@ -738,5 +969,43 @@ frappe.ui.form.on("Job Applicant", {
           });
       }
   }
+});
+
+frappe.ui.form.on('Job Applicant', {
+    status: function(frm) {
+
+        if (!frm.doc.status) return;
+
+        frappe.call({
+            method: "frappe.client.get_value",
+            args: {
+                doctype: "Sub Status",
+                filters: { "parent_status": frm.doc.status },
+                fieldname: ["sub_status"]
+            },
+            callback: function(r) {
+                let options = [];
+                let description = "";
+
+                if (r.message && r.message.sub_status) {
+                    options = r.message.sub_status.split('\n');
+                }
+
+                if (options.length === 0) {
+                    description = "No sub-status available for this status. Please update the Sub Status master.";
+                }
+
+                frm.set_df_property('custom_substatus', 'options', options);
+                frm.set_df_property('custom_substatus', 'description', description);
+                frm.refresh_field('custom_substatus');
+            }
+        });
+    },
+
+    onload: function(frm) {
+        if (frm.doc.status) {
+            frm.trigger('status');
+        }
+    }
 });
 

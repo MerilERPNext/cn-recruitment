@@ -668,7 +668,7 @@
    "row_name": null,
    "value": ""
   },
-  {
+ {
    "_assign": null,
    "_comments": null,
    "_liked_by": null,
@@ -691,12 +691,6 @@
    "row_name": null,
    "value": "1"
   },
-  {
-   "_assign": null,
-   "_comments": null,
-   "_liked_by": null,
-   "_user_tags": null,
-   "creation": "2025-06-18 20:35:39.377948",
    "default_value": null,
    "doc_type": "Exit Interview",
    "docstatus": 0,
