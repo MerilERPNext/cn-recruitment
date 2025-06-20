@@ -11,7 +11,9 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/recruitment/css/job_applicant.css"
-# app_include_js = "/assets/recruitment/js/recruitment.js"
+app_include_js = [
+    "/assets/recruitment/js/teams_utils.js"
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/recruitment/css/recruitment.css"
@@ -61,6 +63,14 @@ fixtures = [
         "dt":"Custom Field",
         "filters":[["module","=","Recruitment"]]
     }
+    # {
+    #     "dt":"Funnel Node",
+    #     "filters":[["name","=","Send Teams Chat Message"]]
+    # }
+    #  {
+    #     "dt":"Client Script",
+    #     "filters":[["name","=","Authorize Teams"]]
+    # }
     ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
