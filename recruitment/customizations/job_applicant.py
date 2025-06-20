@@ -48,10 +48,10 @@ def validation_blacklist_on_doctypes(self,method):
 def validate_blacklist_employee(self,method):
     if self.job_applicant:
         if self.cell_number:
-            mno=frappe.db.get_all("Job Applicant",{"phone_number":self.cell_number,"custom_blacklist":1},["name"])
+            mno=frappe.db.get_value("Job Applicant",{"phone_number":self.cell_number,"custom_blacklist":1},"name")
             if mno:
                 frappe.throw("This Candidate Is Blacklisted")
         if self.personal_email:
-            email=frappe.db.get_all("Job Applicant",{"phone_number":self.personal_email,"custom_blacklist":1},["name"])
+            email=frappe.db.get_value("Job Applicant",{"email_id":self.personal_email,"custom_blacklist":1},"name")
             if email:
                 frappe.throw("This Candidate Is Blacklisted")
