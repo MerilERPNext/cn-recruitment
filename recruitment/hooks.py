@@ -196,7 +196,7 @@ doc_events = {
         
     },
     "Employee":{
-        "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee",
+        "before_insert":"recruitment.customizations.job_applicant.validate_blacklist_employee",
         "after_insert":"recruitment.auto_fetch_fields.link_employee_to_onboarding"
     
     },
