@@ -46,9 +46,15 @@ def validation_blacklist_on_doctypes(self,method):
             frappe.throw("The Applicant Is Blacklisted.So You Cannot Create {0} ".format(self.doctype))
 
 def validate_blacklist_employee(self,method):
-    mno=frappe.db.get_all("Job Applicant",{"phone_number":self.cell_number,"custom_blacklist":1},["name"])
-    if mno:
-        frappe.throw("This Candidate Is Blacklisted")
-    email=frappe.db.get_all("Job Applicant",{"phone_number":self.personal_email,"custom_blacklist":1},["name"])
-    if email:
-        frappe.throw("This Candidate Is Blacklisted")
+    if self.job_applicant:
+        blacklisted = frappe.db.get_value("Job Applicant", {"name": self.job_applicant}, "custom_blacklist")
+        if blacklisted:
+            frappe.throw("The Applicant is Blacklisted. You cannot create an Employee record for this applicant.")
+        if self.cell_number:
+            mno=frappe.db.get_value("Job Applicant",{"phone_number":self.cell_number,"custom_blacklist":1},"name")
+            if mno:
+                frappe.throw("This Candidate Is Blacklisted")
+        if self.personal_email:
+            email=frappe.db.get_value("Job Applicant",{"email_id":self.personal_email,"custom_blacklist":1},"name")
+            if email:
+                frappe.throw("This Candidate Is Blacklisted")
