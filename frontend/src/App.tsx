@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Navigation from './components/Navigation';
+// import Navigation from './components/Navigation';
 import SearchMembers from './components/SearchMembers';
 import Notices from './components/Notices';
 import IdCard from './components/IdCard';
@@ -103,7 +103,7 @@ const DynamicPathRenderer: React.FC = () => {
 
   return (
     <div>
-      <Navigation />
+      {/* <Navigation /> */}
       {renderComponentByPath()}
     </div>
   );
@@ -114,7 +114,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        <Navigation />
+        {/* <Navigation /> */}
         <Routes>
           {/* Default route redirects to dashboard */}
           <Route path="/" element={<Dashboard />} />
