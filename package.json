@@ -1,0 +1,11 @@
+{
+  "name": "recruitment",
+  "version": "1.0.0",
+  "author": "Grawish Sachdeva <41504211+grawish@users.noreply.github.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "cd recruitment && yarn && yarn build",
+    "dev": "cd recruitment && yarn dev --host",
+    "postinstall": "cd recruitment && yarn install --check-files"
+  }
+}
