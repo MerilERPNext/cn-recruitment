@@ -4,8 +4,8 @@
   "author": "Grawish Sachdeva <41504211+grawish@users.noreply.github.com>",
   "license": "MIT",
   "scripts": {
-    "build": "cd recruitment && yarn && yarn build",
-    "dev": "cd recruitment && yarn dev --host",
-    "postinstall": "cd recruitment && yarn install --check-files"
+    "build": "cd frontend && yarn && yarn build",
+    "dev": "cd frontend && yarn dev --host",
+    "postinstall": "cd frontend && yarn install --check-files"
   }
 }
