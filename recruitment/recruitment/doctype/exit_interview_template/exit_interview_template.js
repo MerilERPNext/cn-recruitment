@@ -5,7 +5,9 @@ frappe.ui.form.on('Exit Interview Template', {
             if (!wrapper) return;
 
             wrapper.empty();
-
+            if (frm.doc.__islocal) {
+                return;
+            }
             frappe.db.get_doc('Exit Interview Template', frm.doc.name).then(doc => {
                 const rows = doc.questionaire || [];
                 if (Array.isArray(rows) && rows.length > 0) {
