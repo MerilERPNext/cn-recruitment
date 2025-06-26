@@ -1,10 +1,11 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 // import Navigation from './components/Navigation';
 import SearchMembers from './components/SearchMembers';
 import Notices from './components/Notices';
 import IdCard from './components/IdCard';
 import { useCurrentPath, useRouteInfo } from './hooks/useRouter';
+import { QueryProvider } from './providers/QueryProvider';
 import './App.css';
 
 // Home/Dashboard component
@@ -27,12 +28,12 @@ const Dashboard: React.FC = () => {
             <p className="text-gray-600 mb-4">
               Find and manage employee information quickly and efficiently.
             </p>
-            <a
-              href="/search-members"
+            <Link
+              to="/search-members"
               className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
             >
               Go to Search
-            </a>
+            </Link>
           </div>
           
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -40,12 +41,12 @@ const Dashboard: React.FC = () => {
             <p className="text-gray-600 mb-4">
               View and manage company announcements and important notices.
             </p>
-            <a
-              href="/notices"
+            <Link
+              to="/notices"
               className="inline-block bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
             >
               View Notices
-            </a>
+            </Link>
           </div>
           
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -53,32 +54,16 @@ const Dashboard: React.FC = () => {
             <p className="text-gray-600 mb-4">
               Generate, view, and manage employee identification cards.
             </p>
-            <a
-              href="/id-card"
+            <Link
+              to="/id-card"
               className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
             >
               Manage ID Cards
-            </a>
+            </Link>
           </div>
         </div>
         
-        <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-          <div className="space-y-3">
-            <div className="border-l-4 border-blue-500 pl-4">
-              <p className="text-sm text-gray-600">Today, 2:30 PM</p>
-              <p className="text-gray-900">New employee John Doe added to system</p>
-            </div>
-            <div className="border-l-4 border-green-500 pl-4">
-              <p className="text-sm text-gray-600">Today, 1:15 PM</p>
-              <p className="text-gray-900">Notice "System Maintenance" published</p>
-            </div>
-            <div className="border-l-4 border-purple-500 pl-4">
-              <p className="text-sm text-gray-600">Today, 11:45 AM</p>
-              <p className="text-gray-900">ID card generated for employee EMP001</p>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );
@@ -112,27 +97,29 @@ const DynamicPathRenderer: React.FC = () => {
 // Main App component with React Router
 const App: React.FC = () => {
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        {/* <Navigation /> */}
-        <Routes>
-          {/* Default route redirects to dashboard */}
-          <Route path="/" element={<Dashboard />} />
-          
-          {/* Specific routes for each page */}
-          <Route path="/search-members" element={<SearchMembers />} />
-          <Route path="/notices" element={<Notices />} />
-          <Route path="/id-card" element={<IdCard />} />
-          <Route path="/id-card/:id" element={<IdCard />} />
-          
-          {/* Alternative: Dynamic path renderer */}
-          <Route path="/dynamic/*" element={<DynamicPathRenderer />} />
-          
-          {/* Catch-all route for 404 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </Router>
+    <QueryProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          {/* <Navigation /> */}
+          <Routes>
+            {/* Default route redirects to dashboard */}
+            <Route path="/" element={<Dashboard />} />
+            
+            {/* Specific routes for each page */}
+            <Route path="/search-members" element={<SearchMembers />} />
+            <Route path="/notices" element={<Notices />} />
+            <Route path="/id-card" element={<IdCard />} />
+            <Route path="/id-card/:employeeId" element={<IdCard />} />
+            
+            {/* Alternative: Dynamic path renderer */}
+            <Route path="/dynamic/*" element={<DynamicPathRenderer />} />
+            
+            {/* Catch-all route for 404 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    </QueryProvider>
   );
 };
 

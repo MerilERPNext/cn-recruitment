@@ -1,3 +1,13 @@
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useCurrentEmployeeIdCard, useEmployeeIdCard } from '../hooks/useEmployee';
+import { EmployeeIdCard } from '../types/employee';
+import { 
+  generateEmployeeQRCodeURL, 
+  formatDate, 
+  getDefaultAvatarURL 
+} from '../utils/qrCodeUtils';
+
 // Icon Components
 const BackIcon = () => (
   <svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
@@ -23,6 +33,8 @@ const ShareIcon = () => (
   </svg>
 );
 
+
+
 // Header Component
 const Header = ({ title, onBackClick, onMailClick }: any) => (
   <header className="bg-white shadow-sm">
@@ -45,14 +57,40 @@ const Header = ({ title, onBackClick, onMailClick }: any) => (
 );
 
 // Employee Avatar Component
-const EmployeeAvatar = ({ imageUrl, name, size = "h-32 w-32" }: any) => (
-  <div 
-    className={`bg-center bg-no-repeat aspect-square bg-cover rounded-full ${size} border-4 border-white shadow-md`}
-    style={{ backgroundImage: `url("${imageUrl}")` }}
-    role="img"
-    aria-label={`${name}'s profile picture`}
-  />
-);
+const EmployeeAvatar = ({ imageUrl, name, size = "h-32 w-32" }: { imageUrl?: string; name: string; size?: string }) => {
+  const [imageSrc, setImageSrc] = useState<string>(imageUrl || getDefaultAvatarURL(name));
+  const [imageError, setImageError] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (imageUrl && imageUrl !== imageSrc) {
+      setImageSrc(imageUrl);
+      setImageError(false);
+    }
+  }, [imageUrl]);
+
+  const handleImageError = () => {
+    if (!imageError) {
+      setImageError(true);
+      setImageSrc(getDefaultAvatarURL(name));
+    }
+  };
+
+  return (
+    <div 
+      className={`bg-center bg-no-repeat aspect-square bg-cover rounded-full ${size} border-4 border-white shadow-md overflow-hidden`}
+      role="img"
+      aria-label={`${name}'s profile picture`}
+    >
+      <img
+        src={imageSrc}
+        alt={`${name}'s profile picture`}
+        className="w-full h-full object-cover"
+        onError={handleImageError}
+        loading="lazy"
+      />
+    </div>
+  );
+};
 
 // Employee Info Row Component
 const InfoRow = ({ label, value, isLast = false }: any) => (
@@ -63,15 +101,20 @@ const InfoRow = ({ label, value, isLast = false }: any) => (
 );
 
 // QR Code Component
-const QRCode = ({ src, alt = "QR Code" }: any) => (
-  <div className="mt-8 flex justify-center">
-    <img 
-      alt={alt} 
-      className="rounded-lg shadow" 
-      src={src}
-    />
-  </div>
-);
+const QRCode = ({ employee, alt = "QR Code" }: { employee: EmployeeIdCard; alt?: string }) => {
+  const qrCodeUrl = generateEmployeeQRCodeURL(employee, 200);
+  
+  return (
+    <div className="mt-8 flex justify-center">
+      <img 
+        alt={alt} 
+        className="rounded-lg shadow w-48 h-48" 
+        src={qrCodeUrl}
+        loading="lazy"
+      />
+    </div>
+  );
+};
 
 // Action Button Component
 const ActionButton = ({ 
@@ -99,26 +142,38 @@ const ActionButton = ({
 };
 
 // Employee Card Component
-const EmployeeCard = ({ employee }: any) => (
+const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
   <div className="bg-gray-100 rounded-xl shadow-lg p-6">
     <div className="flex flex-col items-center text-center mb-6">
       <EmployeeAvatar 
         imageUrl={employee.avatar}
-        name={employee.name}
+        name={employee.employee_name}
       />
-      <h2 className="text-gray-800 text-2xl font-bold mt-4">{employee.name}</h2>
+      <h2 className="text-gray-800 text-2xl font-bold mt-4">{employee.employee_name}</h2>
       <p className="text-gray-600 text-md">{employee.department} Department</p>
-      <p className="text-blue-500 text-sm font-medium mt-1">ID: {employee.id}</p>
+      <p className="text-blue-500 text-sm font-medium mt-1">ID: {employee.employee_number || employee.id}</p>
+      {employee.designation && (
+        <p className="text-gray-500 text-sm">{employee.designation}</p>
+      )}
     </div>
     
     <div className="space-y-3">
-      <InfoRow label="Employee ID" value={employee.id} />
+      <InfoRow label="Employee ID" value={employee.employee_number || employee.id} />
       <InfoRow label="Department" value={employee.department} />
-      <InfoRow label="Location" value={employee.location} />
-      <InfoRow label="Start Date" value={employee.startDate} isLast={true} />
+      <InfoRow label="Location" value={employee.location || 'Not Specified'} />
+      <InfoRow label="Start Date" value={formatDate(employee.startDate)} />
+      {employee.designation && (
+        <InfoRow label="Designation" value={employee.designation} />
+      )}
+      {employee.contact && (
+        <InfoRow label="Contact" value={employee.contact} />
+      )}
+      {employee.email && (
+        <InfoRow label="Email" value={employee.email} isLast={true} />
+      )}
     </div>
     
-    <QRCode src={employee.qrCode} alt={`QR Code for ${employee.name}`} />
+    <QRCode employee={employee} alt={`QR Code for ${employee.employee_name}`} />
   </div>
 );
 
@@ -142,38 +197,117 @@ const ActionButtons = ({ onDownload, onShare }: any) => (
   </div>
 );
 
+// Loading Component
+const LoadingCard = () => (
+  <div className="bg-gray-100 rounded-xl shadow-lg p-6">
+    <div className="flex flex-col items-center text-center mb-6">
+      <div className="h-32 w-32 bg-gray-300 rounded-full animate-pulse"></div>
+      <div className="h-6 bg-gray-300 rounded mt-4 w-48 animate-pulse"></div>
+      <div className="h-4 bg-gray-300 rounded mt-2 w-32 animate-pulse"></div>
+    </div>
+    <div className="space-y-3">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="flex justify-between items-center py-3">
+          <div className="h-4 bg-gray-300 rounded w-24 animate-pulse"></div>
+          <div className="h-4 bg-gray-300 rounded w-32 animate-pulse"></div>
+        </div>
+      ))}
+    </div>
+    <div className="mt-8 flex justify-center">
+      <div className="w-48 h-48 bg-gray-300 rounded-lg animate-pulse"></div>
+    </div>
+  </div>
+);
+
+// Error Component
+const ErrorCard = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+  <div className="bg-red-50 rounded-xl shadow-lg p-6 text-center">
+    <div className="text-red-600 mb-4">
+      <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+      </svg>
+    </div>
+    <h3 className="text-lg font-semibold text-red-800 mb-2">Unable to Load Employee Data</h3>
+    <p className="text-red-600 mb-4">{message}</p>
+    <button 
+      onClick={onRetry}
+      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+    >
+      Try Again
+    </button>
+  </div>
+);
+
 // Main App Component
-const EmployeeIDApp = () => {
-  // Employee data - in a real app, this would come from props or API
-  const employee = {
-    id: "123456789",
-    name: "Sophia Bennett",
-    department: "Marketing",
-    location: "New York",
-    startDate: "2022-08-15",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCV2Y43OB3dV82n4eGcpbT7CPZEBn9a-6hbfsWDfdyX2XJH0nakGhxsErw6PWiUfXqg_ytS3LWyf-CbJ84vjHjMy_wlhqjMUfUzz017UieyXoYrewWzNWeYZ5nHY0ZcvOceE2EZe9GB_x9W_EGUwdpWGK-hP5rFIXsvbhwFb_3SH3QK6p7JlV6adRMwFOADDJ2w5hLhKddDKhtNNFE-v6k1d-8c1uuv2I6CQMLw2D1t1w_LktPQCEPUS311w7SFqKUocKX0lEQ1vmYH",
-    qrCode: "https://lh3.googleusercontent.com/aida-public/AB6AXuCAhF8eWF8UImiHiAxWAkBumZ3P0DF-2snN2VlGEGg9SLjmBfE5BHcUxefknmc49veiWfAVUcEOwq4cJVlbQt3sRHtfLdoHGgF3MtZfLInqhU60yUvjE21VFx8bP3Jgl1NmDgV0DlZcXBoSWArVM6Lm4YDkDsJWzA8J48MCKZ0AFdTdl6Ep7T000Yn1Trvqezv7c2xezA80XvR9ac44ImTetKZRxmJ2I-ZYM2AFU-gdRAug6YIOirVvOEL-Gs4rYRdEgOuGTVAzHryF"
-  };
+const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
+  // Get employee ID from router params if not provided as prop
+  const params = useParams<{ employeeId: string }>();
+  const targetEmployeeId = employeeId || params.employeeId;
+  
+  // Use specific employee if ID is provided, otherwise use current employee
+  const { 
+    data: currentEmployee, 
+    isLoading: isLoadingCurrent, 
+    error: currentError,
+    refetch: refetchCurrent 
+  } = useCurrentEmployeeIdCard();
+  
+  // Use specific employee if ID is provided
+  const { 
+    data: specificEmployee, 
+    isLoading: isLoadingSpecific, 
+    error: specificError,
+    refetch: refetchSpecific 
+  } = useEmployeeIdCard(targetEmployeeId || null);
+
+  // Determine which data to use based on whether employeeId param is provided
+  const employee = targetEmployeeId ? specificEmployee : currentEmployee;
+  const isLoading = targetEmployeeId ? isLoadingSpecific : isLoadingCurrent;
+  const error = targetEmployeeId ? specificError : currentError;
+  const refetch = targetEmployeeId ? refetchSpecific : refetchCurrent;
 
   // Event handlers
   const handleBackClick = () => {
     console.log('Back button clicked');
-    // Handle navigation back
+    window.history.back();
   };
 
   const handleMailClick = () => {
-    console.log('Mail button clicked');
-    // Handle mail action
+    if (employee?.email) {
+      window.location.href = `mailto:${employee.email}`;
+    }
   };
 
   const handleDownload = () => {
-    console.log('Download button clicked');
-    // Handle download action
+    if (employee) {
+      // Create a canvas to render the ID card for download
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // This is a simplified version - you might want to use html2canvas or similar library
+        const element = document.querySelector('[data-id-card]') as HTMLElement;
+        if (element) {
+          // Using html2canvas would be better, but for now just trigger download of current page
+          window.print();
+        }
+      }
+    }
   };
 
   const handleShare = () => {
-    console.log('Share button clicked');
-    // Handle share action
+    if (employee && navigator.share) {
+      navigator.share({
+        title: `${employee.employee_name} - Employee ID Card`,
+        text: `Employee: ${employee.employee_name}\nDepartment: ${employee.department}\nID: ${employee.employee_number || employee.id}`,
+        url: window.location.href
+      }).catch(console.error);
+    } else {
+      // Fallback: copy to clipboard
+      const shareText = `Employee: ${employee?.employee_name}\nDepartment: ${employee?.department}\nID: ${employee?.employee_number || employee?.id}`;
+      navigator.clipboard.writeText(shareText).then(() => {
+        alert('Employee information copied to clipboard!');
+      }).catch(console.error);
+    }
   };
 
   return (
@@ -188,12 +322,25 @@ const EmployeeIDApp = () => {
       />
       
       <main className="flex-1 overflow-y-auto p-6 bg-white">
-        <div className="mx-auto max-w-md">
-          <EmployeeCard employee={employee} />
-          <ActionButtons 
-            onDownload={handleDownload}
-            onShare={handleShare}
-          />
+        <div className="mx-auto max-w-md" data-id-card>
+          {isLoading && <LoadingCard />}
+          
+          {error && (
+            <ErrorCard 
+              message={error.message || 'Failed to load employee data'} 
+              onRetry={() => refetch()} 
+            />
+          )}
+          
+          {employee && !isLoading && !error && (
+            <>
+              <EmployeeCard employee={employee} />
+              <ActionButtons 
+                onDownload={handleDownload}
+                onShare={handleShare}
+              />
+            </>
+          )}
         </div>
       </main>
     </div>

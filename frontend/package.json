@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build --base=/assets/recruitment/webapp/ && yarn copy-html-entry",
     "lint": "eslint .",
     "preview": "vite preview",
-    "copy-html-entry": "cp ../recruitment/public/webapp/index.html ../recruitment/www/search-members.html && cp ../recruitment/public/webapp/index.html ../recruitment/www/notices.html && cp ../recruitment/public/webapp/index.html ../recruitment/www/id-card.html && cp ../recruitment/public/webapp/index.html ../recruitment/www/index.html"
+    "copy-html-entry": "cp ../recruitment/public/webapp/index.html ../recruitment/www/webapp.html"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
