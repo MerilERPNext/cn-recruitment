@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import React, { JSX, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import InterviewPage from './interview';
+import { FaHome } from 'react-icons/fa';
+import { MdBadge, MdWork, MdNotifications, MdSearch } from 'react-icons/md';
+import { IoIosArrowBack } from 'react-icons/io';
 
 // Types and Interfaces
 interface Referral {
@@ -15,7 +19,8 @@ interface Referral {
 
 interface NavItem {
   name: string;
-  icon: string;
+  icon: JSX.Element;
+  route: string;
   active?: boolean;
 }
 
@@ -25,7 +30,8 @@ const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedReferrals, setSelectedReferrals] = useState<Set<number>>(new Set());
-  const [activeTab, setActiveTab] = useState<TabName>('Referrals');
+  const storedTab = sessionStorage.getItem('activeTab') as TabName | null;
+  const [activeTab, setActiveTab] = useState<TabName>(storedTab || 'Referrals');
 
   const referrals: Referral[] = [
     {
@@ -72,31 +78,32 @@ const RecruitmentApp: React.FC = () => {
 
   const tabs: TabName[] = ['Referrals', 'Interviews', 'Requirements', 'Requisitions'];
   const navItems: (NavItem & { route?: string })[] = [
-    { name: 'Home', icon: 'home', route: '/' },
-    { name: 'IDs', icon: 'badge', route: '/id-card' },
-    { name: 'Recruitment', icon: 'work', active: true, route: '/recruitment' },
-    { name: 'Alerts', icon: 'notifications', route: '/alerts' },
-    { name: 'Search', icon: 'search', route: '/search' }
+    { name: 'Home', icon: <FaHome />, route: '/' },
+    { name: 'IDs', icon: <MdBadge />, route: '/id-card' },
+    { name: 'Recruitment', icon: <MdWork />, active: true, route: '/recruitment' },
+    { name: 'Alerts', icon: <MdNotifications />, route: '/alerts' },
+    { name: 'Search', icon: <MdSearch />, route: '/search' },
   ];
+
 
   const handleCheckboxChange = (id: number): void => {
     const newSelected = new Set(selectedReferrals);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    newSelected.has(id) ? newSelected.delete(id) : newSelected.add(id);
     setSelectedReferrals(newSelected);
   };
+  const handleTabChange = (tab: TabName) => {
+    setActiveTab(tab);
+    sessionStorage.setItem('activeTab', tab);
+  };
 
-  const filteredReferrals: Referral[] = referrals.filter(referral =>
+  const filteredReferrals = referrals.filter((referral) =>
     referral.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     referral.source.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="relative flex size-full min-h-screen flex-col justify-between group/design-root overflow-x-hidden bg-white" style={{ fontFamily: 'Inter, "Noto Sans", sans-serif' }}>
-      {/* Custom CSS Variables and Styles */}
+    <div className="flex flex-col min-h-screen bg-white">
       <style>{`
         :root {
           --primary-color: #0c7ff2;
@@ -118,171 +125,144 @@ const RecruitmentApp: React.FC = () => {
           justify-content: center;
           align-items: center;
           font-size: 10px;
-          line-height: 1;
         }
         .material-icons {
           font-family: 'Material Icons';
-          font-weight: normal;
-          font-style: normal;
           font-size: 24px;
-          display: inline-block;
-          line-height: 1;
-          text-transform: none;
-          letter-spacing: normal;
-          word-wrap: normal;
-          white-space: nowrap;
-          direction: ltr;
-          -webkit-font-smoothing: antialiased;
-          text-rendering: optimizeLegibility;
-          -moz-osx-font-smoothing: grayscale;
-          font-feature-settings: 'liga';
         }
       `}</style>
 
-      <div className="flex-grow">
-        {/* Header */}
-        <header className="sticky top-0 z-10 bg-[var(--background-light)] shadow-sm">
-          <div className="flex items-center p-4 pb-2 justify-between">
-            <button 
-              onClick={() => navigate('/')}
-              className="text-[var(--text-primary)] flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-[var(--background-medium)] transition-colors"
-            >
-              <span className="material-icons">arrow_back_ios_new</span>
-            </button>
-            <h1 className="text-[var(--text-primary)] text-xl font-semibold leading-tight tracking-tight flex-1 text-center">
-              Recruitment
-            </h1>
-            <div className="size-10"></div>
-          </div>
-
-          {/* Navigation Tabs */}
-          <nav className="pb-0">
-            <div className="flex border-b border-[var(--border-light)] px-2 gap-x-1 sm:gap-x-2 overflow-x-auto whitespace-nowrap">
-              {tabs.map((tab) => (
-                <a
-                  key={tab}
-                  href="#"
-                  onClick={(e: React.MouseEvent) => {
-                    e.preventDefault();
-                    setActiveTab(tab);
-                  }}
-                  className={`flex flex-col items-center justify-center border-b-[3px] pb-3 pt-3 px-3 flex-1 transition-colors ${
-                    activeTab === tab
-                      ? 'border-b-[var(--primary-color)] text-[var(--primary-color)]'
-                      : 'border-b-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-b-[var(--primary-color)]'
-                  }`}
-                >
-                  <p className="text-sm font-medium leading-normal">{tab}</p>
-                </a>
-              ))}
-            </div>
-          </nav>
-        </header>
-
-        {/* Main Content */}
-        <main className="px-4 pt-6 pb-20">
-          {/* Section Header */}
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-[var(--text-primary)] text-lg font-semibold leading-tight">
-              {activeTab}
-            </h2>
-            <div className="flex items-center gap-2">
-              <button className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors">
-                <span className="material-icons">delete</span>
-              </button>
-              <button className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors">
-                <span className="material-icons">more_vert</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Search and Filter */}
-          <div className="mb-4 flex gap-2">
-            <div className="relative flex-grow">
-              <span className="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]">
-                search
-              </span>
-              <input
-                className="w-full rounded-lg border border-[var(--border-light)] bg-[var(--background-light)] py-2.5 pl-10 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)]"
-                placeholder="Search referrals..."
-                type="text"
-                value={searchTerm}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <button className="flex items-center justify-center rounded-lg border border-[var(--border-light)] bg-[var(--background-light)] px-3 text-[var(--text-secondary)] hover:bg-[var(--background-medium)] transition-colors">
-              <span className="material-icons">filter_list</span>
-            </button>
-          </div>
-
-          {/* Referrals List */}
-          <div className="space-y-3">
-            {filteredReferrals.map((referral) => (
-              <div
-                key={referral.id}
-                className="flex items-center gap-3 bg-[var(--background-light)] p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow border border-transparent hover:border-[var(--border-light)] cursor-pointer"
-              >
-                <input
-                  className="checkbox-custom size-4 rounded border-[var(--border-light)] text-[var(--primary-color)] focus:ring-[var(--primary-color)] appearance-none shrink-0"
-                  type="checkbox"
-                  checked={selectedReferrals.has(referral.id)}
-                  onChange={() => handleCheckboxChange(referral.id)}
-                />
-                <div
-                  className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-12 w-12 shrink-0"
-                  style={{ backgroundImage: `url("${referral.avatar}")` }}
-                ></div>
-                <div className="flex-grow min-w-0">
-                  <p className="text-[var(--text-primary)] text-base font-medium leading-tight line-clamp-1">
-                    {referral.title}
-                  </p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                    Source: {referral.source}
-                  </p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                    Submitted: {referral.submitted}
-                  </p>
-                  <div className="flex items-center text-xs text-[var(--text-secondary)] mt-1">
-                    <span className={`material-icons text-sm mr-1 ${referral.statusColor}`}>
-                      {referral.statusIcon}
-                    </span>
-                    <span>Status: {referral.status}</span>
-                  </div>
-                </div>
-                <span className="material-icons text-[var(--text-secondary)]">chevron_right</span>
-              </div>
-            ))}
-          </div>
-        </main>
-      </div>
-
-      {/* Footer Navigation */}
-      <footer className="sticky bottom-0 z-10 bg-[var(--background-light)] shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-around border-t border-[var(--border-light)] px-2 py-2 sm:px-4">
-          {navItems.map((item) => (
-            <button
-              key={item.name}
-              onClick={() => item.route && navigate(item.route)}
-              className={`flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-colors group ${
-                item.active
-                  ? 'text-[var(--primary-color)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--primary-color)]'
-              }`}
-            >
-              <span className="material-icons">{item.icon}</span>
-              <span className="text-xs font-medium">{item.name}</span>
-            </button>
-          ))}
+      {/* Header */}
+      <header className="sticky top-0 bg-white shadow-sm">
+        <div className="flex items-center p-1 justify-between">
+          <button onClick={() => navigate('/')} className="text-[var(--text-primary)] rounded-full hover:bg-gray-100 p-2">
+            <span className="text-xl font-semibold justify-center px-4 pb-3  text-slate-90"><IoIosArrowBack /></span>
+          </button>
+          <h1 className="text-xl font-semibold justify-center px-4  text-slate-900 text-center">{activeTab}</h1>
+          <div className="w-8"></div>
         </div>
-        <div className="h-safe-area-bottom bg-[var(--background-light)]"></div>
+
+        {/* Tabs */}
+        <nav className="border-b border-[var(--border-light)] px-2 flex overflow-x-auto">
+          {tabs.map((tab) => (
+            <a
+              key={tab}
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                handleTabChange(tab);
+              }}
+              className={`px-4 py-3 border-b-2 text-sm font-medium ${activeTab === tab
+                  ? 'border-[var(--primary-color)] text-[var(--primary-color)]'
+                  : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)]'
+                }`}
+            >
+              {tab}
+            </a>
+          ))}
+        </nav>
+
+      </header>
+
+      {/* Main Content */}
+      <main className="p-4 flex-grow">
+        {(() => {
+          switch (activeTab) {
+            case 'Interviews':
+              return <InterviewPage />;
+
+            case 'Referrals':
+              return (
+                <>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold">Referrals</h2>
+                    <div className="flex gap-2">
+                      <button className="text-gray-500 hover:text-blue-500">
+                        <span className="material-icons">delete</span>
+                      </button>
+                      <button className="text-gray-500 hover:text-blue-500">
+                        <span className="material-icons">more_vert</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mb-4 flex gap-2">
+                    <div className="relative flex-grow">
+                      <span className="material-icons absolute left-3 top-2.5 text-gray-400">search</span>
+                      <input
+                        className="w-full pl-10 pr-3 py-2 border rounded-lg text-sm"
+                        placeholder="Search referrals..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    <button className="border px-3 rounded-lg text-gray-500 hover:bg-gray-100">
+                      <span className="material-icons">filter_list</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {filteredReferrals.map((referral) => (
+                      <div key={referral.id} className="flex gap-3 p-3 border rounded-lg hover:shadow">
+                        <input
+                          type="checkbox"
+                          className="checkbox-custom h-4 w-4"
+                          checked={selectedReferrals.has(referral.id)}
+                          onChange={() => handleCheckboxChange(referral.id)}
+                        />
+                        <div
+                          className="w-12 h-12 rounded-full bg-cover bg-center"
+                          style={{ backgroundImage: `url(${referral.avatar})` }}
+                        ></div>
+                        <div className="flex-grow">
+                          <p className="font-medium">{referral.title}</p>
+                          <p className="text-xs text-gray-500">Source: {referral.source}</p>
+                          <p className="text-xs text-gray-500">Submitted: {referral.submitted}</p>
+                          <div className="text-xs text-gray-500 flex items-center gap-1">
+                            <span className={`material-icons ${referral.statusColor}`}>{referral.statusIcon}</span>
+                            {referral.status}
+                          </div>
+                        </div>
+                        <span className="material-icons text-gray-400">chevron_right</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+
+            case 'Requirements':
+              return <div className="text-center text-gray-500">Requirements content coming soon...</div>;
+
+            case 'Requisitions':
+              return <div className="text-center text-gray-500">Requisitions content coming soon...</div>;
+
+            default:
+              return null;
+          }
+        })()}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t sticky bottom-0 flex justify-around py-2">
+        {navItems.map((item) => (
+          <button
+            key={item.name}
+            onClick={() => item.route && navigate(item.route)}
+            className={`flex flex-col items-center text-sm ${item.active
+                ? 'text-[var(--primary-color)]'
+                : 'text-gray-500 hover:text-[var(--primary-color)]'
+              }`}
+          >
+            <span className="material-icons">{item.icon}</span>
+            {item.name}
+          </button>
+        ))}
       </footer>
 
-      {/* Floating Action Button */}
-      <button className="fixed bottom-24 right-4 z-20 flex items-center justify-center rounded-full bg-[var(--primary-color)] p-4 text-white shadow-lg hover:bg-blue-600 transition-colors">
-        <span className="material-icons">add</span>
-      </button>
+
+
     </div>
   );
 };
 
-export default RecruitmentApp; 
+export default RecruitmentApp;
