@@ -6,7 +6,7 @@ import Notices from './components/Notices';
 import IdCard from './components/IdCard';
 import { useRouteInfo } from './hooks/useRouter';
 import { QueryProvider } from './providers/QueryProvider';
-// import RequisitionDetails from './components/RequisitionDetails';
+import RequisitionDetails from './components/RequisitionDetails';
 import './App.css';
 
 // Home/Dashboard component
@@ -86,7 +86,7 @@ const App: React.FC = () => {
             <Route path="/webapp/notices" element={<Notices />} />
             <Route path="/webapp/id-card" element={<IdCard />} />
             <Route path="/webapp/id-card/:employeeId" element={<IdCard />} />
-            {/* <Route path="/webapp/reqisition-details" element={<RequisitionDetails/>} /> */}
+            <Route path="/webapp/requisitions/:requisitionId" element={<RequisitionDetails/>} />
             
             {/* Catch-all route for 404 */}
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
