@@ -8,7 +8,7 @@ import { useCurrentPath, useRouteInfo } from './hooks/useRouter';
 import { QueryProvider } from './providers/QueryProvider';
 import './App.css';
 import RecruitmentApp from './components/RecruitmentApp';
-import InterviewPage from './components/interveiwDetails';
+import InterviewPage from './components/InterveiwDetails';
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
