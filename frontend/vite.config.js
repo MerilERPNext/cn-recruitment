@@ -10,8 +10,7 @@ export default defineConfig({
     plugins: [react()],
     server: {
         port: 8080,
-        proxy: proxyOptions,
-        historyApiFallback: true
+        proxy: proxyOptions
     },
     resolve: {
         alias: {
