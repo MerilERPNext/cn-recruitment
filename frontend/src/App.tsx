@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
               Streamline your recruitment process and manage job applicants with ease.
             </p>
             <Link
-              to="/recruitment-app"
+              to="/webapp/recruitment-app"
               className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
             >
               Recruitment-app
@@ -100,43 +100,35 @@ const DynamicPathRenderer: React.FC = () => {
     }
   };
 
-  return (
-    <div>
-      {/* <Navigation /> */}
-      {renderComponentByPath()}
-    </div>
-  );
+  return <div>{renderComponentByPath()}</div>;
 };
 
-// Main App component with React Router
 const App: React.FC = () => {
   return (
     <QueryProvider>
       <Router>
         <div className="min-h-screen bg-gray-50">
-          {/* <Navigation /> */}
           <Routes>
-            {/* Default route redirects to dashboard */}
-            <Route path="/" element={<Dashboard />} />
+            {/* Default route */}
+            <Route path="/webapp/" element={<Dashboard />} />
 
-            {/* Specific routes for each page */}
-            <Route path="/search-members" element={<SearchMembers />} />
-            <Route path="/notices" element={<Notices />} />
-            <Route path="/id-card" element={<IdCard />} />
-            <Route path="/id-card/:employeeId" element={<IdCard />} />
+            {/* Specific routes */}
+            <Route path="/webapp/search-members" element={<SearchMembers />} />
+            <Route path="/webapp/notices" element={<Notices />} />
+            <Route path="/webapp/id-card" element={<IdCard />} />
+            <Route path="/webapp/id-card/:employeeId" element={<IdCard />} />
+            <Route path="/webapp/dynamic/*" element={<DynamicPathRenderer />} />
+            <Route path="/webapp/recruitment-app/*" element={<RecruitmentApp />} />
+            <Route path="/webapp/recruitment-app/interview-details/*" element={<InterviewPage />} />
 
-            {/* Alternative: Dynamic path renderer */}
-            <Route path="/dynamic/*" element={<DynamicPathRenderer />} />
-            <Route path="/recruitment-app/*" element={<RecruitmentApp />} />
-            <Route path="/recruitment-app/interview-details/*" element={<InterviewPage />} />
-
-            {/* Catch-all route for 404 */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
         </div>
       </Router>
     </QueryProvider>
   );
 };
+
 
 export default App;

@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const InterviewPage = () => {
   const navigate = useNavigate();
   const handleGoToInterview = () => {
-    navigate('/recruitment-app/interview-details');
+    navigate('/webapp/recruitment-app/interview-details');
   };
   // const handleInterviewFeedback = () => {
   //   navigate('/recruitment/interview-feedback-form');
