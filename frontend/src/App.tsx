@@ -9,6 +9,7 @@ import { QueryProvider } from './providers/QueryProvider';
 import './App.css';
 import RecruitmentApp from './components/RecruitmentApp';
 import InterviewPage from './components/InterveiwDetails';
+import AddNewReferral from './components/AddNewReferral';
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -100,9 +101,9 @@ const App: React.FC = () => {
             <Route path="/webapp/notices" element={<Notices />} />
             <Route path="/webapp/id-card" element={<IdCard />} />
             <Route path="/webapp/id-card/:employeeId" element={<IdCard />} />
-            <Route path="/webapp/dynamic/*" element={<DynamicPathRenderer />} />
             <Route path="/webapp/recruitment-app/*" element={<RecruitmentApp />} />
             <Route path="/webapp/recruitment-app/interview-details/*" element={<InterviewPage />} />
+            <Route path="/webapp/recruitment-app/add-new-referral/*" element={<AddNewReferral />} />
 
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
