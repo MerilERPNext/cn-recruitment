@@ -1,4 +1,69 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  useAllNotices,
+  useUnreadNotices,
+  useArchivedNotices,
+  useUnreadNoticesCount,
+  useMarkNoticeAsRead,
+  useArchiveNotice,
+  useDismissNotice,
+} from '../hooks/useNotices';
+import type { Notice } from '../types/notice';
+
+// Type definitions for component props
+interface HeaderProps {
+  title: string;
+  onBackClick: () => void;
+}
+
+interface NavTabProps {
+  label: string;
+  isActive: boolean;
+  hasNotification?: boolean;
+  onClick: () => void;
+}
+
+interface NavigationProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  unreadCount: number;
+}
+
+interface NoticeIconProps {
+  icon: React.ComponentType;
+  color: string;
+  bgColor: string;
+}
+
+interface ActionButtonProps {
+  children: React.ReactNode;
+  onClick: () => void;
+  variant?: 'primary' | 'danger' | 'secondary';
+  className?: string;
+  disabled?: boolean;
+}
+
+interface NoticeCardProps {
+  notice: Notice;
+  onActionClick: (noticeId: string, actionType: string, silent?: boolean) => void;
+  isLoading?: boolean;
+}
+
+interface ErrorMessageProps {
+  message: string;
+  onRetry: () => void;
+}
+
+
+
+interface NoticesListProps {
+  notices?: Notice[];
+  onActionClick: (noticeId: string, actionType: string, silent?: boolean) => void;
+  isLoading: boolean;
+  error: Error | null;
+  onRetry: () => void;
+  activeTab: string;
+}
 
 // Icon Components using SVGs
 const BackIcon = () => (
@@ -43,8 +108,14 @@ const SearchIcon = () => (
   </svg>
 );
 
+const LoadingIcon = () => (
+  <svg className="animate-spin" fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg">
+    <path d="M232,128a104,104,0,0,1-208,0c0-41,23.81-78.36,60.66-95.27a8,8,0,0,1,6.68,14.54C60.15,61.59,40,93.27,40,128a88,88,0,0,0,176,0c0-34.73-20.15-66.41-51.34-80.73a8,8,0,0,1,6.68-14.54C208.19,49.64,232,87,232,128Z"></path>
+  </svg>
+);
+
 // Header Component
-const Header = ({ title, onBackClick }: any) => (
+const Header = ({ title, onBackClick }: HeaderProps) => (
   <header className="bg-white shadow-sm sticky top-0 z-10">
     <div className="flex items-center p-4 pb-3 justify-between">
       <button
@@ -61,7 +132,7 @@ const Header = ({ title, onBackClick }: any) => (
 );
 
 // Navigation Tab Component
-const NavTab = ({ label, isActive, hasNotification, onClick }: any) => (
+const NavTab = ({ label, isActive, hasNotification, onClick }: NavTabProps) => (
   <a
     className={`flex flex-col items-center justify-center border-b-[3px] pb-3 pt-3 flex-1 relative cursor-pointer ${
       isActive
@@ -78,7 +149,7 @@ const NavTab = ({ label, isActive, hasNotification, onClick }: any) => (
 );
 
 // Navigation Component
-const Navigation = ({ activeTab, onTabChange }: any) => (
+const Navigation = ({ activeTab, onTabChange, unreadCount }: NavigationProps) => (
   <nav className="pb-0">
     <div className="flex border-b border-gray-200 px-4 gap-4">
       <NavTab
@@ -89,7 +160,7 @@ const Navigation = ({ activeTab, onTabChange }: any) => (
       <NavTab
         label="Unread"
         isActive={activeTab === 'unread'}
-        hasNotification={true}
+        hasNotification={unreadCount > 0}
         onClick={() => onTabChange('unread')}
       />
       <NavTab
@@ -107,25 +178,26 @@ const UnreadIndicator = ({ color = 'bg-blue-500' }) => (
 );
 
 // Notice Icon Component
-const NoticeIcon = ({ icon: Icon, color, bgColor }: any) => (
+const NoticeIcon = ({ icon: Icon, color, bgColor }: NoticeIconProps) => (
   <div className={`${color} flex items-center justify-center rounded-full ${bgColor} shrink-0 size-10`}>
     <Icon />
   </div>
 );
 
 // Action Button Component
-const ActionButton = ({ children, onClick, variant = 'primary', className = '' }: any) => {
+const ActionButton = ({ children, onClick, variant = 'primary', className = '', disabled = false }: ActionButtonProps) => {
   const baseClasses = "text-xs font-medium py-1.5 px-3 rounded-md transition-colors";
-  const variantClasses: any = {
-    primary: "bg-blue-500 text-white hover:bg-blue-700",
-    danger: "bg-red-500 text-white hover:bg-red-600",
-    secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300"
+  const variantClasses: Record<string, string> = {
+    primary: "bg-blue-500 text-white hover:bg-blue-700 disabled:bg-blue-300",
+    danger: "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300",
+    secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300 disabled:bg-gray-100"
   };
 
   return (
     <button
-      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+      className={`${baseClasses} ${variantClasses[variant]} ${className} ${disabled ? 'cursor-not-allowed' : ''}`}
       onClick={onClick}
+      disabled={disabled}
     >
       {children}
     </button>
@@ -133,9 +205,9 @@ const ActionButton = ({ children, onClick, variant = 'primary', className = '' }
 };
 
 // Notice Card Component
-const NoticeCard = ({ notice, onActionClick }: any) => {
+const NoticeCard = ({ notice, onActionClick, isLoading = false }: NoticeCardProps) => {
   const getIconComponent = () => {
-    const iconMap: any = {
+    const iconMap: Record<Notice['iconType'], { icon: React.ComponentType; color: string; bgColor: string }> = {
       error: { icon: ErrorIcon, color: 'text-red-500', bgColor: 'bg-red-100' },
       campaign: { icon: CampaignIcon, color: 'text-blue-500', bgColor: 'bg-blue-50' },
       work: { icon: WorkIcon, color: 'text-green-500', bgColor: 'bg-green-100' },
@@ -149,6 +221,17 @@ const NoticeCard = ({ notice, onActionClick }: any) => {
   const iconConfig = getIconComponent();
   const borderColor = notice.priority === 'high' ? 'border-red-200' : 'border-gray-200';
   const unreadColor = notice.priority === 'high' ? 'bg-red-500' : 'bg-blue-500';
+
+  // Auto-mark as read when notice comes into view (for unread notices)
+  useEffect(() => {
+    if (notice.isUnread && !isLoading) {
+      const timer = setTimeout(() => {
+        onActionClick(notice.id, 'mark_as_read', true); // silent = true for auto-marking
+      }, 2000); // Auto-mark as read after 2 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [notice.isUnread, notice.id, onActionClick, isLoading]);
 
   return (
     <div className={`flex items-start gap-3 bg-white p-4 rounded-xl shadow-sm border ${borderColor} relative`}>
@@ -171,9 +254,10 @@ const NoticeCard = ({ notice, onActionClick }: any) => {
         {notice.action && (
           <ActionButton
             variant={notice.action.variant}
-            onClick={() => onActionClick(notice.id, notice.action.type)}
+            onClick={() => onActionClick(notice.id, notice.action!.type)}
+            disabled={isLoading}
           >
-            {notice.action.label}
+            {isLoading ? <LoadingIcon /> : notice.action.label}
           </ActionButton>
         )}
       </div>
@@ -181,123 +265,202 @@ const NoticeCard = ({ notice, onActionClick }: any) => {
   );
 };
 
-// Notices List Component
-const NoticesList = ({ notices, onActionClick }: any) => (
-  <main className="p-4 space-y-3">
-    {notices.map((notice: any) => (
-      <NoticeCard
-        key={notice.id}
-        notice={notice}
-        onActionClick={onActionClick}
-      />
-    ))}
-  </main>
+// Loading Skeleton Component
+const NoticeCardSkeleton = () => (
+  <div className="flex items-start gap-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 animate-pulse">
+    <div className="w-10 h-10 bg-gray-200 rounded-full shrink-0"></div>
+    <div className="flex-grow space-y-2">
+      <div className="flex justify-between items-start">
+        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-3 bg-gray-200 rounded w-12"></div>
+      </div>
+      <div className="space-y-1">
+        <div className="h-3 bg-gray-200 rounded w-full"></div>
+        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+      </div>
+      <div className="h-6 bg-gray-200 rounded w-20"></div>
+    </div>
+  </div>
 );
 
-// Main App Component
-const NoticesApp = () => {
-  const [activeTab, setActiveTab] = useState('all');
+// Error Component
+const ErrorMessage = ({ message, onRetry }: ErrorMessageProps) => (
+  <div className="p-4 text-center">
+    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+      <div className="flex items-center justify-center mb-2">
+        <ErrorIcon />
+      </div>
+      <p className="text-red-700 font-medium mb-2">Error Loading Notices</p>
+      <p className="text-red-600 text-sm mb-4">{message}</p>
+      <button
+        className="bg-red-500 text-white px-4 py-2 rounded-md text-sm hover:bg-red-600 transition-colors"
+        onClick={onRetry}
+      >
+        Retry
+      </button>
+    </div>
+  </div>
+);
 
-  // Sample notices data
-  const allNotices = [
-    {
-      id: 1,
-      title: "Action Required: Overdue Task",
-      message: "Your assigned task \"Finalize Q3 Budget\" is overdue by 2 days.",
-      time: "Now",
-      iconType: "error",
-      isUnread: true,
-      priority: "high",
-      action: { label: "View Task", type: "view_task", variant: "danger" }
-    },
-    {
-      id: 2,
-      title: "Company Announcement",
-      message: "Join us for the all-hands meeting next Monday at 10 AM PST.",
-      time: "1h ago",
-      iconType: "campaign",
-      isUnread: true,
-      priority: "medium",
-      action: { label: "Add to Calendar", type: "add_calendar", variant: "primary" }
-    },
-    {
-      id: 3,
-      title: "Recruitment Update",
-      message: "New candidate applications received for the Software Engineer role.",
-      time: "2d ago",
-      iconType: "work",
-      isUnread: false,
-      priority: "low"
-    },
-    {
-      id: 4,
-      title: "Employee IDs Ready",
-      message: "New employee ID cards are printed and ready for distribution.",
-      time: "1w ago",
-      iconType: "badge",
-      isUnread: false,
-      priority: "low"
-    },
-    {
-      id: 5,
-      title: "Meeting Reminder",
-      message: "Reminder: Upcoming team meeting scheduled for tomorrow at 2 PM.",
-      time: "3w ago",
-      iconType: "event",
-      isUnread: false,
-      priority: "low",
-      action: { label: "Dismiss", type: "dismiss", variant: "secondary" }
-    },
-    {
-      id: 6,
-      title: "Member Search Results",
-      message: "The search results for \"John Doe\" are now available.",
-      time: "1m ago",
-      iconType: "search",
-      isUnread: false,
-      priority: "low"
-    }
-  ];
+// Empty State Component
+const EmptyState = ({ activeTab }: { activeTab: string }) => {
+  const messages: Record<string, string> = {
+    all: "No notices available",
+    unread: "No unread notices",
+    archived: "No archived notices"
+  };
 
-  // Filter notices based on active tab
-  const getFilteredNotices = () => {
+  return (
+    <div className="p-8 text-center">
+      <div className="text-gray-400 mb-4">
+        <CampaignIcon />
+      </div>
+      <p className="text-gray-600 font-medium">{messages[activeTab] || messages.all}</p>
+      <p className="text-gray-500 text-sm mt-1">You're all caught up!</p>
+    </div>
+  );
+};
+
+// Notices List Component
+const NoticesList = ({ notices, onActionClick, isLoading, error, onRetry, activeTab }: NoticesListProps) => {
+  if (error) {
+    return <ErrorMessage message={error.message} onRetry={onRetry} />;
+  }
+
+  if (isLoading) {
+    return (
+      <main className="p-4 space-y-3">
+        {[...Array(3)].map((_, index) => (
+          <NoticeCardSkeleton key={index} />
+        ))}
+      </main>
+    );
+  }
+
+  if (!notices || notices.length === 0) {
+    return <EmptyState activeTab={activeTab} />;
+  }
+
+  return (
+    <main className="p-4 space-y-3">
+      {notices.map((notice: Notice) => (
+        <NoticeCard
+          key={notice.id}
+          notice={notice}
+          onActionClick={onActionClick}
+        />
+      ))}
+    </main>
+  );
+};
+
+// Main component
+const Notices: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'archived'>('all');
+
+  // Use appropriate hook based on active tab
+  const allNoticesQuery = useAllNotices();
+  const unreadNoticesQuery = useUnreadNotices();
+  const archivedNoticesQuery = useArchivedNotices();
+  const unreadCountQuery = useUnreadNoticesCount();
+
+  // Mutation hooks
+  const markAsReadMutation = useMarkNoticeAsRead();
+  const archiveMutation = useArchiveNotice();
+  const dismissMutation = useDismissNotice();
+
+  // Get current data based on active tab
+  const getCurrentQuery = () => {
     switch (activeTab) {
       case 'unread':
-        return allNotices.filter(notice => notice.isUnread);
+        return unreadNoticesQuery;
       case 'archived':
-        return []; // No archived notices in this example
+        return archivedNoticesQuery;
       default:
-        return allNotices;
+        return allNoticesQuery;
     }
   };
+
+  const currentQuery = getCurrentQuery();
+  const notices = currentQuery.data || [];
+  const isLoading = currentQuery.isLoading;
+  const error = currentQuery.error;
+
+  // Auto mark as read when notice is viewed
+  useEffect(() => {
+    if (activeTab === 'unread' && notices.length > 0) {
+      notices.forEach(notice => {
+        if (notice.isUnread) {
+          // Mark as read after 2 seconds of viewing
+          const timer = setTimeout(() => {
+            markAsReadMutation.mutate(notice.id);
+          }, 2000);
+          return () => clearTimeout(timer);
+        }
+      });
+    }
+  }, [notices, activeTab, markAsReadMutation]);
 
   // Event handlers
   const handleBackClick = () => {
     console.log('Back button clicked');
-    // Handle navigation back
+    // Handle navigation back - you can use your router here
+    // Example: router.back() or navigate(-1)
   };
 
-  const handleTabChange = (tab: any) => {
-    setActiveTab(tab);
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab as 'all' | 'unread' | 'archived');
     console.log(`Tab changed to: ${tab}`);
   };
 
-  const handleActionClick = (noticeId: any, actionType: any) => {
-    console.log(`Action clicked: ${actionType} for notice ${noticeId}`);
-    // Handle specific actions based on actionType
-    switch (actionType) {
-      case 'view_task':
-        // Navigate to task view
-        break;
-      case 'add_calendar':
-        // Add event to calendar
-        break;
-      case 'dismiss':
-        // Dismiss notice
-        break;
-      default:
-        break;
+  const handleActionClick = async (noticeId: string, actionType: string, silent = false) => {
+    if (!silent) {
+      console.log(`Action clicked: ${actionType} for notice ${noticeId}`);
     }
+
+    try {
+      switch (actionType) {
+        case 'mark_as_read':
+          await markAsReadMutation.mutateAsync(noticeId);
+          break;
+        case 'view_task':
+          // Mark as read first, then navigate
+          await markAsReadMutation.mutateAsync(noticeId);
+          // Navigate to task view - implement your navigation logic
+          console.log(`Navigating to task for notice ${noticeId}`);
+          break;
+        case 'add_calendar':
+          // Mark as read first, then add to calendar
+          await markAsReadMutation.mutateAsync(noticeId);
+          // Implement calendar integration
+          console.log(`Adding to calendar for notice ${noticeId}`);
+          break;
+        case 'dismiss':
+          await dismissMutation.mutateAsync(noticeId);
+          break;
+        case 'archive':
+          await archiveMutation.mutateAsync(noticeId);
+          break;
+        case 'approve':
+        case 'reject':
+        case 'view_details':
+          // Mark as read first, then handle specific action
+          await markAsReadMutation.mutateAsync(noticeId);
+          // Implement specific action logic
+          console.log(`Handling ${actionType} for notice ${noticeId}`);
+          break;
+        default:
+          console.warn(`Unknown action type: ${actionType}`);
+          break;
+      }
+    } catch (error) {
+      console.error(`Failed to handle action ${actionType} for notice ${noticeId}:`, error);
+      // You might want to show a toast notification here
+    }
+  };
+
+  const handleRetry = () => {
+    currentQuery.refetch();
   };
 
   return (
@@ -317,15 +480,20 @@ const NoticesApp = () => {
         <Navigation 
           activeTab={activeTab}
           onTabChange={handleTabChange}
+          unreadCount={unreadCountQuery.data || 0}
         />
         
         <NoticesList 
-          notices={getFilteredNotices()}
+          notices={notices}
           onActionClick={handleActionClick}
+          isLoading={isLoading}
+          error={error}
+          onRetry={handleRetry}
+          activeTab={activeTab}
         />
       </div>
     </div>
   );
 };
 
-export default NoticesApp;
+export default Notices;

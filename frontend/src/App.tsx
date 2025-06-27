@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-ro
 import SearchMembers from './components/SearchMembers';
 import Notices from './components/Notices';
 import IdCard from './components/IdCard';
-import { useCurrentPath, useRouteInfo } from './hooks/useRouter';
+import { useRouteInfo } from './hooks/useRouter';
 import { QueryProvider } from './providers/QueryProvider';
 import './App.css';
 import RecruitmentApp from './components/RecruitmentApp';
@@ -43,7 +43,7 @@ const Dashboard: React.FC = () => {
               Find and manage employee information quickly and efficiently.
             </p>
             <Link
-              to="/search-members"
+              to="/webapp/search-members"
               className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
             >
               Go to Search
@@ -56,7 +56,7 @@ const Dashboard: React.FC = () => {
               View and manage company announcements and important notices.
             </p>
             <Link
-              to="/notices"
+              to="/webapp/notices"
               className="inline-block bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
             >
               View Notices
@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
               Generate, view, and manage employee identification cards.
             </p>
             <Link
-              to="/id-card"
+              to="/webapp/id-card"
               className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
             >
               Manage ID Cards
@@ -83,25 +83,6 @@ const Dashboard: React.FC = () => {
   );
 };
 
-// Dynamic component renderer based on path (alternative approach)
-const DynamicPathRenderer: React.FC = () => {
-  const currentPath = useCurrentPath();
-
-  const renderComponentByPath = () => {
-    switch (currentPath) {
-      case '/search-members':
-        return <SearchMembers />;
-      case '/notices':
-        return <Notices />;
-      case '/id-card':
-        return <IdCard />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
-  return <div>{renderComponentByPath()}</div>;
-};
 
 const App: React.FC = () => {
   return (
@@ -109,10 +90,12 @@ const App: React.FC = () => {
       <Router>
         <div className="min-h-screen bg-gray-50">
           <Routes>
+
             {/* Default route */}
             <Route path="/webapp/" element={<Dashboard />} />
+            
+            {/* Specific routes for each page */}
 
-            {/* Specific routes */}
             <Route path="/webapp/search-members" element={<SearchMembers />} />
             <Route path="/webapp/notices" element={<Notices />} />
             <Route path="/webapp/id-card" element={<IdCard />} />
@@ -121,7 +104,6 @@ const App: React.FC = () => {
             <Route path="/webapp/recruitment-app/*" element={<RecruitmentApp />} />
             <Route path="/webapp/recruitment-app/interview-details/*" element={<InterviewPage />} />
 
-            {/* Fallback */}
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
         </div>
