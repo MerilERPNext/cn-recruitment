@@ -2,11 +2,14 @@ import React from 'react';
 import {
   MdSearch,
   MdExpandMore,
-  MdAddCircle,
 } from 'react-icons/md';
+import { useNavigate } from 'react-router';
 
 const JobRequisition: React.FC = () => {
- 
+   const navigate = useNavigate();
+   const handleGoToRequisition = (id: string) => {
+     navigate(`/webapp/requisitions/${id}`);
+   };
 
   return (
     <div
@@ -96,6 +99,7 @@ const JobRequisition: React.FC = () => {
           ].map((job, idx) => (
             <div
               key={idx}
+              onClick={() => handleGoToRequisition(job.title)}
               className="rounded-xl border border-slate-200 bg-[var(--surface-background)] p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
             >
               <div className="flex items-start justify-between">
@@ -115,13 +119,6 @@ const JobRequisition: React.FC = () => {
           ))}
         </div>
       </main>
-
-      <footer className="sticky left-0 right-0 bg-[var(--surface-background)] border-t border-slate-200 p-4">
-        <button className="flex w-full items-center justify-center rounded-full h-12 bg-[var(--primary-color)] text-white text-base font-semibold shadow-lg hover:bg-blue-700 transition-colors duration-200">
-          <MdAddCircle className="mr-2" />
-          <span>Create New Requisition</span>
-        </button>
-      </footer>
     </div>
   );
 };

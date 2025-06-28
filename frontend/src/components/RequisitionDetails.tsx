@@ -1,5 +1,6 @@
-import React from 'react';
-import { ArrowLeft, CheckCircle, Clock, User, Calendar, DollarSign, AlertTriangle } from 'lucide-react';
+import React, { ReactElement } from 'react';
+import { ArrowLeft, CheckCircle, Clock, User, } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 // Type definitions
 interface ApprovalWorkflow {
@@ -50,13 +51,17 @@ interface MockData {
 }
 
 interface StatusDisplay {
-  icon: JSX.Element;
+  icon: ReactElement;
   bgColor: string;
   textColor: string;
   label: string;
 }
 
 const RequisitionDetails: React.FC = () => {
+  const navigate = useNavigate();
+  const handleBackInterview= () => {
+    navigate(-1);
+  };
   // Mock data that would come from API
   const mockData: MockData = {
     id: 'REQ-001',
@@ -139,7 +144,9 @@ const RequisitionDetails: React.FC = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="flex items-center px-4 py-3">
-          <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
+          <button 
+          onClick={handleBackInterview}
+          className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
           <h2 className="flex-1 text-center text-lg font-semibold text-gray-900 pr-10">
