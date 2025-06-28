@@ -1,10 +1,23 @@
 import type React from "react"
-import { Check, Clock, Circle, FileText, Download, Link, Calendar, Edit, Send, Eye } from "lucide-react"
+import { Check, Clock, Circle, FileText, Download, Link, Calendar, Edit, Send, Eye, ArrowLeft } from "lucide-react"
+import { useNavigate } from "react-router";
 
 const ReferralDetails: React.FC = () => {
+  const navigate = useNavigate();
+  const handleBackInterview= () => {
+    navigate(-1);
+  };
   return (
     <div className="flex flex-col w-full h-screen bg-gray-50">
-      {/* Scrollable Content */}
+              <header className="sticky top-0 z-10 flex items-center bg-white/80 backdrop-blur-md p-4 pb-3 justify-between border-b border-slate-200">
+          <button 
+          onClick={handleBackInterview}
+          className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-900">
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <h1 className="text-lg font-semibold text-center flex-1 text-slate-900">Raferral Details</h1>
+          <div className="w-10 h-10"></div>
+        </header>
       <main className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         {/* Profile Card */}
         <section className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-200">

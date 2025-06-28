@@ -4,8 +4,8 @@ import InterviewPage from './interview';
 import { FaHome } from 'react-icons/fa';
 import { MdBadge, MdWork, MdNotifications, MdSearch } from 'react-icons/md';
 import { IoIosArrowBack } from 'react-icons/io';
-import ReferralDetails from './ReferralDetails';
 import JobRequisition from './JobRequisition';
+import ReferralList from './RafarralList';
 
 
 
@@ -72,6 +72,14 @@ const RecruitmentApp: React.FC = () => {
           font-family: 'Material Icons';
           font-size: 24px;
         }
+          .scrollbar-hidden {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+
+       .scrollbar-hidden::-webkit-scrollbar {
+       display: none; /* Chrome, Safari, Opera */
+       }
       `}</style>
 
       {/* Header */}
@@ -85,7 +93,8 @@ const RecruitmentApp: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <nav className="border-b border-[var(--border-light)] px-2 flex overflow-x-auto">
+        <nav className="border-b border-[var(--border-light)] px-2 flex overflow-x-auto scrollbar-hidden">
+
           {tabs.map((tab) => (
             <a
               key={tab}
@@ -95,8 +104,8 @@ const RecruitmentApp: React.FC = () => {
                 handleTabChange(tab);
               }}
               className={`px-4 py-3 border-b-2 text-sm font-medium ${activeTab === tab
-                  ? 'border-[var(--primary-color)] text-[var(--primary-color)]'
-                  : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)]'
+                ? 'border-[var(--primary-color)] text-[var(--primary-color)]'
+                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)]'
                 }`}
             >
               {tab}
@@ -114,7 +123,7 @@ const RecruitmentApp: React.FC = () => {
               return <InterviewPage />;
 
             case 'Referrals':
-              return <ReferralDetails />
+              return <ReferralList />
 
             case 'Requirements':
               return <div className="text-center text-gray-500">Requirements content coming soon...</div>;
@@ -128,11 +137,11 @@ const RecruitmentApp: React.FC = () => {
         })()}
       </main>
       <button
-  onClick={handleAddNew}
-  className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
->
-  +
-</button>
+        onClick={handleAddNew}
+        className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
+      >
+        +
+      </button>
 
       {/* Footer */}
       <footer className="bg-white border-t sticky bottom-0 z-50 flex justify-around py-2">
@@ -141,8 +150,8 @@ const RecruitmentApp: React.FC = () => {
             key={item.name}
             onClick={() => item.route && navigate(item.route)}
             className={`flex flex-col items-center text-sm ${item.active
-                ? 'text-[var(--primary-color)]'
-                : 'text-gray-500 hover:text-[var(--primary-color)]'
+              ? 'text-[var(--primary-color)]'
+              : 'text-gray-500 hover:text-[var(--primary-color)]'
               }`}
           >
             <span className="material-icons">{item.icon}</span>
