@@ -12,6 +12,7 @@ import RecruitmentApp from './components/RecruitmentApp';
 import InterviewPage from './components/InterveiwDetails';
 import AddNewReferral from './components/AddNewReferral';
 import ReferralDetails from './components/ReferralDetails';
+import AddRequisition from './components/AddRequisition';
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -109,6 +110,7 @@ const App: React.FC = () => {
             <Route path="/webapp/recruitment-app/interview-details/*" element={<InterviewPage />} />
             <Route path="/webapp/recruitment-app/add-new-referral/*" element={<AddNewReferral />} />
             <Route path="/webapp/recruitment-app/referral-details/*" element={<ReferralDetails />} />
+            <Route path="/webapp/recruitment-app/add-requisition/*" element={<AddRequisition />} />
 
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>

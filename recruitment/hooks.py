@@ -189,13 +189,15 @@ doc_events = {
 	# 	"on_submit": "recruitment.customizations.salary_structure_assignment.salary_structure_assignment.on_submit",
 		
 	# },
+
     "Employee Promotion": {
 		"on_submit": "recruitment.customizations.employee_promotion.employee_promotion.on_submit",
 		
 	},
      "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
-        "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+        "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+        "on_update": "recruitment.API.interview.get_interview_data",
     },
     "Interview Feedback": {
         "on_submit": "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback"

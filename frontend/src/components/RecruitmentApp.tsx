@@ -1,22 +1,14 @@
-import React, { JSX, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InterviewPage from './interview';
-import { FaHome } from 'react-icons/fa';
-import { MdBadge, MdWork, MdNotifications, MdSearch } from 'react-icons/md';
 import { IoIosArrowBack } from 'react-icons/io';
 import JobRequisition from './JobRequisition';
 import ReferralList from './RafarralList';
 
 
 
-interface NavItem {
-  name: string;
-  icon: JSX.Element;
-  route: string;
-  active?: boolean;
-}
 
-type TabName = 'Referrals' | 'Interviews' | 'Requirements' | 'Requisitions';
+type TabName = 'Referrals' | 'Interviews' | 'Requisitions';
 
 const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
@@ -25,14 +17,7 @@ const RecruitmentApp: React.FC = () => {
 
 
 
-  const tabs: TabName[] = ['Referrals', 'Interviews', 'Requirements', 'Requisitions'];
-  const navItems: (NavItem & { route?: string })[] = [
-    { name: 'Home', icon: <FaHome />, route: '/' },
-    { name: 'IDs', icon: <MdBadge />, route: '/id-card' },
-    { name: 'Recruitment', icon: <MdWork />, active: true, route: '/recruitment' },
-    { name: 'Alerts', icon: <MdNotifications />, route: '/alerts' },
-    { name: 'Search', icon: <MdSearch />, route: '/search' },
-  ];
+  const tabs: TabName[] = ['Referrals', 'Interviews', 'Requisitions'];
 
 
   const handleTabChange = (tab: TabName) => {
@@ -41,7 +26,11 @@ const RecruitmentApp: React.FC = () => {
   };
 
   const handleAddNew = () => {
-    navigate('/webapp/recruitment-app/add-new-referral'); // change this based on your route
+    if (activeTab === 'Referrals') {
+      navigate('/webapp/recruitment-app/add-new-referral');
+    } else if (activeTab === 'Requisitions') {
+      navigate('/webapp/recruitment-app/add-requisition');
+    }
   };
 
   return (
@@ -125,9 +114,6 @@ const RecruitmentApp: React.FC = () => {
             case 'Referrals':
               return <ReferralList />
 
-            case 'Requirements':
-              return <div className="text-center text-gray-500">Requirements content coming soon...</div>;
-
             case 'Requisitions':
               return <JobRequisition />;
 
@@ -140,26 +126,11 @@ const RecruitmentApp: React.FC = () => {
         onClick={handleAddNew}
         className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
       >
-        +
+        + 
       </button>
 
       {/* Footer */}
-      <footer className="bg-white border-t sticky bottom-0 z-50 flex justify-around py-2">
-        {navItems.map((item) => (
-          <button
-            key={item.name}
-            onClick={() => item.route && navigate(item.route)}
-            className={`flex flex-col items-center text-sm ${item.active
-              ? 'text-[var(--primary-color)]'
-              : 'text-gray-500 hover:text-[var(--primary-color)]'
-              }`}
-          >
-            <span className="material-icons">{item.icon}</span>
-            {item.name}
-          </button>
-        ))}
-      </footer>
-
+      
 
 
     </div>

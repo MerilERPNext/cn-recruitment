@@ -15,7 +15,7 @@ const ReferralDetails: React.FC = () => {
           className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-900">
             <ArrowLeft className="h-6 w-6" />
           </button>
-          <h1 className="text-lg font-semibold text-center flex-1 text-slate-900">Raferral Details</h1>
+          <h1 className="text-lg font-semibold text-center flex-1 text-slate-900">Referral Details</h1>
           <div className="w-10 h-10"></div>
         </header>
       <main className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
