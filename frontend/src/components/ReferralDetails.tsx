@@ -1,5 +1,5 @@
 import type React from "react"
-import { Check, Clock, Circle, FileText, Download, Link, Calendar, Edit, Send, Eye, ArrowLeft } from "lucide-react"
+import { Clock, FileText, Download, Link, ArrowLeft } from "lucide-react"
 import { useNavigate } from "react-router";
 
 const ReferralDetails: React.FC = () => {
@@ -29,7 +29,7 @@ const ReferralDetails: React.FC = () => {
               }}
             ></div>
             <div>
-              <p className="text-gray-900 text-lg font-bold">Sophia Bennett</p>
+              <p className="text-gray-900 text-lg font-bold">Arjun Sharma</p>
               <p className="text-gray-600 text-sm">Software Engineer</p>
               <p className="text-gray-600 text-sm">sophia.bennett@email.com</p>
               <a className="text-blue-600 text-sm font-medium hover:underline flex items-center gap-1 mt-1" href="#">
@@ -48,10 +48,11 @@ const ReferralDetails: React.FC = () => {
               ["Referred By", "Ethan Carter"],
               ["Position", "Senior Software Engineer"],
               ["Submission Date", "July 15, 2024"],
+              ["Additional Details", "Arjun has 5+ years of experience in React and Node.js. Previously worked at TCS and Infosys. Strong in system design and has led multiple full-stack projects. Available for immediate joining."],
             ].map(([label, value], i) => (
               <div
                 key={i}
-                className={`flex items-center justify-between px-4 py-4 ${i !== 0 ? "border-t border-gray-200" : ""}`}
+                className={`flex items-center gap-2 justify-between px-4 py-4 ${i !== 0 ? "border-t border-gray-200" : ""}`}
               >
                 <p className="text-gray-600">{label}</p>
                 <p className="text-gray-900 font-medium">{value}</p>
@@ -66,29 +67,11 @@ const ReferralDetails: React.FC = () => {
           <div className="overflow-hidden z-100">
             {[
               {
-                icon: <Check size={18} />,
-                title: "Application Received",
-                date: "July 15, 2024",
-                status: "done",
-              },
-              {
-                icon: <Check size={18} />,
-                title: "Resume Review",
-                date: "July 17, 2024",
-                status: "done",
-              },
-              {
                 icon: <Clock size={18} />,
                 title: "Interview Scheduled",
                 date: "July 20, 2024",
                 status: "current",
-              },
-              {
-                icon: <Circle size={18} />,
-                title: "Offer Extended",
-                date: "Pending",
-                status: "upcoming",
-              },
+              }
             ].map(({ icon, title, date, status }, index, arr) => {
               const showBlueLine = index < arr.length - 1
               const bgColor =
@@ -112,79 +95,6 @@ const ReferralDetails: React.FC = () => {
                 </div>
               )
             })}
-          </div>
-        </section>
-
-        {/* Actions */}
-        <section>
-          <h2 className="text-gray-900 text-lg font-semibold mb-3">Actions</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              {
-                icon: <Calendar size={18} />,
-                text: "Schedule Interview",
-                className: "bg-blue-600 text-white hover:bg-blue-700",
-              },
-              {
-                icon: <Edit size={18} />,
-                text: "Update Status",
-                className: "bg-gray-200 text-gray-900 hover:bg-gray-300",
-              },
-              {
-                icon: <Send size={18} />,
-                text: "Send Message",
-                className: "bg-gray-200 text-gray-900 hover:bg-gray-300",
-              },
-              {
-                icon: <Eye size={18} />,
-                text: "View Resume",
-                className: "bg-gray-200 text-gray-900 hover:bg-gray-300",
-              },
-            ].map(({ icon, text, className }, i) => (
-              <button
-                key={i}
-                className={`flex items-center justify-center gap-2 rounded-md h-12 px-3 text-sm font-medium transition-colors ${className}`}
-              >
-                {icon}
-                <span className="truncate">{text}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Comments */}
-        <section>
-          <h2 className="text-gray-900 text-lg font-semibold mb-3">Comments/Notes</h2>
-          <div className="space-y-4">
-            {[
-              [
-                "Liam Harper",
-                "July 16, 2024",
-                "Sophia's resume is impressive. Her experience aligns well with the requirements.",
-              ],
-              ["Olivia Hayes", "July 18, 2024", "Agreed. Let's schedule an interview."],
-            ].map(([author, date, comment], i) => (
-              <div key={i} className="flex gap-3 bg-white p-3 rounded-lg border border-gray-200">
-                <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8 shrink-0 bg-gray-300"></div>
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-gray-900 text-sm font-semibold">{author}</p>
-                    <p className="text-gray-600 text-xs">{date}</p>
-                  </div>
-                  <p className="text-gray-900 text-sm mt-0.5">{comment}</p>
-                </div>
-              </div>
-            ))}
-            <div className="mt-2">
-              <textarea
-                className="w-full p-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                placeholder="Add a comment..."
-                rows={3}
-              />
-              <button className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
-                Add Comment
-              </button>
-            </div>
           </div>
         </section>
 

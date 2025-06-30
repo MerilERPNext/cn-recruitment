@@ -58,7 +58,7 @@ const JobRequisition: React.FC = () => {
               status: 'Open',
               statusColor: 'bg-green-100 text-green-800',
               department: 'Marketing Department',
-              location: 'New York, NY',
+              location: 'Pune, MH',
             },
             {
               title: 'Sales Representative',
@@ -76,7 +76,7 @@ const JobRequisition: React.FC = () => {
               status: 'Closed',
               statusColor: 'bg-gray-100 text-gray-800',
               department: 'Engineering Department',
-              location: 'San Francisco, CA',
+              location: 'Vapi, GJ',
             },
             {
               title: 'Product Manager',
@@ -85,7 +85,7 @@ const JobRequisition: React.FC = () => {
               status: 'Open',
               statusColor: 'bg-green-100 text-green-800',
               department: 'Product Department',
-              location: 'London, UK',
+              location: 'Pune, MH',
             },
             {
               title: 'UX Designer',

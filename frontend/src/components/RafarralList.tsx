@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import "../index.css";
 import {
   MdDelete,
   MdMoreVert,
@@ -14,7 +15,7 @@ import {
 
 interface Referral {
   id: number;
-  title: string;
+  refereeName: string;
   source: string;
   submitted: string;
   status: string;
@@ -26,7 +27,7 @@ interface Referral {
 const referrals: Referral[] = [
   {
     id: 1,
-    title: 'Referral for Software Engineer',
+    refereeName: 'Arjun Sharma',
     source: 'LinkedIn',
     submitted: '2023-10-26',
     status: 'Pending',
@@ -36,7 +37,7 @@ const referrals: Referral[] = [
   },
   {
     id: 2,
-    title: 'Referral for Product Manager',
+    refereeName: 'Priya Patel',
     source: 'Employee Referral',
     submitted: '2023-10-25',
     status: 'Interview Scheduled',
@@ -46,7 +47,7 @@ const referrals: Referral[] = [
   },
   {
     id: 3,
-    title: 'Referral for Data Analyst',
+    refereeName: 'Rajesh Kumar',
     source: 'Company Website',
     submitted: '2023-10-24',
     status: 'Accepted',
@@ -56,7 +57,7 @@ const referrals: Referral[] = [
   },
   {
     id: 4,
-    title: 'Referral for UX Designer',
+    refereeName: 'Sneha Gupta',
     source: 'Job Board',
     submitted: '2023-10-23',
     status: 'Rejected',
@@ -106,18 +107,15 @@ const ReferralList: React.FC = () => {
             onClick={handleGoToInterview}
             className="flex items-center gap-3 bg-[var(--background-light)] p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow border hover:border-[var(--border-light)] cursor-pointer "
           >
-            <input
+            {/* <input
               type="checkbox"
               className="checkbox-custom size-4 rounded border-[var(--border-light)] text-[var(--primary-color)] focus:ring-[var(--primary-color)] appearance-none shrink-0"
               onClick={(e) => e.stopPropagation()} // Prevents checkbox click from triggering navigation
-            />
-            <div
-              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-12 w-12 shrink-0"
-              style={{ backgroundImage: `url('${referral.imageUrl}')` }}
-            ></div>
+            /> */}
+            
             <div className="flex-grow min-w-0">
               <p className="text-[var(--text-primary)] text-base font-medium leading-tight line-clamp-1">
-                {referral.title}
+                {referral.refereeName}
               </p>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">Source: {referral.source}</p>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">Submitted: {referral.submitted}</p>

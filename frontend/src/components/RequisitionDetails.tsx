@@ -67,17 +67,17 @@ const RequisitionDetails: React.FC = () => {
     id: 'REQ-001',
     title: 'Senior Product Manager',
     department: 'Product Management',
-    location: 'San Francisco, CA',
+    location: 'Pune, MH',
     employmentType: 'Full-time',
-    description: 'We are seeking a highly motivated and experienced Senior Product Manager to lead the development and execution of our product strategy. The ideal candidate will have a strong understanding of the market, customer needs, and competitive landscape. They will be responsible for defining product vision, roadmap, and requirements, and working closely with engineering, design, and marketing teams to deliver successful products.',
+    description: 'We are seeking a highly motivated and experienced Senior Product Manager to lead the development and execution of our product strategy. The ideal candidate will have a strong understanding of the Indian market, customer needs, and competitive landscape. They will be responsible for defining product vision, roadmap, and requirements, and working closely with engineering, design, and marketing teams to deliver successful products in the Indian market.',
     approvalWorkflow: [
       { id: 1, name: 'HR Approval', status: 'approved', approvedDate: '2024-06-20' },
       { id: 2, name: 'Finance Approval', status: 'approved', approvedDate: '2024-06-22' },
       { id: 3, name: 'Executive Approval', status: 'pending', approvedDate: null }
     ],
     assignedTeam: [
-      { id: 1, name: 'Sophia Carter', role: 'Recruiter', avatar: null },
-      { id: 2, name: 'Ethan Bennett', role: 'Hiring Manager', avatar: null }
+      { id: 1, name: 'Priya Sharma', role: 'Recruiter', avatar: null },
+      { id: 2, name: 'Rajesh Gupta', role: 'Hiring Manager', avatar: null }
     ],
     applicationStats: {
       totalApplications: 125,
@@ -85,8 +85,8 @@ const RequisitionDetails: React.FC = () => {
       interviewing: 15
     },
     details: {
-      budget: 150000,
-      salaryRange: { min: 120000, max: 140000 },
+      budget: 2500000,
+      salaryRange: { min: 2000000, max: 2300000 },
       deadline: '2024-07-15',
       priority: 'High',
       createdDate: '2024-06-15',
@@ -96,16 +96,16 @@ const RequisitionDetails: React.FC = () => {
 
   // Helper function to format currency
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 0
     }).format(amount);
   };
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('en-IN', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'

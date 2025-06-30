@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, Calendar, Clock, Video, Code, FileText, Folder, HelpCircle, Play, CheckCircle } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, Video, Code, FileText, Folder, HelpCircle, Play, CheckCircle, Copy } from "lucide-react"
 import { useNavigate } from "react-router";
 
 const InterviewPage = () => {
+  const id=1;
 
   const [checklist, setChecklist] = useState({
     resume: false,
@@ -19,6 +20,11 @@ const InterviewPage = () => {
   const handleBackInterview= () => {
     navigate(-1);
   };
+  
+  const handleFeedbackInterview= () => {
+    navigate(`/webapp/recruitment-app/feedback-interview/${id}`);
+  };
+  
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-[var(--background-light)]">
       <div className="flex-grow">
@@ -37,15 +43,9 @@ const InterviewPage = () => {
         <section>
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Candidate Information</h2>
           <div className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
-            <div
-              className="w-14 h-14 rounded-full bg-cover bg-center bg-no-repeat"
-              style={{
-                backgroundImage:
-                  'url("https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face")',
-              }}
-            />
+            
             <div className="flex flex-col justify-center">
-              <p className="text-slate-900 text-base font-medium">Ethan Harper</p>
+              <p className="text-slate-900 text-base font-medium">Arjun Sharma</p>
               <p className="text-slate-600 text-sm">Software Engineer</p>
             </div>
           </div>
@@ -81,30 +81,25 @@ const InterviewPage = () => {
               <p className="text-slate-600 text-sm">Video Call</p>
             </div>
           </div>
+          <div className="flex items-center gap-4 bg-white px-4 py-3">
+            <div className="flex items-center justify-center rounded-xl bg-slate-100 w-12 h-12 text-slate-900">
+              <Video className="h-6 w-6" />
+            </div>
+            <div className="flex flex-col justify-center">
+              <p className="text-slate-900 text-base font-medium">Join Link</p>
+              <p className="text-slate-600 text-sm flex items-center gap-2"><Copy className="h-5 w-5" />https://meet.google.com/abc-def-ghi</p>
+            </div>
+          </div>
         </section>
 
         {/* Assigned Interviewers */}
         <section>
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Assigned Interviewers</h2>
-          <div className="flex items-center gap-4 bg-white px-4 py-3">
-            <div
-              className="w-10 h-10 rounded-full bg-cover bg-center bg-no-repeat"
-              style={{
-                backgroundImage:
-                  'url("https://lh3.googleusercontent.com/aida-public/AB6AXuD4NppyMFVTmBvCqwALWOsusNJwjjAqfDndq6BXcY8jRnz9Ah9kKcvFGxjQDf50yY64GCDfl-GID1Z3Ru4Ys2M4ZSr26GD21bsJOo07mP_-SBvxKSlU31p8dKtpauf0psc8e7TQ8Q51KlWDKpSQ4qJ0ZPNnMab-OVcokOptRM7jmwdJh475Jub5a-b7NKLeTwdHxep9NzDNWlI9QBjCYXqJcPG6uA9jyEnItgshopCt-bPRrycK8lYHBIcqZ-YamVt5aPe5mvLCTdU1")',
-              }}
-            />
-            <p className="text-slate-900 text-base font-medium flex-1">Dr. Olivia Bennett</p>
+          <div className="flex items-center gap-4 bg-white px-4 py-3">          
+            <p className="text-slate-900 text-base font-medium flex-1">Dr. Priya Patel</p>
           </div>
           <div className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
-            <div
-              className="w-10 h-10 rounded-full bg-cover bg-center bg-no-repeat"
-              style={{
-                backgroundImage:
-                  'url("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face")',
-              }}
-            />
-            <p className="text-slate-900 text-base font-medium flex-1">Mr. Noah Carter</p>
+            <p className="text-slate-900 text-base font-medium flex-1">Mr. Rajesh Kumar</p>
           </div>
         </section>
 
@@ -197,8 +192,8 @@ const InterviewPage = () => {
 
       {/* Footer */}
       <footer className="sticky bottom-0 bg-white p-4 border-t border-slate-200">
-        <button className="w-full bg-slate-900 text-white font-semibold py-3 px-4 rounded-xl hover:bg-slate-800 active:bg-slate-700 transition-colors duration-150">
-          Start Interview
+        <button className="w-full bg-slate-900 text-white font-semibold py-3 px-4 rounded-xl hover:bg-slate-800 active:bg-slate-700 transition-colors duration-150" onClick={()=>handleFeedbackInterview()}>
+          Feedback Interview
         </button>
       </footer>
     </div>

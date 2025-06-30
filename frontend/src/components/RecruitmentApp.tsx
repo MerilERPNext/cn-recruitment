@@ -17,19 +17,19 @@ const RecruitmentApp: React.FC = () => {
 
 
 
-  const tabs: TabName[] = ['Referrals', 'Interviews', 'Requisitions'];
+  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews'];
 
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
     sessionStorage.setItem('activeTab', tab);
-  };
+  };  
 
   const handleAddNew = () => {
     if (activeTab === 'Referrals') {
       navigate('/webapp/recruitment-app/add-new-referral');
     } else if (activeTab === 'Requisitions') {
-      navigate('/webapp/recruitment-app/add-requisition');
+      // go to add requisition page
     }
   };
 
@@ -75,7 +75,7 @@ const RecruitmentApp: React.FC = () => {
       <header className="sticky z-50 top-0 bg-white shadow-sm">
         <div className="flex items-center p-1 justify-between">
           <button onClick={() => navigate('/')} className="text-[var(--text-primary)] rounded-full hover:bg-gray-100 p-2">
-            <span className="text-xl font-semibold justify-center px-4 pb-3  text-slate-90"><IoIosArrowBack /></span>
+            <span className="text-xl font-semibold justify-center pb-3  text-slate-90"><IoIosArrowBack /></span>
           </button>
           <h1 className="text-xl font-semibold justify-center px-4  text-slate-900 text-center">{activeTab}</h1>
           <div className="w-8"></div>
@@ -122,12 +122,16 @@ const RecruitmentApp: React.FC = () => {
           }
         })()}
       </main>
-      <button
-        onClick={handleAddNew}
-        className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
-      >
-        + 
-      </button>
+      {
+        (activeTab === 'Requisitions' || activeTab === 'Referrals') && (
+          <button
+            onClick={handleAddNew}
+            className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
+          >
+            + 
+          </button>
+        )
+      }
 
       {/* Footer */}
       

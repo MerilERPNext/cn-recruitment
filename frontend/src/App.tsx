@@ -12,26 +12,25 @@ import RecruitmentApp from './components/RecruitmentApp';
 import InterviewPage from './components/InterveiwDetails';
 import AddNewReferral from './components/AddNewReferral';
 import ReferralDetails from './components/ReferralDetails';
-import AddRequisition from './components/AddRequisition';
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
   const routeInfo = useRouteInfo();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--background-medium)' }}>
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
             Recruitment Portal Dashboard
           </h1>
-          <p className="text-gray-600">Current path: {routeInfo.pathname}</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Current path: {routeInfo.pathname}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Search Members</h2>
-            <p className="text-gray-600 mb-4">
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Search Members</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
               Streamline your recruitment process and manage job applicants with ease.
             </p>
             <Link
@@ -41,22 +40,23 @@ const Dashboard: React.FC = () => {
               Recruitment-app
             </Link>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Search Members</h2>
-            <p className="text-gray-600 mb-4">
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Search Members</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
               Find and manage employee information quickly and efficiently.
             </p>
             <Link
               to="/webapp/search-members"
-              className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              className="inline-block text-white px-4 py-2 rounded-md transition-colors"
+              style={{ backgroundColor: 'var(--primary-color)' }}
             >
               Go to Search
             </Link>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Notices</h2>
-            <p className="text-gray-600 mb-4">
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Notices</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
               View and manage company announcements and important notices.
             </p>
             <Link
@@ -67,9 +67,9 @@ const Dashboard: React.FC = () => {
             </Link>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">ID Cards</h2>
-            <p className="text-gray-600 mb-4">
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>ID Cards</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
               Generate, view, and manage employee identification cards.
             </p>
             <Link
@@ -92,7 +92,7 @@ const App: React.FC = () => {
   return (
     <QueryProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen" style={{ backgroundColor: 'var(--background-medium)' }}>
           <Routes>
 
             {/* Default route */}
@@ -110,7 +110,6 @@ const App: React.FC = () => {
             <Route path="/webapp/recruitment-app/interview-details/*" element={<InterviewPage />} />
             <Route path="/webapp/recruitment-app/add-new-referral/*" element={<AddNewReferral />} />
             <Route path="/webapp/recruitment-app/referral-details/*" element={<ReferralDetails />} />
-            <Route path="/webapp/recruitment-app/add-requisition/*" element={<AddRequisition />} />
 
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
