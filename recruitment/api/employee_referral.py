@@ -278,3 +278,31 @@ def add_referral_comment(referral_id, content):
     return {"status": "success", "message": "Comment added successfully"}
 
 #/api/method/upload_file
+
+
+
+
+
+
+@frappe.whitelist()
+def filter_referrals_by_name(full_name=None):
+    if not full_name:
+        return {
+            "status": "error",
+            "message": "Please provide a name to search."
+        }
+
+    referrals = frappe.get_all(
+        "Employee Referral",
+        filters={},
+        or_filters=[
+            ["full_name", "like", f"%{full_name}%"]
+        ],
+        fields=["name", "full_name", "email", "status", "for_designation", "date", "referrer"],
+        order_by="creation desc"
+    )
+
+    return {
+        "status": "success",
+        "referrals": referrals
+    }
