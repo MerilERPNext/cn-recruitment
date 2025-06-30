@@ -282,8 +282,6 @@ def add_referral_comment(referral_id, content):
 
 
 
-
-
 @frappe.whitelist()
 def filter_referrals_by_name(full_name=None):
     if not full_name:
