@@ -115,4 +115,20 @@ def assign_task(reference_doctype, reference_name, assign_to, description=""):
 	todo.insert(ignore_permissions=True)
 	frappe.db.commit()
 
+@frappe.whitelist()
+def get_job_recruiters(doctype, txt, searchfield, start, page_len, filters):
+    role = filters.get("role")
+    if not role:
+        return []
 
+    users = frappe.db.sql("""
+        SELECT user.name, user.full_name
+        FROM `tabUser` user
+        JOIN `tabHas Role` hr ON hr.parent = user.name
+        WHERE hr.role = %s
+          AND user.enabled = 1
+          AND user.name LIKE %s
+        LIMIT %s OFFSET %s
+    """, (role, f"%{txt}%", page_len, start), as_dict=True)
+
+    return [(u.name, u.full_name) for u in users]
