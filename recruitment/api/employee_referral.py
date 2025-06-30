@@ -288,6 +288,7 @@ def filter_referrals_by_name(full_name=None):
             "message": "Please provide a name to search."
         }
 
+
     referrals = frappe.get_all(
         "Employee Referral",
         filters={},
