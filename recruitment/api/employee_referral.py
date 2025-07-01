@@ -43,6 +43,7 @@ def submit_employee_referral(data, resume_file=None):
         doc.current_job_title = data.get("current_job_title")
         doc.work_references = data.get("work_references")
         doc.qualification_reason = data.get("qualification_reason")
+        doc.resume = data.get("resume") 
 
         # ✅ Set referrer to logged-in employee
         doc.referrer = employee_id
