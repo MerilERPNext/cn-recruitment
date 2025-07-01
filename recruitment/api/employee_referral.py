@@ -58,7 +58,7 @@ def submit_employee_referral(data, resume_file=None):
                 "file_name": resume_file["filename"],
                 "attached_to_doctype": doc.doctype,
                 "attached_to_name": doc.name,
-                # "is_private": 1,
+                "is_private": 1,
                 "content": resume_file["content"],
             })
             file_doc.insert(ignore_permissions=True)
