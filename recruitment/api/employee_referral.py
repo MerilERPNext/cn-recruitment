@@ -43,6 +43,7 @@ def submit_employee_referral(data, resume_file=None):
         doc.current_job_title = data.get("current_job_title")
         doc.work_references = data.get("work_references")
         doc.qualification_reason = data.get("qualification_reason")
+        doc.resume = data.get("resume") 
 
         # ✅ Set referrer to logged-in employee
         doc.referrer = employee_id
@@ -57,7 +58,7 @@ def submit_employee_referral(data, resume_file=None):
                 "file_name": resume_file["filename"],
                 "attached_to_doctype": doc.doctype,
                 "attached_to_name": doc.name,
-                "is_private": 1,
+                # "is_private": 1,
                 "content": resume_file["content"],
             })
             file_doc.insert(ignore_permissions=True)
