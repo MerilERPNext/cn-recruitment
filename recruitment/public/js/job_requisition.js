@@ -243,9 +243,11 @@ frappe.ui.form.on("Job Requisition", {
     }
     // This function checks user permissions and toggles visibility of 'custom_assign_to_recruiter' based on role.
     if (frappe.user.has_role("Recruiter Admin")) {
+      console.log("Recruiter Admin");
       frm.set_df_property("custom_assign_to_recruiter", "hidden", 0);
       frm.set_df_property("status", "hidden", 0);
     } else {
+      console.log("Not a Recruiter Admin");
       frm.set_df_property("custom_assign_to_recruiter", "hidden", 1);
       frm.set_df_property("status", "hidden", 1);
     }
@@ -379,7 +381,6 @@ function render_jd_live_preview(frm) {
 
   const rows = frm.doc.custom_jd_details || [];
   wrapper.empty();
-  custom_assign_to_recruiter;
 
   if (!rows.length) {
     wrapper.html(`<p class="text-muted">No job description added.</p>`);

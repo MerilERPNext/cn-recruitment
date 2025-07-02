@@ -17,6 +17,14 @@ frappe.ui.form.on("Job Opening", {
       };
     });
   },
+  before_save: function (frm) {
+        if (frm.is_new()) {
+            let designation = frm.doc.designation
+            let posted_on = frm.doc.posted_on
+            
+            frm.set_value('route', `${posted_on}-${designation}`);
+    }
+  },
   after_save: function (frm) {
     frappe.call({
       method:
