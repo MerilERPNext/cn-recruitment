@@ -29,7 +29,7 @@ const RecruitmentApp: React.FC = () => {
     if (activeTab === 'Referrals') {
       navigate('/webapp/recruitment-app/add-new-referral');
     } else if (activeTab === 'Requisitions') {
-      // go to add requisition page
+      navigate('/webapp/recruitment-app/add-requisition');
     }
   };
 
@@ -133,7 +133,6 @@ const RecruitmentApp: React.FC = () => {
         )
       }
 
-      {/* Footer */}
       
 
 

@@ -32,7 +32,7 @@ import frappe
 from frappe import _
 
 @frappe.whitelist(allow_guest=True)
-def get_interview_data():
+def get_interview_data(doc, methed):
     try:
         # Fetch all interviews (you can filter or paginate as needed)
         interviews = frappe.get_all("Interview", fields=["*"])  # get all fields
