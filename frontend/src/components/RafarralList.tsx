@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import "../index.css";
 import {
@@ -14,64 +15,53 @@ import {
 } from 'react-icons/md';
 
 interface Referral {
-  id: number;
-  refereeName: string;
-  source: string;
-  submitted: string;
+  name: string;
+  full_name: string;
+  email: string;
+  date: string;
   status: string;
-  statusIcon: React.ReactNode;
-  statusColor: string;
-  imageUrl: string;
+  for_designation: string;
 }
 
-const referrals: Referral[] = [
-  {
-    id: 1,
-    refereeName: 'Arjun Sharma',
-    source: 'LinkedIn',
-    submitted: '2023-10-26',
-    status: 'Pending',
-    statusIcon: <MdHourglassEmpty />,
-    statusColor: 'text-yellow-500',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAt-FELbIBS5TVSC3TTO57mgqbRaprRIvMJA_ApPyXsxrKThPhD1CtHhmjBsC-LeP5U6APs_mtgkbDyqAIJRtz030j-mIucU9hDMYCMPl2-_sa1WWDnfu2OBtu8bEGnZTKTpHekmZ60ntESo_fEc9iRgTCMz6sDfgFkbFng7kq-pFEueonDMvgzUdJj1fQSEHJTpeqb0a7AmMTU5QTkdx9gVdSA7TmEeZ3U9tyQCp8K81AFu7RO_Q89t-yrM0dl_s_xBFNkGdotO9Gq',
-  },
-  {
-    id: 2,
-    refereeName: 'Priya Patel',
-    source: 'Employee Referral',
-    submitted: '2023-10-25',
-    status: 'Interview Scheduled',
-    statusIcon: <MdEvent />,
-    statusColor: 'text-blue-500',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARlg8-IucoXnEsIYIeyN9EHMTNXweoRf5ETsXg-Xm4-9odowTzfa1Rd-2OBpiuLyK6aka_1sgccNF6fC0jYXN9nLiIQ6p8Tzxn7S2bw5988z8FIrsK6ZV_B1fRyAO7zkXrt05wmmWgGp__6TziNqMRIGnfeQ1vfBqmqxF6oIiOit8ce6EhxXRNJGn6vcyomPWB9TXPAhkqnRcv3Bl9X4uKJ27LsoY0CjuHrx73CjWV7lWbNTNZ4xSYL91jEynbDMe-NHmP6w3g_9N3',
-  },
-  {
-    id: 3,
-    refereeName: 'Rajesh Kumar',
-    source: 'Company Website',
-    submitted: '2023-10-24',
-    status: 'Accepted',
-    statusIcon: <MdCheckCircleOutline />,
-    statusColor: 'text-green-500',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDFWtQeInXYsky7NDsIIpeMhXAzcxYHT-2hkvgFObNXz_lprM3ZF2M5id6hPTVc22i5y631iL5QG8ZjZk-PzpzFDWYUkBglsLRIahrwrIMupyua-6zswy4dPTHGI95GKroufXdLqzpHiPTFjr-aIbL1DSj04oYg85Iwr3FsVl4fK-ZRkY8k7-1h7u8i6HnHccH4iBmUA4PwqKWJcPGnTvnDZvZqclW5wGy7cXQVCRJJ6djXWN6zopJzB_tzq2TgLH3W86fdHf5hjL5D',
-  },
-  {
-    id: 4,
-    refereeName: 'Sneha Gupta',
-    source: 'Job Board',
-    submitted: '2023-10-23',
-    status: 'Rejected',
-    statusIcon: <MdCancel />,
-    statusColor: 'text-red-500',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC_xeSUO1ugCDjr_plPCzzg1Y-ISj9j7_foaFpRejFZS2LNaKoWvTg0nd-vhTOSlmVCXkkSXWDs65xc5R44TIkbljYCp2qTJSlFEwIli6LgNfOm_jNfBECNhxGbIUAIiV1xe18hB-I9GLi4VW9SkvGOjH-v_qG_E-bWgHidiDrdMH2VqqOiDkJ_QIhgJiu0aCVcxW7XfXWqy8niIEqkVO1da3syzTJZ7NFYg3rrrm2GKPQjDel6FNIEyhGoMSdwH5Z14iLJitG2tu81',
-  },
-];
-
 const ReferralList: React.FC = () => {
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const handleGoToInterview = () => {
-    navigate('/webapp/recruitment-app/referral-details');
+
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return { icon: <MdHourglassEmpty />, color: 'text-yellow-500' };
+      case 'interview scheduled':
+        return { icon: <MdEvent />, color: 'text-blue-500' };
+      case 'accepted':
+        return { icon: <MdCheckCircleOutline />, color: 'text-green-500' };
+      case 'rejected':
+        return { icon: <MdCancel />, color: 'text-red-500' };
+      default:
+        return { icon: <MdHourglassEmpty />, color: 'text-gray-500' };
+    }
   };
+
+  useEffect(() => {
+    const fetchReferrals = async () => {
+      try {
+        const res = await axios.get('/api/method/recruitment.api.employee_referral.get_my_referrals');
+        setReferrals(res.data.message.referrals || []);
+      } catch (err) {
+        console.error("Error fetching referrals", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReferrals();
+  }, []);
+
+  const handleClick = (referralId: string) => {
+    navigate(`/webapp/recruitment-app/referral-details/${referralId}`);
+  };
+
   return (
     <main className="px-2 pt-6 pb-20">
       <div className="flex justify-between items-center mb-4">
@@ -101,32 +91,36 @@ const ReferralList: React.FC = () => {
       </div>
 
       <div className="space-y-3">
-        {referrals.map((referral) => (
-          <div
-            key={referral.id}
-            onClick={handleGoToInterview}
-            className="flex items-center gap-3 bg-[var(--background-light)] p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow border hover:border-[var(--border-light)] cursor-pointer "
-          >
-            {/* <input
-              type="checkbox"
-              className="checkbox-custom size-4 rounded border-[var(--border-light)] text-[var(--primary-color)] focus:ring-[var(--primary-color)] appearance-none shrink-0"
-              onClick={(e) => e.stopPropagation()} // Prevents checkbox click from triggering navigation
-            /> */}
-            
-            <div className="flex-grow min-w-0">
-              <p className="text-[var(--text-primary)] text-base font-medium leading-tight line-clamp-1">
-                {referral.refereeName}
-              </p>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">Source: {referral.source}</p>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">Submitted: {referral.submitted}</p>
-              <div className="flex items-center text-xs text-[var(--text-secondary)] mt-1">
-                <span className={`text-sm mr-1 ${referral.statusColor}`}>{referral.statusIcon}</span>
-                <span>Status: {referral.status}</span>
+        {loading ? (
+          <p className="text-center text-sm text-[var(--text-secondary)]">Loading...</p>
+        ) : referrals.length === 0 ? (
+          <p className="text-center text-sm text-[var(--text-secondary)]">No referrals found.</p>
+        ) : (
+          referrals.map((referral, index) => {
+            const { icon, color } = getStatusIcon(referral.status);
+            return (
+              <div
+                key={index}
+                onClick={() => handleClick(referral.name)}
+                className="flex items-center gap-3 bg-[var(--background-light)] p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow border hover:border-[var(--border-light)] cursor-pointer"
+              >
+                <div className="flex-grow min-w-0">
+                  <p className="text-[var(--text-primary)] text-base font-medium leading-tight line-clamp-1">
+                    {referral.full_name}
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">Email: {referral.email}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">Designation: {referral.for_designation}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">Submitted: {referral.date}</p>
+                  <div className="flex items-center text-xs text-[var(--text-secondary)] mt-1">
+                    <span className={`text-sm mr-1 ${color}`}>{icon}</span>
+                    <span>Status: {referral.status}</span>
+                  </div>
+                </div>
+                <MdChevronRight className="text-[var(--text-secondary)]" />
               </div>
-            </div>
-            <MdChevronRight className="text-[var(--text-secondary)]" />
-          </div>
-        ))}
+            );
+          })
+        )}
       </div>
     </main>
   );
