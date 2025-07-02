@@ -27,10 +27,12 @@ app_include_js = [
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 fixtures =   [
 #         "doctype": "Custom HTML Block"
-#     },{
-#         "doctype": "Custom DocPerm",
-#         "filters": [["Custom DocPerm", "role", "IN", ["Hiring Manager","Job Recruiter","Recruiter Admin"]]],
-#     },{
+#     },
+# {
+#         "doctype": "Role",
+#         "filters": [["Role", "name", "IN", ["Job Recruiter","Recruitment User","Recruiter Admin","Hiring Manager"]]],
+#     },
+#     {
 #         "doctype": "Funnel Node"
 #     }
 #     ,{
@@ -41,36 +43,10 @@ fixtures =   [
 #     },{
 #         "doctype": "Property Setter"
 #     },
-    {
-        "doctype": "Custom Field",
-        "filters": [["Custom Field", "module", "=", "Recruitment"]],
-    },
 #     {
 #         "doctype": "Workspace",
 #         "filters": [["Workspace", "name", "=", "Recruitment"]],
 #     },
-#     {
-#         "doctype": "Workflow",
-#         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
-    ]
-fixtures = [
-    # {
-    #      "doctype": "Workspace",
-    #      "filters": [["Workspace", "name", "=", "Recruitment"]],
-	# },
-   
-    {
-        "dt":"Custom Field",
-        "filters":[["module","=","Recruitment"]]
-    }
-    # {
-    #     "dt":"Funnel Node",
-    #     "filters":[["name","=","Send Teams Chat Message"]]
-    # }
-    #  {
-    #     "dt":"Client Script",
-    #     "filters":[["name","=","Authorize Teams"]]
-    # }
     ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
@@ -118,12 +94,12 @@ website_generators = ["Web Page"]
 
 website_context = {"job_offer": "recruitment.www.get_context"}
 
-#permission_query_conditions = {
-#	"Submit To Hiring Manager": "recruitment.permissions.sthm_query",
-#	"Job Requisition":"recruitment.permissions.jr_query",
-  #  "Job Applicant":"recruitment.permissions.ja_query",
-  #  "Job Opening":"recruitment.permissions.jo_query",
-#}
+permission_query_conditions = {
+    "Job Requisition":"recruitment.permissions.doc_type_permissions.jr_query",
+    "Job Opening":"recruitment.permissions.doc_type_permissions.jo_query",
+    "Interview":"recruitment.permissions.doc_type_permissions.interview_query",
+    "Job Applicant":"recruitment.permissions.doc_type_permissions.ja_query"
+	}
 # Jinja
 # ----------
 

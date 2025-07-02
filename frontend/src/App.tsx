@@ -99,14 +99,14 @@ const App: React.FC = () => {
 
             {/* Default route */}
             <Route path="/webapp/" element={<Dashboard />} />
-            
+
             {/* Specific routes for each page */}
 
             <Route path="/webapp/search-members" element={<SearchMembers />} />
             <Route path="/webapp/notices" element={<Notices />} />
             <Route path="/webapp/id-card" element={<IdCard />} />
             <Route path="/webapp/id-card/:employeeId" element={<IdCard />} />
-            <Route path="/webapp/requisitions/:requisitionId" element={<RequisitionDetails/>} />
+            <Route path="/webapp/requisitions/:requisitionId" element={<RequisitionDetails />} />
             {/* Catch-all route for 404 */}
             <Route path="/webapp/recruitment-app/*" element={<RecruitmentApp />} />
             <Route path="/webapp/recruitment-app/interview-details/*" element={<InterviewPage />} />
@@ -115,6 +115,7 @@ const App: React.FC = () => {
             <Route path="/webapp/recruitment-app/add-requisition/*" element={<AddRequisition />} />
             <Route path="/webapp/recruitment-app/interview-feedback/:id" element={<InterviewFeedbackForm />} />
 
+            <Route path="/webapp/recruitment-app/referral-details/:id" element={<ReferralDetails />} />
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
         </div>
