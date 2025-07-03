@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle, Clock, User } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import axios from "axios";
+import EditRequisition from "./EditRequisition";
 
 // Type definitions
 interface ApprovalWorkflow {
@@ -49,6 +50,7 @@ const RequisitionDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
+  const [showEdit, setShowEdit] = useState(false);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -198,8 +200,7 @@ const RequisitionDetails: React.FC = () => {
 
   const approvalWorkflow: ApprovalWorkflow[] =
     data?.approvalWorkflow || fallbackApprovalWorkflow;
-  const assignedTeam: TeamMember[] =
-    data?.assignedTeam || fallbackAssignedTeam;
+  const assignedTeam: TeamMember[] = data?.assignedTeam || fallbackAssignedTeam;
 
   const applicationStats: ApplicationStats = {
     totalApplications: data?.job_applicant_count || 0,
@@ -229,7 +230,6 @@ const RequisitionDetails: React.FC = () => {
           </h2>
         </div>
       </header>
-
       <main className="flex-1 px-4 pt-4 pb-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">
@@ -331,9 +331,7 @@ const RequisitionDetails: React.FC = () => {
               </p>
             </div>
             <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-              <p className="text-sm font-medium text-gray-600 mb-1">
-                Reviewed
-              </p>
+              <p className="text-sm font-medium text-gray-600 mb-1">Reviewed</p>
               <p className="text-3xl font-bold text-gray-900">
                 {applicationStats.reviewed}
               </p>
@@ -385,15 +383,32 @@ const RequisitionDetails: React.FC = () => {
           </div>
         </section>
       </main>
-
       <footer className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
-        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-200">
+        <button
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-200"
+          onClick={() => setShowEdit(true)}
+        >
           Edit Requisition
         </button>
       </footer>
+      {showEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl w-full max-w-lg shadow-lg relative">
+            <button
+              onClick={() => setShowEdit(false)}
+              className="absolute top-2 right-2 text-xl font-bold"
+            >
+              ×
+            </button>
+            <EditRequisition
+              requisition={job}
+              onClose={() => setShowEdit(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default RequisitionDetails;
-

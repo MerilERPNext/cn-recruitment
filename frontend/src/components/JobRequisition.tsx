@@ -158,14 +158,15 @@ const JobRequisition: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search requisitions..."
-              className="form-input block w-full rounded-lg border-none bg-gray-200 py-3 pl-10 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-opacity-50"
+              className="w-full rounded-lg border border-[var(--border-light)] bg-[var(--background-light)] py-2.5 pl-10 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] "
             />
           </div>
           <button
             onClick={() => setShowFilters(true)}
-            className="ml-2 px-4 py-2 flex items-center gap-1 rounded-md bg-gray-200 hover:bg-gray-300"
+            className="ml-2 px-4 py-2 flex items-center gap-1 rounded-md border-[var(--border-light)] bg-[var(--background-light)] hover:[var(--background-light)]focus:ring-[var(--primary-color)]"
           >
-            <MdFilterList className="text-xl" /> <span>Filters</span>
+            <MdFilterList className="text-xl" /> 
+            <span className="hidden sm:inline">Filters</span>
           </button>
         </div>
       </header>
