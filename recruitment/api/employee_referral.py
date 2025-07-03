@@ -1,7 +1,7 @@
 import frappe
 import json
 import base64
-from frappe.utils import nowdate,formatdate, format_time, get_datetime
+from frappe.utils import nowdate,formatdate, format_time, get_datetime, now_datetime
 
 @frappe.whitelist()
 def submit_employee_referral(data, resume_file=None):
@@ -84,6 +84,34 @@ def submit_employee_referral(data, resume_file=None):
 
 
 
+# @frappe.whitelist()
+# def get_my_referrals():
+#     user = frappe.session.user
+
+#     # Get the Employee ID for the logged-in user
+#     employee_id = frappe.db.get_value("Employee", {"user_id": user}, "name")
+#     if not employee_id:
+#         return {
+#             "status": "error",
+#             "message": "No Employee record linked to this user."
+#         }
+
+#     # Fetch referrals where current user is the referrer
+#     referrals = frappe.get_all(
+#         "Employee Referral",
+#         filters={"referrer": employee_id},
+#         fields=["name", "full_name", "email", "status", "for_designation", "date", "referrer"],
+#         order_by="creation desc"
+#     )
+
+#     return {
+#         "status": "success",
+#         "referrals": referrals
+#     }
+
+
+
+
 @frappe.whitelist()
 def get_my_referrals():
     user = frappe.session.user
@@ -96,17 +124,28 @@ def get_my_referrals():
             "message": "No Employee record linked to this user."
         }
 
-    # Fetch referrals where current user is the referrer
+    # Get today's date
+    today = now_datetime()
+
+    # Fetch all referrals for the user
     referrals = frappe.get_all(
         "Employee Referral",
         filters={"referrer": employee_id},
-        fields=["name", "full_name", "email", "status", "for_designation", "date", "referrer"],
+        fields=["name", "full_name", "email", "status", "for_designation", "date", "referrer", "modified"],
         order_by="creation desc"
     )
 
+    # Filter referrals based on status and modified date
+    visible_referrals = []
+    for ref in referrals:
+        if ref["status"] in ["Accepted", "Rejected"]:
+            if (today - ref["modified"]).days > 10:
+                continue  
+        visible_referrals.append(ref)
+
     return {
         "status": "success",
-        "referrals": referrals
+        "referrals": visible_referrals
     }
 
 
