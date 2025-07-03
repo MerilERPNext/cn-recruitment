@@ -72,6 +72,11 @@ const JobRequisition: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [designationOptions, setDesignationOptions] = useState([]);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
+  const [locationOptions, setLocationOptions] = useState([]);
+  const [statusOptions, setStatusOptions] = useState<string[]>([]);
+
   useEffect(() => {
     const fetchRequisitions = async () => {
       setLoading(true);
@@ -137,11 +142,41 @@ const JobRequisition: React.FC = () => {
     });
   };
 
-  const uniqueStatuses = Array.from(
-    new Set(requisitions.map((job) => job.status))
-  ).filter(Boolean);
-  
+  useEffect(() => {
+    const fetchDropdownOptions = async () => {
+      try {
+        const [designationRes, departmentRes, locationRes] = await Promise.all([
+          fetch('/api/resource/Designation?fields=["name"]'),
+          fetch('/api/resource/Department?fields=["name"]'),
+          fetch('/api/resource/Location?fields=["name"]'),
+        ]);
 
+        const designationData = await designationRes.json();
+        const departmentData = await departmentRes.json();
+        const locationData = await locationRes.json();
+
+        setDesignationOptions(designationData.data.map((d: any) => d.name));
+        setDepartmentOptions(departmentData.data.map((d: any) => d.name));
+        setLocationOptions(locationData.data.map((l: any) => l.name));
+
+        // Set predefined status options
+        setStatusOptions([
+          "Pending",
+          "Open & Approved",
+          "Job Opening Created",
+          "In-Progress",
+          "Rejected",
+          "Filled",
+          "On Hold",
+          "Cancelled",
+        ]);
+      } catch (err) {
+        console.error("Error fetching dropdown options:", err);
+      }
+    };
+
+    fetchDropdownOptions();
+  }, []);
   return (
     <div
       className="relative flex size-full min-h-screen flex-col group/design-root"
@@ -165,7 +200,7 @@ const JobRequisition: React.FC = () => {
             onClick={() => setShowFilters(true)}
             className="ml-2 px-4 py-2 flex items-center gap-1 rounded-md border-[var(--border-light)] bg-[var(--background-light)] hover:[var(--background-light)]focus:ring-[var(--primary-color)]"
           >
-            <MdFilterList className="text-xl" /> 
+            <MdFilterList className="text-xl" />
             <span className="hidden sm:inline">Filters</span>
           </button>
         </div>
@@ -240,45 +275,63 @@ const JobRequisition: React.FC = () => {
                 <label className="flex items-center text-sm font-medium mb-1">
                   <MdWork className="mr-1" /> Designation
                 </label>
-                <input
+                <select
                   className="w-full border rounded px-3 py-2"
-                  placeholder="Search by designation"
                   value={filters.designation}
                   onChange={(e) =>
                     setFilters({ ...filters, designation: e.target.value })
                   }
-                />
+                >
+                  <option value="">Select Designation</option>
+                  {designationOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="flex items-center text-sm font-medium mb-1">
                   <MdBusiness className="mr-1" /> Department
                 </label>
-                <input
+                <select
                   className="w-full border rounded px-3 py-2"
-                  placeholder="Search by department"
                   value={filters.department}
                   onChange={(e) =>
                     setFilters({ ...filters, department: e.target.value })
                   }
-                />
+                >
+                  <option value="">Select Department</option>
+                  {departmentOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="flex items-center text-sm font-medium mb-1">
                   <MdLocationOn className="mr-1" /> Location
                 </label>
-                <input
+                <select
                   className="w-full border rounded px-3 py-2"
-                  placeholder="Search by location"
                   value={filters.location}
                   onChange={(e) =>
                     setFilters({ ...filters, location: e.target.value })
                   }
-                />
+                >
+                  <option value="">Select Location</option>
+                  {locationOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-sm font-medium mb-1">Status</label>
                 <div className="flex flex-wrap gap-2">
-                  {uniqueStatuses.map((status) => (
+                  {statusOptions.map((status) => (
                     <label key={status} className="flex items-center space-x-2">
                       <input
                         type="checkbox"
