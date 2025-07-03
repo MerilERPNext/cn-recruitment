@@ -1,12 +1,13 @@
-import React, { ReactElement } from 'react';
-import { ArrowLeft, CheckCircle, Clock, User, } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import React, { ReactElement, useEffect, useState } from "react";
+import { ArrowLeft, CheckCircle, Clock, User } from "lucide-react";
+import { useNavigate, useParams } from "react-router";
+import axios from "axios";
 
 // Type definitions
 interface ApprovalWorkflow {
   id: number;
   name: string;
-  status: 'approved' | 'pending' | 'rejected';
+  status: "approved" | "pending" | "rejected";
   approvedDate: string | null;
 }
 
@@ -32,22 +33,7 @@ interface Details {
   budget: number;
   salaryRange: SalaryRange;
   deadline: string;
-  priority: 'High' | 'Medium' | 'Low';
-  createdDate: string;
-  updatedDate: string;
-}
-
-interface MockData {
-  id: string;
-  title: string;
-  department: string;
-  location: string;
-  employmentType: string;
-  description: string;
-  approvalWorkflow: ApprovalWorkflow[];
-  assignedTeam: TeamMember[];
-  applicationStats: ApplicationStats;
-  details: Details;
+  priority: "High" | "Medium" | "Low";
 }
 
 interface StatusDisplay {
@@ -59,94 +45,183 @@ interface StatusDisplay {
 
 const RequisitionDetails: React.FC = () => {
   const navigate = useNavigate();
-  const handleBackInterview= () => {
-    navigate(-1);
-  };
-  // Mock data that would come from API
-  const mockData: MockData = {
-    id: 'REQ-001',
-    title: 'Senior Product Manager',
-    department: 'Product Management',
-    location: 'Pune, MH',
-    employmentType: 'Full-time',
-    description: 'We are seeking a highly motivated and experienced Senior Product Manager to lead the development and execution of our product strategy. The ideal candidate will have a strong understanding of the Indian market, customer needs, and competitive landscape. They will be responsible for defining product vision, roadmap, and requirements, and working closely with engineering, design, and marketing teams to deliver successful products in the Indian market.',
-    approvalWorkflow: [
-      { id: 1, name: 'HR Approval', status: 'approved', approvedDate: '2024-06-20' },
-      { id: 2, name: 'Finance Approval', status: 'approved', approvedDate: '2024-06-22' },
-      { id: 3, name: 'Executive Approval', status: 'pending', approvedDate: null }
-    ],
-    assignedTeam: [
-      { id: 1, name: 'Priya Sharma', role: 'Recruiter', avatar: null },
-      { id: 2, name: 'Rajesh Gupta', role: 'Hiring Manager', avatar: null }
-    ],
-    applicationStats: {
-      totalApplications: 125,
-      reviewed: 75,
-      interviewing: 15
-    },
-    details: {
-      budget: 2500000,
-      salaryRange: { min: 2000000, max: 2300000 },
-      deadline: '2024-07-15',
-      priority: 'High',
-      createdDate: '2024-06-15',
-      updatedDate: '2024-06-25'
-    }
-  };
+  const { requisitionId } = useParams<{ requisitionId: string }>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<any>(null);
 
-  // Helper function to format currency
+  useEffect(() => {
+    const fetchDetails = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get(
+          "/api/method/recruitment.api.job_requisition.get_job_requisition_details",
+          {
+            params: { requisition_name: requisitionId },
+          }
+        );
+
+        const resData =
+          response.data.message || response.data.data || response.data;
+
+        setData(resData);
+      } catch (err: any) {
+        setError(
+          err?.response?.data?.message ||
+            err.message ||
+            "Failed to load requisition details"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (requisitionId) fetchDetails();
+  }, [requisitionId]);
+
+  const handleBackInterview = () => navigate(-1);
+
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 
-  // Helper function to format date
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     });
   };
 
-  // Helper function to get status icon and color
   const getStatusDisplay = (status: string): StatusDisplay => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return {
           icon: <CheckCircle className="w-6 h-6 text-green-600" />,
-          bgColor: 'bg-green-100',
-          textColor: 'text-green-600',
-          label: 'Approved'
+          bgColor: "bg-green-100",
+          textColor: "text-green-600",
+          label: "Approved",
         };
-      case 'pending':
+      case "pending":
         return {
           icon: <Clock className="w-6 h-6 text-orange-500" />,
-          bgColor: 'bg-orange-100',
-          textColor: 'text-orange-500',
-          label: 'Pending'
+          bgColor: "bg-orange-100",
+          textColor: "text-orange-500",
+          label: "Pending",
         };
       default:
         return {
           icon: <Clock className="w-6 h-6 text-gray-500" />,
-          bgColor: 'bg-gray-100',
-          textColor: 'text-gray-500',
-          label: 'Unknown'
+          bgColor: "bg-gray-100",
+          textColor: "text-gray-500",
+          label: "Unknown",
         };
     }
   };
 
+  const getPriorityInfo = (
+    status?: string
+  ): { label: string; color: string } => {
+    if (!status) {
+      return { label: "Normal Priority", color: "text-yellow-600" };
+    }
+
+    switch (status.toLowerCase()) {
+      case "pending":
+      case "open & approved":
+      case "job opening created":
+        return { label: "Urgent", color: "text-red-500" };
+      case "in-progress":
+      case "on hold":
+      case "filled":
+        return { label: "Normal Priority", color: "text-yellow-600" };
+      case "rejected":
+      case "cancelled":
+        return { label: "Low Priority", color: "text-gray-500" };
+      default:
+        return { label: "Normal Priority", color: "text-yellow-600" };
+    }
+  };
+
+  const getCleanDescription = (html: string): string => {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.querySelector(".ql-editor")?.innerHTML || html;
+  };
+
+  const fallbackApprovalWorkflow: ApprovalWorkflow[] = [
+    {
+      id: 1,
+      name: "HR Manager",
+      status: "approved",
+      approvedDate: "2025-06-30",
+    },
+    {
+      id: 2,
+      name: "Finance Head",
+      status: "pending",
+      approvedDate: null,
+    },
+  ];
+
+  const fallbackAssignedTeam: TeamMember[] = [
+    {
+      id: 1,
+      name: "Priya Sharma",
+      role: "Recruiter",
+      avatar: null,
+    },
+    {
+      id: 2,
+      name: "Amit Verma",
+      role: "Hiring Manager",
+      avatar: null,
+    },
+  ];
+
+  const job = data?.job_requisition || {};
+  const salaryRange: SalaryRange = (() => {
+    if (typeof job.salary_range === "string") {
+      const [minStr, maxStr] = job.salary_range.split("-");
+      return {
+        min: parseInt(minStr) || 0,
+        max: parseInt(maxStr) || 0,
+      };
+    }
+    return { min: 0, max: 0 };
+  })();
+
+  const approvalWorkflow: ApprovalWorkflow[] =
+    data?.approvalWorkflow || fallbackApprovalWorkflow;
+  const assignedTeam: TeamMember[] =
+    data?.assignedTeam || fallbackAssignedTeam;
+
+  const applicationStats: ApplicationStats = {
+    totalApplications: data?.job_applicant_count || 0,
+    reviewed: data?.review_count || 0,
+    interviewing: data?.interview_count || 0,
+  };
+
+  const details: Details = {
+    budget: job.budget || 0,
+    salaryRange,
+    deadline: job.deadline || new Date().toISOString(),
+    priority: job.priority || "Medium",
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="flex items-center px-4 py-3">
-          <button 
-          onClick={handleBackInterview}
-          className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
+          <button
+            onClick={handleBackInterview}
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
+          >
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
           <h2 className="flex-1 text-center text-lg font-semibold text-gray-900 pr-10">
@@ -155,44 +230,52 @@ const RequisitionDetails: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 px-4 pt-4 pb-6">
-        {/* Job Title */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">
-            {mockData.title}
+            {job.designation}
           </h1>
           <p className="text-sm font-medium text-gray-600">
-            {mockData.department} · {mockData.location} · {mockData.employmentType}
+            {job.department} · {"job.location"} · {job.employment_type}
           </p>
         </div>
 
-        {/* Description */}
         <section className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
             Description & Requirements
           </h2>
-          <p className="text-base text-gray-700 leading-relaxed">
-            {mockData.description}
-          </p>
+          <div
+            className="text-base text-gray-700 leading-relaxed"
+            dangerouslySetInnerHTML={{
+              __html: getCleanDescription(job.description),
+            }}
+          />
         </section>
 
-        {/* Approval Workflow */}
         <section className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">
             Approval Workflow
           </h2>
           <div className="space-y-3">
-            {mockData.approvalWorkflow.map((approval) => {
+            {approvalWorkflow.map((approval) => {
               const statusDisplay = getStatusDisplay(approval.status);
               return (
-                <div key={approval.id} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div className={`flex items-center justify-center w-10 h-10 ${statusDisplay.bgColor} rounded-full`}>
+                <div
+                  key={approval.id}
+                  className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm"
+                >
+                  <div
+                    className={`flex items-center justify-center w-10 h-10 ${statusDisplay.bgColor} rounded-full`}
+                  >
                     {statusDisplay.icon}
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{approval.name}</p>
-                    <p className={`text-sm font-medium ${statusDisplay.textColor}`}>{statusDisplay.label}</p>
+                    <p
+                      className={`text-sm font-medium ${statusDisplay.textColor}`}
+                    >
+                      {statusDisplay.label}
+                    </p>
                   </div>
                 </div>
               );
@@ -200,19 +283,28 @@ const RequisitionDetails: React.FC = () => {
           </div>
         </section>
 
-        {/* Assigned Team */}
         <section className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">
             Assigned Team
           </h2>
           <div className="space-y-3">
-            {mockData.assignedTeam.map((member, index) => {
-              const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-red-500', 'bg-yellow-500'];
+            {assignedTeam.map((member, index) => {
+              const avatarColors = [
+                "bg-blue-500",
+                "bg-purple-500",
+                "bg-green-500",
+                "bg-red-500",
+                "bg-yellow-500",
+              ];
               const avatarColor = avatarColors[index % avatarColors.length];
-              
               return (
-                <div key={member.id} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div className={`w-12 h-12 ${avatarColor} rounded-full flex items-center justify-center`}>
+                <div
+                  key={member.id}
+                  className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm"
+                >
+                  <div
+                    className={`w-12 h-12 ${avatarColor} rounded-full flex items-center justify-center`}
+                  >
                     <User className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1">
@@ -225,69 +317,75 @@ const RequisitionDetails: React.FC = () => {
           </div>
         </section>
 
-        {/* Application Statistics */}
         <section className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">
             Application Statistics
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-              <p className="text-sm font-medium text-gray-600 mb-1">Total Applications</p>
-              <p className="text-3xl font-bold text-gray-900">{mockData.applicationStats.totalApplications}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Total Applications
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {applicationStats.totalApplications}
+              </p>
             </div>
             <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-              <p className="text-sm font-medium text-gray-600 mb-1">Reviewed</p>
-              <p className="text-3xl font-bold text-gray-900">{mockData.applicationStats.reviewed}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Reviewed
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {applicationStats.reviewed}
+              </p>
             </div>
             <div className="col-span-2 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-              <p className="text-sm font-medium text-gray-600 mb-1">Interviewing</p>
-              <p className="text-3xl font-bold text-gray-900">{mockData.applicationStats.interviewing}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Interviewing
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {applicationStats.interviewing}
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Details */}
         <section className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">
-            Details
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Details</h2>
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm divide-y divide-gray-200">
-            <div className="px-4 py-3">
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-medium text-gray-600">Budget</p>
-                <p className="text-sm font-medium text-gray-900">{formatCurrency(mockData.details.budget)}</p>
-              </div>
+            <div className="px-4 py-3 flex justify-between items-center">
+              <p className="text-sm font-medium text-gray-600">Budget</p>
+              <p className="text-sm font-medium text-gray-900">
+                {details.budget
+                  ? formatCurrency(details.budget)
+                  : "details.budget"}
+              </p>
             </div>
-            <div className="px-4 py-3">
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-medium text-gray-600">Salary Range</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {formatCurrency(mockData.details.salaryRange.min)} - {formatCurrency(mockData.details.salaryRange.max)}
-                </p>
-              </div>
+            <div className="px-4 py-3 flex justify-between items-center">
+              <p className="text-sm font-medium text-gray-600">Salary Range</p>
+              <p className="text-sm font-medium text-gray-900">
+                {formatCurrency(details.salaryRange.min)} -{" "}
+                {formatCurrency(details.salaryRange.max)}
+              </p>
             </div>
-            <div className="px-4 py-3">
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-medium text-gray-600">Deadline</p>
-                <p className="text-sm font-medium text-gray-900">{formatDate(mockData.details.deadline)}</p>
-              </div>
+            <div className="px-4 py-3 flex justify-between items-center">
+              <p className="text-sm font-medium text-gray-600">Deadline</p>
+              <p className="text-sm font-medium text-gray-900">
+                {formatDate(details.deadline)}
+              </p>
             </div>
-            <div className="px-4 py-3">
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-medium text-gray-600">Priority</p>
-                <p className={`text-sm font-semibold ${
-                  mockData.details.priority === 'High' ? 'text-red-500' : 
-                  mockData.details.priority === 'Medium' ? 'text-yellow-500' : 'text-green-500'
-                }`}>
-                  {mockData.details.priority}
-                </p>
-              </div>
+            <div className="px-4 py-3 flex justify-between items-center">
+              <p className="text-sm font-medium text-gray-600">Priority</p>
+              {(() => {
+                const { label, color } = getPriorityInfo(job?.status);
+                return (
+                  <p className={`text-sm font-semibold ${color}`}>{label}</p>
+                );
+              })()}
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
         <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-200">
           Edit Requisition
@@ -298,3 +396,4 @@ const RequisitionDetails: React.FC = () => {
 };
 
 export default RequisitionDetails;
+
