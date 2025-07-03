@@ -15,21 +15,21 @@ interface APIRequisition {
 const getStatusColor = (status: string): string => {
   switch (status.toLowerCase()) {
     case "pending":
-      return "bg-yellow-100 text-yellow-800"; // warning
+      return "bg-yellow-100 text-yellow-800";
     case "open & approved":
     case "job opening created":
-      return "bg-green-100 text-green-800"; // active
+      return "bg-green-100 text-green-800";
     case "in-progress":
-      return "bg-blue-100 text-blue-800"; // progress
+      return "bg-blue-100 text-blue-800";
     case "rejected":
     case "cancelled":
-      return "bg-red-100 text-red-800"; // error
+      return "bg-red-100 text-red-800";
     case "filled":
-      return "bg-gray-200 text-gray-700"; // completed
+      return "bg-gray-200 text-gray-700";
     case "on hold":
-      return "bg-orange-100 text-orange-800"; // pause
+      return "bg-orange-100 text-orange-800";
     default:
-      return "bg-gray-100 text-gray-800"; // fallback
+      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -54,6 +54,9 @@ const getPriorityInfo = (status: string): { label: string; color: string } => {
 const JobRequisition: React.FC = () => {
   const navigate = useNavigate();
   const [requisitions, setRequisitions] = useState<APIRequisition[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,8 +70,6 @@ const JobRequisition: React.FC = () => {
         );
         const data =
           response.data.message || response.data.data || response.data;
-
-        console.log("Requisitions fetch data:", data);
         setRequisitions(Array.isArray(data) ? data : []);
       } catch (err: any) {
         setError(
@@ -83,14 +84,32 @@ const JobRequisition: React.FC = () => {
     fetchRequisitions();
   }, []);
 
-  // To observe state update separately:
-  useEffect(() => {
-    console.log("Requisitions updated:", requisitions);
-  }, [requisitions]);
-
   const handleGoToRequisition = (id: string) => {
     navigate(`/webapp/requisitions/${id}`);
   };
+
+  // const filteredRequisitions = requisitions.filter((job) => {
+  //   const query = searchTerm.toLowerCase();
+  //   return (
+  //     job.designation.toLowerCase().includes(query) ||
+  //     job.status.toLowerCase().includes(query) ||
+  //     job.department.toLowerCase().includes(query) ||
+  //     job.custom_location.toLowerCase().includes(query)
+  //   );
+  // });
+
+  const filteredRequisitions = requisitions.filter((job) => {
+    const query = searchTerm.toLowerCase();
+    const priority = getPriorityInfo(job.status).label.toLowerCase(); // derived priority
+
+    return (
+      job.designation.toLowerCase().includes(query) ||
+      job.status.toLowerCase().includes(query) ||
+      job.department.toLowerCase().includes(query) ||
+      job.custom_location.toLowerCase().includes(query) ||
+      priority.includes(query) // ✅ this line makes priority searchable
+    );
+  });
 
   return (
     <div
@@ -103,9 +122,10 @@ const JobRequisition: React.FC = () => {
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <MdSearch className="text-[var(--text-secondary)] text-xl" />
             </div>
-            {/* Changed bg-[var(--secondary-color)] to bg-gray-200 */}
             <input
               type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search requisitions..."
               className="form-input block w-full rounded-lg border-none bg-gray-200 py-3 pl-10 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-opacity-50"
             />
@@ -114,7 +134,6 @@ const JobRequisition: React.FC = () => {
 
         <div className="flex gap-2 px-4 pb-3 overflow-x-auto">
           {["Status", "Department", "Location"].map((filter) => (
-            // Changed bg-[var(--secondary-color)] to bg-gray-200
             <button
               key={filter}
               className="flex h-9 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-gray-200 px-4 text-sm font-medium text-[var(--text-primary)] hover:bg-slate-300"
@@ -128,23 +147,18 @@ const JobRequisition: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto px-2 pb-20">
         <div className="space-y-3 py-3">
-          {/* 🟡 Add these 3 conditional UI blocks here */}
           {loading && (
             <p className="text-center text-sm text-gray-500">
               Loading requisitions...
             </p>
           )}
-
           {error && <p className="text-center text-sm text-red-500">{error}</p>}
-
-          {!loading && !error && requisitions.length === 0 && (
+          {!loading && !error && filteredRequisitions.length === 0 && (
             <p className="text-center text-sm text-gray-500">
               No requisitions found.
             </p>
           )}
-
-          {/* ✅ Render job cards if data is present */}
-          {requisitions.map((job) => {
+          {filteredRequisitions.map((job) => {
             const priority = getPriorityInfo(job.status);
             const statusColor = getStatusColor(job.status);
 
