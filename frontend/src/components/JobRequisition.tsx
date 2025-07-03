@@ -258,7 +258,7 @@ const JobRequisition: React.FC = () => {
       </main>
 
       {showFilters && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-end">
+        <div className="fixed inset-0 bg-black bg-opacity-30 z-[9999] flex items-end">
           <div className="w-full bg-white rounded-t-xl p-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold">Filter Tasks</h2>

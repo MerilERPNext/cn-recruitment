@@ -100,20 +100,58 @@ const RequisitionDetails: React.FC = () => {
   };
 
   const getStatusDisplay = (status: string): StatusDisplay => {
-    switch (status) {
-      case "approved":
+    const lowerStatus = status?.toLowerCase?.() || "";
+
+    switch (lowerStatus) {
+      case "pending":
+        return {
+          icon: <Clock className="w-6 h-6 text-yellow-600" />,
+          bgColor: "bg-yellow-100",
+          textColor: "text-yellow-600",
+          label: "Pending",
+        };
+      case "open & approved":
+      case "job opening created":
         return {
           icon: <CheckCircle className="w-6 h-6 text-green-600" />,
           bgColor: "bg-green-100",
           textColor: "text-green-600",
-          label: "Approved",
+          label: "Open & Approved",
         };
-      case "pending":
+      case "in-progress":
         return {
-          icon: <Clock className="w-6 h-6 text-orange-500" />,
+          icon: <Clock className="w-6 h-6 text-blue-600" />,
+          bgColor: "bg-blue-100",
+          textColor: "text-blue-600",
+          label: "In-Progress",
+        };
+      case "rejected":
+        return {
+          icon: <Clock className="w-6 h-6 text-red-600" />,
+          bgColor: "bg-red-100",
+          textColor: "text-red-600",
+          label: "Rejected",
+        };
+      case "filled":
+        return {
+          icon: <CheckCircle className="w-6 h-6 text-gray-700" />,
+          bgColor: "bg-gray-200",
+          textColor: "text-gray-700",
+          label: "Filled",
+        };
+      case "on hold":
+        return {
+          icon: <Clock className="w-6 h-6 text-orange-600" />,
           bgColor: "bg-orange-100",
-          textColor: "text-orange-500",
-          label: "Pending",
+          textColor: "text-orange-600",
+          label: "On Hold",
+        };
+      case "cancelled":
+        return {
+          icon: <Clock className="w-6 h-6 text-red-400" />,
+          bgColor: "bg-red-100",
+          textColor: "text-red-400",
+          label: "Cancelled",
         };
       default:
         return {
@@ -254,32 +292,28 @@ const RequisitionDetails: React.FC = () => {
 
         <section className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">
-            Approval Workflow
+            Approval Status
           </h2>
           <div className="space-y-3">
-            {approvalWorkflow.map((approval) => {
-              const statusDisplay = getStatusDisplay(approval.status);
-              return (
-                <div
-                  key={approval.id}
-                  className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm"
+            <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div
+                className={`flex items-center justify-center w-10 h-10 ${
+                  getStatusDisplay(job.status).bgColor
+                } rounded-full`}
+              >
+                {getStatusDisplay(job.status).icon}
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Status</p>
+                <p
+                  className={`text-sm font-medium ${
+                    getStatusDisplay(job.status).textColor
+                  }`}
                 >
-                  <div
-                    className={`flex items-center justify-center w-10 h-10 ${statusDisplay.bgColor} rounded-full`}
-                  >
-                    {statusDisplay.icon}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{approval.name}</p>
-                    <p
-                      className={`text-sm font-medium ${statusDisplay.textColor}`}
-                    >
-                      {statusDisplay.label}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+                  {getStatusDisplay(job.status).label}
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -350,14 +384,6 @@ const RequisitionDetails: React.FC = () => {
         <section className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Details</h2>
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm divide-y divide-gray-200">
-            <div className="px-4 py-3 flex justify-between items-center">
-              <p className="text-sm font-medium text-gray-600">Budget</p>
-              <p className="text-sm font-medium text-gray-900">
-                {details.budget
-                  ? formatCurrency(details.budget)
-                  : "details.budget"}
-              </p>
-            </div>
             <div className="px-4 py-3 flex justify-between items-center">
               <p className="text-sm font-medium text-gray-600">Salary Range</p>
               <p className="text-sm font-medium text-gray-900">
