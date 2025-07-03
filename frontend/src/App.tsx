@@ -109,7 +109,7 @@ const App: React.FC = () => {
             <Route path="/webapp/requisitions/:requisitionId" element={<RequisitionDetails />} />
             {/* Catch-all route for 404 */}
             <Route path="/webapp/recruitment-app/*" element={<RecruitmentApp />} />
-            <Route path="/webapp/recruitment-app/interview-details/*" element={<InterviewPage />} />
+            <Route path="/webapp/recruitment-app/interview-details/:id*" element={<InterviewPage />} />
             <Route path="/webapp/recruitment-app/add-new-referral/*" element={<AddNewReferral />} />
             <Route path="/webapp/recruitment-app/referral-details/*" element={<ReferralDetails />} />
             <Route path="/webapp/recruitment-app/add-requisition/*" element={<AddRequisition />} />
