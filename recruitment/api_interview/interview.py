@@ -55,13 +55,13 @@ import frappe
 
 @frappe.whitelist(allow_guest=True)
 def get_skill_names():
-    skills = frappe.get_all("Skill", fields=["skill_name"])
-    skill_names = [s.skill_name for s in skills]
+    skills = frappe.get_all("Skill", fields=["skill_name", "description"])
 
     return {
         "success": True,
-        "data": skill_names
+        "data": skills  # returns a list of dicts with skill_name and description
     }
+
 
 
 

@@ -12,6 +12,7 @@ interface CompetencyRating {
 }
 
 interface SkillAssessment {
+  description: string
   skill: string
   rating: string
 }
@@ -33,31 +34,22 @@ interface FeedbackForm {
   skillAssessment: SkillAssessment[]
 }
 
-
 export default function InterviewFeedbackForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [interviewId, setInterviewId] = useState<string>("")
   const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
-    technical: false,
-    communication: false,
-    cultural: false,
-  })
-  const [skills, setSkills] = useState([])
-  const [showSkillDropdown, setShowSkillDropdown] = useState<number | null>(null)
+  const [skills, setSkills] = useState<string[]>([])
+
   console.log(skills, "skillsskills")
+
   const initialFormData: FeedbackForm = {
     interview: "",
     interviewer: "",
     interview_round: "",
     job_applicant: "",
-    competencies: [
-      { name: "Technical Skills", description: "Problem Solving, Coding Ability", rating: 0 },
-      { name: "Communication", description: "Verbal Clarity, Written Skills", rating: 0 },
-      { name: "Cultural Fit", description: "Teamwork, Adaptability", rating: 0 },
-    ],
+    competencies: [], // Fixed: should be empty array, not empty string
     technicalFeedback: "",
     communicationFeedback: "",
     culturalFitFeedback: "",
@@ -66,7 +58,7 @@ export default function InterviewFeedbackForm() {
     detailedComments: "",
     nextSteps: "",
     attachments: [],
-    skillAssessment: [{ skill: "", rating: "" }],
+    skillAssessment: [{ skill: "",description:"", rating: "" }],
   }
 
   const [formData, setFormData] = useState<FeedbackForm>(initialFormData)
@@ -75,24 +67,41 @@ export default function InterviewFeedbackForm() {
   useEffect(() => {
     const fetchSkills = async () => {
       try {
-        const res = await fetch("/api/method/recruitment.api_interview.interview.get_skill_names");
-        const data = await res.json();
-
-        console.log("Skill fetch response:", data.message.data);
-
+        const res = await fetch("/api/method/recruitment.api_interview.interview.get_skill_names")
+        const data = await res.json()
+  
         if (data.message.success && data.message.data) {
-          setSkills(data.message.data); // now accessing inside `message`
-        } else {
-          console.warn("Skill fetch failed or empty:", data);
+          const fetchedSkills = data.message.data
+  
+          setSkills(fetchedSkills)
+  
+          const initialCompetencies = fetchedSkills.map((skill: any) => ({
+            name: skill.skill_name,
+            description: skill.description || "",
+            rating: 0,
+          }))
+  
+          const initialSkillAssessment = fetchedSkills.map((skill: any) => ({
+            skill: skill.skill_name,
+            description: skill.description || "",
+            rating: "0",
+          }))
+  
+          setFormData((prev) => ({
+            ...prev,
+            competencies: initialCompetencies,
+            skillAssessment: initialSkillAssessment,
+          }))
         }
-      } catch (error) {
-        console.error("Error fetching skills:", error);
+      } catch (err) {
+        console.error("Error fetching skills:", err)
       }
-    };
-
-    fetchSkills();
-  }, []);
-
+    }
+  
+    fetchSkills()
+  }, [])
+  
+  
 
 
   useEffect(() => {
@@ -104,7 +113,6 @@ export default function InterviewFeedbackForm() {
   useEffect(() => {
     const fetchInterviewData = async () => {
       if (!interviewId) return
-
       try {
         const res = await fetch(
           `/api/method/recruitment.api_interview.interview.get_interview_and_round?interview_id=${interviewId}`,
@@ -115,7 +123,6 @@ export default function InterviewFeedbackForm() {
         if (interview) {
           const interviewerEmail =
             interview.interview_details?.map((item: { interviewer: any }) => item.interviewer) || []
-
           setFormData((prev) => ({
             ...prev,
             interview: interview.name || "",
@@ -128,11 +135,22 @@ export default function InterviewFeedbackForm() {
         console.error("Error fetching interview details:", err)
       }
     }
-
     fetchInterviewData()
   }, [interviewId])
 
   const resetForm = () => {
+    // Reset competencies with current skills but zero ratings
+    const resetCompetencies = formData.competencies.map((comp) => ({
+      ...comp,
+      rating: 0,
+    }))
+
+    // Reset skill assessments
+    const resetSkillAssessment = formData.skillAssessment.map((skill) => ({
+      ...skill,
+      rating: "0",
+    }))
+
     setFormData({
       ...initialFormData,
       // Keep the interview details from API
@@ -140,43 +158,46 @@ export default function InterviewFeedbackForm() {
       interviewer: formData.interviewer,
       interview_round: formData.interview_round,
       job_applicant: formData.job_applicant,
-    })
-    setExpandedSections({
-      technical: false,
-      communication: false,
-      cultural: false,
+      competencies: resetCompetencies,
+      skillAssessment: resetSkillAssessment,
     })
   }
 
-  const updateCompetencyRating = (index: number, rating: number) => {
-    const updated = [...formData.competencies]
-    updated[index].rating = rating
-    setFormData({ ...formData, competencies: updated })
+
+
+  // NEW: Function to update skill assessment rating
+  const updateSkillAssessmentRating = (index: number, rating: number) => {
+    const updated = [...formData.skillAssessment]
+    updated[index].rating = rating.toString()
+    setFormData({ ...formData, skillAssessment: updated })
   }
 
   const handleInputChange = (field: keyof FeedbackForm, value: string) => {
     setFormData({ ...formData, [field]: value })
   }
 
-  const toggleSection = (section: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }))
-  }
-
   const handleBack = () => {
     navigate(-1)
   }
 
-  const calculateAverageRating = () => {
-    const totalRating = formData.competencies.reduce((acc, curr) => acc + curr.rating, 0)
-    return Math.round(totalRating / formData.competencies.length)
+
+  // NEW: Function to calculate average skill assessment rating
+  const calculateAverageSkillRating = () => {
+    if (formData.skillAssessment.length === 0) return 0
+
+    // Filter out skills with rating "0" or empty rating
+    const ratedSkills = formData.skillAssessment.filter(skill =>
+      skill.rating && skill.rating !== "0" && skill.rating !== ""
+    )
+
+    if (ratedSkills.length === 0) return 0
+
+    const totalRating = ratedSkills.reduce((acc, curr) => acc + parseInt(curr.rating), 0)
+    return (totalRating / ratedSkills.length).toFixed(1)
   }
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-
     try {
       const apiData = {
         interview: formData.interview,
@@ -185,9 +206,11 @@ export default function InterviewFeedbackForm() {
         result: formData.recommendation || "NA",
         job_applicant: formData.job_applicant,
         feedback: formData.detailedComments || "",
-        rating: calculateAverageRating(),
-        skill_assessment: formData.skillAssessment.filter(sa => sa.skill && sa.rating),
+        rating: calculateAverageSkillRating(),
+        skill_assessment: formData.skillAssessment.filter((sa) => sa.skill && sa.rating && sa.rating !== "0"),
       }
+
+      console.log("API Data being sent:", apiData) // Debug log
 
       const res = await fetch("/api/method/recruitment.api_interview.interview.create_interview_feedback", {
         method: "POST",
@@ -213,13 +236,6 @@ export default function InterviewFeedbackForm() {
     }
   }
 
-  const handleSkillSelect = (index: number, skillName: string) => {
-    const updated = [...formData.skillAssessment]
-    updated[index].skill = skillName
-    setFormData({ ...formData, skillAssessment: updated })
-    setShowSkillDropdown(null)
-  }
-
   const StarRating = ({
     rating,
     onRatingChange,
@@ -228,11 +244,11 @@ export default function InterviewFeedbackForm() {
     onRatingChange: (r: number) => void
   }) => (
     <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
+      {[1, 2, 3, 4].map((star) => (
         <button
           key={star}
           type="button"
-          className={`w-8 h-8 text-2xl transition-all duration-200 hover:scale-110 ${star <= rating ? "text-yellow-400" : "text-gray-300 hover:text-yellow-200"
+          className={`w-6 h-6 text-2xl transition-all duration-200 hover:scale-110 ${star <= rating ? "text-yellow-400" : "text-gray-300 hover:text-yellow-200"
             }`}
           onClick={() => onRatingChange(star)}
         >
@@ -309,97 +325,64 @@ export default function InterviewFeedbackForm() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Interviewer(s)</label>
-              <div className="bg-gray-50 rounded-lg p-3 border">
-                <span className="text-gray-900">
-                  {Array.isArray(formData.interviewer)
-                    ? formData.interviewer.join(", ")
-                    : formData.interviewer || "Loading..."}
-                </span>
-              </div>
+              {Array.isArray(formData.interviewer)
+                ? formData.interviewer.map((item, index) => (
+                  <div className=" mt-2 p-3 ">
+
+                    <span key={index} className="mr-2">
+                      {item}
+                    </span>
+
+
+
+                  </div>
+                ))
+                : formData.interviewer || "Loading..."}
             </div>
           </div>
         </div>
 
-        {/* Competency Ratings */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Competency Assessment</h2>
+        {/* Skill Assessment Section - NEW */}
+        <div className="bg-white rounded-lg shadow-sm border p-2">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Skill Assessment</h2>
           <div className="space-y-4">
-            {formData.competencies.map((comp, index) => (
-              <div key={comp.name} className="bg-gray-50 rounded-lg border p-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {formData.skillAssessment.map((skill, index) => (
+              <div key={skill.skill} className="bg-gray-50 rounded-lg border p-4">
+                <div className="flex flex-row items-center md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{comp.name}</h3>
-                    <p className="text-sm text-gray-600">{comp.description}</p>
+                    <h3 className="font-medium text-gray-900">{skill.skill}</h3>
+                    <p className=" text-gray-900">{skill.description}</p>
                   </div>
                   <div className="flex flex-col items-center md:items-end">
-                    <StarRating rating={comp.rating} onRatingChange={(r) => updateCompetencyRating(index, r)} />
-                    <span className="text-sm text-gray-500 mt-1">
-                      {comp.rating > 0 ? `${comp.rating}/5` : "Not rated"}
-                    </span>
+                    <StarRating
+                      rating={parseInt(skill.rating) || 0}
+                      onRatingChange={(r) => updateSkillAssessmentRating(index, r)}
+                    />
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Average Rating Display */}
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-gray-900">Overall Rating</h4>
-                <p className="text-sm text-gray-600">Average of all competency ratings</p>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-blue-600">{calculateAverageRating()}</div>
-                <div className="text-sm text-gray-500">out of 5</div>
+          {/* Skill Average Rating Display */}
+          {formData.skillAssessment.length > 0 && (
+            <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-gray-900">Overall Skill Rating</h4>
+                  <p className="text-sm text-gray-600">Average of all skill ratings</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-green-600">{calculateAverageSkillRating()}</div>
+                  <div className="text-sm text-gray-500">out of 5</div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Detailed Feedback Sections */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Feedback</h2>
-          <div className="space-y-3">
-            {["technical", "communication", "cultural"].map((section) => (
-              <div key={section} className="border rounded-lg overflow-hidden">
-                <button
-                  onClick={() => toggleSection(section)}
-                  className="w-full p-4 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <span className="font-medium text-gray-900 capitalize">{section} Skills</span>
-                    <span className="ml-2 text-sm text-gray-500">
-                      {section === "technical" && "Problem solving, coding ability"}
-                      {section === "communication" && "Verbal clarity, presentation"}
-                      {section === "cultural" && "Teamwork, adaptability"}
-                    </span>
-                  </div>
-                  <svg
-                    className={`w-5 h-5 text-gray-400 transition-transform ${expandedSections[section] ? "rotate-180" : ""
-                      }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {expandedSections[section] && (
-                  <div className="p-4 bg-white border-t">
-                    <textarea
-                      placeholder={`Share your observations about the candidate's ${section} skills...`}
-                      value={formData[`${section}Feedback` as keyof FeedbackForm] as string}
-                      onChange={(e) => handleInputChange(`${section}Feedback` as keyof FeedbackForm, e.target.value)}
-                      rows={4}
-                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+
 
         {/* Recommendation */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -410,10 +393,10 @@ export default function InterviewFeedbackForm() {
                 key={option}
                 onClick={() => handleInputChange("recommendation", option)}
                 className={`py-3 px-4 rounded-lg border-2 font-medium transition-all ${formData.recommendation === option
-                    ? option === "Cleared"
-                      ? "bg-green-50 border-green-500 text-green-700"
-                      : "bg-red-50 border-red-500 text-red-700"
-                    : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  ? option === "Cleared"
+                    ? "bg-green-50 border-green-500 text-green-700"
+                    : "bg-red-50 border-red-500 text-red-700"
+                  : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
                   }`}
               >
                 {option}
@@ -421,97 +404,6 @@ export default function InterviewFeedbackForm() {
             ))}
           </div>
         </div>
-
-{/* Skill Assessment */}
-<div className="bg-white rounded-lg shadow-sm border p-6">
-  <h2 className="text-lg font-semibold text-gray-900 mb-4">Skill Assessment</h2>
-  <div className="space-y-4">
-    {formData.skillAssessment.map((item, skillIndex) => (
-      <div
-        key={skillIndex}
-        className="flex flex-col md:flex-row gap-4 items-start md:items-center p-4 bg-gray-50 rounded-lg border"
-      >
-        {/* Skill Dropdown */}
-        <div className="flex-1 relative">
-          <button
-            onClick={() => setShowSkillDropdown(showSkillDropdown === skillIndex ? null : skillIndex)}
-            className="w-full p-3 border rounded-lg text-left bg-white hover:bg-gray-50 transition-colors flex items-center justify-between"
-          >
-            <span className={item.skill ? "text-gray-900" : "text-gray-500"}>
-              {item.skill || "Select a skill..."}
-            </span>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {showSkillDropdown === skillIndex && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
-              {skills.map((skill, skillListIndex) => (
-                <button
-                  key={skillListIndex}
-                  onClick={() => handleSkillSelect(skillIndex, skill)}
-                  className="w-full p-3 text-left hover:bg-gray-50 transition-colors border-b last:border-b-0"
-                >
-                  <div className="font-medium text-gray-900">{skill}</div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Star Rating */}
-        <div className="flex flex-col items-start md:items-center gap-1">
-          <StarRating
-            rating={Number(item.rating)}
-            onRatingChange={(newRating) => {
-              const updated = [...formData.skillAssessment];
-              updated[skillIndex].rating = String(newRating);
-              setFormData({ ...formData, skillAssessment: updated });
-            }}
-          />
-          <span className="text-sm text-gray-500">{item.rating}/5</span>
-        </div>
-
-        {/* Delete Button */}
-        <button
-          onClick={() => {
-            const updated = formData.skillAssessment.filter((_, i) => i !== skillIndex);
-            setFormData({ ...formData, skillAssessment: updated });
-          }}
-          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-        </button>
-      </div>
-    ))}
-  </div>
-
-  {/* Add Another Skill Button */}
-  <button
-    onClick={() =>
-      setFormData({
-        ...formData,
-        skillAssessment: [...formData.skillAssessment, { skill: "", rating: "" }],
-      })
-    }
-    className="mt-4 flex items-center px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-  >
-    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-    </svg>
-    Add Another Skill
-  </button>
-</div>
-
-
 
         {/* Detailed Comments */}
         <div className="bg-white rounded-lg shadow-sm border p-6">

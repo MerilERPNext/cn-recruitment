@@ -2,25 +2,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ArrowLeft, Calendar, Clock, Video, Code, FileText, Folder, HelpCircle, Play, CheckCircle, Copy } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, Video, FileText, Copy } from "lucide-react"
 import { useNavigate, useParams } from "react-router";
 import axios from "axios";
 
 const InterviewPage = () => {
   const { id: interviewId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [interviewStarted, setInterviewStarted] = useState(false);
   const [interviewData, setInterviewData] = useState<any>(null);
   const [rounds, setRounds] = useState<any[]>([]);
-  const [checklist, setChecklist] = useState({
-    resume: false,
-    questions: false,
-    setup: false,
-  })
+
 console.log(rounds, interviewData)
-  const handleChecklistChange = (item: keyof typeof checklist) => {
-    setChecklist((prev) => ({ ...prev, [item]: !prev[item] }))
-  }
 
   useEffect(() => {
     const fetchInterviewData = async () => {
@@ -44,20 +36,46 @@ console.log(rounds, interviewData)
       fetchInterviewData();
     }
   }, [interviewId]);
+  const getDuration = (fromTime: string, toTime: string): string => {
+    if (!fromTime || !toTime) return "NA";
+  
+    const [fromHours, fromMinutes] = fromTime.split(":").map(Number);
+    const [toHours, toMinutes] = toTime.split(":").map(Number);
+  
+    const fromDate = new Date();
+    fromDate.setHours(fromHours, fromMinutes, 0);
+  
+    const toDate = new Date();
+    toDate.setHours(toHours, toMinutes, 0);
+  
+    let diffMs = toDate.getTime() - fromDate.getTime();
+  
+    if (diffMs < 0) {
+      // handle if to_time is past midnight
+      diffMs += 24 * 60 * 60 * 1000;
+    }
+  
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  
+    return `${diffHours}h ${diffMinutes}m`;
+  };
+  
 
   const getFieldValue = (field: any) => field || "NA";
 
   const handleBackInterview = () => {
     navigate(-1);
   };
+  const handleRedirect = () => {
+    if (interviewData.custom_resume_attachment) {
+      window.open(interviewData.custom_resume_attachment, "_blank");
+    }
+  };
+  
 
   const handleButtonClick = () => {
-    if (!interviewStarted) {
-      window.open(interviewData.custom_zoom_link);
-      setInterviewStarted(true);
-    } else {
-      navigate(`/webapp/recruitment-app/interview-feedback/${interviewId}`);
-    }
+  navigate(`/webapp/recruitment-app/interview-feedback/${interviewId}`);
   };
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-[var(--background-light)]">
@@ -101,7 +119,7 @@ console.log(rounds, interviewData)
             </div>
             <div className="flex flex-col justify-center">
               <p className="text-slate-900 text-base font-medium">Duration</p>
-              <p className="text-slate-600 text-sm">NA</p>
+              <p className="text-slate-600 text-sm">{getDuration(interviewData?.from_time, interviewData?.to_time)}</p>
             </div>
           </div>
           <div className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
@@ -120,8 +138,17 @@ console.log(rounds, interviewData)
             <div className="flex flex-col justify-center">
               <p className="text-slate-900 text-base font-medium">Join Link</p>
               <p className="text-slate-600 text-sm flex items-center gap-2">
-                <Copy className="h-5 w-5" />{getFieldValue(interviewData?.custom_zoom_link)}
-              </p>
+  <Copy className="h-5 w-5" />
+  <a
+    href={getFieldValue(interviewData?.custom_zoom_link)}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-blue-600 underline"
+  >
+    {getFieldValue(interviewData?.custom_zoom_link)}
+  </a>
+</p>
+
             </div>
           </div>
         </section>
@@ -146,11 +173,8 @@ console.log(rounds, interviewData)
         <section>
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Interview Type</h2>
           <div className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
-            <div className="flex items-center justify-center rounded-xl bg-slate-100 w-10 h-10 text-slate-900">
-              <Code className="h-5 w-5" />
-            </div>
             <div className="flex-1">
-              <span className="inline-flex items-center justify-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-slate-900">
+              <span className="inline-flex items-center justify-center px-3 py-1 text-sm font-semibold text-slate-900">
                 {getFieldValue(interviewData?.interview_round)}
               </span>
             </div>
@@ -160,28 +184,19 @@ console.log(rounds, interviewData)
         {/* Preparation Materials */}
         <section>
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Preparation Materials</h2>
+          
           <div className="flex items-center gap-4 bg-white px-4 py-3">
-            <div className="flex items-center justify-center rounded-xl bg-slate-100 w-10 h-10 text-slate-900">
+           
+            <div onClick={handleRedirect} className="flex items-center justify-center rounded-xl bg-slate-100 w-10 h-10 text-slate-900">
               <FileText className="h-5 w-5" />
             </div>
             <p className="text-slate-900 text-base font-medium flex-1">Resume</p>
-            <button className="flex items-center justify-center w-8 h-8 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded">
-              <CheckCircle className="h-5 w-5" />
-            </button>
           </div>
-          <div className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
-            <div className="flex items-center justify-center rounded-xl bg-slate-100 w-10 h-10 text-slate-900">
-              <Folder className="h-5 w-5" />
-            </div>
-            <p className="text-slate-900 text-base font-medium flex-1">Portfolio</p>
-            <button className="flex items-center justify-center w-8 h-8 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded">
-              <CheckCircle className="h-5 w-5" />
-            </button>
-          </div>
+         
         </section>
 
         {/* Interview Questions Template */}
-        <section>
+        {/* <section>
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Interview Questions Template</h2>
           <div className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
             <div className="flex items-center justify-center rounded-xl bg-slate-100 w-10 h-10 text-slate-900">
@@ -192,10 +207,10 @@ console.log(rounds, interviewData)
               <Play className="h-5 w-5" />
             </button>
           </div>
-        </section>
+        </section> */}
 
         {/* Pre-Interview Checklist */}
-        <section>
+        {/* <section>
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Pre-Interview Checklist</h2>
           <div className="px-4 pb-4">
             <label className="flex gap-x-3 py-3 items-center cursor-pointer">
@@ -226,7 +241,7 @@ console.log(rounds, interviewData)
               <p className="text-slate-900 text-base flex-1">Confirm video call setup</p>
             </label>
           </div>
-        </section>
+        </section> */}
       </div>
 
       <footer className="sticky bottom-0 bg-white p-4 border-t border-slate-200">
@@ -234,7 +249,7 @@ console.log(rounds, interviewData)
           className="w-full bg-slate-900 text-white font-semibold py-3 px-4 rounded-xl hover:bg-slate-800 active:bg-slate-700 transition-colors duration-150"
           onClick={handleButtonClick}
         >
-          {interviewStarted ? "Go to Feedback" : "Start Interview"}
+         Go to Feedback
         </button>
       </footer>
     </div>
