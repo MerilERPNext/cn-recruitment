@@ -46,3 +46,15 @@ def get_interview_data(doc, methed):
             "status": "error",
             "message": str(e)
         }
+
+
+import frappe
+from frappe import _
+
+@frappe.whitelist(allow_guest=True)
+def get_custom_interviews():
+    interviews = frappe.get_all("Interview", fields=["name", "from_time", "to_time", "custom_full_name"])
+
+    return {
+        "data": interviews
+    }
