@@ -34,7 +34,7 @@ import frappe
 
 @frappe.whitelist(allow_guest=True)
 def get_custom_interviews():
-    interview_names = frappe.get_all("Interview", fields=["name", "from_time", "to_time"])
+    interview_names = frappe.get_all("Interview", fields=["name", "from_time", "to_time","status"])
     
     results = []
     for row in interview_names:
@@ -43,6 +43,7 @@ def get_custom_interviews():
             "name": doc.name,
             "from_time": doc.from_time,
             "to_time": doc.to_time,
+            "status": doc.status,
             "interviewer": getattr(doc, "interview_details", "")
         })
 

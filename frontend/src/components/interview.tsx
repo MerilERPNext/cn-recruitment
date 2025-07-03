@@ -9,14 +9,16 @@ interface Interview {
   to_time: string;
   candidate_name: string;
   interviewers: string[];
+  status: "Pending" | "Cleared" | "Rejected"; 
 }
 
 const InterviewPage = () => {
   const navigate = useNavigate();
-  const [interviews, setInterviews] = useState<Interview[]>([]); // ✅ fixed initialization
-const handleGoToInterview = (interviewId: string) => {
-  navigate(`/webapp/recruitment-app/interview-details/${interviewId}`);
-};
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  
+  const handleGoToInterview = (interviewId: string) => {
+    navigate(`/webapp/recruitment-app/interview-details/${interviewId}`);
+  };
 
   useEffect(() => {
     const fetchInterviews = async () => {
@@ -40,6 +42,7 @@ const handleGoToInterview = (interviewId: string) => {
             to_time: item.to_time,
             candidate_name: candidateName,
             interviewers,
+            status: item.status || "Pending", // ✅ Added status mapping from API data
           };
         });
 
@@ -85,6 +88,18 @@ const handleGoToInterview = (interviewId: string) => {
                   <p className="text-[var(--secondary-color)] text-base font-medium">
                     {interview.candidate_name}
                   </p>
+                  <span
+                    className={`text-sm font-medium px-2 py-1 rounded-full ${
+                      interview.status === "Cleared"
+                        ? "bg-green-100 text-green-800"
+                        : interview.status === "Rejected"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {interview.status}
+                  </span>
+
                   <p className="text-[var(--secondary-color)] text-sm">
                     {formatTime(interview.from_time)} - {formatTime(interview.to_time)}
                   </p>
