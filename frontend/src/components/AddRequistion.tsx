@@ -1,5 +1,3 @@
-import React from "react";
-
 const AddRequisition = ({ onClose }: { onClose?: () => void }) => {
   return (
     <div className="relative max-w-md mx-auto mt-8 bg-white p-6 rounded shadow">
