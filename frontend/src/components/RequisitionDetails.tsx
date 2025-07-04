@@ -230,7 +230,7 @@ const RequisitionDetails: React.FC = () => {
   };
 
   return (
-    <main className="flex-1 px-4 pt-4 pb-6">
+    <main>
       {loading ? (
         <p className="text-center text-gray-500 text-base">
           Loading requisition details...
