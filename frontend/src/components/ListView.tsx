@@ -32,7 +32,7 @@ interface GetDocumentsParams {
   searchTerm?: string;
   filters?: Record<string, any>;
   fields: string[];
-  searchFields?: string[];
+  searchFields: string[];
 }
 
 interface GetDocumentsResponse {
@@ -49,7 +49,7 @@ interface GetCountParams {
 }
 
 interface GetCountResponse {
-  count: number;
+  message: number;
 }
 
 // Frappe API service functions
@@ -80,7 +80,6 @@ const frappeApi = {
       limit_start: pageParam.toString(),
       fields: JSON.stringify(fields)
     });
-
     // Add search filters
     let apiFilters = [];
     let orFilters: any[] = [];
@@ -143,7 +142,7 @@ const frappeApi = {
   // Get total count for traditional pagination
   getDocumentCount: async ({ doctype, filters }: GetCountParams): Promise<GetCountResponse> => {
     // Replace with actual Frappe API call
-    const response = await fetch(`/api/resource/${doctype}?count=true&filters=${JSON.stringify(filters)}`);
+    const response = await fetch(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${JSON.stringify(filters)}`);
     return response.json();
     
     // await new Promise(resolve => setTimeout(resolve, 200));
@@ -167,8 +166,8 @@ interface FrappeListViewProps {
 const FrappeListView: React.FC<FrappeListViewProps> = ({ 
   doctype, 
   ItemComponent, 
-  isSearch = true, 
-  isFilter = true, 
+  isSearch = !true, 
+  isFilter = !true, 
   pageSize = 20,
   defaultFilters = {},
   defaultFields = ['name', 'modified'],
@@ -243,7 +242,8 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
         pageSize,
         searchTerm: debouncedSearchTerm,
         filters,
-        fields: defaultFields
+        fields: defaultFields,
+        searchFields
       }),
     enabled: !infiniteScroll,
     // keepPreviousData: true,
@@ -277,7 +277,7 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll ? 
     (infiniteQueryResult.data?.pages[0]?.totalCount || 0) : 
-    (countData?.count || 0);
+    (countData?.message || 0);
   const totalPages = Math.ceil(totalCount / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalCount);
@@ -336,7 +336,7 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
               )}
             </button>
           ) : (
-            <span className="text-sm text-gray-500">No more items to load</span>
+            <span className="text-sm text-gray-500">End of List</span>
           )}
         </div>
       );
@@ -399,7 +399,6 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
 
   const renderFilters = () => {
     if (!isFilter || !showFilters || !doctypeSchema) return null;
-    console.log(doctypeSchema);
     const filterableFields = doctypeSchema?.fields?.filter(
       field => field.fieldtype === 'Select' || field.fieldtype === 'Link'
     );
@@ -455,9 +454,9 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
       {/* Header */}
       <div className="border-gray-200 pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 w-full">
             {isSearch && (
-              <div className="relative">
+              <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-5 w-5 text-gray-400" />
                 </div>
@@ -548,69 +547,3 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
 };
 
 export default FrappeListView;
-// Example Item Component for demonstration
-// const ExampleItemComponent: React.FC<{ item: DocumentItem; doctype: string }> = ({ item, doctype }) => (
-//   <div className="px-4 py-3">
-//     <div className="flex items-center justify-between">
-//       <div className="flex-1 min-w-0">
-//         <p className="text-sm font-medium text-gray-900 truncate">
-//           {item.title || item.name}
-//         </p>
-//         <p className="text-sm text-gray-500 truncate">
-//           {item.name}
-//         </p>
-//       </div>
-//       <div className="flex items-center space-x-4 text-sm text-gray-500">
-//         {item.status && (
-//           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-//             item.status === 'Active' ? 'bg-green-100 text-green-800' :
-//             item.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
-//             'bg-gray-100 text-gray-800'
-//           }`}>
-//             {item.status}
-//           </span>
-//         )}
-//         <span>{new Date(item.modified).toLocaleDateString()}</span>
-//       </div>
-//     </div>
-//   </div>
-// );
-
-// // Demo usage with React Query Provider
-// export default function App() {
-//   return (
-//     <div className="p-6 max-w-6xl mx-auto space-y-8">
-//       <h1 className="text-2xl font-bold">Frappe List View with React Query</h1>
-      
-//       <div>
-//         <h2 className="text-lg font-semibold mb-4">Traditional Pagination</h2>
-//         <FrappeListView
-//           doctype="Task"
-//           ItemComponent={ExampleItemComponent}
-//           isSearch={true}
-//           isFilter={true}
-//           doctypeName="Tasks"
-//           pageSize={10}
-//           defaultFields={['name', 'title', 'status', 'modified', 'owner']}
-//           onItemClick={(item) => console.log('Clicked item:', item)}
-//           infiniteScroll={false}
-//         />
-//       </div>
-
-//       <div>
-//         <h2 className="text-lg font-semibold mb-4">Infinite Scroll</h2>
-//         <FrappeListView
-//           doctype="Customer"
-//           ItemComponent={ExampleItemComponent}
-//           isSearch={true}
-//           isFilter={true}
-//           doctypeName="Customers"
-//           pageSize={10}
-//           defaultFields={['name', 'title', 'status', 'modified', 'owner']}
-//           onItemClick={(item) => console.log('Clicked item:', item)}
-//           infiniteScroll={true}
-//         />
-//       </div>
-//     </div>
-//   );
-// }

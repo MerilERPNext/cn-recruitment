@@ -32,7 +32,6 @@ const ReferralList: React.FC = () => {
         doctype="Employee Referral"
         ItemComponent={ReferralItem}
         isSearch={true}
-        isFilter={true}
         pageSize={10}
         defaultFields={['name', 'full_name', 'email', 'date', 'status', 'for_designation']}
         searchFields={['full_name', 'email', 'for_designation', 'status']}
