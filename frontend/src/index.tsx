@@ -12,3 +12,9 @@ root.render(
     <App />
   </React.StrictMode>
 ); 
+
+declare global {
+  interface Window {
+    csrf_token: string;
+  }
+}

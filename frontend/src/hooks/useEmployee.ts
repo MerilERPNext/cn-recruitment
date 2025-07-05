@@ -72,7 +72,7 @@ export const useEmployeeIdCard = (employeeId: string | null): UseQueryResult<Emp
 };
 
 // Hook to get current user's employee ID card
-export const useCurrentEmployeeIdCard = (): UseQueryResult<EmployeeIdCard | null, Error> => {
+export const useCurrentEmployeeIdCard = (...args: any[]): UseQueryResult<EmployeeIdCard | null, Error> => {
   return useQuery<EmployeeIdCard | null, Error>({
     queryKey: ['currentEmployeeIdCard'],
     queryFn: async () => {
@@ -83,5 +83,6 @@ export const useCurrentEmployeeIdCard = (): UseQueryResult<EmployeeIdCard | null
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 1,
+    ...args,
   });
 }; 

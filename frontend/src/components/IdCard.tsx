@@ -27,9 +27,9 @@ const DownloadIcon = () => (
   </svg>
 );
 
-const ShareIcon = () => (
-  <svg fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg">
-    <path d="M232,80A32.09,32.09,0,0,0,200,48H56A32.09,32.09,0,0,0,24,80v96a32.09,32.09,0,0,0,32,32H200a32.09,32.09,0,0,0,32-32ZM40,80a16,16,0,0,1,16-16H200a16,16,0,0,1,16,16v4H159.08a8,8,0,0,0-5.62,2.31L128,112.14l-25.46-25.83a8,8,0,0,0-5.62-2.31H40ZM200,192H56a16,16,0,0,1-16-16V100h49.08l31.46,31.83a8,8,0,0,0,11,0L157.82,100H216v76A16,16,0,0,1,200,192Z"></path>
+const CallIcon = () => (
+  <svg fill="currentColor" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
   </svg>
 );
 
@@ -178,7 +178,7 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
 );
 
 // Action Buttons Component
-const ActionButtons = ({ onDownload, onShare }: any) => (
+const ActionButtons = ({ onDownload, onCall }: any) => (
   <div className="mt-8 flex gap-4">
     <ActionButton 
       variant="primary" 
@@ -189,10 +189,10 @@ const ActionButtons = ({ onDownload, onShare }: any) => (
     </ActionButton>
     <ActionButton 
       variant="secondary" 
-      icon={ShareIcon}
-      onClick={onShare}
+      icon={CallIcon}
+      onClick={onCall}
     >
-      Share
+      Call
     </ActionButton>
   </div>
 );
@@ -243,14 +243,17 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
   // Get employee ID from router params if not provided as prop
   const params = useParams<{ employeeId: string }>();
   const targetEmployeeId = employeeId || params.employeeId;
-  
   // Use specific employee if ID is provided, otherwise use current employee
   const { 
     data: currentEmployee, 
     isLoading: isLoadingCurrent, 
     error: currentError,
     refetch: refetchCurrent 
-  } = useCurrentEmployeeIdCard();
+  } = useCurrentEmployeeIdCard(
+    {
+      enabled: !targetEmployeeId,
+    }
+  );
   
   // Use specific employee if ID is provided
   const { 
@@ -278,35 +281,286 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     }
   };
 
-  const handleDownload = () => {
+    const handleDownload = () => {
     if (employee) {
-      // Create a canvas to render the ID card for download
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        // This is a simplified version - you might want to use html2canvas or similar library
-        const element = document.querySelector('[data-id-card]') as HTMLElement;
-        if (element) {
-          // Using html2canvas would be better, but for now just trigger download of current page
-          window.print();
-        }
+      // Create a new window for printing only the ID card
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        // Create print-optimized HTML with only the ID card content
+        const printContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>${employee.employee_name} - ID Card</title>
+            <style>
+              /* Print-specific optimizations */
+              @page {
+                size: A4;
+                margin: 0.5in;
+              }
+              
+              @media print {
+                * {
+                  -webkit-print-color-adjust: exact !important;
+                  color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                
+                body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: white !important;
+                }
+                
+                .id-card-container {
+                  page-break-inside: avoid;
+                  break-inside: avoid;
+                }
+                
+                .no-print { display: none !important; }
+              }
+              
+              /* Base styles optimized for print */
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                background: white;
+                margin: 0;
+                padding: 0;
+                line-height: 1.4;
+                color: #000;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              
+              /* ID Card Layout - clean and elegant */
+              .id-card-container {
+                width: 100%;
+                max-width: 400px;
+                margin: 0;
+                background: #f3f4f6;
+                border-radius: 12px;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+              }
+              
+              /* Employee info section */
+              .employee-info {
+                padding: 24px;
+                text-align: center;
+                background: white;
+                border-radius: 12px 12px 0 0;
+              }
+              
+              .employee-avatar {
+                width: 128px;
+                height: 128px;
+                border-radius: 50%;
+                border: 4px solid white;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                object-fit: cover;
+                margin: 0 auto 24px;
+                display: block;
+              }
+              
+              .employee-name {
+                color: #1f2937;
+                font-size: 24px;
+                font-weight: bold;
+                margin: 16px 0 8px;
+                line-height: 1.2;
+              }
+              
+              .employee-department {
+                color: #6b7280;
+                font-size: 16px;
+                margin-bottom: 4px;
+              }
+              
+              .employee-id {
+                color: #3b82f6;
+                font-size: 14px;
+                font-weight: 500;
+                margin-bottom: 4px;
+              }
+              
+              .employee-designation {
+                color: #6b7280;
+                font-size: 14px;
+              }
+              
+              /* Info section */
+              .info-section {
+                padding: 24px;
+                background: #f3f4f6;
+              }
+              
+              .info-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 0;
+                border-bottom: 1px solid #e5e7eb;
+              }
+              
+              .info-row:last-child {
+                border-bottom: none;
+              }
+              
+              .info-label {
+                color: #6b7280;
+                font-size: 14px;
+                font-weight: 500;
+              }
+              
+              .info-value {
+                color: #1f2937;
+                font-size: 14px;
+                font-weight: 500;
+                text-align: right;
+              }
+              
+              /* QR Code section */
+              .qr-section {
+                text-align: center;
+                padding: 24px;
+                background: white;
+                border-radius: 0 0 12px 12px;
+              }
+              
+              .qr-code {
+                width: 192px;
+                height: 192px;
+                margin: 0 auto;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                background: white;
+                padding: 8px;
+              }
+              
+              .qr-code img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                border-radius: 4px;
+              }
+              
+              /* Print-specific adjustments */
+              @media print {
+                .id-card-container {
+                  box-shadow: none;
+                  border: 1px solid #e5e7eb;
+                }
+                
+                .employee-info {
+                  background: white !important;
+                }
+                
+                .info-section {
+                  background: #f3f4f6 !important;
+                }
+                
+                .qr-section {
+                  background: white !important;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="id-card-container">
+              <!-- Employee Info -->
+              <div class="employee-info">
+                <img 
+                  src="${employee.avatar || getDefaultAvatarURL(employee.employee_name)}" 
+                  alt="${employee.employee_name}'s profile picture"
+                  class="employee-avatar"
+                  onerror="this.src='${getDefaultAvatarURL(employee.employee_name)}'"
+                />
+                <h2 class="employee-name">${employee.employee_name}</h2>
+                <p class="employee-department">${employee.department} Department</p>
+                <p class="employee-id">ID: ${employee.employee_number || employee.id}</p>
+                ${employee.designation ? `<p class="employee-designation">${employee.designation}</p>` : ''}
+              </div>
+              
+              <!-- Info Section -->
+              <div class="info-section">
+                <div class="info-row">
+                  <span class="info-label">Employee ID</span>
+                  <span class="info-value">${employee.employee_number || employee.id}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Department</span>
+                  <span class="info-value">${employee.department}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Location</span>
+                  <span class="info-value">${employee.location || 'Not Specified'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Start Date</span>
+                  <span class="info-value">${formatDate(employee.startDate)}</span>
+                </div>
+                ${employee.designation ? `
+                  <div class="info-row">
+                    <span class="info-label">Designation</span>
+                    <span class="info-value">${employee.designation}</span>
+                  </div>
+                ` : ''}
+                ${employee.contact ? `
+                  <div class="info-row">
+                    <span class="info-label">Contact</span>
+                    <span class="info-value">${employee.contact}</span>
+                  </div>
+                ` : ''}
+                ${employee.email ? `
+                  <div class="info-row">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">${employee.email}</span>
+                  </div>
+                ` : ''}
+              </div>
+              
+              <!-- QR Code -->
+              <div class="qr-section">
+                <img 
+                  src="${generateEmployeeQRCodeURL(employee, 200)}" 
+                  alt="QR Code for ${employee.employee_name}"
+                  class="qr-code"
+                />
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+        
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        
+        // Wait for images to load before printing
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+          }, 1000);
+        };
       }
     }
   };
 
-  const handleShare = () => {
-    if (employee && navigator.share) {
-      navigator.share({
-        title: `${employee.employee_name} - Employee ID Card`,
-        text: `Employee: ${employee.employee_name}\nDepartment: ${employee.department}\nID: ${employee.employee_number || employee.id}`,
-        url: window.location.href
-      }).catch(console.error);
+  const handleCall = () => {
+    if (employee?.contact) {
+      // Remove any non-numeric characters from the phone number
+      const phoneNumber = employee.contact.replace(/\D/g, '');
+      
+      if (phoneNumber) {
+        // Initiate phone call
+        window.location.href = `tel:${phoneNumber}`;
+      } else {
+        alert('Invalid phone number format. Please check the contact information.');
+      }
     } else {
-      // Fallback: copy to clipboard
-      const shareText = `Employee: ${employee?.employee_name}\nDepartment: ${employee?.department}\nID: ${employee?.employee_number || employee?.id}`;
-      navigator.clipboard.writeText(shareText).then(() => {
-        alert('Employee information copied to clipboard!');
-      }).catch(console.error);
+      alert('No contact number available for this employee.');
     }
   };
 
@@ -337,7 +591,7 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
               <EmployeeCard employee={employee} />
               <ActionButtons 
                 onDownload={handleDownload}
-                onShare={handleShare}
+                onCall={handleCall}
               />
             </>
           )}

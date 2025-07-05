@@ -415,7 +415,7 @@ const RequisitionDetails: React.FC = () => {
           <footer className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
             <button
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-200"
-              onClick={() => navigate(`/app/job-requisition/${requisitionId}`)}
+              onClick={() => window.open(`/app/job-requisition/${requisitionId}`)}
             >
               Edit Requisition
             </button>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InterviewPage from './interview';
-import { IoIosArrowBack } from 'react-icons/io';
 import JobRequisition from './JobRequisition';
 import ReferralList from './RafarralList';
 
@@ -29,7 +28,7 @@ const RecruitmentApp: React.FC = () => {
     if (activeTab === 'Referrals') {
       navigate('/webapp/recruitment-app/add-new-referral');
     } else if (activeTab === 'Requisitions') {
-      navigate('/app/job-requisition/new');
+      window.open('/app/job-requisition/new');
     }
   };
 
@@ -73,10 +72,7 @@ const RecruitmentApp: React.FC = () => {
 
       {/* Header */}
       <header className="sticky z-50 top-0 bg-white shadow-sm">
-        <div className="flex items-center p-1 justify-between">
-          <button onClick={() => navigate('/')} className="text-[var(--text-primary)] rounded-full hover:bg-gray-100 p-2">
-            <span className="text-xl font-semibold justify-center pb-3  text-slate-90"><IoIosArrowBack /></span>
-          </button>
+        <div className="flex items-center p-1 justify-center">
           <h1 className="text-xl font-semibold justify-center px-4  text-slate-900 text-center">{activeTab}</h1>
           <div className="w-8"></div>
         </div>

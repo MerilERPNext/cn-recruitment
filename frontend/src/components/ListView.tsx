@@ -1,6 +1,55 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, Filter, ChevronLeft, ChevronRight, RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, RefreshCw, AlertCircle, Loader2, Shield, RefreshCw as RetryIcon } from 'lucide-react';
+
+/**
+ * FrappeListView Component
+ * 
+ * A comprehensive list view component for Frappe/ERPNext applications with built-in
+ * permission error handling and graceful error recovery.
+ * 
+ * Features:
+ * - Automatic 403 permission error detection and handling
+ * - User-friendly error messages with retry options
+ * - Infinite scroll or traditional pagination
+ * - Search and filtering capabilities
+ * - Customizable error messages
+ * - Automatic retry logic (excluding permission errors)
+ * 
+ * Usage Example:
+ * ```tsx
+ * import FrappeListView from './ListView';
+ * 
+ * const MyComponent = () => {
+ *   const JobItem = ({ item }) => (
+ *     <div className="p-4 border rounded">
+ *       <h3>{item.title}</h3>
+ *       <p>{item.status}</p>
+ *     </div>
+ *   );
+ * 
+ *   return (
+ *     <FrappeListView
+ *       doctype="Job Opening"
+ *       ItemComponent={JobItem}
+ *       isSearch={true}
+ *       isFilter={true}
+ *       pageSize={20}
+ *       searchFields={['title', 'description']}
+ *       permissionErrorMessage="You don't have access to view job openings. Please contact HR for assistance."
+ *       onItemClick={(item) => console.log('Clicked:', item)}
+ *     />
+ *   );
+ * };
+ * ```
+ * 
+ * Permission Error Handling:
+ * - Automatically detects 403 errors from Frappe API
+ * - Shows user-friendly permission error messages
+ * - Provides retry and refresh options
+ * - Does not retry permission errors (avoids unnecessary API calls)
+ * - Supports custom permission error messages via permissionErrorMessage prop
+ */
 
 // TypeScript interfaces
 interface DoctypeField {
@@ -52,101 +101,224 @@ interface GetCountResponse {
   message: number;
 }
 
+// Custom error class for permission errors
+class PermissionError extends Error {
+  constructor(message: string, public statusCode: number = 403) {
+    super(message);
+    this.name = 'PermissionError';
+  }
+}
+
+// Error handler utility
+const handleApiError = async (response: Response, context: string): Promise<never> => {
+  if (response.status === 403) {
+    throw new PermissionError(
+      `You don't have permission to access ${context}. Please contact your administrator for access.`,
+      403
+    );
+  } else if (response.status === 401) {
+    throw new Error('Your session has expired. Please refresh the page and try again.');
+  } else if (response.status === 404) {
+    throw new Error(`${context} not found.`);
+  } else if (response.status >= 500) {
+    throw new Error('Server error. Please try again later.');
+  } else {
+    // Try to parse error response, but don't fail if it's not JSON
+    let errorMessage = `Failed to load ${context}. Please try again.`;
+    try {
+      const errorData = await response.json();
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      }
+    } catch (parseError) {
+      // If we can't parse the response as JSON, use a generic message
+      errorMessage = `Failed to load ${context} (Status: ${response.status}). Please try again.`;
+    }
+    throw new Error(errorMessage);
+  }
+};
+
+// Utility to check if error is permission-related
+const isPermissionError = (error: unknown): error is PermissionError => {
+  // Check if it's a PermissionError instance
+  if (error instanceof PermissionError) {
+    return true;
+  }
+  
+  // Check if it's an Error with permission-related message
+  if (error instanceof Error) {
+    return error.message.includes('permission') || 
+           error.message.includes('403') || 
+           error.message.includes('Access Restricted');
+  }
+  
+  // Check if it's a plain object (React Query might serialize errors)
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as any).message;
+    return typeof message === 'string' && (
+      message.includes('permission') || 
+      message.includes('403') || 
+      message.includes('Access Restricted')
+    );
+  }
+  
+  return false;
+};
+
 // Frappe API service functions
 const frappeApi = {
   // Fetch doctype schema
   getDoctypeSchema: async (doctype: string): Promise<DoctypeSchema> => {
-    // Replace with actual Frappe API call
-    const response = await fetch(`/api/v2/doctype/${doctype}/meta`);
-    return response.json();
-    
-    // Mock implementation
-    // await new Promise(resolve => setTimeout(resolve, 300));
-    // return {
-    //   fields: [
-    //     { fieldname: 'name', label: 'Name', fieldtype: 'Data' },
-    //     { fieldname: 'title', label: 'Title', fieldtype: 'Data' },
-    //     { fieldname: 'status', label: 'Status', fieldtype: 'Select', options: 'Draft\nActive\nInactive' },
-    //     { fieldname: 'modified', label: 'Modified', fieldtype: 'Datetime' },
-    //     { fieldname: 'owner', label: 'Owner', fieldtype: 'Link', options: 'User' }
-    //   ]
-    // };
+    try {
+      const response = await fetch(`/api/v2/doctype/${doctype}/meta`);
+      
+      // Handle non-ok responses first
+      if (!response.ok) {
+        await handleApiError(response, `doctype schema for ${doctype}`);
+      }
+      
+      // Parse response JSON
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, throw a generic error
+        throw new Error(`Failed to parse response from ${doctype} schema API`);
+      }
+      
+      // Check for Frappe-specific error responses in the JSON
+      if (result.error) {
+        if (result.error.includes('permission') || result.error.includes('403')) {
+          throw new PermissionError(
+            `You don't have permission to access the ${doctype} doctype. Please contact your administrator for access.`,
+            403
+          );
+        }
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to load doctype schema: ${errorMessage}`);
+    }
   },
 
   // Fetch documents with pagination
   getDocuments: async ({ doctype, pageParam = 0, pageSize, searchTerm, filters, fields, searchFields }: GetDocumentsParams): Promise<GetDocumentsResponse> => {
-    const params = new URLSearchParams({
-      limit_page_length: pageSize.toString(),
-      limit_start: pageParam.toString(),
-      fields: JSON.stringify(fields)
-    });
-    // Add search filters
-    let apiFilters = [];
-    let orFilters: any[] = [];
-    if (searchTerm?.trim()) {
-    //   apiFilters.push(['name', 'like', `%${searchTerm}%`]);
-    //   searchFields.forEach((field: string) => {
-    //     apiFilters.push([field, 'like', `%${searchTerm}%`]);
-    //   });
-
-    if (searchFields.length > 0) {
-        searchFields.forEach((field: string) => {
-          orFilters.push([field, 'like', `%${searchTerm}%`]);
-        });
+    try {
+      const params = new URLSearchParams({
+        limit_page_length: pageSize.toString(),
+        limit_start: pageParam.toString(),
+        fields: JSON.stringify(fields)
+      });
+      
+      // Add search filters
+      let apiFilters = [];
+      let orFilters: any[] = [];
+      if (searchTerm?.trim()) {
+        if (searchFields.length > 0) {
+          searchFields.forEach((field: string) => {
+            orFilters.push([field, 'like', `%${searchTerm}%`]);
+          });
+        }
       }
+
+      // Add custom filters
+      if (filters && Object.keys(filters).length > 0) {
+        const filterArray = Object.entries(filters)
+          .filter(([_, value]) => value !== '' && value != null)
+          .map(([key, value]) => [key, '=', value]);
+        apiFilters.push(...filterArray);
+      }
+
+      if (apiFilters.length > 0) {
+        params.append('filters', JSON.stringify(apiFilters));
+      }
+      if (orFilters.length > 0) {
+        params.append('or_filters', JSON.stringify(orFilters));
+      }
+
+      const response = await fetch(`/api/resource/${doctype}?${params}`);
+      
+      // Handle non-ok responses first
+      if (!response.ok) {
+        await handleApiError(response, `${doctype} documents`);
+      }
+      
+      // Parse response JSON
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, throw a generic error
+        throw new Error(`Failed to parse response from ${doctype} API`);
+      }
+      
+      // Check for Frappe-specific error responses in the JSON
+      if (result.error) {
+        if (result.error.includes('permission') || result.error.includes('403')) {
+          throw new PermissionError(
+            `You don't have permission to access ${doctype} documents. Please contact your administrator for access.`,
+            403
+          );
+        }
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to load documents: ${errorMessage}`);
     }
-
-    // Add custom filters
-    if (filters && Object.keys(filters).length > 0) {
-      const filterArray = Object.entries(filters)
-        .filter(([_, value]) => value !== '' && value != null)
-        .map(([key, value]) => [key, '=', value]);
-      apiFilters.push(...filterArray);
-    }
-
-    if (apiFilters.length > 0) {
-      params.append('filters', JSON.stringify(apiFilters));
-    }
-    if (orFilters.length > 0) {
-      params.append('or_filters', JSON.stringify(orFilters));
-    }
-
-
-    // Replace with actual Frappe API call
-    const response = await fetch(`/api/resource/${doctype}?${params}`);
-    const result = await response.json();
-    
-    return result;
-
-    // // Filter mock data based on search and filters
-    // let filteredData = mockData;
-    // if (searchTerm?.trim()) {
-    //   filteredData = filteredData.filter(item => 
-    //     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    //     (item.title && item.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    //   );
-    // }
-
-    // if (filters?.status) {
-    //   filteredData = filteredData.filter(item => item.status === filters.status);
-    // }
-
-    // return {
-    //   data: filteredData,
-    //   totalCount: 50, // Mock total count
-    //   hasNextPage: pageParam + pageSize < 50,
-    //   nextCursor: pageParam + pageSize < 50 ? pageParam + pageSize : undefined
-    // };
   },
 
   // Get total count for traditional pagination
   getDocumentCount: async ({ doctype, filters }: GetCountParams): Promise<GetCountResponse> => {
-    // Replace with actual Frappe API call
-    const response = await fetch(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${JSON.stringify(filters)}`);
-    return response.json();
-    
-    // await new Promise(resolve => setTimeout(resolve, 200));
-    // return { count: 50 }; // Mock count
+    try {
+      const response = await fetch(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${JSON.stringify(filters)}`);
+      
+      // Handle non-ok responses first
+      if (!response.ok) {
+        await handleApiError(response, `document count for ${doctype}`);
+      }
+      
+      // Parse response JSON
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, throw a generic error
+        throw new Error(`Failed to parse response from ${doctype} count API`);
+      }
+      
+      // Check for Frappe-specific error responses in the JSON
+      if (result.error) {
+        if (result.error.includes('permission') || result.error.includes('403')) {
+          throw new PermissionError(
+            `You don't have permission to access ${doctype} documents. Please contact your administrator for access.`,
+            403
+          );
+        }
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to get document count: ${errorMessage}`);
+    }
   }
 };
 
@@ -161,6 +333,7 @@ interface FrappeListViewProps {
   searchFields?: string[];
   onItemClick?: (item: any) => void;
   infiniteScroll?: boolean;
+  permissionErrorMessage?: string;
 }
 
 const FrappeListView: React.FC<FrappeListViewProps> = ({ 
@@ -173,7 +346,8 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   defaultFields = ['name', 'modified'],
   searchFields = [],
   onItemClick = null,
-  infiniteScroll = false // Toggle between infinite scroll and traditional pagination
+  infiniteScroll = false, // Toggle between infinite scroll and traditional pagination
+  permissionErrorMessage
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState(defaultFilters);
@@ -208,7 +382,15 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
     queryKey: ['doctype-schema', doctype],
     queryFn: () => frappeApi.getDoctypeSchema(doctype),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    // cacheTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, error) => {
+      // Don't retry permission errors
+      if (error instanceof PermissionError || isPermissionError(error)) {
+        return false;
+      }
+      // Retry other errors up to 3 times
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const doctypeSchema = doctypeSchemaData?.data;
@@ -230,6 +412,15 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
     initialPageParam: 0,
     enabled: infiniteScroll,
     staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: (failureCount, error) => {
+      // Don't retry permission errors
+      if (error instanceof PermissionError || isPermissionError(error)) {
+        return false;
+      }
+      // Retry other errors up to 3 times
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Traditional pagination query
@@ -246,8 +437,16 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
         searchFields
       }),
     enabled: !infiniteScroll,
-    // keepPreviousData: true,
     staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: (failureCount, error) => {
+      // Don't retry permission errors
+      if (error instanceof PermissionError || isPermissionError(error)) {
+        return false;
+      }
+      // Retry other errors up to 3 times
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Count query for traditional pagination
@@ -260,6 +459,15 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
     }),
     enabled: !infiniteScroll,
     staleTime: 2 * 60 * 1000,
+    retry: (failureCount, error) => {
+      // Don't retry permission errors
+      if (error instanceof PermissionError || isPermissionError(error)) {
+        return false;
+      }
+      // Retry other errors up to 3 times
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Determine which query result to use
@@ -404,50 +612,102 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
     );
 
     return (
-      <div className="bg-gray-50 border-b border-gray-200 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {filterableFields?.map(field => (
-            <div key={field.fieldname}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {field.label}
-              </label>
-              {field.fieldtype === 'Select' ? (
-                <select
-                  value={filters[field.fieldname] || ''}
-                  onChange={(e) => handleFilterChange(field.fieldname, e.target.value)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value="">All</option>
-                  {field.options?.split('\n').map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={filters[field.fieldname] || ''}
-                  onChange={(e) => handleFilterChange(field.fieldname, e.target.value)}
-                  placeholder={`Filter by ${field.label}`}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              )}
+      <>
+        {/* Backdrop overlay */}
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setShowFilters(false)}
+        />
+        
+        {/* Action sheet */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
+          {/* Handle bar */}
+          <div className="flex justify-center pt-3 pb-2">
+            <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+          </div>
+          
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-          ))}
+          </div>
+          
+          {/* Filters content */}
+          <div className="px-6 py-4 max-h-96 overflow-y-auto">
+            <div className="space-y-4">
+              {filterableFields?.map(field => (
+                <div key={field.fieldname}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {field.label}
+                  </label>
+                  {field.fieldtype === 'Select' ? (
+                    <select
+                      value={filters[field.fieldname] || ''}
+                      onChange={(e) => handleFilterChange(field.fieldname, e.target.value)}
+                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">All {field.label}</option>
+                      {field.options?.split('\n').map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={filters[field.fieldname] || ''}
+                      onChange={(e) => handleFilterChange(field.fieldname, e.target.value)}
+                      placeholder={`Filter by ${field.label}`}
+                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Action buttons */}
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex space-x-3">
+              <button
+                onClick={clearFilters}
+                className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Clear All
+              </button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="flex-1 px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="mt-4 flex justify-end space-x-2">
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Clear Filters
-          </button>
-        </div>
-      </div>
+      </>
     );
   };
 
   const isLoading = queryResult.isLoading || schemaLoading;
   const error = queryResult.error;
+
+  // Debug: Log error details
+  if (error) {
+    console.log('ListView error detected:', {
+      error,
+      errorType: error.constructor.name,
+      isPermissionError: error instanceof PermissionError,
+      message: error.message
+    });
+  }
 
   return (
     <>
@@ -497,9 +757,62 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
       <div className="min-h-96">
         {error ? (
           <div className="flex items-center justify-center py-12">
-            <div className="flex items-center space-x-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              <span>Error loading data: {error.message}</span>
+            <div className="max-w-md mx-auto text-center">
+              {isPermissionError(error) ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center">
+                    <div className="p-3 bg-yellow-100 rounded-full">
+                      <Shield className="h-8 w-8 text-yellow-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Access Restricted
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {permissionErrorMessage || error.message}
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                      <button
+                        onClick={refreshData}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <RetryIcon className="h-4 w-4 mr-2" />
+                        Try Again
+                      </button>
+                      <button
+                        onClick={() => window.location.href = '/login?redirect-to=' + window.location.pathname}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        Try Login Again
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center">
+                    <div className="p-3 bg-red-100 rounded-full">
+                      <AlertCircle className="h-8 w-8 text-red-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Error Loading Data
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {error.message}
+                    </p>
+                    <button
+                      onClick={refreshData}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <RetryIcon className="h-4 w-4 mr-2" />
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : isLoading && processedData.length === 0 ? (

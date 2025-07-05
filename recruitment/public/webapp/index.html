@@ -10,5 +10,10 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      if (!window.csrf_token) {
+        window.csrf_token = "{{ csrf_token }}";
+      }
+    </script>
   </body>
 </html>
