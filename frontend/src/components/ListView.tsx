@@ -527,7 +527,7 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   const renderPagination = () => {
     if (infiniteScroll) {
       return (
-        <div className="flex items-center justify-center px-4 py-6 bg-white border-t border-gray-200">
+        <div className="flex items-center justify-center px-4 py-6 bg-white border-gray-200">
           {infiniteQueryResult.hasNextPage ? (
             <button
               onClick={loadMore}
@@ -543,9 +543,7 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
                 'Load More'
               )}
             </button>
-          ) : (
-            <span className="text-sm text-gray-500">End of List</span>
-          )}
+          ) : null}
         </div>
       );
     }
