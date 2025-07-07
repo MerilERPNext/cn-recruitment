@@ -124,5 +124,12 @@ const App: React.FC = () => {
   );
 };
 
+interface global {
+  window: {
+    nativeInterface: {
+      execute: (command: string) => Promise<any>;
+    };
+  };
+}
 
 export default App;

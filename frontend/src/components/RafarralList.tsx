@@ -27,6 +27,8 @@ const ReferralList: React.FC = () => {
     navigate(`/webapp/recruitment-app/referral-details/${referralId}`);
   };
 
+  console.log('NotificationToken', window.nativeInterface.execute('getPushToken'))
+
   return (
       <FrappeListView
         doctype="Employee Referral"

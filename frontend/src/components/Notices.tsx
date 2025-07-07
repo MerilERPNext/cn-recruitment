@@ -9,6 +9,7 @@ import {
   useDismissNotice,
 } from '../hooks/useNotices';
 import type { Notice } from '../types/notice';
+import FrappeListView from './ListView';
 
 // Type definitions for component props
 interface HeaderProps {
@@ -44,17 +45,15 @@ interface ActionButtonProps {
 }
 
 interface NoticeCardProps {
-  notice: Notice;
+  item: Notice;
   onActionClick: (noticeId: string, actionType: string, silent?: boolean) => void;
-  isLoading?: boolean;
+  isLoading: boolean;
 }
 
 interface ErrorMessageProps {
   message: string;
   onRetry: () => void;
 }
-
-
 
 interface NoticesListProps {
   notices?: Notice[];
@@ -205,37 +204,41 @@ const ActionButton = ({ children, onClick, variant = 'primary', className = '', 
 };
 
 // Notice Card Component
-const NoticeCard = ({ notice, onActionClick, isLoading = false }: NoticeCardProps) => {
+const NoticeCard = ({ item: notice, onActionClick, isLoading = false }: NoticeCardProps) => {
+  // Map notice_type to icon
   const getIconComponent = () => {
-    const iconMap: Record<Notice['iconType'], { icon: React.ComponentType; color: string; bgColor: string }> = {
-      error: { icon: ErrorIcon, color: 'text-red-500', bgColor: 'bg-red-100' },
-      campaign: { icon: CampaignIcon, color: 'text-blue-500', bgColor: 'bg-blue-50' },
-      work: { icon: WorkIcon, color: 'text-green-500', bgColor: 'bg-green-100' },
-      badge: { icon: BadgeIcon, color: 'text-purple-500', bgColor: 'bg-purple-100' },
-      event: { icon: EventIcon, color: 'text-yellow-500', bgColor: 'bg-yellow-100' },
-      search: { icon: SearchIcon, color: 'text-teal-500', bgColor: 'bg-teal-100' }
+    const type = ((notice as any).notice_type || '').toLowerCase();
+    const iconMap: Record<string, { icon: React.ComponentType; color: string; bgColor: string }> = {
+      announcement: { icon: CampaignIcon, color: 'text-blue-500', bgColor: 'bg-blue-50' },
+      alert: { icon: ErrorIcon, color: 'text-red-500', bgColor: 'bg-red-100' },
+      information: { icon: CampaignIcon, color: 'text-green-500', bgColor: 'bg-green-100' },
+      'policy update': { icon: BadgeIcon, color: 'text-purple-500', bgColor: 'bg-purple-100' },
+      'system notice': { icon: WorkIcon, color: 'text-yellow-500', bgColor: 'bg-yellow-100' },
+      emergency: { icon: EventIcon, color: 'text-pink-500', bgColor: 'bg-pink-100' }
     };
-    return iconMap[notice.iconType] || iconMap.campaign;
+    return iconMap[type] || iconMap.announcement;
   };
-
   const iconConfig = getIconComponent();
-  const borderColor = notice.priority === 'high' ? 'border-red-200' : 'border-gray-200';
-  const unreadColor = notice.priority === 'high' ? 'bg-red-500' : 'bg-blue-500';
-
-  // Auto-mark as read when notice comes into view (for unread notices)
-  useEffect(() => {
-    if (notice.isUnread && !isLoading) {
-      const timer = setTimeout(() => {
-        onActionClick(notice.id, 'mark_as_read', true); // silent = true for auto-marking
-      }, 2000); // Auto-mark as read after 2 seconds
-
-      return () => clearTimeout(timer);
-    }
-  }, [notice.isUnread, notice.id, onActionClick, isLoading]);
+  // Badge colors
+  const typeColor = 'bg-blue-100 text-blue-700';
+  const priorityColor = notice?.priority === 'high' ? 'bg-red-100 text-red-700' :
+    notice?.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+    notice?.priority === 'low' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500';
+  const statusColor = notice?.status === 'active' ? 'bg-green-100 text-green-700' :
+    notice?.status === 'archived' ? 'bg-red-100 text-red-700' :
+    notice?.status === 'dismissed' ? 'bg-gray-100 text-gray-500' : 'bg-gray-100 text-gray-500';
+  // Format dates
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+  const borderColor = notice?.priority === 'high' ? 'border-red-200' : 'border-gray-200';
+  const unreadColor = notice?.priority === 'high' ? 'bg-red-500' : 'bg-blue-500';
 
   return (
     <div className={`flex items-start gap-3 bg-white p-4 rounded-xl shadow-sm border ${borderColor} relative`}>
-      {notice.isUnread && <UnreadIndicator color={unreadColor} />}
+      {notice?.isUnread && <UnreadIndicator color={unreadColor} />}
       
       <NoticeIcon
         icon={iconConfig.icon}
@@ -243,21 +246,34 @@ const NoticeCard = ({ notice, onActionClick, isLoading = false }: NoticeCardProp
         bgColor={iconConfig.bgColor}
       />
       
-      <div className="flex-grow">
-        <div className="flex justify-between items-start mb-1">
-          <p className="text-gray-800 text-base font-semibold leading-tight">{notice.title}</p>
-          <p className="text-gray-600 text-xs font-normal">{notice.time}</p>
+      <div className="flex-grow min-w-0">
+        <div className="flex flex-wrap gap-2 items-center mb-1">
+          <span className="text-gray-800 text-base font-semibold truncate flex-1">{notice?.title}</span>
+          {(notice as any).notice_type && (
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${typeColor}`}>{(notice as any).notice_type}</span>
+          )}
+          {notice?.priority && (
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${priorityColor}`}>{notice.priority}</span>
+          )}
+          {notice?.status && (
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>{notice.status}</span>
+          )}
         </div>
-        <p className="text-gray-600 text-sm font-normal leading-relaxed line-clamp-2 mb-2">
-          {notice.message}
-        </p>
-        {notice.action && (
+        {/* Content summary */}
+        {notice?.message && (
+          <div className="text-gray-600 text-sm leading-relaxed line-clamp-2 mb-2">{notice.message}</div>
+        )}
+        <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-2">
+          {notice?.createdAt && <span>Published: {formatDate(notice.createdAt)}</span>}
+          {notice?.updatedAt && <span>Updated: {formatDate(notice.updatedAt)}</span>}
+        </div>
+        {notice?.action && (
           <ActionButton
-            variant={notice.action.variant}
-            onClick={() => onActionClick(notice.id, notice.action!.type)}
+            variant={notice?.action?.variant}
+            onClick={() => onActionClick(notice?.id, notice?.action!.type)}
             disabled={isLoading}
           >
-            {isLoading ? <LoadingIcon /> : notice.action.label}
+            {isLoading ? <LoadingIcon /> : notice?.action?.label}
           </ActionButton>
         )}
       </div>
@@ -337,19 +353,28 @@ const NoticesList = ({ notices, onActionClick, isLoading, error, onRetry, active
     );
   }
 
-  if (!notices || notices.length === 0) {
-    return <EmptyState activeTab={activeTab} />;
+  // Set filters based on activeTab
+  let defaultFilters: Record<string, any> = {};
+  if (activeTab === 'all') {
+    defaultFilters = { status: ['!=', 'expired'] };
+  } else if (activeTab === 'unread') {
+    defaultFilters = { status: ['!=', 'expired'], is_unread: 1 };
+  } else if (activeTab === 'archived') {
+    defaultFilters = { status: 'archived' };
   }
 
   return (
     <main className="p-4 space-y-3">
-      {notices.map((notice: Notice) => (
-        <NoticeCard
-          key={notice.id}
-          notice={notice}
-          onActionClick={onActionClick}
-        />
-      ))}
+      <FrappeListView
+        doctype="Notice"
+        ItemComponent={NoticeCard}
+        onItemClick={(item: Notice) => onActionClick(item.id, item.action!.type)}
+        isSearch={true}
+        pageSize={10}
+        defaultFilters={defaultFilters}
+        defaultFields={['name','title','notice_type','priority','publish_date','expiry_date','status']}
+        searchFields={['title','content','notice_type','priority','status']}
+      />
     </main>
   );
 };

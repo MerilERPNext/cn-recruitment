@@ -16,5 +16,8 @@ root.render(
 declare global {
   interface Window {
     csrf_token: string;
+    nativeInterface: {
+      execute: (method: string, params?: any) => Promise<any>;
+    };
   }
 }

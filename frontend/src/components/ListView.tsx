@@ -233,7 +233,14 @@ const frappeApi = {
       if (filters && Object.keys(filters).length > 0) {
         const filterArray = Object.entries(filters)
           .filter(([_, value]) => value !== '' && value != null)
-          .map(([key, value]) => [key, '=', value]);
+          .map(([key, value]) => {
+            // If value is an array and matches [operator, operand], use as [key, operator, operand]
+            if (Array.isArray(value) && value.length === 2 && typeof value[0] === 'string') {
+              return [key, value[0], value[1]];
+            }
+            // If value is a primitive, use '='
+            return [key, '=', value];
+          });
         apiFilters.push(...filterArray);
       }
 
@@ -356,6 +363,11 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   const queryClient = useQueryClient();
+
+  // Sync filters with defaultFilters prop
+  useEffect(() => {
+    setFilters(defaultFilters || {});
+  }, [JSON.stringify(defaultFilters)]);
 
   // Debounce search term
   useEffect(() => {
