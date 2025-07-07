@@ -1,26 +1,288 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
-import type React from "react"
-import { useState, useEffect, useMemo } from "react"
-import { useQueryClient } from "@tanstack/react-query"
-import {
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-  AlertCircle,
-  Loader2,
-  Shield,
-  RepeatIcon as RetryIcon,
-} from "lucide-react"
-import {
-  useDoctypeSchema,
-  useFrappeInfiniteQuery,
-  useFrappeDocuments,
-  useFrappeDocumentCount,
-  isPermissionError,
-} from "../hooks/interview"
+import React, { useState, useEffect, useMemo } from 'react';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search, Filter, ChevronLeft, ChevronRight, RefreshCw, AlertCircle, Loader2, Shield, RefreshCw as RetryIcon } from 'lucide-react';
+import { DoctypeSchema, PermissionError, handleApiError } from '../utils/frappeAPI';
+
+/**
+ * FrappeListView Component
+ * 
+ * A comprehensive list view component for Frappe/ERPNext applications with built-in
+ * permission error handling and graceful error recovery.
+ * 
+ * Features:
+ * - Automatic 403 permission error detection and handling
+ * - User-friendly error messages with retry options
+ * - Infinite scroll or traditional pagination
+ * - Search and filtering capabilities
+ * - Customizable error messages
+ * - Automatic retry logic (excluding permission errors)
+ * 
+ * Usage Example:
+ * ```tsx
+ * import FrappeListView from './ListView';
+ * 
+ * const MyComponent = () => {
+ *   const JobItem = ({ item }) => (
+ *     <div className="p-4 border rounded">
+ *       <h3>{item.title}</h3>
+ *       <p>{item.status}</p>
+ *     </div>
+ *   );
+ * 
+ *   return (
+ *     <FrappeListView
+ *       doctype="Job Opening"
+ *       ItemComponent={JobItem}
+ *       isSearch={true}
+ *       isFilter={true}
+ *       pageSize={20}
+ *       searchFields={['title', 'description']}
+ *       permissionErrorMessage="You don't have access to view job openings. Please contact HR for assistance."
+ *       onItemClick={(item) => console.log('Clicked:', item)}
+ *     />
+ *   );
+ * };
+ * ```
+ * 
+ * Permission Error Handling:
+ * - Automatically detects 403 errors from Frappe API
+ * - Shows user-friendly permission error messages
+ * - Provides retry and refresh options
+ * - Does not retry permission errors (avoids unnecessary API calls)
+ * - Supports custom permission error messages via permissionErrorMessage prop
+ */
+
+
+
+
+interface DocumentItem {
+  name: string;
+  title?: string;
+  status?: string;
+  modified: string;
+  owner?: string;
+  [key: string]: any;
+}
+
+interface GetDocumentsParams {
+  doctype: string;
+  pageParam?: number;
+  pageSize: number;
+  searchTerm?: string;
+  filters?: Record<string, any>;
+  fields: string[];
+  searchFields: string[];
+}
+
+interface GetDocumentsResponse {
+  data: DocumentItem[];
+  totalCount: number;
+  hasNextPage: boolean;
+  nextCursor?: number;
+}
+
+interface GetCountParams {
+  doctype: string;
+  searchTerm?: string;
+  filters?: Record<string, any>;
+}
+
+interface GetCountResponse {
+  message: number;
+}
+
+
+
+
+
+// Utility to check if error is permission-related
+const isPermissionError = (error: unknown): error is PermissionError => {
+  // Check if it's a PermissionError instance
+  if (error instanceof PermissionError) {
+    return true;
+  }
+  
+  // Check if it's an Error with permission-related message
+  if (error instanceof Error) {
+    return error.message.includes('permission') || 
+           error.message.includes('403') || 
+           error.message.includes('Access Restricted');
+  }
+  
+  // Check if it's a plain object (React Query might serialize errors)
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as any).message;
+    return typeof message === 'string' && (
+      message.includes('permission') || 
+      message.includes('403') || 
+      message.includes('Access Restricted')
+    );
+  }
+  
+  return false;
+};
+
+// Frappe API service functions
+const frappeApi = {
+  // Fetch doctype schema
+  getDoctypeSchema: async (doctype: string): Promise<DoctypeSchema> => {
+    try {
+      const response = await fetch(`/api/v2/doctype/${doctype}/meta`);
+      
+      // Handle non-ok responses first
+      if (!response.ok) {
+        await handleApiError(response, `doctype schema for ${doctype}`);
+      }
+      
+      // Parse response JSON
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, throw a generic error
+        throw new Error(`Failed to parse response from ${doctype} schema API`);
+      }
+      
+      // Check for Frappe-specific error responses in the JSON
+      if (result.error) {
+        if (result.error.includes('permission') || result.error.includes('403')) {
+          throw new PermissionError(
+            `You don't have permission to access the ${doctype} doctype. Please contact your administrator for access.`,
+            403
+          );
+        }
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to load doctype schema: ${errorMessage}`);
+    }
+  },
+
+  // Fetch documents with pagination
+  getDocuments: async ({ doctype, pageParam = 0, pageSize, searchTerm, filters, fields, searchFields }: GetDocumentsParams): Promise<GetDocumentsResponse> => {
+    try {
+      const params = new URLSearchParams({
+        limit_page_length: pageSize.toString(),
+        limit_start: pageParam.toString(),
+        fields: JSON.stringify(fields)
+      });
+      
+      // Add search filters
+      let apiFilters = [];
+      let orFilters: any[] = [];
+      if (searchTerm?.trim()) {
+        if (searchFields.length > 0) {
+          searchFields.forEach((field: string) => {
+            orFilters.push([field, 'like', `%${searchTerm}%`]);
+          });
+        }
+      }
+
+      // Add custom filters
+      if (filters && Object.keys(filters).length > 0) {
+        const filterArray = Object.entries(filters)
+          .filter(([_, value]) => value !== '' && value != null)
+          .map(([key, value]) => {
+            // If value is an array and matches [operator, operand], use as [key, operator, operand]
+            if (Array.isArray(value) && value.length === 2 && typeof value[0] === 'string') {
+              return [key, value[0], value[1]];
+            }
+            // If value is a primitive, use '='
+            return [key, '=', value];
+          });
+        apiFilters.push(...filterArray);
+      }
+
+      if (apiFilters.length > 0) {
+        params.append('filters', JSON.stringify(apiFilters));
+      }
+      if (orFilters.length > 0) {
+        params.append('or_filters', JSON.stringify(orFilters));
+      }
+
+      const response = await fetch(`/api/resource/${doctype}?${params}`);
+      
+      // Handle non-ok responses first
+      if (!response.ok) {
+        await handleApiError(response, `${doctype} documents`);
+      }
+      
+      // Parse response JSON
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, throw a generic error
+        throw new Error(`Failed to parse response from ${doctype} API`);
+      }
+      
+      // Check for Frappe-specific error responses in the JSON
+      if (result.error) {
+        if (result.error.includes('permission') || result.error.includes('403')) {
+          throw new PermissionError(
+            `You don't have permission to access ${doctype} documents. Please contact your administrator for access.`,
+            403
+          );
+        }
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to load documents: ${errorMessage}`);
+    }
+  },
+
+  // Get total count for traditional pagination
+  getDocumentCount: async ({ doctype, filters }: GetCountParams): Promise<GetCountResponse> => {
+    try {
+      const response = await fetch(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${JSON.stringify(filters)}`);
+      
+      // Handle non-ok responses first
+      if (!response.ok) {
+        await handleApiError(response, `document count for ${doctype}`);
+      }
+      
+      // Parse response JSON
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, throw a generic error
+        throw new Error(`Failed to parse response from ${doctype} count API`);
+      }
+      
+      // Check for Frappe-specific error responses in the JSON
+      if (result.error) {
+        if (result.error.includes('permission') || result.error.includes('403')) {
+          throw new PermissionError(
+            `You don't have permission to access ${doctype} documents. Please contact your administrator for access.`,
+            403
+          );
+        }
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to get document count: ${errorMessage}`);
+    }
+  }
+};
 
 interface FrappeListViewProps {
   doctype: string
