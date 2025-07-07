@@ -56,7 +56,6 @@ interface ErrorMessageProps {
 }
 
 interface NoticesListProps {
-  notices?: Notice[];
   onActionClick: (noticeId: string, actionType: string, silent?: boolean) => void;
   isLoading: boolean;
   error: Error | null;
@@ -98,12 +97,6 @@ const BadgeIcon = () => (
 const EventIcon = () => (
   <svg fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg">
     <path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Zm-96-88v64a8,8,0,0,1-16,0V132.94l-4.42,2.22a8,8,0,0,1-7.16-14.32l16-8A8,8,0,0,1,112,120Zm59.16,30.45L152,176h16a8,8,0,0,1,0,16H136a8,8,0,0,1-6.4-12.8l28.78-38.37A8,8,0,1,0,145.07,132a8,8,0,1,1-13.85-8A24,24,0,0,1,176,136,23.76,23.76,0,0,1,171.16,150.45Z"></path>
-  </svg>
-);
-
-const SearchIcon = () => (
-  <svg fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg">
-    <path d="M230.92,212l-54.32-54.32a88.21,88.21,0,1,0-18.84,18.84L212,230.92a12,12,0,1,0,18.92-15Zm-203.15-100a64,64,0,1,1,64,64A64.07,64.07,0,0,1,27.77,112Z"></path>
   </svg>
 );
 
@@ -318,27 +311,8 @@ const ErrorMessage = ({ message, onRetry }: ErrorMessageProps) => (
   </div>
 );
 
-// Empty State Component
-const EmptyState = ({ activeTab }: { activeTab: string }) => {
-  const messages: Record<string, string> = {
-    all: "No notices available",
-    unread: "No unread notices",
-    archived: "No archived notices"
-  };
-
-  return (
-    <div className="p-8 text-center">
-      <div className="text-gray-400 mb-4">
-        <CampaignIcon />
-      </div>
-      <p className="text-gray-600 font-medium">{messages[activeTab] || messages.all}</p>
-      <p className="text-gray-500 text-sm mt-1">You're all caught up!</p>
-    </div>
-  );
-};
-
 // Notices List Component
-const NoticesList = ({ notices, onActionClick, isLoading, error, onRetry, activeTab }: NoticesListProps) => {
+const NoticesList = ({ onActionClick, isLoading, error, onRetry, activeTab }: NoticesListProps) => {
   if (error) {
     return <ErrorMessage message={error.message} onRetry={onRetry} />;
   }
@@ -509,7 +483,6 @@ const Notices: React.FC = () => {
         />
         
         <NoticesList 
-          notices={notices}
           onActionClick={handleActionClick}
           isLoading={isLoading}
           error={error}
