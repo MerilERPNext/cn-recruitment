@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search, Filter, ChevronLeft, ChevronRight, RefreshCw, AlertCircle, Loader2, Shield, RefreshCw as RetryIcon } from 'lucide-react';
+import { DoctypeSchema, PermissionError, handleApiError } from '../utils/frappeAPI';
 
 /**
  * FrappeListView Component
@@ -51,19 +52,8 @@ import { Search, Filter, ChevronLeft, ChevronRight, RefreshCw, AlertCircle, Load
  * - Supports custom permission error messages via permissionErrorMessage prop
  */
 
-// TypeScript interfaces
-interface DoctypeField {
-  fieldname: string;
-  label: string;
-  fieldtype: string;
-  options?: string;
-}
 
-interface DoctypeSchema {
-  data: {
-  fields: DoctypeField[];
-  }
-}
+
 
 interface DocumentItem {
   name: string;
@@ -101,44 +91,9 @@ interface GetCountResponse {
   message: number;
 }
 
-// Custom error class for permission errors
-class PermissionError extends Error {
-  constructor(message: string, public statusCode: number = 403) {
-    super(message);
-    this.name = 'PermissionError';
-  }
-}
 
-// Error handler utility
-const handleApiError = async (response: Response, context: string): Promise<never> => {
-  if (response.status === 403) {
-    throw new PermissionError(
-      `You don't have permission to access ${context}. Please contact your administrator for access.`,
-      403
-    );
-  } else if (response.status === 401) {
-    throw new Error('Your session has expired. Please refresh the page and try again.');
-  } else if (response.status === 404) {
-    throw new Error(`${context} not found.`);
-  } else if (response.status >= 500) {
-    throw new Error('Server error. Please try again later.');
-  } else {
-    // Try to parse error response, but don't fail if it's not JSON
-    let errorMessage = `Failed to load ${context}. Please try again.`;
-    try {
-      const errorData = await response.json();
-      if (errorData.message) {
-        errorMessage = errorData.message;
-      } else if (errorData.error) {
-        errorMessage = errorData.error;
-      }
-    } catch (parseError) {
-      // If we can't parse the response as JSON, use a generic message
-      errorMessage = `Failed to load ${context} (Status: ${response.status}). Please try again.`;
-    }
-    throw new Error(errorMessage);
-  }
-};
+
+
 
 // Utility to check if error is permission-related
 const isPermissionError = (error: unknown): error is PermissionError => {

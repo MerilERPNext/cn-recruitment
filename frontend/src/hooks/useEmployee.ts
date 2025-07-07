@@ -24,16 +24,6 @@ export const useCurrentEmployee = (): UseQueryResult<Employee | null, Error> => 
   });
 };
 
-// Hook to get employee list with optional filters
-export const useEmployeeList = (filters: Record<string, any> = {}): UseQueryResult<EmployeeListItem[], Error> => {
-  return useQuery<EmployeeListItem[], Error>({
-    queryKey: ['employeeList', filters],
-    queryFn: () => EmployeeService.getEmployeeList(filters),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes (renamed from cacheTime in v5)
-  });
-};
-
 // Hook to search employees by name
 export const useEmployeeSearch = (searchTerm: string): UseQueryResult<EmployeeListItem[], Error> => {
   return useQuery<EmployeeListItem[], Error>({

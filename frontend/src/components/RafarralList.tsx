@@ -27,28 +27,28 @@ const ReferralList: React.FC = () => {
     navigate(`/webapp/recruitment-app/referral-details/${referralId}`);
   };
 
-  console.log('NotificationToken', window.nativeInterface.execute('getPushToken'))
+  console.log('NotificationToken', window.nativeInterface.execute('getPushToken').then((x: any) => { window.nativeInterface.logToNative(x); }));
 
   return (
-      <FrappeListView
-        doctype="Employee Referral"
-        ItemComponent={ReferralItem}
-        isSearch={true}
-        pageSize={10}
-        defaultFields={['name', 'full_name', 'email', 'date', 'status', 'for_designation']}
-        searchFields={['full_name', 'email', 'for_designation', 'status']}
-        onItemClick={(item: Referral) => {
-          handleClick(item.name)
-        }}
-        infiniteScroll={true}
-      />
+    <FrappeListView
+      doctype="Employee Referral"
+      ItemComponent={ReferralItem}
+      isSearch={true}
+      pageSize={10}
+      defaultFields={['name', 'full_name', 'email', 'date', 'status', 'for_designation']}
+      searchFields={['full_name', 'email', 'for_designation', 'status']}
+      onItemClick={(item: Referral) => {
+        handleClick(item.name)
+      }}
+      infiniteScroll={true}
+    />
   );
 };
 
 
 const ReferralItem: React.FC<{ item: Referral, index: number }> = ({ item, index }) => {
   const referral = item;
-  
+
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending':

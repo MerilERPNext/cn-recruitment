@@ -11,25 +11,6 @@ export class EmployeeService {
     });
   }
 
-  // Get list of active employees
-  static async getEmployeeList(filters: Record<string, any> = {}): Promise<EmployeeListItem[]> {
-    const defaultFilters = {
-      status: 'Active',
-      ...filters
-    };
-
-    const fields = [
-      'name', 'employee_name', 'department', 'designation', 'status', 'image'
-    ];
-
-    return await FrappeAPI.getDocumentList<EmployeeListItem>('Employee', {
-      fields,
-      filters: defaultFilters,
-      orderBy: 'employee_name asc',
-      limit: 100
-    });
-  }
-
   // Search employees by name
   static async searchEmployees(searchTerm: string): Promise<EmployeeListItem[]> {
     return await FrappeAPI.callMethod<EmployeeListItem[]>('recruitment.api.search_employees', {
