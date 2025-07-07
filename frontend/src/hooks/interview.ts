@@ -1,0 +1,101 @@
+import { useQuery, useInfiniteQuery, type UseQueryOptions, type UseInfiniteQueryOptions } from "@tanstack/react-query"
+import { frappeService } from "../services/interviewService"
+import { PermissionError } from "../types/interview"
+import type {
+  DoctypeSchema,
+  GetDocumentsParams,
+  GetDocumentsResponse,
+  GetCountParams,
+  GetCountResponse,
+} from "../types/interview"
+
+// Utility to check if error is permission-related
+const isPermissionError = (error: unknown): error is PermissionError => {
+  if (error instanceof PermissionError) {
+    return true
+  }
+  if (error instanceof Error) {
+    return (
+      error.message.includes("permission") ||
+      error.message.includes("403") ||
+      error.message.includes("Access Restricted")
+    )
+  }
+  return false
+}
+
+// Default retry function that doesn't retry permission errors
+const defaultRetry = (failureCount: number, error: unknown) => {
+  if (isPermissionError(error)) {
+    return false
+  }
+  return failureCount < 3
+}
+
+// Hook for fetching doctype schema
+export const useDoctypeSchema = (
+  doctype: string,
+  options?: Omit<UseQueryOptions<DoctypeSchema>, "queryKey" | "queryFn">,
+) => {
+  return useQuery({
+    queryKey: ["doctype-schema", doctype],
+    queryFn: () => frappeService.getDoctypeSchema(doctype),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: defaultRetry,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    ...options,
+  })
+}
+
+// Hook for infinite query
+export const useFrappeInfiniteQuery = (
+  params: Omit<GetDocumentsParams, "pageParam">,
+  options?: Omit<
+    UseInfiniteQueryOptions<GetDocumentsResponse, Error, GetDocumentsResponse, readonly unknown[], number>,
+    "queryKey" | "queryFn" | "getNextPageParam" | "initialPageParam"
+  >,
+) => {
+  return useInfiniteQuery({
+    queryKey: ["documents-infinite", params.doctype, params.searchTerm, params.filters, params.fields],
+    queryFn: ({ pageParam = 0 }) => frappeService.getDocuments({ ...params, pageParam: pageParam as number }),
+    getNextPageParam: (lastPage: GetDocumentsResponse) => lastPage.nextCursor,
+    initialPageParam: 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: defaultRetry,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    ...options,
+  })
+}
+
+// Hook for paginated query
+export const useFrappeDocuments = (
+  params: GetDocumentsParams,
+  options?: Omit<UseQueryOptions<GetDocumentsResponse>, "queryKey" | "queryFn">,
+) => {
+  return useQuery({
+    queryKey: ["documents", params.doctype, params.pageParam, params.searchTerm, params.filters, params.fields],
+    queryFn: () => frappeService.getDocuments(params),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: defaultRetry,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    ...options,
+  })
+}
+
+// Hook for document count
+export const useFrappeDocumentCount = (
+  params: GetCountParams,
+  options?: Omit<UseQueryOptions<GetCountResponse>, "queryKey" | "queryFn">,
+) => {
+  return useQuery({
+    queryKey: ["document-count", params.doctype, params.filters],
+    queryFn: () => frappeService.getDocumentCount(params),
+    staleTime: 2 * 60 * 1000,
+    retry: defaultRetry,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    ...options,
+  })
+}
+
+// Export utility function
+export { isPermissionError }

@@ -12,7 +12,7 @@ export class EmployeeService {
   }
 
   // Get list of active employees
-  static async getEmployeeList(filters: Record<string, any> = {}): Promise<EmployeeListItem[]> {
+  static async getEmployeeList(filters: Record<string, unknown> = {}): Promise<EmployeeListItem[]> {
     const defaultFilters = {
       status: 'Active',
       ...filters

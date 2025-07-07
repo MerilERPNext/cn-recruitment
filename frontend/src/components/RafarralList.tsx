@@ -65,6 +65,7 @@ const ReferralItem: React.FC<{ item: Referral, index: number }> = ({ item, index
   };
 
   const { icon, color } = getStatusIcon(referral?.status || '');
+  console.log(referral,"hello archu this data of raferral")
   return (
     <div
       key={index}
