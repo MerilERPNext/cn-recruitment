@@ -1,288 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, Filter, ChevronLeft, ChevronRight, RefreshCw, AlertCircle, Loader2, Shield, RefreshCw as RetryIcon } from 'lucide-react';
-import { DoctypeSchema, PermissionError, handleApiError } from '../utils/frappeAPI';
-
-/**
- * FrappeListView Component
- * 
- * A comprehensive list view component for Frappe/ERPNext applications with built-in
- * permission error handling and graceful error recovery.
- * 
- * Features:
- * - Automatic 403 permission error detection and handling
- * - User-friendly error messages with retry options
- * - Infinite scroll or traditional pagination
- * - Search and filtering capabilities
- * - Customizable error messages
- * - Automatic retry logic (excluding permission errors)
- * 
- * Usage Example:
- * ```tsx
- * import FrappeListView from './ListView';
- * 
- * const MyComponent = () => {
- *   const JobItem = ({ item }) => (
- *     <div className="p-4 border rounded">
- *       <h3>{item.title}</h3>
- *       <p>{item.status}</p>
- *     </div>
- *   );
- * 
- *   return (
- *     <FrappeListView
- *       doctype="Job Opening"
- *       ItemComponent={JobItem}
- *       isSearch={true}
- *       isFilter={true}
- *       pageSize={20}
- *       searchFields={['title', 'description']}
- *       permissionErrorMessage="You don't have access to view job openings. Please contact HR for assistance."
- *       onItemClick={(item) => console.log('Clicked:', item)}
- *     />
- *   );
- * };
- * ```
- * 
- * Permission Error Handling:
- * - Automatically detects 403 errors from Frappe API
- * - Shows user-friendly permission error messages
- * - Provides retry and refresh options
- * - Does not retry permission errors (avoids unnecessary API calls)
- * - Supports custom permission error messages via permissionErrorMessage prop
- */
-
-
-
-
-interface DocumentItem {
-  name: string;
-  title?: string;
-  status?: string;
-  modified: string;
-  owner?: string;
-  [key: string]: any;
-}
-
-interface GetDocumentsParams {
-  doctype: string;
-  pageParam?: number;
-  pageSize: number;
-  searchTerm?: string;
-  filters?: Record<string, any>;
-  fields: string[];
-  searchFields: string[];
-}
-
-interface GetDocumentsResponse {
-  data: DocumentItem[];
-  totalCount: number;
-  hasNextPage: boolean;
-  nextCursor?: number;
-}
-
-interface GetCountParams {
-  doctype: string;
-  searchTerm?: string;
-  filters?: Record<string, any>;
-}
-
-interface GetCountResponse {
-  message: number;
-}
-
-
-
-
-
-// Utility to check if error is permission-related
-const isPermissionError = (error: unknown): error is PermissionError => {
-  // Check if it's a PermissionError instance
-  if (error instanceof PermissionError) {
-    return true;
-  }
-  
-  // Check if it's an Error with permission-related message
-  if (error instanceof Error) {
-    return error.message.includes('permission') || 
-           error.message.includes('403') || 
-           error.message.includes('Access Restricted');
-  }
-  
-  // Check if it's a plain object (React Query might serialize errors)
-  if (error && typeof error === 'object' && 'message' in error) {
-    const message = (error as any).message;
-    return typeof message === 'string' && (
-      message.includes('permission') || 
-      message.includes('403') || 
-      message.includes('Access Restricted')
-    );
-  }
-  
-  return false;
-};
-
-// Frappe API service functions
-const frappeApi = {
-  // Fetch doctype schema
-  getDoctypeSchema: async (doctype: string): Promise<DoctypeSchema> => {
-    try {
-      const response = await fetch(`/api/v2/doctype/${doctype}/meta`);
-      
-      // Handle non-ok responses first
-      if (!response.ok) {
-        await handleApiError(response, `doctype schema for ${doctype}`);
-      }
-      
-      // Parse response JSON
-      let result;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        // If JSON parsing fails, throw a generic error
-        throw new Error(`Failed to parse response from ${doctype} schema API`);
-      }
-      
-      // Check for Frappe-specific error responses in the JSON
-      if (result.error) {
-        if (result.error.includes('permission') || result.error.includes('403')) {
-          throw new PermissionError(
-            `You don't have permission to access the ${doctype} doctype. Please contact your administrator for access.`,
-            403
-          );
-        }
-        throw new Error(result.error);
-      }
-      
-      return result;
-    } catch (error) {
-      if (error instanceof PermissionError) {
-        throw error;
-      }
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      throw new Error(`Failed to load doctype schema: ${errorMessage}`);
-    }
-  },
-
-  // Fetch documents with pagination
-  getDocuments: async ({ doctype, pageParam = 0, pageSize, searchTerm, filters, fields, searchFields }: GetDocumentsParams): Promise<GetDocumentsResponse> => {
-    try {
-      const params = new URLSearchParams({
-        limit_page_length: pageSize.toString(),
-        limit_start: pageParam.toString(),
-        fields: JSON.stringify(fields)
-      });
-      
-      // Add search filters
-      let apiFilters = [];
-      let orFilters: any[] = [];
-      if (searchTerm?.trim()) {
-        if (searchFields.length > 0) {
-          searchFields.forEach((field: string) => {
-            orFilters.push([field, 'like', `%${searchTerm}%`]);
-          });
-        }
-      }
-
-      // Add custom filters
-      if (filters && Object.keys(filters).length > 0) {
-        const filterArray = Object.entries(filters)
-          .filter(([_, value]) => value !== '' && value != null)
-          .map(([key, value]) => {
-            // If value is an array and matches [operator, operand], use as [key, operator, operand]
-            if (Array.isArray(value) && value.length === 2 && typeof value[0] === 'string') {
-              return [key, value[0], value[1]];
-            }
-            // If value is a primitive, use '='
-            return [key, '=', value];
-          });
-        apiFilters.push(...filterArray);
-      }
-
-      if (apiFilters.length > 0) {
-        params.append('filters', JSON.stringify(apiFilters));
-      }
-      if (orFilters.length > 0) {
-        params.append('or_filters', JSON.stringify(orFilters));
-      }
-
-      const response = await fetch(`/api/resource/${doctype}?${params}`);
-      
-      // Handle non-ok responses first
-      if (!response.ok) {
-        await handleApiError(response, `${doctype} documents`);
-      }
-      
-      // Parse response JSON
-      let result;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        // If JSON parsing fails, throw a generic error
-        throw new Error(`Failed to parse response from ${doctype} API`);
-      }
-      
-      // Check for Frappe-specific error responses in the JSON
-      if (result.error) {
-        if (result.error.includes('permission') || result.error.includes('403')) {
-          throw new PermissionError(
-            `You don't have permission to access ${doctype} documents. Please contact your administrator for access.`,
-            403
-          );
-        }
-        throw new Error(result.error);
-      }
-      
-      return result;
-    } catch (error) {
-      if (error instanceof PermissionError) {
-        throw error;
-      }
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      throw new Error(`Failed to load documents: ${errorMessage}`);
-    }
-  },
-
-  // Get total count for traditional pagination
-  getDocumentCount: async ({ doctype, filters }: GetCountParams): Promise<GetCountResponse> => {
-    try {
-      const response = await fetch(`/api/method/frappe.client.get_count?doctype=${doctype}&filters=${JSON.stringify(filters)}`);
-      
-      // Handle non-ok responses first
-      if (!response.ok) {
-        await handleApiError(response, `document count for ${doctype}`);
-      }
-      
-      // Parse response JSON
-      let result;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        // If JSON parsing fails, throw a generic error
-        throw new Error(`Failed to parse response from ${doctype} count API`);
-      }
-      
-      // Check for Frappe-specific error responses in the JSON
-      if (result.error) {
-        if (result.error.includes('permission') || result.error.includes('403')) {
-          throw new PermissionError(
-            `You don't have permission to access ${doctype} documents. Please contact your administrator for access.`,
-            403
-          );
-        }
-        throw new Error(result.error);
-      }
-      
-      return result;
-    } catch (error) {
-      if (error instanceof PermissionError) {
-        throw error;
-      }
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      throw new Error(`Failed to get document count: ${errorMessage}`);
-    }
-  }
-};
+"use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type React from "react"
+import { useState, useEffect, useMemo } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import {
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  AlertCircle,
+  Loader2,
+  Shield,
+  RepeatIcon as RetryIcon,
+} from "lucide-react"
+import {
+  useDoctypeSchema,
+  useFrappeInfiniteQuery,
+  useFrappeDocuments,
+  useFrappeDocumentCount,
+  isPermissionError,
+} from "../hooks/useFrappeQuery"
 
 interface FrappeListViewProps {
   doctype: string
@@ -302,7 +40,7 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   doctype,
   ItemComponent,
   isSearch = true,
-  isFilter = true,
+  isFilter = false,
   pageSize = 20,
   defaultFilters = {},
   defaultFields = ["name", "modified"],
@@ -318,6 +56,15 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
 
   const queryClient = useQueryClient()
+
+  // Console log component props
+  console.log(`🎯 FrappeListView initialized for doctype: ${doctype}`, {
+    pageSize,
+    defaultFilters,
+    defaultFields,
+    searchFields,
+    infiniteScroll,
+  })
 
   // Sync filters with defaultFilters prop
   useEffect(() => {
@@ -341,6 +88,17 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   const { data: doctypeSchemaData, isLoading: schemaLoading } = useDoctypeSchema(doctype)
   const doctypeSchema = doctypeSchemaData?.data
 
+  // Log schema data
+  useEffect(() => {
+    if (doctypeSchemaData) {
+      console.log(`📋 Schema loaded for ${doctype}:`, doctypeSchemaData)
+      console.log(
+        `🔍 Available fields for ${doctype}:`,
+        doctypeSchemaData.data?.fields?.map((f) => f.fieldname),
+      )
+    }
+  }, [doctypeSchemaData, doctype])
+
   // Common query parameters
   const queryParams = {
     doctype,
@@ -350,6 +108,8 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
     fields: defaultFields,
     searchFields,
   }
+
+  console.log(`🔧 Query params for ${doctype}:`, queryParams)
 
   // Infinite query for infinite scroll
   const infiniteQueryResult = useFrappeInfiniteQuery(queryParams, {
@@ -379,17 +139,54 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
     },
   )
 
+  // Log query results
+  useEffect(() => {
+    if (infiniteScroll && infiniteQueryResult.data) {
+      console.log(`♾️ Infinite query data for ${doctype}:`, infiniteQueryResult.data)
+      console.log(`📄 Total pages loaded for ${doctype}: ${infiniteQueryResult.data.pages.length}`)
+      infiniteQueryResult.data.pages.forEach((page: any, index: number) => {
+        console.log(`📄 Page ${index + 1} data for ${doctype}:`, page)
+      })
+    }
+  }, [infiniteQueryResult.data, doctype, infiniteScroll])
+
+  useEffect(() => {
+    if (!infiniteScroll && paginationQueryResult.data) {
+      console.log(`📋 Pagination query data for ${doctype}:`, paginationQueryResult.data)
+    }
+  }, [paginationQueryResult.data, doctype, infiniteScroll])
+
+  useEffect(() => {
+    if (countData) {
+      console.log(`🔢 Count data for ${doctype}:`, countData)
+    }
+  }, [countData, doctype])
+
   // Determine which query result to use
   const queryResult = infiniteScroll ? infiniteQueryResult : paginationQueryResult
 
   // Process data based on query type
   const processedData = useMemo(() => {
+    let data = []
     if (infiniteScroll) {
-      return infiniteQueryResult.data?.pages.flatMap((page: { data: any }) => page.data) || []
+      data = infiniteQueryResult.data?.pages.flatMap((page: { data: any }) => page.data) || []
     } else {
-      return paginationQueryResult.data?.data || []
+      data = paginationQueryResult.data?.data || []
     }
-  }, [infiniteScroll, infiniteQueryResult.data, paginationQueryResult.data])
+
+    console.log(`📦 Processed data for ${doctype}:`, data)
+    console.log(`📊 Total processed items for ${doctype}: ${data.length}`)
+
+    // Log first few items
+    if (data.length > 0) {
+      console.log(`🔍 First item sample for ${doctype}:`, data[0])
+      if (data.length > 1) {
+        console.log(`🔍 Second item sample for ${doctype}:`, data[1])
+      }
+    }
+
+    return data
+  }, [infiniteScroll, infiniteQueryResult.data, paginationQueryResult.data, doctype])
 
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll ? infiniteQueryResult.data?.pages[0]?.totalCount || 0 : countData?.message || 0
@@ -397,11 +194,22 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   const startIndex = (currentPage - 1) * pageSize
   const endIndex = Math.min(startIndex + pageSize, totalCount)
 
+  console.log(`📊 Pagination info for ${doctype}:`, {
+    totalCount,
+    totalPages,
+    currentPage,
+    startIndex,
+    endIndex,
+    pageSize,
+  })
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(`🔍 Search term changed for ${doctype}:`, e.target.value)
     setSearchTerm(e.target.value)
   }
 
   const handleFilterChange = (fieldname: string, value: string) => {
+    console.log(`🔧 Filter changed for ${doctype}:`, { fieldname, value })
     setFilters((prev: any) => ({
       ...prev,
       [fieldname]: value,
@@ -409,12 +217,14 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   }
 
   const clearFilters = () => {
+    console.log(`🧹 Clearing filters for ${doctype}`)
     setFilters({})
     setSearchTerm("")
     setDebouncedSearchTerm("")
   }
 
   const refreshData = () => {
+    console.log(`🔄 Refreshing data for ${doctype}`)
     queryClient.invalidateQueries({ queryKey: ["documents", doctype] })
     queryClient.invalidateQueries({ queryKey: ["documents-infinite", doctype] })
     queryClient.invalidateQueries({ queryKey: ["document-count", doctype] })
@@ -422,12 +232,14 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
+      console.log(`📄 Going to page ${page} for ${doctype}`)
       setCurrentPage(page)
     }
   }
 
   const loadMore = () => {
     if (infiniteQueryResult.hasNextPage && !infiniteQueryResult.isFetchingNextPage) {
+      console.log(`⬇️ Loading more data for ${doctype}`)
       infiniteQueryResult.fetchNextPage()
     }
   }
@@ -593,6 +405,17 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   const isLoading = queryResult.isLoading || schemaLoading
   const error = queryResult.error
 
+  // Log loading and error states
+  useEffect(() => {
+    console.log(`⏳ Loading state for ${doctype}:`, { isLoading, schemaLoading, queryLoading: queryResult.isLoading })
+  }, [isLoading, schemaLoading, queryResult.isLoading, doctype])
+
+  useEffect(() => {
+    if (error) {
+      console.error(`❌ Error for ${doctype}:`, error)
+    }
+  }, [error, doctype])
+
   return (
     <>
       {/* Header */}
@@ -704,15 +527,25 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
           </div>
         ) : (
           <div>
-            {processedData.map((item: { name: any }, index: any) => (
-              <div
-                key={item.name || index}
-                onClick={() => onItemClick?.(item)}
-                className={`mb-2 ${onItemClick ? "cursor-pointer hover:bg-gray-50" : ""}`}
-              >
-                <ItemComponent item={item} doctype={doctype} />
-              </div>
-            ))}
+            {processedData.map((item: { name: any }, index: number) => {
+              // Log each item being rendered
+              if (index < 3) {
+                // Only log first 3 items to avoid spam
+                console.log(`🎨 Rendering item ${index + 1} for ${doctype}:`, item)
+              }
+              return (
+                <div
+                  key={item.name || index}
+                  onClick={() => {
+                    console.log(`👆 Item clicked for ${doctype}:`, item)
+                    onItemClick?.(item)
+                  }}
+                  className={`mb-2 ${onItemClick ? "cursor-pointer hover:bg-gray-50" : ""}`}
+                >
+                  <ItemComponent item={item} doctype={doctype} />
+                </div>
+              )
+            })}
             {/* Loading indicator for fetching more data */}
             {queryResult.isFetching && processedData.length > 0 && (
               <div className="flex items-center justify-center py-4 border-b border-gray-200">

@@ -1,13 +1,14 @@
 import { useQuery, useInfiniteQuery, type UseQueryOptions, type UseInfiniteQueryOptions } from "@tanstack/react-query"
-import { frappeService } from "../services/interviewService"
-import { PermissionError } from "../types/interview"
+import { frappeService } from "../services/frappeService"
+import { PermissionError } from "../types/frappe"
 import type {
   DoctypeSchema,
   GetDocumentsParams,
-  GetDocumentsResponse,
+  FrappePageResponse,
+  FrappeDocumentsResponse,
   GetCountParams,
   GetCountResponse,
-} from "../types/interview"
+} from "../types/frappe"
 
 // Utility to check if error is permission-related
 const isPermissionError = (error: unknown): error is PermissionError => {
@@ -51,14 +52,14 @@ export const useDoctypeSchema = (
 export const useFrappeInfiniteQuery = (
   params: Omit<GetDocumentsParams, "pageParam">,
   options?: Omit<
-    UseInfiniteQueryOptions<GetDocumentsResponse, Error, GetDocumentsResponse, readonly unknown[], number>,
+    UseInfiniteQueryOptions<FrappePageResponse>,
     "queryKey" | "queryFn" | "getNextPageParam" | "initialPageParam"
   >,
 ) => {
   return useInfiniteQuery({
     queryKey: ["documents-infinite", params.doctype, params.searchTerm, params.filters, params.fields],
-    queryFn: ({ pageParam = 0 }) => frappeService.getDocuments({ ...params, pageParam: pageParam as number }),
-    getNextPageParam: (lastPage: GetDocumentsResponse) => lastPage.nextCursor,
+    queryFn: ({ pageParam = 0 }) => frappeService.getDocumentsPage({ ...params, pageParam: pageParam as number }),
+    getNextPageParam: (lastPage: FrappePageResponse) => lastPage.nextCursor,
     initialPageParam: 0,
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: defaultRetry,
@@ -70,11 +71,11 @@ export const useFrappeInfiniteQuery = (
 // Hook for paginated query
 export const useFrappeDocuments = (
   params: GetDocumentsParams,
-  options?: Omit<UseQueryOptions<GetDocumentsResponse>, "queryKey" | "queryFn">,
+  options?: Omit<UseQueryOptions<FrappeDocumentsResponse>, "queryKey" | "queryFn">,
 ) => {
   return useQuery({
     queryKey: ["documents", params.doctype, params.pageParam, params.searchTerm, params.filters, params.fields],
-    queryFn: () => frappeService.getDocuments(params),
+    queryFn: () => frappeService.getDocumentsPage(params),
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: defaultRetry,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
