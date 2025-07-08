@@ -30,12 +30,10 @@ export const feedbackService = {
     try {
       console.log(`🎯 Fetching interview details for feedback: ${interview_id}`)
 
-      const result = await FrappeAPI.callMethod("recruitment.api_interview.interview.get_interview_and_round", {
-        interview_id,
-      })
+      const result = await FrappeAPI.getDocument("Interview", interview_id)
 
       return {
-        interview: result?.message?.interview || {},
+        interview: result || {},
       }
     } catch (error) {
       console.error(`❌ Failed to fetch interview details for ${interview_id}:`, error)

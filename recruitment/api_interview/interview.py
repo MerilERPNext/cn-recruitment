@@ -118,19 +118,16 @@ def create_interview_feedback():
         # Create Interview Feedback document
         doc = frappe.new_doc("Interview Feedback")
 
-        # Manually assign all fields to prevent any default overwrites
+        # Assign all fields
         doc.interview = data["interview"]
         doc.interviewer = data["interviewer"]
         doc.interview_round = data["interview_round"]
         doc.job_applicant = data["job_applicant"]
         doc.feedback = data["feedback"]
         doc.result = data["result"]
-        
-        # Set average_rating (correct field name from doctype)
         doc.average_rating = float(data["rating"])
 
         # Assign skill_assessment child table
-        doc.skill_assessment = []
         for row in data["skill_assessment"]:
             doc.append("skill_assessment", {
                 "skill": row["skill"],
@@ -138,15 +135,12 @@ def create_interview_feedback():
                 "comments": row.get("comments", "")
             })
 
-        # Set average_rating again after child table to ensure it doesn't get overridden
-        doc.average_rating = float(data["rating"])
-        
+        # Insert and submit in correct sequence
         doc.flags.ignore_permissions = True
-        doc.insert()
-        
-        # Force set average_rating after insert to ensure it's saved correctly
-        doc.db_set("average_rating", float(data["rating"]), update_modified=False)
-        
+        doc.flags.ignore_validate = True  # Skip validation checks
+        doc.flags.ignore_mandatory = True  # Skip mandatory field checks if needed
+        doc.insert(ignore_permissions=True)
+        doc.submit()  # Submit after successful insertion
         frappe.db.commit()
 
         return {
@@ -154,7 +148,8 @@ def create_interview_feedback():
             "message": "Interview feedback submitted successfully.",
             "name": doc.name,
             "saved_result": doc.result,
-            "saved_rating": doc.average_rating
+            "saved_rating": doc.average_rating,
+            "docstatus": doc.docstatus
         }
 
     except Exception as e:

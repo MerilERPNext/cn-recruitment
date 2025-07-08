@@ -7,15 +7,13 @@ export const interviewService = {
     try {
       console.log(` Fetching interview and rounds for ID: ${interview_id}`)
 
-      const result = await FrappeAPI.callMethod("recruitment.api_interview.interview.get_interview_and_round", {
-        interview_id,
-      })
+    const result = await FrappeAPI.getDocument("Interview", interview_id)
 
-      console.log(` Interview and rounds response:`, result)
+      console.log(`Ѻ Interview and rounds response:`, result)
      
 
       return {
-        interview: result?.message.interview || {},
+        interview: result || {},
         rounds: result?.rounds || [],
       }
     } catch (error) {

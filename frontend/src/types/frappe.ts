@@ -12,6 +12,7 @@ export interface DoctypeField {
     }
   }
   
+  
   export interface DocumentItem {
     name: string
     title?: string
@@ -20,6 +21,7 @@ export interface DoctypeField {
     owner?: string
     [key: string]: any
   }
+  
   
   export interface GetDocumentsParams {
     doctype: string

@@ -142,12 +142,14 @@ export default function InterviewFeedbackForm() {
     console.log(`🧹 Form reset`)
   }, [formData, initialFormData])
 
-  // Function to update skill assessment rating
+  // Function to update skill assessment rating with float values
   const updateSkillAssessmentRating = useCallback((index: number, rating: number) => {
     setFormData((prev) => {
       const updated = [...prev.skillAssessment]
-      updated[index].rating = rating.toString()
-      console.log(`⭐ Updated skill rating for ${updated[index].skill}: ${rating}`)
+      // Convert rating to float based on requirements
+      const floatRating = rating * 0.2
+      updated[index].rating = floatRating.toString()
+      console.log(`⭐ Updated skill rating for ${updated[index].skill}: ${rating} stars = ${floatRating}`)
       return { ...prev, skillAssessment: updated }
     })
   }, [])
@@ -162,22 +164,41 @@ export default function InterviewFeedbackForm() {
     navigate(-1)
   }, [navigate])
 
-  // Function to calculate average skill assessment rating
+  // Function to calculate average skill assessment rating (for API payload - out of 1.0)
   const calculateAverageSkillRating = useCallback(() => {
-    if (formData.skillAssessment.length === 0) return "0"
+    if (formData.skillAssessment.length === 0) return "0.0"
 
     // Filter out skills with rating "0" or empty rating
     const ratedSkills = formData.skillAssessment.filter(
       (skill) => skill.rating && skill.rating !== "0" && skill.rating !== "",
     )
 
-    if (ratedSkills.length === 0) return "0"
+    if (ratedSkills.length === 0) return "0.0"
 
-    const totalRating = ratedSkills.reduce((acc, curr) => acc + Number.parseInt(curr.rating), 0)
-    const average = (totalRating / ratedSkills.length).toFixed(1)
+    const totalRating = ratedSkills.reduce((acc, curr) => acc + parseFloat(curr.rating), 0)
+    const average = (totalRating / ratedSkills.length).toFixed(2)
 
     console.log(`📊 Average skill rating calculated: ${average}`)
     return average
+  }, [formData.skillAssessment])
+
+  // Function to calculate display average rating (for UI display - out of 5.0)
+  const calculateDisplayAverageRating = useCallback(() => {
+    if (formData.skillAssessment.length === 0) return "0.0"
+
+    // Filter out skills with rating "0" or empty rating
+    const ratedSkills = formData.skillAssessment.filter(
+      (skill) => skill.rating && skill.rating !== "0" && skill.rating !== "",
+    )
+
+    if (ratedSkills.length === 0) return "0.0"
+
+    // Convert back to star rating (multiply by 5 since we stored as rating * 0.2)
+    const totalStarRating = ratedSkills.reduce((acc, curr) => acc + (parseFloat(curr.rating) * 5), 0)
+    const averageStarRating = (totalStarRating / ratedSkills.length).toFixed(1)
+
+    console.log(`⭐ Display average rating calculated: ${averageStarRating}`)
+    return averageStarRating
   }, [formData.skillAssessment])
 
   const handleSubmit = useCallback(async () => {
@@ -215,23 +236,65 @@ export default function InterviewFeedbackForm() {
     refetchInterview()
   }, [refetchSkills, refetchInterview])
 
+  // Enhanced StarRating component with half-star functionality
   const StarRating = useCallback(
-    ({ rating, onRatingChange }: { rating: number; onRatingChange: (r: number) => void }) => (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4].map((star) => (
+    ({ rating, onRatingChange }: { rating: number; onRatingChange: (r: number) => void }) => {
+      const handleStarClick = (starIndex: number, event: React.MouseEvent) => {
+        const rect = event.currentTarget.getBoundingClientRect()
+        const clickX = event.clientX - rect.left
+        const starWidth = rect.width
+        const isLeftHalf = clickX < starWidth / 2
+        
+        // Calculate rating based on click position
+        const newRating = isLeftHalf ? starIndex - 0.5 : starIndex
+        onRatingChange(newRating)
+      }
+
+      const renderStar = (starIndex: number) => {
+        const isFullStar = rating >= starIndex
+        const isHalfStar = rating >= starIndex - 0.5 && rating < starIndex
+        
+        return (
           <button
-            key={star}
+            key={starIndex}
             type="button"
-            className={`w-6 h-6 text-2xl transition-all duration-200 hover:scale-110 ${
-              star <= rating ? "text-yellow-400" : "text-gray-300 hover:text-yellow-200"
-            }`}
-            onClick={() => onRatingChange(star)}
+            className="relative w-4 h-4 text-xl transition-all duration-200 hover:scale-110 focus:outline-none"
+            onClick={(e) => handleStarClick(starIndex, e)}
           >
-            ★
+            {/* Background star (gray) */}
+            <span className="absolute inset-0 text-gray-300">★</span>
+            
+            {/* Half star (left half) */}
+            {isHalfStar && (
+              <span 
+                className="absolute inset-0 text-yellow-400 overflow-hidden"
+                style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}
+              >
+                ★
+              </span>
+            )}
+            
+            {/* Full star */}
+            {isFullStar && (
+              <span className="absolute inset-0 text-yellow-400">★</span>
+            )}
+            
+            {/* Hover effect overlay */}
+            <span className="absolute inset-0 text-yellow-200 opacity-0 hover:opacity-100 transition-opacity">
+              ★
+            </span>
           </button>
-        ))}
-      </div>
-    ),
+        )
+      }
+
+      return (
+        <div className="flex gap-1 items-center">
+          {[1, 2, 3, 4, 5].map(renderStar)}
+          <span className="ml-2 text-sm text-gray-600">
+          </span>
+        </div>
+      )
+    },
     [],
   )
 
@@ -412,7 +475,8 @@ export default function InterviewFeedbackForm() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border p-2">
+        {/* Skill Assessment Section */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Skill Assessment</h2>
           <div className="space-y-4">
             {formData.skillAssessment.map((skill, index) => (
@@ -420,11 +484,11 @@ export default function InterviewFeedbackForm() {
                 <div className="flex flex-row items-center md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">{skill.skill}</h3>
-                    <p className=" text-gray-900">{skill.description}</p>
+                    <p className="text-gray-900">{skill.description}</p>
                   </div>
                   <div className="flex flex-col items-center md:items-end">
                     <StarRating
-                      rating={parseInt(skill.rating) || 0}
+                      rating={parseFloat(skill.rating) / 0.2 || 0} // Convert back to star rating for display
                       onRatingChange={(r) => updateSkillAssessmentRating(index, r)}
                     />
                   </div>
@@ -442,8 +506,8 @@ export default function InterviewFeedbackForm() {
                   <p className="text-sm text-gray-600">Average of all skill ratings</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-green-600">{calculateAverageSkillRating()}</div>
-                  <div className="text-sm text-gray-500">out of 5</div>
+                  <div className="text-2xl font-bold text-green-600">{calculateDisplayAverageRating()}</div>
+                  <div className="text-sm text-gray-500">out of 5.0</div>
                 </div>
               </div>
             </div>
@@ -491,7 +555,7 @@ export default function InterviewFeedbackForm() {
           <button
             onClick={handleSubmit}
             disabled={feedbackMutation.isPending}
-            className="w-full bg-black hover:bg-black-400 text-white py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {feedbackMutation.isPending ? (
               <div className="flex items-center justify-center">
