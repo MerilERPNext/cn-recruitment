@@ -1,89 +1,218 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useEffect, useState } from "react"
-import { ArrowLeft, Calendar, Clock, Video, FileText, Copy } from "lucide-react"
-import { useNavigate, useParams } from "react-router";
-import axios from "axios";
+import { useMemo } from "react"
+import { ArrowLeft, Calendar, Clock, Video, FileText, Copy, AlertCircle, RefreshCw } from "lucide-react"
+import { useNavigate, useParams } from "react-router-dom"
+import { useInterviewAndRounds, isPermissionError } from "../hooks/useInterview"
 
 const InterviewPage = () => {
-  const { id: interviewId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [interviewData, setInterviewData] = useState<any>(null);
-  const [rounds, setRounds] = useState<any[]>([]);
+  const { id: interviewId } = useParams<{ id: string }>()
+  const navigate = useNavigate()
 
-console.log(rounds, interviewData)
+  console.log(`🎯 InterviewPage initialized with ID: ${interviewId}`)
 
-  useEffect(() => {
-    const fetchInterviewData = async () => {
-      try {
-        const response = await axios.get(
-          "/api/method/recruitment.api_interview.interview.get_interview_and_round",
-          {
-            params: { interview_id: interviewId },
-          }
-        );
+  // Use React Query hook
+  const {
+    data: interviewResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useInterviewAndRounds(
+    { interview_id: interviewId || "" },
+    {
+      enabled: !!interviewId, // Only fetch if interviewId exists
+    },
+  )
 
-        const result = response.data?.message?.message;
-        setInterviewData(result?.interview);
-        setRounds(result?.rounds || []);
-      } catch (error) {
-        console.error("Error fetching interview data:", error);
-      }
-    };
+  // Extract data from response
+  const interviewData = useMemo(() => {
+    const data = interviewResponse?.interview
+    console.log(`📋 Interview data processed:`, data)
+    return data
+  }, [interviewResponse?.interview])
 
-    if (interviewId) {
-      fetchInterviewData();
-    }
-  }, [interviewId]);
+  const rounds = useMemo(() => {
+    const roundsData = interviewResponse?.rounds || []
+    console.log(`🔄 Rounds data processed:`, roundsData)
+    return roundsData
+  }, [interviewResponse?.rounds])
+
   const getDuration = (fromTime: string, toTime: string): string => {
-    if (!fromTime || !toTime) return "NA";
-  
-    const [fromHours, fromMinutes] = fromTime.split(":").map(Number);
-    const [toHours, toMinutes] = toTime.split(":").map(Number);
-  
-    const fromDate = new Date();
-    fromDate.setHours(fromHours, fromMinutes, 0);
-  
-    const toDate = new Date();
-    toDate.setHours(toHours, toMinutes, 0);
-  
-    let diffMs = toDate.getTime() - fromDate.getTime();
-  
+    if (!fromTime || !toTime) return "NA"
+    const [fromHours, fromMinutes] = fromTime.split(":").map(Number)
+    const [toHours, toMinutes] = toTime.split(":").map(Number)
+    const fromDate = new Date()
+    fromDate.setHours(fromHours, fromMinutes, 0)
+    const toDate = new Date()
+    toDate.setHours(toHours, toMinutes, 0)
+    let diffMs = toDate.getTime() - fromDate.getTime()
     if (diffMs < 0) {
       // handle if to_time is past midnight
-      diffMs += 24 * 60 * 60 * 1000;
+      diffMs += 24 * 60 * 60 * 1000
     }
-  
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  
-    return `${diffHours}h ${diffMinutes}m`;
-  };
-  
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+    return `${diffHours}h ${diffMinutes}m`
+  }
 
-  const getFieldValue = (field: any) => field || "NA";
+  const getFieldValue = (field: any) => field || "NA"
 
   const handleBackInterview = () => {
-    navigate(-1);
-  };
+    console.log(`🔙 Navigating back from interview ${interviewId}`)
+    navigate(-1)
+  }
+
   const handleRedirect = () => {
-    if (interviewData.custom_resume_attachment) {
-      window.open(interviewData.custom_resume_attachment, "_blank");
+    if (interviewData?.custom_resume_attachment) {
+      console.log(`📄 Opening resume: ${interviewData.custom_resume_attachment}`)
+      window.open(interviewData.custom_resume_attachment, "_blank")
     }
-  };
-  
+  }
 
   const handleButtonClick = () => {
-  navigate(`/webapp/recruitment-app/interview-feedback/${interviewId}`);
-  };
+    console.log(`📝 Navigating to feedback for interview ${interviewId}`)
+    navigate(`/webapp/recruitment-app/interview-feedback/${interviewId}`)
+  }
+
+  const handleRetry = () => {
+    console.log(`🔄 Retrying data fetch for interview ${interviewId}`)
+    refetch()
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="relative flex size-full min-h-screen flex-col bg-[var(--background-light)]">
+        <header className="sticky top-0 z-10 flex items-center bg-white/80 backdrop-blur-md p-4 pb-3 justify-between border-b border-slate-200">
+          <button
+            onClick={handleBackInterview}
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-900"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <h1 className="text-lg font-semibold text-center flex-1 text-slate-900">Interview Details</h1>
+          <div className="w-10 h-10"></div>
+        </header>
+        <div className="flex-grow flex items-center justify-center">
+          <div className="flex items-center space-x-2 text-slate-500">
+            <RefreshCw className="h-6 w-6 animate-spin" />
+            <span className="text-lg">Loading interview details...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="relative flex size-full min-h-screen flex-col bg-[var(--background-light)]">
+        <header className="sticky top-0 z-10 flex items-center bg-white/80 backdrop-blur-md p-4 pb-3 justify-between border-b border-slate-200">
+          <button
+            onClick={handleBackInterview}
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-900"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <h1 className="text-lg font-semibold text-center flex-1 text-slate-900">Interview Details</h1>
+          <div className="w-10 h-10"></div>
+        </header>
+        <div className="flex-grow flex items-center justify-center p-4">
+          <div className="max-w-md mx-auto text-center">
+            {isPermissionError(error) ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="p-3 bg-yellow-100 rounded-full">
+                    <AlertCircle className="h-8 w-8 text-yellow-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">Access Restricted</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    You don't have permission to view this interview. Please contact your administrator for access.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <button
+                      onClick={handleRetry}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Try Again
+                    </button>
+                    <button
+                      onClick={handleBackInterview}
+                      className="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+                    >
+                      Go Back
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="p-3 bg-red-100 rounded-full">
+                    <AlertCircle className="h-8 w-8 text-red-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">Error Loading Interview</h3>
+                  <p className="text-sm text-slate-600 mb-4">{error.message}</p>
+                  <button
+                    onClick={handleRetry}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // No data state
+  if (!interviewData) {
+    return (
+      <div className="relative flex size-full min-h-screen flex-col bg-[var(--background-light)]">
+        <header className="sticky top-0 z-10 flex items-center bg-white/80 backdrop-blur-md p-4 pb-3 justify-between border-b border-slate-200">
+          <button
+            onClick={handleBackInterview}
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-900"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <h1 className="text-lg font-semibold text-center flex-1 text-slate-900">Interview Details</h1>
+          <div className="w-10 h-10"></div>
+        </header>
+        <div className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-slate-900 mb-2">Interview Not Found</h3>
+            <p className="text-sm text-slate-600 mb-4">The requested interview could not be found.</p>
+            <button
+              onClick={handleBackInterview}
+              className="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-[var(--background-light)]">
       <div className="flex-grow">
         <header className="sticky top-0 z-10 flex items-center bg-white/80 backdrop-blur-md p-4 pb-3 justify-between border-b border-slate-200">
-          <button 
+          <button
             onClick={handleBackInterview}
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-900">
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-900"
+          >
             <ArrowLeft className="h-6 w-6" />
           </button>
           <h1 className="text-lg font-semibold text-center flex-1 text-slate-900">Interview Details</h1>
@@ -110,7 +239,9 @@ console.log(rounds, interviewData)
             </div>
             <div className="flex flex-col justify-center">
               <p className="text-slate-900 text-base font-medium">{getFieldValue(interviewData?.scheduled_on)}</p>
-              <p className="text-slate-600 text-sm">{`${getFieldValue(interviewData?.from_time)} - ${getFieldValue(interviewData?.to_time)}`}</p>
+              <p className="text-slate-600 text-sm">{`${getFieldValue(interviewData?.from_time)} - ${getFieldValue(
+                interviewData?.to_time,
+              )}`}</p>
             </div>
           </div>
           <div className="flex items-center gap-4 bg-white px-4 py-3">
@@ -128,7 +259,9 @@ console.log(rounds, interviewData)
             </div>
             <div className="flex flex-col justify-center">
               <p className="text-slate-900 text-base font-medium">Location</p>
-              <p className="text-slate-600 text-sm">{getFieldValue(interviewData?.custom_interview_type) || 'Video Call'}</p>
+              <p className="text-slate-600 text-sm">
+                {getFieldValue(interviewData?.custom_interview_type) || "Video Call"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-4 bg-white px-4 py-3">
@@ -138,17 +271,16 @@ console.log(rounds, interviewData)
             <div className="flex flex-col justify-center">
               <p className="text-slate-900 text-base font-medium">Join Link</p>
               <p className="text-slate-600 text-sm flex items-center gap-2">
-  <Copy className="h-5 w-5" />
-  <a
-    href={getFieldValue(interviewData?.custom_zoom_link)}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-blue-600 underline"
-  >
-    {getFieldValue(interviewData?.custom_zoom_link)}
-  </a>
-</p>
-
+                <Copy className="h-5 w-5" />
+                <a
+                  href={getFieldValue(interviewData?.custom_zoom_link)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  {getFieldValue(interviewData?.custom_zoom_link)}
+                </a>
+              </p>
             </div>
           </div>
         </section>
@@ -184,64 +316,31 @@ console.log(rounds, interviewData)
         {/* Preparation Materials */}
         <section>
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Preparation Materials</h2>
-          
           <div className="flex items-center gap-4 bg-white px-4 py-3">
-           
-            <div onClick={handleRedirect} className="flex items-center justify-center rounded-xl bg-slate-100 w-10 h-10 text-slate-900">
+            <div
+              onClick={handleRedirect}
+              className="flex items-center justify-center rounded-xl bg-slate-100 w-10 h-10 text-slate-900 cursor-pointer hover:bg-slate-200"
+            >
               <FileText className="h-5 w-5" />
             </div>
             <p className="text-slate-900 text-base font-medium flex-1">Resume</p>
           </div>
-         
         </section>
 
-        {/* Interview Questions Template */}
-        {/* <section>
-          <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Interview Questions Template</h2>
-          <div className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
-            <div className="flex items-center justify-center rounded-xl bg-slate-100 w-10 h-10 text-slate-900">
-              <HelpCircle className="h-5 w-5" />
-            </div>
-            <p className="text-slate-900 text-base font-medium flex-1">Technical Questions</p>
-            <button className="flex items-center justify-center w-8 h-8 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded">
-              <Play className="h-5 w-5" />
-            </button>
-          </div>
-        </section> */}
-
-        {/* Pre-Interview Checklist */}
-        {/* <section>
-          <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Pre-Interview Checklist</h2>
-          <div className="px-4 pb-4">
-            <label className="flex gap-x-3 py-3 items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={checklist.resume}
-                onChange={() => handleChecklistChange("resume")}
-                className="h-5 w-5 rounded-md border-2 border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-2"
-              />
-              <p className="text-slate-900 text-base flex-1">{"Review candidate's resume and portfolio"}</p>
-            </label>
-            <label className="flex gap-x-3 py-3 items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={checklist.questions}
-                onChange={() => handleChecklistChange("questions")}
-                className="h-5 w-5 rounded-md border-2 border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-2"
-              />
-              <p className="text-slate-900 text-base flex-1">Prepare technical questions</p>
-            </label>
-            <label className="flex gap-x-3 py-3 items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={checklist.setup}
-                onChange={() => handleChecklistChange("setup")}
-                className="h-5 w-5 rounded-md border-2 border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-2"
-              />
-              <p className="text-slate-900 text-base flex-1">Confirm video call setup</p>
-            </label>
-          </div>
-        </section> */}
+        {/* Rounds Information (if available) */}
+        {rounds.length > 0 && (
+          <section>
+            <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Interview Rounds</h2>
+            {rounds.map((round: any, index: number) => (
+              <div key={index} className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
+                <div className="flex flex-col justify-center flex-1">
+                  <p className="text-slate-900 text-base font-medium">{getFieldValue(round.round_name)}</p>
+                  <p className="text-slate-600 text-sm">{getFieldValue(round.status)}</p>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
       </div>
 
       <footer className="sticky bottom-0 bg-white p-4 border-t border-slate-200">
@@ -249,11 +348,11 @@ console.log(rounds, interviewData)
           className="w-full bg-slate-900 text-white font-semibold py-3 px-4 rounded-xl hover:bg-slate-800 active:bg-slate-700 transition-colors duration-150"
           onClick={handleButtonClick}
         >
-         Go to Feedback
+          Go to Feedback
         </button>
       </footer>
     </div>
   )
 }
 
-export default InterviewPage;
+export default InterviewPage

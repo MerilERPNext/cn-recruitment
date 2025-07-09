@@ -1,4 +1,5 @@
 import frappe
+import json
 from frappe import _
 
 @frappe.whitelist(allow_guest=True)
@@ -66,11 +67,10 @@ def get_skill_names():
 
 
 
-import json
-import frappe
-from frappe import _
 
-@frappe.whitelist(allow_guest=True)  # Only if Guest access is needed; remove if only authenticated users should post
+
+
+@frappe.whitelist(allow_guest=True)  
 def create_interview_feedback():
     if frappe.request.method != "POST":
         frappe.throw(_("Only POST requests are allowed"))
@@ -117,17 +117,44 @@ def create_interview_feedback():
 
         # Create Interview Feedback document
         doc = frappe.new_doc("Interview Feedback")
-        doc.update(data)
-        doc.flags.ignore_permissions = True  # Optional: Only use if Guest user must be allowed to insert
-        doc.insert()
+
+        # Assign all fields
+        doc.interview = data["interview"]
+        doc.interviewer = data["interviewer"]
+        doc.interview_round = data["interview_round"]
+        doc.job_applicant = data["job_applicant"]
+        doc.feedback = data["feedback"]
+        doc.result = data["result"]
+        doc.average_rating = float(data["rating"])
+
+        # Assign skill_assessment child table
+        for row in data["skill_assessment"]:
+            doc.append("skill_assessment", {
+                "skill": row["skill"],
+                "rating": row["rating"],
+                "comments": row.get("comments", "")
+            })
+
+        # Insert and submit in correct sequence
+        doc.flags.ignore_permissions = True
+        doc.flags.ignore_validate = True  # Skip validation checks
+        doc.flags.ignore_mandatory = True  # Skip mandatory field checks if needed
+        doc.insert(ignore_permissions=True)
+        doc.submit()  # Submit after successful insertion
         frappe.db.commit()
 
         return {
             "status": "success",
             "message": "Interview feedback submitted successfully.",
-            "name": doc.name
+            "name": doc.name,
+            "saved_result": doc.result,
+            "saved_rating": doc.average_rating,
+            "docstatus": doc.docstatus
         }
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Interview Feedback API Error")
-        frappe.throw(_("Error submitting feedback: {0}").format(str(e)))
+        return {
+            "status": "error",
+            "message": _("Error submitting feedback: {0}").format(str(e))
+        }

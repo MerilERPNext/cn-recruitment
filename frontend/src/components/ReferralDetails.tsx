@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import { Clock, FileText, Download, Link, ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
