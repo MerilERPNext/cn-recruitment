@@ -1,34 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Clock, FileText, Download, Link, ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
-import axios from "axios";
+import { useReferralDetails } from "../hooks/useReferralDetails";
 
 const ReferralDetails: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const [referral, setReferral] = useState<any>(null);
+  const { id } = useParams<{ id: string }>();
+  const { data, error, isLoading } = useReferralDetails(id || "");
+  const referral = data?.data;
 
- useEffect(() => {
-  const fetchReferralDetails = async () => {
-    try {
-      const res = await axios.get(`/api/method/recruitment.api.employee_referral.get_referral_status`, {
-        params: { referral_id: id }
-      });
-      console.log("Referral response ===>", res.data.message.data); // ✅ correct log
-      setReferral(res.data.message.data); // ✅ correct assignment
-    } catch (error) {
-      console.error("Error fetching referral details", error);
-    }
-  };
-
-  fetchReferralDetails();
-}, [id]);
-
-
+  console.log("my candidate data",referral)
+  
   const handleBack = () => navigate(-1);
+  if (isLoading) return <div className="p-4">Loading...</div>;
 
-  if (!referral) return <div className="p-4">Loading...</div>;
+  if (error) return <div className="p-4 text-red-600">Error loading referral details</div>;
+
+  if (!referral) return <div className="p-4">No referral details found.</div>;
 
   return (
     <div className="flex flex-col w-full h-screen bg-gray-50">
@@ -58,12 +46,9 @@ const ReferralDetails: React.FC = () => {
               }}
             ></div>
             <div>
-              <p className="text-gray-900 text-lg font-bold">
-                {referral.candidate_name}
-              </p>
+              <p className="text-gray-900 text-lg font-bold">{referral.candidate_name}</p>
               <p className="text-gray-600 text-sm">{referral.position}</p>
-<p className="text-gray-600 text-sm">{referral.email}</p>
-              {referral.resume_url ? (
+              {referral.resume_url?(
                 <a
                   className="text-blue-600 text-sm font-medium hover:underline flex items-center gap-1 mt-1"
                   href={referral.resume_url}
@@ -82,14 +67,13 @@ const ReferralDetails: React.FC = () => {
 
         {/* Referral Info Section */}
         <section>
-          <h2 className="text-gray-900 text-lg font-semibold mb-3">
-            Referral Details
-          </h2>
+          <h2 className="text-gray-900 text-lg font-semibold mb-3">Referral Details</h2>
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white text-sm">
             {[
               ["Referred By", referral.referrer_name],
               ["Position", referral.position],
-              ["Submission Date", referral.referral_date],
+              ["Submission Date", referral.referral_date
+],
               ["Referral ID", referral.referral_id],
             ].map(([label, value], i) => (
               <div
@@ -107,9 +91,7 @@ const ReferralDetails: React.FC = () => {
 
         {/* Status Timeline */}
         <section>
-          <h2 className="text-gray-900 text-lg font-semibold mb-4">
-            Current Status
-          </h2>
+          <h2 className="text-gray-900 text-lg font-semibold mb-4">Current Status</h2>
           <div className="overflow-hidden z-100">
             <div className="relative flex items-start gap-4 mb-6 last:mb-0">
               <div className="relative flex flex-col items-center z-10">
@@ -118,12 +100,8 @@ const ReferralDetails: React.FC = () => {
                 </div>
               </div>
               <div className="flex-1 pt-1">
-                <p className="text-gray-900 font-medium text-sm">
-                  {referral.latest_status}
-                </p>
-                <p className="text-gray-600 text-xs">
-                  {referral.status_date || "N/A"}
-                </p>
+                <p className="text-gray-900 font-medium text-sm">{referral.latest_status}</p>
+                <p className="text-gray-600 text-xs">{referral.status_date || "N/A"}</p>
               </div>
             </div>
           </div>
@@ -131,9 +109,7 @@ const ReferralDetails: React.FC = () => {
 
         {/* Resume Attachment */}
         <section className="pb-6">
-          <h2 className="text-gray-900 text-lg font-semibold mb-3">
-            Documents & Attachments
-          </h2>
+          <h2 className="text-gray-900 text-lg font-semibold mb-3">Documents & Attachments</h2>
           <div className="space-y-3">
             {referral.resume_url ? (
               <div className="p-4 rounded-lg border border-gray-200 bg-white flex items-center gap-4 hover:bg-gray-50 transition-colors cursor-pointer">
@@ -143,15 +119,8 @@ const ReferralDetails: React.FC = () => {
                 <p className="text-sm font-medium text-gray-900 flex-1 truncate">
                   {referral.resume_url.split("/").pop()}
                 </p>
-                <a
-                  href={referral.resume_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Download
-                    size={20}
-                    className="text-gray-500 hover:text-gray-700"
-                  />
+                <a href={referral.resume_url} target="_blank" rel="noopener noreferrer">
+                  <Download size={20} className="text-gray-500 hover:text-gray-700" />
                 </a>
               </div>
             ) : (
