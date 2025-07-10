@@ -1,5 +1,5 @@
 "use client"
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -22,21 +22,30 @@ import {
   isPermissionError,
 } from "../hooks/useFrappeQuery"
 
-interface FrappeListViewProps {
+interface BaseItem {
+  name: string;
+}
+
+type PageData = {
+  totalCount: number;
+  results: unknown[];
+};
+
+interface FrappeListViewProps<T extends BaseItem> {
   doctype: string
-  ItemComponent: React.ComponentType<any>
+  ItemComponent: React.ComponentType<{ item: T; index?: number; doctype: string }>
   isSearch?: boolean
   isFilter?: boolean
   pageSize?: number
-  defaultFilters?: Record<string, any>
+  defaultFilters?: Record<string, string>
   defaultFields?: string[]
   searchFields?: string[]
-  onItemClick?: (item: any) => void
+  onItemClick?: (item: T) => void
   infiniteScroll?: boolean
   permissionErrorMessage?: string
 }
 
-const FrappeListView: React.FC<FrappeListViewProps> = ({
+const FrappeListView = <T extends BaseItem>({
   doctype,
   ItemComponent,
   isSearch = true,
@@ -45,16 +54,15 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   defaultFilters = {},
   defaultFields = ["name", "modified"],
   searchFields = [],
-  onItemClick = null,
+  onItemClick, 
   infiniteScroll = false,
   permissionErrorMessage,
-}) => {
+}: FrappeListViewProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("")
   const [filters, setFilters] = useState(defaultFilters)
   const [showFilters, setShowFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
-
   const queryClient = useQueryClient()
 
   // Console log component props
@@ -66,7 +74,6 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
     infiniteScroll,
   })
 
-  // Sync filters with defaultFilters prop
   useEffect(() => {
     setFilters(defaultFilters || {})
   }, [JSON.stringify(defaultFilters)])
@@ -132,7 +139,7 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
     {
       doctype,
       searchTerm: debouncedSearchTerm,
-      filters,
+      filters: Object.entries(filters).map(([key, value]) => [key, '=', value]),
     },
     {
       enabled: !infiniteScroll,
@@ -144,7 +151,7 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
     if (infiniteScroll && infiniteQueryResult.data) {
       console.log(`♾️ Infinite query data for ${doctype}:`, infiniteQueryResult.data)
       console.log(`📄 Total pages loaded for ${doctype}: ${infiniteQueryResult.data.pages.length}`)
-      infiniteQueryResult.data.pages.forEach((page: any, index: number) => {
+      infiniteQueryResult.data.pages.forEach((page: number, index: number) => {
         console.log(`📄 Page ${index + 1} data for ${doctype}:`, page)
       })
     }
@@ -167,17 +174,19 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
 
   // Process data based on query type
   const processedData = useMemo(() => {
-    let data = []
+    let data: T[] = []; // Type as T[] instead of unknown[]
+
     if (infiniteScroll) {
-      data = infiniteQueryResult.data?.pages.flatMap((page: { data: any }) => page.data) || []
+      const pages = infiniteQueryResult.data?.pages as { data: T[] }[] | undefined
+      data = pages?.flatMap((page) => page.data) || []
+      console.log(data, "gggggggggggggggg")
     } else {
-      data = paginationQueryResult.data?.data || []
+      data = (paginationQueryResult.data?.data as unknown as T[]) || []
     }
 
     console.log(`📦 Processed data for ${doctype}:`, data)
     console.log(`📊 Total processed items for ${doctype}: ${data.length}`)
 
-    // Log first few items
     if (data.length > 0) {
       console.log(`🔍 First item sample for ${doctype}:`, data[0])
       if (data.length > 1) {
@@ -189,7 +198,9 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
   }, [infiniteScroll, infiniteQueryResult.data, paginationQueryResult.data, doctype])
 
   // Calculate pagination values for traditional pagination
-  const totalCount = infiniteScroll ? infiniteQueryResult.data?.pages[0]?.totalCount || 0 : countData?.message || 0
+  const totalCount = infiniteScroll
+    ? (infiniteQueryResult.data?.pages[0] as unknown as PageData)?.totalCount || 0
+    : countData?.message || 0
   const totalPages = Math.ceil(totalCount / pageSize)
   const startIndex = (currentPage - 1) * pageSize
   const endIndex = Math.min(startIndex + pageSize, totalCount)
@@ -210,7 +221,7 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
 
   const handleFilterChange = (fieldname: string, value: string) => {
     console.log(`🔧 Filter changed for ${doctype}:`, { fieldname, value })
-    setFilters((prev: any) => ({
+    setFilters((prev: Record<string, string>) => ({
       ...prev,
       [fieldname]: value,
     }))
@@ -439,9 +450,7 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
             {isFilter && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  showFilters ? "bg-gray-100" : ""
-                }`}
+                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${showFilters ? "bg-gray-100" : ""}`}
               >
                 <Filter className="h-4 w-4" />
               </button>
@@ -527,10 +536,8 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
           </div>
         ) : (
           <div>
-            {processedData.map((item: { name: any }, index: number) => {
-              // Log each item being rendered
+            {processedData.map((item, index) => {
               if (index < 3) {
-                // Only log first 3 items to avoid spam
                 console.log(`🎨 Rendering item ${index + 1} for ${doctype}:`, item)
               }
               return (
@@ -538,11 +545,11 @@ const FrappeListView: React.FC<FrappeListViewProps> = ({
                   key={item.name || index}
                   onClick={() => {
                     console.log(`👆 Item clicked for ${doctype}:`, item)
-                    onItemClick?.(item)
+                    onItemClick?.(item) // Use optional chaining
                   }}
                   className={`mb-2 ${onItemClick ? "cursor-pointer hover:bg-gray-50" : ""}`}
                 >
-                  <ItemComponent item={item} doctype={doctype} />
+                  <ItemComponent item={item} index={index} doctype={doctype} />
                 </div>
               )
             })}

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../index.css";
@@ -28,7 +26,7 @@ const ReferralList: React.FC = () => {
     navigate(`/webapp/recruitment-app/referral-details/${referralId}`);
   };
 
-  console.log('NotificationToken', window.nativeInterface.execute('getPushToken').then((x: any) => { window.nativeInterface.logToNative(x); }));
+  console.log('NotificationToken', window.nativeInterface.execute('getPushToken').then((x: string) => { window.nativeInterface.logToNative(x); }));
 
   return (
     <FrappeListView
@@ -46,8 +44,7 @@ const ReferralList: React.FC = () => {
   );
 };
 
-
-const ReferralItem: React.FC<{ item: Referral, index: number }> = ({ item, index }) => {
+const ReferralItem: React.FC<{ item: Referral; index?: number; doctype: string }> = ({ item, doctype }) => {
   const referral = item;
 
   const getStatusIcon = (status: string) => {
@@ -66,7 +63,7 @@ const ReferralItem: React.FC<{ item: Referral, index: number }> = ({ item, index
   };
 
   const { icon, color } = getStatusIcon(referral?.status || '');
-  console.log(referral,"hello archu this data of raferral")
+  console.log(referral, `hello archu this data of referral for ${doctype}`)
   return (
     <div
       className="flex items-center gap-3 bg-[var(--background-light)] p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow border hover:border-[var(--border-light)] cursor-pointer"

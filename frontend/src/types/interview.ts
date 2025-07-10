@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 
 // Generic Frappe types
 export interface DoctypeField {
@@ -20,7 +20,7 @@ export interface DoctypeField {
     status?: string
     modified: string
     owner?: string
-    [key: string]: any
+    [key: string]: unknown
   }
   
   export interface GetDocumentsParams {
@@ -28,13 +28,13 @@ export interface DoctypeField {
     pageParam?: number
     pageSize: number
     searchTerm?: string
-    filters?: Record<string, any>
+    filters?: Record<string, unknown>
     fields: string[]
     searchFields: string[]
   }
   
   export interface FrappePageResponse {
-    pages: any
+    pages: number
     data: DocumentItem[]
     totalCount: number
     hasNextPage: boolean
@@ -49,7 +49,7 @@ export interface DoctypeField {
   export interface GetCountParams {
     doctype: string
     searchTerm?: string
-    filters?: Record<string, any>
+    filters?: Record<string, unknown>
   }
   
   export interface GetCountResponse {
@@ -69,7 +69,7 @@ export interface DoctypeField {
   // Interview-specific types
   export interface InterviewDetail {
     custom_full_name: string
-    [key: string]: any
+    [key: string]: unknown
   }
   
   export interface InterviewData {
@@ -84,14 +84,15 @@ export interface DoctypeField {
     interview_round: string
     custom_resume_attachment: string
     interview_details: InterviewDetail[]
-    [key: string]: any
+    [key: string]: unknown
   }
   
   export interface InterviewRound {
     name: string
     round_name: string
     status: string
-    [key: string]: any
+    [key: string]: string
+
   }
   
   export interface InterviewAndRoundsResponse {

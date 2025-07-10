@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from "@tanstack/react-query"
 import { feedbackService } from "../services/feedbackService"
-import { PermissionError } from "../types/interview"
+import { PermissionError } from "../types/feedback"
 import type {
-  SkillsResponse,
   InterviewDetailsResponse,
+  InterviewRoundResponse,
   FeedbackSubmissionData,
   GetFeedbackParams,
+  GetInterviewRoundParams,
 } from "../types/feedback"
 
 // Utility to check if error is permission-related
@@ -31,14 +32,18 @@ const defaultRetry = (failureCount: number, error: unknown) => {
   return failureCount < 3
 }
 
-// Hook for fetching skills
-export const useSkills = (options?: Omit<UseQueryOptions<SkillsResponse>, "queryKey" | "queryFn">) => {
+// Hook for fetching interview round data (includes skills as child table)
+export const useInterviewRoundData = (
+  params: GetInterviewRoundParams,
+  options?: Omit<UseQueryOptions<InterviewRoundResponse>, "queryKey" | "queryFn">,
+) => {
   return useQuery({
-    queryKey: ["skills"],
-    queryFn: () => feedbackService.getSkills(),
-    staleTime: 10 * 60 * 1000, // 10 minutes - skills don't change often
+    queryKey: ["interview-round", params.interview_round],
+    queryFn: () => feedbackService.getInterviewRoundData(params),
+    staleTime: 5 * 60 * 1000, // 5 minutes
     retry: defaultRetry,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    enabled: !!params.interview_round, // Only run query if interview_round exists
     ...options,
   })
 }
@@ -68,9 +73,15 @@ export const useFeedbackSubmission = () => {
     onSuccess: (_data, variables) => {
       console.log(`✅ Feedback submitted successfully for interview: ${variables.interview}`)
       // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ["interview-feedback", variables.interview] })
-      queryClient.invalidateQueries({ queryKey: ["documents", "Interview"] })
-      queryClient.invalidateQueries({ queryKey: ["documents-infinite", "Interview"] })
+      queryClient.invalidateQueries({
+        queryKey: ["interview-feedback", variables.interview],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["documents", "Interview"],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["documents-infinite", "Interview"],
+      })
     },
     onError: (error, variables) => {
       console.error(`❌ Failed to submit feedback for interview: ${variables.interview}`, error)

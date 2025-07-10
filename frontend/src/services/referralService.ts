@@ -3,11 +3,11 @@ import type { GetReferralStatusResponse, DesignationResponse } from "../types/re
 
 export const referralService = {
   getReferralDetails: async (referralId: string): Promise<GetReferralStatusResponse> => {
-    return FrappeAPI.callMethod("recruitment.api.employee_referral.get_referral_status", {
+    const result = await FrappeAPI.callMethod("recruitment.api.employee_referral.get_referral_status", {
       referral_id: referralId,
-    })
+    }) as GetReferralStatusResponse; // Type assertion
+    return result;
   },
-
 
   // ✅ New method for fetching designations
   getDesignations: async (): Promise<DesignationResponse> => {
@@ -16,9 +16,9 @@ export const referralService = {
       // Use the resource API endpoint for fetching list of documents
       const result = await FrappeAPI.getDocumentList("Designation", {
         fields: ["name"],
-        limit:1000
-      })
-      return result
+        limit: 1000
+      }) as DesignationResponse; // Type assertion
+      return result;
     } catch (error) {
       console.error("Failed to fetch designations:", error)
       throw error
