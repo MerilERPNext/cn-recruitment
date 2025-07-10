@@ -1,7 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MdArrowBackIosNew, MdCloudUpload } from 'react-icons/md';
 import { useNavigate } from 'react-router';
 import Select from 'react-select';
+import { useDesignations } from '../hooks/useReferralDetails'; // ✅ Import the hook
+import type { SelectOption } from '../types/referral';
+
+type ModalProps = {
+  show: boolean;
+  title: string;
+  message: string;
+  onClose: () => void;
+};
+
+const Modal: React.FC<ModalProps> = ({ show, title, message, onClose }) => {
+  if (!show) return null;
+
+  const isSuccess = title.toLowerCase() === 'success';
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div className="p-8 text-center">
+          <div
+            className={`w-16 h-16 ${isSuccess ? 'bg-green-100' : 'bg-red-100'
+              } rounded-full flex items-center justify-center mx-auto mb-4`}
+          >
+            {isSuccess ? (
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-8 h-8 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            )}
+          </div>
+
+          <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
+          <p className="text-gray-600 mb-6">{message}</p>
+          <button
+            onClick={onClose}
+            className={`${isSuccess ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'
+              } text-white py-2 px-6 rounded-lg font-medium transition-colors`}
+          >
+            Ok
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AddNewReferral: React.FC = () => {
   const navigate = useNavigate();
@@ -15,27 +83,38 @@ const AddNewReferral: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [positionOptions, setPositionOptions] = useState<{ label: string; value: string }[]>([]);
 
-  useEffect(() => {
-    const fetchDesignations = async () => {
-      try {
-        const res = await fetch("/api/resource/Designation?fields=[\"name\"]");
-        const result = await res.json();
-        if (result.data) {
-          const options = result.data.map((designation: { name: string }) => ({
-            label: designation.name,
-            value: designation.name,
-          }));
-          setPositionOptions(options);
-        }
-      } catch (error) {
-        console.error("Error fetching designations:", error);
-      }
-    };
+  // ✅ Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
 
-    fetchDesignations();
-  }, []);
+  // ✅ Use React Query hook for designations
+  const { 
+    data: designationsData, 
+    isLoading: isLoadingDesignations, 
+    error: designationsError 
+  } = useDesignations();
+
+  // ✅ Memoize position options
+  const positionOptions: SelectOption[] = useMemo(() => {
+    if (!designationsData?.data) return [];
+    
+    return designationsData.data.map((designation) => ({
+      label: designation.name,
+      value: designation.name,
+    }));
+  }, [designationsData]);
+
+  // ✅ Handle designation loading error
+  React.useEffect(() => {
+    if (designationsError) {
+      console.error("Error fetching designations:", designationsError);
+      setModalTitle("Error");
+      setModalMessage("Failed to load positions. Please try again.");
+      setShowModal(true);
+    }
+  }, [designationsError]);
 
   const handleBackInterview = () => {
     navigate(-1);
@@ -46,7 +125,9 @@ const AddNewReferral: React.FC = () => {
     if (file && file.size <= 5 * 1024 * 1024) {
       setResumeFile(file);
     } else {
-      alert("File too large. Max size 5MB");
+      setModalTitle("Error");
+      setModalMessage("File too large. Max size 5MB");
+      setShowModal(true);
     }
   };
 
@@ -69,21 +150,26 @@ const AddNewReferral: React.FC = () => {
     } catch (error) {
       setUploading(false);
       console.error("Upload error", error);
-      alert("Resume upload failed");
+      setModalTitle("Error");
+      setModalMessage("Resume upload failed");
+      setShowModal(true);
       return null;
     }
   };
 
   const handleSubmit = async () => {
-    // ✅ Validation
     if (!candidateName.trim() || !email.trim() || !phone.trim() || !position || !resumeFile) {
-      alert("Please fill all required fields and upload a resume.");
+      setModalTitle("Error");
+      setModalMessage("Please fill all required fields and upload a resume.");
+      setShowModal(true);
       return;
     }
 
     const file_url = await uploadResume();
     if (!file_url) {
-      alert("Resume upload failed. Cannot submit referral.");
+      setModalTitle("Error");
+      setModalMessage("Resume upload failed. Cannot submit referral.");
+      setShowModal(true);
       return;
     }
 
@@ -96,6 +182,7 @@ const AddNewReferral: React.FC = () => {
       referrer_email: referrerEmail.trim(),
       notes: notes.trim(),
       resume: file_url,
+      docstatus: 1,
     };
 
     try {
@@ -112,14 +199,26 @@ const AddNewReferral: React.FC = () => {
       const result = await res.json();
 
       if (res.ok) {
-        alert("Referral submitted successfully!");
-        navigate('/webapp/recruitment-app');
+        setModalTitle("Success");
+        setModalMessage("Referral submitted successfully!");
+        setShowModal(true);
       } else {
-        alert(result?.message || "Submission failed.");
+        setModalTitle("Error");
+        setModalMessage(result?.message || "Submission failed.");
+        setShowModal(true);
       }
     } catch (err) {
       console.error("Submit error", err);
-      alert("Error submitting referral");
+      setModalTitle("Error");
+      setModalMessage("Error submitting referral");
+      setShowModal(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    if (modalTitle === "Success") {
+      navigate('/webapp/recruitment-app');
     }
   };
 
@@ -157,10 +256,12 @@ const AddNewReferral: React.FC = () => {
                 options={positionOptions}
                 value={positionOptions.find(opt => opt.value === position)}
                 onChange={(selected) => setPosition(selected?.value || '')}
-                placeholder="Select position"
+                placeholder={isLoadingDesignations ? "Loading positions..." : "Select position"}
                 className="react-select-container"
                 classNamePrefix="react-select"
                 isSearchable
+                isLoading={isLoadingDesignations}
+                isDisabled={isLoadingDesignations}
               />
             </div>
           </div>
@@ -212,6 +313,14 @@ const AddNewReferral: React.FC = () => {
           </button>
         </div>
       </footer>
+
+      {/* ✅ Modal */}
+      <Modal
+        show={showModal}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };
