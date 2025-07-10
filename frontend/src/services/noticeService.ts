@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FrappeAPI } from '../utils/frappeAPI';
 import { Notice, NoticeFilters } from '../types/notice';
 

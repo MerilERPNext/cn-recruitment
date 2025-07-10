@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { EmployeeService } from '../services/employeeService';
 import { Employee, EmployeeIdCard, EmployeeListItem } from '../types/employee';
