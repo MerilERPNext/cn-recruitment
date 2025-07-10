@@ -1,27 +1,90 @@
 import { FrappeAPI } from '../utils/frappeAPI';
 import { Employee, EmployeeIdCard, EmployeeListItem } from '../types/employee';
 
+function hasRequiredProperties<T extends Record<string, unknown>>(
+  obj: unknown,
+  requiredProps: (keyof T)[]
+): obj is T {
+  if (!obj || typeof obj !== 'object') return false;
+
+  const objRecord = obj as Record<string, unknown>;
+
+  return requiredProps.every(prop =>
+    prop in objRecord && objRecord[prop as string] !== undefined
+  );
+}
+
+// Type guards for runtime validation
+function isEmployee(obj: unknown): obj is Employee {
+  if (!hasRequiredProperties(obj, ['name', 'employee_name', 'first_name', 'date_of_joining', 'date_of_birth', 'gender', 'status'])) {
+    return false;
+  }
+  
+  const employee = obj as Record<string, unknown>;
+  return typeof employee.name === 'string' &&
+    typeof employee.employee_name === 'string' &&
+    typeof employee.first_name === 'string' &&
+    typeof employee.date_of_joining === 'string' &&
+    typeof employee.date_of_birth === 'string' &&
+    typeof employee.gender === 'string' &&
+    ['Active', 'Inactive', 'Suspended', 'Left'].includes(employee.status as string);
+}
+
+function isEmployeeListItem(obj: unknown): obj is EmployeeListItem {
+  if (!hasRequiredProperties(obj, ['name', 'employee_name', 'status'])) {
+    return false;
+  }
+  
+  const item = obj as Record<string, unknown>;
+  return typeof item.name === 'string' &&
+    typeof item.employee_name === 'string' &&
+    typeof item.status === 'string';
+}
+
+function isEmployeeListItemArray(obj: unknown): obj is EmployeeListItem[] {
+  return Array.isArray(obj) && obj.every((item: unknown) => isEmployeeListItem(item));
+}
+
 // Employee API service
 export class EmployeeService {
   
   // Get a single employee by ID/name
   static async getEmployee(employeeId: string): Promise<Employee> {
-    return await FrappeAPI.callMethod<Employee>('recruitment.api.get_employee_details', {
+    const result = await FrappeAPI.callMethod('recruitment.api.get_employee_details', {
       employee_id: employeeId
     });
+    
+    if (!isEmployee(result)) {
+      throw new Error('Invalid employee data received from API');
+    }
+    
+    return result;
   }
-
+  
   // Search employees by name
   static async searchEmployees(searchTerm: string): Promise<EmployeeListItem[]> {
-    return await FrappeAPI.callMethod<EmployeeListItem[]>('recruitment.api.search_employees', {
+    const result = await FrappeAPI.callMethod('recruitment.api.search_employees', {
       search_term: searchTerm
     });
+    
+    if (!isEmployeeListItemArray(result)) {
+      throw new Error('Invalid employee list data received from API');
+    }
+    
+    return result;
   }
 
   // Get current user's employee record
   static async getCurrentEmployee(): Promise<Employee | null> {
     try {
-      return await FrappeAPI.callMethod<Employee>('recruitment.api.get_current_employee');
+      const result = await FrappeAPI.callMethod('recruitment.api.get_current_employee');
+      
+      if (!isEmployee(result)) {
+        console.error('Invalid employee data received from API');
+        return null;
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error fetching current employee:', error);
       return null;
@@ -61,7 +124,6 @@ export class EmployeeService {
     
     return JSON.stringify(qrData);
   }
-
 }
 
-export default EmployeeService; 
+export default EmployeeService;
