@@ -211,7 +211,8 @@ def get_job_requisition_details(requisition_name):
                 "status": job_req.status,
                 "salary_range": job_req.custom_salary,
                 "deadline": job_req.expected_by,
-                "location":job_req.custom_location
+                "location":job_req.custom_location,
+                "custom_assign_to_recruiter":job_req.custom_assign_to_recruiter
             },
             "interviews": [],
             "review_count": 0,
@@ -254,7 +255,9 @@ def get_job_requisition_details(requisition_name):
             "description": job_req.description,
             "status": job_req.status,
             "salary_range": job_req.custom_salary,
-            "deadline": job_req.expected_by
+            "deadline": job_req.expected_by,
+            "custom_assign_to_recruiter":job_req.custom_assign_to_recruiter
+
         },
         "interviews": interviews,
         "review_count": feedback_count,
