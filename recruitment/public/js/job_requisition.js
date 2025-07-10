@@ -12,7 +12,6 @@ frappe.ui.form.on("Job Requisition", {
   },
   refresh: function (frm) {
     // This render method checks if the JD is available. If it is, it will be added.
-    render_jd_live_preview(frm);
     // This will add the custom notes section to the form.
     if (!frm.is_new()) {
       let crm_notes = `
@@ -331,7 +330,7 @@ frappe.ui.form.on("Job Requisition", {
   custom_job_description_template: function (frm) {
     if (!frm.doc.custom_job_description_template) {
       frm.set_value("custom_jd_details", []);
-      render_jd_live_preview(frm);
+      update_description_field(frm)
       return;
     }
 
@@ -368,80 +367,35 @@ frappe.ui.form.on("Job Requisition", {
         frm.refresh_field("custom_skills");
 
         setTimeout(() => {
-          render_jd_live_preview(frm);
+          update_description_field(frm)
         }, 200);
       });
   },
 });
 
-// This function renders the job description live preview in the form.
-function render_jd_live_preview(frm) {
-  const wrapper = frm.fields_dict.custom_job_description?.$wrapper;
-  if (!wrapper) return;
+function update_description_field(frm) {
+    const rows = frm.doc.custom_jd_details || [];
+    if (!rows.length) {
+        frm.set_value("description", "");
+        return;
+    }
 
-  const rows = frm.doc.custom_jd_details || [];
-  wrapper.empty();
+    let html = "";
 
-  if (!rows.length) {
-    wrapper.html(`<p class="text-muted">No job description added.</p>`);
-    return;
-  }
+    rows.forEach(row => {
+        if (row.label) {
+            html += `<p><strong>${frappe.utils.escape_html(row.label.trim())}</strong></p>`;
+        }
+        if (row.description) {
+            const lines = row.description.trim().split("\n");
+            lines.forEach(line => {
+                if (line.trim()) {
+                    html += `<p>${frappe.utils.escape_html(line.trim())}</p>`;
+                }
+            });
+        }
+        html += `<p><br></p>`;  // Spacer between sections
+    });
 
-  let html = `
-        <style>
-            .frappe-jd-group {
-                margin-bottom: 18px;
-            }
-
-            .frappe-jd-heading {
-                font-weight: 600;
-                font-size: 14px;
-                margin-bottom: 6px;
-                color: var(--gray-800);
-            }
-
-            .frappe-jd-box {
-                background-color: var(--control-bg);
-                border: 1px solid var(--border-color);
-                border-radius: var(--border-radius);
-                padding: 12px;
-            }
-
-            .frappe-jd-box textarea {
-                width: 100%;
-                border: none;
-                resize: vertical;
-                font-size: 14px;
-                background-color: transparent;
-                font-family: inherit;
-                line-height: 1.5;
-                color: var(--text-color);
-            }
-
-            .frappe-jd-box textarea:focus {
-                outline: none;
-            }
-        </style>
-    `;
-
-  rows.forEach((row, index) => {
-    html += `
-            <div class="frappe-jd-group">
-                <div class="frappe-jd-heading">${row.label}</div>
-                <div class="frappe-jd-box">
-                    <textarea rows="4" data-index="${index}">${
-      row.description || ""
-    }</textarea>
-                </div>
-            </div>
-        `;
-  });
-
-  wrapper.html(html);
-
-  wrapper.find("textarea").on("input", function () {
-    const i = $(this).data("index");
-    frm.doc.custom_jd_details[i].description = $(this).val();
-    frm.dirty();
-  });
+    frm.set_value("description", html);
 }

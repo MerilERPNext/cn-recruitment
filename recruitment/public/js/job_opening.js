@@ -1,6 +1,5 @@
 frappe.ui.form.on("Job Opening", {
   refresh: function (frm) {
-    render_jd_live_preview(frm);
     frm.set_query("custom_division", function () {
       return {
         filters: {
@@ -80,7 +79,7 @@ frappe.ui.form.on("Job Opening", {
   custom_job_description_template: function (frm) {
     if (!frm.doc.custom_job_description_template) {
       frm.set_value("custom_jd_details", []);
-      render_jd_live_preview(frm);
+      update_description_field(frm)
       return;
     }
 
@@ -103,79 +102,36 @@ frappe.ui.form.on("Job Opening", {
         frm.refresh_field("custom_jd_details");
 
         setTimeout(() => {
-          render_jd_live_preview(frm);
+          update_description_field(frm);
         }, 200);
       });
   },
 });
 
-function render_jd_live_preview(frm) {
-  const wrapper = frm.fields_dict.custom_job_description?.$wrapper;
-  if (!wrapper) return;
 
-  const rows = frm.doc.custom_jd_details || [];
-  wrapper.empty();
+function update_description_field(frm) {
+    const rows = frm.doc.custom_jd_details || [];
+    if (!rows.length) {
+        frm.set_value("description", "");
+        return;
+    }
 
-  if (!rows.length) {
-    wrapper.html(`<p class="text-muted">No job description added.</p>`);
-    return;
-  }
+    let html = "";
 
-  let html = `
-        <style>
-            .frappe-jd-group {
-                margin-bottom: 18px;
-            }
+    rows.forEach(row => {
+        if (row.label) {
+            html += `<p><strong>${frappe.utils.escape_html(row.label.trim())}</strong></p>`;
+        }
+        if (row.description) {
+            const lines = row.description.trim().split("\n");
+            lines.forEach(line => {
+                if (line.trim()) {
+                    html += `<p>${frappe.utils.escape_html(line.trim())}</p>`;
+                }
+            });
+        }
+        html += `<p><br></p>`;  // Spacer between sections
+    });
 
-            .frappe-jd-heading {
-                font-weight: 600;
-                font-size: 14px;
-                margin-bottom: 6px;
-                color: var(--gray-800);
-            }
-
-            .frappe-jd-box {
-                background-color: var(--control-bg);
-                border: 1px solid var(--border-color);
-                border-radius: var(--border-radius);
-                padding: 12px;
-            }
-
-            .frappe-jd-box textarea {
-                width: 100%;
-                border: none;
-                resize: vertical;
-                font-size: 14px;
-                background-color: transparent;
-                font-family: inherit;
-                line-height: 1.5;
-                color: var(--text-color);
-            }
-
-            .frappe-jd-box textarea:focus {
-                outline: none;
-            }
-        </style>
-    `;
-
-  rows.forEach((row, index) => {
-    html += `
-            <div class="frappe-jd-group">
-                <div class="frappe-jd-heading">${row.label}</div>
-                <div class="frappe-jd-box">
-                    <textarea rows="4" data-index="${index}">${
-      row.description || ""
-    }</textarea>
-                </div>
-            </div>
-        `;
-  });
-
-  wrapper.html(html);
-
-  wrapper.find("textarea").on("input", function () {
-    const i = $(this).data("index");
-    frm.doc.custom_jd_details[i].description = $(this).val();
-    frm.dirty();
-  });
+    frm.set_value("description", html);
 }
