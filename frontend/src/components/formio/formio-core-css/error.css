@@ -1,0 +1,15 @@
+.bg-error {
+  @apply relative py-3 px-4 mb-4 border-1 border-solid border rounded-sm text-red-900 bg-red-100 border-red-200;
+
+  > *:first-child {
+    @apply mt-0;
+  }
+
+  > *:last-child {
+    @apply mb-0;
+  }
+
+  &:last-child {
+    @apply mb-0;
+  }
+}

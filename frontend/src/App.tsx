@@ -14,6 +14,8 @@ import AddNewReferral from './components/AddNewReferral';
 import ReferralDetails from './components/ReferralDetails';
 import InterviewFeedbackForm from './components/Feedback';
 import AddRequisition from './components/AddRequistion';
+import FormExample from './components/FormExample';
+import FormWithDataUpdates from './components/FormWithDataUpdates';
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -81,6 +83,27 @@ const Dashboard: React.FC = () => {
               Manage ID Cards
             </Link>
           </div>
+
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>FormIO Examples</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Test FormIO components with data management features.
+            </p>
+            <div className="space-y-2">
+              <Link
+                to="/webapp/form-example"
+                className="inline-block bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors mr-2"
+              >
+                Basic Form
+              </Link>
+              <Link
+                to="/webapp/form-data-updates"
+                className="inline-block bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+              >
+                Data Updates Demo
+              </Link>
+            </div>
+          </div>
         </div>
 
 
@@ -114,6 +137,10 @@ const App: React.FC = () => {
             <Route path="/webapp/recruitment-app/referral-details/*" element={<ReferralDetails />} />
             <Route path="/webapp/recruitment-app/add-requisition/*" element={<AddRequisition />} />
             <Route path="/webapp/recruitment-app/interview-feedback/:id" element={<InterviewFeedbackForm />} />
+            
+            {/* FormIO Example Routes */}
+            <Route path="/webapp/form-example" element={<FormExample />} />
+            <Route path="/webapp/form-data-updates" element={<FormWithDataUpdates />} />
 
             <Route path="/webapp/recruitment-app/referral-details/:id" element={<ReferralDetails />} />
             <Route path="*" element={<Navigate to="/webapp/" replace />} />

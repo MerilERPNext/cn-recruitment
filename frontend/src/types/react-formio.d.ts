@@ -18,9 +18,9 @@ declare module 'react-formio' {
 
   export interface FormSchema {
     display: string;
-    title: string;
-    name: string;
-    path: string;
+    title?: string;
+    name?: string;
+    path?: string;
     components: FormComponent[];
   }
 

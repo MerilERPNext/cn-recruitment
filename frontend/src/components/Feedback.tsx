@@ -6,6 +6,8 @@ import { useNavigate, useParams } from "react-router"
 import { useSkills, useInterviewForFeedback, useFeedbackSubmission, isPermissionError } from "../hooks/useFeedbackQuery"
 import { AlertCircle, RefreshCw, ArrowLeft } from "lucide-react"
 import type { FeedbackForm, SkillAssessment, CompetencyRating } from "../types/feedback"
+// import FormWrapper from "./FormWrapper"
+import FormExample from "./FormExample"
 
 export default function InterviewFeedbackForm() {
   const { id } = useParams()
@@ -446,8 +448,38 @@ export default function InterviewFeedbackForm() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+       <FormExample />
+       
+       
+       
+        {/* <FormWrapper form={{
+          "display": "form",
+          "components": [
+            {
+              "label": "Text Area",
+              "applyMaskOn": "change",
+              "autoExpand": false,
+              "tableView": true,
+              "validateWhenHidden": false,
+              "key": "textArea",
+              "type": "textarea",
+              "input": true
+            },
+            {
+              "type": "button",
+              "label": "Submit",
+              "key": "submit",
+              "disableOnInvalid": true,
+              "input": true,
+              "tableView": false
+            }
+          ]
+        }} onSubmit={function (): void {
+          throw new Error("Function not implemented.")
+        } } 
+        /> */}
         {/* Interview Information Card */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        {/* <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Interview Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -473,12 +505,12 @@ export default function InterviewFeedbackForm() {
               <div className="">{renderInterviewer()}</div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Skill Assessment Section */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Skill Assessment</h2>
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             {formData.skillAssessment.map((skill, index) => (
               <div key={skill.skill} className="bg-gray-50 rounded-lg border p-4">
                 <div className="flex flex-row items-center md:flex-row md:items-center justify-between gap-4">
@@ -495,10 +527,10 @@ export default function InterviewFeedbackForm() {
                 </div>
               </div>
             ))}
-          </div>
+          </div> */}
 
           {/* Skill Average Rating Display */}
-          {formData.skillAssessment.length > 0 && (
+          {/* {formData.skillAssessment.length > 0 && (
             <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -511,11 +543,11 @@ export default function InterviewFeedbackForm() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Recommendation */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        {/* <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Final Recommendation</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {["Cleared", "Rejected"].map((option) => (
@@ -534,10 +566,10 @@ export default function InterviewFeedbackForm() {
               </button>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Detailed Comments */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        {/* <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Detailed Comments</h2>
           <textarea
             placeholder="Provide comprehensive feedback about the candidate's performance..."
@@ -546,11 +578,11 @@ export default function InterviewFeedbackForm() {
             rows={6}
             className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Sticky Footer Submit */}
-      <div className="sticky bottom-0 bg-white border-t shadow-lg">
+      {/* <div className="sticky bottom-0 bg-white border-t shadow-lg">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <button
             onClick={handleSubmit}
@@ -567,7 +599,7 @@ export default function InterviewFeedbackForm() {
             )}
           </button>
         </div>
-      </div>
+      </div> */}
     </div>
   )
 }

@@ -1,0 +1,3 @@
+@import "formiojs/dist/formio.full.min.css";
+@import "./tailwind.css";
+@import "./formio-core-css/index.css";
