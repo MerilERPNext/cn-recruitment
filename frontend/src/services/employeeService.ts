@@ -62,28 +62,6 @@ export class EmployeeService {
     return JSON.stringify(qrData);
   }
 
-  // Get employee by employee number
-  static async getEmployeeByNumber(employeeNumber: string): Promise<Employee | null> {
-    try {
-      const employees = await FrappeAPI.getDocumentList<Employee>('Employee', {
-        filters: { employee_number: employeeNumber },
-        fields: [
-          'name', 'employee_name', 'first_name', 'middle_name', 'last_name',
-          'employee_number', 'designation', 'department', 'company', 'branch',
-          'date_of_joining', 'date_of_birth', 'gender', 'image', 'status',
-          'cell_number', 'personal_email', 'company_email', 'prefered_email',
-          'current_address', 'person_to_be_contacted', 'emergency_phone_number',
-          'blood_group', 'custom_aadhar_no', 'employment_type'
-        ],
-        limit: 1
-      });
-
-      return employees.length > 0 ? employees[0] : null;
-    } catch (error) {
-      console.error('Error fetching employee by number:', error);
-      return null;
-    }
-  }
 }
 
 export default EmployeeService; 

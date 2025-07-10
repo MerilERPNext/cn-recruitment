@@ -35,17 +35,6 @@ export const useEmployeeSearch = (searchTerm: string): UseQueryResult<EmployeeLi
   });
 };
 
-// Hook to get employee by employee number
-export const useEmployeeByNumber = (employeeNumber: string | null): UseQueryResult<Employee | null, Error> => {
-  return useQuery<Employee | null, Error>({
-    queryKey: ['employeeByNumber', employeeNumber],
-    queryFn: () => EmployeeService.getEmployeeByNumber(employeeNumber!),
-    enabled: !!employeeNumber,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
-  });
-};
-
 // Hook to get employee data transformed for ID card
 export const useEmployeeIdCard = (employeeId: string | null): UseQueryResult<EmployeeIdCard | null, Error> => {
   return useQuery<EmployeeIdCard | null, Error>({
