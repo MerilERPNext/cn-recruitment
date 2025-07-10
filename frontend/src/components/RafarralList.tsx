@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,11 +8,11 @@ import {
   MdHourglassEmpty,
   MdEvent,
   MdCheckCircleOutline,
-  MdCancel
-} from 'react-icons/md';
-import FrappeListView from './ListView';
+  MdCancel,
+} from "react-icons/md";
+import FrappeListView from "./ListView";
 
-interface Referral {
+export interface Referral {
   name: string;
   full_name: string;
   email: string;
@@ -20,10 +21,9 @@ interface Referral {
   for_designation: string;
 }
 
-
-
 const ReferralList: React.FC = () => {
   const navigate = useNavigate();
+
   const handleClick = (referralId: string) => {
     navigate(`/webapp/recruitment-app/referral-details/${referralId}`);
   };
@@ -52,16 +52,16 @@ const ReferralItem: React.FC<{ item: Referral, index: number }> = ({ item, index
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return { icon: <MdHourglassEmpty />, color: 'text-yellow-500' };
-      case 'interview scheduled':
-        return { icon: <MdEvent />, color: 'text-blue-500' };
-      case 'accepted':
-        return { icon: <MdCheckCircleOutline />, color: 'text-green-500' };
-      case 'rejected':
-        return { icon: <MdCancel />, color: 'text-red-500' };
+      case "pending":
+        return { icon: <MdHourglassEmpty />, color: "text-yellow-500" };
+      case "interview scheduled":
+        return { icon: <MdEvent />, color: "text-blue-500" };
+      case "accepted":
+        return { icon: <MdCheckCircleOutline />, color: "text-green-500" };
+      case "rejected":
+        return { icon: <MdCancel />, color: "text-red-500" };
       default:
-        return { icon: <MdHourglassEmpty />, color: 'text-gray-500' };
+        return { icon: <MdHourglassEmpty />, color: "text-gray-500" };
     }
   };
 
@@ -69,24 +69,29 @@ const ReferralItem: React.FC<{ item: Referral, index: number }> = ({ item, index
   console.log(referral,"hello archu this data of raferral")
   return (
     <div
-      key={index}
       className="flex items-center gap-3 bg-[var(--background-light)] p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow border hover:border-[var(--border-light)] cursor-pointer"
     >
       <div className="flex-grow min-w-0">
         <p className="text-[var(--text-primary)] text-base font-medium leading-tight line-clamp-1">
-          {referral?.full_name}
+          {item.full_name}
         </p>
-        <p className="text-xs text-[var(--text-secondary)] mt-0.5">Email: {referral?.email}</p>
-        <p className="text-xs text-[var(--text-secondary)] mt-0.5">Designation: {referral?.for_designation}</p>
-        <p className="text-xs text-[var(--text-secondary)] mt-0.5">Submitted: {referral?.date}</p>
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+          Email: {item.email}
+        </p>
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+          Designation: {item.for_designation}
+        </p>
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+          Submitted: {item.date}
+        </p>
         <div className="flex items-center text-xs text-[var(--text-secondary)] mt-1">
           <span className={`text-sm mr-1 ${color}`}>{icon}</span>
-          <span>Status: {referral?.status}</span>
+          <span>: {item.status}</span>
         </div>
       </div>
       <MdChevronRight className="text-[var(--text-secondary)]" />
     </div>
   );
-}
+};
 
 export default ReferralList;
