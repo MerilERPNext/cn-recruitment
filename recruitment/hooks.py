@@ -173,7 +173,7 @@ doc_events = {
      "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-        "on_update": "recruitment.API.interview.get_interview_data",
+        # "on_update": "recruitment.api.interview.get_interview_data",
     },
     "Interview Feedback": {
         "on_submit": "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback"
