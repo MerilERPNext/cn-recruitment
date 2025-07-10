@@ -45,7 +45,7 @@ export class NoticeService {
   // Get a single notice by ID
   static async getNotice(noticeId: string): Promise<Notice | null> {
     try {
-      const notice = await FrappeAPI.getDocument<any>('Notice', noticeId);
+      const notice = await FrappeAPI.getDocument('Notice', noticeId);
       return this.transformFromFrappe(notice);
     } catch (error) {
       console.error('Error fetching notice:', error);

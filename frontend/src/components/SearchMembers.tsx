@@ -6,9 +6,14 @@ const ChevronRightIcon = () => (
     <path d="m181.66,133.66-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path>
   </svg>
 );
-
+interface MemberAvatarProps {
+  src?: string;
+  alt?: string;
+  size?: string; // e.g., "h-14 w-14"
+  fallback?: React.ReactNode; // Could be a fallback icon, initials, etc.
+}
 // Member Avatar Component
-const MemberAvatar = ({ src, alt, size = "h-14 w-14", fallback }: any) => {
+const MemberAvatar = ({ src, alt, size = "h-14 w-14", fallback }: MemberAvatarProps) => {
   if (src) {
     return (
       <img

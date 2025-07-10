@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { EmployeeService } from '../services/employeeService';
 import { Employee, EmployeeIdCard, EmployeeListItem } from '../types/employee';
@@ -52,7 +52,7 @@ export const useEmployeeIdCard = (employeeId: string | null): UseQueryResult<Emp
 };
 
 // Hook to get current user's employee ID card
-export const useCurrentEmployeeIdCard = (...args: any[]): UseQueryResult<EmployeeIdCard | null, Error> => {
+export const useCurrentEmployeeIdCard = (...args: unknown[]): UseQueryResult<EmployeeIdCard | null, Error> => {
   return useQuery<EmployeeIdCard | null, Error>({
     queryKey: ['currentEmployeeIdCard'],
     queryFn: async () => {

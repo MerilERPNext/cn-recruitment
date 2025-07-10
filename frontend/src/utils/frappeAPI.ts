@@ -1,92 +1,83 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import axios from "axios"
+import axios, { AxiosRequestConfig } from "axios"
 import { PermissionError } from "../types/interview"
+import { FilterCondition } from "../types/frappe";
 
 // Base configuration for Frappe API calls
 const API_BASE = window.location.origin
+interface CustomAxiosRequestConfig extends AxiosRequestConfig {
+  _retry?: boolean
+}
+declare global {
+  interface Window {
+    csrf_token: string;
+  }
+}
 
 const apiClient = axios.create({
   baseURL: API_BASE,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
-    "X-Frappe-CSRF-Token": (window as any).csrf_token,
+    "X-Frappe-CSRF-Token": window.csrf_token, // ✅ Now TypeScript understands
   },
-})
+});
 
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const config = error.config as CustomAxiosRequestConfig
+
     if (error.response?.status === 403) {
-      if (!error.config._retry) {
-        error.config._retry = true
-        return apiClient.request(error.config)
+      if (!config._retry) {
+        config._retry = true
+        return apiClient.request(config)
       }
       throw new PermissionError(
         "You don't have permission to access this resource. Please contact your administrator.",
         403,
       )
     }
+
     if (error.response?.status === 401) {
       window.location.href = "/login"
       throw new Error("Your session has expired. Please refresh the page and try again.")
     }
+
     return Promise.reject(error)
   },
 )
 
-// Frappe specific API functions
 export const FrappeAPI = {
-  // Get a single document
-  getDocument: async (doctype: string, name: string, fields?: string[]): Promise<any> => {
+  getDocument: async (doctype: string, name: string, fields?: string[]): Promise<unknown> => {
     const fieldsQuery = fields ? `&fields=${JSON.stringify(fields)}` : ""
     const response = await apiClient.get(`/api/resource/${doctype}/${name}?${fieldsQuery}`)
     return response.data.data
   },
+  
 
-  // Get list of documents
   getDocumentList: async (
     doctype: string,
     options: {
-      fields?: string[]
-      filters?: Record<string, any>
-      orFilters?: any[]
-      limit?: number
-      limitStart?: number
-      orderBy?: string
+      fields?: string[];
+      filters?: FilterCondition[]; // <- यहाँ ये टाइप होनी चाहिए
+      orFilters?: FilterCondition[];
+      limit?: number;
+      limitStart?: number;
+      orderBy?: string;
     } = {},
-  ): Promise<{ data: any[]; totalCount?: number }> => {
-    console.log(`📋 FrappeAPI: Getting document list for ${doctype}`, options)
-
+  ): Promise<{ data: unknown[]; totalCount?: number }> => {
     const params = new URLSearchParams()
 
-    if (options.fields) {
-      params.append("fields", JSON.stringify(options.fields))
-    }
-    if (options.filters) {
-      params.append("filters", JSON.stringify(options.filters))
-    }
-    if (options.orFilters) {
-      params.append("or_filters", JSON.stringify(options.orFilters))
-    }
-    if (options.limit) {
-      params.append("limit_page_length", options.limit.toString())
-    }
-    if (options.limitStart) {
-      params.append("limit_start", options.limitStart.toString())
-    }
-    if (options.orderBy) {
-      params.append("order_by", options.orderBy)
-    }
+    if (options.fields) params.append("fields", JSON.stringify(options.fields))
+    if (options.filters) params.append("filters", JSON.stringify(options.filters))
+    if (options.orFilters) params.append("or_filters", JSON.stringify(options.orFilters))
+    if (options.limit) params.append("limit_page_length", options.limit.toString())
+    if (options.limitStart) params.append("limit_start", options.limitStart.toString())
+    if (options.orderBy) params.append("order_by", options.orderBy)
 
     const url = `/api/resource/${doctype}?${params.toString()}`
 
     const response = await apiClient.get(url)
-
-    // Log first few items to see structure
-    if (response.data.data && response.data.data.length > 0) {
-      console.log(`FrappeAPI: First document sample for ${doctype}:`, response.data.data[0])
-    }
 
     return {
       data: response.data.data,
@@ -94,20 +85,17 @@ export const FrappeAPI = {
     }
   },
 
-  // Call a custom API method
-  callMethod: async (method: string, args: Record<string, any> = {}): Promise<any> => {
+  callMethod: async (method: string, args: Record<string, unknown> = {}): Promise<unknown> => {
     const response = await apiClient.post(`/api/method/${method}`, args)
     return response.data.message
   },
 
-  // Get document schema/meta
   getDocMeta: async (doctype: string) => {
     const response = await apiClient.get(`/api/method/frappe.desk.form.meta.get_meta?doctype=${doctype}`)
     return response.data.message
   },
 
-  // Get document count
-  getDocumentCount: async (doctype: string, filters?: Record<string, any>): Promise<number> => {
+  getDocumentCount: async (doctype: string, filters?: Record<string, unknown>): Promise<number> => {
     const response = await apiClient.get(
       `/api/method/frappe.client.get_count?doctype=${doctype}&filters=${JSON.stringify(filters || {})}`,
     )

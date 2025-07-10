@@ -19,7 +19,7 @@ export interface NoticeAction {
   type: 'view_task' | 'add_calendar' | 'dismiss' | 'approve' | 'reject' | 'view_details' | 'mark_as_read';
   variant: 'primary' | 'danger' | 'secondary';
   url?: string;
-  data?: Record<string, any>;
+  data?: Record<string, Date>;
 }
 
 export interface NoticeListItem {

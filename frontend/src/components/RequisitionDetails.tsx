@@ -1,8 +1,7 @@
 import React, { ReactElement, useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle, Clock, User } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
-import axios from "axios";
-import EditRequisition from "./EditRequisition";
+import axios, { AxiosError } from "axios";
 
 interface TeamMember {
   id: number;
@@ -36,12 +35,33 @@ interface StatusDisplay {
   label: string;
 }
 
+interface RequisitionData {
+  job_requisition?: {
+    designation?: string;
+    department?: string;
+    location?: string;
+    employment_type?: string;
+    salary_range?: string;
+    deadline?: string;
+    budget?: number;
+    priority?: "High" | "Medium" | "Low";
+    status?: string;
+    description?: string;
+    [key: string]: unknown;
+  };
+  assignedTeam?: TeamMember[];
+  job_applicant_count?: number;
+  review_count?: number;
+  interview_count?: number;
+}
+
+
 const RequisitionDetails: React.FC = () => {
   const navigate = useNavigate();
   const { requisitionId } = useParams<{ requisitionId: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<RequisitionData | null>(null);
   const [showEdit, setShowEdit] = useState(false);
 
   useEffect(() => {
@@ -60,17 +80,20 @@ const RequisitionDetails: React.FC = () => {
           response.data.message || response.data.data || response.data;
 
         setData(resData);
-      } catch (err: any) {
-        console.error("Error fetching requisition details:", err);
+        console.log("Resposne data ",resData)
+      } catch (err: unknown) {
+        const axiosErr = err as AxiosError<{ message?: string }>;
         setError(
-          err?.response?.data?.message ||
-            err.message ||
-            "Failed to load requisition details"
+          axiosErr.response?.data?.message ??
+          axiosErr.message ??
+          "Failed to load requisition details"
         );
+        console.error("Error fetching requisition details:", err);
       } finally {
         setLoading(false);
       }
     };
+
     if (requisitionId) fetchDetails();
   }, [requisitionId]);
 
@@ -278,7 +301,7 @@ const RequisitionDetails: React.FC = () => {
               <div
                 className="text-base text-gray-700 leading-relaxed"
                 dangerouslySetInnerHTML={{
-                  __html: getCleanDescription(job.description),
+                  __html: getCleanDescription(job.description ?? ""),
                 }}
               />
             </section>
@@ -291,19 +314,18 @@ const RequisitionDetails: React.FC = () => {
                 <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
                   <div
                     className={`flex items-center justify-center w-10 h-10 ${
-                      getStatusDisplay(job.status).bgColor
-                    } rounded-full`}
+getStatusDisplay(job.status ?? "").bgColor                    } rounded-full`}
                   >
-                    {getStatusDisplay(job.status).icon}
+                    {getStatusDisplay(job.status ?? "").icon}
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">Status</p>
                     <p
                       className={`text-sm font-medium ${
-                        getStatusDisplay(job.status).textColor
+                        getStatusDisplay(job.status ?? "").textColor
                       }`}
                     >
-                      {getStatusDisplay(job.status).label}
+                      {getStatusDisplay(job.status ?? "").label}
                     </p>
                   </div>
                 </div>
@@ -429,10 +451,6 @@ const RequisitionDetails: React.FC = () => {
                 >
                   ×
                 </button>
-                <EditRequisition
-                  requisition={job}
-                  onClose={() => setShowEdit(false)}
-                />
               </div>
             </div>
           )}

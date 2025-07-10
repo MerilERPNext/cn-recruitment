@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useMemo } from "react"
@@ -56,7 +55,7 @@ const InterviewPage = () => {
     return `${diffHours}h ${diffMinutes}m`
   }
 
-  const getFieldValue = (field: any) => field || "NA"
+  const getFieldValue = (field: string) => field || "NA"
 
   const handleBackInterview = () => {
     console.log(`🔙 Navigating back from interview ${interviewId}`)
@@ -289,7 +288,7 @@ const InterviewPage = () => {
         <section>
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Assigned Interviewers</h2>
           {interviewData?.interview_details?.length > 0 ? (
-            interviewData.interview_details.map((int: any, index: number) => (
+            interviewData.interview_details.map((int, index: number) => (
               <div key={index} className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
                 <p className="text-slate-900 text-base font-medium flex-1">{getFieldValue(int.custom_full_name)}</p>
               </div>
@@ -331,7 +330,7 @@ const InterviewPage = () => {
         {rounds.length > 0 && (
           <section>
             <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Interview Rounds</h2>
-            {rounds.map((round: any, index: number) => (
+            {rounds.map((round, index: number) => (
               <div key={index} className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
                 <div className="flex flex-col justify-center flex-1">
                   <p className="text-slate-900 text-base font-medium">{getFieldValue(round.round_name)}</p>

@@ -1,55 +1,73 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
+
+import type React from "react"
 
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { useNavigate, useParams } from "react-router"
-import { useSkills, useInterviewForFeedback, useFeedbackSubmission, isPermissionError } from "../hooks/useFeedbackQuery"
+import {
+  useInterviewRoundData,
+  useInterviewForFeedback,
+  useFeedbackSubmission,
+  isPermissionError,
+} from "../hooks/useFeedbackQuery"
 import { AlertCircle, RefreshCw, ArrowLeft } from "lucide-react"
-import type { FeedbackForm, SkillAssessment, CompetencyRating } from "../types/feedback"
+import type {
+  FeedbackForm,
+  SkillAssessment,
+  CompetencyRating,
+  Interview,
+  ExpectedSkillSet,
+  StarRatingProps,
+  FeedbackSubmissionData,
+} from "../types/feedback"
 
 export default function InterviewFeedbackForm() {
-  const { id } = useParams()
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   console.log(`🎯 InterviewFeedbackForm initialized with ID: ${id}`)
 
   // React Query hooks
-  const { data: skillsResponse, isLoading: skillsLoading, error: skillsError, refetch: refetchSkills } = useSkills()
-
   const {
     data: interviewResponse,
     isLoading: interviewLoading,
     error: interviewError,
     refetch: refetchInterview,
-  } = useInterviewForFeedback(
-    { interview_id: id || "" },
-    {
-      enabled: !!id,
-    },
+  } = useInterviewForFeedback({ interview_id: id || "" }, { enabled: !!id })
+
+  // Get interview round data based on interview details
+  const {
+    data: roundResponse,
+    isLoading: roundLoading,
+    error: roundError,
+    refetch: refetchRound,
+  } = useInterviewRoundData(
+    { interview_round: interviewResponse?.interview?.interview_round || "" },
+    { enabled: !!interviewResponse?.interview?.interview_round },
   )
 
   const feedbackMutation = useFeedbackSubmission()
 
-  // Process skills data
-  const skills = useMemo(() => {
-    const skillsData = skillsResponse?.success ? skillsResponse.data : []
-    console.log(`📋 Skills processed:`, skillsData)
-    return skillsData
-  }, [skillsResponse])
-
-  // Process interview data
-  const interviewData = useMemo(() => {
+  // Process interview data with proper type checking
+  const interviewData: Partial<Interview> | undefined = useMemo(() => {
     const interview = interviewResponse?.interview
     console.log(`📋 Interview data processed:`, interview)
     return interview
   }, [interviewResponse])
 
+  // Process skills from interview round with proper type checking
+  const expectedSkills: ExpectedSkillSet[] = useMemo(() => {
+    const skills = roundResponse?.data?.expected_skill_set || []
+    console.log(`📋 Expected skills processed:`, skills)
+    return skills
+  }, [roundResponse])
+
   // Initialize form data
   const initialFormData: FeedbackForm = useMemo(
     () => ({
       interview: "",
-      interviewer: "", // Initialize as empty string
+      interviewer: [], // Always initialize as array
       interview_round: "",
       job_applicant: "",
       competencies: [],
@@ -61,7 +79,7 @@ export default function InterviewFeedbackForm() {
       detailedComments: "",
       nextSteps: "",
       attachments: [],
-      skillAssessment: [{ skill: "", description: "", rating: "" }],
+      skillAssessment: [],
     }),
     [],
   )
@@ -70,17 +88,17 @@ export default function InterviewFeedbackForm() {
 
   // Update form data when skills are loaded
   useEffect(() => {
-    if (skills.length > 0) {
-      const initialCompetencies: CompetencyRating[] = skills.map((skill) => ({
-        name: skill.skill_name,
+    if (expectedSkills.length > 0) {
+      const initialCompetencies: CompetencyRating[] = expectedSkills.map((skill) => ({
+        name: skill.skill,
         description: skill.description || "",
         rating: 0,
       }))
 
-      const initialSkillAssessment: SkillAssessment[] = skills.map((skill) => ({
-        skill: skill.skill_name,
+      const initialSkillAssessment: SkillAssessment[] = expectedSkills.map((skill) => ({
+        skill: skill.skill,
         description: skill.description || "",
-        rating: "0",
+        rating: "0.0",
       }))
 
       setFormData((prev) => ({
@@ -89,19 +107,22 @@ export default function InterviewFeedbackForm() {
         skillAssessment: initialSkillAssessment,
       }))
 
-      console.log(`🔧 Form data updated with skills:`, { initialCompetencies, initialSkillAssessment })
+      console.log(`🔧 Form data updated with skills:`, {
+        initialCompetencies,
+        initialSkillAssessment,
+      })
     }
-  }, [skills])
+  }, [expectedSkills])
 
-  // Update form data when interview details are loaded
+  // Update form data when interview details are loaded with null checks
   useEffect(() => {
-    if (interviewData) {
-      const interviewerEmails = interviewData.interview_details?.map((item: any) => item.interviewer) || []
+    if (interviewData && Object.keys(interviewData).length > 0) {
+      const interviewerEmails: string[] = interviewData.interview_details?.map((item) => item.interviewer) || []
 
       setFormData((prev) => ({
         ...prev,
         interview: interviewData.name || "",
-        interviewer: interviewerEmails, // This is now properly typed as string[]
+        interviewer: interviewerEmails,
         interview_round: interviewData.interview_round || "",
         job_applicant: interviewData.job_applicant || "",
       }))
@@ -125,7 +146,7 @@ export default function InterviewFeedbackForm() {
     // Reset skill assessments
     const resetSkillAssessment = formData.skillAssessment.map((skill) => ({
       ...skill,
-      rating: "0",
+      rating: "0.0",
     }))
 
     setFormData({
@@ -146,9 +167,10 @@ export default function InterviewFeedbackForm() {
   const updateSkillAssessmentRating = useCallback((index: number, rating: number) => {
     setFormData((prev) => {
       const updated = [...prev.skillAssessment]
-      // Convert rating to float based on requirements
-      const floatRating = rating * 0.2
-      updated[index].rating = floatRating.toString()
+      // Convert rating to float based on requirements (0-5 stars to 0.0-1.0)
+      const floatRating = (rating * 0.2).toFixed(1)
+      updated[index].rating = floatRating
+
       console.log(`⭐ Updated skill rating for ${updated[index].skill}: ${rating} stars = ${floatRating}`)
       return { ...prev, skillAssessment: updated }
     })
@@ -170,12 +192,12 @@ export default function InterviewFeedbackForm() {
 
     // Filter out skills with rating "0" or empty rating
     const ratedSkills = formData.skillAssessment.filter(
-      (skill) => skill.rating && skill.rating !== "0" && skill.rating !== "",
+      (skill) => skill.rating && skill.rating !== "0" && skill.rating !== "0.0",
     )
 
     if (ratedSkills.length === 0) return "0.0"
 
-    const totalRating = ratedSkills.reduce((acc, curr) => acc + parseFloat(curr.rating), 0)
+    const totalRating = ratedSkills.reduce((acc, curr) => acc + Number.parseFloat(curr.rating), 0)
     const average = (totalRating / ratedSkills.length).toFixed(2)
 
     console.log(`📊 Average skill rating calculated: ${average}`)
@@ -188,21 +210,22 @@ export default function InterviewFeedbackForm() {
 
     // Filter out skills with rating "0" or empty rating
     const ratedSkills = formData.skillAssessment.filter(
-      (skill) => skill.rating && skill.rating !== "0" && skill.rating !== "",
+      (skill) => skill.rating && skill.rating !== "0" && skill.rating !== "0.0",
     )
 
     if (ratedSkills.length === 0) return "0.0"
 
     // Convert back to star rating (multiply by 5 since we stored as rating * 0.2)
-    const totalStarRating = ratedSkills.reduce((acc, curr) => acc + (parseFloat(curr.rating) * 5), 0)
+    const totalStarRating = ratedSkills.reduce((acc, curr) => acc + Number.parseFloat(curr.rating) * 5, 0)
     const averageStarRating = (totalStarRating / ratedSkills.length).toFixed(1)
 
     console.log(`⭐ Display average rating calculated: ${averageStarRating}`)
     return averageStarRating
   }, [formData.skillAssessment])
 
+  // Update the submit handler to handle the response properly with better error handling
   const handleSubmit = useCallback(async () => {
-    const apiData = {
+    const apiData: FeedbackSubmissionData = {
       interview: formData.interview,
       interviewer: formData.interviewer,
       interview_round: formData.interview_round,
@@ -210,7 +233,9 @@ export default function InterviewFeedbackForm() {
       job_applicant: formData.job_applicant,
       feedback: formData.detailedComments || "",
       rating: calculateAverageSkillRating(),
-      skill_assessment: formData.skillAssessment.filter((sa) => sa.skill && sa.rating && sa.rating !== "0"),
+      skill_assessment: formData.skillAssessment.filter(
+        (sa) => sa.skill && sa.rating && sa.rating !== "0" && sa.rating !== "0.0",
+      ),
     }
 
     console.log("🚀 Submitting feedback:", apiData)
@@ -222,81 +247,72 @@ export default function InterviewFeedbackForm() {
         resetForm()
         console.log("✅ Feedback submitted successfully")
       } else {
-        throw new Error(result.message || "Submission failed")
+        const errorMessage = result.message || "Submission failed"
+        throw new Error(errorMessage)
       }
     } catch (error) {
       console.error("❌ Feedback submission error:", error)
-      alert("Error submitting feedback")
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+      alert(`Error submitting feedback: ${errorMessage}`)
     }
   }, [formData, calculateAverageSkillRating, feedbackMutation, resetForm])
 
   const handleRetry = useCallback(() => {
     console.log(`🔄 Retrying data fetch`)
-    refetchSkills()
     refetchInterview()
-  }, [refetchSkills, refetchInterview])
+    refetchRound()
+  }, [refetchInterview, refetchRound])
 
   // Enhanced StarRating component with half-star functionality
-  const StarRating = useCallback(
-    ({ rating, onRatingChange }: { rating: number; onRatingChange: (r: number) => void }) => {
-      const handleStarClick = (starIndex: number, event: React.MouseEvent) => {
-        const rect = event.currentTarget.getBoundingClientRect()
-        const clickX = event.clientX - rect.left
-        const starWidth = rect.width
-        const isLeftHalf = clickX < starWidth / 2
-        
-        // Calculate rating based on click position
-        const newRating = isLeftHalf ? starIndex - 0.5 : starIndex
-        onRatingChange(newRating)
-      }
+  const StarRating = useCallback(({ rating, onRatingChange }: StarRatingProps) => {
+    const handleStarClick = (starIndex: number, event: React.MouseEvent) => {
+      const rect = event.currentTarget.getBoundingClientRect()
+      const clickX = event.clientX - rect.left
+      const starWidth = rect.width
+      const isLeftHalf = clickX < starWidth / 2
 
-      const renderStar = (starIndex: number) => {
-        const isFullStar = rating >= starIndex
-        const isHalfStar = rating >= starIndex - 0.5 && rating < starIndex
-        
-        return (
-          <button
-            key={starIndex}
-            type="button"
-            className="relative w-4 h-4 text-xl transition-all duration-200 hover:scale-110 focus:outline-none"
-            onClick={(e) => handleStarClick(starIndex, e)}
-          >
-            {/* Background star (gray) */}
-            <span className="absolute inset-0 text-gray-300">★</span>
-            
-            {/* Half star (left half) */}
-            {isHalfStar && (
-              <span 
-                className="absolute inset-0 text-yellow-400 overflow-hidden"
-                style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}
-              >
-                ★
-              </span>
-            )}
-            
-            {/* Full star */}
-            {isFullStar && (
-              <span className="absolute inset-0 text-yellow-400">★</span>
-            )}
-            
-            {/* Hover effect overlay */}
-            <span className="absolute inset-0 text-yellow-200 opacity-0 hover:opacity-100 transition-opacity">
-              ★
-            </span>
-          </button>
-        )
-      }
+      // Calculate rating based on click position
+      const newRating = isLeftHalf ? starIndex - 0.5 : starIndex
+      onRatingChange(newRating)
+    }
+
+    const renderStar = (starIndex: number) => {
+      const isFullStar = rating >= starIndex
+      const isHalfStar = rating >= starIndex - 0.5 && rating < starIndex
 
       return (
-        <div className="flex gap-1 items-center">
-          {[1, 2, 3, 4, 5].map(renderStar)}
-          <span className="ml-2 text-sm text-gray-600">
-          </span>
-        </div>
+        <button
+          key={starIndex}
+          type="button"
+          className="relative w-4 h-4 text-xl transition-all duration-200 hover:scale-110 focus:outline-none"
+          onClick={(e) => handleStarClick(starIndex, e)}
+        >
+          {/* Background star (gray) */}
+          <span className="absolute inset-0 text-gray-300">★</span>
+          {/* Half star (left half) */}
+          {isHalfStar && (
+            <span
+              className="absolute inset-0 text-yellow-400 overflow-hidden"
+              style={{ clipPath: "polygon(0 0, 50% 0, 50% 100%, 0 100%)" }}
+            >
+              ★
+            </span>
+          )}
+          {/* Full star */}
+          {isFullStar && <span className="absolute inset-0 text-yellow-400">★</span>}
+          {/* Hover effect overlay */}
+          <span className="absolute inset-0 text-yellow-200 opacity-0 hover:opacity-100 transition-opacity">★</span>
+        </button>
       )
-    },
-    [],
-  )
+    }
+
+    return (
+      <div className="flex gap-1 items-center">
+        {[1, 2, 3, 4, 5].map(renderStar)}
+        <span className="ml-2 text-sm text-gray-600"></span>
+      </div>
+    )
+  }, [])
 
   // Success Modal Component
   const SuccessModal = useCallback(
@@ -328,18 +344,15 @@ export default function InterviewFeedbackForm() {
 
   // Helper function to render interviewer display
   const renderInterviewer = useCallback(() => {
-    if (Array.isArray(formData.interviewer)) {
-      return formData.interviewer.map((item, index) => (
-        <span key={index} className="block bg-gray-50 mt-2 rounded-lg p-3 border">
-          {item}
-        </span>
-      ))
-    }
-    return formData.interviewer || "Loading..."
+    return formData.interviewer.map((email, index) => (
+      <span key={index} className="block bg-gray-50 mt-2 rounded-lg p-3 border">
+        {email}
+      </span>
+    ))
   }, [formData.interviewer])
 
   // Loading state
-  if (skillsLoading || interviewLoading) {
+  if (interviewLoading || roundLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="bg-white shadow-sm border-b px-6 py-4 sticky top-0 z-10">
@@ -360,9 +373,11 @@ export default function InterviewFeedbackForm() {
     )
   }
 
-  // Error state
-  if (skillsError || interviewError) {
-    const error = skillsError || interviewError
+  // Error state with improved error handling
+  if (interviewError || roundError) {
+    const error = interviewError || roundError
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
+
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="bg-white shadow-sm border-b px-6 py-4 sticky top-0 z-10">
@@ -413,7 +428,7 @@ export default function InterviewFeedbackForm() {
                 </div>
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Form</h3>
-                  <p className="text-sm text-gray-600 mb-4">{error?.message}</p>
+                  <p className="text-sm text-gray-600 mb-4">{errorMessage}</p>
                   <button
                     onClick={handleRetry}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -488,7 +503,7 @@ export default function InterviewFeedbackForm() {
                   </div>
                   <div className="flex flex-col items-center md:items-end">
                     <StarRating
-                      rating={parseFloat(skill.rating) / 0.2 || 0} // Convert back to star rating for display
+                      rating={Number.parseFloat(skill.rating) / 0.2 || 0} // Convert back to star rating for display
                       onRatingChange={(r) => updateSkillAssessmentRating(index, r)}
                     />
                   </div>

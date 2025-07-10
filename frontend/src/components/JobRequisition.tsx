@@ -50,6 +50,42 @@ const getPriorityInfo = (status: string): { label: string; color: string } => {
   }
 };
 
+const JobRequisitionItem: React.FC<{
+  item: APIRequisition;
+  index?: number;
+  doctype: string;
+}> = ({ item }) => {
+  const job = item;
+  const priority = getPriorityInfo(job.status);
+  const statusColor = getStatusColor(job.status);
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-[var(--surface-background)] p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">
+            {job.designation}
+          </h3>
+          <p className={`text-xs font-medium ${priority.color} mt-0.5`}>
+            {priority.label}
+          </p>
+        </div>
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor}`}
+        >
+          {job.status}
+        </span>
+      </div>
+      <p className="mt-1 text-sm text-[var(--text-secondary)]">
+        {job.department}
+      </p>
+      <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
+        {job.custom_location}
+      </p>
+    </div>
+  );
+};
+
 const JobRequisition: React.FC = () => {
   const navigate = useNavigate();
 
@@ -68,48 +104,25 @@ const JobRequisition: React.FC = () => {
         ItemComponent={JobRequisitionItem}
         isSearch={true}
         pageSize={10}
-        defaultFields={['name', 'designation', 'status', 'requested_by', 'department', 'custom_location']}
-        searchFields={['designation', 'status', 'requested_by', 'department', 'custom_location']}
+        defaultFields={[
+          "name",
+          "designation",
+          "status",
+          "requested_by",
+          "department",
+          "custom_location",
+        ]}
+        searchFields={[
+          "designation",
+          "status",
+          "requested_by",
+          "department",
+          "custom_location",
+        ]}
         infiniteScroll={true}
       />
     </div>
   );
 };
-
-const JobRequisitionItem: React.FC<{ item: APIRequisition, index: number }> = ({ item, index }) => {
-  const job = item;
-  const priority = getPriorityInfo(job.status);
-            const statusColor = getStatusColor(job.status);
-            return (
-              <div
-                key={index}
-                className="rounded-xl border border-slate-200 bg-[var(--surface-background)] p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-base font-semibold text-[var(--text-primary)]">
-                      {job.designation}
-                    </h3>
-                    <p
-                      className={`text-xs font-medium ${priority.color} mt-0.5`}
-                    >
-                      {priority.label}
-                    </p>
-                  </div>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor}`}
-                  >
-                    {job.status}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                  {job.department}
-                </p>
-                <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-                  {job.custom_location}
-                </p>
-              </div>
-            );
-}
 
 export default JobRequisition;
