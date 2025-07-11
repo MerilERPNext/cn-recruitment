@@ -95,7 +95,8 @@ frappe.ui.form.on('Job Opening', {
 
     refresh: function (frm) {
         render_jd_live_preview(frm);
-    }
+    },
+    custom_job_application_form: set_job_application_route
 });
 
 function render_jd_live_preview(frm) {
@@ -165,4 +166,13 @@ function render_jd_live_preview(frm) {
         frm.doc.custom_jd_details[i].description = $(this).val();
         frm.dirty();
     });
+}
+function set_job_application_route(frm) {
+    const web_form = frm.doc.custom_job_application_form || '';
+    if (!web_form) {
+        frm.set_value('job_application_route', '');
+        return;
+    }
+    frappe.db.get_value('Web Form', web_form, 'route')
+        .then(r => frm.set_value('job_application_route', (r.message || {}).route || ''));
 }
