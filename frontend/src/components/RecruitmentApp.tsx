@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import InterviewPage from './interview';
 import JobRequisition from './JobRequisition';
 import ReferralList from './RafarralList';
+import JobApplicantList from './JobApplicantList';
 
 
 
 
-type TabName = 'Referrals' | 'Interviews' | 'Requisitions';
+type TabName = 'Referrals' | 'Interviews' | 'Requisitions' | 'JobApplicants';
 
 const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const RecruitmentApp: React.FC = () => {
 
 
 
-  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews'];
+  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews', 'JobApplicants'];
 
 
   const handleTabChange = (tab: TabName) => {
@@ -112,6 +113,9 @@ const RecruitmentApp: React.FC = () => {
 
             case 'Requisitions':
               return <JobRequisition />;
+
+            case 'JobApplicants':
+              return <JobApplicantList />;
 
             default:
               return null;
