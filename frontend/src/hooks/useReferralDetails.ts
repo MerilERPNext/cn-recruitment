@@ -27,6 +27,7 @@ export const useReferralDetails = (
   })
 }
 
+
 // ✅ New hook for designations
 export const useDesignations = (
   options?: Omit<UseQueryOptions<DesignationResponse>, "queryKey" | "queryFn">

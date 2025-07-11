@@ -23,7 +23,7 @@ export class NoticeService {
 
       if (!response.ok) {
         console.error('📡 API failed:', response.statusText);
-        return this.getMockNotices();
+        throw new Error(`API request failed: ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -33,12 +33,12 @@ export class NoticeService {
         return result.message;
       }
       
-      console.log('📡 No notices returned, using mock data');
-      return this.getMockNotices();
+      console.log('📡 No notices returned from API');
+      return [];
       
     } catch (error) {
       console.error('📡 Error fetching notices:', error);
-      return this.getMockNotices(); // Fallback to mock data
+      throw error;
     }
   }
 
@@ -139,8 +139,7 @@ export class NoticeService {
       
     } catch (error) {
       console.error('📡 Error fetching unread notices count:', error);
-      // Return mock count
-      return this.getMockNotices().filter(notice => notice.isUnread).length;
+      return 0;
     }
   }
 
@@ -150,7 +149,7 @@ export class NoticeService {
       return allNotices.filter(notice => notice.isUnread);
     } catch (error) {
       console.error('📡 Error fetching unread notices:', error);
-      return this.getMockNotices().filter(notice => notice.isUnread);
+      return [];
     }
   }
 
@@ -197,6 +196,7 @@ export class NoticeService {
 
     return {
       id: doc.name,
+      name: doc.name,
       title: doc.title,
       message: doc.content || '',
       time: relativeTime,
@@ -231,63 +231,10 @@ export class NoticeService {
     if (diffInDays < 7) return `${diffInDays}d ago`;
     return `${diffInWeeks}w ago`;
   }
-
-  // Mock data for development/fallback
-  private getMockNotices(): Notice[] {
-    return [
-      {
-        id: 'mock-1',
-        title: '🔧 API Integration Test',
-        message: 'This is mock data displayed while we debug the API integration. If you see this, the Notice API is not returning data.',
-        time: '2m ago',
-        iconType: 'campaign',
-        isUnread: true,
-        priority: 'high',
-        action: {
-          label: 'Acknowledge',
-          type: 'dismiss',
-          variant: 'primary'
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        userId: 'system',
-        category: 'System Notice',
-        status: 'active'
-      },
-      {
-        id: 'mock-2', 
-        title: '📡 API Status',
-        message: 'The frontend is working correctly. The issue is likely with the backend API endpoints or data transformation.',
-        time: '5m ago',
-        iconType: 'badge',
-        isUnread: true,
-        priority: 'medium',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        userId: 'system',
-        category: 'Information',
-        status: 'active'
-      },
-      {
-        id: 'mock-3',
-        title: '✅ Frontend Ready',
-        message: 'The React components, TypeScript types, and UI are all working properly. Check browser console for API debugging info.',
-        time: '10m ago',
-        iconType: 'work',
-        isUnread: false,
-        priority: 'low',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        userId: 'system',
-        category: 'Information',
-        status: 'active'
-      }
-    ];
-  }
 }
 
 // Export a singleton instance
 export const noticeService = new NoticeService();
 
 // Default export for compatibility
-export default NoticeService; 
+export default NoticeService;

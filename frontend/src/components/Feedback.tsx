@@ -10,7 +10,7 @@ import {
   useFeedbackSubmission,
   isPermissionError,
 } from "../hooks/useFeedbackQuery"
-import { AlertCircle, RefreshCw, ArrowLeft } from "lucide-react"
+import { AlertCircle, RefreshCw, ArrowLeft, X } from "lucide-react"
 import type {
   FeedbackForm,
   SkillAssessment,
@@ -25,6 +25,8 @@ export default function InterviewFeedbackForm() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
   console.log(`🎯 InterviewFeedbackForm initialized with ID: ${id}`)
 
@@ -85,6 +87,12 @@ export default function InterviewFeedbackForm() {
   )
 
   const [formData, setFormData] = useState<FeedbackForm>(initialFormData)
+
+  // Function to show error popup
+  const showError = useCallback((message: string) => {
+    setErrorMessage(message)
+    setShowErrorModal(true)
+  }, [])
 
   // Update form data when skills are loaded
   useEffect(() => {
@@ -253,9 +261,9 @@ export default function InterviewFeedbackForm() {
     } catch (error) {
       console.error("❌ Feedback submission error:", error)
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
-      alert(`Error submitting feedback: ${errorMessage}`)
+      showError(`Error submitting feedback: ${errorMessage}`)
     }
-  }, [formData, calculateAverageSkillRating, feedbackMutation, resetForm])
+  }, [formData, calculateAverageSkillRating, feedbackMutation, resetForm, showError])
 
   const handleRetry = useCallback(() => {
     console.log(`🔄 Retrying data fetch`)
@@ -340,6 +348,42 @@ export default function InterviewFeedbackForm() {
       </div>
     ),
     [navigate],
+  )
+
+  // Error Modal Component
+  const ErrorModal = useCallback(
+    () => (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                  <AlertCircle className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Error</h3>
+              </div>
+              <button
+                onClick={() => setShowErrorModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6">{errorMessage}</p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowErrorModal(false)}
+                className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    [errorMessage],
   )
 
   // Helper function to render interviewer display
@@ -449,6 +493,9 @@ export default function InterviewFeedbackForm() {
     <div className="min-h-screen bg-gray-50">
       {/* Success Modal */}
       {showSuccessModal && <SuccessModal />}
+
+      {/* Error Modal */}
+      {showErrorModal && <ErrorModal />}
 
       {/* Header */}
       <div className="bg-white shadow-sm border-b px-6 py-4 sticky top-0 z-10">

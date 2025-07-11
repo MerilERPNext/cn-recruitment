@@ -1,4 +1,5 @@
 export interface Notice {
+  name: string;
   id: string;
   title: string;
   message: string;
