@@ -9,7 +9,7 @@ const ReferralDetails: React.FC = () => {
   const { data, error, isLoading } = useReferralDetails(id || "");
   const referral = data?.data;
 
-  console.log("my candidate data",referral)
+  console.log("my candidate data",data)
   
   const handleBack = () => navigate(-1);
   if (isLoading) return <div className="p-4">Loading...</div>;
