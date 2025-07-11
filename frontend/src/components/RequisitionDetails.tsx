@@ -1,123 +1,45 @@
-import React, { ReactElement, useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle, Clock, User } from "lucide-react";
-import { useNavigate, useParams } from "react-router";
-import axios, { AxiosError } from "axios";
+"use client"
 
-interface TeamMember {
-  id: number;
-  name: string;
-  role: string;
-  avatar: string | null;
-}
-
-interface ApplicationStats {
-  totalApplications: number;
-  reviewed: number;
-  interviewing: number;
-}
-
-interface SalaryRange {
-  min: number;
-  max: number;
-}
-
-interface Details {
-  budget: number;
-  salaryRange: SalaryRange;
-  deadline: string;
-  priority: "High" | "Medium" | "Low";
-}
-
-interface StatusDisplay {
-  icon: ReactElement;
-  bgColor: string;
-  textColor: string;
-  label: string;
-}
-
-interface RequisitionData {
-  job_requisition?: {
-    designation?: string;
-    department?: string;
-    location?: string;
-    employment_type?: string;
-    salary_range?: string;
-    deadline?: string;
-    budget?: number;
-    priority?: "High" | "Medium" | "Low";
-    status?: string;
-    description?: string;
-    [key: string]: unknown;
-  };
-  assignedTeam?: TeamMember[];
-  job_applicant_count?: number;
-  review_count?: number;
-  interview_count?: number;
-}
-
+import type React from "react"
+import { useMemo, useState, useCallback } from "react"
+import { ArrowLeft, CheckCircle, Clock, User, AlertCircle, RefreshCw, BriefcaseBusiness, MapPin } from "lucide-react"
+import { useNavigate, useParams } from "react-router-dom"
+import { useRequisitionDetails, isPermissionError } from "../hooks/useRequisition"
+import type { StatusDisplay } from "../types/requisition"
 
 const RequisitionDetails: React.FC = () => {
-  const navigate = useNavigate();
-  const { requisitionId } = useParams<{ requisitionId: string }>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<RequisitionData | null>(null);
-  const [showEdit, setShowEdit] = useState(false);
+  const navigate = useNavigate()
+  const { requisitionId } = useParams<{ requisitionId: string }>()
+  const [showEdit, setShowEdit] = useState(false)
 
-  useEffect(() => {
-    const fetchDetails = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await axios.get(
-          "/api/method/recruitment.api.job_requisition.get_job_requisition_details",
-          {
-            params: { requisition_name: requisitionId },
-          }
-        );
+  console.log(`🎯 RequisitionDetails initialized with ID: ${requisitionId}`)
 
-        const resData =
-          response.data.message || response.data.data || response.data;
+  // Use React Query hook
+  const {
+    data: requisitionResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useRequisitionDetails({ requisition_name: requisitionId || "" }, { enabled: !!requisitionId })
 
-        setData(resData);
-        console.log("Resposne data ",resData)
-      } catch (err: unknown) {
-        const axiosErr = err as AxiosError<{ message?: string }>;
-        setError(
-          axiosErr.response?.data?.message ??
-          axiosErr.message ??
-          "Failed to load requisition details"
-        );
-        console.error("Error fetching requisition details:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  console.log("Requisition Response:", requisitionResponse)
 
-    if (requisitionId) fetchDetails();
-  }, [requisitionId]);
+  // Extract job data from response
+  const job = useMemo(() => {
+    if (!requisitionResponse) return null
+    return requisitionResponse.job_requisition // Map to job_requisition from the response
+  }, [requisitionResponse])
 
-  const handleBackInterview = () => navigate(-1);
+  const handleBackInterview = useCallback(() => {
+    navigate(-1)
+  }, [navigate])
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  const handleRetry = useCallback(() => {
+    refetch()
+  }, [refetch])
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString("en-IN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  };
-
-  const getStatusDisplay = (status: string): StatusDisplay => {
-    const lowerStatus = status?.toLowerCase?.() || "";
-
+  const getStatusDisplay = useCallback((status: string): StatusDisplay => {
+    const lowerStatus = status?.toLowerCase?.() || ""
     switch (lowerStatus) {
       case "pending":
         return {
@@ -125,7 +47,7 @@ const RequisitionDetails: React.FC = () => {
           bgColor: "bg-yellow-100",
           textColor: "text-yellow-600",
           label: "Pending",
-        };
+        }
       case "open & approved":
       case "job opening created":
         return {
@@ -133,143 +55,86 @@ const RequisitionDetails: React.FC = () => {
           bgColor: "bg-green-100",
           textColor: "text-green-600",
           label: "Open & Approved",
-        };
+        }
       case "in-progress":
         return {
           icon: <Clock className="w-6 h-6 text-blue-600" />,
           bgColor: "bg-blue-100",
           textColor: "text-blue-600",
           label: "In-Progress",
-        };
+        }
       case "rejected":
         return {
           icon: <Clock className="w-6 h-6 text-red-600" />,
           bgColor: "bg-red-100",
           textColor: "text-red-600",
           label: "Rejected",
-        };
+        }
       case "filled":
         return {
           icon: <CheckCircle className="w-6 h-6 text-gray-700" />,
           bgColor: "bg-gray-200",
           textColor: "text-gray-700",
           label: "Filled",
-        };
+        }
       case "on hold":
         return {
           icon: <Clock className="w-6 h-6 text-orange-600" />,
           bgColor: "bg-orange-100",
           textColor: "text-orange-600",
           label: "On Hold",
-        };
+        }
       case "cancelled":
         return {
           icon: <Clock className="w-6 h-6 text-red-400" />,
           bgColor: "bg-red-100",
           textColor: "text-red-400",
           label: "Cancelled",
-        };
+        }
       default:
         return {
           icon: <Clock className="w-6 h-6 text-gray-500" />,
           bgColor: "bg-gray-100",
           textColor: "text-gray-500",
           label: "Unknown",
-        };
+        }
     }
-  };
+  }, [])
 
-  const getPriorityInfo = (
-    status?: string
-  ): { label: string; color: string } => {
+  const getPriorityInfo = useCallback((status?: string): { label: string; color: string } => {
     if (!status) {
-      return { label: "Normal Priority", color: "text-yellow-600" };
+      return { label: "Normal Priority", color: "text-yellow-600" }
     }
-
     switch (status.toLowerCase()) {
       case "pending":
       case "open & approved":
       case "job opening created":
-        return { label: "Urgent", color: "text-red-500" };
+        return { label: "Urgent", color: "text-red-500" }
       case "in-progress":
       case "on hold":
       case "filled":
-        return { label: "Normal Priority", color: "text-yellow-600" };
+        return { label: "Normal Priority", color: "text-yellow-600" }
       case "rejected":
       case "cancelled":
-        return { label: "Low Priority", color: "text-gray-500" };
+        return { label: "Low Priority", color: "text-gray-500" }
       default:
-        return { label: "Normal Priority", color: "text-yellow-600" };
+        return { label: "Normal Priority", color: "text-yellow-600" }
     }
-  };
+  }, [])
 
-  const getCleanDescription = (html: string): string => {
-    if (!html) return "";
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    return div.querySelector(".ql-editor")?.innerHTML || html;
-  };
-
-  const fallbackAssignedTeam: TeamMember[] = [
-    {
-      id: 1,
-      name: "Priya Sharma",
-      role: "Recruiter",
-      avatar: null,
-    },
-    {
-      id: 2,
-      name: "Amit Verma",
-      role: "Hiring Manager",
-      avatar: null,
-    },
-  ];
-
-  const job = data?.job_requisition || {};
-  const salaryRange: SalaryRange = (() => {
-    if (typeof job.salary_range === "string") {
-      const [minStr, maxStr] = job.salary_range.split("-");
-      return {
-        min: parseInt(minStr) || 0,
-        max: parseInt(maxStr) || 0,
-      };
+  const formatDate = useCallback((dateString: string) => {
+    if (!dateString) return "N/A"
+    try {
+      return new Date(dateString).toLocaleDateString()
+    } catch {
+      return dateString
     }
-    return { min: 0, max: 0 };
-  })();
+  }, [])
 
-  const assignedTeam: TeamMember[] = data?.assignedTeam || fallbackAssignedTeam;
-
-  const applicationStats: ApplicationStats = {
-    totalApplications: data?.job_applicant_count || 0,
-    reviewed: data?.review_count || 0,
-    interviewing: data?.interview_count || 0,
-  };
-
-  const details: Details = {
-    budget: job.budget || 0,
-    salaryRange,
-    deadline: job.deadline || new Date().toISOString(),
-    priority: job.priority || "Medium",
-  };
-
-  return (
-    <main>
-      {loading ? (
-        <p className="text-center text-gray-500 text-base">
-          Loading requisition details...
-        </p>
-      ) : error ? (
-        <div className="text-center text-red-600 space-y-2">
-          <h2 className="text-lg font-semibold">Error</h2>
-          <p>{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          >
-            Retry
-          </button>
-        </div>
-      ) : (
+  // Loading state
+  if (isLoading) {
+    return (
+      <main>
         <div className="min-h-screen bg-white flex flex-col">
           <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
             <div className="flex items-center px-4 py-3">
@@ -279,185 +144,299 @@ const RequisitionDetails: React.FC = () => {
               >
                 <ArrowLeft className="w-6 h-6 text-gray-700" />
               </button>
-              <h2 className="flex-1 text-center text-lg font-semibold text-gray-900 pr-10">
-                Requisition Details
-              </h2>
+              <h2 className="flex-1 text-center text-lg font-semibold text-gray-900 pr-10">Requisition Details</h2>
             </div>
           </header>
-          <main className="flex-1 px-4 pt-4 pb-6">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                {job.designation}
-              </h1>
-              <p className="text-sm font-medium text-gray-600">
-                {job.department} · {job.location} · {job.employment_type}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex items-center space-x-2 text-gray-500">
+              <RefreshCw className="h-6 w-6 animate-spin" />
+              <span className="text-lg">Loading requisition details...</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <main>
+        <div className="min-h-screen bg-white flex flex-col">
+          <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+            <div className="flex items-center px-4 py-3">
+              <button
+                onClick={handleBackInterview}
+                className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <ArrowLeft className="w-6 h-6 text-gray-700" />
+              </button>
+              <h2 className="flex-1 text-center text-lg font-semibold text-gray-900 pr-10">Requisition Details</h2>
+            </div>
+          </header>
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="max-w-md mx-auto text-center">
+              {isPermissionError(error) ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center">
+                    <div className="p-3 bg-yellow-100 rounded-full">
+                      <AlertCircle className="h-8 w-8 text-yellow-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Access Restricted</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      You don't have permission to view this requisition. Please contact your administrator for access.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                      <button
+                        onClick={handleRetry}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Try Again
+                      </button>
+                      <button
+                        onClick={handleBackInterview}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                      >
+                        Go Back
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center">
+                    <div className="p-3 bg-red-100 rounded-full">
+                      <AlertCircle className="h-8 w-8 text-red-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Requisition</h3>
+                    <p className="text-sm text-gray-600 mb-4">{error.message}</p>
+                    <button
+                      onClick={handleRetry}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  // No data state
+  if (!job || !job.name) {
+    return (
+      <main>
+        <div className="min-h-screen bg-white flex flex-col">
+          <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+            <div className="flex items-center px-4 py-3">
+              <button
+                onClick={handleBackInterview}
+                className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <ArrowLeft className="w-6 h-6 text-gray-700" />
+              </button>
+              <h2 className="flex-1 text-center text-lg font-semibold text-gray-900 pr-10">Requisition Details</h2>
+            </div>
+          </header>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Requisition Not Found</h3>
+              <p className="text-sm text-gray-600 mb-4">The requested requisition could not be found.</p>
+              <button
+                onClick={handleBackInterview}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main>
+      <div className="min-h-screen bg-white flex flex-col">
+        <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+          <div className="flex items-center px-4 py-3">
+            <button
+              onClick={handleBackInterview}
+              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6 text-gray-700" />
+            </button>
+            <h2 className="flex-1 text-center text-lg font-semibold text-gray-900 pr-10">Requisition Details</h2>
+          </div>
+        </header>
+
+        <main className="flex-1 px-4 pt-4 pb-6">
+          {/* Header Section */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">{job.designation || "N/A"}</h1>
+            <div className="flex flex-grow gap-2 mt-2">
+              {/* First growing element */}
+              <p className="flex-1 text-sm bg-gray-200 px-2 rounded text-center flex items-center gap-2 font-medium text-gray-600">
+                <BriefcaseBusiness className="w-4" />
+                {job.department || "N/A"}
+              </p>
+
+              {/* Second growing element */}
+              <p className="flex-1 text-sm px-2 bg-gray-200 flex items-center gap-2 rounded text-center font-medium text-gray-600">
+                <MapPin className="w-4" />
+                {job.location || "N/A"}
+              </p>
+
+              {/* Third growing element */}
+              <p className="flex-1 text-sm bg-gray-200 px-2 flex items-center gap-2 rounded text-center font-medium text-gray-600">
+                <Clock className="w-4" />
+                {job.employment_type || "N/A"}
               </p>
             </div>
+          </div>
 
+          {/* Job Description */}
+          {job.description && (
             <section className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                Description & Requirements
-              </h2>
-              <div
-                className="text-base text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: getCleanDescription(job.description ?? ""),
-                }}
-              />
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Job Description & Requirement</h2>
+              <div className="space-y-2">
+                <div className="text-base text-gray-700 leading-relaxed">
+                  <span>{job.description}</span>
+                </div>
+              </div>
             </section>
+          )}
 
-            <section className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Approval Status
-              </h2>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div
-                    className={`flex items-center justify-center w-10 h-10 ${
-getStatusDisplay(job.status ?? "").bgColor                    } rounded-full`}
-                  >
-                    {getStatusDisplay(job.status ?? "").icon}
+          {/* Status Section */}
+          <section className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Status</h2>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div
+                  className={`flex items-center justify-center w-10 h-10 ${getStatusDisplay(job.status || "").bgColor} rounded-full`}
+                >
+                  {getStatusDisplay(job.status || "").icon}
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">Current Status</p>
+                  <p className={`text-sm font-medium ${getStatusDisplay(job.status || "").textColor}`}>
+                    {getStatusDisplay(job.status || "").label}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Assigned Teams */}
+          <section className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Assigned Teams</h2>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div
+                  className={`flex items-center justify-center w-12 h-12 ${getStatusDisplay(job.status || "").bgColor} rounded-full`}
+                >
+                  <div className={`w-16 h-12 bg-gray-200 rounded-full flex items-center justify-center`}>
+                    <User className="w-6 h-6" />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">Status</p>
-                    <p
-                      className={`text-sm font-medium ${
-                        getStatusDisplay(job.status ?? "").textColor
-                      }`}
-                    >
-                      {getStatusDisplay(job.status ?? "").label}
-                    </p>
-                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">Assign To Recruiter</p>
+                  <p className="text-sm font-medium">{job.custom_assign_to_recruiter || "N/A"}</p>
                 </div>
               </div>
-            </section>
+            </div>
+          </section>
 
-            <section className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Assigned Team
-              </h2>
-              <div className="space-y-3">
-                {assignedTeam.map((member, index) => {
-                  const avatarColors = [
-                    "bg-blue-500",
-                    "bg-purple-500",
-                    "bg-green-500",
-                    "bg-red-500",
-                    "bg-yellow-500",
-                  ];
-                  const avatarColor = avatarColors[index % avatarColors.length];
-                  return (
-                    <div
-                      key={member.id}
-                      className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm"
-                    >
-                      <div
-                        className={`w-12 h-12 ${avatarColor} rounded-full flex items-center justify-center`}
-                      >
-                        <User className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">
-                          {member.name}
-                        </p>
-                        <p className="text-sm text-gray-600">{member.role}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+          {/* Application Statistics */}
+          <section className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Application Statistics</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                <p className="text-sm font-medium text-gray-600 mb-1">Total Applications</p>
+                <p className="text-3xl font-bold text-gray-900">{requisitionResponse?.job_applicant_count || 0}</p>
               </div>
-            </section>
+              <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                <p className="text-sm font-medium text-gray-600 mb-1">Reviewed</p>
+                <p className="text-3xl font-bold text-gray-900">{requisitionResponse?.review_count || 0}</p>
+              </div>
+              <div className="col-span-2 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                <p className="text-sm font-medium text-gray-600 mb-1">Interviewing</p>
+                <p className="text-3xl font-bold text-gray-900">{requisitionResponse?.interview_count || 0}</p>
+              </div>
+            </div>
+          </section>
 
-            <section className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Application Statistics
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                  <p className="text-sm font-medium text-gray-600 mb-1">
-                    Total Applications
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {applicationStats.totalApplications}
-                  </p>
-                </div>
-                <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                  <p className="text-sm font-medium text-gray-600 mb-1">
-                    Reviewed
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {applicationStats.reviewed}
-                  </p>
-                </div>
-                <div className="col-span-2 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                  <p className="text-sm font-medium text-gray-600 mb-1">
-                    Interviewing
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {applicationStats.interviewing}
-                  </p>
-                </div>
+          {/* Details Section */}
+          <section className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Details</h2>
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm divide-y divide-gray-200">
+              <div className="px-4 py-3 flex justify-between items-center">
+                <p className="text-sm font-medium text-gray-600">Requisition ID</p>
+                <p className="text-sm font-medium text-gray-900">{job.name}</p>
               </div>
-            </section>
+              <div className="px-4 py-3 flex justify-between items-center">
+                <p className="text-sm font-medium text-gray-600">Positions</p>
+                <p className="text-sm font-medium text-gray-900">{job.no_of_positions || "N/A"}</p>
+              </div>
+              <div className="px-4 py-3 flex justify-between items-center">
+                <p className="text-sm font-medium text-gray-600">Expected By</p>
+                <p className="text-sm font-medium text-gray-900">{formatDate(job.expected_by)}</p>
+              </div>
+              <div className="px-4 py-3 flex justify-between items-center">
+                <p className="text-sm font-medium text-gray-600">Deadline</p>
+                <p className="text-sm font-medium text-gray-900">{formatDate(job.deadline)}</p>
+              </div>
+              <div className="px-4 py-3 flex justify-between items-center">
+                <p className="text-sm font-medium text-gray-600">Salary</p>
+                <p className="text-sm font-medium text-gray-900">{job.salary_range || "N/A"}</p>
+              </div>
+              <div className="px-4 py-3 flex justify-between items-center">
+                <p className="text-sm font-medium text-gray-600">Priority</p>
+                {(() => {
+                  const { label, color } = getPriorityInfo(job?.status)
+                  return <p className={`text-sm font-semibold ${color}`}>{label}</p>
+                })()}
+              </div>
+            </div>
+          </section>
+        </main>
 
-            <section className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Details
-              </h2>
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm divide-y divide-gray-200">
-                <div className="px-4 py-3 flex justify-between items-center">
-                  <p className="text-sm font-medium text-gray-600">
-                    Salary Range
-                  </p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {formatCurrency(details.salaryRange.min)} -{" "}
-                    {formatCurrency(details.salaryRange.max)}
-                  </p>
-                </div>
-                <div className="px-4 py-3 flex justify-between items-center">
-                  <p className="text-sm font-medium text-gray-600">Deadline</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {formatDate(details.deadline)}
-                  </p>
-                </div>
-                <div className="px-4 py-3 flex justify-between items-center">
-                  <p className="text-sm font-medium text-gray-600">Priority</p>
-                  {(() => {
-                    const { label, color } = getPriorityInfo(job?.status);
-                    return (
-                      <p className={`text-sm font-semibold ${color}`}>
-                        {label}
-                      </p>
-                    );
-                  })()}
-                </div>
-              </div>
-            </section>
-          </main>
-          <footer className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+        <footer className="sticky bottom-0 bg-white border-t shadow-lg">
+          <div className="border-gray-200 p-4 max-w-4xl mx-auto px-6 py-4">
             <button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition-colors duration-200"
-              onClick={() => window.open(`/app/job-requisition/${requisitionId}`)}
+              className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={() => {
+                console.log(`📝 Opening edit requisition for ${requisitionId}`)
+                window.open(`/app/job-requisition/${requisitionId}`)
+              }}
             >
               Edit Requisition
             </button>
-          </footer>
-          {showEdit && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-              <div className="bg-white rounded-xl w-full max-w-lg shadow-lg relative">
-                <button
-                  onClick={() => setShowEdit(false)}
-                  className="absolute top-2 right-2 text-xl font-bold"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </main>
-  );
-};
+          </div>
+        </footer>
 
-export default RequisitionDetails;
+        {showEdit && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-xl w-full max-w-lg shadow-lg relative">
+              <button onClick={() => setShowEdit(false)} className="absolute top-2 right-2 text-xl font-bold">
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  )
+}
+
+export default RequisitionDetails
