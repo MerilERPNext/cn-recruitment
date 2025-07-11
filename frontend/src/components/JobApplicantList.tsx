@@ -3,6 +3,24 @@ import FrappeListView from "./ListView";
 import { ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
+// Define the expected structure of a Job Applicant
+interface JobApplicant {
+  name: string;
+  applicant_name: string;
+  email_id?: string;
+  phone_number?: string;
+  job_title?: string;
+  designation?: string;
+  status?: string;
+  country?: string;
+  source?: string;
+  applicant_rating?: number;
+  resume_attachment?: string;
+  resume_link?: string;
+  notes?: string;
+  creation: string;
+  profile_image?: string;
+}
 
 // Avatar helper (fallback to initials if no image)
 const Avatar = ({ src, name }: { src?: string; name: string }) => {
@@ -15,7 +33,6 @@ const Avatar = ({ src, name }: { src?: string; name: string }) => {
       />
     );
   }
-  // Fallback: initials
   const initials = name
     .split(" ")
     .map((n) => n[0])
@@ -30,7 +47,13 @@ const Avatar = ({ src, name }: { src?: string; name: string }) => {
 };
 
 // Card for each applicant
-const ApplicantCard = ({ item, onClick }: any) => (
+const ApplicantCard = ({
+  item,
+  onClick,
+}: {
+  item: JobApplicant;
+  onClick: (item: JobApplicant) => void;
+}) => (
   <div
     className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors"
     onClick={() => onClick(item)}
@@ -43,16 +66,19 @@ const ApplicantCard = ({ item, onClick }: any) => (
         </p>
       </div>
       <div className="flex items-center gap-2 text-sm text-gray-600 mt-0.5">
-  {item.designation && <span>{item.designation}</span>}
+        {item.designation && <span>{item.designation}</span>}
 
-  {item.designation && item.creation && <span className="mx-1">|</span>}
+        {item.designation && item.creation && <span className="mx-1">|</span>}
 
-  {item.creation && (
-    <span>
-      Applied {formatDistanceToNow(new Date(item.creation), { addSuffix: true }).replace("about ", "")}
-    </span>
-  )}
-</div>
+        {item.creation && (
+          <span>
+            Applied{" "}
+            {formatDistanceToNow(new Date(item.creation), {
+              addSuffix: true,
+            }).replace("about ", "")}
+          </span>
+        )}
+      </div>
     </div>
     <button className="text-blue-500 flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-blue-50 active:bg-blue-100 transition-colors">
       <ChevronRight />
@@ -63,7 +89,7 @@ const ApplicantCard = ({ item, onClick }: any) => (
 export default function JobApplicantList() {
   const navigate = useNavigate();
 
-  const handleApplicantClick = (item: any) => {
+  const handleApplicantClick = (item: JobApplicant) => {
     navigate(`/webapp/recruitment-app/job-applicant-detail/${item.name}`);
   };
 
@@ -71,7 +97,7 @@ export default function JobApplicantList() {
     <div className="flex-grow h-full w-full bg-white overflow-y-auto p-4">
       <FrappeListView
         doctype="Job Applicant"
-        ItemComponent={(props) => (
+        ItemComponent={(props: { item: JobApplicant }) => (
           <ApplicantCard {...props} onClick={handleApplicantClick} />
         )}
         onItemClick={handleApplicantClick}
