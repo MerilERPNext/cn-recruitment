@@ -1,5 +1,3 @@
-# recruitment/recruitment/api/job_applicant.py
-
 import frappe
 from frappe.utils import getdate, formatdate
 from frappe import _
@@ -32,11 +30,10 @@ def get_job_applicant_details(applicant_name):
         "experience": applicant_doc.custom_total_experience or "N/A",
         "expected_ctc": f"{applicant_doc.currency or ''} {applicant_doc.custom_expected_ctc or applicant_doc.lower_range or 0} / Annum".strip(),
         "notice_period": applicant_doc.custom_bond_if_any or "N/A", # Using bond field for now
-        "profile_image": None, # Confirm if there's a specific field for this, otherwise defaults to None
+        "profile_image": None, 
         "resume_attachment": applicant_doc.resume_attachment,
         "creation": applicant_doc.creation,
         "custom_recruiter_name": applicant_doc.custom_recruiter_name or "N/A",
-        # Add other main fields you might need
         "custom_current_designation": applicant_doc.custom_current_designation or "N/A",
         "custom_current_company_name": applicant_doc.custom_current_company_name or "N/A",
         "custom_linkedin_url": applicant_doc.custom_linkedin_url or "N/A",
@@ -86,7 +83,6 @@ def get_job_applicant_details(applicant_name):
                 "duration": duration,
                 "address": entry.address,
                 "salary": entry.salary,
-                # "description": entry.description or "", # Add if you have a description field in this child table
             })
 
     # Fetch Education History
@@ -101,9 +97,8 @@ def get_job_applicant_details(applicant_name):
                 "degree": entry.qualification,
                 "field_of_study": entry.custom_educational_details or "N/A",
                 "level": entry.level,
-                "start_year": education_year, # Assuming start and end year are the same or derived from this
+                "start_year": education_year, 
                 "end_year": education_year,
-                # "class_percentage": entry.class_per # Add if you want this
             })
 
     # Fetch Notes from custom_crm_note child table
@@ -115,37 +110,88 @@ def get_job_applicant_details(applicant_name):
                 "timestamp": note_entry.added_on,
                 "author": note_entry.added_by,
                 "content": note_entry.note,
-                "type": note_entry.custom_comment_type # Keep type for potential timeline integration
+                "type": note_entry.custom_comment_type 
             })
 
-    # Timeline (can be expanded later with Interview/Communication events)
-    timeline_events = []
-    # Add application creation event
-    timeline_events.append({
-        "id": "application_created",
-        "type": "Application Submitted",
-        "timestamp": applicant_doc.creation,
-        "description": f"Applied for {applicant_doc.job_title} role.",
-        "by_user": applicant_doc.owner
-    })
-    # Add CRM notes to timeline
-    for note in notes:
-        timeline_events.append({
-            "id": note["id"],
-            "type": f"Note ({note['type']})", # Use the type from CRM note
-            "timestamp": note["timestamp"],
-            "description": f"Internal note added: {note['content'][:100]}...", # Truncate for timeline
-            "by_user": note["author"]
-        })
+    # Mock data for Applicant Timeline and Communication History
+    mock_timeline_events = [
+        {
+            "id": "app_submitted",
+            "type": "Application Submitted",
+            "timestamp": "2025-07-10T11:00:00Z",
+            "description": "Applied for Senior Frontend Developer role.",
+            "by_user": "Applicant"
+        },
+        {
+            "id": "status_changed_screening",
+            "type": "Status Changed",
+            "timestamp": "2025-07-11T16:15:00Z",
+            "description": "Status changed: Sourced → Screening. Sub-status changed to HR Round.",
+            "by_user": "Sarah Wilson"
+        },
+        {
+            "id": "interview_scheduled_tech",
+            "type": "Interview Scheduled",
+            "timestamp": "2025-07-12T10:30:00Z",
+            "description": "Technical Round with John Smith.",
+            "by_user": "Recruiter"
+        }
+    ]
 
-    # Sort timeline events by timestamp
-    timeline_events.sort(key=lambda x: x["timestamp"])
-
+    mock_communication_history = [
+        {
+            "id": "whatsapp_confirm",
+            "type": "WhatsApp Message",
+            "timestamp": "2025-07-12T10:35:00Z",
+            "description": "Confirming interview schedule.",
+            "icon": "chat" 
+        },
+        {
+            "id": "outgoing_call_expectations",
+            "type": "Outgoing Call",
+            "timestamp": "2025-07-11T16:00:00Z",
+            "description": "Duration: 5m 32s. Spoke about role expectations.",
+            "icon": "call"
+        },
+        {
+            "id": "email_screening_invite",
+            "type": "Email Sent",
+            "timestamp": "2025-07-10T14:00:00Z",
+            "description": "Invitation for initial screening call.",
+            "icon": "mail" 
+        }
+    ]
 
     return {
         "job_applicant": job_applicant_data,
         "employment_history": employment_history,
         "education_history": education_history,
         "notes": notes,
-        "timeline_events": timeline_events
+        "applicant_timeline_events": mock_timeline_events,
+        "communication_history": mock_communication_history 
+    }
+    
+    
+@frappe.whitelist()
+def get_job_applicant_field_options():
+    """
+    Fetches the options for 'status' and 'custom_substatus' fields
+    of the Job Applicant DocType.
+    """
+    status_options = []
+    substatus_options = []
+
+    # Get options for 'status' field
+    status_field = frappe.get_meta("Job Applicant").get_field("status")
+    if status_field and status_field.options:
+        status_options = [s.strip() for s in status_field.options.split('\n') if s.strip()]
+
+    # Get options for 'custom_substatus' field
+    substatus_field = frappe.get_meta("Job Applicant").get_field("custom_substatus")
+    if substatus_field and substatus_field.options:
+        substatus_options = [s.strip() for s in substatus_field.options.split('\n') if s.strip()]
+
+    return {
+        "status_options": status_options,
+        "sub_status_options": substatus_options
     }

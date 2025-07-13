@@ -17,24 +17,25 @@ import {
   Paperclip,
   AtSign,
   ChevronLeft,
-  AlertCircle, // For error state
-  RefreshCw, // For loading/retry
+  AlertCircle,
+  RefreshCw, 
 } from "lucide-react";
-import { useParams, useNavigate } from "react-router-dom"; // Import useParams and useNavigate
+import { useParams, useNavigate } from "react-router-dom"; 
 import {
   useJobApplicantDetails,
+  useJobApplicantDropdownOptions, 
   isPermissionError,
-} from "../hooks/useJobApplicant"; // Adjust path to your new hook
+} from "../hooks/useJobApplicant"; 
 import type {
   JobApplicantBasicDetails,
   EmploymentEntry,
   EducationEntry,
   ApplicantNote,
-  TimelineEvent,
-} from "../types/jobApplicant"; // Adjust path to your new types
+  ApplicantTimelineEvent,
+  CommunicationEvent,
+} from "../types/jobApplicant"; 
 
 
-// Header Component (unchanged from your original code)
 const Header = ({ onBack }: { onBack: () => void }) => {
   return (
     <header className="sticky top-0 z-10 bg-white shadow-sm">
@@ -50,15 +51,30 @@ const Header = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-// ApplicantProfile Component (updated to use JobApplicantBasicDetails)
 const ApplicantProfile = ({
   applicant,
 }: {
   applicant: JobApplicantBasicDetails;
 }) => {
-  // Use state for controlled selects, initialized with API data
   const [status, setStatus] = useState(applicant.status);
-  const [subStatus, setSubStatus] = useState(applicant.sub_status); // Use sub_status from API
+  const [subStatus, setSubStatus] = useState(applicant.sub_status); 
+
+  // Fetch dropdown options dynamically
+  const {
+    data: optionsData,
+    isLoading: isLoadingOptions,
+    error: optionsError,
+  } = useJobApplicantDropdownOptions();
+
+  // Memoize options to prevent re-renders if the data object itself changes but content doesn't
+  const statusOptions = useMemo(
+    () => optionsData?.status_options || [],
+    [optionsData],
+  );
+  const subStatusOptions = useMemo(
+    () => optionsData?.sub_status_options || [],
+    [optionsData],
+  );
 
   // Handlers for contact buttons
   const handleCall = () =>
@@ -101,37 +117,54 @@ const ApplicantProfile = ({
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="relative flex-1">
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="w-full appearance-none bg-gray-100 border border-gray-300 text-slate-900 text-sm font-semibold rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
-          >
-            {/* These options should ideally be dynamic from Frappe metadata */}
-            <option value="Open">Open</option>
-            <option value="Sourced">Sourced</option>
-            <option value="Screening">Screening</option>
-            <option value="Interview">Interview</option>
-            <option value="Offered">Offered</option>
-            <option value="Hired">Hired</option>
-            <option value="Rejected">Rejected</option>
-          </select>
+          {isLoadingOptions ? (
+            <div className="w-full h-10 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center text-sm text-gray-500">
+              Loading Statuses...
+            </div>
+          ) : optionsError ? (
+            <div className="w-full h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center text-sm">
+              Error loading statuses
+            </div>
+          ) : (
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full appearance-none bg-gray-100 border border-gray-300 text-slate-900 text-sm font-semibold rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+            >
+              {statusOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
             <ChevronDown className="h-4 w-4" />
           </div>
         </div>
 
         <div className="relative flex-1">
-          <select
-            value={subStatus}
-            onChange={(e) => setSubStatus(e.target.value)}
-            className="w-full appearance-none bg-gray-100 border border-gray-300 text-slate-900 text-sm font-semibold rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
-          >
-            {/* These options should ideally be dynamic from Frappe metadata */}
-            <option value="Waiting for Response">Waiting for Response</option>
-            <option value="HR Round">HR Round</option>
-            <option value="Technical Round">Technical Round</option>
-            <option value="Awaiting Feedback">Awaiting Feedback</option>
-          </select>
+          {isLoadingOptions ? (
+            <div className="w-full h-10 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center text-sm text-gray-500">
+              Loading Sub-statuses...
+            </div>
+          ) : optionsError ? (
+            <div className="w-full h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center text-sm">
+              Error loading sub-statuses
+            </div>
+          ) : (
+            <select
+              value={subStatus}
+              onChange={(e) => setSubStatus(e.target.value)}
+              className="w-full appearance-none bg-gray-100 border border-gray-300 text-slate-900 text-sm font-semibold rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+            >
+              {subStatusOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
             <ChevronDown className="h-4 w-4" />
           </div>
@@ -168,21 +201,22 @@ const ApplicantProfile = ({
   );
 };
 
-// TabContent Component (updated to use real data structures)
 const TabContent = ({
   activeTab,
   applicant,
   employmentHistory,
   educationHistory,
   notes,
-  timelineEvents,
+  applicantTimelineEvents, 
+  communicationHistory, 
 }: {
   activeTab: string;
   applicant: JobApplicantBasicDetails;
   employmentHistory: EmploymentEntry[];
   educationHistory: EducationEntry[];
   notes: ApplicantNote[];
-  timelineEvents: TimelineEvent[];
+  applicantTimelineEvents: ApplicantTimelineEvent[]; 
+  communicationHistory: CommunicationEvent[]; 
 }) => {
   const [noteText, setNoteText] = useState("");
 
@@ -213,6 +247,21 @@ const TabContent = ({
       return dateTimeString;
     }
   }, []);
+
+  // Helper to get Lucide icon based on icon string
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case "chat":
+        return <MessageCircle className="h-5 w-5 text-green-500" />;
+      case "call":
+        return <Phone className="h-5 w-5 text-blue-600" />;
+      case "mail":
+        return <Mail className="h-5 w-5 text-gray-400" />;
+      default:
+        return null;
+    }
+  };
+
 
   if (activeTab === "details") {
     return (
@@ -366,11 +415,12 @@ const TabContent = ({
   if (activeTab === "timeline") {
     return (
       <div className="p-4 space-y-4">
+        {/* Applicant Timeline Section */}
         <div className="bg-white rounded-lg shadow-sm p-4">
           <h3 className="font-bold text-lg mb-4">Applicant Timeline</h3>
           <div className="relative pl-6 space-y-6 border-l-2 border-gray-200">
-            {timelineEvents.length > 0 ? (
-              timelineEvents.map((event, index) => (
+            {applicantTimelineEvents.length > 0 ? (
+              applicantTimelineEvents.map((event, index) => (
                 <div key={event.id || index} className="relative">
                   <div
                     className={`absolute -left-[11px] top-1.5 w-5 h-5 ${
@@ -395,7 +445,34 @@ const TabContent = ({
               ))
             ) : (
               <p className="text-sm text-slate-500">
-                No timeline events available.
+                No applicant timeline events available.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Communication History Section */}
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <h3 className="font-bold text-lg mb-4">Communication History</h3>
+          <div className="space-y-4">
+            {communicationHistory.length > 0 ? (
+              communicationHistory.map((event) => (
+                <div key={event.id} className="flex items-start gap-3">
+                  {getIcon(event.icon)} {/* Render icon dynamically */}
+                  <div>
+                    <p className="font-medium text-sm">{event.type}</p>
+                    <p className="text-xs text-slate-500">
+                      {event.description}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {formatDateTime(event.timestamp)}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">
+                No communication history available.
               </p>
             )}
           </div>
@@ -506,13 +583,18 @@ export default function JobApplicantDetail() {
     () => applicantResponse?.notes || [],
     [applicantResponse]
   );
-  const timelineEvents = useMemo(
-    () => applicantResponse?.timeline_events || [],
+  const applicantTimelineEvents = useMemo( // Updated to new field name
+    () => applicantResponse?.applicant_timeline_events || [],
+    [applicantResponse]
+  );
+  const communicationHistory = useMemo( // New memoized field
+    () => applicantResponse?.communication_history || [],
     [applicantResponse]
   );
 
+
   // State for active tab
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState("timeline"); // Changed initial state to "timeline" for demonstration
 
   // Callback for back button
   const handleBack = useCallback(() => {
@@ -673,7 +755,7 @@ export default function JobApplicantDetail() {
                   : "text-slate-500 border-transparent hover:text-blue-600 hover:border-gray-300"
               }`}
             >
-              Timeline ({timelineEvents.length}) {/* Display count */}
+              Timeline ({applicantTimelineEvents.length + communicationHistory.length}) {/* Display combined count */}
             </button>
             <button
               onClick={() => handleTabChange("notes")}
@@ -695,7 +777,8 @@ export default function JobApplicantDetail() {
           employmentHistory={employmentHistory}
           educationHistory={educationHistory}
           notes={notes}
-          timelineEvents={timelineEvents}
+          applicantTimelineEvents={applicantTimelineEvents}
+          communicationHistory={communicationHistory}
         />
       </main>
     </div>

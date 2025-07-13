@@ -1,9 +1,7 @@
-// src/hooks/useJobApplicant.ts
-
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import { jobApplicantService } from "../services/jobApplicantService"; // Adjust this path
-import { PermissionError } from "../types/interview"; // Assuming PermissionError is defined here or adjust path
-import type { JobApplicantDetailsResponse, GetJobApplicantParams } from "../types/jobApplicant"; // Adjust this path
+import { useQuery, type UseQueryOptions, UseQueryResult } from "@tanstack/react-query"; 
+import { jobApplicantService } from "../services/jobApplicantService"; 
+import { PermissionError } from "../types/interview"; 
+import type { JobApplicantDetailsResponse, GetJobApplicantParams, JobApplicantFieldOptionsResponse } from "../types/jobApplicant"; 
 
 // Utility to check if error is permission-related (re-used from your existing code)
 const isPermissionError = (error: unknown): error is PermissionError => {
@@ -37,7 +35,7 @@ const defaultRetry = (failureCount: number, error: unknown) => {
 export const useJobApplicantDetails = (
   params: GetJobApplicantParams,
   options?: Omit<UseQueryOptions<JobApplicantDetailsResponse>, "queryKey" | "queryFn">,
-) => {
+): UseQueryResult<JobApplicantDetailsResponse, Error> => {
   return useQuery<JobApplicantDetailsResponse, Error>({
     queryKey: ["job-applicant-details", params.applicant_name], // Unique key for caching
     queryFn: () => jobApplicantService.getJobApplicantDetails(params), // Function to fetch data
@@ -49,5 +47,23 @@ export const useJobApplicantDetails = (
   });
 };
 
-// Export utility function for error checking
+/**
+ * Custom React Query hook for fetching job applicant status and sub-status dropdown options.
+ * @param {Omit<UseQueryOptions<JobApplicantFieldOptionsResponse>, "queryKey" | "queryFn">} [options] - Optional React Query options.
+ * @returns {UseQueryResult<JobApplicantFieldOptionsResponse, Error>} The query result object.
+ */
+export const useJobApplicantDropdownOptions = (
+  options?: Omit<UseQueryOptions<JobApplicantFieldOptionsResponse>, "queryKey" | "queryFn">,
+): UseQueryResult<JobApplicantFieldOptionsResponse, Error> => {
+  return useQuery<JobApplicantFieldOptionsResponse, Error>({
+    queryKey: ["job-applicant-dropdown-options"], // Unique key for caching
+    queryFn: () => jobApplicantService.getJobApplicantDropdownOptions(), // Function to fetch data
+    staleTime: Infinity, // Options are unlikely to change often, so can be cached indefinitely
+    retry: defaultRetry,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    ...options,
+  });
+};
+
+
 export { isPermissionError };

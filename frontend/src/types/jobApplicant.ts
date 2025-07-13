@@ -1,29 +1,26 @@
-// src/types/jobApplicant.ts
-
-// Basic details for the job applicant
 export interface JobApplicantBasicDetails {
-  name: string; // The unique ID of the applicant (e.g., "shiv@gamil.com")
-  applicant_name: string; // Full name (e.g., "Shiv Kumar")
+  name: string; 
+  applicant_name: string; 
   email_id: string;
   phone_number: string;
-  job_title: string; // The job opening they applied for
-  designation: string; // Their role/designation
-  status: string; // Current status (e.g., "Open")
-  sub_status: string; // Sub-status (e.g., "Waiting for Response")
-  location: string; // Combined location (e.g., "Gujrat, India")
-  experience: string; // e.g., "5+ Years"
-  expected_ctc: string; // e.g., "INR 75000 / Annum"
-  notice_period: string; // e.g., "1 Year" (from bond_if_any)
-  profile_image: string | null; // URL to profile image (currently null from API)
-  resume_attachment: string | null; // URL to resume attachment
-  creation: string; // Timestamp of creation
+  job_title: string; 
+  designation: string; 
+  status: string; 
+  sub_status: string; 
+  location: string; 
+  experience: string; 
+  expected_ctc: string; 
+  notice_period: string; 
+  profile_image: string | null;
+  resume_attachment: string | null; 
+  creation: string; 
   custom_recruiter_name: string;
   custom_current_designation: string;
   custom_current_company_name: string;
   custom_linkedin_url: string;
   custom_permanent_address: string;
   custom_current_address: string;
-  custom_expected_doj: string | null; // Expected Date of Joining
+  custom_expected_doj: string | null; 
   source: string;
   applicant_rating: number;
   custom_home_town: string;
@@ -34,12 +31,11 @@ export interface JobApplicantBasicDetails {
 export interface EmploymentEntry {
   company_name: string;
   designation: string;
-  start_date: string; // Formatted date string (e.g., "YYYY-MM-DD")
-  end_date: string | null; // Formatted date string or "Present"
-  duration: string; // e.g., "4 yrs 7 mos"
+  start_date: string; 
+  end_date: string | null; 
+  duration: string; 
   address: string;
-  salary: number; // Or string if displayed with currency
-  // description?: string; // Add if your backend includes this field
+  salary: number; 
 }
 
 // Interface for individual education history entries
@@ -50,7 +46,6 @@ export interface EducationEntry {
   level: string;
   start_year: string | number;
   end_year: string | number;
-  // class_percentage?: string; // Add if your backend includes this field
 }
 
 // Interface for individual notes entries (from custom_crm_note)
@@ -59,38 +54,45 @@ export interface ApplicantNote {
   timestamp: string;
   author: string;
   content: string;
-  type: string; // e.g., "Call" from custom_comment_type
+  type: string; 
 }
 
-// Interface for individual timeline events
-export interface TimelineEvent {
+// Interface for individual applicant timeline events
+export interface ApplicantTimelineEvent {
   id: string;
-  type: string; // e.g., "Application Submitted", "Note (Call)"
+  type: string; 
   timestamp: string;
   description: string;
   by_user: string | null;
 }
 
-// The overall response structure from your new custom Frappe API method
+// Interface for individual communication history events
+export interface CommunicationEvent {
+  id: string;
+  type: string; 
+  timestamp: string;
+  description: string;
+  icon: string; 
+}
+
+
+// The overall response structure from your new custom Frappe API method for applicant details
 export interface JobApplicantDetailsResponse {
   job_applicant: JobApplicantBasicDetails;
   employment_history: EmploymentEntry[];
   education_history: EducationEntry[];
   notes: ApplicantNote[];
-  timeline_events: TimelineEvent[];
+  applicant_timeline_events: ApplicantTimelineEvent[];
+  communication_history: CommunicationEvent[];
+}
+
+// Interface for the response of the new API method to fetch dropdown options
+export interface JobApplicantFieldOptionsResponse {
+  status_options: string[];
+  sub_status_options: string[];
 }
 
 // Parameters for fetching a specific job applicant
 export interface GetJobApplicantParams {
   applicant_name: string;
 }
-
-// Re-using PermissionError from your existing types if available, otherwise define it
-// Assuming it's in a file like '../types/interview' or '../types/frappe'
-// If not, you might need to add it here:
-// export class PermissionError extends Error {
-//   constructor(message: string, public status?: number) {
-//     super(message);
-//     this.name = 'PermissionError';
-//   }
-// }
