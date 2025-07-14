@@ -10,10 +10,13 @@ import RequisitionDetails from './components/RequisitionDetails';
 import './App.css';
 import RecruitmentApp from './components/RecruitmentApp';
 import InterviewPage from './components/InterveiwDetails';
+import InterviewList from './components/interview';
 import AddNewReferral from './components/AddNewReferral';
 import ReferralDetails from './components/ReferralDetails';
 import InterviewFeedbackForm from './components/Feedback';
-import AddRequisition from './components/AddRequistion';
+// import AddRequisition from './components/AddRequistion';
+import JobRequisition from './components/JobRequisition';
+import ReferralList from './components/RafarralList';
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -89,33 +92,54 @@ const Dashboard: React.FC = () => {
   );
 };
 
-
 const App: React.FC = () => {
   return (
     <QueryProvider>
       <Router>
         <div className="min-h-screen" style={{ backgroundColor: 'var(--background-medium)' }}>
           <Routes>
-
-            {/* Default route */}
+            {/* Home/Dashboard */}
             <Route path="/webapp/" element={<Dashboard />} />
 
-            {/* Specific routes for each page */}
-
+            {/* Standalone Routes */}
             <Route path="/webapp/search-members" element={<SearchMembers />} />
             <Route path="/webapp/notices" element={<Notices />} />
             <Route path="/webapp/id-card" element={<IdCard />} />
             <Route path="/webapp/id-card/:employeeId" element={<IdCard />} />
-            <Route path="/webapp/requisitions/:requisitionId" element={<RequisitionDetails />} />
-            {/* Catch-all route for 404 */}
-            <Route path="/webapp/recruitment-app/*" element={<RecruitmentApp />} />
-            <Route path="/webapp/recruitment-app/interview-details/:id*" element={<InterviewPage />} />
-            <Route path="/webapp/recruitment-app/add-new-referral/*" element={<AddNewReferral />} />
-            <Route path="/webapp/recruitment-app/referral-details/*" element={<ReferralDetails />} />
-            <Route path="/webapp/recruitment-app/add-requisition/*" element={<AddRequisition />} />
-            <Route path="/webapp/recruitment-app/interview-feedback/:id" element={<InterviewFeedbackForm />} />
 
-            <Route path="/webapp/recruitment-app/referral-details/:id" element={<ReferralDetails />} />
+            {/* RecruitmentApp nested routes */}
+            <Route path="/webapp/recruitment-app" element={<RecruitmentApp />}>
+              {/* Redirect default path to referrals tab */}
+              <Route index element={<Navigate to="referrals" replace />} />
+
+              {/* Tabs */}
+              <Route path="requisitions" element={<JobRequisition />} />
+              <Route path="requisitions">
+
+                <Route path="requisitions-detail/:requisitionId" element={<RequisitionDetails />} />
+
+              </Route>
+
+              <Route path="referrals" element={<ReferralList />} />
+              <Route path="referrals">
+                <Route index element={<ReferralList />} />
+                <Route path="add-new-referral" element={<AddNewReferral />} />
+                <Route path="referral-details/:id" element={<ReferralDetails />} />
+              </Route>
+
+              {/* <Route path="interviews" element={<InterviewList />} /> */}
+              <Route path="interviews">
+                <Route index element={<InterviewList />} />
+                <Route path="interview-details/:id" element={<InterviewPage />} />
+                <Route path="interview-feedback/:id" element={<InterviewFeedbackForm />} />
+              </Route>
+
+              {/* Child Routes */}
+              <Route path="add-new-referral" element={<AddNewReferral />} />
+              <Route path="referral-details/:id" element={<ReferralDetails />} />
+            </Route>
+
+            {/* Fallback route */}
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
         </div>

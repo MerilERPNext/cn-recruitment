@@ -1,35 +1,46 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import InterviewPage from './interview';
-import JobRequisition from './JobRequisition';
-import ReferralList from './RafarralList';
+import React, { useEffect, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+type TabName = 'Referrals' | 'Requisitions' | 'Interviews';
 
-
-
-type TabName = 'Referrals' | 'Interviews' | 'Requisitions';
+const tabRoutes: Record<TabName, string> = {
+  Requisitions: '/webapp/recruitment-app/requisitions',
+  Referrals: '/webapp/recruitment-app/referrals',
+  Interviews: '/webapp/recruitment-app/interviews',
+};
 
 const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
-  const storedTab = sessionStorage.getItem('activeTab') as TabName | null;
-  const [activeTab, setActiveTab] = useState<TabName>(storedTab || 'Referrals');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<TabName>('Referrals');
 
+  // Detect tab based on current route
+  useEffect(() => {
+    const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
+      location.pathname.startsWith(tabRoutes[tab])
+    );
 
+    if (matchedTab) {
+      setActiveTab(matchedTab);
+      sessionStorage.setItem('activeTab', matchedTab);
+    }
+  }, [location.pathname]);
 
-  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews'];
+  // On initial load, redirect to saved tab if user comes to /webapp/recruitment-app
+  useEffect(() => {
+    if (location.pathname === '/webapp/recruitment-app') {
+      const savedTab = sessionStorage.getItem('activeTab') as TabName | null;
+      const fallback = 'Referrals';
 
+      const redirectTab = savedTab && tabRoutes[savedTab] ? savedTab : fallback;
+      navigate(tabRoutes[redirectTab], { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
     sessionStorage.setItem('activeTab', tab);
-  };  
-
-  const handleAddNew = () => {
-    if (activeTab === 'Referrals') {
-      navigate('/webapp/recruitment-app/add-new-referral');
-    } else if (activeTab === 'Requisitions') {
-      window.open('/app/job-requisition/new');
-    }
+    navigate(tabRoutes[tab]);
   };
 
   return (
@@ -44,94 +55,54 @@ const RecruitmentApp: React.FC = () => {
           --background-medium: #f0f2f5;
           --border-light: #dbe0e6;
         }
-        .checkbox-custom:checked {
-          background-color: var(--primary-color);
-          border-color: var(--primary-color);
+        .scrollbar-hidden {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
-        .checkbox-custom:checked::before {
-          content: "✔";
-          color: white;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          font-size: 10px;
+        .scrollbar-hidden::-webkit-scrollbar {
+          display: none;
         }
-        .material-icons {
-          font-family: 'Material Icons';
-          font-size: 24px;
-        }
-          .scrollbar-hidden {
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none;  /* IE and Edge */
-        }
-
-       .scrollbar-hidden::-webkit-scrollbar {
-       display: none; /* Chrome, Safari, Opera */
-       }
       `}</style>
 
       {/* Header */}
-      <header className="sticky z-50 top-0 bg-white shadow-sm">
-        <div className="flex items-center p-1 justify-center">
-          <h1 className="text-xl font-semibold justify-center px-4  text-slate-900 text-center">{activeTab}</h1>
-          <div className="w-8"></div>
+      <header className="sticky top-0 z-50 bg-white shadow-sm">
+        <div className="flex items-center justify-center p-2">
+          <h1 className="text-xl font-semibold text-slate-900">{activeTab}</h1>
         </div>
 
         {/* Tabs */}
-        <nav className="border-b border-[var(--border-light)] px-2 flex overflow-x-auto scrollbar-hidden">
-
-          {tabs.map((tab) => (
-            <a
+        <nav className="px-2 flex overflow-x-auto scrollbar-hidden">
+          {(Object.keys(tabRoutes) as TabName[]).map((tab) => (
+            <button
               key={tab}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                handleTabChange(tab);
-              }}
-              className={`px-4 py-3 border-b-2 text-sm font-medium ${activeTab === tab
-                ? 'border-[var(--primary-color)] text-[var(--primary-color)]'
-                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)]'
+              onClick={() => handleTabChange(tab)}
+              className={`px-4 py-3 border-b-2 border-t-0 border-l-0 border-r-0 bg-transparent text-sm font-medium rounded-none outline-none focus:outline-none focus:ring-0 ${activeTab === tab
+                  ? 'border-b-[3px] border-b-[var(--primary-color)] text-[var(--primary-color)]'
+                  : 'border-b-transparent text-[var(--text-secondary)]'
                 }`}
             >
               {tab}
-            </a>
+            </button>
           ))}
         </nav>
-
       </header>
 
-      {/* Main Content */}
+      {/* Tab Content */}
       <main className="p-4 z-100 flex-grow overflow-y-auto">
-        {(() => {
-          switch (activeTab) {
-            case 'Interviews':
-              return <InterviewPage />;
-
-            case 'Referrals':
-              return <ReferralList />
-
-            case 'Requisitions':
-              return <JobRequisition />;
-
-            default:
-              return null;
-          }
-        })()}
+        <Outlet />
       </main>
-      {
-        (activeTab === 'Requisitions' || activeTab === 'Referrals') && (
-          <button
-            onClick={handleAddNew}
-            className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
-          >
-            + 
-          </button>
-        )
-      }
 
-      
-
-
+      {(activeTab === 'Requisitions' || activeTab === 'Referrals') && (
+        <button
+          onClick={() => {
+            if (activeTab === 'Referrals') navigate('/webapp/recruitment-app/referrals/add-new-referral');
+            if (activeTab === 'Requisitions') window.open('/app/job-requisition/new');
+          }}
+          className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
+        >
+          +
+        </button>
+      )}
     </div>
   );
 };
