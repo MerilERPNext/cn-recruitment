@@ -67,6 +67,11 @@ frappe.ui.form.on("Job Opening", {
 })
 
 frappe.ui.form.on('Job Opening', {
+
+    custom_job_application_form: function (frm) {
+        set_job_application_route(frm);
+        
+    },
     custom_job_description_template: function (frm) {
         if (!frm.doc.custom_job_description_template) {
             frm.set_value('custom_jd_details', []);
@@ -96,7 +101,6 @@ frappe.ui.form.on('Job Opening', {
     refresh: function (frm) {
         render_jd_live_preview(frm);
     },
-    custom_job_application_form: set_job_application_route
 });
 
 function render_jd_live_preview(frm) {
