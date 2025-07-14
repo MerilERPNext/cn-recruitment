@@ -2,13 +2,12 @@ import FrappeAPI from "../utils/frappeAPI";
 import type {
   JobApplicantDetailsResponse,
   GetJobApplicantParams,
-  JobApplicantFieldOptionsResponse,
   JobApplicantBasicDetails,
   EmploymentEntry,
   EducationEntry,
   ApplicantNote,
-  ApplicantTimelineEvent, // Keep if mock data stays in client
-  CommunicationEvent,     // Keep if mock data stays in client
+  ApplicantTimelineEvent,
+  CommunicationEvent,
 } from "../types/jobApplicant";
 
 export const jobApplicantService = {
@@ -23,38 +22,41 @@ export const jobApplicantService = {
     try {
       console.log(`🎯 Fetching job applicant details for: ${applicant_name}`);
 
-      // Use FrappeAPI.getDocument to fetch the Job Applicant DocType
       const applicantDoc = (await FrappeAPI.getDocument(
         "Job Applicant",
         applicant_name
-      )) as any; // Using 'any' for now, will map to proper types
-
-      // Map the raw Frappe document data to your desired JobApplicantDetailsResponse structure
-      // This mapping is crucial because Frappe's resource API returns fields as they are named in the DocType
-      // while your current types expect specific transformed names (e.g., custom_applicant_last_name_ combined).
-      // Also, child table data will be directly nested arrays.
+      )) as any;
 
       const job_applicant_data: JobApplicantBasicDetails = {
         name: applicantDoc.name,
-        applicant_name: `${applicantDoc.applicant_name || ''} ${applicantDoc.custom_applicant_last_name_ || ''}`.trim(),
+        applicant_name: `${applicantDoc.applicant_name || ""} ${
+          applicantDoc.custom_applicant_last_name_ || ""
+        }`.trim(),
         email_id: applicantDoc.email_id || "N/A",
         phone_number: applicantDoc.phone_number || "N/A",
         job_title: applicantDoc.job_title || "N/A",
         designation: applicantDoc.designation || "N/A",
         status: applicantDoc.status || "N/A",
         sub_status: applicantDoc.custom_substatus || "N/A",
-        location: `${applicantDoc.custom_location || ''}${applicantDoc.custom_location && applicantDoc.country ? ', ' : ''}${applicantDoc.country || ''}`.trim(),
+        location: `${applicantDoc.custom_location || ""}${
+          applicantDoc.custom_location && applicantDoc.country ? ", " : ""
+        }${applicantDoc.country || ""}`.trim(),
         experience: applicantDoc.custom_total_experience || "N/A",
-        expected_ctc: `${applicantDoc.currency || ''} ${applicantDoc.custom_expected_ctc || applicantDoc.lower_range || 0} / Annum`.trim(),
+        expected_ctc: `${applicantDoc.currency || ""} ${
+          applicantDoc.custom_expected_ctc || applicantDoc.lower_range || 0
+        } / Annum`.trim(),
         notice_period: applicantDoc.custom_bond_if_any || "N/A",
         profile_image: applicantDoc.profile_image || null,
         resume_attachment: applicantDoc.resume_attachment || null,
         creation: applicantDoc.creation,
         custom_recruiter_name: applicantDoc.custom_recruiter_name || "N/A",
-        custom_current_designation: applicantDoc.custom_current_designation || "N/A",
-        custom_current_company_name: applicantDoc.custom_current_company_name || "N/A",
+        custom_current_designation:
+          applicantDoc.custom_current_designation || "N/A",
+        custom_current_company_name:
+          applicantDoc.custom_current_company_name || "N/A",
         custom_linkedin_url: applicantDoc.custom_linkedin_url || "N/A",
-        custom_permanent_address: applicantDoc.custom_permanent_address || "N/A",
+        custom_permanent_address:
+          applicantDoc.custom_permanent_address || "N/A",
         custom_current_address: applicantDoc.custom_current_address || "N/A",
         custom_expected_doj: applicantDoc.custom_expected_doj || null,
         source: applicantDoc.source || "N/A",
@@ -63,102 +65,96 @@ export const jobApplicantService = {
         custom_recruiter_remark: applicantDoc.custom_recruiter_remark || "N/A",
       };
 
-      // Employment History
-      const employment_history: EmploymentEntry[] = (applicantDoc.custom_previous_work_experience || []).map((entry: any) => {
-        // Frappe doesn't calculate duration automatically via resource API,
-        // so you'll need to replicate the duration calculation logic on the client side
-        // or have a separate custom method just for utility calculations if allowed.
-        // For now, let's assume raw dates and leave duration as a client-side concern or 'N/A'
+      const employment_history: EmploymentEntry[] = (
+        applicantDoc.custom_previous_work_experience || []
+      ).map((entry: any) => {
         const startDate = entry.custom_from_datee;
         const endDate = entry.custom_to_datee;
         let duration = "";
-        // You would typically calculate duration here if not coming from backend,
-        // but for a pure resource API approach, it might be simplified or calculated in UI.
-        // For demonstration, leaving it basic.
         return {
           company_name: entry.company_name || "N/A",
           designation: entry.designation || "N/A",
           start_date: startDate || "N/A",
           end_date: endDate || "Present",
-          duration: duration, // Will be empty unless calculated here or in UI
+          duration: duration,
           address: entry.address || "N/A",
           salary: entry.salary || 0,
         };
       });
 
-      // Education History
-      const education_history: EducationEntry[] = (applicantDoc.custom_educational_qualification || []).map((entry: any) => ({
+      const education_history: EducationEntry[] = (
+        applicantDoc.custom_educational_qualification || []
+      ).map((entry: any) => ({
         university: entry.school_univ || "N/A",
         degree: entry.qualification || "N/A",
         field_of_study: entry.custom_educational_details || "N/A",
         level: entry.level || "N/A",
-        start_year: entry.custom_passing_year || (entry.year_of_passing !== 0 ? String(entry.year_of_passing) : "N/A"),
-        end_year: entry.custom_passing_year || (entry.year_of_passing !== 0 ? String(entry.year_of_passing) : "N/A"),
+        start_year:
+          entry.custom_passing_year ||
+          (entry.year_of_passing !== 0 ? String(entry.year_of_passing) : "N/A"),
+        end_year:
+          entry.custom_passing_year ||
+          (entry.year_of_passing !== 0 ? String(entry.year_of_passing) : "N/A"),
       }));
 
-      // Notes
-      const notes: ApplicantNote[] = (applicantDoc.custom_crm_note || []).map((note_entry: any) => ({
-        id: note_entry.name,
-        timestamp: note_entry.added_on,
-        author: note_entry.added_by,
-        content: note_entry.note,
-        type: note_entry.custom_comment_type,
-      }));
+      const notes: ApplicantNote[] = (applicantDoc.custom_crm_note || []).map(
+        (note_entry: any) => ({
+          id: note_entry.name,
+          timestamp: note_entry.added_on,
+          author: note_entry.added_by,
+          content: note_entry.note,
+          type: note_entry.custom_comment_type,
+        })
+      );
 
-      // Applicant Timeline and Communication History will NOT come from resource API directly
-      // if they are not stored in Frappe DocTypes.
-      // If they are static mock data, they should be defined in the frontend component.
-      // If they are to be actual data, you would need to define DocTypes for them in Frappe
-      // and fetch them separately using FrappeAPI.getDocumentList or include them as child tables.
-      // For now, assuming they are client-side mock data as per your job_applicant.py's current structure.
       const applicant_timeline_events: ApplicantTimelineEvent[] = [
         {
-            "id": "app_submitted",
-            "type": "Application Submitted",
-            "timestamp": "2025-07-10T11:00:00Z",
-            "description": "Applied for Senior Frontend Developer role.",
-            "by_user": "Applicant"
+          id: "app_submitted",
+          type: "Application Submitted",
+          timestamp: "2025-07-10T11:00:00Z",
+          description: "Applied for Senior Frontend Developer role.",
+          by_user: "Applicant",
         },
         {
-            "id": "status_changed_screening",
-            "type": "Status Changed",
-            "timestamp": "2025-07-11T16:15:00Z",
-            "description": "Status changed: Sourced → Screening. Sub-status changed to HR Round.",
-            "by_user": "Sarah Wilson"
+          id: "status_changed_screening",
+          type: "Status Changed",
+          timestamp: "2025-07-11T16:15:00Z",
+          description:
+            "Status changed: Sourced → Screening. Sub-status changed to HR Round.",
+          by_user: "Sarah Wilson",
         },
         {
-            "id": "interview_scheduled_tech",
-            "type": "Interview Scheduled",
-            "timestamp": "2025-07-12T10:30:00Z",
-            "description": "Technical Round with John Smith.",
-            "by_user": "Recruiter"
-        }
+          id: "interview_scheduled_tech",
+          type: "Interview Scheduled",
+          timestamp: "2025-07-12T10:30:00Z",
+          description: "Technical Round with John Smith.",
+          by_user: "Recruiter",
+        },
       ];
 
       const communication_history: CommunicationEvent[] = [
         {
-            "id": "whatsapp_confirm",
-            "type": "WhatsApp Message",
-            "timestamp": "2025-07-12T10:35:00Z",
-            "description": "Confirming interview schedule.",
-            "icon": "chat"
+          id: "whatsapp_confirm",
+          type: "WhatsApp Message",
+          timestamp: "2025-07-12T10:35:00Z",
+          description: "Confirming interview schedule.",
+          icon: "chat",
         },
         {
-            "id": "outgoing_call_expectations",
-            "type": "Outgoing Call",
-            "timestamp": "2025-07-11T16:00:00Z",
-            "description": "Duration: 5m 32s. Spoke about role expectations.",
-            "icon": "call"
+          id: "outgoing_call_expectations",
+          type: "Outgoing Call",
+          timestamp: "2025-07-11T16:00:00Z",
+          description: "Duration: 5m 32s. Spoke about role expectations.",
+          icon: "call",
         },
         {
-            "id": "email_screening_invite",
-            "type": "Email Sent",
-            "timestamp": "2025-07-10T14:00:00Z",
-            "description": "Invitation for initial screening call.",
-            "icon": "mail"
-        }
+          id: "email_screening_invite",
+          type: "Email Sent",
+          timestamp: "2025-07-10T14:00:00Z",
+          description: "Invitation for initial screening call.",
+          icon: "mail",
+        },
       ];
-
 
       const result: JobApplicantDetailsResponse = {
         job_applicant: job_applicant_data,
@@ -182,43 +178,93 @@ export const jobApplicantService = {
   },
 
   /**
-   * Fetches dropdown options for Job Applicant status and sub-status fields using Frappe's DocType metadata API.
-   * @returns {Promise<JobApplicantFieldOptionsResponse>} A promise that resolves to the available options.
+   * Fetches dropdown options for Job Applicant status fields using static data.
+   * This is a temporary solution to bypass API issues for the status dropdown.
+   * In a production environment, this should ideally be fetched from a Frappe DocType.
+   * @returns {Promise<string[]>} A promise that resolves to an array of status strings.
    */
-  getJobApplicantDropdownOptions:
-    async (): Promise<JobApplicantFieldOptionsResponse> => {
-      try {
-        console.log(`🎯 Fetching job applicant dropdown options.`);
+  getJobApplicantStatusOptions: async (): Promise<string[]> => {
+    try {
+      console.log(`🎯 Fetching job applicant status options from static data.`);
 
-        // Use FrappeAPI.getDocMeta to get the DocType's metadata
-        const meta = (await FrappeAPI.getDocMeta("Job Applicant")) as any;
+      // Provide your static status options here, matching the dropdown in Frappe
+      const static_status_options: string[] = [
+        "Open",
+        "Screening",
+        "Replied",
+        "Interview",
+        "Hold",
+        "Approvals",
+        "Accepted",
+        "Rejected",
+        // Add any other statuses you need from your Frappe dropdown
+      ];
 
-        let status_options: string[] = [];
-        let sub_status_options: string[] = [];
+      // Simulate a network delay for better development experience
+      await new Promise(resolve => setTimeout(resolve, 300)); // Simulate 300ms delay
 
-        // Find the 'status' field and extract its options
-        const statusField = meta.fields.find((f: any) => f.fieldname === "status");
-        if (statusField && statusField.options) {
-          status_options = statusField.options.split('\n').map((s: string) => s.trim()).filter((s: string) => s);
+      console.log(`✅ Static status options provided successfully:`, static_status_options);
+
+      return static_status_options;
+    } catch (error) {
+      // This catch block might not be strictly necessary for static data,
+      // but good practice if you ever switch back to an API call.
+      console.error(`❌ Failed to provide static job applicant status options:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Fetches dropdown options for 'Sub Status' based on the selected main status.
+   * This assumes a 'Sub Status' DocType exists where each document's 'Parent Status'
+   * matches a main status, and its 'sub_status' field contains newline-separated sub-statuses.
+   * @param {string} mainStatus - The currently selected main status (which corresponds to 'Parent Status' in 'Sub Status' DocType).
+   * @returns {Promise<string[]>} A promise that resolves to an array of sub-status strings.
+   */
+  getJobApplicantSubStatusOptions: async (
+    mainStatus: string
+  ): Promise<string[]> => {
+    try {
+      console.log(
+        `🎯 Fetching sub-status options for main status: ${mainStatus}`
+      );
+
+      // IMPORTANT: Replace "Sub Status" with the actual name of your Sub Status DocType.
+      // VERIFY "parent_status" and "sub_status" are the correct field names
+      // in your "Sub Status" DocType as per your Frappe setup.
+      const response = await FrappeAPI.getDocumentList(
+        "Sub Status", // <--- VERIFY THIS DOCTYPE NAME IN FRAPPE
+        {
+          fields: ["name", "parent_status", "sub_status"], // <--- VERIFY THESE FIELD NAMES IN YOUR "Sub Status" DOCTYPE
+          filters: [["parent_status", "=", mainStatus]], // Filter by the main status value
         }
+      );
 
-        // Find the 'custom_substatus' field and extract its options
-        const subStatusField = meta.fields.find((f: any) => f.fieldname === "custom_substatus");
-        if (subStatusField && subStatusField.options) {
-          sub_status_options = subStatusField.options.split('\n').map((s: string) => s.trim()).filter((s: string) => s);
+      let subStatusOptions: string[] = [];
+
+      if (response.data && response.data.length > 0) {
+        const subStatusDoc = response.data[0] as any;
+        if (subStatusDoc.sub_status) {
+          // 'sub_status' is the field containing the multiline string
+          subStatusOptions = subStatusDoc.sub_status
+            .split("\n")
+            .map((s: string) => s.trim())
+            .filter((s: string) => s);
         }
-
-        const result: JobApplicantFieldOptionsResponse = {
-          status_options: status_options,
-          sub_status_options: sub_status_options,
-        };
-
-        console.log(`✅ Dropdown options fetched successfully:`, result);
-
-        return result;
-      } catch (error) {
-        console.error(`❌ Failed to fetch job applicant dropdown options:`, error);
-        throw error;
       }
-    },
+
+      console.log(
+        `✅ Sub-status options fetched successfully for ${mainStatus}:`,
+        subStatusOptions
+      );
+
+      return subStatusOptions;
+    } catch (error) {
+      console.error(
+        `❌ Failed to fetch sub-status options for ${mainStatus}:`,
+        error
+      );
+      throw error;
+    }
+  },
 };

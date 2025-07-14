@@ -1,7 +1,9 @@
-import { useQuery, type UseQueryOptions, UseQueryResult } from "@tanstack/react-query"; 
-import { jobApplicantService } from "../services/jobApplicantService"; 
-import { PermissionError } from "../types/interview"; 
-import type { JobApplicantDetailsResponse, GetJobApplicantParams, JobApplicantFieldOptionsResponse } from "../types/jobApplicant"; 
+
+// useJobApplicant.ts
+import { useQuery, type UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
+import { jobApplicantService } from "../services/jobApplicantService";
+import { PermissionError } from "../types/interview";
+import type { JobApplicantDetailsResponse, GetJobApplicantParams } from "../types/jobApplicant";
 
 // Utility to check if error is permission-related (re-used from your existing code)
 const isPermissionError = (error: unknown): error is PermissionError => {
@@ -37,41 +39,55 @@ export const useJobApplicantDetails = (
   options?: Omit<UseQueryOptions<JobApplicantDetailsResponse>, "queryKey" | "queryFn">,
 ): UseQueryResult<JobApplicantDetailsResponse, Error> => {
   return useQuery<JobApplicantDetailsResponse, Error>({
-    queryKey: ["job-applicant-details", params.applicant_name], // Unique key for caching
-    queryFn: () => jobApplicantService.getJobApplicantDetails(params), // Function to fetch data
-    staleTime: 5 * 60 * 1000, // Data is considered fresh for 5 minutes
-    retry: defaultRetry, // Custom retry logic
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
-    enabled: !!params.applicant_name, // Only run query if applicant_name is provided
-    ...options, // Spread any additional options passed to the hook
+    queryKey: ["job-applicant-details", params.applicant_name],
+    queryFn: () => jobApplicantService.getJobApplicantDetails(params),
+    staleTime: 5 * 60 * 1000,
+    retry: defaultRetry,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    enabled: !!params.applicant_name,
+    ...options,
   });
 };
 
 /**
- * Custom React Query hook for fetching job applicant status and sub-status dropdown options.
- * @param {Omit<UseQueryOptions<JobApplicantFieldOptionsResponse>, "queryKey" | "queryFn">} [options] - Optional React Query options.
- * @returns {UseQueryResult<JobApplicantFieldOptionsResponse, Error>} The query result object.
+ * Custom React Query hook for fetching job applicant status dropdown options.
+ * @param {Omit<UseQueryOptions<string[]>, "queryKey" | "queryFn">} [options] - Optional React Query options.
+ * @returns {UseQueryResult<string[], Error>} The query result object.
  */
-export const useJobApplicantDropdownOptions = (
-  options?: Omit<UseQueryOptions<JobApplicantFieldOptionsResponse>, "queryKey" | "queryFn">,
-): UseQueryResult<JobApplicantFieldOptionsResponse, Error> => {
-  return useQuery<JobApplicantFieldOptionsResponse, Error>({
-    queryKey: ["job-applicant-dropdown-options"], // Unique key for caching
-    queryFn: () => jobApplicantService.getJobApplicantDropdownOptions(), // Function to fetch data
-    staleTime: Infinity, // Options are unlikely to change often, so can be cached indefinitely
+export const useJobApplicantStatusOptions = (
+  options?: Omit<UseQueryOptions<string[]>, "queryKey" | "queryFn">,
+): UseQueryResult<string[], Error> => {
+  return useQuery<string[], Error>({
+    queryKey: ["job-applicant-status-options"],
+    queryFn: () => jobApplicantService.getJobApplicantStatusOptions(),
+    staleTime: Infinity,
     retry: defaultRetry,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     ...options,
   });
 };
 
+/**
+ * Custom React Query hook for fetching job applicant sub-status dropdown options
+ * based on a selected main status.
+ * @param {string} mainStatus - The main status to filter sub-statuses by.
+ * @param {Omit<UseQueryOptions<string[]>, "queryKey" | "queryFn">} [options] - Optional React Query options.
+ * @returns {UseQueryResult<string[], Error>} The query result object.
+ */
+export const useJobApplicantSubStatusOptions = (
+  mainStatus: string,
+  options?: Omit<UseQueryOptions<string[]>, "queryKey" | "queryFn">,
+): UseQueryResult<string[], Error> => {
+  return useQuery<string[], Error>({
+    queryKey: ["job-applicant-sub-status-options", mainStatus],
+    queryFn: () => jobApplicantService.getJobApplicantSubStatusOptions(mainStatus),
+    staleTime: Infinity,
+    retry: defaultRetry,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    enabled: !!mainStatus,
+    ...options,
+  });
+};
+
 
 export { isPermissionError };
-
-
-
-
-// 11111111111111111111111111111111111111111111111111
-
-
-

@@ -1,6 +1,8 @@
+
+// JobApplicantDetail.tsx
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   Phone,
   MessageCircle,
@@ -18,14 +20,15 @@ import {
   AtSign,
   ChevronLeft,
   AlertCircle,
-  RefreshCw, 
+  RefreshCw,
 } from "lucide-react";
-import { useParams, useNavigate } from "react-router-dom"; 
+import { useParams, useNavigate } from "react-router-dom";
 import {
   useJobApplicantDetails,
-  useJobApplicantDropdownOptions, 
+  useJobApplicantStatusOptions, // Renamed hook
+  useJobApplicantSubStatusOptions, // New hook
   isPermissionError,
-} from "../hooks/useJobApplicant"; 
+} from "../hooks/useJobApplicant";
 import type {
   JobApplicantBasicDetails,
   EmploymentEntry,
@@ -33,7 +36,7 @@ import type {
   ApplicantNote,
   ApplicantTimelineEvent,
   CommunicationEvent,
-} from "../types/jobApplicant"; 
+} from "../types/jobApplicant";
 
 
 const Header = ({ onBack }: { onBack: () => void }) => {
@@ -57,24 +60,60 @@ const ApplicantProfile = ({
   applicant: JobApplicantBasicDetails;
 }) => {
   const [status, setStatus] = useState(applicant.status);
-  const [subStatus, setSubStatus] = useState(applicant.sub_status); 
+  const [subStatus, setSubStatus] = useState(applicant.sub_status);
 
-  // Fetch dropdown options dynamically
+  // Fetch main status dropdown options
   const {
-    data: optionsData,
-    isLoading: isLoadingOptions,
-    error: optionsError,
-  } = useJobApplicantDropdownOptions();
+    data: statusOptionsData,
+    isLoading: isLoadingStatusOptions,
+    error: statusOptionsError,
+  } = useJobApplicantStatusOptions(); // Using new hook for status
 
-  // Memoize options to prevent re-renders if the data object itself changes but content doesn't
+  // Fetch sub-status dropdown options, dependent on the selected 'status'
+  const {
+    data: subStatusOptionsData,
+    isLoading: isLoadingSubStatusOptions,
+    error: subStatusOptionsError,
+  } = useJobApplicantSubStatusOptions(status); // New hook for sub-status, enabled by `status`
+
+  // Memoize status options
   const statusOptions = useMemo(
-    () => optionsData?.status_options || [],
-    [optionsData],
+    () => statusOptionsData || [],
+    [statusOptionsData],
   );
+
+  // Memoize sub-status options
   const subStatusOptions = useMemo(
-    () => optionsData?.sub_status_options || [],
-    [optionsData],
+    () => subStatusOptionsData || [],
+    [subStatusOptionsData],
   );
+
+  // Effect to set the initial status if the applicant's status is not available
+  // or to ensure the selected status is valid among fetched options.
+  useEffect(() => {
+    if (statusOptionsData && statusOptionsData.length > 0) {
+      if (!statusOptionsData.includes(status)) {
+        // If current status from applicant is not in options, default to the first one
+        setStatus(statusOptionsData[0]);
+      }
+    }
+  }, [status, statusOptionsData]);
+
+  // Effect to reset subStatus when main status changes and the current subStatus
+  // is no longer valid for the newly fetched subStatusOptions.
+  useEffect(() => {
+    if (subStatusOptionsData) { // Ensure subStatusOptionsData is loaded
+      if (!subStatusOptionsData.includes(subStatus)) {
+        // If current subStatus is not in the new options, reset it
+        if (subStatusOptionsData.length > 0) {
+          setSubStatus(subStatusOptionsData[0]);
+        } else {
+          setSubStatus("N/A"); // Or an empty string if no sub-statuses are available for the current main status
+        }
+      }
+    }
+  }, [subStatus, subStatusOptionsData]); // Only re-run when subStatus or subStatusOptionsData changes
+
 
   // Handlers for contact buttons
   const handleCall = () =>
@@ -117,11 +156,11 @@ const ApplicantProfile = ({
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="relative flex-1">
-          {isLoadingOptions ? (
+          {isLoadingStatusOptions ? (
             <div className="w-full h-10 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center text-sm text-gray-500">
               Loading Statuses...
             </div>
-          ) : optionsError ? (
+          ) : statusOptionsError ? (
             <div className="w-full h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center text-sm">
               Error loading statuses
             </div>
@@ -144,11 +183,11 @@ const ApplicantProfile = ({
         </div>
 
         <div className="relative flex-1">
-          {isLoadingOptions ? (
+          {isLoadingSubStatusOptions ? (
             <div className="w-full h-10 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center text-sm text-gray-500">
               Loading Sub-statuses...
             </div>
-          ) : optionsError ? (
+          ) : subStatusOptionsError ? (
             <div className="w-full h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center text-sm">
               Error loading sub-statuses
             </div>
@@ -158,11 +197,15 @@ const ApplicantProfile = ({
               onChange={(e) => setSubStatus(e.target.value)}
               className="w-full appearance-none bg-gray-100 border border-gray-300 text-slate-900 text-sm font-semibold rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             >
-              {subStatusOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+              {subStatusOptions.length > 0 ? (
+                subStatusOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))
+              ) : (
+                <option value="N/A">No Sub-status Available</option>
+              )}
             </select>
           )}
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
@@ -207,29 +250,27 @@ const TabContent = ({
   employmentHistory,
   educationHistory,
   notes,
-  applicantTimelineEvents, 
-  communicationHistory, 
+  applicantTimelineEvents,
+  communicationHistory,
 }: {
   activeTab: string;
   applicant: JobApplicantBasicDetails;
   employmentHistory: EmploymentEntry[];
   educationHistory: EducationEntry[];
   notes: ApplicantNote[];
-  applicantTimelineEvents: ApplicantTimelineEvent[]; 
-  communicationHistory: CommunicationEvent[]; 
+  applicantTimelineEvents: ApplicantTimelineEvent[];
+  communicationHistory: CommunicationEvent[];
 }) => {
   const [noteText, setNoteText] = useState("");
 
   const handlePostNote = () => {
     if (noteText.trim()) {
       console.log("Note posted:", noteText);
-      // TODO: Implement API call to save the note (e.g., using FrappeAPI.callMethod to create a new CRM Note)
       setNoteText("");
     }
   };
 
 
-  // Helper to format date and time for timeline/notes
   const formatDateTime = useCallback((dateTimeString: string | null) => {
     if (!dateTimeString || dateTimeString === "N/A") return "N/A";
     try {
@@ -248,7 +289,6 @@ const TabContent = ({
     }
   }, []);
 
-  // Helper to get Lucide icon based on icon string
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case "chat":
@@ -306,11 +346,8 @@ const TabContent = ({
                     <p className="font-medium text-sm">
                       {applicant.resume_attachment.split("/").pop() || "Resume"}
                     </p>
-                    {/* File size is not directly available from API, can be estimated or hardcoded */}
-                    {/* <p className="text-xs text-slate-500">1.2 MB</p> */}
                   </div>
                 </div>
-                {/* Assuming resume_attachment is a direct URL to the file */}
                 <a
                   href={applicant.resume_attachment}
                   target="_blank"
@@ -415,7 +452,6 @@ const TabContent = ({
   if (activeTab === "timeline") {
     return (
       <div className="p-4 space-y-4">
-        {/* Applicant Timeline Section */}
         <div className="bg-white rounded-lg shadow-sm p-4">
           <h3 className="font-bold text-lg mb-4">Applicant Timeline</h3>
           <div className="relative pl-6 space-y-6 border-l-2 border-gray-200">
@@ -451,14 +487,13 @@ const TabContent = ({
           </div>
         </div>
 
-        {/* Communication History Section */}
         <div className="bg-white rounded-lg shadow-sm p-4">
           <h3 className="font-bold text-lg mb-4">Communication History</h3>
           <div className="space-y-4">
             {communicationHistory.length > 0 ? (
               communicationHistory.map((event) => (
                 <div key={event.id} className="flex items-start gap-3">
-                  {getIcon(event.icon)} {/* Render icon dynamically */}
+                  {getIcon(event.icon)}
                   <div>
                     <p className="font-medium text-sm">{event.type}</p>
                     <p className="text-xs text-slate-500">
@@ -533,7 +568,7 @@ const TabContent = ({
             <button
               onClick={handlePostNote}
               className="py-2 px-5 bg-blue-600 text-white rounded-lg font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!noteText.trim()} // Disable if note is empty
+              disabled={!noteText.trim()}
             >
               Post Note
             </button>
@@ -546,14 +581,12 @@ const TabContent = ({
   return null;
 };
 
-// Main JobApplicantDetail Component
 export default function JobApplicantDetail() {
   const navigate = useNavigate();
-  const { applicantId } = useParams<{ applicantId: string }>(); // Get applicant ID from URL (e.g., "shiv@gamil.com")
+  const { applicantId } = useParams<{ applicantId: string }>();
 
   console.log(`🎯 JobApplicantDetail initialized with ID: ${applicantId}`);
 
-  // Use the custom React Query hook to fetch data
   const {
     data: applicantResponse,
     isLoading,
@@ -566,7 +599,6 @@ export default function JobApplicantDetail() {
 
   console.log("Job Applicant Response:", applicantResponse);
 
-  // Use useMemo to extract and memoize data for child components
   const applicant = useMemo(
     () => applicantResponse?.job_applicant || null,
     [applicantResponse]
@@ -583,36 +615,32 @@ export default function JobApplicantDetail() {
     () => applicantResponse?.notes || [],
     [applicantResponse]
   );
-  const applicantTimelineEvents = useMemo( // Updated to new field name
+  const applicantTimelineEvents = useMemo(
     () => applicantResponse?.applicant_timeline_events || [],
     [applicantResponse]
   );
-  const communicationHistory = useMemo( // New memoized field
+  const communicationHistory = useMemo(
     () => applicantResponse?.communication_history || [],
     [applicantResponse]
   );
 
 
-  // State for active tab
-  const [activeTab, setActiveTab] = useState("timeline"); // Changed initial state to "timeline" for demonstration
+  const [activeTab, setActiveTab] = useState("timeline");
 
-  // Callback for back button
   const handleBack = useCallback(() => {
     console.log("Back button clicked");
-    navigate(-1); // Go back to the previous page in history
+    navigate(-1);
   }, [navigate]);
 
-  // Callback for retry button on error
   const handleRetry = useCallback(() => {
-    refetch(); // Re-fetch the data
+    refetch();
   }, [refetch]);
 
-  // Conditional rendering for Loading state
   if (isLoading) {
     return (
       <main>
         <div className="min-h-screen bg-white flex flex-col">
-          <Header onBack={handleBack} /> {/* Keep header for consistent UX */}
+          <Header onBack={handleBack} />
           <div className="flex-1 flex items-center justify-center">
             <div className="flex items-center space-x-2 text-gray-500">
               <RefreshCw className="h-6 w-6 animate-spin" />
@@ -624,12 +652,11 @@ export default function JobApplicantDetail() {
     );
   }
 
-  // Conditional rendering for Error state
   if (error) {
     return (
       <main>
         <div className="min-h-screen bg-white flex flex-col">
-          <Header onBack={handleBack} /> {/* Keep header for consistent UX */}
+          <Header onBack={handleBack} />
           <div className="flex-1 flex items-center justify-center p-4">
             <div className="max-w-md mx-auto text-center">
               {isPermissionError(error) ? (
@@ -695,12 +722,11 @@ export default function JobApplicantDetail() {
     );
   }
 
-  // Conditional rendering for No Data state (e.g., applicantId provided but no data returned)
   if (!applicant || !applicant.name) {
     return (
       <main>
         <div className="min-h-screen bg-white flex flex-col">
-          <Header onBack={handleBack} /> {/* Keep header for consistent UX */}
+          <Header onBack={handleBack} />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -722,7 +748,6 @@ export default function JobApplicantDetail() {
     );
   }
 
-  // Handle tab change
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     console.log("Tab changed to:", tab);
@@ -732,7 +757,6 @@ export default function JobApplicantDetail() {
     <div className="relative flex size-full min-h-screen flex-col justify-between bg-slate-50">
       <main className="flex-grow">
         <Header onBack={handleBack} />
-        {/* Pass the fetched applicant data to ApplicantProfile */}
         <ApplicantProfile applicant={applicant} />
 
         <div className="bg-white">
@@ -755,7 +779,7 @@ export default function JobApplicantDetail() {
                   : "text-slate-500 border-transparent hover:text-blue-600 hover:border-gray-300"
               }`}
             >
-              Timeline ({applicantTimelineEvents.length + communicationHistory.length}) {/* Display combined count */}
+              Timeline ({applicantTimelineEvents.length + communicationHistory.length})
             </button>
             <button
               onClick={() => handleTabChange("notes")}
@@ -765,12 +789,11 @@ export default function JobApplicantDetail() {
                   : "text-slate-500 border-transparent hover:text-blue-600 hover:border-gray-300"
               }`}
             >
-              Notes ({notes.length}) {/* Display count */}
+              Notes ({notes.length})
             </button>
           </div>
         </div>
 
-        {/* Pass all relevant data to TabContent */}
         <TabContent
           activeTab={activeTab}
           applicant={applicant}
@@ -784,9 +807,3 @@ export default function JobApplicantDetail() {
     </div>
   );
 }
-
-
-
-
-// 11111111111111111111111111111111111111111111111111
-

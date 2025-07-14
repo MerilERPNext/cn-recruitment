@@ -1,26 +1,28 @@
+
+// jobApplicant.ts
 export interface JobApplicantBasicDetails {
-  name: string; 
-  applicant_name: string; 
+  name: string;
+  applicant_name: string;
   email_id: string;
   phone_number: string;
-  job_title: string; 
-  designation: string; 
-  status: string; 
-  sub_status: string; 
-  location: string; 
-  experience: string; 
-  expected_ctc: string; 
-  notice_period: string; 
+  job_title: string;
+  designation: string;
+  status: string;
+  sub_status: string;
+  location: string;
+  experience: string;
+  expected_ctc: string;
+  notice_period: string;
   profile_image: string | null;
-  resume_attachment: string | null; 
-  creation: string; 
+  resume_attachment: string | null;
+  creation: string;
   custom_recruiter_name: string;
   custom_current_designation: string;
   custom_current_company_name: string;
   custom_linkedin_url: string;
   custom_permanent_address: string;
   custom_current_address: string;
-  custom_expected_doj: string | null; 
+  custom_expected_doj: string | null;
   source: string;
   applicant_rating: number;
   custom_home_town: string;
@@ -31,11 +33,11 @@ export interface JobApplicantBasicDetails {
 export interface EmploymentEntry {
   company_name: string;
   designation: string;
-  start_date: string; 
-  end_date: string | null; 
-  duration: string; 
+  start_date: string;
+  end_date: string | null;
+  duration: string;
   address: string;
-  salary: number; 
+  salary: number;
 }
 
 // Interface for individual education history entries
@@ -54,13 +56,13 @@ export interface ApplicantNote {
   timestamp: string;
   author: string;
   content: string;
-  type: string; 
+  type: string;
 }
 
 // Interface for individual applicant timeline events
 export interface ApplicantTimelineEvent {
   id: string;
-  type: string; 
+  type: string;
   timestamp: string;
   description: string;
   by_user: string | null;
@@ -69,10 +71,10 @@ export interface ApplicantTimelineEvent {
 // Interface for individual communication history events
 export interface CommunicationEvent {
   id: string;
-  type: string; 
+  type: string;
   timestamp: string;
   description: string;
-  icon: string; 
+  icon: string;
 }
 
 
@@ -86,19 +88,8 @@ export interface JobApplicantDetailsResponse {
   communication_history: CommunicationEvent[];
 }
 
-// Interface for the response of the new API method to fetch dropdown options
-export interface JobApplicantFieldOptionsResponse {
-  status_options: string[];
-  sub_status_options: string[];
-}
 
 // Parameters for fetching a specific job applicant
 export interface GetJobApplicantParams {
   applicant_name: string;
 }
-
-
-
-// 11111111111111111111111111111111111111111111111
-
-
