@@ -3,18 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import InterviewPage from './interview';
 import JobRequisition from './JobRequisition';
 import ReferralList from './RafarralList';
-import JobOpeningsUI from './JobOpening/JobOpening';
+import JobApplicantList from './JobApplicantList';
 
 
 
 
-type TabName = 'Referrals' | 'Interviews' | 'Requisitions' | 'Job Opening';
+type TabName = 'Referrals' | 'Interviews' | 'Requisitions' | 'JobApplicants';
 
 const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
   const storedTab = sessionStorage.getItem('activeTab') as TabName | null;
   const [activeTab, setActiveTab] = useState<TabName>(storedTab || 'Referrals');
-  const tabs: TabName[] = ['Requisitions', 'Referrals', 'Interviews', 'Job Opening'];
+
+
+
+  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews', 'JobApplicants'];
+
+
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
     sessionStorage.setItem('activeTab', tab);
@@ -105,8 +110,10 @@ const RecruitmentApp: React.FC = () => {
               return <ReferralList />;
             case 'Requisitions':
               return <JobRequisition />;
-            case 'Job Opening':
-              return <JobOpeningsUI />;
+
+            case 'JobApplicants':
+              return <JobApplicantList />;
+
             default:
               return null;
           }
