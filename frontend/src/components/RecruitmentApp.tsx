@@ -3,27 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import InterviewPage from './interview';
 import JobRequisition from './JobRequisition';
 import ReferralList from './RafarralList';
+import JobOpeningsUI from './JobOpening/JobOpening';
 
 
 
 
-type TabName = 'Referrals' | 'Interviews' | 'Requisitions';
+type TabName = 'Referrals' | 'Interviews' | 'Requisitions' | 'Job Opening';
 
 const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
   const storedTab = sessionStorage.getItem('activeTab') as TabName | null;
   const [activeTab, setActiveTab] = useState<TabName>(storedTab || 'Referrals');
-
-
-
-  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews'];
-
-
+  const tabs: TabName[] = ['Requisitions', 'Referrals', 'Interviews', 'Job Opening'];
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
     sessionStorage.setItem('activeTab', tab);
-  };  
-
+  };
   const handleAddNew = () => {
     if (activeTab === 'Referrals') {
       navigate('/webapp/recruitment-app/add-new-referral');
@@ -32,7 +27,7 @@ const RecruitmentApp: React.FC = () => {
     }
   };
 
-  return (
+ return (
     <div className="flex flex-col min-h-screen bg-white">
       <style>{`
         :root {
@@ -88,7 +83,7 @@ const RecruitmentApp: React.FC = () => {
                 e.preventDefault();
                 handleTabChange(tab);
               }}
-              className={`px-4 py-3 border-b-2 text-sm font-medium ${activeTab === tab
+              className={`inline-block whitespace-nowrap px-4 py-3 border-b-2 text-sm font-medium ${activeTab === tab
                 ? 'border-[var(--primary-color)] text-[var(--primary-color)]'
                 : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)]'
                 }`}
@@ -106,13 +101,12 @@ const RecruitmentApp: React.FC = () => {
           switch (activeTab) {
             case 'Interviews':
               return <InterviewPage />;
-
             case 'Referrals':
-              return <ReferralList />
-
+              return <ReferralList />;
             case 'Requisitions':
               return <JobRequisition />;
-
+            case 'Job Opening':
+              return <JobOpeningsUI />;
             default:
               return null;
           }
@@ -124,14 +118,10 @@ const RecruitmentApp: React.FC = () => {
             onClick={handleAddNew}
             className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
           >
-            + 
+            +
           </button>
         )
       }
-
-      
-
-
     </div>
   );
 };
