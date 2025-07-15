@@ -62,7 +62,6 @@ const FrappeListView = <T extends BaseItem>({
 }: FrappeListViewProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("")
   const [filters, setFilters] = useState(defaultFilters)
-  const [queryParamsFilters, setQueryParamsFilters] = useState({})
   const [showFilters, setShowFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
@@ -70,20 +69,18 @@ const FrappeListView = <T extends BaseItem>({
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
   const filtersString = queryParam.get('filters');
-  useEffect(() => {
-    let filter = {};
-    if (filtersString) {
-      try {
-        const decoded = decodeURIComponent(filtersString);
-        filter = JSON.parse(decoded); setQueryParamsFilters(filter)
-
-      } catch (e) {
-        console.error('Invalid filters JSON', e);
-      }
-    } else {
-      console.log('No filters in query');
+  const initialQueryParamsFilters = useMemo(() => {
+    if (!filtersString) return {};
+    try {
+      return JSON.parse(decodeURIComponent(filtersString));
+    } catch (e) {
+      console.error('Invalid filters JSON', e);
+      return {};
     }
-  }, [])
+  }, [filtersString]);
+
+  const [queryParamsFilters, setQueryParamsFilters] = useState(initialQueryParamsFilters);
+
 
   // Console log component props
   console.log(`🎯 FrappeListView initialized for doctype: ${doctype}`, {

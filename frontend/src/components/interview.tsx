@@ -14,7 +14,7 @@ const InterviewPage = () => {
   const navigate = useNavigate();
 
   const handleGoToInterview = (interviewId: string) => {
-    navigate(`/webapp/recruitment-app/interviews/interview-details/${interviewId}`);
+    navigate(`/webapp/recruitment-app/interviews/${interviewId}`);
   };
 
   // TODO: Add custom API integration here if needed
@@ -55,10 +55,10 @@ const InterViewItem: React.FC<{ item: Interview; index?: number; doctype: string
           </p>
           <span
             className={`flex items-center justify-center text-xs font-medium px-2 rounded-full ${interview.status === "Cleared"
-                ? "bg-green-100 text-green-800"
-                : interview.status === "Rejected"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-yellow-100 text-ellow-800"
+              ? "bg-green-100 text-green-800"
+              : interview.status === "Rejected"
+                ? "bg-red-100 text-red-800"
+                : "bg-yellow-100 text-ellow-800"
               }`}
           >
             {interview.status}

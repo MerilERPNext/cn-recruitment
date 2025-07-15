@@ -77,8 +77,8 @@ const RecruitmentApp: React.FC = () => {
               key={tab}
               onClick={() => handleTabChange(tab)}
               className={`px-4 py-3 border-b-2 border-t-0 border-l-0 border-r-0 bg-transparent text-sm font-medium rounded-none outline-none focus:outline-none focus:ring-0 ${activeTab === tab
-                  ? 'border-b-[3px] border-b-[var(--primary-color)] text-[var(--primary-color)]'
-                  : 'border-b-transparent text-[var(--text-secondary)]'
+                ? 'border-b-[3px] border-b-[var(--primary-color)] text-[var(--primary-color)]'
+                : 'border-b-transparent text-[var(--text-secondary)]'
                 }`}
             >
               {tab}
