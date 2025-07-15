@@ -21,6 +21,8 @@ import {
   useFrappeDocumentCount,
   isPermissionError,
 } from "../hooks/useFrappeQuery"
+import { useLocation } from "react-router"
+import { FilterCondition } from "../types/frappe"
 
 interface BaseItem {
   name: string;
@@ -54,16 +56,34 @@ const FrappeListView = <T extends BaseItem>({
   defaultFilters = {},
   defaultFields = ["name", "modified"],
   searchFields = [],
-  onItemClick, 
+  onItemClick,
   infiniteScroll = false,
   permissionErrorMessage,
 }: FrappeListViewProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("")
   const [filters, setFilters] = useState(defaultFilters)
+  const [queryParamsFilters, setQueryParamsFilters] = useState({})
   const [showFilters, setShowFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const queryClient = useQueryClient()
+  const { search } = useLocation();
+  const queryParam = new URLSearchParams(search);
+  const filtersString = queryParam.get('filters');
+  useEffect(() => {
+    let filter = {};
+    if (filtersString) {
+      try {
+        const decoded = decodeURIComponent(filtersString);
+        filter = JSON.parse(decoded); setQueryParamsFilters(filter)
+
+      } catch (e) {
+        console.error('Invalid filters JSON', e);
+      }
+    } else {
+      console.log('No filters in query');
+    }
+  }, [])
 
   // Console log component props
   console.log(`🎯 FrappeListView initialized for doctype: ${doctype}`, {
@@ -111,7 +131,7 @@ const FrappeListView = <T extends BaseItem>({
     doctype,
     pageSize,
     searchTerm: debouncedSearchTerm,
-    filters,
+    filters: { ...filters, ...queryParamsFilters },
     fields: defaultFields,
     searchFields,
   }
@@ -134,12 +154,16 @@ const FrappeListView = <T extends BaseItem>({
     },
   )
 
+  const combinedFilters = [
+    ...Object.entries(filters || {}).map(([key, value]) => [key, '=', value]),
+    ...Object.entries(queryParamsFilters || {}).map(([key, value]) => [key, '=', value]),
+  ];
   // Count query for traditional pagination
   const { data: countData } = useFrappeDocumentCount(
     {
       doctype,
       searchTerm: debouncedSearchTerm,
-      filters: Object.entries(filters).map(([key, value]) => [key, '=', value]),
+      filters: combinedFilters as FilterCondition[],
     },
     {
       enabled: !infiniteScroll,
@@ -232,6 +256,10 @@ const FrappeListView = <T extends BaseItem>({
     setFilters({})
     setSearchTerm("")
     setDebouncedSearchTerm("")
+    setQueryParamsFilters({})
+    const url = new URL(window.location.href);
+    url.searchParams.delete('filters');
+    window.history.replaceState({}, '', url);
   }
 
   const refreshData = () => {
@@ -309,11 +337,10 @@ const FrappeListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {pageNum}
               </button>
