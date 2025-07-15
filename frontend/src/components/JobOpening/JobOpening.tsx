@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 
 const JobOpeningsUI: React.FC = () => {
   const navigate = useNavigate();
-  
+
   const handleGoToJobOpening = (item: JobOpening) => {
     const JobOpeningId = encodeURIComponent(item.name);
     navigate(`/webapp/recruitment-app/job-opening/${JobOpeningId}`);
@@ -38,42 +38,46 @@ const JobOpeningItem: React.FC<{
   doctype: string;
 }> = ({ item }) => {
   const navigate = useNavigate();
-  
+
   const handleViewApplicants = () => {
-    const filterDesignation = encodeURIComponent(item.designation);
-    const jobTitle = encodeURIComponent(item.job_title);
-    navigate(
-      `/webapp/recruitment-app/referral-details?designation=${filterDesignation}&job_title=${jobTitle}`
-    );
+    const filter = {
+      designation: item.designation,
+      job_title: item.job_title,
+    };
+  
+    const encodedFilter = encodeURIComponent(JSON.stringify(filter));
+  
+    navigate(`/webapp/recruitment-app/job-applicant?filter=${encodedFilter}`);
   };
+  
 
   const getStatusColor = (status: string) => {
-    const normalizedStatus = status.toLowerCase().replace(/\s+/g, '');
-    
+    const normalizedStatus = status.toLowerCase().replace(/\s+/g, "");
+
     switch (normalizedStatus) {
-      case 'open':
+      case "open":
         return {
-          bg: 'bg-green-100',
-          text: 'text-green-800',
-          border: 'border-green-200'
+          bg: "bg-green-100",
+          text: "text-green-800",
+          border: "border-green-200",
         };
-      case 'in-progress':
+      case "in-progress":
         return {
-          bg: 'bg-yellow-100',
-          text: 'text-yellow-800',
-          border: 'border-yellow-200'
+          bg: "bg-yellow-100",
+          text: "text-yellow-800",
+          border: "border-yellow-200",
         };
-      case 'closed':
+      case "closed":
         return {
-          bg: 'bg-red-100',
-          text: 'text-red-800',
-          border: 'border-red-200'
+          bg: "bg-red-100",
+          text: "text-red-800",
+          border: "border-red-200",
         };
       default:
         return {
-          bg: 'bg-gray-100',
-          text: 'text-gray-800',
-          border: 'border-gray-200'
+          bg: "bg-gray-100",
+          text: "text-gray-800",
+          border: "border-gray-200",
         };
     }
   };
@@ -88,7 +92,9 @@ const JobOpeningItem: React.FC<{
           <p className="text-sm text-gray-500">{item.designation}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors.bg} ${statusColors.text} ${statusColors.border}`}
+          >
             {item.status}
           </span>
           <button className="text-gray-500">
@@ -144,7 +150,10 @@ const JobOpeningItem: React.FC<{
       </div>
       <div className="mt-4 flex space-x-2">
         <button
-          onClick={handleViewApplicants}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleViewApplicants();
+          }}
           className="flex-1 rounded-full bg-gray-100 py-2 text-sm font-medium text-gray-900"
         >
           View Applicants

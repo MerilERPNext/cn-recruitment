@@ -1,9 +1,8 @@
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import FrappeListView from "./ListView";
 import { ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-// Define the expected structure of a Job Applicant
 interface JobApplicant {
   name: string;
   applicant_name: string;
@@ -22,7 +21,6 @@ interface JobApplicant {
   profile_image?: string;
 }
 
-// Avatar helper (fallback to initials if no image)
 const Avatar = ({ src, name }: { src?: string; name: string }) => {
   if (src) {
     return (
@@ -46,7 +44,6 @@ const Avatar = ({ src, name }: { src?: string; name: string }) => {
   );
 };
 
-// Card for each applicant
 const ApplicantCard = ({
   item,
   onClick,
@@ -67,9 +64,7 @@ const ApplicantCard = ({
       </div>
       <div className="flex items-center gap-2 text-sm text-gray-600 mt-0.5">
         {item.designation && <span>{item.designation}</span>}
-
         {item.designation && item.creation && <span className="mx-1">|</span>}
-
         {item.creation && (
           <span>
             Applied{" "}
@@ -88,18 +83,71 @@ const ApplicantCard = ({
 
 export default function JobApplicantList() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const filterParam = queryParams.get("filter");
+
+  let filterDesignation: string | null = null;
+  let filterJobTitle: string | null = null;
+
+  if (filterParam) {
+    try {
+      const parsedFilter = JSON.parse(decodeURIComponent(filterParam));
+      filterDesignation = parsedFilter.designation || null;
+      filterJobTitle = parsedFilter.job_title || null;
+    } catch (error) {
+      console.error("Failed to parse filter param:", error);
+    }
+  }
 
   const handleApplicantClick = (item: JobApplicant) => {
     navigate(`/webapp/recruitment-app/job-applicant-detail/${item.name}`);
   };
 
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="flex-grow h-full w-full bg-white overflow-y-auto p-4">
+      <div className="py-4 flex justify-between items-center bg-white">
+        <button
+          onClick={handleGoBack}
+          className="text-sm font-medium text-blue-600 hover:underline"
+        >
+          ← Back
+        </button>
+
+        <h1 className="text-lg font-semibold text-gray-900">
+          Job Applicants
+        </h1>
+
+        <div className="w-12" />
+      </div>
+
       <FrappeListView
         doctype="Job Applicant"
-        ItemComponent={(props: { item: JobApplicant }) => (
-          <ApplicantCard {...props} onClick={handleApplicantClick} />
-        )}
+        ItemComponent={(props: { item: JobApplicant }) => {
+          const { item } = props;
+
+          const matchesDesignation = filterDesignation
+            ? item.designation?.toLowerCase() ===
+              filterDesignation.toLowerCase()
+            : false;
+
+          const matchesJobTitle = filterJobTitle
+            ? item.job_title?.toLowerCase() === filterJobTitle.toLowerCase()
+            : false;
+
+          if (matchesDesignation || matchesJobTitle) {
+            return (
+              <ApplicantCard item={item} onClick={handleApplicantClick} />
+            );
+          }
+
+          return null;
+        }}
         onItemClick={handleApplicantClick}
         infiniteScroll={true}
         isSearch={true}

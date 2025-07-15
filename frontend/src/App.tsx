@@ -116,6 +116,8 @@ const App: React.FC = () => {
             <Route path="/webapp/recruitment-app/referral-details/*" element={<ReferralDetails />} />
             <Route path="/webapp/recruitment-app/add-requisition/*" element={<AddRequisition />} />
             <Route path="/webapp/recruitment-app/interview-feedback/:id" element={<InterviewFeedbackForm />} />
+            <Route path="/webapp/recruitment-app/job-applicant/" element={<JobApplicantList />} />
+
 
             <Route path="/webapp/recruitment-app/referral-details/:id" element={<ReferralDetails />} />
             <Route path="/webapp/recruitment-app/job-applicant-list" element={<JobApplicantList />} />

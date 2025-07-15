@@ -1,38 +1,44 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import InterviewPage from './interview';
-import JobRequisition from './JobRequisition';
-import ReferralList from './RafarralList';
-import JobApplicantList from './JobApplicantList';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import InterviewPage from "./interview";
+import JobRequisition from "./JobRequisition";
+import ReferralList from "./RafarralList";
+import JobApplicantList from "./JobApplicantList";
+import JobOpeningsUI from "./JobOpening/JobOpening";
 
-
-
-
-type TabName = 'Referrals' | 'Interviews' | 'Requisitions' | 'JobApplicants';
+type TabName =
+  | "Referrals"
+  | "Interviews"
+  | "Requisitions"
+  | "Job Opening"
+  | "JobApplicants";
 
 const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
-  const storedTab = sessionStorage.getItem('activeTab') as TabName | null;
-  const [activeTab, setActiveTab] = useState<TabName>(storedTab || 'Referrals');
+  const storedTab = sessionStorage.getItem("activeTab") as TabName | null;
+  const [activeTab, setActiveTab] = useState<TabName>(storedTab || "Referrals");
 
-
-
-  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews', 'JobApplicants'];
-
+  const tabs: TabName[] = [
+    "Requisitions",
+    "Referrals",
+    "Interviews",
+    "Job Opening",
+    "JobApplicants",
+  ];
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
-    sessionStorage.setItem('activeTab', tab);
+    sessionStorage.setItem("activeTab", tab);
   };
   const handleAddNew = () => {
-    if (activeTab === 'Referrals') {
-      navigate('/webapp/recruitment-app/add-new-referral');
-    } else if (activeTab === 'Requisitions') {
-      window.open('/app/job-requisition/new');
+    if (activeTab === "Referrals") {
+      navigate("/webapp/recruitment-app/add-new-referral");
+    } else if (activeTab === "Requisitions") {
+      window.open("/app/job-requisition/new");
     }
   };
 
- return (
+  return (
     <div className="flex flex-col min-h-screen bg-white">
       <style>{`
         :root {
@@ -73,13 +79,14 @@ const RecruitmentApp: React.FC = () => {
       {/* Header */}
       <header className="sticky z-50 top-0 bg-white shadow-sm">
         <div className="flex items-center p-1 justify-center">
-          <h1 className="text-xl font-semibold justify-center px-4  text-slate-900 text-center">{activeTab}</h1>
+          <h1 className="text-xl font-semibold justify-center px-4  text-slate-900 text-center">
+            {activeTab}
+          </h1>
           <div className="w-8"></div>
         </div>
 
         {/* Tabs */}
         <nav className="border-b border-[var(--border-light)] px-2 flex overflow-x-auto scrollbar-hidden">
-
           {tabs.map((tab) => (
             <a
               key={tab}
@@ -88,30 +95,32 @@ const RecruitmentApp: React.FC = () => {
                 e.preventDefault();
                 handleTabChange(tab);
               }}
-              className={`inline-block whitespace-nowrap px-4 py-3 border-b-2 text-sm font-medium ${activeTab === tab
-                ? 'border-[var(--primary-color)] text-[var(--primary-color)]'
-                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)]'
-                }`}
+              className={`inline-block whitespace-nowrap px-4 py-3 border-b-2 text-sm font-medium ${
+                activeTab === tab
+                  ? "border-[var(--primary-color)] text-[var(--primary-color)]"
+                  : "border-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)]"
+              }`}
             >
               {tab}
             </a>
           ))}
         </nav>
-
       </header>
 
       {/* Main Content */}
       <main className="p-4 z-100 flex-grow overflow-y-auto">
         {(() => {
           switch (activeTab) {
-            case 'Interviews':
+            case "Interviews":
               return <InterviewPage />;
-            case 'Referrals':
+            case "Referrals":
               return <ReferralList />;
-            case 'Requisitions':
+            case "Requisitions":
               return <JobRequisition />;
+            case "Job Opening":
+              return <JobOpeningsUI />;
 
-            case 'JobApplicants':
+            case "JobApplicants":
               return <JobApplicantList />;
 
             default:
@@ -119,16 +128,14 @@ const RecruitmentApp: React.FC = () => {
           }
         })()}
       </main>
-      {
-        (activeTab === 'Requisitions' || activeTab === 'Referrals') && (
-          <button
-            onClick={handleAddNew}
-            className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
-          >
-            +
-          </button>
-        )
-      }
+      {(activeTab === "Requisitions" || activeTab === "Referrals") && (
+        <button
+          onClick={handleAddNew}
+          className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
+        >
+          +
+        </button>
+      )}
     </div>
   );
 };
