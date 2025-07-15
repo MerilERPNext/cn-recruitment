@@ -91,7 +91,7 @@ export const FrappeAPI = {
   },
 
   getDocMeta: async (doctype: string) => {
-    const response = await apiClient.get(`/api/method/frappe.desk.form.meta.get_meta?doctype=${doctype}`)
+    const response = await apiClient.get(`/api/v2/doctype/${doctype}/meta`)
     return response.data.message
   },
 
