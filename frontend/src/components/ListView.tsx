@@ -34,6 +34,7 @@ type PageData = {
 interface FrappeListViewProps<T extends BaseItem> {
   doctype: string
   ItemComponent: React.ComponentType<{ item: T; index?: number; doctype: string }>
+  SkeletonComponent?: React.ComponentType
   isSearch?: boolean
   isFilter?: boolean
   pageSize?: number
@@ -48,6 +49,7 @@ interface FrappeListViewProps<T extends BaseItem> {
 const FrappeListView = <T extends BaseItem>({
   doctype,
   ItemComponent,
+  SkeletonComponent,
   isSearch = true,
   isFilter = false,
   pageSize = 20,
@@ -524,12 +526,18 @@ const FrappeListView = <T extends BaseItem>({
             </div>
           </div>
         ) : isLoading && processedData.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center space-x-2 text-gray-500">
-              <RefreshCw className="h-5 w-5 animate-spin" />
-              <span>Loading...</span>
+          SkeletonComponent ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonComponent key={index} />
+            ))
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center space-x-2 text-gray-500">
+                <RefreshCw className="h-5 w-5 animate-spin" />
+                <span>Loading...</span>
+              </div>
             </div>
-          </div>
+          )
         ) : processedData.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <span className="text-gray-500">No records found</span>
