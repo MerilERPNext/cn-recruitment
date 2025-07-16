@@ -11,19 +11,39 @@ type TabName =
   | "Interviews"
   | "Requisitions"
   | "Job Opening"
-  | "Job Applicants";
+  | "JobApplicants";
 
 const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
   const storedTab = sessionStorage.getItem("activeTab") as TabName | null;
   const [activeTab, setActiveTab] = useState<TabName>(storedTab || "Referrals");
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import InterviewPage from './interview';
+import JobRequisition from './JobRequisition';
+import ReferralList from './RafarralList';
+import JobApplicantList from './JobApplicantList';
+
+
+
+
+type TabName = 'Referrals' | 'Interviews' | 'Requisitions' | 'Job Applicants';
+
+const RecruitmentApp: React.FC = () => {
+  const navigate = useNavigate();
+  const storedTab = sessionStorage.getItem('activeTab') as TabName | null;
+  const [activeTab, setActiveTab] = useState<TabName>(storedTab || 'Referrals');
+
+
+
+  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews', 'Job Applicants'];
 
   const tabs: TabName[] = [
     "Requisitions",
     "Referrals",
     "Interviews",
     "Job Opening",
-    "Job Applicants",
+    "JobApplicants",
   ];
 
   const handleTabChange = (tab: TabName) => {
@@ -119,8 +139,7 @@ const RecruitmentApp: React.FC = () => {
               return <JobRequisition />;
             case "Job Opening":
               return <JobOpeningsUI />;
-
-            case "Job Applicants":
+            case "JobApplicant:
               return <JobApplicantList />;
 
             default:
