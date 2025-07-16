@@ -53,11 +53,6 @@ useEffect(() => {
       return;
     }
 
-    console.log("🟢 Updating backend with:", {
-      status,
-      custom_substatus: subStatus,
-    });
-
     updateMutation.mutate(
       {
         name: applicantId,
@@ -73,7 +68,7 @@ useEffect(() => {
         },
       }
     );
-  }, [status, subStatus]);
+  }, [status, subStatus, applicantId, refetch]);
 
   return (
     <div className="p-4 bg-white">
