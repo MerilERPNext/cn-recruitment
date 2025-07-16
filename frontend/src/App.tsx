@@ -1,19 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 // import Navigation from './components/Navigation';
-import SearchMembers from './components/SearchMembers';
-import Notices from './components/Notices';
-import IdCard from './components/IdCard';
 import { useRouteInfo } from './hooks/useRouter';
 import { QueryProvider } from './providers/QueryProvider';
-import RequisitionDetails from './components/RequisitionDetails';
 import './App.css';
-import RecruitmentApp from './components/RecruitmentApp';
-import InterviewPage from './components/InterveiwDetails';
-import AddNewReferral from './components/AddNewReferral';
-import ReferralDetails from './components/ReferralDetails';
-import InterviewFeedbackForm from './components/Feedback';
-import AddRequisition from './components/AddRequistion';
+
+import { AppRoute, routesConfig } from './routesConfig';
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -89,33 +81,28 @@ const Dashboard: React.FC = () => {
   );
 };
 
-
 const App: React.FC = () => {
+
+
+  const renderRoutes = (routes: AppRoute[]) =>
+    routes.map(({ path, element, children }, index) =>
+      children ? (
+        <Route key={`${index}-${path}`} path={path} element={element}>
+          {renderRoutes(children)}
+        </Route>
+      ) : (
+        <Route key={`${index}-${path}`} path={path} element={element} />
+      )
+    );
+
+
   return (
     <QueryProvider>
       <Router>
         <div className="min-h-screen" style={{ backgroundColor: 'var(--background-medium)' }}>
           <Routes>
-
-            {/* Default route */}
             <Route path="/webapp/" element={<Dashboard />} />
-
-            {/* Specific routes for each page */}
-
-            <Route path="/webapp/search-members" element={<SearchMembers />} />
-            <Route path="/webapp/notices" element={<Notices />} />
-            <Route path="/webapp/id-card" element={<IdCard />} />
-            <Route path="/webapp/id-card/:employeeId" element={<IdCard />} />
-            <Route path="/webapp/requisitions/:requisitionId" element={<RequisitionDetails />} />
-            {/* Catch-all route for 404 */}
-            <Route path="/webapp/recruitment-app/*" element={<RecruitmentApp />} />
-            <Route path="/webapp/recruitment-app/interview-details/:id*" element={<InterviewPage />} />
-            <Route path="/webapp/recruitment-app/add-new-referral/*" element={<AddNewReferral />} />
-            <Route path="/webapp/recruitment-app/referral-details/*" element={<ReferralDetails />} />
-            <Route path="/webapp/recruitment-app/add-requisition/*" element={<AddRequisition />} />
-            <Route path="/webapp/recruitment-app/interview-feedback/:id" element={<InterviewFeedbackForm />} />
-
-            <Route path="/webapp/recruitment-app/referral-details/:id" element={<ReferralDetails />} />
+            {renderRoutes(routesConfig)}
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
         </div>
