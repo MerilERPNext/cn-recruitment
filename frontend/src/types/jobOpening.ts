@@ -40,7 +40,6 @@ export type JobOpening = {
     salary_per: string;
     publish_salary_range: number;
     custom__employee_type: string;
-    custom_employee_type: string | null;
     custom_location: string | null;
     custom_work_experience: string;
     custom_salary: string | null;
