@@ -1,14 +1,11 @@
-// src/hooks/useJobApplicant.ts
 import { useQuery, useMutation, UseQueryOptions, UseMutationOptions } from "@tanstack/react-query";
 import {
   jobApplicantService,
   commentService,
-   // ✅ Now importing instead of redefining
 } from "../services/jobApplicantService";
 import type { JobApplicant ,AddCommentPayload,
   CommentItem, } from "../types/jobApplicant";
 
-// ✅ Permission handling helper
 const isPermissionError = (error: unknown): boolean =>
   error instanceof Error &&
   (error.message.includes("permission") ||
@@ -18,7 +15,7 @@ const isPermissionError = (error: unknown): boolean =>
 const defaultRetry = (failureCount: number, error: unknown) =>
   isPermissionError(error) ? false : failureCount < 3;
 
-// ✅ Fetch job applicant
+// job applicant ko fetch karna 
 export const useJobApplicant = (
   name: string,
   options?: Omit<UseQueryOptions<JobApplicant, Error>, "queryKey" | "queryFn">
@@ -27,6 +24,7 @@ export const useJobApplicant = (
     queryKey: ["job-applicant", name],
     queryFn: () => jobApplicantService.getJobApplicantById(name),
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
     retry: defaultRetry,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     enabled: !!name,
@@ -34,7 +32,8 @@ export const useJobApplicant = (
   });
 };
 
-// ✅ Post comment
+
+// Post comment
 export const useAddComment = (
   options?: UseMutationOptions<void, Error, AddCommentPayload>
 ) => {
@@ -44,7 +43,7 @@ export const useAddComment = (
   });
 };
 
-// ✅ Fetch comments for applicant
+// Fetch comments for applicant
 export const useComments = (
   applicantId: string,
   options?: Omit<UseQueryOptions<CommentItem[], Error>, "queryKey" | "queryFn">
@@ -58,7 +57,8 @@ export const useComments = (
   });
 };
 
-// ✅ Update job applicant (status, sub_status, custom_substatus)
+
+//  Update job applicant (status, sub_status, custom_substatus)
 export const useUpdateJobApplicant = () => {
   return useMutation({
     mutationFn: ({
@@ -75,7 +75,8 @@ export const useUpdateJobApplicant = () => {
   });
 };
 
-// ✅ Fetch sub statuses based on parent status
+
+// Fetch sub statuses based on parent status
 export const useSubStatuses = (
   parentStatus: string,
   options?: Omit<UseQueryOptions<string[], Error>, "queryKey" | "queryFn">
@@ -89,3 +90,4 @@ export const useSubStatuses = (
 };
 
 export { isPermissionError };
+

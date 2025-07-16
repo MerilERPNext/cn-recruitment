@@ -11,7 +11,6 @@ import {
   useUpdateJobApplicant,
 } from "../hooks/useJobApplicant";
 
-// ✅ Props interface
 interface TopCardProps {
   name: string;
   email: string;
@@ -19,16 +18,17 @@ interface TopCardProps {
   applicantId: string;
   status?: string;
   customSubStatus?: string;
+  refetch?: () => void; 
 }
-
 
 const TopCard: React.FC<TopCardProps> = ({
   name,
   email,
   jobTitle,
   applicantId,
-  status: initialStatus = "Open", // ✅ fallback to Open
-  customSubStatus: initialSubStatus = "", // ✅ fallback to empty
+  status: initialStatus = "Open", 
+  customSubStatus: initialSubStatus = "", 
+  refetch,
 }) => {
   const [status, setStatus] = useState<string>(initialStatus);
   const [subStatus, setSubStatus] = useState<string>(initialSubStatus);
@@ -38,14 +38,13 @@ const TopCard: React.FC<TopCardProps> = ({
     useSubStatuses(status);
   const updateMutation = useUpdateJobApplicant();
 
-  // Auto-select substatus if not set
-  useEffect(() => {
-    if (subStatusOptions.length > 0) {
-      setSubStatus((prev) => prev || subStatusOptions[0]);
-    } else {
-      setSubStatus("");
-    }
-  }, [subStatusOptions]);
+// Sub Status Setting
+useEffect(() => {
+  if (!initialSubStatus && subStatusOptions.length > 0) {
+    setSubStatus(subStatusOptions[0]);
+  }
+}, [subStatusOptions, initialSubStatus]);
+
 
   // Update backend when status/subStatus change
   useEffect(() => {
@@ -59,18 +58,26 @@ const TopCard: React.FC<TopCardProps> = ({
       custom_substatus: subStatus,
     });
 
-    updateMutation.mutate({
-      name: applicantId,
-      updates: {
-        status,
-        custom_substatus: subStatus,
+    updateMutation.mutate(
+      {
+        name: applicantId,
+        updates: {
+          status,
+          custom_substatus: subStatus,
+        },
       },
-    });
+      {
+        onSuccess: () => {
+          console.log("✅ Backend updated. Refetching latest data...");
+          refetch?.(); 
+        },
+      }
+    );
   }, [status, subStatus]);
 
   return (
     <div className="p-4 bg-white">
-      {/* --- Profile Info --- */}
+      
       <div className="flex items-center gap-4 mb-4">
         <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
           <MdPerson />
@@ -84,9 +91,7 @@ const TopCard: React.FC<TopCardProps> = ({
         </div>
       </div>
 
-      {/* --- Dropdowns --- */}
       <div className="grid grid-cols-2 gap-4 mb-4">
-        {/* Status Dropdown */}
         <div className="relative flex-1">
           <select
             value={status}
@@ -113,7 +118,7 @@ const TopCard: React.FC<TopCardProps> = ({
           </div>
         </div>
 
-        {/* Sub-status Dropdown */}
+
         <div className="relative flex-1">
           <select
             disabled={isSubLoading}
@@ -137,7 +142,6 @@ const TopCard: React.FC<TopCardProps> = ({
         </div>
       </div>
 
-      {/* --- Action Buttons --- */}
       <div className="flex justify-between items-center gap-2 p-2">
         <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-[var(--primary-color)] text-white rounded-lg font-semibold text-sm">
           <MdCall className="text-base" /> Call
@@ -154,3 +158,4 @@ const TopCard: React.FC<TopCardProps> = ({
 };
 
 export default TopCard;
+

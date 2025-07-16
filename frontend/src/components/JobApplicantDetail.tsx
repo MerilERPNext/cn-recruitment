@@ -17,21 +17,19 @@ const JobApplicantDetails: React.FC = () => {
     isLoading,
     isError,
     error,
+    refetch, 
   } = useJobApplicant(id || '', {
     enabled: !!id,
-    //yha pe id check kr rhe hai hai 
   });
 
   if (!id) {
     return <p className="p-4 text-red-500">No applicant ID found in URL.</p>;
   }
 
-  // Handle loading and error before using `data`
   if (isLoading) return <p className="p-4">Loading applicant...</p>;
   if (isError) return <p className="p-4 text-red-500">Error: {(error as Error).message}</p>;
   if (!data) return <p className="p-4 text-red-500">No data found for this applicant.</p>;
 
-  // Now safe to use `data` (guaranteed to be defined)
   const renderTabContent = () => {
     switch (activeTab) {
       case 'details':
@@ -62,19 +60,16 @@ const JobApplicantDetails: React.FC = () => {
           </div>
         </header>
 
-        {/* Top summary card */}
-       <TopCard
-  name={data.applicant_name}
-  email={data.email_id || ""}
-  jobTitle={data.designation || ""}
-  applicantId={data.name}
-  status={data.status || "Open"}
-  customSubStatus={data.custom_substatus || ""}
-/>
+        <TopCard
+          name={data.applicant_name}
+          email={data.email_id || ""}
+          jobTitle={data.designation || ""}
+          applicantId={data.name}
+          status={data.status || "Open"}
+          customSubStatus={data.custom_substatus || ""}
+          refetch={refetch} 
+        />
 
-
-
-        {/* Tab buttons */}
         <div className="bg-white">
           <div className="flex justify-center gap-2 px-4 py-2">
             {[
@@ -96,7 +91,6 @@ const JobApplicantDetails: React.FC = () => {
           </div>
         </div>
 
-        {/* Active tab content */}
         <div className="p-4 space-y-4">{renderTabContent()}</div>
       </main>
     </div>
@@ -104,3 +98,4 @@ const JobApplicantDetails: React.FC = () => {
 };
 
 export default JobApplicantDetails;
+
