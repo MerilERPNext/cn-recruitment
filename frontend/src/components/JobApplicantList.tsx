@@ -22,26 +22,29 @@ interface JobApplicant {
   profile_image?: string;
 }
 
-// Avatar helper (fallback to initials if no image)
-const Avatar = ({ src, name }: { src?: string; name: string }) => {
+interface AvatarProps {
+  src?: string;
+  alt?: string;
+  size?: string; // e.g., "h-14 w-14"
+  fallback?: React.ReactNode; // Could be a fallback icon, initials, etc.
+}
+
+const Avatar = ({ src, alt, size = "h-14 w-14", fallback }: AvatarProps) => {
   if (src) {
     return (
       <img
+        alt={alt}
+        className={`aspect-square rounded-full ${size} object-cover border border-gray-200 bg-white`}
         src={src}
-        alt={name}
-        className="aspect-square rounded-full h-12 w-12 object-cover border border-gray-200 bg-white"
       />
     );
   }
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  // Fallback: initials
   return (
-    <div className="flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold text-lg uppercase h-12 w-12">
-      {initials}
+    <div className={`flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold text-lg uppercase ${size}`}
+      style={{ minWidth: '3.5rem', minHeight: '3.5rem' }}
+    >
+      {fallback}
     </div>
   );
 };
@@ -53,12 +56,19 @@ const ApplicantCard = ({
 }: {
   item: JobApplicant;
   onClick: (item: JobApplicant) => void;
-}) => (
+}) => {
+  const fullName = item.applicant_name ;
+  const initials = fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+   return (
   <div
     className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors"
     onClick={() => onClick(item)}
   >
-    <Avatar src={item.profile_image} name={item.applicant_name} />
+    <Avatar
+        src={item.profile_image}
+        alt={item.applicant_name}
+        fallback={initials}
+      />
     <div className="flex-grow min-w-0">
       <div className="flex items-center gap-2">
         <p className="text-gray-900 text-base font-semibold truncate">
@@ -84,7 +94,7 @@ const ApplicantCard = ({
       <ChevronRight />
     </button>
   </div>
-);
+)}
 
 export default function JobApplicantList() {
   const navigate = useNavigate();
@@ -94,7 +104,7 @@ export default function JobApplicantList() {
   };
 
   return (
-    <div className="flex-grow h-full w-full bg-white overflow-y-auto p-4">
+    <div className="flex-grow h-full w-full bg-white overflow-y-auto">
       <FrappeListView
         doctype="Job Applicant"
         ItemComponent={(props: { item: JobApplicant }) => (
@@ -133,3 +143,5 @@ export default function JobApplicantList() {
     </div>
   );
 }
+
+

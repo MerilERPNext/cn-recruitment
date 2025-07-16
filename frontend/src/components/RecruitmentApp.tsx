@@ -8,7 +8,7 @@ import JobApplicantList from './JobApplicantList';
 
 
 
-type TabName = 'Referrals' | 'Interviews' | 'Requisitions' | 'JobApplicants';
+type TabName = 'Referrals' | 'Interviews' | 'Requisitions' | 'Job Applicants';
 
 const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ const RecruitmentApp: React.FC = () => {
 
 
 
-  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews', 'JobApplicants'];
+  const tabs: TabName[] = [ 'Requisitions', 'Referrals', 'Interviews', 'Job Applicants'];
 
 
   const handleTabChange = (tab: TabName) => {
@@ -114,7 +114,7 @@ const RecruitmentApp: React.FC = () => {
             case 'Requisitions':
               return <JobRequisition />;
 
-            case 'JobApplicants':
+            case 'Job Applicants':
               return <JobApplicantList />;
 
             default:
