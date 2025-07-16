@@ -3,12 +3,6 @@ import type { JobOpening } from "../../types/jobOpening";
 import { useNavigate } from "react-router";
 
 const JobOpeningsUI: React.FC = () => {
-  // const navigate = useNavigate();
-
-  // const handleGoToJobOpening = (item: JobOpening) => {
-  //   const JobOpeningId = encodeURIComponent(item.name);
-  //   navigate(`/webapp/recruitment-app/job-opening/${JobOpeningId}`);
-  // };
   return (
     <FrappeListView
       doctype="Job Opening"

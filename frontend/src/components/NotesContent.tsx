@@ -35,7 +35,6 @@ const NotesContent: React.FC<NotesContentProps> = ({ applicant }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-4">
       <h3 className="font-bold text-lg mb-4">Notes</h3>
-
       <div className="space-y-3 mb-4">
         {comments.length === 0 && (
           <p className="text-sm text-gray-500">No notes yet.</p>
@@ -45,10 +44,10 @@ const NotesContent: React.FC<NotesContentProps> = ({ applicant }) => {
             const plainText = note.content.replace(/<[^>]*>?/gm, '').trim();
             return plainText && !note.content.includes('/files/');
           })
-          .map((note, index) => {
+          .map((note) => { // Removed 'index' from here
             const cleanText = note.content.replace(/<[^>]*>?/gm, '').trim();
             return (
-              <div key={index} className="p-3 bg-gray-100 rounded-md border text-sm">
+              <div key={note.name} className="p-3 bg-gray-100 rounded-md border text-sm"> {/* Changed key to note.name */}
                 <p>{cleanText}</p>
                 <div className="text-xs text-gray-500 mt-1">
                   By {note.owner} on {new Date(note.creation).toLocaleString()}

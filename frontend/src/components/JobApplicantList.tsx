@@ -23,7 +23,6 @@ const Avatar = ({ src, alt, size = "h-14 w-14", fallback }: AvatarProps) => {
   // Fallback: initials
   return (
     <div className={`flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold text-lg uppercase ${size}`}
-      style={{ minWidth: '3.5rem', minHeight: '3.5rem' }}
     >
       {fallback}
     </div>
