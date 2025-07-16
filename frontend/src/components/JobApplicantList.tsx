@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router";
-import FrappeListView from "./ListView";
+import FrappeListView from "./ListView"; // Assuming this is FrappeListView
 import { ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -115,33 +115,27 @@ export default function JobApplicantList() {
     navigate(`/webapp/recruitment-app/job-applicant-detail/${item.name}`);
   };
 
+  // Construct the filters object to pass to FrappeListView's defaultFilters prop
+  const defaultFilters: Record<string, string> = {};
+  if (filterDesignation) {
+    defaultFilters.designation = filterDesignation;
+  }
+  if (filterJobTitle) {
+    defaultFilters.job_title = filterJobTitle;
+  }
 
   return (
     <div className="flex-grow h-full w-full bg-white overflow-y-auto">
       <FrappeListView
         doctype="Job Applicant"
         ItemComponent={(props: { item: JobApplicant }) => {
-          const { item } = props;
-
-          const matchesDesignation = filterDesignation
-            ? item.designation?.toLowerCase() ===
-              filterDesignation.toLowerCase()
-            : true; // ← agar filterDesignation nahi hai, to sab match honge
-
-          const matchesJobTitle = filterJobTitle
-            ? item.job_title?.toLowerCase() === filterJobTitle.toLowerCase()
-            : true; // ← agar filterJobTitle nahi hai, to sab match honge
-
-          if (matchesDesignation && matchesJobTitle) {
-            return <ApplicantCard item={item} onClick={handleApplicantClick} />;
-          }
-
-          return null;
+          return <ApplicantCard item={props.item} onClick={handleApplicantClick} />;
         }}
         onItemClick={handleApplicantClick}
         infiniteScroll={true}
         isSearch={true}
         isFilter={false}
+        defaultFilters={defaultFilters} 
         defaultFields={[
           "name",
           "applicant_name",
@@ -171,5 +165,3 @@ export default function JobApplicantList() {
     </div>
   );
 }
-
-
