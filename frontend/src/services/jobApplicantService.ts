@@ -77,7 +77,7 @@ export const commentService = {
 
   getCommentsForApplicant: async (applicantId: string): Promise<CommentItem[]> => {
     const response = await FrappeAPI.getDocumentList("Comment", {
-      fields: ["content", "creation", "owner"],
+      fields: ["name", "content", "creation", "owner"],
       filters: [
         ["reference_doctype", "=", "Job Applicant"],
         ["reference_name", "=", applicantId],

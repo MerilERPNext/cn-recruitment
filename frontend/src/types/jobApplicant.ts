@@ -21,6 +21,7 @@ export interface JobApplicant {
 }
 
 export interface CommentItem {
+  name: string;
   content: string;
   creation: string;
   owner: string;
