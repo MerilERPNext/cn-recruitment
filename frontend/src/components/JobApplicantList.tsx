@@ -2,24 +2,7 @@ import { useLocation, useNavigate } from "react-router";
 import FrappeListView from "./ListView"; // Assuming this is FrappeListView
 import { ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-
-interface JobApplicant {
-  name: string;
-  applicant_name: string;
-  email_id?: string;
-  phone_number?: string;
-  job_title?: string;
-  designation?: string;
-  status?: string;
-  country?: string;
-  source?: string;
-  applicant_rating?: number;
-  resume_attachment?: string;
-  resume_link?: string;
-  notes?: string;
-  creation: string;
-  profile_image?: string;
-}
+import type { JobApplicant } from '../types/jobApplicant';
 
 interface AvatarProps {
   src?: string;
