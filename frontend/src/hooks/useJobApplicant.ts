@@ -1,93 +1,91 @@
+// src/hooks/useJobApplicant.ts
+import { useQuery, useMutation, UseQueryOptions, UseMutationOptions } from "@tanstack/react-query";
+import {
+  jobApplicantService,
+  commentService,
+   // ✅ Now importing instead of redefining
+} from "../services/jobApplicantService";
+import type { JobApplicant ,AddCommentPayload,
+  CommentItem, } from "../types/jobApplicant";
 
-// useJobApplicant.ts
-import { useQuery, type UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
-import { jobApplicantService } from "../services/jobApplicantService";
-import { PermissionError } from "../types/interview";
-import type { JobApplicantDetailsResponse, GetJobApplicantParams } from "../types/jobApplicant";
+// ✅ Permission handling helper
+const isPermissionError = (error: unknown): boolean =>
+  error instanceof Error &&
+  (error.message.includes("permission") ||
+    error.message.includes("403") ||
+    error.message.includes("Access Restricted"));
 
-// Utility to check if error is permission-related (re-used from your existing code)
-const isPermissionError = (error: unknown): error is PermissionError => {
-  if (error instanceof PermissionError) {
-    return true;
-  }
-  if (error instanceof Error) {
-    return (
-      error.message.includes("permission") ||
-      error.message.includes("403") ||
-      error.message.includes("Access Restricted")
-    );
-  }
-  return false;
-};
+const defaultRetry = (failureCount: number, error: unknown) =>
+  isPermissionError(error) ? false : failureCount < 3;
 
-// Default retry function that doesn't retry permission errors (re-used from your existing code)
-const defaultRetry = (failureCount: number, error: unknown) => {
-  if (isPermissionError(error)) {
-    return false;
-  }
-  return failureCount < 3;
-};
-
-/**
- * Custom React Query hook for fetching job applicant details.
- * @param {GetJobApplicantParams} params - The parameters for fetching the applicant (e.g., applicant_name).
- * @param {Omit<UseQueryOptions<JobApplicantDetailsResponse>, "queryKey" | "queryFn">} [options] - Optional React Query options.
- * @returns {UseQueryResult<JobApplicantDetailsResponse, Error>} The query result object.
- */
-export const useJobApplicantDetails = (
-  params: GetJobApplicantParams,
-  options?: Omit<UseQueryOptions<JobApplicantDetailsResponse>, "queryKey" | "queryFn">,
-): UseQueryResult<JobApplicantDetailsResponse, Error> => {
-  return useQuery<JobApplicantDetailsResponse, Error>({
-    queryKey: ["job-applicant-details", params.applicant_name],
-    queryFn: () => jobApplicantService.getJobApplicantDetails(params),
+// ✅ Fetch job applicant
+export const useJobApplicant = (
+  name: string,
+  options?: Omit<UseQueryOptions<JobApplicant, Error>, "queryKey" | "queryFn">
+) => {
+  return useQuery<JobApplicant, Error>({
+    queryKey: ["job-applicant", name],
+    queryFn: () => jobApplicantService.getJobApplicantById(name),
     staleTime: 5 * 60 * 1000,
     retry: defaultRetry,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    enabled: !!params.applicant_name,
+    enabled: !!name,
     ...options,
   });
 };
 
-/**
- * Custom React Query hook for fetching job applicant status dropdown options.
- * @param {Omit<UseQueryOptions<string[]>, "queryKey" | "queryFn">} [options] - Optional React Query options.
- * @returns {UseQueryResult<string[], Error>} The query result object.
- */
-export const useJobApplicantStatusOptions = (
-  options?: Omit<UseQueryOptions<string[]>, "queryKey" | "queryFn">,
-): UseQueryResult<string[], Error> => {
+// ✅ Post comment
+export const useAddComment = (
+  options?: UseMutationOptions<void, Error, AddCommentPayload>
+) => {
+  return useMutation<void, Error, AddCommentPayload>({
+    mutationFn: (payload) => commentService.addComment(payload),
+    ...options,
+  });
+};
+
+// ✅ Fetch comments for applicant
+export const useComments = (
+  applicantId: string,
+  options?: Omit<UseQueryOptions<CommentItem[], Error>, "queryKey" | "queryFn">
+) => {
+  return useQuery<CommentItem[], Error>({
+    queryKey: ["comments", applicantId],
+    queryFn: () => commentService.getCommentsForApplicant(applicantId),
+    enabled: !!applicantId,
+    staleTime: 60 * 1000,
+    ...options,
+  });
+};
+
+// ✅ Update job applicant (status, sub_status, custom_substatus)
+export const useUpdateJobApplicant = () => {
+  return useMutation({
+    mutationFn: ({
+      name,
+      updates,
+    }: {
+      name: string;
+      updates: Partial<{
+        status: string;
+        sub_status: string;
+        custom_substatus: string;
+      }>;
+    }) => jobApplicantService.updateJobApplicant(name, updates),
+  });
+};
+
+// ✅ Fetch sub statuses based on parent status
+export const useSubStatuses = (
+  parentStatus: string,
+  options?: Omit<UseQueryOptions<string[], Error>, "queryKey" | "queryFn">
+) => {
   return useQuery<string[], Error>({
-    queryKey: ["job-applicant-status-options"],
-    queryFn: () => jobApplicantService.getJobApplicantStatusOptions(),
-    staleTime: Infinity,
-    retry: defaultRetry,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    queryKey: ["sub-statuses", parentStatus],
+    queryFn: () => jobApplicantService.getSubStatuses(parentStatus),
+    enabled: !!parentStatus,
     ...options,
   });
 };
-
-/**
- * Custom React Query hook for fetching job applicant sub-status dropdown options
- * based on a selected main status.
- * @param {string} mainStatus - The main status to filter sub-statuses by.
- * @param {Omit<UseQueryOptions<string[]>, "queryKey" | "queryFn">} [options] - Optional React Query options.
- * @returns {UseQueryResult<string[], Error>} The query result object.
- */
-export const useJobApplicantSubStatusOptions = (
-  mainStatus: string,
-  options?: Omit<UseQueryOptions<string[]>, "queryKey" | "queryFn">,
-): UseQueryResult<string[], Error> => {
-  return useQuery<string[], Error>({
-    queryKey: ["job-applicant-sub-status-options", mainStatus],
-    queryFn: () => jobApplicantService.getJobApplicantSubStatusOptions(mainStatus),
-    staleTime: Infinity,
-    retry: defaultRetry,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    enabled: !!mainStatus,
-    ...options,
-  });
-};
-
 
 export { isPermissionError };

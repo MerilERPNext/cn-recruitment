@@ -119,7 +119,7 @@ const App: React.FC = () => {
 
             <Route path="/webapp/recruitment-app/referral-details/:id" element={<ReferralDetails />} />
             <Route path="/webapp/recruitment-app/job-applicant-list" element={<JobApplicantList />} />
-            <Route path="/webapp/recruitment-app/job-applicant-detail/:applicantId" element={<JobApplicantDetail />} />
+            <Route path="/webapp/recruitment-app/job-applicant-detail/:id" element={<JobApplicantDetail />} />
 
             {/* Redirect any unmatched routes to the home page */}
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
