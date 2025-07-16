@@ -25,7 +25,10 @@ const RecruitmentApp: React.FC = () => {
       sessionStorage.setItem('activeTab', matchedTab);
     }
   }, [location.pathname]);
-
+  const handleAddNew = () => {
+    if (activeTab === 'Referrals') navigate('/webapp/recruitment-app/referrals/add-new-referral');
+    if (activeTab === 'Requisitions') window.open('/app/job-requisition/new');
+  }
   // On initial load, redirect to saved tab if user comes to /webapp/recruitment-app
   useEffect(() => {
     if (location.pathname === '/webapp/recruitment-app') {
@@ -94,10 +97,7 @@ const RecruitmentApp: React.FC = () => {
 
       {(activeTab === 'Requisitions' || activeTab === 'Referrals') && (
         <button
-          onClick={() => {
-            if (activeTab === 'Referrals') navigate('/webapp/recruitment-app/referrals/add-new-referral');
-            if (activeTab === 'Requisitions') window.open('/app/job-requisition/new');
-          }}
+          onClick={handleAddNew}
           className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
         >
           +

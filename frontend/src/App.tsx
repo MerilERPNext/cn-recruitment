@@ -5,7 +5,7 @@ import { useRouteInfo } from './hooks/useRouter';
 import { QueryProvider } from './providers/QueryProvider';
 import './App.css';
 
-import { AppRoute, routesConfig } from './routesConfg';
+import { AppRoute, routesConfig } from './routesConfig';
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -87,11 +87,11 @@ const App: React.FC = () => {
   const renderRoutes = (routes: AppRoute[]) =>
     routes.map(({ path, element, children }, index) =>
       children ? (
-        <Route key={index} path={path} element={element}>
+        <Route key={`${index}-${path}`} path={path} element={element}>
           {renderRoutes(children)}
         </Route>
       ) : (
-        <Route key={index} path={path} element={element} />
+        <Route key={`${index}-${path}`} path={path} element={element} />
       )
     );
 

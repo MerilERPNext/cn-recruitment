@@ -3,15 +3,15 @@ import SearchMembers from './components/SearchMembers';
 import Notices from './components/Notices';
 import IdCard from './components/IdCard';
 import RecruitmentApp from './components/RecruitmentApp';
-import InterviewPage from './components/InterveiwDetails';
+import InterviewPage from './components/InterviewDetails';
 import InterviewList from './components/interview';
 import AddNewReferral from './components/AddNewReferral';
 import ReferralDetails from './components/ReferralDetails';
 import InterviewFeedbackForm from './components/Feedback';
-import AddRequisition from './components/AddRequistion';
+import AddRequisition from './components/AddRequisition';
 import JobRequisition from './components/JobRequisition';
 import RequisitionDetails from './components/RequisitionDetails';
-import ReferralList from './components/RafarralList';
+import ReferralList from './components/ReferralList';
 
 export interface AppRoute {
   path: string;
