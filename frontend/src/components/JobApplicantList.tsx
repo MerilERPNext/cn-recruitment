@@ -21,14 +21,13 @@ interface JobApplicant {
   profile_image?: string;
 }
 
-const Avatar = ({ src, name }: { src?: string; name: string }) => {
 interface AvatarProps {
   src?: string;
   alt?: string;
   size?: string; // e.g., "h-14 w-14"
   fallback?: React.ReactNode; // Could be a fallback icon, initials, etc.
 }
-const Avatar = ({ src, alt, size = "h-14 w-14", fallback }: AvatarProps) => 
+const Avatar = ({ src, alt, size = "h-14 w-14", fallback }: AvatarProps) => {
   if (src) {
     return (
       <img
