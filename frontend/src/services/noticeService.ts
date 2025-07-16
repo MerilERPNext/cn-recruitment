@@ -12,7 +12,7 @@ export class NoticeService {
       console.log('📡 Fetching notices...');
       
       // Call our custom API
-      const response = await fetch(`${this.baseUrl}.get_user_notices`, {
+      const response = await fetch(`/api/resource/Notices`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -116,50 +116,30 @@ export class NoticeService {
   // Get unread count
   async getUnreadNoticesCount(): Promise<number> {
     try {
-      const response = await fetch(`${this.baseUrl}.get_unread_notices_count`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      });
+      // const response = await fetch(`${this.baseUrl}.get_unread_notices_count`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Accept': 'application/json',
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({}),
+      // });
 
-      if (response.ok) {
-        const result = await response.json();
+      // if (response.ok) {
+      //   const result = await response.json();
         
-        if (typeof result.message === 'number') {
-          return result.message;
-        }
-      }
+      //   if (typeof result.message === 'number') {
+      //     return result.message;
+      //   }
+      // }
       
-      // Fallback to counting from getAllNotices
-      const unreadNotices = await this.getUnreadNotices();
-      return unreadNotices.length;
-      
+      // // Fallback to counting from getAllNotices
+      // const unreadNotices = await this.getUnreadNotices();
+      // return unreadNotices.length;
+      return 0
     } catch (error) {
       console.error('📡 Error fetching unread notices count:', error);
       return 0;
-    }
-  }
-
-  async getUnreadNotices(filters?: NoticeFilters): Promise<Notice[]> {
-    try {
-      const allNotices = await this.getAllNotices(filters);
-      return allNotices.filter(notice => notice.isUnread);
-    } catch (error) {
-      console.error('📡 Error fetching unread notices:', error);
-      return [];
-    }
-  }
-
-  async getArchivedNotices(filters?: NoticeFilters): Promise<Notice[]> {
-    try {
-      const allNotices = await this.getAllNotices({ ...filters, status: 'archived' });
-      return allNotices.filter(notice => notice.status === 'archived');
-    } catch (error) {
-      console.error('📡 Error fetching archived notices:', error);
-      return [];
     }
   }
 

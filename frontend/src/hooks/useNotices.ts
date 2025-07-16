@@ -14,45 +14,6 @@ const QUERY_KEYS = {
   archivedNotices: (filters?: NoticeFilters) => ['notices', 'archived', filters] as const,
 };
 
-// Hook to get all notices
-export function useAllNotices(filters?: NoticeFilters) {
-  return useQuery({
-    queryKey: QUERY_KEYS.allNotices(filters),
-    queryFn: () => noticeService.getAllNotices(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh longer
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
-    refetchOnWindowFocus: false,
-    refetchOnMount: false, // Don't refetch on component mount if data exists
-    refetchOnReconnect: false, // Don't refetch on network reconnect
-  });
-}
-
-// Hook to get unread notices
-export function useUnreadNotices(filters?: NoticeFilters) {
-  return useQuery({
-    queryKey: QUERY_KEYS.unreadNotices(filters),
-    queryFn: () => noticeService.getUnreadNotices(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-  });
-}
-
-// Hook to get archived notices
-export function useArchivedNotices(filters?: NoticeFilters) {
-  return useQuery({
-    queryKey: QUERY_KEYS.archivedNotices(filters),
-    queryFn: () => noticeService.getArchivedNotices(filters),
-    staleTime: 10 * 60 * 1000, // 10 minutes - archived data changes less frequently
-    gcTime: 15 * 60 * 1000, // 15 minutes cache time
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-  });
-}
-
 // Hook to get unread count
 export function useUnreadNoticesCount() {
   return useQuery({

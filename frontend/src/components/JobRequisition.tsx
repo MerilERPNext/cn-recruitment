@@ -90,7 +90,7 @@ const JobRequisition: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGoToRequisition = (id: string) => {
-    navigate(`/webapp/requisitions/${id}`);
+    navigate(`/webapp/recruitment-app/requisitions/${id}`);
   };
 
   return (

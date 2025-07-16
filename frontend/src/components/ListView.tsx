@@ -21,6 +21,8 @@ import {
   useFrappeDocumentCount,
   isPermissionError,
 } from "../hooks/useFrappeQuery"
+import { useLocation } from "react-router"
+import { FilterCondition } from "../types/frappe"
 
 interface BaseItem {
   name: string;
@@ -34,6 +36,7 @@ type PageData = {
 interface FrappeListViewProps<T extends BaseItem> {
   doctype: string
   ItemComponent: React.ComponentType<{ item: T; index?: number; doctype: string }>
+  SkeletonComponent?: React.ComponentType
   isSearch?: boolean
   isFilter?: boolean
   pageSize?: number
@@ -48,13 +51,14 @@ interface FrappeListViewProps<T extends BaseItem> {
 const FrappeListView = <T extends BaseItem>({
   doctype,
   ItemComponent,
+  SkeletonComponent,
   isSearch = true,
   isFilter = false,
   pageSize = 20,
   defaultFilters = {},
   defaultFields = ["name", "modified"],
   searchFields = [],
-  onItemClick, 
+  onItemClick,
   infiniteScroll = false,
   permissionErrorMessage,
 }: FrappeListViewProps<T>) => {
@@ -64,6 +68,21 @@ const FrappeListView = <T extends BaseItem>({
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const queryClient = useQueryClient()
+  const { search } = useLocation();
+  const queryParam = new URLSearchParams(search);
+  const filtersString = queryParam.get('filters');
+  const initialQueryParamsFilters = useMemo(() => {
+    if (!filtersString) return {};
+    try {
+      return JSON.parse(decodeURIComponent(filtersString));
+    } catch (e) {
+      console.error('Invalid filters JSON', e);
+      return {};
+    }
+  }, [filtersString]);
+
+  const [queryParamsFilters, setQueryParamsFilters] = useState(initialQueryParamsFilters);
+
 
   // Console log component props
   console.log(`🎯 FrappeListView initialized for doctype: ${doctype}`, {
@@ -111,7 +130,7 @@ const FrappeListView = <T extends BaseItem>({
     doctype,
     pageSize,
     searchTerm: debouncedSearchTerm,
-    filters,
+    filters: { ...filters, ...queryParamsFilters },
     fields: defaultFields,
     searchFields,
   }
@@ -134,12 +153,16 @@ const FrappeListView = <T extends BaseItem>({
     },
   )
 
+  const combinedFilters = [
+    ...Object.entries(filters || {}).map(([key, value]) => [key, '=', value]),
+    ...Object.entries(queryParamsFilters || {}).map(([key, value]) => [key, '=', value]),
+  ];
   // Count query for traditional pagination
   const { data: countData } = useFrappeDocumentCount(
     {
       doctype,
       searchTerm: debouncedSearchTerm,
-      filters: Object.entries(filters).map(([key, value]) => [key, '=', value]),
+      filters: combinedFilters as FilterCondition[],
     },
     {
       enabled: !infiniteScroll,
@@ -232,6 +255,10 @@ const FrappeListView = <T extends BaseItem>({
     setFilters({})
     setSearchTerm("")
     setDebouncedSearchTerm("")
+    setQueryParamsFilters({})
+    const url = new URL(window.location.href);
+    url.searchParams.delete('filters');
+    window.history.replaceState({}, '', url);
   }
 
   const refreshData = () => {
@@ -309,11 +336,10 @@ const FrappeListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {pageNum}
               </button>
@@ -524,12 +550,18 @@ const FrappeListView = <T extends BaseItem>({
             </div>
           </div>
         ) : isLoading && processedData.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center space-x-2 text-gray-500">
-              <RefreshCw className="h-5 w-5 animate-spin" />
-              <span>Loading...</span>
+          SkeletonComponent ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonComponent key={index} />
+            ))
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center space-x-2 text-gray-500">
+                <RefreshCw className="h-5 w-5 animate-spin" />
+                <span>Loading...</span>
+              </div>
             </div>
-          </div>
+          )
         ) : processedData.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <span className="text-gray-500">No records found</span>

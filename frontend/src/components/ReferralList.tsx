@@ -23,7 +23,7 @@ const ReferralList: React.FC = () => {
   const navigate = useNavigate();
 
   const handleClick = (referralId: string) => {
-    navigate(`/webapp/recruitment-app/referral-details/${referralId}`);
+    navigate(`/webapp/recruitment-app/referrals/${referralId}`);
   };
 
   console.log('NotificationToken', window.nativeInterface.execute('getPushToken').then((x: string) => { window.nativeInterface.logToNative(x); }));

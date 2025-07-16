@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  useAllNotices,
-  useUnreadNotices,
-  useArchivedNotices,
   useUnreadNoticesCount,
   useMarkNoticeAsRead,
   useArchiveNotice,
@@ -18,7 +15,6 @@ import {
   MdWork,
   MdBadge,
   MdEvent,
-  MdArrowBack,
   MdRefresh,
 } from 'react-icons/md';
 
@@ -35,11 +31,6 @@ interface NoticeItem extends BaseItem, Notice {
 }
 
 // Type definitions for component props
-interface HeaderProps {
-  title: string;
-  onBackClick: () => void;
-}
-
 interface NavTabProps {
   label: string;
   isActive: boolean;
@@ -75,35 +66,29 @@ interface NoticeCardProps {
   isLoading?: boolean;
 }
 
-interface ErrorMessageProps {
-  message: string;
-  onRetry: () => void;
-}
-
 interface NoticesListProps {
   onActionClick: (noticeId: string, actionType: string, silent?: boolean) => void;
-  isLoading: boolean;
-  error: Error | null;
-  onRetry: () => void;
   activeTab: string;
 }
 
-// Header Component
-const Header = ({ title, onBackClick }: HeaderProps) => (
-  <header className="bg-white shadow-sm sticky top-0 z-10">
-    <div className="flex items-center p-4 pb-3 justify-between">
-      <button
-        className="text-gray-800 flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-        onClick={onBackClick}
-      >
-        <MdArrowBack size={24} />
-      </button>
-      <h1 className="text-gray-800 text-xl font-semibold leading-tight flex-1 text-center pr-10">
-        {title}
-      </h1>
+// Loading Skeleton Component
+const NoticeCardSkeleton = () => (
+  <div className="flex items-start gap-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 animate-pulse mb-3">
+    <div className="w-10 h-10 bg-gray-200 rounded-full shrink-0"></div>
+    <div className="flex-grow space-y-2">
+      <div className="flex justify-between items-start">
+        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-3 bg-gray-200 rounded w-12"></div>
+      </div>
+      <div className="space-y-1">
+        <div className="h-3 bg-gray-200 rounded w-full"></div>
+        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+      </div>
+      <div className="h-6 bg-gray-200 rounded w-20"></div>
     </div>
-  </header>
+  </div>
 );
+
 
 // Navigation Tab Component
 const NavTab = ({ label, isActive, hasNotification, onClick }: NavTabProps) => (
@@ -267,58 +252,9 @@ const NoticeCard = ({ item, onActionClick, isLoading = false }: NoticeCardProps)
   );
 };
 
-// Loading Skeleton Component
-const NoticeCardSkeleton = () => (
-  <div className="flex items-start gap-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 animate-pulse">
-    <div className="w-10 h-10 bg-gray-200 rounded-full shrink-0"></div>
-    <div className="flex-grow space-y-2">
-      <div className="flex justify-between items-start">
-        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-        <div className="h-3 bg-gray-200 rounded w-12"></div>
-      </div>
-      <div className="space-y-1">
-        <div className="h-3 bg-gray-200 rounded w-full"></div>
-        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-      </div>
-      <div className="h-6 bg-gray-200 rounded w-20"></div>
-    </div>
-  </div>
-);
-
-// Error Component
-const ErrorMessage = ({ message, onRetry }: ErrorMessageProps) => (
-  <div className="p-4 text-center">
-    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-      <div className="flex items-center justify-center mb-2">
-        <MdError className="text-red-500" size={20} />
-      </div>
-      <p className="text-red-700 font-medium mb-2">Error Loading Notices</p>
-      <p className="text-red-600 text-sm mb-4">{message}</p>
-      <button
-        className="bg-red-500 text-white px-4 py-2 rounded-md text-sm hover:bg-red-600 transition-colors"
-        onClick={onRetry}
-      >
-        Retry
-      </button>
-    </div>
-  </div>
-);
 
 // Notices List Component
-const NoticesList = ({ onActionClick, isLoading, error, onRetry, activeTab }: NoticesListProps) => {
-  if (error) {
-    return <ErrorMessage message={error.message} onRetry={onRetry} />;
-  }
-
-  if (isLoading) {
-    return (
-      <main className="p-4 space-y-3">
-        {[...Array(3)].map((_, index) => (
-          <NoticeCardSkeleton key={index} />
-        ))}
-      </main>
-    );
-  }
+const NoticesList = ({ onActionClick, activeTab }: NoticesListProps) => {
 
   // Set filters based on activeTab
   let defaultFilters: Record<string, string> = {};
@@ -335,6 +271,7 @@ const NoticesList = ({ onActionClick, isLoading, error, onRetry, activeTab }: No
       <FrappeListView
         doctype="Notice"
         ItemComponent={NoticeCard}
+        SkeletonComponent={NoticeCardSkeleton}
         onItemClick={(item: BaseItem) => {
           const noticeId = item.id || item.name;
           const notice = item as NoticeItem;
@@ -343,8 +280,8 @@ const NoticesList = ({ onActionClick, isLoading, error, onRetry, activeTab }: No
         isSearch={true}
         pageSize={10}
         defaultFilters={defaultFilters}
-        defaultFields={['name', 'title', 'category', 'priority', 'publish_date', 'expiry_date', 'status', 'isUnread']}
-        searchFields={['title', 'message', 'category', 'priority', 'status']}
+        defaultFields={['name', 'title', 'priority', 'publish_date', 'expiry_date', 'status']}
+        searchFields={['title', 'message', 'priority', 'status']}
         // Removed itemComponentProps as it doesn't exist on FrappeListViewProps
         // The props are passed directly to ItemComponent through the FrappeListView
         infiniteScroll={true}
@@ -359,9 +296,6 @@ const Notices: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'archived'>('all');
 
   // Use appropriate hook based on active tab
-  const allNoticesQuery = useAllNotices();
-  const unreadNoticesQuery = useUnreadNotices();
-  const archivedNoticesQuery = useArchivedNotices();
   const unreadCountQuery = useUnreadNoticesCount();
 
   // Mutation hooks
@@ -369,44 +303,23 @@ const Notices: React.FC = () => {
   const archiveMutation = useArchiveNotice();
   const dismissMutation = useDismissNotice();
 
-  // Get current data based on active tab
-  const getCurrentQuery = () => {
-    switch (activeTab) {
-      case 'unread':
-        return unreadNoticesQuery;
-      case 'archived':
-        return archivedNoticesQuery;
-      default:
-        return allNoticesQuery;
-    }
-  };
-
-  const currentQuery = getCurrentQuery();
-  const notices = useMemo(() => currentQuery.data || [], [currentQuery.data]);
-  const isLoading = currentQuery.isLoading;
-  const error = currentQuery.error;
 
   // Auto mark as read when notice is viewed
-  useEffect(() => {
-    if (activeTab === 'unread' && notices.length > 0) {
-      const timers = notices.map(notice => {
-        if (notice.isUnread) {
-          return setTimeout(() => {
-            const noticeId = notice.id || notice.name;
-            markAsReadMutation.mutate(noticeId);
-          }, 2000);
-        }
-        return null;
-      });
-      return () => timers.forEach(timer => timer && clearTimeout(timer));
-    }
-  }, [activeTab, markAsReadMutation, notices]);
+  // useEffect(() => {
+  //   if (activeTab === 'unread' && notices.length > 0) {
+  //     const timers = notices.map(notice => {
+  //       if (notice.isUnread) {
+  //         return setTimeout(() => {
+  //           const noticeId = notice.id || notice.name;
+  //           markAsReadMutation.mutate(noticeId);
+  //         }, 2000);
+  //       }
+  //       return null;
+  //     });
+  //     return () => timers.forEach(timer => timer && clearTimeout(timer));
+  //   }
+  // }, [activeTab, markAsReadMutation, notices]);
 
-  // Event handlers
-  const handleBackClick = () => {
-    console.log('Back button clicked');
-    navigate(-1);
-  };
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab as 'all' | 'unread' | 'archived');
@@ -452,10 +365,6 @@ const Notices: React.FC = () => {
     }
   };
 
-  const handleRetry = () => {
-    currentQuery.refetch();
-  };
-
   return (
     <div 
       className="relative flex size-full min-h-screen flex-col justify-between bg-gray-50 overflow-x-hidden"
@@ -465,10 +374,6 @@ const Notices: React.FC = () => {
       }}
     >
       <div className="flex-grow">
-        <Header 
-          title="Notices"
-          onBackClick={handleBackClick}
-        />
         
         <Navigation 
           activeTab={activeTab}
@@ -478,9 +383,6 @@ const Notices: React.FC = () => {
         
         <NoticesList 
           onActionClick={handleActionClick}
-          isLoading={isLoading}
-          error={error}
-          onRetry={handleRetry}
           activeTab={activeTab}
         />
       </div>
