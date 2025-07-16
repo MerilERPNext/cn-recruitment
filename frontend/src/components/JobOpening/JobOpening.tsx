@@ -3,19 +3,16 @@ import type { JobOpening } from "../../types/jobOpening";
 import { useNavigate } from "react-router";
 
 const JobOpeningsUI: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  const handleGoToJobOpening = (item: JobOpening) => {
-    const JobOpeningId = encodeURIComponent(item.name);
-    navigate(`/webapp/recruitment-app/job-opening/${JobOpeningId}`);
-  };
+  // const handleGoToJobOpening = (item: JobOpening) => {
+  //   const JobOpeningId = encodeURIComponent(item.name);
+  //   navigate(`/webapp/recruitment-app/job-opening/${JobOpeningId}`);
+  // };
   return (
     <FrappeListView
       doctype="Job Opening"
       ItemComponent={JobOpeningItem}
-      onItemClick={(item: JobOpening) => {
-        handleGoToJobOpening(item);
-      }}
       isSearch={true}
       pageSize={10}
       defaultFields={[
@@ -45,7 +42,7 @@ const JobOpeningItem: React.FC<{
       job_title: item.job_title,
     };
     const encodedFilter = encodeURIComponent(JSON.stringify(filter));
-    navigate(`/webapp/recruitment-app/job-applicant?filter=${encodedFilter}`);
+    navigate(`/webapp/recruitment-app/job-applicant-filter-list?filter=${encodedFilter}`);
   };
   const handleEditRequisition = () => {
     const JobOpeningId = encodeURIComponent(item.name);
@@ -87,7 +84,7 @@ const JobOpeningItem: React.FC<{
   const statusColors = getStatusColor(item.status);
 
   return (
-    <div className="rounded-2xl bg-white p-4 border">
+    <div className="rounded-2xl bg-white p-4 border hover:bg-gray-50 ">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-lg font-bold text-gray-900">{item.job_title}</h3>

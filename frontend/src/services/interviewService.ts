@@ -5,7 +5,6 @@ export const interviewService = {
   // Fetch interview and rounds data
   getInterviewAndRounds: async ({ interview_id }: GetInterviewParams): Promise<InterviewAndRoundsResponse> => {
     try {
-      console.log(`📡 Fetching interview and rounds for ID: ${interview_id}`)
 
       const result = await FrappeAPI.getDocument("Interview", interview_id) as InterviewData
 

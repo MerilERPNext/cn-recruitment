@@ -81,7 +81,7 @@ const ApplicantCard = ({
   </div>
 );
 
-export default function JobApplicantList() {
+export default function JobApplicantFilterList() {
   const navigate = useNavigate();
   const location = useLocation();
 
