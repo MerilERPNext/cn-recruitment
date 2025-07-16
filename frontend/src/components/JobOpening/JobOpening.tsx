@@ -44,10 +44,12 @@ const JobOpeningItem: React.FC<{
       designation: item.designation,
       job_title: item.job_title,
     };
-  
     const encodedFilter = encodeURIComponent(JSON.stringify(filter));
-  
     navigate(`/webapp/recruitment-app/job-applicant?filter=${encodedFilter}`);
+  };
+  const handleEditRequisition = () => {
+    const JobOpeningId = encodeURIComponent(item.name);
+    window.open(`/app/job-opening/${JobOpeningId}`);
   };
   
 
@@ -158,7 +160,12 @@ const JobOpeningItem: React.FC<{
         >
           View Applicants
         </button>
-        <button className="rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white">
+        <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditRequisition();
+                  }}
+        className="rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white">
           Edit
         </button>
       </div>

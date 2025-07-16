@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router";
 import FrappeListView from "./ListView";
-import { ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface JobApplicant {
@@ -105,9 +105,26 @@ export default function JobApplicantList() {
     navigate(`/webapp/recruitment-app/job-applicant-detail/${item.name}`);
   };
 
+  const handleGoBack = () => {
+    navigate(-1);
+  };
 
   return (
-    <div className="flex-grow h-full w-full bg-white overflow-y-auto">
+    <div className="flex-grow h-full w-full bg-white overflow-y-auto p-4">
+      <div className="py-4 flex justify-between items-center bg-white">
+        <button
+             onClick={handleGoBack}
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-100 active:bg-slate-200 text-slate-900"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+
+        <h1 className="text-lg font-semibold text-gray-900">
+          Job Applicants
+        </h1>
+
+        <div className="w-12" />
+      </div>
 
       <FrappeListView
         doctype="Job Applicant"
@@ -117,14 +134,16 @@ export default function JobApplicantList() {
           const matchesDesignation = filterDesignation
             ? item.designation?.toLowerCase() ===
               filterDesignation.toLowerCase()
-            : true; // ← agar filterDesignation nahi hai, to sab match honge
+            : false;
 
           const matchesJobTitle = filterJobTitle
             ? item.job_title?.toLowerCase() === filterJobTitle.toLowerCase()
-            : true; // ← agar filterJobTitle nahi hai, to sab match honge
+            : false;
 
-          if (matchesDesignation && matchesJobTitle) {
-            return <ApplicantCard item={item} onClick={handleApplicantClick} />;
+          if (matchesDesignation || matchesJobTitle) {
+            return (
+              <ApplicantCard item={item} onClick={handleApplicantClick} />
+            );
           }
 
           return null;

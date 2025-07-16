@@ -14,8 +14,8 @@ import AddNewReferral from './components/AddNewReferral';
 import ReferralDetails from './components/ReferralDetails';
 import InterviewFeedbackForm from './components/Feedback';
 import AddRequisition from './components/AddRequistion';
-import JobApplicantList from './components/JobApplicantList';
 import JobApplicantDetail from './components/JobApplicantDetail';
+import JobApplicantFilterList from './components/jobApplicantFilterList';
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -116,11 +116,11 @@ const App: React.FC = () => {
             <Route path="/webapp/recruitment-app/referral-details/*" element={<ReferralDetails />} />
             <Route path="/webapp/recruitment-app/add-requisition/*" element={<AddRequisition />} />
             <Route path="/webapp/recruitment-app/interview-feedback/:id" element={<InterviewFeedbackForm />} />
-            <Route path="/webapp/recruitment-app/job-applicant/" element={<JobApplicantList />} />
+            <Route path="/webapp/recruitment-app/job-applicant/" element={<JobApplicantFilterList />} />
 
 
             <Route path="/webapp/recruitment-app/referral-details/:id" element={<ReferralDetails />} />
-            <Route path="/webapp/recruitment-app/job-applicant-list" element={<JobApplicantList />} />
+            <Route path="/webapp/recruitment-app/job-applicant-list" element={<JobApplicantFilterList />} />
             <Route path="/webapp/recruitment-app/job-applicant-detail/:applicantId" element={<JobApplicantDetail />} />
 
             {/* Redirect any unmatched routes to the home page */}
