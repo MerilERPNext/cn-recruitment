@@ -11,7 +11,7 @@ type TabName =
   | "Interviews"
   | "Requisitions"
   | "Job Opening"
-  | "JobApplicants";
+  | "Job Applicants";
 
 const RecruitmentApp: React.FC = () => {
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ const RecruitmentApp: React.FC = () => {
     "Referrals",
     "Interviews",
     "Job Opening",
-    "JobApplicants",
+    "Job Applicants",
   ];
 
   const handleTabChange = (tab: TabName) => {
@@ -139,7 +139,7 @@ const RecruitmentApp: React.FC = () => {
               return <JobRequisition />;
             case "Job Opening":
               return <JobOpeningsUI />;
-            case "JobApplicant:
+            case "Job Applicant:
               return <JobApplicantList />;
 
             default:
