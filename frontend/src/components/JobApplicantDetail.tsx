@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router-dom';
+import { RefreshCw, AlertCircle } from "lucide-react";
+
 import DetailsContent from './DetailsContent';
 import TimelineContent from './TimelineContent';
 import NotesContent from './NotesContent';
 import TopCard from './TopCard';
-import { useJobApplicant } from '../hooks/useJobApplicant';
+import { useJobApplicant, isPermissionError } from '../hooks/useJobApplicant';
 
 const JobApplicantDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -17,18 +19,80 @@ const JobApplicantDetails: React.FC = () => {
     isLoading,
     isError,
     error,
-    refetch, 
+    refetch,
   } = useJobApplicant(id || '', {
     enabled: !!id,
   });
 
-  if (!id) {
-    return <p className="p-4 text-red-500">No applicant ID found in URL.</p>;
+  const handleBack = () => navigate(-1);
+
+  // 🔄 Loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex items-center space-x-2 text-gray-500">
+          <RefreshCw className="w-6 h-6 animate-spin" />
+          <span className="text-lg">Loading applicant details...</span>
+        </div>
+      </div>
+    );
   }
 
-  if (isLoading) return <p className="p-4">Loading applicant...</p>;
-  if (isError) return <p className="p-4 text-red-500">Error: {(error as Error).message}</p>;
-  if (!data) return <p className="p-4 text-red-500">No data found for this applicant.</p>;
+  // ❌ Error
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white px-4">
+        <div className="max-w-md w-full text-center space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="p-3 bg-red-100 rounded-full">
+              <AlertCircle className="h-8 w-8 text-red-600" />
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">Error Loading Applicant</h3>
+          <p className="text-sm text-gray-600">
+            {isPermissionError(error)
+              ? "You don’t have permission to view this applicant. Please contact your administrator."
+              : (error as Error).message}
+          </p>
+          <div className="flex justify-center gap-3 mt-2">
+            <button
+              onClick={() => {
+                console.log("🔁 Retrying referral fetch...");
+                refetch();
+              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md"
+            >
+              <RefreshCw className="w-4 h-4 inline-block mr-1" />
+              Try Again
+            </button>
+            <button
+              onClick={handleBack}
+              className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md bg-white hover:bg-gray-50"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white px-4">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-900">Applicant Not Found</h3>
+          <p className="text-sm text-gray-600 mb-4">The requested applicant could not be found.</p>
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -63,11 +127,12 @@ const JobApplicantDetails: React.FC = () => {
         <TopCard
           name={data.applicant_name}
           email={data.email_id || ""}
+          phone_number={data.phone_number || ""}
           jobTitle={data.designation || ""}
           applicantId={data.name}
           status={data.status || "Open"}
           customSubStatus={data.custom_substatus || ""}
-          refetch={refetch} 
+          refetch={refetch}
         />
 
         <div className="bg-white">
@@ -81,8 +146,8 @@ const JobApplicantDetails: React.FC = () => {
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value as typeof activeTab)}
                 className={`flex-1 py-3 text-center text-sm font-medium cursor-pointer transition-all duration-200 ${activeTab === tab.value
-                    ? 'border-b-2 border-[var(--primary-color)] text-[var(--primary-color)]'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--primary-color)]'
+                  ? 'border-b-2 border-[var(--primary-color)] text-[var(--primary-color)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--primary-color)]'
                   }`}
               >
                 {tab.label}
@@ -98,4 +163,3 @@ const JobApplicantDetails: React.FC = () => {
 };
 
 export default JobApplicantDetails;
-
