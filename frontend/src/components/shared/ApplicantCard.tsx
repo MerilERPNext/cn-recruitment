@@ -1,9 +1,9 @@
-// frontend/src/components/shared/ApplicantCard.tsx
+
 import React from 'react';
 import { ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import type { JobApplicant } from '../../types/jobApplicant'; // Adjust path based on your project structure
-import Avatar from './Avatar'; // Import the newly created shared Avatar component
+import type { JobApplicant } from '../../types/jobApplicant'; 
+import Avatar from './Avatar'; 
 
 interface ApplicantCardProps {
   item: JobApplicant;

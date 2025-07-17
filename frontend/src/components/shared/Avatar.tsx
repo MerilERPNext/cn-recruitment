@@ -1,18 +1,18 @@
-// frontend/src/components/shared/Avatar.tsx
+
 import React from 'react';
 
 interface AvatarProps {
   src?: string;
-  name: string; // Changed from 'alt' in JobApplicantList for consistency with initial suggestion
-  size?: string; // e.g., "h-14 w-14"
+  name: string; 
+  size?: string; 
 }
 
-const Avatar: React.FC<AvatarProps> = ({ src, name, size = "h-12 w-12" }) => { // Default size as per original
+const Avatar: React.FC<AvatarProps> = ({ src, name, size = "h-12 w-12" }) => { 
   if (src) {
     return (
       <img
         src={src}
-        alt={name} // Use name as alt text
+        alt={name} 
         className={`aspect-square rounded-full ${size} object-cover border border-gray-200 bg-white`}
       />
     );

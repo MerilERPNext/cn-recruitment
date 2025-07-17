@@ -1,13 +1,8 @@
-// frontend/src/components/JobApplicantList.tsx
+
 import { useLocation, useNavigate } from "react-router";
 import FrappeListView from "./ListView";
-// import { ChevronRight } from "lucide-react"; // No longer directly used here
-// import { formatDistanceToNow } from "date-fns"; // No longer directly used here
 import type { JobApplicant } from "../types/jobApplicant";
-import ApplicantCard from './shared/ApplicantCard'; // Import the shared component
-// import Avatar from './shared/Avatar'; // No longer needed here as it's used inside ApplicantCard
-
-// Removed Avatar and ApplicantCard definitions from here
+import ApplicantCard from './shared/ApplicantCard';
 
 export default function JobApplicantList() {
   const navigate = useNavigate();
