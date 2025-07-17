@@ -71,19 +71,23 @@ const FrappeListView = <T extends BaseItem>({
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
   const filtersString = queryParam.get('filters');
-  const initialQueryParamsFilters = useMemo(() => {
-    if (!filtersString) return {};
+
+  const [queryParamsFilters, setQueryParamsFilters] = useState({});
+
+  useEffect(() => {
+    if (!filtersString) {
+      setQueryParamsFilters({});
+      return;
+    }
+
     try {
-      return JSON.parse(decodeURIComponent(filtersString));
+      const parsed = JSON.parse(decodeURIComponent(filtersString));
+      setQueryParamsFilters(parsed);
     } catch (e) {
       console.error('Invalid filters JSON', e);
-      return {};
+      setQueryParamsFilters({});
     }
   }, [filtersString]);
-
-  const [queryParamsFilters, setQueryParamsFilters] = useState(initialQueryParamsFilters);
-
-
   // Console log component props
   console.log(`🎯 FrappeListView initialized for doctype: ${doctype}`, {
     pageSize,
