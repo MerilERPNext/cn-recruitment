@@ -129,7 +129,7 @@ const NoticeDetails = () => {
             </div>
         )
     }
-    const cleanHTML = DOMPurify.sanitize(notice?.message);
+    const cleanHTML = DOMPurify.sanitize(notice?.message || "");
 
     return (
         <div className=" bg-white">
@@ -211,8 +211,7 @@ const NoticeDetails = () => {
                                         <span
                                             className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(notice?.priority)}`}
                                         >
-                                            {notice?.priority.charAt(0).toUpperCase() + notice?.priority.slice(1)}
-                                        </span>
+                                            {notice?.priority ? notice.priority.charAt(0).toUpperCase() + notice.priority.slice(1) : ''}                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -242,7 +241,7 @@ const NoticeDetails = () => {
                         )}
                     </button>
 
-                    {notice?.status.toLowerCase() !== 'archived' && (
+                    {notice?.status?.toLowerCase() !== 'archived' && (
                         <button
                             className="px-6 py-3 border border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
                             onClick={() => handleActionClick("archive")}

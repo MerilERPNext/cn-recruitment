@@ -85,7 +85,7 @@ export function useArchiveNotice() {
 
 export function useGetNoticeById(noticeId: string) {
   return useQuery({
-    queryKey: [QUERY_KEYS, noticeId],
+    queryKey: [QUERY_KEYS.notices, noticeId],
     queryFn: () => NoticeService.getNotice(noticeId),
     enabled: !!noticeId, // avoids firing when ID is undefined
   });
