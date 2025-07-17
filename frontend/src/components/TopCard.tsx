@@ -15,20 +15,22 @@ import { JOB_APPLICATION_STATUSES } from "../constants/jobApplicantConstants";
 interface TopCardProps {
   name: string;
   email: string;
+  phone_number: string;
   jobTitle: string;
   applicantId: string;
   status?: string;
   customSubStatus?: string;
-  refetch?: () => void; 
+  refetch?: () => void;
 }
 
 const TopCard: React.FC<TopCardProps> = ({
   name,
   email,
+  phone_number,
   jobTitle,
   applicantId,
-  status: initialStatus = "Open", 
-  customSubStatus: initialSubStatus = "", 
+  status: initialStatus = "Open",
+  customSubStatus: initialSubStatus = "",
   refetch,
 }) => {
   const [status, setStatus] = useState<string>(initialStatus);
@@ -39,13 +41,12 @@ const TopCard: React.FC<TopCardProps> = ({
     useSubStatuses(status);
   const updateMutation = useUpdateJobApplicant();
 
-// Sub Status Setting
-useEffect(() => {
-  if (!initialSubStatus && subStatusOptions.length > 0) {
-    setSubStatus(subStatusOptions[0]);
-  }
-}, [subStatusOptions, initialSubStatus]);
-
+  // Set default sub-status
+  useEffect(() => {
+    if (!initialSubStatus && subStatusOptions.length > 0) {
+      setSubStatus(subStatusOptions[0]);
+    }
+  }, [subStatusOptions, initialSubStatus]);
 
   // Update backend when status/subStatus change
   useEffect(() => {
@@ -65,15 +66,48 @@ useEffect(() => {
       {
         onSuccess: () => {
           console.log("✅ Backend updated. Refetching latest data...");
-          refetch?.(); 
+          refetch?.();
         },
       }
     );
   }, [status, subStatus, applicantId, refetch]);
 
+  const handleCall = () => {
+    console.log("📞 Phone number (raw):", phone_number);
+    if (phone_number && phone_number !== "N/A") {
+      window.open(`tel:${phone_number}`);
+      console.log("✅ Call triggered for", phone_number);
+    } else {
+      console.log("❌ Phone number not available for call.");
+    }
+  };
+
+  const handleWhatsApp = () => {
+    console.log("💬 Phone number (raw):", phone_number);
+    if (phone_number && phone_number !== "N/A") {
+      let cleanPhoneNumber = phone_number.replace(/\D/g, "");
+      if (cleanPhoneNumber.length === 10 && !cleanPhoneNumber.startsWith("91")) {
+        cleanPhoneNumber = "91" + cleanPhoneNumber;
+      }
+      const whatsappUrl = `https://wa.me/${cleanPhoneNumber}`;
+      console.log("✅ WhatsApp URL:", whatsappUrl);
+      window.open(whatsappUrl, "_blank");
+    } else {
+      console.log("❌ Phone number not available for WhatsApp.");
+    }
+  };
+
+  const handleEmail = () => {
+    if (email && email !== "N/A") {
+      window.open(`mailto:${email}`);
+      console.log("Email clicked for", email);
+    } else {
+      console.log("Email ID not available.");
+    }
+  };
+
   return (
     <div className="p-4 bg-white">
-      
       <div className="flex items-center gap-4 mb-4">
         <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl">
           <MdPerson />
@@ -105,7 +139,6 @@ useEffect(() => {
           </div>
         </div>
 
-
         <div className="relative flex-1">
           <select
             disabled={isSubLoading}
@@ -130,13 +163,22 @@ useEffect(() => {
       </div>
 
       <div className="flex justify-between items-center gap-2 p-2">
-        <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-[var(--primary-color)] text-white rounded-lg font-semibold text-sm">
+        <button
+          onClick={handleCall}
+          className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-[var(--primary-color)] text-white rounded-lg font-semibold text-sm"
+        >
           <MdCall className="text-base" /> Call
         </button>
-        <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-green-500 text-white rounded-lg font-semibold text-sm">
+        <button
+          onClick={handleWhatsApp}
+          className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-green-500 text-white rounded-lg font-semibold text-sm"
+        >
           <MdChat className="text-base" /> WhatsApp
         </button>
-        <button className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-gray-200 text-[var(--text-primary)] rounded-lg font-semibold text-sm">
+        <button
+          onClick={handleEmail}
+          className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-gray-200 text-[var(--text-primary)] rounded-lg font-semibold text-sm"
+        >
           <MdMail className="text-base" /> Email
         </button>
       </div>
@@ -145,4 +187,3 @@ useEffect(() => {
 };
 
 export default TopCard;
-
