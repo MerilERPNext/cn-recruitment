@@ -1,6 +1,5 @@
 import { ReactElement } from 'react';
 import SearchMembers from './components/SearchMembers';
-import Notices from './components/Notices';
 import IdCard from './components/IdCard';
 import RecruitmentApp from './components/RecruitmentApp';
 import InterviewPage from './components/InterviewDetails';
@@ -12,6 +11,9 @@ import AddRequisition from './components/AddRequisition';
 import JobRequisition from './components/JobRequisition';
 import RequisitionDetails from './components/RequisitionDetails';
 import ReferralList from './components/ReferralList';
+import NoticeDetails from './components/Notices/NoticeDetails';
+import NoticesLayout from './components/Notices/NoticesLayout';
+import NoticesTab from './components/Notices/NoticesTab';
 
 export interface AppRoute {
   path: string;
@@ -23,7 +25,6 @@ export const routesConfig: AppRoute[] = [
 
   // Standalone Routes
   { path: '/webapp/search-members', element: <SearchMembers /> },
-  { path: '/webapp/notices', element: <Notices /> },
   { path: '/webapp/id-card', element: <IdCard /> },
   { path: '/webapp/id-card/:employeeId', element: <IdCard /> },
 
@@ -37,7 +38,16 @@ export const routesConfig: AppRoute[] = [
       { path: 'interviews', element: <InterviewList /> },
     ],
   },
-
+  {
+    path: '/webapp/notices',
+    element: <NoticesLayout />,
+    children: [
+      { path: 'all', element: <NoticesTab tab="all" /> },
+      { path: 'unread', element: <NoticesTab tab="unread" /> },
+      // { path: 'archived', element: <NoticesTab tab="archived" /> },
+    ],
+  },
+  { path: '/webapp/notices/:id', element: <NoticeDetails /> },
   // Flat Recruitment Routes
   {
     path: '/webapp/recruitment-app/referrals/add-new-referral',
@@ -63,4 +73,6 @@ export const routesConfig: AppRoute[] = [
     path: '/webapp/recruitment-app/requisitions/add-requisition/*',
     element: <AddRequisition />,
   },
+  // { path: '/webapp/notices/:id', element: <NoticeDetails /> },
+
 ];

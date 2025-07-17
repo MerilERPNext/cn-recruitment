@@ -82,6 +82,15 @@ export function useArchiveNotice() {
   });
 }
 
+
+export function useGetNoticeById(noticeId: string) {
+  return useQuery({
+    queryKey: [QUERY_KEYS, noticeId],
+    queryFn: () => NoticeService.getNotice(noticeId),
+    enabled: !!noticeId, // avoids firing when ID is undefined
+  });
+}
+
 // Hook to dismiss notice
 export function useDismissNotice() {
   const queryClient = useQueryClient();
