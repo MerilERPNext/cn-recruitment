@@ -28,14 +28,13 @@ export const useReferralDetails = (
 }
 
 
-// ✅ New hook for designations
 export const useDesignations = (
   options?: Omit<UseQueryOptions<DesignationResponse>, "queryKey" | "queryFn">
 ) => {
   return useQuery({
     queryKey: ["designations"],
     queryFn: () => referralService.getDesignations(),
-    staleTime: 10 * 60 * 1000, // 10 minutes - designations don't change frequently
+    staleTime: 10 * 60 * 1000,
     retry: (failureCount, error) => !isPermissionError(error) && failureCount < 3,
     ...options,
   })

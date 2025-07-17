@@ -1,7 +1,6 @@
 import FrappeListView from "../ListView";
 import type { JobOpening } from "../../types/jobOpening";
 
-
 const JobOpeningsUI: React.FC = () => {
   return (
     <FrappeListView
@@ -28,20 +27,19 @@ const JobOpeningItem: React.FC<{
   index?: number;
   doctype: string;
 }> = ({ item }) => {
- 
-
   const handleViewApplicants = () => {
     const filter = {
       designation: item.designation,
     };
     const encodedFilter = JSON.stringify(filter);
-    window.location.href=(`/webapp/recruitment-app/job-applicant-list?filters=${encodedFilter}`);
+    window.open(
+      `/webapp/recruitment-app/job-applicant-list?filters=${encodedFilter}`
+    );
   };
   const handleEditRequisition = () => {
     const JobOpeningId = encodeURIComponent(item.name);
     window.open(`/app/job-opening/${JobOpeningId}`);
   };
-  
 
   const getStatusColor = (status: string) => {
     const normalizedStatus = status.toLowerCase().replace(/\s+/g, "");
@@ -89,21 +87,6 @@ const JobOpeningItem: React.FC<{
           >
             {item.status}
           </span>
-          <button className="text-gray-500">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-              />
-            </svg>
-          </button>
         </div>
       </div>
       <div className="mt-4 flex items-center justify-between">
@@ -150,12 +133,13 @@ const JobOpeningItem: React.FC<{
         >
           View Applicants
         </button>
-        <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditRequisition();
-                  }}
-        className="rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEditRequisition();
+          }}
+          className="rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white"
+        >
           Edit
         </button>
       </div>

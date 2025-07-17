@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { MdArrowBackIosNew, MdCloudUpload } from "react-icons/md";
 import { useNavigate } from "react-router";
 import Select from "react-select";
-import { useDesignations } from "../hooks/useReferralDetails"; // ✅ Import the hook
+import { useDesignations } from "../hooks/useReferralDetails";
 import type { SelectOption } from "../types/referral";
 
 type ModalProps = {
@@ -79,6 +79,7 @@ const AddNewReferral: React.FC = () => {
   const navigate = useNavigate();
 
   const [candidateName, setCandidateName] = useState("");
+  const [candidateLastName, setCandidateLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [position, setPosition] = useState("");
@@ -88,19 +89,16 @@ const AddNewReferral: React.FC = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // ✅ Modal state
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
-  // ✅ Use React Query hook for designations
   const {
     data: designationsData,
     isLoading: isLoadingDesignations,
     error: designationsError,
   } = useDesignations();
 
-  // ✅ Memoize position options
   const positionOptions: SelectOption[] = useMemo(() => {
     if (!designationsData?.data) return [];
 
@@ -110,7 +108,6 @@ const AddNewReferral: React.FC = () => {
     }));
   }, [designationsData]);
 
-  // ✅ Handle designation loading error
   React.useEffect(() => {
     if (designationsError) {
       console.error("Error fetching designations:", designationsError);
@@ -164,6 +161,7 @@ const AddNewReferral: React.FC = () => {
   const handleSubmit = async () => {
     if (
       !candidateName.trim() ||
+      !candidateLastName.trim() ||
       !email.trim() ||
       !phone.trim() ||
       !position ||
@@ -185,6 +183,7 @@ const AddNewReferral: React.FC = () => {
 
     const payload = {
       candidate_name: candidateName.trim(),
+      last_name: candidateLastName.trim(),
       email: email.trim(),
       contact_no: phone.trim(),
       for_designation: position,
@@ -204,7 +203,7 @@ const AddNewReferral: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            data: JSON.stringify(payload),
+            data: payload,
           }),
         }
       );
@@ -265,13 +264,28 @@ const AddNewReferral: React.FC = () => {
                 htmlFor="candidateName"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Candidate Name*
+                Candidate First Name*
               </label>
               <input
                 id="candidateName"
                 type="text"
                 value={candidateName}
                 onChange={(e) => setCandidateName(e.target.value)}
+                className="w-full border border-gray-300 bg-[var(--primary-light)] rounded-lg px-4 py-3"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="candidateLastName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Candidate Last Name*
+              </label>
+              <input
+                id="candidateLastName"
+                type="text"
+                value={candidateLastName}
+                onChange={(e) => setCandidateLastName(e.target.value)}
                 className="w-full border border-gray-300 bg-[var(--primary-light)] rounded-lg px-4 py-3"
               />
             </div>
@@ -435,7 +449,6 @@ const AddNewReferral: React.FC = () => {
         </div>
       </footer>
 
-      {/* ✅ Modal */}
       <Modal
         show={showModal}
         title={modalTitle}
