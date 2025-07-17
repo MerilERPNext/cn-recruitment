@@ -1,6 +1,6 @@
 import FrappeListView from "../ListView";
 import type { JobOpening } from "../../types/jobOpening";
-import { useNavigate } from "react-router";
+
 
 const JobOpeningsUI: React.FC = () => {
   return (
@@ -28,27 +28,20 @@ const JobOpeningItem: React.FC<{
   index?: number;
   doctype: string;
 }> = ({ item }) => {
-  const navigate = useNavigate();
+ 
 
   const handleViewApplicants = () => {
     const filter = {
       designation: item.designation,
-      job_title: item.job_title,
     };
-    const encodedFilter = encodeURIComponent(JSON.stringify(filter));
-    navigate(
-      `/webapp/recruitment-app/job-applicant-filter-list?filter=${encodedFilter}`
-    );
+    const encodedFilter = JSON.stringify(filter);
+    window.location.href=(`/webapp/recruitment-app/job-applicant-list?filters=${encodedFilter}`);
   };
   const handleEditRequisition = () => {
     const JobOpeningId = encodeURIComponent(item.name);
     window.open(`/app/job-opening/${JobOpeningId}`);
   };
-
-  const handleMoreOptionsClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log("More options button clicked for job opening:", item.job_title);
-  };
+  
 
   const getStatusColor = (status: string) => {
     const normalizedStatus = status.toLowerCase().replace(/\s+/g, "");
@@ -96,12 +89,7 @@ const JobOpeningItem: React.FC<{
           >
             {item.status}
           </span>
-          <button
-            type="button"
-            onClick={handleMoreOptionsClick}
-            aria-label={`More options for ${item.job_title}`}
-            className="text-gray-500 p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <button className="text-gray-500">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -162,13 +150,12 @@ const JobOpeningItem: React.FC<{
         >
           View Applicants
         </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleEditRequisition();
-          }}
-          className="rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white"
-        >
+        <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditRequisition();
+                  }}
+        className="rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white">
           Edit
         </button>
       </div>
