@@ -1,0 +1,91 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:assignment_code",
+ "creation": "2025-07-17 18:26:37.229202",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "assignment_name",
+  "assignment_code",
+  "applicable_for_process",
+  "column_break_dbqr",
+  "description",
+  "business_unit",
+  "user_assignment_conditions_section",
+  "assignment_conditions"
+ ],
+ "fields": [
+  {
+   "fieldname": "assignment_name",
+   "fieldtype": "Data",
+   "label": "Assignment Name"
+  },
+  {
+   "fieldname": "assignment_code",
+   "fieldtype": "Data",
+   "label": "Assignment Code",
+   "unique": 1
+  },
+  {
+   "fieldname": "applicable_for_process",
+   "fieldtype": "Link",
+   "label": "Applicable for Process",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "column_break_dbqr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "business_unit",
+   "fieldtype": "Link",
+   "label": "Business Unit",
+   "options": "Business Unit"
+  },
+  {
+   "fieldname": "user_assignment_conditions_section",
+   "fieldtype": "Section Break",
+   "label": "User Assignment Conditions"
+  },
+  {
+   "fieldname": "assignment_conditions",
+   "fieldtype": "Table",
+   "label": "Assignment Conditions",
+   "options": "Assignment Conditions"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-07-17 18:34:37.283412",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "User Assignment",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

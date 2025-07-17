@@ -1,0 +1,219 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:notice_period_id",
+ "creation": "2025-07-17 17:11:59.607490",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "is_archive",
+  "notice_period_id",
+  "column_break_olfk",
+  "notice_period_name",
+  "notice_period_settings_section",
+  "set_notice_period_after_confirmation_in",
+  "set_notice_period_under_probation_in",
+  "set_notice_period_under_contract_in",
+  "column_break_bvsw",
+  "enable_tenure_based_notice_period",
+  "duration_of_notice_period_after_confirmation",
+  "duration_of_notice_period_under_probation",
+  "duration_of_notice_period_under_contract",
+  "tenure_based_logic_section",
+  "tenure_based_slabs",
+  "applicability_section",
+  "nationality_applicability",
+  "is_applicable_for_countries",
+  "column_break_qodk",
+  "is_not_applicable_for_countries",
+  "applicable_for",
+  "behavior_settings_section",
+  "managerreviewer_will_be_able_to_edit_the_recovery_days",
+  "from_resignation_date",
+  "exclude_weekly_offs",
+  "exclude_holidays",
+  "exclude_unpaid_leaves",
+  "prioritize_contract_notice"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "is_archive",
+   "fieldtype": "Check",
+   "label": "Is Archive"
+  },
+  {
+   "fieldname": "notice_period_id",
+   "fieldtype": "Data",
+   "label": "Notice Period ID",
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_olfk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notice_period_name",
+   "fieldtype": "Data",
+   "label": "Notice Period Name"
+  },
+  {
+   "fieldname": "notice_period_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Notice Period Settings"
+  },
+  {
+   "fieldname": "set_notice_period_after_confirmation_in",
+   "fieldtype": "Int",
+   "label": "Set Notice Period After Confirmation In"
+  },
+  {
+   "fieldname": "set_notice_period_under_probation_in",
+   "fieldtype": "Int",
+   "label": "Set Notice Period Under Probation In"
+  },
+  {
+   "fieldname": "set_notice_period_under_contract_in",
+   "fieldtype": "Int",
+   "label": "Set Notice Period Under Contract In\t"
+  },
+  {
+   "fieldname": "column_break_bvsw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_tenure_based_notice_period",
+   "fieldtype": "Check",
+   "label": "Enable Tenure Based Notice Period"
+  },
+  {
+   "fieldname": "duration_of_notice_period_after_confirmation",
+   "fieldtype": "Int",
+   "label": "Duration Of Notice Period After Confirmation"
+  },
+  {
+   "fieldname": "duration_of_notice_period_under_probation",
+   "fieldtype": "Int",
+   "label": "Duration Of Notice Period Under Probation"
+  },
+  {
+   "fieldname": "duration_of_notice_period_under_contract",
+   "fieldtype": "Int",
+   "label": "Duration Of Notice Period Under Contract"
+  },
+  {
+   "fieldname": "tenure_based_logic_section",
+   "fieldtype": "Section Break",
+   "label": "Tenure Based Logic"
+  },
+  {
+   "fieldname": "tenure_based_slabs",
+   "fieldtype": "Table",
+   "label": "Tenure Based Slabs",
+   "options": "Notice Period Tenure Slab"
+  },
+  {
+   "fieldname": "applicability_section",
+   "fieldtype": "Section Break",
+   "label": "Applicability"
+  },
+  {
+   "fieldname": "nationality_applicability",
+   "fieldtype": "Select",
+   "label": "Nationality Applicability",
+   "options": "\nInclude\nExclude"
+  },
+  {
+   "fieldname": "is_applicable_for_countries",
+   "fieldtype": "Link",
+   "label": "Is Applicable for Countries",
+   "options": "Country"
+  },
+  {
+   "fieldname": "column_break_qodk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "is_not_applicable_for_countries",
+   "fieldtype": "Link",
+   "label": "Is Not Applicable for Countries",
+   "options": "Country"
+  },
+  {
+   "fieldname": "applicable_for",
+   "fieldtype": "Select",
+   "label": "Applicable For",
+   "options": "\nAll\nPermanent\nContract\nProbation"
+  },
+  {
+   "fieldname": "behavior_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Behavior Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "managerreviewer_will_be_able_to_edit_the_recovery_days",
+   "fieldtype": "Check",
+   "label": "Manager/Reviewer Will Be Able To Edit The Recovery Days"
+  },
+  {
+   "default": "0",
+   "fieldname": "from_resignation_date",
+   "fieldtype": "Check",
+   "label": "Calculate Notice Period From Resignation Date"
+  },
+  {
+   "default": "0",
+   "fieldname": "exclude_weekly_offs",
+   "fieldtype": "Check",
+   "label": "Exclude Weekly Offs from the Notice Period duration calculation"
+  },
+  {
+   "default": "0",
+   "fieldname": "exclude_holidays",
+   "fieldtype": "Check",
+   "label": "Exclude Holidays opted for from the Notice Period duration calculation"
+  },
+  {
+   "default": "0",
+   "fieldname": "exclude_unpaid_leaves",
+   "fieldtype": "Check",
+   "label": "Exclude Unpaid Leaves from the Notice Period duration calculation"
+  },
+  {
+   "default": "0",
+   "fieldname": "prioritize_contract_notice",
+   "fieldtype": "Check",
+   "label": "Consider Notice Period As Per Contract Period If Employee Is On Probation And Contract At The Same Time"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-07-17 17:30:08.399865",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Notice Period",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
