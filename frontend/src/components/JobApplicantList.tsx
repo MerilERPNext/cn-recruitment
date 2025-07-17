@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router";
 import FrappeListView from "./ListView"; // Assuming this is FrappeListView
 import { ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import type { JobApplicant } from '../types/jobApplicant';
+import type { JobApplicant } from "../types/jobApplicant";
 
 interface AvatarProps {
   src?: string;
@@ -22,7 +22,8 @@ const Avatar = ({ src, alt, size = "h-14 w-14", fallback }: AvatarProps) => {
   }
   // Fallback: initials
   return (
-    <div className={`flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold text-lg uppercase ${size}`}
+    <div
+      className={`flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold text-lg uppercase ${size}`}
     >
       {fallback}
     </div>
@@ -36,42 +37,48 @@ const ApplicantCard = ({
   item: JobApplicant;
   onClick: (item: JobApplicant) => void;
 }) => {
-  const fullName = item.applicant_name ;
-  const initials = fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-   return (
-  <div
-    className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors"
-    onClick={() => onClick(item)}
-  >
-    <Avatar
+  const fullName = item.applicant_name;
+  const initials = fullName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return (
+    <div
+      className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors"
+      onClick={() => onClick(item)}
+    >
+      <Avatar
         src={item.profile_image}
         alt={item.applicant_name}
         fallback={initials}
       />
-    <div className="flex-grow min-w-0">
-      <div className="flex items-center gap-2">
-        <p className="text-gray-900 text-base font-semibold truncate">
-          {item.applicant_name}
-        </p>
+      <div className="flex-grow min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-gray-900 text-base font-semibold truncate">
+            {item.applicant_name}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600 mt-0.5">
+          {item.designation && <span>{item.designation}</span>}
+          {item.designation && item.creation && <span className="mx-1">|</span>}
+          {item.creation && (
+            <span>
+              Applied{" "}
+              {formatDistanceToNow(new Date(item.creation), {
+                addSuffix: true,
+              }).replace("about ", "")}
+            </span>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-2 text-sm text-gray-600 mt-0.5">
-        {item.designation && <span>{item.designation}</span>}
-        {item.designation && item.creation && <span className="mx-1">|</span>}
-        {item.creation && (
-          <span>
-            Applied{" "}
-            {formatDistanceToNow(new Date(item.creation), {
-              addSuffix: true,
-            }).replace("about ", "")}
-          </span>
-        )}
-      </div>
+      <button className="text-blue-500 flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-blue-50 active:bg-blue-100 transition-colors">
+        <ChevronRight />
+      </button>
     </div>
-    <button className="text-blue-500 flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-blue-50 active:bg-blue-100 transition-colors">
-      <ChevronRight />
-    </button>
-  </div>
-)}
+  );
+};
 
 export default function JobApplicantList() {
   const navigate = useNavigate();
@@ -111,13 +118,15 @@ export default function JobApplicantList() {
       <FrappeListView
         doctype="Job Applicant"
         ItemComponent={(props: { item: JobApplicant }) => {
-          return <ApplicantCard item={props.item} onClick={handleApplicantClick} />;
+          return (
+            <ApplicantCard item={props.item} onClick={handleApplicantClick} />
+          );
         }}
         onItemClick={handleApplicantClick}
         infiniteScroll={true}
         isSearch={true}
         isFilter={false}
-        defaultFilters={defaultFilters} 
+        defaultFilters={defaultFilters}
         defaultFields={[
           "name",
           "applicant_name",

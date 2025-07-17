@@ -15,7 +15,7 @@ const isPermissionError = (error: unknown): boolean =>
 const defaultRetry = (failureCount: number, error: unknown) =>
   isPermissionError(error) ? false : failureCount < 3;
 
-// job applicant ko fetch karna 
+// Fetches a job applicant by name
 export const useJobApplicant = (
   name: string,
   options?: Omit<UseQueryOptions<JobApplicant, Error>, "queryKey" | "queryFn">

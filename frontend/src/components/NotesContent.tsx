@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import type { JobApplicant } from '../types/jobApplicant';
-import { useAddComment, useComments } from '../hooks/useJobApplicant';
+import React, { useState } from "react";
+import type { JobApplicant } from "../types/jobApplicant";
+import { useAddComment, useComments } from "../hooks/useJobApplicant";
 
 interface NotesContentProps {
   applicant: JobApplicant;
 }
 
 const NotesContent: React.FC<NotesContentProps> = ({ applicant }) => {
-  const [newNote, setNewNote] = useState('');
+  const [newNote, setNewNote] = useState("");
   const { data: comments = [], refetch } = useComments(applicant.name);
-  const addCommentMutation = useAddComment(); // 👈 FIXED
+  const addCommentMutation = useAddComment();
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
@@ -17,16 +17,16 @@ const NotesContent: React.FC<NotesContentProps> = ({ applicant }) => {
     addCommentMutation.mutate(
       {
         content: newNote,
-        reference_doctype: 'Job Applicant',
+        reference_doctype: "Job Applicant",
         reference_name: applicant.name,
       },
       {
         onSuccess: () => {
-          setNewNote('');
+          setNewNote("");
           refetch();
         },
         onError: (error) => {
-          console.error('❌ Failed to post note:', error);
+          console.error("❌ Failed to post note:", error);
         },
       }
     );
@@ -41,13 +41,16 @@ const NotesContent: React.FC<NotesContentProps> = ({ applicant }) => {
         )}
         {comments
           .filter((note) => {
-            const plainText = note.content.replace(/<[^>]*>?/gm, '').trim();
-            return plainText && !note.content.includes('/files/');
+            const plainText = note.content.replace(/<[^>]*>?/gm, "").trim();
+            return plainText && !note.content.includes("/files/");
           })
-          .map((note) => { // Removed 'index' from here
-            const cleanText = note.content.replace(/<[^>]*>?/gm, '').trim();
+          .map((note) => {
+            const cleanText = note.content.replace(/<[^>]*>?/gm, "").trim();
             return (
-              <div key={note.name} className="p-3 bg-gray-100 rounded-md border text-sm"> {/* Changed key to note.name */}
+              <div
+                key={note.name}
+                className="p-3 bg-gray-100 rounded-md border text-sm"
+              >
                 <p>{cleanText}</p>
                 <div className="text-xs text-gray-500 mt-1">
                   By {note.owner} on {new Date(note.creation).toLocaleString()}
@@ -66,12 +69,11 @@ const NotesContent: React.FC<NotesContentProps> = ({ applicant }) => {
         />
         <button
           onClick={handleAddNote}
-          disabled={addCommentMutation.status === 'pending'}
+          disabled={addCommentMutation.status === "pending"}
           className="bg-[var(--primary-color)] text-white px-4 py-2 text-sm rounded-md disabled:opacity-50"
         >
-          {addCommentMutation.status === 'pending' ? 'Adding...' : 'Add'}
+          {addCommentMutation.status === "pending" ? "Adding..." : "Add"}
         </button>
-
       </div>
     </div>
   );

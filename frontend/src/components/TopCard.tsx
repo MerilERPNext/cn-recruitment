@@ -10,6 +10,7 @@ import {
   useSubStatuses,
   useUpdateJobApplicant,
 } from "../hooks/useJobApplicant";
+import { JOB_APPLICATION_STATUSES } from "../constants/jobApplicantConstants";
 
 interface TopCardProps {
   name: string;
@@ -93,16 +94,7 @@ useEffect(() => {
             onChange={(e) => setStatus(e.target.value)}
             className="w-full appearance-none bg-gray-100 border border-gray-300 text-sm font-semibold rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)]"
           >
-            {[
-              "Open",
-              "Screening",
-              "Replied",
-              "Interview",
-              "Hold",
-              "Approvals",
-              "Accepted",
-              "Rejected",
-            ].map((s) => (
+            {JOB_APPLICATION_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
