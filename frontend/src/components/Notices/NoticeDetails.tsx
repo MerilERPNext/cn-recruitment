@@ -3,6 +3,7 @@ import { ArrowLeft, Clock, Tag, AlertCircle, CheckCircle, XCircle } from "lucide
 import { useNavigate, useParams } from "react-router"
 import { useArchiveNotice, useGetNoticeById, useMarkNoticeAsRead } from "../../hooks/useNotices"
 import { useState } from "react"
+import DOMPurify from 'dompurify';
 
 
 
@@ -64,7 +65,7 @@ const NoticeDetails = () => {
     const getPriorityColor = (priority: string) => {
         switch (priority) {
             case "high":
-                return "bg-red text-white"
+                return "bg-red-500 text-white"
             case "medium":
                 return "bg-gray-600 text-white"
             case "low":
@@ -128,6 +129,7 @@ const NoticeDetails = () => {
             </div>
         )
     }
+    const cleanHTML = DOMPurify.sanitize(notice?.message);
 
     return (
         <div className=" bg-white">
@@ -178,7 +180,7 @@ const NoticeDetails = () => {
                     <div className="p-6 sm:p-8">
                         <div
                             className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: notice?.message }}
+                            dangerouslySetInnerHTML={{ __html: cleanHTML }}
                         />
                     </div>
 

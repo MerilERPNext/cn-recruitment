@@ -10,7 +10,7 @@ const tabs = [
 const NoticesLayout: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('*');
+    const [activeTab, setActiveTab] = useState(() => tabs.find(tab => location.pathname.includes(tab.key))?.key || 'all');
 
     useEffect(() => {
         const currentTab = tabs.find((tab) => location.pathname.includes(tab.key));

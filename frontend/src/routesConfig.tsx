@@ -73,6 +73,4 @@ export const routesConfig: AppRoute[] = [
     path: '/webapp/recruitment-app/requisitions/add-requisition/*',
     element: <AddRequisition />,
   },
-  // { path: '/webapp/notices/:id', element: <NoticeDetails /> },
-
 ];
