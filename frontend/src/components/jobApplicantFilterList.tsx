@@ -1,68 +1,13 @@
+
+// frontend/src/components/jobApplicantFilterList.tsx
 import { useLocation, useNavigate } from "react-router";
 import FrappeListView from "./ListView";
-import { ArrowLeft, ChevronRight } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { ArrowLeft } from "lucide-react"; // Only ArrowLeft needed here
+// import { formatDistanceToNow } from "date-fns"; // No longer needed
 import type { JobApplicant } from '../types/jobApplicant';
+import ApplicantCard from './shared/ApplicantCard'; // Import the shared component
 
-const Avatar = ({ src, name }: { src?: string; name: string }) => {
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={name}
-        className="aspect-square rounded-full h-12 w-12 object-cover border border-gray-200 bg-white"
-      />
-    );
-  }
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  return (
-    <div className="flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold text-lg uppercase h-12 w-12">
-      {initials}
-    </div>
-  );
-};
-
-const ApplicantCard = ({
-  item,
-  onClick,
-}: {
-  item: JobApplicant;
-  onClick: (item: JobApplicant) => void;
-}) => (
-  <div
-    className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors"
-    onClick={() => onClick(item)}
-  >
-    <Avatar src={item.profile_image} name={item.applicant_name} />
-    <div className="flex-grow min-w-0">
-      <div className="flex items-center gap-2">
-        <p className="text-gray-900 text-base font-semibold truncate">
-          {item.applicant_name}
-        </p>
-      </div>
-      <div className="flex items-center gap-2 text-sm text-gray-600 mt-0.5">
-        {item.designation && <span>{item.designation}</span>}
-        {item.designation && item.creation && <span className="mx-1">|</span>}
-        {item.creation && (
-          <span>
-            Applied{" "}
-            {formatDistanceToNow(new Date(item.creation), {
-              addSuffix: true,
-            }).replace("about ", "")}
-          </span>
-        )}
-      </div>
-    </div>
-    <button className="text-blue-500 flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-blue-50 active:bg-blue-100 transition-colors">
-      <ChevronRight />
-    </button>
-  </div>
-);
+// Removed Avatar and ApplicantCard definitions from here
 
 export default function JobApplicantFilterList() {
   const navigate = useNavigate();
@@ -123,13 +68,14 @@ export default function JobApplicantFilterList() {
             ? item.job_title?.toLowerCase() === filterJobTitle.toLowerCase()
             : false;
 
+          // Only render ApplicantCard if it matches filters
           if (matchesDesignation || matchesJobTitle) {
             return (
               <ApplicantCard item={item} onClick={handleApplicantClick} />
             );
           }
 
-          return null;
+          return null; // Return null if item doesn't match filter criteria
         }}
         onItemClick={handleApplicantClick}
         infiniteScroll={true}
