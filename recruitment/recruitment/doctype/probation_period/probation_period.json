@@ -1,0 +1,131 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:probation_id",
+ "creation": "2025-07-17 16:42:59.097540",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "is_archive",
+  "probation_id",
+  "probation",
+  "probation_name",
+  "column_break_lhug",
+  "probation_period_in",
+  "duration_of_probation",
+  "extension_settings_section",
+  "include_this_probation",
+  "start_probation_period_from_assigned_date",
+  "extend_confirmation_in_case_of_auto_confirmation",
+  "select_auto_extended_probation_period",
+  "configure_probation",
+  "select_probation_period_for_extension"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "is_archive",
+   "fieldtype": "Check",
+   "label": "Is Archive"
+  },
+  {
+   "fieldname": "probation_id",
+   "fieldtype": "Data",
+   "label": "Probation ID",
+   "unique": 1
+  },
+  {
+   "fieldname": "probation",
+   "fieldtype": "Data",
+   "label": "Probation"
+  },
+  {
+   "fieldname": "probation_name",
+   "fieldtype": "Data",
+   "label": "Probation Name"
+  },
+  {
+   "fieldname": "column_break_lhug",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "probation_period_in",
+   "fieldtype": "Select",
+   "label": "Probation Period in"
+  },
+  {
+   "fieldname": "duration_of_probation",
+   "fieldtype": "Int",
+   "label": "Duration of Probation"
+  },
+  {
+   "fieldname": "extension_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Extension Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "include_this_probation",
+   "fieldtype": "Check",
+   "label": "Include this Probation period in the list of available options for extending an employee's Probation period"
+  },
+  {
+   "default": "0",
+   "fieldname": "start_probation_period_from_assigned_date",
+   "fieldtype": "Check",
+   "label": "Start Probation Period From Assigned Date"
+  },
+  {
+   "default": "0",
+   "fieldname": "extend_confirmation_in_case_of_auto_confirmation",
+   "fieldtype": "Check",
+   "label": "Extend Confirmation (In Case Of Auto Confirmation)"
+  },
+  {
+   "fieldname": "select_auto_extended_probation_period",
+   "fieldtype": "Link",
+   "label": "Select Auto Extended Probation Period",
+   "options": "Probation Period"
+  },
+  {
+   "fieldname": "configure_probation",
+   "fieldtype": "Link",
+   "label": "Configure Probation Periods allowed for selection during extension of this Probation Period",
+   "options": "Probation Period"
+  },
+  {
+   "fieldname": "select_probation_period_for_extension",
+   "fieldtype": "Link",
+   "label": "Select Probation Period For Extension",
+   "options": "Probation Period"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-07-17 17:06:55.839704",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Probation Period",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

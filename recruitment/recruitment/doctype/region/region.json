@@ -1,0 +1,84 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:location_region_code",
+ "creation": "2025-07-17 16:23:29.179058",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "is_archive",
+  "location_region",
+  "location_region_code",
+  "state_id",
+  "column_break_dhmi",
+  "effective_from",
+  "update_type"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "is_archive",
+   "fieldtype": "Check",
+   "label": "Is Archive"
+  },
+  {
+   "fieldname": "location_region",
+   "fieldtype": "Data",
+   "label": "Location Region"
+  },
+  {
+   "fieldname": "location_region_code",
+   "fieldtype": "Data",
+   "label": "Location Region Code",
+   "unique": 1
+  },
+  {
+   "fieldname": "state_id",
+   "fieldtype": "Data",
+   "label": "State ID"
+  },
+  {
+   "fieldname": "column_break_dhmi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "label": "Effective From"
+  },
+  {
+   "fieldname": "update_type",
+   "fieldtype": "Select",
+   "label": "Update Type",
+   "options": "\nAdd\nDelete\nReplace"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-07-17 16:42:32.493309",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Region",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
