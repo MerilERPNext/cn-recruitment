@@ -15,30 +15,35 @@
  ],
  "fields": [
   {
+   "columns": 2,
    "fieldname": "target_type",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Target Type"
   },
   {
+   "columns": 2,
    "fieldname": "field_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Field Name"
   },
   {
+   "columns": 2,
    "fieldname": "operator",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Operator"
   },
   {
+   "columns": 2,
    "fieldname": "value",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Value"
   },
   {
+   "columns": 2,
    "fieldname": "join_type",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -50,7 +55,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-07-17 18:33:45.469504",
+ "modified": "2025-07-18 16:01:32.237554",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Assignment Conditions",

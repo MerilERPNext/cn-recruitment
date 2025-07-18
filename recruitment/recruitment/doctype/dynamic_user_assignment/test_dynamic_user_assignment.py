@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestUserAssignment(FrappeTestCase):
+class TestDynamicUserAssignment(FrappeTestCase):
 	pass
