@@ -15,8 +15,13 @@ import ReferralList from "./components/ReferralList";
 import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
+import AttendanceLayout from "./components/Attendance/AttendanceLayout";
+import { Navigate } from "react-router";
+import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
+import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
 
 export interface AppRoute {
+  index?: boolean,
   path: string;
   element: ReactElement;
   children?: AppRoute[];
@@ -71,4 +76,18 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/recruitment-app/requisitions/add-requisition/*",
     element: <AddRequisition />,
   },
+
+  {
+    path: '/webapp/attendance',
+    element: <AttendanceLayout />,
+    children: [
+      {
+        index: true, element: <Navigate to="emp-attendance" replace />,
+        path: ""
+      },
+      { path: 'emp-attendance', element: <EmployeeAttendance /> },
+      { path: 'team-attendance', element: <TeamAttendance /> },
+    ],
+  },
+
 ];
