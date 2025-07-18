@@ -3,86 +3,106 @@ import json
 import base64
 from frappe.utils import nowdate,formatdate, format_time, get_datetime, now_datetime
 
+
+
 @frappe.whitelist()
 def submit_employee_referral(data, resume_file=None):
     try:
-        # Parse incoming data
-        data = json.loads(data)
+        if isinstance(data, str):
+            data = json.loads(data)
+        elif not isinstance(data, dict):
+            frappe.throw("Invalid data format. Expected JSON string or dictionary.")
+        if resume_file:
+            if isinstance(resume_file, str):
+                resume_file = json.loads(resume_file)
+            elif not isinstance(resume_file, dict):
+                frappe.throw("Invalid resume file format. Expected JSON string or dictionary.")
 
-        if isinstance(resume_file, str):
-            resume_file = json.loads(resume_file)
+        candidate_name = data.get("candidate_name", "").strip()
+        email = data.get("email", "").strip()
+        
+        if not candidate_name:
+            frappe.throw("Candidate name is mandatory.")
+        if not email:
+            frappe.throw("Email is mandatory.")
 
-        # Split full name into first and last name
-        full_name = data.get("candidate_name", "").strip()
-        name_parts = full_name.split()
+        name_parts = candidate_name.split()
         first_name = name_parts[0] if len(name_parts) > 0 else ""
         last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
 
-        if not first_name or not data.get("email"):
-            frappe.throw("Candidate name and email are mandatory.")
-
-        # ✅ Get logged-in user's employee ID
         user = frappe.session.user
         employee_id = frappe.db.get_value("Employee", {"user_id": user}, "name")
-        employee_name = frappe.db.get_value("Employee", employee_id, "employee_name") if employee_id else None
-
+        
         if not employee_id:
             frappe.throw("Logged-in user is not linked to any Employee record.")
+        
+        employee_name = frappe.db.get_value("Employee", employee_id, "employee_name")
 
-        # Create the Employee Referral document
         doc = frappe.new_doc("Employee Referral")
+        
         doc.first_name = first_name
         doc.last_name = last_name
-        doc.full_name = full_name
-        doc.email = data.get("email")
-        doc.contact_no = data.get("contact_no")
+        doc.full_name = candidate_name
+        doc.email = email
         doc.date = nowdate()
         doc.status = "Pending"
-        doc.for_designation = data.get("for_designation")
-        doc.current_employer = data.get("current_employer")
-        doc.current_job_title = data.get("current_job_title")
-        doc.work_references = data.get("work_references")
-        doc.qualification_reason = data.get("qualification_reason")
-        doc.resume = data.get("resume") 
-
-        # ✅ Set referrer to logged-in employee
         doc.referrer = employee_id
         doc.referrer_name = employee_name
 
+        doc.contact_no = data.get("contact_no") or ""
+        doc.for_designation = data.get("for_designation") or ""
+        doc.current_employer = data.get("current_employer") or ""
+        doc.current_job_title = data.get("current_job_title") or ""
+        doc.work_references = data.get("work_references") or ""
+        doc.qualification_reason = data.get("qualification_reason") or ""
+        
+        if data.get("resume"):
+            doc.resume = data.get("resume")
+
         doc.insert(ignore_permissions=True)
 
-        # Handle resume attachment
         if resume_file and resume_file.get("filename") and resume_file.get("content"):
-            file_doc = frappe.get_doc({
-                "doctype": "File",
-                "file_name": resume_file["filename"],
-                "attached_to_doctype": doc.doctype,
-                "attached_to_name": doc.name,
-                "is_private": 1,
-                "content": resume_file["content"],
-            })
-            file_doc.insert(ignore_permissions=True)
-            doc.resume = file_doc.file_url
-            doc.save()
+            try:
+                file_doc = frappe.get_doc({
+                    "doctype": "File",
+                    "file_name": resume_file["filename"],
+                    "attached_to_doctype": doc.doctype,
+                    "attached_to_name": doc.name,
+                    "is_private": 1,
+                    "content": resume_file["content"],
+                })
+                file_doc.insert(ignore_permissions=True)
+                
+                doc.resume = file_doc.file_url
+                doc.save(ignore_permissions=True)
+                
+            except Exception as file_error:
+                frappe.log_error(f"File upload error: {str(file_error)}", "Resume Upload Error")
+                pass
 
         frappe.db.commit()
 
         return {
             "status": "success",
             "name": doc.name,
-            "resume_url": doc.resume,
-            "message": f"Referral {doc.name} submitted successfully."
+            "resume_url": doc.resume or "",
+            "message": f"Referral {doc.name} submitted successfully.",
+            "referrer": employee_name
         }
 
+    except frappe.ValidationError as ve:
+        frappe.db.rollback()
+        return {
+            "status": "error",
+            "message": str(ve)
+        }
     except Exception as e:
+        frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "Referral Submission Error")
         return {
             "status": "error",
-            "message": str(e)
+            "message": f"An error occurred while submitting referral: {str(e)}"
         }
-
-
-
 
 # @frappe.whitelist()
 # def get_my_referrals():

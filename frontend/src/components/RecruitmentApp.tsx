@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-type TabName = 'Referrals' | 'Requisitions' | 'Interviews';
+type TabName = 'Referrals' | 'Requisitions' | 'Interviews' | 'Job Openings' | 'Job Applicant';
 
 const tabRoutes: Record<TabName, string> = {
   Requisitions: '/webapp/recruitment-app/requisitions',
   Referrals: '/webapp/recruitment-app/referrals',
   Interviews: '/webapp/recruitment-app/interviews',
+  'Job Openings': '/webapp/recruitment-app/job-openings',
+  'Job Applicant': '/webapp/recruitment-app/job-applicant-list',
 };
 
 const RecruitmentApp: React.FC = () => {
