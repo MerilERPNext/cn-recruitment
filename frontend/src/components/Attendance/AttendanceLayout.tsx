@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 const tabs = [
     { name: 'Employee Attendance', key: 'emp-attendance' },
     { name: 'Team Attendance', key: 'team-attendance' },
+    { name: 'Attendance Request', key: 'attendance-request' },
 ];
 
 const AttendanceLayout: React.FC = () => {

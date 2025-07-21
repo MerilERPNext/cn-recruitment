@@ -1,22 +1,37 @@
-import React from 'react';
+import React from "react";
 
 interface AvatarProps {
   src?: string;
   name: string;
   size?: string;
-  status?: "present" | "absent" | "onleave";
+  indicatorBgColor?: string;
+  indicatorBorderColor?: string;
+  indicatorNode?: React.ReactNode;
+  indicatorSize?: string;
+  indicatorPositionClass?: string;
+  avatarBgColor?: string;
+  avatarTextColor?: string;
 }
 
-const statusColors = {
-  present: "bg-green-500",
-  absent: "bg-red-500",
-  onleave: "bg-yellow-400",
-};
-
-const Avatar: React.FC<AvatarProps> = ({ src, name, size = "h-12 w-12", status }) => {
-  const statusDot = status ? (
+const Avatar: React.FC<AvatarProps> = ({
+  src,
+  name,
+  size = "h-12 w-12",
+  indicatorBgColor,
+  indicatorBorderColor = "border-white",
+  indicatorNode,
+  indicatorSize = "h-4 w-4",
+  indicatorPositionClass = "absolute bottom-0 right-0",
+  avatarBgColor = "bg-indigo-100", avatarTextColor = "text-indigo-800"
+}) => {
+  // If a custom indicator node is passed, render that instead
+  const indicator = indicatorNode ? (
+    <span className={`${indicatorPositionClass} ${indicatorSize}`}>
+      {indicatorNode}
+    </span>
+  ) : indicatorBgColor ? (
     <span
-      className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${statusColors[status]}`}
+      className={`${indicatorPositionClass} ${indicatorSize} rounded-full ${indicatorBgColor} ${indicatorBorderColor}`}
     />
   ) : null;
 
@@ -28,7 +43,7 @@ const Avatar: React.FC<AvatarProps> = ({ src, name, size = "h-12 w-12", status }
     />
   ) : (
     <div
-      className={`flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold text-lg uppercase ${size}`}
+      className={`flex items-center justify-center rounded-full font-bold text-lg uppercase ${avatarBgColor} ${avatarTextColor} ${size}`}
     >
       {name
         .split(" ")
@@ -42,7 +57,7 @@ const Avatar: React.FC<AvatarProps> = ({ src, name, size = "h-12 w-12", status }
   return (
     <div className="relative inline-block">
       {avatarContent}
-      {statusDot}
+      {indicator}
     </div>
   );
 };
