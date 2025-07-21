@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class UserAssignment(Document):
+class AssignedUsers(Document):
 	pass

@@ -8,12 +8,17 @@
  "field_order": [
   "assignment_name",
   "assignment_code",
+  "default",
   "applicable_for_process",
   "column_break_dbqr",
   "description",
-  "business_unit",
+  "section_break_isal",
+  "approval_condtions",
   "user_assignment_conditions_section",
-  "assignment_conditions"
+  "assignment_conditions",
+  "section_break_bvev",
+  "fetch_users",
+  "assigned_users"
  ],
  "fields": [
   {
@@ -28,10 +33,11 @@
    "unique": 1
   },
   {
+   "depends_on": "eval:doc.default==0",
    "fieldname": "applicable_for_process",
-   "fieldtype": "Link",
+   "fieldtype": "Table MultiSelect",
    "label": "Applicable for Process",
-   "options": "DocType"
+   "options": "Global Search DocType"
   },
   {
    "fieldname": "column_break_dbqr",
@@ -43,12 +49,7 @@
    "label": "Description"
   },
   {
-   "fieldname": "business_unit",
-   "fieldtype": "Link",
-   "label": "Business Unit",
-   "options": "Business Unit"
-  },
-  {
+   "collapsible": 1,
    "fieldname": "user_assignment_conditions_section",
    "fieldtype": "Section Break",
    "label": "User Assignment Conditions"
@@ -58,15 +59,46 @@
    "fieldtype": "Table",
    "label": "Assignment Conditions",
    "options": "Assignment Conditions"
+  },
+  {
+   "default": "0",
+   "fieldname": "default",
+   "fieldtype": "Check",
+   "label": "Default"
+  },
+  {
+   "fieldname": "section_break_isal",
+   "fieldtype": "Section Break",
+   "label": "Conditions"
+  },
+  {
+   "fieldname": "approval_condtions",
+   "fieldtype": "HTML",
+   "label": "Approval Condtions"
+  },
+  {
+   "fieldname": "section_break_bvev",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "fetch_users",
+   "fieldtype": "Button",
+   "label": "Fetch Users"
+  },
+  {
+   "fieldname": "assigned_users",
+   "fieldtype": "Table",
+   "label": "Assigned Users",
+   "options": "Assigned Users"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-07-17 18:34:37.283412",
+ "modified": "2025-07-21 17:17:44.143988",
  "modified_by": "Administrator",
  "module": "Recruitment",
- "name": "User Assignment",
+ "name": "Dynamic User Assignment",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

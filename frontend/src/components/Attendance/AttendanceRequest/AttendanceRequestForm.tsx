@@ -1,6 +1,7 @@
-
 import React from "react";
-import { Form } from "react-formio";
+// @ts-expect-error ignore
+import { Form } from "@tsed/react-formio";
+import "formiojs/dist/formio.full.css"; // Ensure you import default styles if not already
 
 const attndanceRequestFormSchema = {
     title: "Attendance Request",
@@ -14,6 +15,7 @@ const attndanceRequestFormSchema = {
             label: "Attendance Request",
             title: "Attendance Request",
             hideLabel: true,
+            customClass: "bg-white rounded-lg",
             components: [
                 {
                     label: "Employee Name",
@@ -21,14 +23,15 @@ const attndanceRequestFormSchema = {
                     type: "textfield",
                     input: true,
                     placeholder: "John Doe",
-                    customClass: "w-full border border-gray-300 px-3 py-2 rounded-lg"
+                    customClass: "mb-4"
                 },
                 {
                     label: "Department",
                     key: "department",
                     type: "textfield",
                     input: true,
-                    placeholder: "Design"
+                    placeholder: "Design",
+                    customClass: "mb-4"
                 },
                 {
                     type: "columns",
@@ -41,7 +44,8 @@ const attndanceRequestFormSchema = {
                                     type: "datetime",
                                     input: true,
                                     widget: { type: "calendar" },
-                                    format: "yyyy-MM-dd"
+                                    format: "yyyy-MM-dd",
+                                    customClass: "mb-4"
                                 }
                             ],
                             width: 6
@@ -54,7 +58,8 @@ const attndanceRequestFormSchema = {
                                     type: "datetime",
                                     input: true,
                                     widget: { type: "calendar" },
-                                    format: "yyyy-MM-dd"
+                                    format: "yyyy-MM-dd",
+                                    customClass: "mb-4"
                                 }
                             ],
                             width: 6
@@ -67,6 +72,7 @@ const attndanceRequestFormSchema = {
                     type: "select",
                     input: true,
                     placeholder: "Select a reason",
+                    customClass: "mb-4",
                     data: {
                         values: [
                             { label: "Work From Home", value: "work-from-home" },
@@ -84,7 +90,8 @@ const attndanceRequestFormSchema = {
                     type: "textarea",
                     input: true,
                     placeholder: "Provide additional details...",
-                    rows: 4
+                    rows: 4,
+                    customClass: "mb-4"
                 },
                 {
                     type: "button",
@@ -92,7 +99,8 @@ const attndanceRequestFormSchema = {
                     key: "submit",
                     disableOnInvalid: true,
                     input: true,
-                    theme: "primary"
+                    theme: "transparent",
+                    customClass: "text-black w-full"
                 }
             ]
         }
@@ -102,20 +110,20 @@ const attndanceRequestFormSchema = {
 const AttndanceRequestForm: React.FC = () => {
     const handleSubmit = (submission: any) => {
         console.log("Form data:", submission.data);
-        // You can send this to your API here
+        // Send data to API here
     };
 
     return (
-        <div className="h-full w-full p-2">
+        <div className="max-w-2xl mx-auto p-4">
             <Form
                 form={attndanceRequestFormSchema}
                 onSubmit={handleSubmit}
                 options={{
                     builder: { styles: false },
                     submitButton: false,
-                    noAlerts: true,
-
+                    noAlerts: true
                 }}
+                className="formio-no-border" // custom class to strip form border
             />
         </div>
     );
