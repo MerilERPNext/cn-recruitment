@@ -4,6 +4,23 @@ frappe.ui.form.on("Dynamic User Assignment", {
   refresh(frm) {
     render_dynamic_user_assignment_filter_ui(frm)
   },
+  fetch_users: function(frm) {
+        frappe.call({
+            method: "recruitment.recruitment.doctype.dynamic_user_assignment.dynamic_user_assignment.fetch_employees_and_users",
+            args: {
+                docname: frm.doc.name
+            },
+            callback: function(r) {
+                if (r.message) {
+                    frappe.show_alert({
+                        message: r.message,
+                        indicator: 'green'
+                    });
+                    frm.reload_doc();
+                }
+            }
+        });
+    }
 })
 
 function render_dynamic_user_assignment_filter_ui(frm) {
@@ -155,7 +172,7 @@ function render_dynamic_user_assignment_filter_ui(frm) {
   }
 
   // Function to add a new filter row
-  function addFilterRow() {
+  function addFilterRow(savedCondition = null) {
     const rowHtml = `
             <div class="filter-row" data-index="${filterIndex++}" style="display: flex; align-items: center; margin-bottom: 12px; gap: 8px;">
                 ${createStyledSelect("target-type-select", "150px")}
@@ -174,56 +191,76 @@ function render_dynamic_user_assignment_filter_ui(frm) {
     const operatorSelect = newRow.find(".operator-select")
     const valueContainer = newRow.find(".value-container")
 
+    // Store saved condition data on the row for later use
+    if (savedCondition) {
+      newRow.data("savedCondition", savedCondition)
+    }
+
     // Populate target type (doctype) options
     let targetTypeOptions = '<option value="">Select Doctype...</option>'
     filterConfig.targetTypes.forEach((doctype) => {
-      targetTypeOptions += `<option value="${doctype.value}">${doctype.label}</option>`
+      const selected = savedCondition && savedCondition.target_type === doctype.value ? "selected" : ""
+      targetTypeOptions += `<option value="${doctype.value}" ${selected}>${doctype.label}</option>`
     })
     targetTypeSelect.html(targetTypeOptions)
 
-
     // Set up event handlers for cascading updates
     targetTypeSelect.on("change", function () {
-      const selectedValue = jQuery(this).val()
-      console.log("Target type changed to:", selectedValue)
-      updateFieldOptions(jQuery(this), fieldSelect)
-      // Clear operator and value when target type changes
-      operatorSelect.empty().append('<option value="">Select Operator...</option>')
-      valueContainer.empty()
+      updateFieldOptions($(this), fieldSelect, newRow)
+      // Clear operator and value when target type changes (unless restoring)
+      if (!newRow.data("restoring")) {
+        operatorSelect.empty().append('<option value="">Select Operator...</option>')
+        valueContainer.empty()
+      }
     })
 
     fieldSelect.on("change", function () {
-      const selectedValue = jQuery(this).val()
-      console.log("Field changed to:", selectedValue)
-      updateOperatorOptions(jQuery(this), operatorSelect)
-      updateValueInput(jQuery(this), operatorSelect, valueContainer)
+      updateOperatorOptions($(this), operatorSelect, newRow)
+      updateValueInput($(this), operatorSelect, valueContainer, newRow)
     })
 
     operatorSelect.on("change", function () {
-      const selectedValue = jQuery(this).val()
-      console.log("Operator changed to:", selectedValue)
-      updateValueInput(fieldSelect, jQuery(this), valueContainer)
+      updateValueInput(fieldSelect, $(this), valueContainer, newRow)
     })
 
     // Set up remove button
     newRow.find(".remove-filter-btn").on("click", function () {
-      jQuery(this).closest(".filter-row").remove()
+      $(this).closest(".filter-row").remove()
     })
+
+    // If we have a saved condition, trigger the cascade to restore it
+    if (savedCondition) {
+      newRow.data("restoring", true)
+      setTimeout(() => {
+        if (targetTypeSelect.val()) {
+          targetTypeSelect.trigger("change")
+        }
+      }, 100)
+    }
+
+    return newRow
   }
 
   // Function to update field options based on selected target type (doctype)
-  function updateFieldOptions(targetTypeSelect, fieldSelect) {
+  function updateFieldOptions(targetTypeSelect, fieldSelect, row = null) {
     const selectedDoctype = targetTypeSelect.val()
-    console.log("Updating fields for doctype:", selectedDoctype)
 
     // Clear existing options
     fieldSelect.empty().append('<option value="">Select Field...</option>')
 
     if (!selectedDoctype) return
 
+    const savedCondition = row ? row.data("savedCondition") : null
+    const isRestoring = row ? row.data("restoring") : false
+
     // If we already have the fields for this doctype, use them
     if (filterConfig.fields[selectedDoctype]) {
-      populateFieldOptions(selectedDoctype, fieldSelect)
+      populateFieldOptions(selectedDoctype, fieldSelect, savedCondition)
+      if (isRestoring && savedCondition) {
+        setTimeout(() => {
+          fieldSelect.val(savedCondition.field_name).trigger("change")
+        }, 50)
+      }
       return
     }
 
@@ -231,11 +268,18 @@ function render_dynamic_user_assignment_filter_ui(frm) {
     fieldSelect.html('<option value="">Loading fields...</option>')
 
     // Fetch fields from the selected doctype
-    frappe.model.with_doctype(selectedDoctype, () => {
+    window.frappe.model.with_doctype(selectedDoctype, () => {
       try {
-        const meta = frappe.get_meta(selectedDoctype)
+        const meta = window.frappe.get_meta(selectedDoctype)
         filterConfig.fields[selectedDoctype] = meta.fields
-        populateFieldOptions(selectedDoctype, fieldSelect)
+        populateFieldOptions(selectedDoctype, fieldSelect, savedCondition)
+
+        // If restoring, set the saved field value
+        if (isRestoring && savedCondition) {
+          setTimeout(() => {
+            fieldSelect.val(savedCondition.field_name).trigger("change")
+          }, 50)
+        }
       } catch (error) {
         console.error("Error getting meta for", selectedDoctype, ":", error)
         fieldSelect.html('<option value="">Error loading fields</option>')
@@ -244,17 +288,15 @@ function render_dynamic_user_assignment_filter_ui(frm) {
   }
 
   // Helper function to populate field options
-  function populateFieldOptions(doctype, fieldSelect) {
+  function populateFieldOptions(doctype, fieldSelect, savedCondition = null) {
     fieldSelect.empty().append('<option value="">Select Field...</option>')
 
     const fields = filterConfig.fields[doctype]
     if (!fields || !Array.isArray(fields)) {
-      console.error("No fields found for doctype:", doctype)
       return
     }
-    // console.log("Populating fields for doctype:", doctype, "with", fields.length, "fields", fields)
+
     fields.forEach((field) => {
-        console.log("Processing field:", field.fieldname, "of type:", field.fieldtype)
       // Skip hidden and section break fields
       if (
         field.hidden ||
@@ -267,25 +309,26 @@ function render_dynamic_user_assignment_filter_ui(frm) {
         return
       }
 
-      const option = jQuery(
-        `<option value="${field.fieldname}" data-type="${field.fieldtype}" data-options="${field.options || ""}" data-link-doctype="${field.options || ""}">${field.label || field.fieldname}</option>`,
+      const selected = savedCondition && savedCondition.field_name === field.fieldname ? "selected" : ""
+      const option = $(
+        `<option value="${field.fieldname}" data-type="${field.fieldtype}" data-options="${field.options || ""}" data-link-doctype="${field.options || ""}" ${selected}>${field.label || field.fieldname}</option>`,
       )
       fieldSelect.append(option)
     })
-
-    console.log("Populated", fieldSelect.find("option").length - 1, "fields for", doctype)
   }
 
   // Function to update operator options based on selected field
-  function updateOperatorOptions(fieldSelect, operatorSelect) {
+  function updateOperatorOptions(fieldSelect, operatorSelect, row = null) {
     const selectedOption = fieldSelect.find("option:selected")
     const fieldType = selectedOption.data("type")
-    console.log("Updating operators for field type:", fieldType)
 
     // Clear existing options
     operatorSelect.empty().append('<option value="">Select Operator...</option>')
 
     if (!fieldType) return
+
+    const savedCondition = row ? row.data("savedCondition") : null
+    const isRestoring = row ? row.data("restoring") : false
 
     // Map Frappe field types to our operator types
     let operatorType = fieldType
@@ -300,20 +343,27 @@ function render_dynamic_user_assignment_filter_ui(frm) {
     // Add new options based on field type
     if (filterConfig.operators[operatorType]) {
       filterConfig.operators[operatorType].forEach((operator) => {
-        operatorSelect.append(`<option value="${operator.value}">${operator.label}</option>`)
+        const selected = savedCondition && savedCondition.operator === operator.value ? "selected" : ""
+        operatorSelect.append(`<option value="${operator.value}" ${selected}>${operator.label}</option>`)
       })
     } else {
       // Default to Data operators if we don't have specific ones
       filterConfig.operators.Data.forEach((operator) => {
-        operatorSelect.append(`<option value="${operator.value}">${operator.label}</option>`)
+        const selected = savedCondition && savedCondition.operator === operator.value ? "selected" : ""
+        operatorSelect.append(`<option value="${operator.value}" ${selected}>${operator.label}</option>`)
       })
     }
 
-    console.log("Populated", operatorSelect.find("option").length - 1, "operators")
+    // If restoring, set the saved operator value
+    if (isRestoring && savedCondition) {
+      setTimeout(() => {
+        operatorSelect.val(savedCondition.operator).trigger("change")
+      }, 50)
+    }
   }
 
   // Function to update the value input based on the selected field and operator
-  function updateValueInput(fieldSelect, operatorSelect, valueContainer) {
+  function updateValueInput(fieldSelect, operatorSelect, valueContainer, row = null) {
     if (fieldSelect.find("option").length === 0 || operatorSelect.find("option").length === 0) return
 
     const selectedFieldOption = fieldSelect.find("option:selected")
@@ -322,12 +372,13 @@ function render_dynamic_user_assignment_filter_ui(frm) {
     const selectedDoctype = fieldSelect.closest(".filter-row").find(".target-type-select").val()
     const operatorValue = operatorSelect.val()
 
-    console.log("Updating value input for:", { fieldType, fieldName, selectedDoctype, operatorValue })
-
     // Clear the value container
     valueContainer.empty()
 
     if (!fieldType || !operatorValue) return
+
+    const savedCondition = row ? row.data("savedCondition") : null
+    const isRestoring = row ? row.data("restoring") : false
 
     // Create the appropriate input based on field type and operator
     if (fieldType === "Check") {
@@ -339,6 +390,10 @@ function render_dynamic_user_assignment_filter_ui(frm) {
       select.append('<option value="">Select...</option>')
       select.append('<option value="1">Yes</option>')
       select.append('<option value="0">No</option>')
+
+      if (isRestoring && savedCondition) {
+        setTimeout(() => select.val(savedCondition.value), 100)
+      }
     } else if (fieldType === "Select") {
       // Check if operator is 'in' for multiselect
       if (operatorValue === "in") {
@@ -350,15 +405,24 @@ function render_dynamic_user_assignment_filter_ui(frm) {
         select.html('<option value="">Loading options...</option>')
 
         // Fetch options from the field's metadata
-        frappe.model.with_doctype(selectedDoctype, () => {
-          const fieldMeta = frappe.meta.get_docfield(selectedDoctype, fieldName)
+        window.frappe.model.with_doctype(selectedDoctype, () => {
+          const fieldMeta = window.frappe.meta.get_docfield(selectedDoctype, fieldName)
           if (fieldMeta && fieldMeta.options) {
             const optionsList = fieldMeta.options.split("\n").filter((opt) => opt.trim())
             select.empty()
             optionsList.forEach((optionText) => {
               select.append(`<option value="${optionText}">${optionText}</option>`)
             })
-            console.log("Loaded", optionsList.length, "select options for multiselect")
+
+            // Restore saved values
+            if (isRestoring && savedCondition && savedCondition.value) {
+              const savedValues = savedCondition.value.split(",")
+              setTimeout(() => {
+                savedValues.forEach((value) => {
+                  select.find(`option[value="${value.trim()}"]`).prop("selected", true)
+                })
+              }, 100)
+            }
           } else {
             select.html('<option value="">No options available</option>')
           }
@@ -372,15 +436,18 @@ function render_dynamic_user_assignment_filter_ui(frm) {
         select.html('<option value="">Loading options...</option>')
 
         // Fetch options from the field's metadata
-        frappe.model.with_doctype(selectedDoctype, () => {
-          const fieldMeta = frappe.meta.get_docfield(selectedDoctype, fieldName)
+        window.frappe.model.with_doctype(selectedDoctype, () => {
+          const fieldMeta = window.frappe.meta.get_docfield(selectedDoctype, fieldName)
           if (fieldMeta && fieldMeta.options) {
             const optionsList = fieldMeta.options.split("\n").filter((opt) => opt.trim())
             select.empty().append('<option value="">Select...</option>')
             optionsList.forEach((optionText) => {
               select.append(`<option value="${optionText}">${optionText}</option>`)
             })
-            console.log("Loaded", optionsList.length, "select options for single select")
+
+            if (isRestoring && savedCondition) {
+              setTimeout(() => select.val(savedCondition.value), 100)
+            }
           } else {
             select.html('<option value="">No options available</option>')
           }
@@ -391,17 +458,20 @@ function render_dynamic_user_assignment_filter_ui(frm) {
       if (operatorValue === "in") {
         // Create multiselect autocomplete for Link fields with 'in' operator
         valueContainer.html(createMultiselectLinkField())
-        setupMultiselectLink(valueContainer, fieldName, selectedDoctype)
+        setupMultiselectLink(valueContainer, fieldName, selectedDoctype, savedCondition, isRestoring)
       } else {
         // Create single autocomplete for Link fields
         valueContainer.html(createStyledInput("text", "value-input"))
         setupSingleLink(valueContainer, fieldName, selectedDoctype)
+
+        if (isRestoring && savedCondition) {
+          setTimeout(() => valueContainer.find(".value-input").val(savedCondition.value), 100)
+        }
       }
     } else if (fieldType === "Data" && fieldName === "name" && operatorValue === "in") {
       // Special handling for 'name' field with 'in' operator - create multiselect
-      console.log("Creating multiselect for name field of", selectedDoctype)
       valueContainer.html(createMultiselectDataField())
-      setupMultiselectDataField(valueContainer, selectedDoctype)
+      setupMultiselectDataField(valueContainer, selectedDoctype, savedCondition, isRestoring)
     } else if (["Currency", "Float", "Int", "Decimal", "Percent"].includes(fieldType)) {
       // Create number input(s) for numeric fields
       if (operatorValue === "between") {
@@ -417,6 +487,14 @@ function render_dynamic_user_assignment_filter_ui(frm) {
         if (["Currency", "Float", "Decimal", "Percent"].includes(fieldType)) {
           valueContainer.find("input").attr("step", "0.01")
         }
+
+        if (isRestoring && savedCondition && savedCondition.value.includes(":")) {
+          const [min, max] = savedCondition.value.split(":")
+          setTimeout(() => {
+            valueContainer.find(".value-input-min").val(min)
+            valueContainer.find(".value-input-max").val(max)
+          }, 100)
+        }
       } else {
         // For other operators, create a single input
         valueContainer.html(createStyledInput("number", "value-input"))
@@ -424,6 +502,10 @@ function render_dynamic_user_assignment_filter_ui(frm) {
         // Add step attribute for Float/Currency fields
         if (["Currency", "Float", "Decimal", "Percent"].includes(fieldType)) {
           valueContainer.find("input").attr("step", "0.01")
+        }
+
+        if (isRestoring && savedCondition) {
+          setTimeout(() => valueContainer.find(".value-input").val(savedCondition.value), 100)
         }
       }
     } else if (["Date", "Datetime"].includes(fieldType)) {
@@ -436,9 +518,21 @@ function render_dynamic_user_assignment_filter_ui(frm) {
                         ${createStyledInput(fieldType.toLowerCase(), "value-input-max")}
                     </div>
                 `)
+
+        if (isRestoring && savedCondition && savedCondition.value.includes(":")) {
+          const [min, max] = savedCondition.value.split(":")
+          setTimeout(() => {
+            valueContainer.find(".value-input-min").val(min)
+            valueContainer.find(".value-input-max").val(max)
+          }, 100)
+        }
       } else {
         // For other operators, create a single input
         valueContainer.html(createStyledInput(fieldType.toLowerCase(), "value-input"))
+
+        if (isRestoring && savedCondition) {
+          setTimeout(() => valueContainer.find(".value-input").val(savedCondition.value), 100)
+        }
       }
     } else {
       // Create a text input for all other fields
@@ -449,17 +543,56 @@ function render_dynamic_user_assignment_filter_ui(frm) {
         // For other operators, create a single input
         valueContainer.html(createStyledInput("text", "value-input"))
       }
+
+      if (isRestoring && savedCondition) {
+        setTimeout(() => valueContainer.find(".value-input").val(savedCondition.value), 100)
+      }
+    }
+
+    // Mark restoration as complete
+    if (isRestoring && row) {
+      setTimeout(() => {
+        row.removeData("restoring")
+      }, 500)
     }
   }
 
   // Function to setup multiselect for Data fields (like name field)
-  function setupMultiselectDataField(valueContainer, selectedDoctype) {
+  function setupMultiselectDataField(valueContainer, selectedDoctype, savedCondition = null, isRestoring = false) {
     const input = valueContainer.find(".multiselect-input")
     const dropdown = valueContainer.find(".multiselect-dropdown")
     const selectedContainer = valueContainer.find(".selected-values")
     let selectedValues = []
 
-    console.log("Setting up multiselect data field for doctype:", selectedDoctype)
+    // Function to add selected tag
+    const addSelectedTag = (value) => {
+      const tag = $(`
+                <span class="selected-tag" data-value="${value}" style="background-color: #E5E7EB; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                    ${value}
+                    <button type="button" class="remove-tag" style="background: none; border: none; color: #6B7280; cursor: pointer; font-size: 14px;">&times;</button>
+                </span>
+            `)
+
+      tag.find(".remove-tag").on("click", () => {
+        const valueToRemove = tag.data("value")
+        selectedValues = selectedValues.filter((v) => v !== valueToRemove)
+        tag.remove()
+      })
+
+      selectedContainer.find(".multiselect-input").before(tag)
+    }
+
+    // Restore saved values if restoring
+    if (isRestoring && savedCondition && savedCondition.value) {
+      const savedValues = savedCondition.value.split(",")
+      savedValues.forEach((value) => {
+        const trimmedValue = value.trim()
+        if (trimmedValue && !selectedValues.includes(trimmedValue)) {
+          selectedValues.push(trimmedValue)
+          addSelectedTag(trimmedValue)
+        }
+      })
+    }
 
     // Function to fetch and display options
     const fetchOptions = (searchText) => {
@@ -467,7 +600,7 @@ function render_dynamic_user_assignment_filter_ui(frm) {
       dropdown.show()
 
       // Fetch records from the selected doctype
-      frappe.call({
+      window.frappe.call({
         method: "frappe.client.get_list",
         args: {
           doctype: selectedDoctype,
@@ -494,7 +627,7 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
           // Handle option click
           dropdown.find(".multiselect-option").on("click", function () {
-            const value = jQuery(this).data("value")
+            const value = $(this).data("value")
             if (!selectedValues.includes(value)) {
               selectedValues.push(value)
               addSelectedTag(value)
@@ -505,41 +638,22 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
           // Add hover effect
           dropdown.find(".multiselect-option").on("mouseenter", function () {
-            jQuery(this).css("background-color", "#F9FAFB")
+            $(this).css("background-color", "#F9FAFB")
           })
           dropdown.find(".multiselect-option").on("mouseleave", function () {
-            jQuery(this).css("background-color", "")
+            $(this).css("background-color", "")
           })
         },
         error: (err) => {
-          console.error("Error fetching data field options:", err)
           dropdown.html('<div style="padding: 8px; text-align: center; color: #EF4444;">Error loading options</div>')
         },
       })
     }
 
-    // Function to add selected tag
-    const addSelectedTag = (value) => {
-      const tag = jQuery(`
-                <span class="selected-tag" data-value="${value}" style="background-color: #E5E7EB; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: flex; align-items: center; gap: 4px;">
-                    ${value}
-                    <button type="button" class="remove-tag" style="background: none; border: none; color: #6B7280; cursor: pointer; font-size: 14px;">&times;</button>
-                </span>
-            `)
-
-      tag.find(".remove-tag").on("click", () => {
-        const valueToRemove = tag.data("value")
-        selectedValues = selectedValues.filter((v) => v !== valueToRemove)
-        tag.remove()
-      })
-
-      selectedContainer.find(".multiselect-input").before(tag)
-    }
-
     // Set up input event with debounce
     let debounceTimer
     input.on("input", function () {
-      const searchText = jQuery(this).val()
+      const searchText = this.value
       clearTimeout(debounceTimer)
       debounceTimer = setTimeout(() => {
         fetchOptions(searchText)
@@ -548,13 +662,13 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
     // Show dropdown on focus
     input.on("focus", function () {
-      const searchText = jQuery(this).val()
+      const searchText = this.value
       fetchOptions(searchText)
     })
 
     // Hide dropdown when clicking outside
-    jQuery(document).on("click", (e) => {
-      if (!jQuery(e.target).closest(".multiselect-data-container").length) {
+    $(document).on("click", (e) => {
+      if (!$(e.target).closest(".multiselect-data-container").length) {
         dropdown.hide()
       }
     })
@@ -564,25 +678,59 @@ function render_dynamic_user_assignment_filter_ui(frm) {
   }
 
   // Function to setup multiselect Link field
-  function setupMultiselectLink(valueContainer, fieldName, selectedDoctype) {
+  function setupMultiselectLink(
+    valueContainer,
+    fieldName,
+    selectedDoctype,
+    savedCondition = null,
+    isRestoring = false,
+  ) {
     const input = valueContainer.find(".multiselect-input")
     const dropdown = valueContainer.find(".multiselect-dropdown")
     const selectedContainer = valueContainer.find(".selected-values")
     let selectedValues = []
 
     // Get the linked doctype
-    const fieldMeta = frappe.meta.get_docfield(selectedDoctype, fieldName)
+    const fieldMeta = window.frappe.meta.get_docfield(selectedDoctype, fieldName)
     const linkDoctype = fieldMeta ? fieldMeta.options : null
 
-    console.log("Setting up multiselect link for:", fieldName, "linked to:", linkDoctype)
-
     if (linkDoctype) {
+      // Function to add selected tag
+      const addSelectedTag = (value) => {
+        const tag = $(`
+                    <span class="selected-tag" data-value="${value}" style="background-color: #E5E7EB; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                        ${value}
+                        <button type="button" class="remove-tag" style="background: none; border: none; color: #6B7280; cursor: pointer; font-size: 14px;">&times;</button>
+                    </span>
+                `)
+
+        tag.find(".remove-tag").on("click", () => {
+          const valueToRemove = tag.data("value")
+          selectedValues = selectedValues.filter((v) => v !== valueToRemove)
+          tag.remove()
+        })
+
+        selectedContainer.find(".multiselect-input").before(tag)
+      }
+
+      // Restore saved values if restoring
+      if (isRestoring && savedCondition && savedCondition.value) {
+        const savedValues = savedCondition.value.split(",")
+        savedValues.forEach((value) => {
+          const trimmedValue = value.trim()
+          if (trimmedValue && !selectedValues.includes(trimmedValue)) {
+            selectedValues.push(trimmedValue)
+            addSelectedTag(trimmedValue)
+          }
+        })
+      }
+
       // Function to fetch and display options
       const fetchOptions = (searchText) => {
         dropdown.html('<div style="padding: 8px; text-align: center; color: #6B7280;">Loading...</div>')
         dropdown.show()
 
-        frappe.db
+        window.frappe.db
           .get_link_options(linkDoctype, searchText)
           .then((results) => {
             if (results.length === 0) {
@@ -604,7 +752,7 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
             // Handle option click
             dropdown.find(".multiselect-option").on("click", function () {
-              const value = jQuery(this).data("value")
+              const value = $(this).data("value")
               if (!selectedValues.includes(value)) {
                 selectedValues.push(value)
                 addSelectedTag(value)
@@ -615,40 +763,21 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
             // Add hover effect
             dropdown.find(".multiselect-option").on("mouseenter", function () {
-              jQuery(this).css("background-color", "#F9FAFB")
+              $(this).css("background-color", "#F9FAFB")
             })
             dropdown.find(".multiselect-option").on("mouseleave", function () {
-              jQuery(this).css("background-color", "")
+              $(this).css("background-color", "")
             })
           })
           .catch((err) => {
-            console.error("Error fetching link options:", err)
             dropdown.html('<div style="padding: 8px; text-align: center; color: #EF4444;">Error loading options</div>')
           })
-      }
-
-      // Function to add selected tag
-      const addSelectedTag = (value) => {
-        const tag = jQuery(`
-                    <span class="selected-tag" data-value="${value}" style="background-color: #E5E7EB; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: flex; align-items: center; gap: 4px;">
-                        ${value}
-                        <button type="button" class="remove-tag" style="background: none; border: none; color: #6B7280; cursor: pointer; font-size: 14px;">&times;</button>
-                    </span>
-                `)
-
-        tag.find(".remove-tag").on("click", () => {
-          const valueToRemove = tag.data("value")
-          selectedValues = selectedValues.filter((v) => v !== valueToRemove)
-          tag.remove()
-        })
-
-        selectedContainer.find(".multiselect-input").before(tag)
       }
 
       // Set up input event with debounce
       let debounceTimer
       input.on("input", function () {
-        const searchText = jQuery(this).val()
+        const searchText = this.value
         clearTimeout(debounceTimer)
         debounceTimer = setTimeout(() => {
           fetchOptions(searchText)
@@ -657,13 +786,13 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
       // Show dropdown on focus
       input.on("focus", function () {
-        const searchText = jQuery(this).val()
+        const searchText = this.value
         fetchOptions(searchText)
       })
 
       // Hide dropdown when clicking outside
-      jQuery(document).on("click", (e) => {
-        if (!jQuery(e.target).closest(".multiselect-link-container").length) {
+      $(document).on("click", (e) => {
+        if (!$(e.target).closest(".multiselect-link-container").length) {
           dropdown.hide()
         }
       })
@@ -678,10 +807,8 @@ function render_dynamic_user_assignment_filter_ui(frm) {
     const input = valueContainer.find(".value-input")
 
     // Get the linked doctype
-    const fieldMeta = frappe.meta.get_docfield(selectedDoctype, fieldName)
+    const fieldMeta = window.frappe.meta.get_docfield(selectedDoctype, fieldName)
     const linkDoctype = fieldMeta ? fieldMeta.options : null
-
-    console.log("Setting up single link for:", fieldName, "linked to:", linkDoctype)
 
     if (linkDoctype) {
       // Set up autocomplete for link field
@@ -689,20 +816,20 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
       // Initialize the autocomplete
       input.on("input", function () {
-        const searchText = jQuery(this).val()
+        const searchText = this.value
 
         // Use the recommended Frappe method to fetch link options
-        frappe.db
+        window.frappe.db
           .get_link_options(linkDoctype, searchText)
           .then((results) => {
             // Create a datalist for autocomplete suggestions
             const datalistId = `link-options-${fieldName}-${Date.now()}`
 
             // Remove existing datalist if any
-            jQuery(`datalist[id^="link-options-${fieldName}"]`).remove()
+            $(`datalist[id^="link-options-${fieldName}"]`).remove()
 
             // Create new datalist
-            const datalist = jQuery(`<datalist id="${datalistId}"></datalist>`)
+            const datalist = $(`<datalist id="${datalistId}"></datalist>`)
 
             // Add options to datalist
             results.forEach((result) => {
@@ -710,7 +837,7 @@ function render_dynamic_user_assignment_filter_ui(frm) {
             })
 
             // Append datalist to document
-            jQuery("body").append(datalist)
+            $("body").append(datalist)
 
             // Connect input to datalist
             input.attr("list", datalistId)
@@ -734,8 +861,6 @@ function render_dynamic_user_assignment_filter_ui(frm) {
     const operatorValue = row.find(".operator-select").val()
     const valueContainer = row.find(".value-container")
 
-    console.log("Getting value for field type:", fieldType, "field name:", fieldName, "operator:", operatorValue)
-
     // Check if this is a multiselect case
     const isMultiselect =
       (["Link", "Select"].includes(fieldType) || (fieldType === "Data" && fieldName === "name")) &&
@@ -745,25 +870,19 @@ function render_dynamic_user_assignment_filter_ui(frm) {
       if (fieldType === "Link") {
         // Get selected values from multiselect Link field
         const getSelectedValues = valueContainer.data("getSelectedValues")
-        const result = getSelectedValues ? getSelectedValues() : ""
-        console.log("Multiselect Link values:", result)
-        return result
+        return getSelectedValues ? getSelectedValues() : ""
       } else if (fieldType === "Select") {
         // Get selected values from multiselect Select field
         const selectedOptions = valueContainer.find(".multiselect-select option:selected")
         const values = []
         selectedOptions.each(function () {
-          values.push(jQuery(this).val())
+          values.push($(this).val())
         })
-        const result = values.join(",")
-        console.log("Multiselect Select values:", result)
-        return result
+        return values.join(",")
       } else if (fieldType === "Data" && fieldName === "name") {
         // Get selected values from multiselect Data field (name field)
         const getSelectedValues = valueContainer.data("getSelectedValues")
-        const result = getSelectedValues ? getSelectedValues() : ""
-        console.log("Multiselect Data (name) values:", result)
-        return result
+        return getSelectedValues ? getSelectedValues() : ""
       }
     }
 
@@ -774,19 +893,14 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
     if (valueInputMin.length && valueInputMax.length) {
       // For 'between' operator
-      const result = {
+      return {
         min: valueInputMin.val(),
         max: valueInputMax.val(),
       }
-      console.log("Between values:", result)
-      return result
     } else if (valueInput.length) {
-      const result = valueInput.val()
-      console.log("Single value:", result)
-      return result
+      return valueInput.val()
     }
 
-    console.log("No value found")
     return null
   }
 
@@ -799,25 +913,17 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
   // Function to apply filters
   function applyFilters() {
-    console.log("Apply filters clicked")
     const filters = []
     const duplicates = []
 
     filtersContainer.find(".filter-row").each(function () {
-      const row = jQuery(this)
+      const row = $(this)
       const targetTypeSelect = row.find(".target-type-select")
       const fieldSelect = row.find(".field-select")
       const operatorSelect = row.find(".operator-select")
 
-      console.log("Processing row:", {
-        targetType: targetTypeSelect.val(),
-        field: fieldSelect.val(),
-        operator: operatorSelect.val(),
-      })
-
       // Handle different value input types
       const value = getValueFromInput(row)
-      console.log("Value from input:", value)
 
       // Only add filter if all fields are selected and value is provided
       if (targetTypeSelect.val() && fieldSelect.val() && operatorSelect.val() && value) {
@@ -836,8 +942,6 @@ function render_dynamic_user_assignment_filter_ui(frm) {
           value: value,
           field_type: fieldOption.data("type"),
         }
-
-        console.log("Filter data:", filterData)
 
         // Check if this filter is a duplicate
         let isDuplicate = false
@@ -875,18 +979,16 @@ function render_dynamic_user_assignment_filter_ui(frm) {
       }
     })
 
-    console.log("Final filters:", filters)
-
     // Notify about duplicates if any
     if (duplicates.length > 0) {
-      frappe.msgprint(`${duplicates.length} duplicate filter(s) were ignored.`)
+      window.frappe.msgprint(`${duplicates.length} duplicate filter(s) were ignored.`)
     }
 
     // Add to child table in Frappe
     frm.doc.assignment_conditions = []
 
     filters.forEach((filter) => {
-      const child = frappe.model.add_child(frm.doc, "Assignment Conditions", "assignment_conditions")
+      const child = window.frappe.model.add_child(frm.doc, "Assignment Conditions", "assignment_conditions")
       child.target_type = filter.target_type
       child.field_name = filter.field
       child.operator = filter.operator
@@ -902,16 +1004,13 @@ function render_dynamic_user_assignment_filter_ui(frm) {
     })
 
     frm.refresh_field("assignment_conditions")
-    frappe.msgprint(`${filters.length} filter(s) applied successfully`)
-    console.log("Filters applied to form")
+    window.frappe.msgprint(`${filters.length} filter(s) applied successfully`)
   }
 
   // Function to get all doctypes for target type dropdown
   function getAllDoctypes(callback) {
-    console.log("Fetching all doctypes...")
-
     // Try multiple methods to get doctypes
-    frappe.call({
+    window.frappe.call({
       method: "frappe.client.get_list",
       args: {
         doctype: "DocType",
@@ -924,18 +1023,15 @@ function render_dynamic_user_assignment_filter_ui(frm) {
         limit_page_length: 0,
       },
       callback: (r) => {
-        console.log("Doctypes response (method 1):", r)
         if (r.message && r.message.length > 0) {
           const options = r.message.map((doctype) => ({
             label: doctype.name,
             value: doctype.name,
           }))
-          console.log("Processed doctypes:", options.length)
           callback(options)
         } else {
           // Fallback method
-          console.log("Trying fallback method for doctypes...")
-          frappe.call({
+          window.frappe.call({
             method: "frappe.desk.search.search_link",
             args: {
               doctype: "DocType",
@@ -946,16 +1042,13 @@ function render_dynamic_user_assignment_filter_ui(frm) {
               },
             },
             callback: (r2) => {
-              console.log("Doctypes response (method 2):", r2)
               if (r2.results) {
                 const options = r2.results.map((result) => ({
                   label: result.value,
                   value: result.value,
                 }))
-                console.log("Processed doctypes (fallback):", options.length)
                 callback(options)
               } else {
-                console.log("No doctypes found with either method")
                 callback([])
               }
             },
@@ -967,17 +1060,15 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
   // Get all doctypes then load UI
   getAllDoctypes((doctypes) => {
-    console.log("Setting up UI with doctypes:", doctypes.length)
     filterConfig.targetTypes = doctypes
 
     // Set up event handlers
     addFilterBtn.on("click", () => {
-      console.log("Add filter button clicked")
       // Check if there are any incomplete rows before adding a new one
       let hasIncompleteRow = false
 
       filtersContainer.find(".filter-row").each(function () {
-        const row = jQuery(this)
+        const row = $(this)
         const targetTypeSelect = row.find(".target-type-select")
         const fieldSelect = row.find(".field-select")
         const operatorSelect = row.find(".operator-select")
@@ -993,7 +1084,7 @@ function render_dynamic_user_assignment_filter_ui(frm) {
       })
 
       if (hasIncompleteRow) {
-        frappe.msgprint("Please complete the existing filter row before adding a new one.")
+        window.frappe.msgprint("Please complete the existing filter row before adding a new one.")
       } else {
         addFilterRow()
       }
@@ -1004,65 +1095,17 @@ function render_dynamic_user_assignment_filter_ui(frm) {
 
     // Load saved filters if available
     if (frm.doc.assignment_conditions && frm.doc.assignment_conditions.length > 0) {
-      console.log("Loading saved conditions:", frm.doc.assignment_conditions.length)
+      // Clear any existing rows first
+      filtersContainer.empty()
+      filterIndex = 0
+
       frm.doc.assignment_conditions.forEach((condition) => {
-        addFilterRow()
-        const lastIndex = filterIndex - 1
-        const row = filtersContainer.find(`.filter-row[data-index="${lastIndex}"]`)
-
-        const targetTypeSelect = row.find(".target-type-select")
-        const fieldSelect = row.find(".field-select")
-        const operatorSelect = row.find(".operator-select")
-
-        setTimeout(() => {
-          targetTypeSelect.val(condition.target_type).trigger("change")
-
-          setTimeout(() => {
-            fieldSelect.val(condition.field_name).trigger("change")
-
-            setTimeout(() => {
-              operatorSelect.val(condition.operator).trigger("change")
-
-              setTimeout(() => {
-                const conditionValue = condition.value
-
-                if (condition.operator === "between" && conditionValue.includes(":")) {
-                  const [min, max] = conditionValue.split(":")
-                  row.find(".value-input-min").val(min)
-                  row.find(".value-input-max").val(max)
-                } else {
-                  // Handle multiselect values (comma-separated)
-                  const fieldType = fieldSelect.find("option:selected").data("type")
-                  const fieldName = fieldSelect.find("option:selected").val()
-                  const isMultiselect =
-                    (["Link", "Select"].includes(fieldType) || (fieldType === "Data" && fieldName === "name")) &&
-                    condition.operator === "in"
-
-                  if (isMultiselect) {
-                    if (fieldType === "Select") {
-                      // Set multiple selected values for Select field
-                      const values = conditionValue.split(",")
-                      setTimeout(() => {
-                        const selectElement = row.find(".multiselect-select")
-                        values.forEach((value) => {
-                          selectElement.find(`option[value="${value.trim()}"]`).prop("selected", true)
-                        })
-                      }, 200)
-                    }
-                    // For Link and Data fields, the multiselect restoration would need custom implementation
-                  } else {
-                    row.find(".value-input").val(conditionValue)
-                  }
-                }
-              }, 100)
-            }, 100)
-          }, 100)
-        }, 100)
+        addFilterRow(condition)
       })
     } else {
       // If no saved filters, show a blank one
-      console.log("Adding initial blank filter row")
       addFilterRow()
     }
   })
 }
+
