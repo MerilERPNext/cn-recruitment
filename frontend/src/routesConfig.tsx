@@ -1,3 +1,4 @@
+
 import { ReactElement } from "react";
 import SearchMembers from "./components/SearchMembers";
 import Notices from "./components/Notices";
@@ -18,6 +19,7 @@ import JobApplicantDetails from "./components/JobApplicantDetail";
 import ExpensesApp from "./components/Expenses-App/ExpensesApp";
 import ExpensesList from "./components/Expenses-App/ExpensesList";
 import NewExpenseType from "./components/Expenses-App/NewExpenseType";
+import GeneralExpenseClaim from "./components/Expenses-App/GeneralExpenseClaim"; // Import the new component
 
 export interface AppRoute {
   path: string;
@@ -86,5 +88,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/expenses-app/expenses-list/new-expense-type",
     element: <NewExpenseType />,
+  },
+  // New route for General Expense Claim
+  {
+    path: "/webapp/expenses-app/general-expense-claim",
+    element: <GeneralExpenseClaim />,
   },
 ];
