@@ -103,6 +103,18 @@ const Dashboard: React.FC = () => {
               Manage ID Cards
             </Link>
           </div>
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Expenses App</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Streamline your Expenses process and manage all Expenses with ease.
+            </p>
+            <Link
+              to="/webapp/expenses-app"
+              className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              View Expenses
+            </Link>
+          </div>
         </div>
 
 

@@ -15,6 +15,9 @@ import ReferralList from "./components/ReferralList";
 import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
+import ExpensesApp from "./components/Expenses-App/ExpensesApp";
+import ExpensesList from "./components/Expenses-App/ExpensesList";
+import NewExpenseType from "./components/Expenses-App/NewExpenseType";
 
 export interface AppRoute {
   path: string;
@@ -46,6 +49,15 @@ export const routesConfig: AppRoute[] = [
     ],
   },
 
+  // Nested Expenses App Routes
+  {
+    path: "/webapp/expenses-app",
+    element: <ExpensesApp />,
+    children: [
+      { path: "expenses-list", element: <ExpensesList /> },
+    ],
+  },
+
   // Flat Recruitment Routes
   {
     path: "/webapp/recruitment-app/referrals/add-new-referral",
@@ -70,5 +82,9 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recruitment-app/requisitions/add-requisition/*",
     element: <AddRequisition />,
+  },
+  {
+    path: "/webapp/expenses-app/expenses-list/new-expense-type",
+    element: <NewExpenseType />,
   },
 ];
