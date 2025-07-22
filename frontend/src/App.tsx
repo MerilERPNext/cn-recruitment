@@ -6,6 +6,8 @@ import { QueryProvider } from './providers/QueryProvider';
 import './App.css';
 
 import { AppRoute, routesConfig } from './routesConfig';
+// @ts-expect-error ignore
+import {Form} from "@tsed/react-formio";
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -13,6 +15,34 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--background-medium)' }}>
+      <Form form={{
+        "display": "form",
+        "settings": {
+          "pdf": {
+            "id": "1ec0f8ee-6685-5d98-a847-26f67b67d6f0",
+            "src": "https://files.form.io/pdf/5692b91fd1028f01000407e3/file/1ec0f8ee-6685-5d98-a847-26f67b67d6f0"
+          }
+        },
+        "components": [
+          {
+            "label": "Text Field",
+            "applyMaskOn": "change",
+            "tableView": true,
+            "validateWhenHidden": false,
+            "key": "textField",
+            "type": "textfield",
+            "input": true
+          },
+          {
+            "type": "button",
+            "label": "Submit",
+            "key": "submit",
+            "disableOnInvalid": true,
+            "input": true,
+            "tableView": false
+          }
+        ]
+      }}/>
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>

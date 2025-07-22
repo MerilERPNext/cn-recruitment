@@ -1,5 +1,3 @@
-"use client"
-
 import { useMemo } from "react"
 import { ArrowLeft, Calendar, Clock, Video, FileText, Copy, AlertCircle, RefreshCw } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
