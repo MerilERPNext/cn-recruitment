@@ -1,6 +1,7 @@
 // Employee interface based on Frappe Employee DocType
 export interface Employee {
   name: string;
+  employee: string;
   employee_name: string;
   first_name: string;
   middle_name?: string;
@@ -59,6 +60,7 @@ export interface Employee {
   salary_mode?: string;
   payroll_cost_center?: string;
   pan_number?: string;
+  provident_fund_account?: string;
   
   // Bank Details
   bank_name?: string;

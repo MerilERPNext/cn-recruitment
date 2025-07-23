@@ -90,6 +90,26 @@ export class EmployeeService {
       return null;
     }
   }
+  static async getCurrentEmployeeAllDetails(user_id : string): Promise<Employee | null> {
+    try {
+      const result = await FrappeAPI.getDocumentList("Employee", {
+      fields: ["*"],
+      filters: [
+        ["user_id", "=", user_id]
+      ],
+    });
+
+      if (!isEmployee(result.data[0])) {
+        console.error('Invalid employee data received from API');
+        return null;
+      }
+      
+      return result?.data[0];
+    } catch (error) {
+      console.error('Error fetching current employee:', error);
+      return null;
+    }
+  }
 
   // Transform Employee data to EmployeeIdCard format
   static transformToIdCard(employee: Employee): EmployeeIdCard {

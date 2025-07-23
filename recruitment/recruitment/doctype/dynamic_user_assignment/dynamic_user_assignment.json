@@ -15,7 +15,10 @@
   "section_break_isal",
   "approval_condtions",
   "user_assignment_conditions_section",
-  "assignment_conditions"
+  "assignment_conditions",
+  "section_break_bvev",
+  "fetch_users",
+  "assigned_users"
  ],
  "fields": [
   {
@@ -72,12 +75,27 @@
    "fieldname": "approval_condtions",
    "fieldtype": "HTML",
    "label": "Approval Condtions"
+  },
+  {
+   "fieldname": "section_break_bvev",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "fetch_users",
+   "fieldtype": "Button",
+   "label": "Fetch Users"
+  },
+  {
+   "fieldname": "assigned_users",
+   "fieldtype": "Table",
+   "label": "Assigned Users",
+   "options": "Assigned Users"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-07-18 16:03:24.875795",
+ "modified": "2025-07-21 17:17:44.143988",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Dynamic User Assignment",
