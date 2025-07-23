@@ -15,6 +15,16 @@ import ReferralList from "./components/ReferralList";
 import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
+import SalarySlip from "./components/SalarySlip/SalaryDetails";
+import SalarySlipApp from "./components/SalarySlip/SalarySlipApp";
+import SalarySlipsList from "./components/SalarySlip/SalarySlipList";
+import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
+import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
+import TeamShift from "./components/ShiftRequest/TeamShift";
+import MyShiftAssignment from "./components/ShiftRequest/MyShiftAssignment";
+import ShiftChangeForm from "./components/ShiftRequest/AddRequestForm";
+import ShiftRequestList from "./components/ShiftRequest/MyShiftList";
+import ShiftChangeRequest from "./components/ShiftRequest/ShiftChangeRequest";
 
 export interface AppRoute {
   path: string;
@@ -32,6 +42,10 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
     element: <JobApplicantDetails />,
   },
+  {
+    path: "/webapp/recruitment-app/salary-slip-details/:id",
+    element: <SalarySlip />,
+  },
 
   // Nested Recruitment App Routes
   {
@@ -44,6 +58,34 @@ export const routesConfig: AppRoute[] = [
       { path: "job-openings", element: <JobOpeningsUI /> },
       { path: "job-applicant-list", element: <JobApplicantList /> },
     ],
+  },
+  {
+    path: "/webapp/salary-slip-app",
+    element: <SalarySlipApp />,
+    children: [
+      { path: "salary-slip-list", element: <SalarySlipsList /> },
+    ],
+  },
+
+  {
+    path: "/webapp/shift-request",
+    element: <ShiftRequestApp />,
+    children: [
+      { path: "my-shift-assignment", element: <MyShiftAssignment /> },
+      { path: "team-shift", element: <TeamShift /> },
+      { path: "shift-list", element: <ShiftRequestList /> },
+      { path: "shift-change-request", element: <ShiftChangeRequest /> },
+    ],
+  },
+
+  {
+    path: "/webapp/shift-request/shift-change-form",
+    element: <ShiftChangeForm />,
+  },
+
+  {
+    path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
+    element: <SalarySlipDetails />,
   },
 
   // Flat Recruitment Routes

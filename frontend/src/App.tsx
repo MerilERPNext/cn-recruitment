@@ -53,7 +53,7 @@ const Dashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
-            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Search Members</h2>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Recruitment</h2>
             <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
               Streamline your recruitment process and manage job applicants with ease.
             </p>
@@ -101,6 +101,30 @@ const Dashboard: React.FC = () => {
               className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
             >
               Manage ID Cards
+            </Link>
+          </div>
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Salary slip</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Generate, view, and manage employee salary slip cards.
+            </p>
+            <Link
+              to="/webapp/salary-slip-app"
+              className="inline-block bg-black text-white px-4 py-2 rounded-md  transition-colors"
+            >
+              Salary Slips
+            </Link>
+          </div>
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Shift Management</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Generate, view, and manage employee shift management cards.
+            </p>
+            <Link
+              to="/webapp/shift-request"
+              className="inline-block bg-red-500 text-white px-4 py-2 rounded-md  transition-colors"
+            >
+              Shift Management
             </Link>
           </div>
         </div>

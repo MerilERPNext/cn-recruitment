@@ -2,7 +2,6 @@ import axios, { AxiosRequestConfig } from "axios"
 import { PermissionError } from "../types/interview"
 import { FilterCondition } from "../types/frappe";
 
-// Base configuration for Frappe API calls
 const API_BASE = window.location.origin
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean
@@ -18,7 +17,7 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
-    "X-Frappe-CSRF-Token": window.csrf_token, // ✅ Now TypeScript understands
+    "X-Frappe-CSRF-Token": window.csrf_token,
   },
 });
 
@@ -54,12 +53,11 @@ export const FrappeAPI = {
     return response.data.data
   },
   
-
   getDocumentList: async (
     doctype: string,
     options: {
       fields?: string[];
-      filters?: FilterCondition[]; // <- यहाँ ये टाइप होनी चाहिए
+      filters?: FilterCondition[];
       orFilters?: FilterCondition[];
       limit?: number;
       limitStart?: number;
@@ -83,6 +81,18 @@ export const FrappeAPI = {
       data: response.data.data,
       totalCount: response.data.total_count,
     }
+  },
+
+  // Update document using resource API
+  updateDocument: async (doctype: string, name: string, data: Record<string, unknown>): Promise<unknown> => {
+    const response = await apiClient.put(`/api/resource/${doctype}/${name}`, data)
+    return response.data.data
+  },
+
+  // Create document using resource API
+  createDocument: async (doctype: string, data: Record<string, unknown>): Promise<unknown> => {
+    const response = await apiClient.post(`/api/resource/${doctype}`, data)
+    return response.data.data
   },
 
   callMethod: async (method: string, args: Record<string, unknown> = {}): Promise<unknown> => {
