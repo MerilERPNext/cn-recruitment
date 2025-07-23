@@ -3,6 +3,7 @@ import SearchMembers from "./components/SearchMembers";
 import Notices from "./components/Notices";
 import IdCard from "./components/IdCard";
 import RecruitmentApp from "./components/RecruitmentApp";
+import MyProfile from "./components/MyProfile/MyProfile";
 import InterviewPage from "./components/InterviewDetails";
 import InterviewList from "./components/interview";
 import AddNewReferral from "./components/AddNewReferral";
@@ -52,6 +53,10 @@ export const routesConfig: AppRoute[] = [
       { path: "job-openings", element: <JobOpeningsUI /> },
       { path: "job-applicant-list", element: <JobApplicantList /> },
     ],
+  },
+  {
+    path: "/webapp/my-profile",
+    element: <MyProfile />,
   },
 
   // Flat Recruitment Routes

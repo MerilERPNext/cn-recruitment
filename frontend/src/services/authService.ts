@@ -1,3 +1,4 @@
+ 
 import FrappeAPI from "../utils/frappeAPI";
 
 export const authService = {
@@ -7,3 +8,4 @@ export const authService = {
     return response as string;
   },
 };
+

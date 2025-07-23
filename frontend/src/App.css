@@ -6,3 +6,18 @@
   @apply h-full;
   @apply w-full;
 }
+
+.address-form-container .row {
+  /* increase specificity and force no-wrap */
+  display: flex !important;
+  flex-wrap: nowrap !important;
+}
+
+.flatpickr-calendar {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+.address-form-container .choices__inner::after {
+  display: none !important;
+}

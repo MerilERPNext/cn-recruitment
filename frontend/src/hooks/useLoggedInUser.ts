@@ -1,3 +1,4 @@
+
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { authService } from "../services/authService";
 
@@ -19,10 +20,11 @@ export const useLoggedInUser = (
   return useQuery<string, Error>({
     queryKey: ["logged-in-user"],
     queryFn: () => authService.getLoggedInUser(),
-    staleTime: 1000 * 60 * 60 * 2,
+    staleTime: 1000 * 60 * 60 * 2, // 2 hours
     refetchOnWindowFocus: true,
     retry: defaultRetry,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     ...options,
   });
 };
+

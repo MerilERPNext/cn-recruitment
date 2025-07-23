@@ -161,6 +161,28 @@ const Dashboard: React.FC = () => {
               className="text-xl font-semibold mb-4"
               style={{ color: "var(--text-primary)" }}
             >
+
+              My Profile
+            </h2>
+            <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
+              Profile Details
+            </p>
+            <Link
+              to="/webapp/my-profile"
+              className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+            >
+              Manage Profile
+            </Link>
+          </div>
+           <div
+            className="rounded-lg shadow-md p-6"
+            style={{ backgroundColor: "var(--background-light)" }}
+          >
+            <h2
+              className="text-xl font-semibold mb-4"
+              style={{ color: "var(--text-primary)" }}
+            >
+
               Leaves
             </h2>
             <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
