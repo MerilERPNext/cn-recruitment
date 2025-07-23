@@ -64,7 +64,7 @@ const Holidays: React.FC = () => {
                     <button
                         onClick={() => {
                             navigate("/webapp/leave-app/leaves/holidays/all");
-                            setShowAllRegular(!showAllRegular);
+
                         }}
                         className="w-full bg-black text-white py-3 my-2 rounded-lg font-medium"
                     >
@@ -83,7 +83,7 @@ const Holidays: React.FC = () => {
                     <button
                         onClick={() => {
                             navigate("/webapp/leave-app/leaves/holidays/all");
-                            setShowAllOptional(!showAllOptional);
+
                         }}
                         className="w-full bg-black text-white py-3 my-2 rounded-lg font-medium"
                     >

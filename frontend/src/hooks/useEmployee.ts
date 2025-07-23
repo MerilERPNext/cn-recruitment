@@ -1,5 +1,5 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
-import { EmployeeService, employeeService } from "../services/employeeService";
+import { EmployeeService } from "../services/employeeService";
 import { Employee, EmployeeIdCard, EmployeeListItem } from "../types/employee";
 
 // Hook to get a single employee by ID
@@ -80,8 +80,8 @@ export const useCurrentEmployeeIdCard = (
 //Hook to get employee by user id
 export const useEmployeeByUserId = (userId?: string) => {
   return useQuery({
-    queryKey: ["employee", userId],
-    queryFn: () => employeeService.getEmployeeByUserId(userId!),
+    queryKey: ["employee-by-user-id", userId],
+    queryFn: () => EmployeeService.getEmployeeByUserId(userId!),
     enabled: !!userId,
     staleTime: 1000 * 60 * 5,
   });

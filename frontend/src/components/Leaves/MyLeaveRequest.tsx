@@ -86,18 +86,12 @@ const MyLeaveRequest: React.FC = () => {
   const { data: currentEmployee } = useEmployeeByUserId(userId);
   const { data: leaveRequests = [], isLoading, isError } = useMyLeaveRequests(currentEmployee?.name);
 
-
-
-  console.log(currentEmployee);
-
-
   if (isLoading) return <div className="p-4 text-center text-gray-500">Loading leave requests...</div>;
   if (isError) return <div className="p-4 text-center text-red-500">Error loading leave requests. Please try again later.</div>;
   if (!leaveRequests.length) return <div className="p-4 text-center text-gray-500">No leave requests found.</div>;
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">My Leave Requests</h2>
       <div className="space-y-3">
         {leaveRequests.map((request) => (
           <LeaveRequestCard key={request.name} request={request} />

@@ -7,3 +7,13 @@ export interface LeaveRequest {
   employee_name: string;
   description?: string;
 }
+
+export interface TeamLeaveRequest {
+  id: string;
+  employeeName: string;
+  employeePhoto: string;
+  leaveType: string;
+  dateRange: string;
+  reason: string;
+  status: "Pending" | "Approved" | "Rejected";
+}

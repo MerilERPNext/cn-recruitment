@@ -23,7 +23,6 @@ import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
 import LeaveApp from "./components/Leaves/LeaveApp";
 import Holidays from "./components/Leaves/Holidays";
 import HolidaysFull from "./components/Leaves/HolidaysFull";
-import LeaveRequestDetails from "./components/Leaves/LeaveRequestDetails";
 
 export interface AppRoute {
   path: string;
@@ -97,7 +96,6 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
-      { path: "leaves/leave-requests/:id", element: <LeaveRequestDetails /> },
 
     ],
   },

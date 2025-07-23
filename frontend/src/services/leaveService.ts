@@ -4,7 +4,7 @@ import type { LeaveRequest } from "../types/leaves";
 export const leaveService = {
   getMyLeaveRequests: async (employeeId: string): Promise<LeaveRequest[]> => {
     const result = await FrappeAPI.getDocumentList("Leave Application", {
-      filters: [["employee", "=", employeeId || "HR-EMP-00001"]],
+      filters: [["employee", "=", employeeId]],
       fields: [
         "name",
         "leave_type",

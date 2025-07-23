@@ -154,11 +154,9 @@ export class EmployeeService {
 
     return JSON.stringify(qrData);
   }
-}
 
-//getEmployeeId by userId
-export const employeeService = {
-  getEmployeeByUserId: async (userId: string) => {
+  //get employeId by userID
+  static async getEmployeeByUserId(userId: string): Promise<Employee> {
     const response = await FrappeAPI.callMethod("frappe.client.get_list", {
       doctype: "Employee",
       filters: [["user_id", "=", userId]],
@@ -171,7 +169,7 @@ export const employeeService = {
     }
 
     return response[0];
-  },
-};
+  }
+}
 
 export default EmployeeService;

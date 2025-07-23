@@ -123,7 +123,7 @@ const formSchema = {
       label: "Submit Request",
       key: "submit",
       input: true,
-      theme: "primary",
+      theme: "",
       customClass: "bg-black w-full font-medium rounded-lg text-white py-2 hover:bg-gray-800 transition-colors"
     },
   ],

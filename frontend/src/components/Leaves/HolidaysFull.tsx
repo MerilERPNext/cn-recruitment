@@ -2,11 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 
-// Keep in sync with Holidays.tsx arrays
 export type Holiday = {
   name: string;
-  date: string; // ISO date string
-  optional?: boolean;
+  date: string;
 };
 
 const holidays: Holiday[] = [
@@ -24,7 +22,7 @@ const holidays: Holiday[] = [
 ];
 
 const HolidaysFull: React.FC = () => {
-  const year = new Date(holidays[0].date).getFullYear();
+  const year = holidays.length > 0 ? new Date(holidays[0].date).getFullYear() : new Date().getFullYear();
   const navigate = useNavigate();
 
   return (

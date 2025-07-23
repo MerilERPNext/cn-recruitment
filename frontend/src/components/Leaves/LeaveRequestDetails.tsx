@@ -1,6 +1,11 @@
 import React from "react";
+import { TeamLeaveRequest } from "../../types/leaves";
 
-const LeaveRequestDetails: React.FC = () => {
+interface LeaveRequestDetailsProps {
+    request: TeamLeaveRequest;
+}
+
+const LeaveRequestDetails: React.FC<LeaveRequestDetailsProps> = () => {
     const employee = {
         name: "Ethan Harper",
         role: "Software Engineer",

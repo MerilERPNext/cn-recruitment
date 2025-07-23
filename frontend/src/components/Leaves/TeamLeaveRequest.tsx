@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import LeaveRequestDetails from "./LeaveRequestDetails";
 import { FiArrowLeft } from 'react-icons/fi';
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+
 interface TeamLeaveRequest {
   id: string;
   employeeName: string;
@@ -163,10 +163,6 @@ const TeamLeaveRequest: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<TeamLeaveRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: userId } = useLoggedInUser();
-  console.log(userId);
-
-
   const handleCardClick = (request: TeamLeaveRequest) => {
     setSelectedRequest(request);
     setIsModalOpen(true);
@@ -214,7 +210,7 @@ const TeamLeaveRequest: React.FC = () => {
             <h2 className="text-lg font-semibold text-center">Leave Request Details</h2>
           </div>
           <div className="p-4">
-            <LeaveRequestDetails />
+            <LeaveRequestDetails request={selectedRequest} />
           </div>
         </div>
       )}
