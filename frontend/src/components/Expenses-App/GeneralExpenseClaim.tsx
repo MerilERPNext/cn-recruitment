@@ -10,7 +10,8 @@ interface ExpenseItem {
   date: string;
   amount: number;
   description: string;
-  imageUrl?: string; 
+  imageUrl?: string; // This will hold either the uploaded URL or a local object URL
+  fileObject?: File; // To store the actual File object for local preview
 }
 
 const MOCK_EXPENSE_ITEMS: ExpenseItem[] = [
@@ -55,7 +56,7 @@ const newExpenseItemFormSchema = {
       validate: {
         required: true,
         min: 0,
-        pattern: "\\d+(\\.\\d{1,2})?", 
+        pattern: "\\d+(\\.\\d{1,2})?",
       },
       key: "amount",
       type: "number",
@@ -98,15 +99,14 @@ const newExpenseItemFormSchema = {
     {
       label: "Attachments",
       tableView: false,
-      webcam: true, 
+      webcam: true,
       fileTypes: [
         { label: "Images", value: "image/*" },
         { label: "Documents", value: "application/*" },
       ],
       image: true,
       imageSize: "200",
-      url: "YOUR_FILE_UPLOAD_ENDPOINT", // IMPORTANT: Replace with your actual file upload endpoint
-      storage: "url", 
+      storage: "base64",
       key: "attachments",
       type: "file",
       input: true,
@@ -118,7 +118,7 @@ const newExpenseItemFormSchema = {
 interface FormioModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (submission: any) => void;
+  onSubmit: (submission: any, fileObject?: File | null) => void; // Changed here
 }
 
 const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
@@ -130,24 +130,46 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
   const formioContainerRef = useRef<HTMLDivElement>(null);
   // Ref to the Form.io instance itself
   const formInstanceRef = useRef<any>(null);
+  // localFile state is less critical for base64 previews
+  const [localFile, setLocalFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (isOpen && formioContainerRef.current) {
       Formio.createForm(formioContainerRef.current, newExpenseItemFormSchema, {
         // We ensure no buttons are rendered by Form.io itself.
         render: {
-          submit: false, 
-          cancel: false, 
+          submit: false,
+          cancel: false,
         },
       })
         .then((form: any) => {
-          formInstanceRef.current = form; 
+          formInstanceRef.current = form;
+
+          // When storage is 'base64', the 'change' event on attachments will already contain the data URI.
+          form.on("change", (submission: any) => {
+            if (submission.data && submission.data.attachments && submission.data.attachments.length > 0) {
+                const attachment = submission.data.attachments[0];
+                if (attachment.url && attachment.url.startsWith('data:')) {
+                    // Form.io has provided the data URI for preview
+                    console.log("Attachment data URI available for preview:", attachment.url.substring(0, 50) + '...');
+                    // No need to createObjectURL here, as Formio gives us the full data URI
+                    // If you *still* wanted the File object for some other reason:
+                    // You'd need to convert the data URI back to a Blob/File, which is more complex.
+                } else if (attachment.file instanceof File) {
+                    // This branch might still be useful if Form.io happens to pass the File object alongside data URI
+                    setLocalFile(attachment.file);
+                }
+            } else {
+                setLocalFile(null); // No attachment or cleared
+            }
+          });
 
           // Attach a listener to Form.io's 'submit' event.
           // This event fires AFTER Form.io's internal validation passes.
           form.on("submit", (submission: any) => {
             console.log("Form.io internal submit event fired:", submission);
-            onSubmit(submission.data); // Pass the validated data to parent
+            // We'll pass `submission.data` and still pass `localFile` if it was set (though less critical now).
+            onSubmit(submission.data, localFile); // Pass the validated data to parent
             onClose(); // Close modal after successful submission
           });
 
@@ -171,7 +193,7 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
         }
       };
     }
-  }, [isOpen, onSubmit, onClose]); 
+  }, [isOpen, onSubmit, onClose]);
 
   // Function to handle our custom "Save" button click
   const handleSaveClick = () => {
@@ -235,19 +257,47 @@ const GeneralExpenseClaim: React.FC = () => {
   const [expenseItems, setExpenseItems] =
     useState<ExpenseItem[]>(MOCK_EXPENSE_ITEMS);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // objectUrls ref can be removed if you are not using URL.createObjectURL anymore.
+   const objectUrls = useRef<Record<string, string>>({}); 
 
   const handleBack = useCallback(() => {
     navigate(-1);
   }, [navigate]);
 
-  const handleDeleteItem = useCallback((id: string) => {
-    setExpenseItems((prevItems) => prevItems.filter((item) => item.id !== id));
-  }, []);
+  const handleDeleteItem = useCallback(
+      (id: string) => {
+        setExpenseItems((prevItems) => {
+          const itemToDelete = prevItems.find((item) => item.id === id);
+          // If you were using URL.createObjectURL for some images, keep this part.
+          // If strictly using base64, this might not be needed.
+          if (itemToDelete && itemToDelete.imageUrl && itemToDelete.imageUrl.startsWith('blob:')) {
+              const urlToRevoke = objectUrls.current[itemToDelete.id];
+              if (urlToRevoke) {
+                  URL.revokeObjectURL(urlToRevoke);
+                  delete objectUrls.current[itemToDelete.id];
+              }
+          }
+          return prevItems.filter((item) => item.id !== id);
+        });
+      },
+      []
+    );
 
   const handleAddExpenseItem = useCallback(
-    (formData: any) => {
+      (formData: any, fileObjectFromModal: File | null | undefined) => {
       // Form.io submission data comes as an object (formData here is submission.data from the modal)
       const newId = `exp${expenseItems.length + 1}-${Date.now()}`;
+      let imageUrl = "https://placehold.co/80x80/e0e0e0/000000?text=Receipt";
+      let fileForState: File | undefined = undefined; // This will likely remain undefined with base64 storage
+
+      // If Form.io is configured for 'base64' storage, formData.attachments[0]?.url will already be a data URI
+      if (formData.attachments && formData.attachments.length > 0) {
+        // Use the URL provided by Form.io, which will be the data URI (base64)
+        imageUrl = formData.attachments[0]?.url || imageUrl;
+        // The fileObjectFromModal will likely be null/undefined, as Formio doesn't expose the raw File object directly
+        // when converting to base64 internally for the submission data.
+        fileForState = fileObjectFromModal || undefined; // Assign if available, otherwise undefined
+      }
       setExpenseItems((prevItems) => [
         ...prevItems,
         {
@@ -256,10 +306,8 @@ const GeneralExpenseClaim: React.FC = () => {
           amount: parseFloat(formData.amount),
           description: formData.description,
           date: formData.date,
-          // Handle attachments from Form.io. `formData.attachments` will be an array of file objects
-          imageUrl: formData.attachments && formData.attachments.length > 0
-            ? formData.attachments[0]?.url || "https://placehold.co/80x80/e0e0e0/000000?text=Receipt"
-            : "https://placehold.co/80x80/e0e0e0/000000?text=Receipt",
+          imageUrl: imageUrl, // This will now be the base64 data URI if an image was selected
+          fileObject: fileForState, // Remains for potential future use or debugging
         },
       ]);
       setIsModalOpen(false); // Close modal after adding
@@ -271,6 +319,15 @@ const GeneralExpenseClaim: React.FC = () => {
   const totalAmount = expenseItems.reduce((sum, item) => sum + item.amount, 0);
   const advances = 0; // Mock value
   const netPayable = totalAmount - advances;
+
+   // Cleanup effect for object URLs (keep if you potentially use URL.createObjectURL elsewhere)
+    useEffect(() => {
+      return () => {
+        for (const id in objectUrls.current) {
+          URL.revokeObjectURL(objectUrls.current[id]);
+        }
+      };
+    }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -440,4 +497,3 @@ const GeneralExpenseClaim: React.FC = () => {
 };
 
 export default GeneralExpenseClaim;
-
