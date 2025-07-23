@@ -25,6 +25,20 @@ export const useCurrentEmployee = (): UseQueryResult<Employee | null, Error> => 
   });
 };
 
+// Hook to get current logged-in user's All Details
+export const useCurrentEmployeeAllDetails = (
+  user_id: string
+) => {
+  return useQuery<Employee | null, Error>({
+    queryKey: ["currentEmployeeAllDetails", user_id],
+    queryFn: () => EmployeeService.getCurrentEmployeeAllDetails(user_id),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
+    retry: 1,
+    enabled: !!user_id
+  })
+}
+
 // Hook to search employees by name
 export const useEmployeeSearch = (searchTerm: string): UseQueryResult<EmployeeListItem[], Error> => {
   return useQuery<EmployeeListItem[], Error>({
