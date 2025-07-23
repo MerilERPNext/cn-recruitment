@@ -16,6 +16,10 @@ const NewExpenseType: React.FC = () => {
     // Navigate to the appropriate expense claim form based on type
     if (type === "General Expense") {
       navigate("/webapp/expenses-app/general-expense-claim");
+    } else if (type === "Mileage Expense") {
+      navigate("/webapp/expenses-app/mileage-expense-claim");
+    } else if (type === "Daily Allowance") {
+      navigate("/webapp/expenses-app/daily-allowance-claim");
     }
     // Add logic for other expense types if needed in the future
   };
@@ -49,7 +53,8 @@ const NewExpenseType: React.FC = () => {
               onClick={() => handleSelectExpenseType("General Expense")}
             >
               <div className="flex-shrink-0 p-3 bg-gray-200 rounded-full mb-3">
-                <FileText className="h-6 w-6 text-gray-700" /> {/* Added a default text color */}
+                <FileText className="h-6 w-6 text-gray-700" />{" "}
+                {/* Added a default text color */}
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">
@@ -68,7 +73,8 @@ const NewExpenseType: React.FC = () => {
               onClick={() => handleSelectExpenseType("Mileage Expense")}
             >
               <div className="flex-shrink-0 p-3 bg-gray-200 rounded-full mb-3">
-                <Car className="h-6 w-6 text-gray-700" /> {/* Added a default text color */}
+                <Car className="h-6 w-6 text-gray-700" />{" "}
+                {/* Added a default text color */}
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">
@@ -87,7 +93,8 @@ const NewExpenseType: React.FC = () => {
               onClick={() => handleSelectExpenseType("Daily Allowance")}
             >
               <div className="flex-shrink-0 p-3 bg-gray-200 rounded-full mb-3">
-                <Smile className="h-6 w-6 text-gray-700" /> {/* Added a default text color */}
+                <Smile className="h-6 w-6 text-gray-700" />{" "}
+                {/* Added a default text color */}
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">
