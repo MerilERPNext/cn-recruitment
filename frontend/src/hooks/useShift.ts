@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ShiftRequestService } from "../services/shiftRequests";
 import { ShiftRequest } from "../types/shift";
@@ -21,7 +20,7 @@ export const useApproveShiftRequest = () => {
       queryClient.invalidateQueries({ queryKey: ["shift-requests"] });
       toast.success("Shift request approved successfully!");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error("Error approving shift request:", error);
       toast.error("Failed to approve shift request. Please try again.");
     },
@@ -38,7 +37,7 @@ export const useRejectShiftRequest = () => {
       queryClient.invalidateQueries({ queryKey: ["shift-requests"] });
       toast.success("Shift request rejected.");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error("Error rejecting shift request:", error);
       toast.error("Failed to reject shift request. Please try again.");
     },

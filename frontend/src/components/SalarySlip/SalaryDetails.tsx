@@ -6,12 +6,14 @@ import {
   EyeOff,
   Download,
   ArrowLeft,
-  User,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import { useSalarySlipDetails, useDownloadSalarySlipPDF } from "../../hooks/useSalaryDetails";
 import type { SalaryComponent } from "../../types/salary";
 import { UseMutationResult } from "@tanstack/react-query";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import defaultProfile from "../../assets/user.png";
 
 const SalarySlipDetails = () => {
   const [showSalary, setShowSalary] = useState(false);
@@ -19,38 +21,15 @@ const SalarySlipDetails = () => {
   const [showDeductions, setShowDeductions] = useState(false);
   const navigator = useNavigate();
   const { salaryId } = useParams<{ salaryId: string }>();
+    const { data: user_id } = useLoggedInUser();
+  
+    const { data: user } = useCurrentEmployeeAllDetails(user_id || "");
+    
+    
   const decodedName = decodeURIComponent(salaryId || "");
 
   const { data, isLoading, error } = useSalarySlipDetails({
     name: decodedName,
-    owner: "",
-    creation: "",
-    modified: "",
-    modified_by: "",
-    docstatus: 0,
-    idx: 0,
-    salary_component: "",
-    abbr: "",
-    amount: 0,
-    year_to_date: 0,
-    is_recurring_additional_salary: 0,
-    statistical_component: 0,
-    depends_on_payment_days: 0,
-    exempted_from_income_tax: 0,
-    is_tax_applicable: 0,
-    is_flexible_benefit: 0,
-    variable_based_on_taxable_salary: 0,
-    do_not_include_in_total: 0,
-    deduct_full_tax_on_selected_payroll_date: 0,
-    amount_based_on_formula: 0,
-    default_amount: 0,
-    additional_amount: 0,
-    tax_on_flexible_benefit: 0,
-    tax_on_additional_salary: 0,
-    parent: "",
-    parentfield: "",
-    parenttype: "",
-    doctype: "",
   });
 
   const {
@@ -99,9 +78,15 @@ const SalarySlipDetails = () => {
         {/* Header Section */}
         <div className="p-4 border-b flex justify-between border-gray-100">
           <div className="flex items-start space-x-3 mb-1">
-            <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
-              <User className="w-10 h-10 text-gray-400" />
-            </div>
+            
+            <div className="relative">
+            <img
+              src={user?.image || defaultProfile}
+              alt="User avatar"
+              className="w-20 h-20 rounded-full object-cover"
+            />
+          </div>
+        
             <div>
               <h2 className="text-lg font-semibold text-gray-900">{data?.employee_name || "Employee Name"}</h2>
               <p className="text-sm text-gray-600">{data?.designation || "Designation"}</p>

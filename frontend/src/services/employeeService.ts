@@ -98,7 +98,7 @@ export class EmployeeService {
         ["user_id", "=", user_id]
       ],
     });
-
+    console.log(result,"+++++++++++++++++++++++")
       if (!isEmployee(result.data[0])) {
         console.error('Invalid employee data received from API');
         return null;
