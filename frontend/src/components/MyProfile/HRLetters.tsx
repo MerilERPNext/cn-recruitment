@@ -1,36 +1,36 @@
 import React from "react";
-const policies = [
+const letters = [
   {
-    title: "Leave Policy",
-    description: "Annual leave, sick leave, and other absences.",
+    title: "Offer Letter",
+    description: "Confirms job offer with basic terms.",
   },
   {
-    title: "Expense Policy",
-    description: "Guidelines for business-related expenses.",
+    title: "Appointment Letter",
+    description: "Officially appoints the candidate with full job details.",
   },
   {
-    title: "Code of Conduct",
-    description: "Standards for professional behavior.",
+    title: "Joining Letter",
+    description: "Employee's confirmation of joining the job.",
   },
   {
-    title: "Benefits Summary",
-    description: "Health insurance and retirement plans.",
+    title: "Probation Confirmation Letter",
+    description: "Confirms successful completion of probation.",
   },
 ];
 
-const HRPolicies: React.FC = () => {
+const HRLetters: React.FC = () => {
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl shadow-md p-4 space-y-4">
-      {policies.map((policy) => (
+      {letters.map((letter) => (
         <div
-          key={policy.title}
+          key={letter.title}
           className="flex justify-between items-center border rounded-lg p-4"
         >
           <div>
             <h2 className="text-sm font-semibold text-gray-900">
-              {policy.title}
+              {letter.title}
             </h2>
-            <p className="text-xs text-gray-500">{policy.description}</p>
+            <p className="text-xs text-gray-500">{letter.description}</p>
           </div>
           <div className="flex gap-2">
             <button className="text-sm px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
@@ -46,4 +46,4 @@ const HRPolicies: React.FC = () => {
   );
 };
 
-export default HRPolicies;
+export default HRLetters;
