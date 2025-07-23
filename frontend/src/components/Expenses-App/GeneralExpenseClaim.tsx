@@ -1,8 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, X } from "lucide-react";
-// Import all necessary icons, including FileIcon (aliased from File)
-import { FileText, File as FileIcon } from "lucide-react";
+import { ArrowLeft, Trash2, X, FileText, File as FileIcon } from "lucide-react";
 
 import { Formio } from "formiojs";
 
@@ -311,8 +309,8 @@ const GeneralExpenseClaim: React.FC = () => {
   useEffect(() => {
     return () => {
       for (const id in objectUrls.current) {
-        if (objectUrls.current[id].startsWith('blob:')) {
-            URL.revokeObjectURL(objectUrls.current[id]);
+        if (objectUrls.current[id].startsWith("blob:")) {
+          URL.revokeObjectURL(objectUrls.current[id]);
         }
       }
     };
@@ -459,11 +457,11 @@ const GeneralExpenseClaim: React.FC = () => {
                     )}
                     {/* Placeholder if no attachmentUrl */}
                     {!item.attachmentUrl && (
-                        <img
-                            src="https://placehold.co/80x80/e0e0e0/000000?text=Receipt"
-                            alt="Receipt"
-                            className="w-22 h-22 object-cover rounded-md flex-shrink-0"
-                        />
+                      <img
+                        src="https://placehold.co/80x80/e0e0e0/000000?text=Receipt"
+                        alt="Receipt"
+                        className="w-22 h-22 object-cover rounded-md flex-shrink-0"
+                      />
                     )}
                     <button
                       onClick={() => handleDeleteItem(item.id)}
