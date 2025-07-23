@@ -16,6 +16,15 @@ import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
 
+import LeaveBalance from "./components/Leaves/LeaveBalance";
+import LeaveRequestApp from "./components/Leaves/LeaveRequestApp";
+import MyLeaveRequest from "./components/Leaves/MyLeaveRequest";
+import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
+import LeaveApp from "./components/Leaves/LeaveApp";
+import Holidays from "./components/Leaves/Holidays";
+import HolidaysFull from "./components/Leaves/HolidaysFull";
+import LeaveRequestDetails from "./components/Leaves/LeaveRequestDetails";
+
 export interface AppRoute {
   path: string;
   element: ReactElement;
@@ -70,5 +79,26 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recruitment-app/requisitions/add-requisition/*",
     element: <AddRequisition />,
+  },
+
+  //Leaves routes
+  {
+    path: "/webapp/leave-app",
+    element: <LeaveApp />,
+    children: [
+      { path: "leaves/leave-balance", element: <LeaveBalance /> },
+      {
+        path: "leaves/leave-requests",
+        element: <LeaveRequestApp />,
+        children: [
+          { path: "my", element: <MyLeaveRequest /> },
+          { path: "team", element: <TeamLeaveRequest /> },
+        ],
+      },
+      { path: "leaves/holidays", element: <Holidays /> },
+      { path: "leaves/holidays/all", element: <HolidaysFull /> },
+      { path: "leaves/leave-requests/:id", element: <LeaveRequestDetails /> },
+
+    ],
   },
 ];

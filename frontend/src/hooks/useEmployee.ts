@@ -1,12 +1,13 @@
-
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { EmployeeService } from '../services/employeeService';
-import { Employee, EmployeeIdCard, EmployeeListItem } from '../types/employee';
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { EmployeeService, employeeService } from "../services/employeeService";
+import { Employee, EmployeeIdCard, EmployeeListItem } from "../types/employee";
 
 // Hook to get a single employee by ID
-export const useEmployee = (employeeId: string | null): UseQueryResult<Employee, Error> => {
+export const useEmployee = (
+  employeeId: string | null
+): UseQueryResult<Employee, Error> => {
   return useQuery<Employee, Error>({
-    queryKey: ['employee', employeeId],
+    queryKey: ["employee", employeeId],
     queryFn: () => EmployeeService.getEmployee(employeeId!),
     enabled: !!employeeId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -15,9 +16,12 @@ export const useEmployee = (employeeId: string | null): UseQueryResult<Employee,
 };
 
 // Hook to get current logged-in user's employee record
-export const useCurrentEmployee = (): UseQueryResult<Employee | null, Error> => {
+export const useCurrentEmployee = (): UseQueryResult<
+  Employee | null,
+  Error
+> => {
   return useQuery<Employee | null, Error>({
-    queryKey: ['currentEmployee'],
+    queryKey: ["currentEmployee"],
     queryFn: () => EmployeeService.getCurrentEmployee(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
@@ -26,9 +30,11 @@ export const useCurrentEmployee = (): UseQueryResult<Employee | null, Error> => 
 };
 
 // Hook to search employees by name
-export const useEmployeeSearch = (searchTerm: string): UseQueryResult<EmployeeListItem[], Error> => {
+export const useEmployeeSearch = (
+  searchTerm: string
+): UseQueryResult<EmployeeListItem[], Error> => {
   return useQuery<EmployeeListItem[], Error>({
-    queryKey: ['employeeSearch', searchTerm],
+    queryKey: ["employeeSearch", searchTerm],
     queryFn: () => EmployeeService.searchEmployees(searchTerm),
     enabled: searchTerm.length >= 2,
     staleTime: 1 * 60 * 1000, // 1 minute
@@ -37,9 +43,11 @@ export const useEmployeeSearch = (searchTerm: string): UseQueryResult<EmployeeLi
 };
 
 // Hook to get employee data transformed for ID card
-export const useEmployeeIdCard = (employeeId: string | null): UseQueryResult<EmployeeIdCard | null, Error> => {
+export const useEmployeeIdCard = (
+  employeeId: string | null
+): UseQueryResult<EmployeeIdCard | null, Error> => {
   return useQuery<EmployeeIdCard | null, Error>({
-    queryKey: ['employeeIdCard', employeeId],
+    queryKey: ["employeeIdCard", employeeId],
     queryFn: async () => {
       if (!employeeId) return null;
       const employee = await EmployeeService.getEmployee(employeeId);
@@ -52,9 +60,11 @@ export const useEmployeeIdCard = (employeeId: string | null): UseQueryResult<Emp
 };
 
 // Hook to get current user's employee ID card
-export const useCurrentEmployeeIdCard = (...args: unknown[]): UseQueryResult<EmployeeIdCard | null, Error> => {
+export const useCurrentEmployeeIdCard = (
+  ...args: unknown[]
+): UseQueryResult<EmployeeIdCard | null, Error> => {
   return useQuery<EmployeeIdCard | null, Error>({
-    queryKey: ['currentEmployeeIdCard'],
+    queryKey: ["currentEmployeeIdCard"],
     queryFn: async () => {
       const employee = await EmployeeService.getCurrentEmployee();
       if (!employee) return null;
@@ -65,4 +75,14 @@ export const useCurrentEmployeeIdCard = (...args: unknown[]): UseQueryResult<Emp
     retry: 1,
     ...args,
   });
-}; 
+};
+
+//Hook to get employee by user id
+export const useEmployeeByUserId = (userId?: string) => {
+  return useQuery({
+    queryKey: ["employee", userId],
+    queryFn: () => employeeService.getEmployeeByUserId(userId!),
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5,
+  });
+};
