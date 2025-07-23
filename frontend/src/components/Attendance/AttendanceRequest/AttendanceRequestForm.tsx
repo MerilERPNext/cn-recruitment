@@ -131,7 +131,7 @@ const AttndanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) 
         // API call or further logic here
     };
 
-    return (<div className="fixed top-0 z-20 max-w-2xl mx-auto left-0 h-screen bg-white">
+    return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
         <LayoutHeader
             tab="Attendance Request"
             onBack={() => {
@@ -140,15 +140,18 @@ const AttndanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) 
             icon="x"
         />
         <div className=" p-4 ">
-            <div className="flex gap-2 mb-2">
+            <div className="flex gap-2 mb-2 bg-gray-200 p-1 rounded-md">
                 <button
-                    className={`w-full p-2 rounded ${!isForOthers ? "bg-black text-white" : "bg-gray-200"}`}
+                    style={{ outline: "none", border: "none" }}
+                    className={`w-full p-2 rounded text-gray-500  ${!isForOthers ? "bg-white text-black" : ""}`}
                     onClick={() => setIsForOthers(false)}
                 >
                     Self
                 </button>
                 <button
-                    className={`w-full p-2 rounded ${isForOthers ? "bg-black text-white" : "bg-gray-200"}`}
+                    style={{ outline: "none", border: "none" }}
+
+                    className={`w-full p-2 rounded text-gray-500 ${isForOthers ? "bg-white text-black" : ""}`}
                     onClick={() => setIsForOthers(true)}
                 >
                     For Others
