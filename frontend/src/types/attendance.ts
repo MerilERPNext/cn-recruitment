@@ -26,3 +26,39 @@ export type Attendance = {
   early_exit: number;
   amended_from: string | null;
 };
+
+export interface AttendanceRequest {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  employee: string;
+  employee_name: string;
+  department: string;
+  company: string;
+  from_date: string;
+  to_date: string;
+  half_day: number;
+  half_day_date: string | null;
+  include_holidays: number;
+  shift: string | null;
+  reason: string;
+  explanation: string | null;
+  amended_from: string | null;
+}
+
+export interface RequestCardProps {
+    request: AttendanceRequest
+    isActionedCard?:boolean
+    isSelected?:boolean
+
+}
+export interface BulkActionProps {
+  selectedIds: string[]
+  pendingRequests: AttendanceRequest[]
+  onSelectAll: () => void
+  onBulkAction: (action: "approved" | "rejected") => void
+}

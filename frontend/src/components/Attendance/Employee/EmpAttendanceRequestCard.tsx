@@ -26,8 +26,8 @@ const EmpAttendanceRequestCard = ({ data }: { data: any }) => {
                 <div className="flex items-center justify-between gap-1">
                     <div>
                         <div className="font-medium text-gray-900">
-                            {data?.modified
-                                ? new Date(data.modified).toLocaleDateString("en-US", {
+                            {data?.creation
+                                ? new Date(data.creation).toLocaleDateString("en-US", {
                                     year: "numeric",
                                     month: "short",
                                     day: "numeric",

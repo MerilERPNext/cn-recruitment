@@ -118,15 +118,6 @@ code {
   line-height: 1;
 }
 
-/* styles form io */
-.formio-component .border {
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  background: transparent !important;
-}
-
-
 /* React DatePicker Custom Styles */
 .react-datepicker {
   width: 100% !important;

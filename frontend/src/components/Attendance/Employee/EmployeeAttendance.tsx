@@ -2,36 +2,27 @@ import { useMemo, useState } from "react"
 import LayoutHeader from "../../shared/LayoutHeader"
 import DatePicker from "react-datepicker"
 import { ArrowLeft, Plus, XCircle } from "lucide-react"
-// import { timeSinceFormatted } from "../../../utils/helperUtils"
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser"
 import { useAttendance } from "../../../hooks/useAttendance"
 import FrappeListView from "../../ListView"
 import { Attendance } from "../../../types/attendance"
 import { useNavigate } from "react-router"
 import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard"
+import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm"
+import RequestCompOff from "./RequestCompOff"
 
 const EmployeeAttendance = () => {
     const navigate = useNavigate()
     const { data: userId } = useLoggedInUser();
-    const filters = userId
-        ? [
-            ["owner", "=", userId],
-            // ["attendance_date", "=", today],
-        ]
-        : [];
-
+    const filters = userId ? [["owner", "=", userId]] : [];
     const { data: allAttendance, isError, error } = useAttendance(filters as any, {
         enabled: !!userId,
     });
     const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
-
-    const todayAttendance = allAttendance?.filter(
-        (record) => record.attendance_date === today
-    )?.[0];
-
+    const todayAttendance = allAttendance?.filter((record) => record.attendance_date === today)?.[0];
     const [selectedDate, setSelectedDate] = useState<Date | null>(new Date(2025, 6, 17))
-
-
+    const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] = useState<boolean>(false)
+    const [showReqCompOff, setShowReqCompOff] = useState<boolean>(false)
     type Status = | "present"
         | "absent"
         | "on-leave"
@@ -196,7 +187,10 @@ const EmployeeAttendance = () => {
             {/* ------------------------------------------------- Calendar End---------------------------------------------- */}
 
             {/* Request Attendance Correction */}
-            <button className="w-full text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2">
+            <button className="w-full text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2"
+                onClick={() => {
+                    setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
+                }}>
                 <Plus className="w-5 h-5 mr-2 font-bold" />
                 Request Attendance Correction
             </button>
@@ -207,7 +201,7 @@ const EmployeeAttendance = () => {
             {/* Work Hour Exceptions */}
             <h3 className="text-lg font-semibold text-gray-900">Work Hour Exceptions</h3>
             <div className="flex gap-3">
-                <button className="flex-1 text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2">
+                <button onClick={() => { setShowReqCompOff(!showReqCompOff) }} className="flex-1 text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2">
                     <Plus className="w-4 h-4 mr-2 font-bold" />
                     Request Comp Off
                 </button>
@@ -236,13 +230,25 @@ const EmployeeAttendance = () => {
                     onItemClick={() => { }}
                     infiniteScroll={true}
                     isFilter={false}
+                    pageSize={5}
                     defaultFields={[
-                        '*'
+                        // '*',
+                        "reason",
+                        // "label",
+                        "modified",
+                        "creation",
+                        "docstatus"
                     ]}
                 />
 
 
             </div>
+            {showReqAttendanceCorrection &&
+                <AttndanceRequestForm onClose={() => { setShowReqAttendanceCorrection(false) }} />
+            }
+            {
+                showReqCompOff && <RequestCompOff onClose={() => setShowReqCompOff(false)} />
+            }
             {/* My Attendance Requests */}
         </div>
     </div >

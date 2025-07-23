@@ -20,6 +20,8 @@ import { Navigate } from "react-router";
 import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
 import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
 import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
+import TeamAttendanceDetails from "./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails";
+
 
 export interface AppRoute {
   index?: boolean,
@@ -89,7 +91,7 @@ export const routesConfig: AppRoute[] = [
       { path: 'emp-attendance', element: <EmployeeAttendance /> },
       { path: 'team-attendance', element: <TeamAttendance /> },
       { path: 'attendance-request', element: <AttendanceRequest /> },
+      { path: 'team-attendance-details', element: <TeamAttendanceDetails /> },
     ],
   },
-
 ];

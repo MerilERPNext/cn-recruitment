@@ -1,6 +1,6 @@
 // services/attendanceService.ts
 import FrappeAPI from '../utils/frappeAPI';
-import type { Attendance } from '../types/attendance';
+import type { Attendance, AttendanceRequest } from '../types/attendance';
 import { FilterCondition } from '../types/frappe';
 
 export const attendanceService = {
@@ -9,6 +9,12 @@ export const attendanceService = {
       fields: ['*'],
     });
     return response.data as Attendance[];
+  },
+  getAllAttendanceRequests: async (): Promise<AttendanceRequest[]> => {
+    const response = await FrappeAPI.getDocumentList('Attendance Request', {
+      fields: ['*'],
+    });
+    return response.data as AttendanceRequest[];
   },
 
   getAttendanceById: async (id: string): Promise<Attendance> => {
@@ -24,6 +30,13 @@ export const attendanceService = {
       filters,
     });
     return response.data as Attendance[];
+  },
+  getLeaveType: async (filters?: FilterCondition[]): Promise<any> => {
+    const response = await FrappeAPI.getDocumentList("Leave Type", {
+      fields: ["*"],
+      filters,
+    });
+    return response.data;
   },
 
 //   searchAttendance: async (searchTerm: string): Promise<Attendance[]> => {

@@ -1,6 +1,6 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { attendanceService } from '../services/attendanceService';
-import type { Attendance } from '../types/attendance';
+import type { Attendance, AttendanceRequest } from '../types/attendance';
 import { FilterCondition } from '../types/frappe';
 
 // Retry logic (same as other hooks)
@@ -29,6 +29,14 @@ export const useAllAttendance = (): UseQueryResult<Attendance[], Error> => {
     ...defaultQueryOptions,
   });
 };
+export const useAllAttendanceRequests = (): UseQueryResult<AttendanceRequest[], Error> => {
+  return useQuery<AttendanceRequest[], Error>({
+    queryKey: ['attendance', 'all'],
+    queryFn: () => attendanceService.getAllAttendanceRequests(),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
 
 
 export const useAttendanceById = (id: string | null): UseQueryResult<Attendance, Error> => {
@@ -53,5 +61,17 @@ export const useAttendance = (
     staleTime: defaultStaleTime,
     gcTime: defaultGcTime,
     enabled: filters.length > 0,
+  });
+};
+
+export const useLeaveType = (
+  filters?: FilterCondition[],
+  queryKeySuffix: unknown = filters,
+): UseQueryResult<any, Error> => {
+  return useQuery<Attendance[], Error>({
+    queryKey: ["leave-type", queryKeySuffix],
+    queryFn: () => attendanceService.getLeaveType(filters),
+    staleTime: defaultStaleTime,
+    gcTime: defaultGcTime,
   });
 };
