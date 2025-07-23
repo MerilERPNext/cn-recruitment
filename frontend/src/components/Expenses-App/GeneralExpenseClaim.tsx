@@ -1,32 +1,18 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  Trash2,
-  Camera,
-  Image,
-  FileText,
-  X,
-} from "lucide-react";
+import { ArrowLeft, Trash2, X } from "lucide-react";
 
-// Define the structure for an individual expense item
+import { Formio } from "formiojs";
+
 interface ExpenseItem {
   id: string;
   type: string;
   date: string;
   amount: number;
   description: string;
-  imageUrl?: string; // Optional image URL for mock purposes
+  imageUrl?: string; 
 }
 
-// Define the props for the NewExpenseItemModal
-interface NewExpenseItemModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (item: Omit<ExpenseItem, "id" | "imageUrl">) => void; // Omit id and imageUrl as they are generated/handled by parent
-}
-
-// Mock data for expense items
 const MOCK_EXPENSE_ITEMS: ExpenseItem[] = [
   {
     id: "exp1",
@@ -36,49 +22,165 @@ const MOCK_EXPENSE_ITEMS: ExpenseItem[] = [
     description: "Flight to San Francisco",
     imageUrl: "https://placehold.co/80x80/e0e0e0/000000?text=Receipt", // Placeholder image
   },
-  {
-    id: "exp2",
-    type: "Food",
-    date: "2024-07-29",
-    amount: 30.0,
-    description: "Lunch with client",
-    imageUrl: "https://placehold.co/80x80/e0e0e0/000000?text=Receipt", // Placeholder image
-  },
 ];
 
-// New Expense Item Modal Component
-const NewExpenseItemModal: React.FC<NewExpenseItemModalProps> = ({
+const newExpenseItemFormSchema = {
+  display: "form",
+  components: [
+    {
+      label: "Expense Type",
+      tableView: true,
+      dataSrc: "values",
+      data: {
+        values: [
+          { label: "Travel", value: "Travel" },
+          { label: "Food", value: "Food" },
+          { label: "Accommodation", value: "Accommodation" },
+          { label: "Supplies", value: "Supplies" },
+          { label: "Other", value: "Other" },
+        ],
+      },
+      key: "expenseType",
+      type: "select",
+      input: true,
+      widget: "html5",
+      placeholder: "Select type...",
+      validate: {
+        required: true,
+      },
+    },
+    {
+      label: "Amount",
+      tableView: true,
+      validate: {
+        required: true,
+        min: 0,
+        pattern: "\\d+(\\.\\d{1,2})?", 
+      },
+      key: "amount",
+      type: "number",
+      input: true,
+      decimalLimit: 2,
+      allowDecimals: true,
+      placeholder: "0.00",
+    },
+    {
+      label: "Description",
+      tableView: true,
+      validate: {
+        required: true,
+      },
+      key: "description",
+      type: "textarea",
+      input: true,
+      rows: 3,
+      placeholder: "Add a description...",
+    },
+    {
+      label: "Date",
+      tableView: true,
+      validate: {
+        required: true,
+      },
+      key: "date",
+      type: "datetime",
+      input: true,
+      format: "yyyy-MM-dd",
+      enableTime: false,
+      widget: {
+        type: "calendar",
+        altInput: true,
+        dateFormat: "yyyy-MM-dd",
+        enableTime: false,
+        mode: "single",
+      },
+    },
+    {
+      label: "Attachments",
+      tableView: false,
+      webcam: true, 
+      fileTypes: [
+        { label: "Images", value: "image/*" },
+        { label: "Documents", value: "application/*" },
+      ],
+      image: true,
+      imageSize: "200",
+      url: "YOUR_FILE_UPLOAD_ENDPOINT", // IMPORTANT: Replace with your actual file upload endpoint
+      storage: "url", 
+      key: "attachments",
+      type: "file",
+      input: true,
+      tooltip: "Upload receipts or supporting documents.",
+    },
+  ],
+};
+
+interface FormioModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (submission: any) => void;
+}
+
+const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
   isOpen,
   onClose,
-  onSave,
+  onSubmit,
 }) => {
-  const [expenseType, setExpenseType] = useState("");
-  const [amount, setAmount] = useState<string>("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
+  // Ref to the DOM element where Form.io will render
+  const formioContainerRef = useRef<HTMLDivElement>(null);
+  // Ref to the Form.io instance itself
+  const formInstanceRef = useRef<any>(null);
 
-  // Reset form fields when modal opens/closes
-  React.useEffect(() => {
-    if (!isOpen) {
-      setExpenseType("");
-      setAmount("");
-      setDescription("");
-      setDate("");
+  useEffect(() => {
+    if (isOpen && formioContainerRef.current) {
+      Formio.createForm(formioContainerRef.current, newExpenseItemFormSchema, {
+        // We ensure no buttons are rendered by Form.io itself.
+        render: {
+          submit: false, 
+          cancel: false, 
+        },
+      })
+        .then((form: any) => {
+          formInstanceRef.current = form; 
+
+          // Attach a listener to Form.io's 'submit' event.
+          // This event fires AFTER Form.io's internal validation passes.
+          form.on("submit", (submission: any) => {
+            console.log("Form.io internal submit event fired:", submission);
+            onSubmit(submission.data); // Pass the validated data to parent
+            onClose(); // Close modal after successful submission
+          });
+
+          // Attach a listener for validation errors (optional, but helpful for debugging)
+          form.on("error", (errors: any) => {
+            console.error("Form.io validation errors:", errors);
+            // Form.io should automatically show errors on the fields.
+            // You could also add a global notification here if you wish.
+            alert("Please correct the errors in the form.");
+          });
+        })
+        .catch((err: any) => {
+          console.error("Error creating Form.io form:", err);
+        });
+
+      // Cleanup function: Destroy the Form.io instance when the modal closes or component unmounts
+      return () => {
+        if (formInstanceRef.current) {
+          formInstanceRef.current.destroy();
+          formInstanceRef.current = null;
+        }
+      };
     }
-  }, [isOpen]);
+  }, [isOpen, onSubmit, onClose]); 
 
-  const handleSave = () => {
-    if (expenseType && amount && description && date) {
-      onSave({
-        type: expenseType,
-        amount: parseFloat(amount),
-        description,
-        date,
-      });
-      onClose(); // Close modal after saving
+  // Function to handle our custom "Save" button click
+  const handleSaveClick = () => {
+    if (formInstanceRef.current) {
+      // Trigger Form.io's submission process.
+      // This will internally validate and then fire the 'submit' event if valid.
+      formInstanceRef.current.submit();
     } else {
-      // Basic validation feedback
-      alert("Please fill in all fields.");
+      console.warn("Form.io instance not ready yet for submission.");
     }
   };
 
@@ -101,110 +203,12 @@ const NewExpenseItemModal: React.FC<NewExpenseItemModalProps> = ({
           </button>
         </div>
 
-        {/* Form Fields */}
-        <div className="flex-grow space-y-4">
-          {/* Expense Type */}
-          <div>
-            <label
-              htmlFor="expenseType"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Expense Type
-            </label>
-            <select
-              id="expenseType"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none "
-              value={expenseType}
-              onChange={(e) => setExpenseType(e.target.value)}
-            >
-              <option value="">Select type...</option>
-              <option value="Travel">Travel</option>
-              <option value="Food">Food</option>
-              <option value="Accommodation">Accommodation</option>
-              <option value="Supplies">Supplies</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          {/* Amount */}
-          <div>
-            <label
-              htmlFor="amount"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Amount
-            </label>
-            <input
-              type="number"
-              id="amount"
-              placeholder="0.00"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              step="0.01"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Description
-            </label>
-            <textarea
-              id="description"
-              placeholder="Add a description..."
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          {/* Date */}
-          <div>
-            <label
-              htmlFor="date"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Date
-            </label>
-            <div className="relative">
-              <input
-                type="date"
-                id="date"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Attachments */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Attachments
-            </label>
-            <div className="flex space-x-3">
-              <button className="flex-1 flex flex-col items-center justify-center p-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                <Camera className="h-5 w-5 mb-1" />
-                <span className="text-xs">Camera</span>
-              </button>
-              <button className="flex-1 flex flex-col items-center justify-center p-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                <Image className="h-5 w-5 mb-1" />
-                <span className="text-xs">Gallery</span>
-              </button>
-              <button className="flex-1 flex flex-col items-center justify-center p-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                <FileText className="h-5 w-5 mb-1" />
-                <span className="text-xs">Document</span>
-              </button>
-            </div>
-          </div>
+        {/* Form.io Form will be rendered into this div */}
+        <div className="flex-grow" ref={formioContainerRef}>
+          {/* Form.io will inject its HTML here */}
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons (Managed by React, styled like original UI) */}
         <div className="flex justify-between space-x-4 pt-6 border-t border-gray-200 mt-6">
           <button
             onClick={onClose}
@@ -213,7 +217,7 @@ const NewExpenseItemModal: React.FC<NewExpenseItemModalProps> = ({
             Cancel
           </button>
           <button
-            onClick={handleSave}
+            onClick={handleSaveClick} // This button triggers Form.io's submission
             className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Save
@@ -223,6 +227,8 @@ const NewExpenseItemModal: React.FC<NewExpenseItemModalProps> = ({
     </div>
   );
 };
+
+// ... (Rest of your GeneralExpenseClaim component remains unchanged) ...
 
 const GeneralExpenseClaim: React.FC = () => {
   const navigate = useNavigate();
@@ -239,16 +245,24 @@ const GeneralExpenseClaim: React.FC = () => {
   }, []);
 
   const handleAddExpenseItem = useCallback(
-    (newItem: Omit<ExpenseItem, "id" | "imageUrl">) => {
-      const newId = `exp${expenseItems.length + 1}-${Date.now()}`; // Simple unique ID generation
+    (formData: any) => {
+      // Form.io submission data comes as an object (formData here is submission.data from the modal)
+      const newId = `exp${expenseItems.length + 1}-${Date.now()}`;
       setExpenseItems((prevItems) => [
         ...prevItems,
         {
-          ...newItem,
           id: newId,
-          imageUrl: "https://placehold.co/80x80/e0e0e0/000000?text=Receipt",
-        }, // Add a default placeholder image
+          type: formData.expenseType,
+          amount: parseFloat(formData.amount),
+          description: formData.description,
+          date: formData.date,
+          // Handle attachments from Form.io. `formData.attachments` will be an array of file objects
+          imageUrl: formData.attachments && formData.attachments.length > 0
+            ? formData.attachments[0]?.url || "https://placehold.co/80x80/e0e0e0/000000?text=Receipt"
+            : "https://placehold.co/80x80/e0e0e0/000000?text=Receipt",
+        },
       ]);
+      setIsModalOpen(false); // Close modal after adding
     },
     [expenseItems.length]
   );
@@ -260,11 +274,11 @@ const GeneralExpenseClaim: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* New Expense Item Modal */}
-      <NewExpenseItemModal
+      {/* New Expense Item Modal with Form.io */}
+      <FormioNewExpenseItemModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleAddExpenseItem}
+        onSubmit={handleAddExpenseItem}
       />
 
       {/* Header */}
@@ -327,30 +341,40 @@ const GeneralExpenseClaim: React.FC = () => {
           </select>
         </div>
 
-         {/* Expense Items Section */}
+        {/* Expense Items Section */}
         <div className="bg-white p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Expense Items</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Expense Items
+          </h2>
           <div className="space-y-4">
             {expenseItems.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No expense items added yet.</p>
+              <p className="text-gray-500 text-center py-4">
+                No expense items added yet.
+              </p>
             ) : (
               expenseItems.map((item) => (
-                <div key={item.id} className="flex items-start justify-between p-3 border border-gray-200 rounded-lg">
-                  <div className="flex flex-col space-y-1"> {/* Changed to flex-col for text stack */}
+                <div
+                  key={item.id}
+                  className="flex items-start justify-between p-3 border border-gray-200 rounded-lg"
+                >
+                  <div className="flex flex-col space-y-1">
                     <p className="font-medium text-gray-900">{item.type}</p>
                     <p className="text-sm text-gray-600">Date: {item.date}</p>
-                    <p className="text-sm text-gray-600">Amount: ${item.amount.toFixed(2)}</p>
+                    <p className="text-sm text-gray-600">
+                      Amount: {item.amount.toFixed(2)}
+                    </p>
                     <p className="text-sm text-gray-600">{item.description}</p>
                   </div>
-                  <div className="flex items-center space-x-3"> {/* Container for image and trash icon */}
+                  <div className="flex items-center space-x-3">
                     {item.imageUrl && (
                       <img
                         src={item.imageUrl}
                         alt="Receipt"
                         className="w-22 h-22 object-cover rounded-md flex-shrink-0"
                         onError={(e) => {
-                          e.currentTarget.onerror = null; // Prevent infinite loop
-                          e.currentTarget.src = "https://placehold.co/80x80/e0e0e0/000000?text=Error"; // Fallback image
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src =
+                            "https://placehold.co/80x80/e0e0e0/000000?text=Error";
                         }}
                       />
                     )}
@@ -380,15 +404,15 @@ const GeneralExpenseClaim: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border p-4 space-y-2">
             <div className="flex justify-between text-gray-700">
               <span>Total Amount</span>
-              <span className="font-medium">${totalAmount.toFixed(2)}</span>
+              <span className="font-medium">{totalAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-gray-700">
               <span>Advances</span>
-              <span className="font-medium">${advances.toFixed(2)}</span>
+              <span className="font-medium">{advances.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-gray-900 font-bold text-lg border-t pt-2 mt-2">
               <span>Net Payable</span>
-              <span>${netPayable.toFixed(2)}</span>
+              <span>{netPayable.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -416,3 +440,4 @@ const GeneralExpenseClaim: React.FC = () => {
 };
 
 export default GeneralExpenseClaim;
+
