@@ -67,8 +67,8 @@ export const useAttendance = (
 export const useLeaveType = (
   filters?: FilterCondition[],
   queryKeySuffix: unknown = filters,
-): UseQueryResult<any, Error> => {
-  return useQuery<Attendance[], Error>({
+): UseQueryResult<[], Error> => {
+  return useQuery<[], Error>({
     queryKey: ["leave-type", queryKeySuffix],
     queryFn: () => attendanceService.getLeaveType(filters),
     staleTime: defaultStaleTime,

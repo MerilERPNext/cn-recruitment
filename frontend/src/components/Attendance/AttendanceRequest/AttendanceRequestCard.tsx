@@ -1,7 +1,8 @@
+import { AttendanceRequest } from "../../../types/attendance"
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils"
 import Badge from "../../shared/Badge"
 
-const AttendanceRequestCard = ({ data }: { data: any }) => {
+const AttendanceRequestCard = ({ data }: { data: AttendanceRequest }) => {
 
     const getStatus = (status: number) => {
         if (status === 0) {

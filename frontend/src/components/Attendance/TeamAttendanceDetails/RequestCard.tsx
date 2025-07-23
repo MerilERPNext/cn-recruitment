@@ -21,7 +21,6 @@ export function RequestCard({
         >
             <div className="p-4">
                 <div className="flex justify-start items-start gap-2 w-full">
-
                     {!isActionedCard && (
                         <input
                             type="checkbox"
@@ -34,7 +33,7 @@ export function RequestCard({
                         />
                     )}                    <div className="w-full">
                         <div className="flex items-start space-x-3">
-                            <Avatar name="Test" />
+                            <Avatar name={request.name} />
 
                             <div className="flex-1">
                                 <div className="flex items-center justify-between ">

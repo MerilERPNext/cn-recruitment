@@ -27,7 +27,7 @@
   transform: translateX(-50%) !important;
 }
 .custom-w-fill-available{
-  width: -webkit-fill-available;
+  width: fill-available;
 }
 
 .address-form-container .choices__inner::after {

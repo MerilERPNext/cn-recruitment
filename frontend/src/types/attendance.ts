@@ -11,7 +11,7 @@ export type Attendance = {
   employee: string;
   employee_name: string;
   working_hours: number;
-  status: "Present" | "Absent" | "Half Day" | "On Leave" | string;
+  status: "Present" | "Absent" | "Half Day" | "On Leave" ;
   leave_type: string | null;
   custom_half_day_type: string;
   leave_application: string | null;

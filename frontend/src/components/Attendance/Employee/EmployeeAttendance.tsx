@@ -97,7 +97,10 @@ const EmployeeAttendance = () => {
             </div>
         )
     }
-    let defaultFilters: Record<string, string> = { owner: userId as string };
+    const defaultFilters = useMemo(() => {
+        if (!userId) return undefined;
+        return { owner: userId };
+    }, [userId]);
 
     return <div>
         <LayoutHeader tab="Attendance" />

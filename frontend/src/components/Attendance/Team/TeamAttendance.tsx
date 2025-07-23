@@ -85,7 +85,10 @@ const TeamAttendance = () => {
                 infiniteScroll={true}
                 isFilter={false}
                 defaultFields={[
-                    '*'
+                    "employee_name",
+                    "status",
+                    "in_time",
+                    "out_time"
                 ]}
 
             />

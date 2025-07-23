@@ -2,10 +2,12 @@
 import { Check, X } from "lucide-react"
 import Avatar from "../shared/Avatar"
 import LayoutHeader from "../shared/LayoutHeader"
+import { formatDateString } from "../../utils/helperUtils"
+import { AttendanceRequest } from "../../types/attendance"
 
 
 
-export function AttendanceDetailView({ data, onClose }: { data: any, onClose: () => void }) {
+export function AttendanceDetailView({ data, onClose }: { data: AttendanceRequest, onClose: () => void }) {
 
 
     return data?.name ? <div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
@@ -31,11 +33,7 @@ export function AttendanceDetailView({ data, onClose }: { data: any, onClose: ()
             {/* Date */}
             <div className="p-4 border-b">
                 <p className="text-sm text-gray-500 mb-1">Date</p>
-                <p className="font-medium">{new Date(data?.creation).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                })}</p>
+                <p className="font-medium">{formatDateString(data?.creation)}</p>
             </div>
 
             {/* Log Details */}
@@ -50,10 +48,10 @@ export function AttendanceDetailView({ data, onClose }: { data: any, onClose: ()
                             </div>
                             <div>
                                 <p className="font-medium text-sm">Check In</p>
-                                <p className="text-xs text-gray-500">{data?.checkInType}</p>
+                                {/* <p className="text-xs text-gray-500">{data?.checkInType}</p> */}
                             </div>
                         </div>
-                        <p className="font-medium">{data?.checkIn || "--:--"}</p>
+                        {/* <p className="font-medium">{data?.checkIn || "--:--"}</p> */}
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -66,7 +64,7 @@ export function AttendanceDetailView({ data, onClose }: { data: any, onClose: ()
                                 {/* <p className="text-xs text-gray-500">{requestData.checkOut}</p> */}
                             </div>
                         </div>
-                        <p className="font-medium">{data?.checkOut || "--:--"}</p>
+                        {/* <p className="font-medium">{data?.checkOut || "--:--"}</p> */}
                     </div>
                 </div>
             </div>

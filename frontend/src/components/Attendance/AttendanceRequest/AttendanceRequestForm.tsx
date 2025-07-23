@@ -115,7 +115,7 @@ const baseFormComponents = (isForOthers: boolean) => {
 interface AttndanceRequestFormProps {
     onClose: () => void;
 }
-const AttndanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) => {
+const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) => {
     const [isForOthers, setIsForOthers] = useState(false);
 
     const formSchema = useMemo(() => ({
@@ -173,4 +173,4 @@ const AttndanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) 
     );
 };
 
-export default AttndanceRequestForm;
+export default AttendanceRequestForm;

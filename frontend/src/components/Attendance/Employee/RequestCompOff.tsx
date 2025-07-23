@@ -31,7 +31,7 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
                             placeholder: "Select a leave type",
                             customClass: "mb-4",
                             data: {
-                                values: data?.length > 0 ?
+                                values: data && data?.length > 0 ?
                                     data?.map((item: { name: any; leave_type_name: any; }) => { return { label: item?.name, value: item?.leave_type_name } }) : []
                                 // values: [
                                 //     { label: "Compensatory Off", value: "compensatory-off" },
@@ -107,7 +107,7 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
     };
 
     return (
-        <div className="fixed top-0 z-20 max-w-2xl mx-auto left-0 h-screen bg-white">
+        <div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
             <LayoutHeader tab="Request Compensatory Off"
                 onBack={() => {
                     onClose()

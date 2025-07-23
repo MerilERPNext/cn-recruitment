@@ -3,12 +3,15 @@ import FrappeListView from "../../ListView";
 import LayoutHeader from "../../shared/LayoutHeader";
 import AttendanceRequestCard from "./AttendanceRequestCard";
 import AttndanceRequestForm from "./AttendanceRequestForm";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 
 const AttendanceRequest = () => {
     const { data: userId } = useLoggedInUser();
-    let defaultFilters: Record<string, string> = { owner: userId as string };
+    const defaultFilters = useMemo(() => {
+        if (!userId) return undefined;
+        return { owner: userId };
+    }, [userId]);
 
     const [showForm, setShowForm] = useState(false)
     return (<>
