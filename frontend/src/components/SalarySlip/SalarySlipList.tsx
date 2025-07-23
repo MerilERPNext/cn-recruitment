@@ -58,7 +58,7 @@ const SalarySlipItem: React.FC<{
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "NIR",
+      currency: "INR",
       minimumFractionDigits: 2,
     }).format(amount);
   };

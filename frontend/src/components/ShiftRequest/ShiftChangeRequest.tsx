@@ -79,12 +79,12 @@ export default function ShiftChangeRequests() {
         </p>
       </div>
 
-      {mappedRequests.map((request, idx) => {
+      {mappedRequests.map((request) => {
         const isProcessing = processingIds.has(request.id);
         
         return (
           <div
-            key={idx}
+            key={request.id}
             className="bg-white shadow rounded-xl p-4 space-y-4 border border-gray-200"
           >
             <div className="flex justify-between items-start">

@@ -16,7 +16,6 @@ import ReferralList from "./components/ReferralList";
 import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
-import SalarySlip from "./components/SalarySlip/SalaryDetails";
 import SalarySlipApp from "./components/SalarySlip/SalarySlipApp";
 import SalarySlipsList from "./components/SalarySlip/SalarySlipList";
 import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
@@ -43,10 +42,7 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
     element: <JobApplicantDetails />,
   },
-  {
-    path: "/webapp/recruitment-app/salary-slip-details/:id",
-    element: <SalarySlip />,
-  },
+
 
   // Nested Recruitment App Routes
   {
@@ -59,6 +55,11 @@ export const routesConfig: AppRoute[] = [
       { path: "job-openings", element: <JobOpeningsUI /> },
       { path: "job-applicant-list", element: <JobApplicantList /> },
     ],
+  },
+  //salary slip route 
+  {
+    path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
+    element: <SalarySlipDetails />,
   },
   {
     path: "/webapp/salary-slip-app",
@@ -84,10 +85,7 @@ export const routesConfig: AppRoute[] = [
     element: <ShiftChangeForm />,
   },
 
-  {
-    path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
-    element: <SalarySlipDetails />,
-  },
+
   {
     path: "/webapp/my-profile",
     element: <MyProfile />,
