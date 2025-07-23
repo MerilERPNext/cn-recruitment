@@ -3,6 +3,7 @@ import SearchMembers from "./components/SearchMembers";
 import Notices from "./components/Notices";
 import IdCard from "./components/IdCard";
 import RecruitmentApp from "./components/RecruitmentApp";
+import MyProfile from "./components/MyProfile/MyProfile";
 import InterviewPage from "./components/InterviewDetails";
 import InterviewList from "./components/interview";
 import AddNewReferral from "./components/AddNewReferral";
@@ -86,6 +87,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
     element: <SalarySlipDetails />,
+  },
+  {
+    path: "/webapp/my-profile",
+    element: <MyProfile />,
   },
 
   // Flat Recruitment Routes
