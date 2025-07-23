@@ -173,6 +173,26 @@ const Dashboard: React.FC = () => {
               Manage Profile
             </Link>
           </div>
+           <div
+            className="rounded-lg shadow-md p-6"
+            style={{ backgroundColor: "var(--background-light)" }}
+          >
+            <h2
+              className="text-xl font-semibold mb-4"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Leaves
+            </h2>
+            <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
+              Request , view and manage leaves seamlessly.
+            </p>
+            <Link
+              to="/webapp/leave-app"
+              className="inline-block bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
+            >
+              Go to Leaves
+            </Link>
+          </div>
         </div>
       </div>
     </div>
