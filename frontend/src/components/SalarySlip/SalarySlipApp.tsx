@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import HeaderBar from "../HeaderBar";
 
 type TabName = "Salary Slip";
 
@@ -61,10 +62,7 @@ const SalarySlipApp: React.FC = () => {
       `}</style>
 
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="flex items-center justify-center p-2">
-          <h1 className="text-xl font-semibold text-slate-900">{activeTab}</h1>
-        </div>
-
+        <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
         <nav className="px-2 flex overflow-x-auto scrollbar-hidden">
           {(Object.keys(tabRoutes) as TabName[]).map((tab) => (
             <button

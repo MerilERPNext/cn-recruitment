@@ -9,7 +9,6 @@ export default function MyShiftAssignment() {
   };
 
   const { data: shiftTypes, isLoading, error } = useMyCurrentShiftAssignment();
-  console.log(shiftTypes, "<<<<<<<<<<<<<<<<<<<<<<<");
 
   if (isLoading) return <div>Loading shifts…</div>;
   if (error)
