@@ -1,8 +1,8 @@
 import { ReactElement } from "react";
 import SearchMembers from "./components/SearchMembers";
-import Notices from "./components/Notices";
 import IdCard from "./components/IdCard";
 import RecruitmentApp from "./components/RecruitmentApp";
+import MyProfile from "./components/MyProfile/MyProfile";
 import InterviewPage from "./components/InterviewDetails";
 import InterviewList from "./components/interview";
 import AddNewReferral from "./components/AddNewReferral";
@@ -15,8 +15,33 @@ import ReferralList from "./components/ReferralList";
 import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
+import NoticesLayout from "./components/Notices/NoticesLayout";
+import NoticesTab from "./components/Notices/NoticesTab";
+import NoticeDetails from "./components/Notices/NoticeDetails";
+import AttendanceLayout from "./components/Attendance/AttendanceLayout";
+import { Navigate } from "react-router";
+import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
+import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
+import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
+import TeamAttendanceDetails from "./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails";
+
+import ExpensesApp from "./components/Expenses-App/ExpensesApp";
+import ExpensesList from "./components/Expenses-App/ExpensesList";
+import NewExpenseType from "./components/Expenses-App/NewExpenseType";
+import GeneralExpenseClaim from "./components/Expenses-App/GeneralExpenseClaim";
+import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim";
+import MileageExpenseClaim from "./components/Expenses-App/MileageExpenseClaim";
+
+import LeaveBalance from "./components/Leaves/LeaveBalance";
+import LeaveRequestApp from "./components/Leaves/LeaveRequestApp";
+import MyLeaveRequest from "./components/Leaves/MyLeaveRequest";
+import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
+import LeaveApp from "./components/Leaves/LeaveApp";
+import Holidays from "./components/Leaves/Holidays";
+import HolidaysFull from "./components/Leaves/HolidaysFull";
 
 export interface AppRoute {
+  index?: boolean,
   path: string;
   element: ReactElement;
   children?: AppRoute[];
@@ -25,7 +50,7 @@ export interface AppRoute {
 export const routesConfig: AppRoute[] = [
   // Standalone Routes
   { path: "/webapp/search-members", element: <SearchMembers /> },
-  { path: "/webapp/notices", element: <Notices /> },
+
   { path: "/webapp/id-card", element: <IdCard /> },
   { path: "/webapp/id-card/:employeeId", element: <IdCard /> },
   {
@@ -44,6 +69,28 @@ export const routesConfig: AppRoute[] = [
       { path: "job-openings", element: <JobOpeningsUI /> },
       { path: "job-applicant-list", element: <JobApplicantList /> },
     ],
+  },
+  {
+    path: '/webapp/notices',
+    element: <NoticesLayout />,
+    children: [
+      { path: 'all', element: <NoticesTab tab="all" /> },
+      { path: 'unread', element: <NoticesTab tab="unread" /> },
+      // { path: 'archived', element: <NoticesTab tab="archived" /> },
+    ],
+  },
+
+  { path: '/webapp/notices/:id', element: <NoticeDetails /> },
+  {
+    path: "/webapp/my-profile",
+    element: <MyProfile />,
+  },
+
+  // Nested Expenses App Routes
+  {
+    path: "/webapp/expenses-app",
+    element: <ExpensesApp />,
+    children: [{ path: "expenses-list", element: <ExpensesList /> }],
   },
 
   // Flat Recruitment Routes
@@ -70,5 +117,58 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recruitment-app/requisitions/add-requisition/*",
     element: <AddRequisition />,
+  },
+
+  {
+    path: '/webapp/attendance',
+    element: <AttendanceLayout />,
+    children: [
+      {
+        index: true, element: <Navigate to="emp-attendance" replace />,
+        path: ""
+      },
+      { path: 'emp-attendance', element: <EmployeeAttendance /> },
+      { path: 'team-attendance', element: <TeamAttendance /> },
+      { path: 'attendance-request', element: <AttendanceRequest /> },
+      { path: 'team-attendance-details', element: <TeamAttendanceDetails /> },
+    ],
+  },
+  //Leaves routes
+  {
+    path: "/webapp/leave-app",
+    element: <LeaveApp />,
+    children: [
+      { path: "leaves/leave-balance", element: <LeaveBalance /> },
+      {
+        path: "leaves/leave-requests",
+        element: <LeaveRequestApp />,
+        children: [
+          { path: "my", element: <MyLeaveRequest /> },
+          { path: "team", element: <TeamLeaveRequest /> },
+        ],
+      },
+      { path: "leaves/holidays", element: <Holidays /> },
+      { path: "leaves/holidays/all", element: <HolidaysFull /> },
+
+    ],
+  },
+  {
+    path: "/webapp/expenses-app/expenses-list/new-expense-type",
+    element: <NewExpenseType />,
+  },
+  // New route for General Expense Claim
+  {
+    path: "/webapp/expenses-app/general-expense-claim",
+    element: <GeneralExpenseClaim />,
+  },
+  // New route for Daily Allowance Claim
+  {
+    path: "/webapp/expenses-app/daily-allowance-claim",
+    element: <DailyAllowanceClaim />,
+  },
+  // New route for Mileage Expense Claim
+  {
+    path: "/webapp/expenses-app/mileage-expense-claim",
+    element: <MileageExpenseClaim />,
   },
 ];

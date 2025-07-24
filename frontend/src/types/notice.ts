@@ -58,3 +58,17 @@ export interface CreateNoticeData {
   action?: NoticeAction;
   targetUsers?: string[];
 } 
+export type NoticeStatusReadStatus = {
+  name: string;
+  owner: string;
+  creation: string; 
+  modified: string; 
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  notice: string;
+  user: string;
+  read_at: string; 
+  acknowledged_at: string | null; 
+  ip_address: string;
+};
