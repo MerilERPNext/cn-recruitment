@@ -1,4 +1,5 @@
 import { useQuery, useInfiniteQuery, type UseQueryOptions, type UseInfiniteQueryOptions } from "@tanstack/react-query"
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query"
 import { frappeService } from "../services/frappeService"
 import { PermissionError } from "../types/frappe"
 import type {
@@ -101,3 +102,33 @@ export const useFrappeDocumentCount = (
 
 // Export utility function
 export { isPermissionError }
+
+// Mutation hook for creating a document
+export const useCreateFrappeDocument = (
+  options?: UseMutationOptions<unknown, unknown, { doctype: string; data: Record<string, unknown> }>
+) => {
+  return useMutation({
+    mutationFn: ({ doctype, data }) => frappeService.createDocument(doctype, data),
+    ...options,
+  })
+}
+
+// Mutation hook for updating a document
+export const useUpdateFrappeDocument = (
+  options?: UseMutationOptions<unknown, unknown, { doctype: string; name: string; data: Record<string, unknown> }>
+) => {
+  return useMutation({
+    mutationFn: ({ doctype, name, data }) => frappeService.updateDocument(doctype, name, data),
+    ...options,
+  })
+}
+
+// Mutation hook for deleting a document
+export const useDeleteFrappeDocument = (
+  options?: UseMutationOptions<unknown, unknown, { doctype: string; name: string }>
+) => {
+  return useMutation({
+    mutationFn: ({ doctype, name }) => frappeService.deleteDocument(doctype, name),
+    ...options,
+  })
+}
