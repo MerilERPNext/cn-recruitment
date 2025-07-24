@@ -44,6 +44,9 @@ interface FrappeListViewProps<T extends BaseItem> {
   onItemClick?: (item: T) => void
   infiniteScroll?: boolean
   permissionErrorMessage?: string
+  showRefereshButton?: boolean
+  onRefetchAvailable?: (refetch: () => void) => void;
+
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -58,7 +61,9 @@ const FrappeListView = <T extends BaseItem>({
   searchFields = [],
   onItemClick,
   infiniteScroll = false,
+  showRefereshButton = true,
   permissionErrorMessage,
+  onRefetchAvailable
 }: FrappeListViewProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("")
   const [filters, setFilters] = useState(defaultFilters)
@@ -66,10 +71,10 @@ const FrappeListView = <T extends BaseItem>({
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const queryClient = useQueryClient()
+
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
   const filtersString = queryParam.get('filters');
-
   const [queryParamsFilters, setQueryParamsFilters] = useState({});
 
   useEffect(() => {
@@ -171,6 +176,14 @@ const FrappeListView = <T extends BaseItem>({
     },
   )
 
+  useEffect(() => {
+    if (onRefetchAvailable) {
+      onRefetchAvailable(() => {
+        queryClient.invalidateQueries({ queryKey: ["documents-infinite"] })
+      });
+    }
+  }, [onRefetchAvailable]);
+
   // Log query results
   useEffect(() => {
     if (infiniteScroll && infiniteQueryResult.data) {
@@ -270,6 +283,7 @@ const FrappeListView = <T extends BaseItem>({
     queryClient.invalidateQueries({ queryKey: ["document-count", doctype] })
   }
 
+
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       console.log(`📄 Going to page ${page} for ${doctype}`)
@@ -287,23 +301,26 @@ const FrappeListView = <T extends BaseItem>({
   const renderPagination = () => {
     if (infiniteScroll) {
       return (
-        <div className="flex items-center justify-center px-4 py-6 bg-white border-gray-200">
+        <div>
           {infiniteQueryResult.hasNextPage ? (
-            <button
-              onClick={loadMore}
-              disabled={infiniteQueryResult.isFetchingNextPage}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {infiniteQueryResult.isFetchingNextPage ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                "Load More"
-              )}
-            </button>
+            <div className="flex items-center justify-center px-4 py-6 bg-white border-gray-200">
+              <button
+                onClick={loadMore}
+                disabled={infiniteQueryResult.isFetchingNextPage}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {infiniteQueryResult.isFetchingNextPage ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Load More"
+                )}
+              </button>
+            </div>
           ) : null}
+
         </div>
       )
     }
@@ -483,13 +500,13 @@ const FrappeListView = <T extends BaseItem>({
                 <Filter className="h-4 w-4" />
               </button>
             )}
-            <button
+            {showRefereshButton && <button
               onClick={refreshData}
               disabled={isLoading}
               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            </button>
+            </button>}
           </div>
         </div>
       </div>

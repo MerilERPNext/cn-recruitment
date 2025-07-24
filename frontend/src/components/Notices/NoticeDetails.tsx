@@ -209,7 +209,7 @@ const NoticeDetails = () => {
                                     <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Priority</p>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span
-                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(notice?.priority)}`}
+                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getPriorityColor(notice?.priority)}`}
                                         >
                                             {notice?.priority ? notice.priority.charAt(0).toUpperCase() + notice.priority.slice(1) : ''}                                        </span>
                                     </div>

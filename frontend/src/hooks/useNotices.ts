@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { NoticeService } from '../services/noticeService';
 import type { Notice, NoticeFilters } from '../types/notice';
+import { FilterCondition } from '../types/frappe';
 
 // Create a service instance
 const noticeService = new NoticeService();
@@ -88,6 +89,14 @@ export function useGetNoticeById(noticeId: string) {
     queryKey: [QUERY_KEYS.notices, noticeId],
     queryFn: () => NoticeService.getNotice(noticeId),
     enabled: !!noticeId, // avoids firing when ID is undefined
+  });
+}
+
+export function useGetAllNoticeReadStatus(filters: FilterCondition[],enabled:boolean) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.notices],
+    queryFn: () => NoticeService.getAllNoticeReadStatus(filters),
+    enabled: enabled,
   });
 }
 

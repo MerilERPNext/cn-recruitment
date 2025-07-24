@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FrappeAPI } from '../utils/frappeAPI';
-import { Notice, NoticeFilters } from '../types/notice';
+import { Notice, NoticeFilters, NoticeStatusReadStatus } from '../types/notice';
+import { FilterCondition } from '../types/frappe';
 
 // Notice API service
 export class NoticeService {
@@ -47,6 +48,18 @@ export class NoticeService {
     try {
       const notice = await FrappeAPI.getDocument('Notice', noticeId);
       return this.transformFromFrappe(notice);
+    } catch (error) {
+      console.error('Error fetching notice:', error);
+      return null;
+    }
+  }
+  static async getAllNoticeReadStatus(filters: FilterCondition[]): Promise<NoticeStatusReadStatus[] | null> {
+    try {
+      const notice = await FrappeAPI.getDocumentList('Notice Read Status', {
+      fields: ["*"],
+      filters,
+    });
+      return notice?.data as NoticeStatusReadStatus[];
     } catch (error) {
       console.error('Error fetching notice:', error);
       return null;
