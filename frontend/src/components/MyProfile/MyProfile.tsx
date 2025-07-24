@@ -9,9 +9,9 @@ import { useNavigate } from "react-router";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { Employee } from "../../types/employee";
-import HRPolicies from "./HRPolicies";
 import { Pencil } from "lucide-react";
 import defaultProfile from "../../assets/user.png";
+import HRLetters from "./HRLetters";
 
 type TabKey =
   | "personal-info"
@@ -110,7 +110,7 @@ const MyProfile: React.FC = () => {
       address: <AddressInfo user={user} />,
       "company-info": <CompanyInfo user={user} />,
       "salary-info": <SalaryInfo user={user} />,
-      "hr-letters": <HRPolicies />,
+      "hr-letters": <HRLetters />,
     }),
     [user]
   );

@@ -165,6 +165,19 @@ const Dashboard: React.FC = () => {
             </Link>
           </div>
 
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Expenses App</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Streamline your Expenses process and manage all Expenses with ease.
+            </p>
+            <Link
+              to="/webapp/expenses-app"
+              className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              View Expenses
+            </Link>
+          </div>
+
           <div
             className="rounded-lg shadow-md p-6"
             style={{ backgroundColor: "var(--background-light)" }}
@@ -173,6 +186,7 @@ const Dashboard: React.FC = () => {
               className="text-xl font-semibold mb-4"
               style={{ color: "var(--text-primary)" }}
             >
+
               My Profile
             </h2>
             <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
@@ -183,6 +197,27 @@ const Dashboard: React.FC = () => {
               className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
             >
               Manage Profile
+            </Link>
+          </div>
+           <div
+            className="rounded-lg shadow-md p-6"
+            style={{ backgroundColor: "var(--background-light)" }}
+          >
+            <h2
+              className="text-xl font-semibold mb-4"
+              style={{ color: "var(--text-primary)" }}
+            >
+
+              Leaves
+            </h2>
+            <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
+              Request , view and manage leaves seamlessly.
+            </p>
+            <Link
+              to="/webapp/leave-app"
+              className="inline-block bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
+            >
+              Go to Leaves
             </Link>
           </div>
         </div>

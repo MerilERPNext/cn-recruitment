@@ -23,6 +23,20 @@ import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
 import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
 import TeamAttendanceDetails from "./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails";
 
+import ExpensesApp from "./components/Expenses-App/ExpensesApp";
+import ExpensesList from "./components/Expenses-App/ExpensesList";
+import NewExpenseType from "./components/Expenses-App/NewExpenseType";
+import GeneralExpenseClaim from "./components/Expenses-App/GeneralExpenseClaim";
+import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim";
+import MileageExpenseClaim from "./components/Expenses-App/MileageExpenseClaim";
+
+import LeaveBalance from "./components/Leaves/LeaveBalance";
+import LeaveRequestApp from "./components/Leaves/LeaveRequestApp";
+import MyLeaveRequest from "./components/Leaves/MyLeaveRequest";
+import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
+import LeaveApp from "./components/Leaves/LeaveApp";
+import Holidays from "./components/Leaves/Holidays";
+import HolidaysFull from "./components/Leaves/HolidaysFull";
 
 export interface AppRoute {
   index?: boolean,
@@ -57,6 +71,13 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/my-profile",
     element: <MyProfile />,
+  },
+
+  // Nested Expenses App Routes
+  {
+    path: "/webapp/expenses-app",
+    element: <ExpensesApp />,
+    children: [{ path: "expenses-list", element: <ExpensesList /> }],
   },
 
   // Flat Recruitment Routes
@@ -98,5 +119,43 @@ export const routesConfig: AppRoute[] = [
       { path: 'attendance-request', element: <AttendanceRequest /> },
       { path: 'team-attendance-details', element: <TeamAttendanceDetails /> },
     ],
+  },
+  //Leaves routes
+  {
+    path: "/webapp/leave-app",
+    element: <LeaveApp />,
+    children: [
+      { path: "leaves/leave-balance", element: <LeaveBalance /> },
+      {
+        path: "leaves/leave-requests",
+        element: <LeaveRequestApp />,
+        children: [
+          { path: "my", element: <MyLeaveRequest /> },
+          { path: "team", element: <TeamLeaveRequest /> },
+        ],
+      },
+      { path: "leaves/holidays", element: <Holidays /> },
+      { path: "leaves/holidays/all", element: <HolidaysFull /> },
+
+    ],
+  },
+  {
+    path: "/webapp/expenses-app/expenses-list/new-expense-type",
+    element: <NewExpenseType />,
+  },
+  // New route for General Expense Claim
+  {
+    path: "/webapp/expenses-app/general-expense-claim",
+    element: <GeneralExpenseClaim />,
+  },
+  // New route for Daily Allowance Claim
+  {
+    path: "/webapp/expenses-app/daily-allowance-claim",
+    element: <DailyAllowanceClaim />,
+  },
+  // New route for Mileage Expense Claim
+  {
+    path: "/webapp/expenses-app/mileage-expense-claim",
+    element: <MileageExpenseClaim />,
   },
 ];

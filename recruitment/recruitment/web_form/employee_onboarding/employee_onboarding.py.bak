@@ -1,0 +1,5 @@
+import frappe
+
+def get_context(context):
+	# do your magic here
+	frappe.web_form.set_value("job_applicant", "prathamjadhav052@gmail.com")
