@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from "react";
-// @ts-expect-error ignore
-import { Form } from "@tsed/react-formio";
+import React, {useMemo, useState} from "react";
+import {Form} from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import LayoutHeader from "../../shared/LayoutHeader";
 

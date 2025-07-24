@@ -1,19 +1,12 @@
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  Link,
-} from "react-router-dom";
+import {BrowserRouter as Router, Link, Navigate, Route, Routes,} from "react-router-dom";
 // import Navigation from './components/Navigation';
-import { useRouteInfo } from "./hooks/useRouter";
-import { QueryProvider } from "./providers/QueryProvider";
+import {useRouteInfo} from "./hooks/useRouter";
+import {QueryProvider} from "./providers/QueryProvider";
 import "./App.css";
 
-import { AppRoute, routesConfig } from "./routesConfig";
-// @ts-expect-error ignore
-import { Form } from "@tsed/react-formio";
+import {AppRoute, routesConfig} from "./routesConfig";
+import {Form} from "@tsed/react-formio";
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {

@@ -1,9 +1,8 @@
-// @ts-expect-error ignore
-import { Form } from "@tsed/react-formio";
+import {Form} from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css"; // Ensure you import default styles if not already
 import LayoutHeader from "../../shared/LayoutHeader";
-import { useLeaveType } from "../../../hooks/useAttendance";
-import { useMemo } from "react";
+import {useLeaveType} from "../../../hooks/useAttendance";
+import {useMemo} from "react";
 
 const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
   const { data } = useLeaveType();

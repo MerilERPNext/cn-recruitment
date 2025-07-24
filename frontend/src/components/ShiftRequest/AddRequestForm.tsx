@@ -1,8 +1,8 @@
 import React from "react";
-import { ArrowLeft } from "lucide-react";
-import { Form } from "react-formio";
-import { useNavigate } from "react-router";
-import { useShiftTypes } from "../../hooks/useShift";
+import {ArrowLeft} from "lucide-react";
+import {Form} from "@tsed/react-formio";
+import {useNavigate} from "react-router";
+import {useShiftTypes} from "../../hooks/useShift";
 
 const ShiftChangeForm: React.FC = () => {
   const navigate = useNavigate();

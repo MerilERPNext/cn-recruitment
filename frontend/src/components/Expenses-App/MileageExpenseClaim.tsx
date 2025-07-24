@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { Formio } from "formiojs";
+import React, {useCallback, useEffect, useRef, useState} from "react";
+import {useNavigate} from "react-router-dom";
+import {ArrowLeft} from "lucide-react";
+import {Formio} from "formiojs";
 
 // =============================================================================
 // Form.io Schemas - Split into three parts for interleaved rendering
@@ -184,9 +184,9 @@ const MileageExpense: React.FC = () => {
   // States to hold form data from each Form.io instance
   // These states are primarily for React to react to changes,
   // the actual submission data will be collected directly from form instances.
-  const [basicDetailsFormData, setBasicDetailsFormData] = useState<any>({});
+  const [, setBasicDetailsFormData] = useState<any>({});
   const [travelFieldsFormData, setTravelFieldsFormData] = useState<any>({});
-  const [notesFormData, setNotesFormData] = useState<any>({});
+  const [, setNotesFormData] = useState<any>({});
 
   // Handler for the back button
   const handleBack = useCallback(() => {

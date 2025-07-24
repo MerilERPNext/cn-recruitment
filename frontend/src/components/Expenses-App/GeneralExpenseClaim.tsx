@@ -1,17 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, {
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
-  useMemo,
-} from "react";
-import { useNavigate } from "react-router-dom";
-import { Trash2, FileText, File as FileIcon } from "lucide-react";
+import React, {useCallback, useEffect, useMemo, useRef, useState,} from "react";
+import {useNavigate} from "react-router-dom";
+import {File as FileIcon, FileText, Trash2} from "lucide-react";
 import defaultReceipt from "../../assets/Receipt.svg";
 
-// @ts-expect-error ignore
-import { Form } from "@tsed/react-formio";
+import {Form} from "@tsed/react-formio";
 import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
 import HeaderBar from "../HeaderBar";
 

@@ -1,7 +1,6 @@
-import React, { useMemo } from "react";
-// @ts-expect-error ignore
-import { Form } from "@tsed/react-formio";
-import { PersonalInfoProps } from "./MyProfile";
+import React, {useMemo} from "react";
+import {Form} from "@tsed/react-formio";
+import {PersonalInfoProps} from "./MyProfile";
 
 export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   const personalInfoForm = useMemo(() => {

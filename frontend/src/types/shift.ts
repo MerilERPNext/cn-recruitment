@@ -1,3 +1,5 @@
+import {ReactNode} from "react";
+
 export interface ShiftRequest {
     name: string;
     owner: string;
