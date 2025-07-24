@@ -16,16 +16,6 @@ import ReferralList from "./components/ReferralList";
 import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
-import SalarySlipApp from "./components/SalarySlip/SalarySlipApp";
-import SalarySlipsList from "./components/SalarySlip/SalarySlipList";
-import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
-import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
-import TeamShift from "./components/ShiftRequest/TeamShift";
-import MyShiftAssignment from "./components/ShiftRequest/MyShiftAssignment";
-import ShiftChangeForm from "./components/ShiftRequest/AddRequestForm";
-import ShiftRequestList from "./components/ShiftRequest/MyShiftList";
-import ShiftChangeRequest from "./components/ShiftRequest/ShiftChangeRequest";
-import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim";
 import ExpensesApp from "./components/Expenses-App/ExpensesApp";
 import ExpensesList from "./components/Expenses-App/ExpensesList";
 import GeneralExpenseClaim from "./components/Expenses-App/GeneralExpenseClaim";
@@ -38,6 +28,22 @@ import LeaveBalance from "./components/Leaves/LeaveBalance";
 import LeaveRequestApp from "./components/Leaves/LeaveRequestApp";
 import MyLeaveRequest from "./components/Leaves/MyLeaveRequest";
 import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
+import { Navigate } from "react-router";
+import AttendanceLayout from "./components/Attendance/AttendanceLayout";
+import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
+import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
+import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
+import TeamAttendanceDetails from "./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails";
+import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim";
+import SalarySlipApp from "./components/SalarySlip/SalarySlipApp";
+import SalarySlipsList from "./components/SalarySlip/SalarySlipList";
+import ShiftChangeForm from "./components/ShiftRequest/AddRequestForm";
+import MyShiftAssignment from "./components/ShiftRequest/MyShiftAssignment";
+import ShiftRequestList from "./components/ShiftRequest/MyShiftList";
+import ShiftChangeRequest from "./components/ShiftRequest/ShiftChangeRequest";
+import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
+import TeamShift from "./components/ShiftRequest/TeamShift";
+
 
 
 
@@ -54,6 +60,7 @@ import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
 
 
 export interface AppRoute {
+  index?: boolean,
   path: string;
   element: ReactElement;
   children?: AppRoute[];
@@ -84,10 +91,6 @@ export const routesConfig: AppRoute[] = [
     ],
   },
   //salary slip route 
-  {
-    path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
-    element: <SalarySlipDetails />,
-  },
   {
     path: "/webapp/salary-slip-app",
     element: <SalarySlipApp />,
@@ -151,6 +154,20 @@ export const routesConfig: AppRoute[] = [
     element: <AddRequisition />,
   },
 
+  {
+    path: '/webapp/attendance',
+    element: <AttendanceLayout />,
+    children: [
+      {
+        index: true, element: <Navigate to="emp-attendance" replace />,
+        path: ""
+      },
+      { path: 'emp-attendance', element: <EmployeeAttendance /> },
+      { path: 'team-attendance', element: <TeamAttendance /> },
+      { path: 'attendance-request', element: <AttendanceRequest /> },
+      { path: 'team-attendance-details', element: <TeamAttendanceDetails /> },
+    ],
+  },
   //Leaves routes
   {
     path: "/webapp/leave-app",

@@ -7,6 +7,15 @@
   @apply w-full;
 }
 
+
+/* styles form io */
+.formio-component .border {
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
 .address-form-container .row {
   /* increase specificity and force no-wrap */
   display: flex !important;
@@ -16,6 +25,10 @@
 .flatpickr-calendar {
   left: 50% !important;
   transform: translateX(-50%) !important;
+}
+
+.custom-w-fill-available{
+  width: fill-available;
 }
 
 .address-form-container .choices__inner::after {

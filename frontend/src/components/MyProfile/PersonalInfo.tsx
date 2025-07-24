@@ -136,15 +136,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                     },
                   ],
                 },
-                {
-                  type: "textfield",
-                  key: "nationality",
-                  label: "Nationality",
-                  input: true,
-                  validate: { required: true },
-                  customClass: "px-2 pb-2",
-                  placeholder: "India",
-                },
               ],
               customClass: "rounded-lg mb-6",
               autofocus: false,
@@ -193,7 +184,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   }, [user]);
 
   return (
-    <div className="address-form-container max-w-md mx-auto rounded-lg bg-gray-100 shadow-md">
+    <div className="address-form-container max-w-md mx-auto rounded-lg bg-white shadow-md">
       <Form
         key={user?.employee || "loading"}
         form={personalInfoForm}

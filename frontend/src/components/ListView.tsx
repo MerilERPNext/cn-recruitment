@@ -44,6 +44,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   onItemClick?: (item: T) => void
   infiniteScroll?: boolean
   permissionErrorMessage?: string
+  showRefereshButton?: boolean
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -58,6 +59,7 @@ const FrappeListView = <T extends BaseItem>({
   searchFields = [],
   onItemClick,
   infiniteScroll = false,
+  showRefereshButton = true,
   permissionErrorMessage,
 }: FrappeListViewProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("")
@@ -66,21 +68,26 @@ const FrappeListView = <T extends BaseItem>({
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const queryClient = useQueryClient()
+
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
   const filtersString = queryParam.get('filters');
-  const initialQueryParamsFilters = useMemo(() => {
-    if (!filtersString) return {};
+  const [queryParamsFilters, setQueryParamsFilters] = useState({});
+
+  useEffect(() => {
+    if (!filtersString) {
+      setQueryParamsFilters({});
+      return;
+    }
+
     try {
-      return JSON.parse(decodeURIComponent(filtersString));
+      const parsed = JSON.parse(decodeURIComponent(filtersString));
+      setQueryParamsFilters(parsed);
     } catch (e) {
       console.error('Invalid filters JSON', e);
-      return {};
+      setQueryParamsFilters({});
     }
   }, [filtersString]);
-
-  const [queryParamsFilters, setQueryParamsFilters] = useState(initialQueryParamsFilters);
-
 
   // Console log component props
   console.log(`🎯 FrappeListView initialized for doctype: ${doctype}`, {
@@ -283,23 +290,26 @@ const FrappeListView = <T extends BaseItem>({
   const renderPagination = () => {
     if (infiniteScroll) {
       return (
-        <div className="flex items-center justify-center px-4 py-6 bg-white border-gray-200">
+        <div>
           {infiniteQueryResult.hasNextPage ? (
-            <button
-              onClick={loadMore}
-              disabled={infiniteQueryResult.isFetchingNextPage}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {infiniteQueryResult.isFetchingNextPage ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                "Load More"
-              )}
-            </button>
+            <div className="flex items-center justify-center px-4 py-6 bg-white border-gray-200">
+              <button
+                onClick={loadMore}
+                disabled={infiniteQueryResult.isFetchingNextPage}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {infiniteQueryResult.isFetchingNextPage ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Load More"
+                )}
+              </button>
+            </div>
           ) : null}
+
         </div>
       )
     }
@@ -479,13 +489,13 @@ const FrappeListView = <T extends BaseItem>({
                 <Filter className="h-4 w-4" />
               </button>
             )}
-            <button
+            {showRefereshButton && <button
               onClick={refreshData}
               disabled={isLoading}
               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            </button>
+            </button>}
           </div>
         </div>
       </div>
