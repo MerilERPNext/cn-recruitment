@@ -9,7 +9,12 @@ import type {
   FrappeDocumentsResponse,
   GetCountParams,
   GetCountResponse,
-
+  CreateDocumentParams,
+  UpdateDocumentParams,
+  DeleteDocumentParams,
+  CreateDocumentResult,
+  UpdateDocumentResult,
+  DeleteDocumentResult,
 } from "../types/frappe"
 
 // Utility to check if error is permission-related
@@ -105,9 +110,9 @@ export { isPermissionError }
 
 // Mutation hook for creating a document
 export const useCreateFrappeDocument = (
-  options?: UseMutationOptions<unknown, unknown, { doctype: string; data: Record<string, unknown> }>
+  options?: UseMutationOptions<CreateDocumentResult, unknown, CreateDocumentParams>
 ) => {
-  return useMutation({
+  return useMutation<CreateDocumentResult, unknown, CreateDocumentParams>({
     mutationFn: ({ doctype, data }) => frappeService.createDocument(doctype, data),
     ...options,
   })
@@ -115,9 +120,9 @@ export const useCreateFrappeDocument = (
 
 // Mutation hook for updating a document
 export const useUpdateFrappeDocument = (
-  options?: UseMutationOptions<unknown, unknown, { doctype: string; name: string; data: Record<string, unknown> }>
+  options?: UseMutationOptions<UpdateDocumentResult, unknown, UpdateDocumentParams>
 ) => {
-  return useMutation({
+  return useMutation<UpdateDocumentResult, unknown, UpdateDocumentParams>({
     mutationFn: ({ doctype, name, data }) => frappeService.updateDocument(doctype, name, data),
     ...options,
   })
@@ -125,9 +130,9 @@ export const useUpdateFrappeDocument = (
 
 // Mutation hook for deleting a document
 export const useDeleteFrappeDocument = (
-  options?: UseMutationOptions<unknown, unknown, { doctype: string; name: string }>
+  options?: UseMutationOptions<DeleteDocumentResult, unknown, DeleteDocumentParams>
 ) => {
-  return useMutation({
+  return useMutation<DeleteDocumentResult, unknown, DeleteDocumentParams>({
     mutationFn: ({ doctype, name }) => frappeService.deleteDocument(doctype, name),
     ...options,
   })
