@@ -15,30 +15,19 @@ export const ShiftRequestService = {
 
  
   approveShiftRequest: async (shiftRequestName: string): Promise<any> => {
-    await FrappeAPI.callMethod("frappe.client.set_value", {
-      doctype: "Shift Request",
-      name: shiftRequestName,
-      fieldname: "status",
-      value: "Approved",
+    return await FrappeAPI.callMethod("recruitment.api.shift_submit.process_shift_request", {
+      docname: shiftRequestName,
+      action: "Approved",
     });
-
-    return await FrappeAPI.callMethod("recruitment.api.shift_submit.submit_shift_request", {
-        docname: shiftRequestName, 
-      });
   },
+  
 
  
   rejectShiftRequest: async (shiftRequestName: string): Promise<any> => {
-    await FrappeAPI.callMethod("frappe.client.set_value", {
-      doctype: "Shift Request",
-      name: shiftRequestName,
-      fieldname: "status",
-      value: "Rejected",
+    return await FrappeAPI.callMethod("recruitment.api.shift_submit.process_shift_request", {
+      docname: shiftRequestName,
+      action: "Rejected",
     });
-
-    return await FrappeAPI.callMethod("recruitment.api.shift_submit.submit_shift_request", {
-        docname: shiftRequestName, 
-      });
   },
 };
 
@@ -48,8 +37,18 @@ export const getAllShiftTypes = async (): Promise<{ data: ShiftType[] }> => {
       orderBy: "creation desc",
     });
   
-    // Cast the data safely
     return {
       data: res.data as ShiftType[],
+    };
+  };
+
+  export const getCurrentMyShiftAssignment = async (): Promise<{ data: ShiftType[] }> => {
+    const result = await FrappeAPI.getDocumentList("Shift Assignment", {
+      fields: ["*"],
+      orderBy: "creation desc",
+    });
+  
+    return {
+      data: result.data as ShiftType[],
     };
   };

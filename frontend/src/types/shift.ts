@@ -18,6 +18,15 @@ export interface ShiftRequest {
     amended_from: string | null;
   }
   export interface ShiftType {
+    status: string;
+    shift_type: ReactNode;
+    start_date: ReactNode;
+    end_date: ReactNode;
+    employee_name: ReactNode;
+    company: ReactNode;
+    to: ReactNode;
+    from: ReactNode;
+    title: ReactNode;
     name: string;
     start_time: string;
     end_time: string;
