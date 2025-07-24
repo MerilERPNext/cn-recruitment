@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import FrappeListView from "../../ListView";
-import LayoutHeader from "../../shared/LayoutHeader";
 import AttendanceRequestCard from "./AttendanceRequestCard";
 import AttndanceRequestForm from "./AttendanceRequestForm";
 import { useMemo, useState } from "react";
@@ -15,7 +14,7 @@ const AttendanceRequest = () => {
 
     const [showForm, setShowForm] = useState(false)
     return (<>
-        <LayoutHeader tab="Attendance Request" />
+        {/* <LayoutHeader tab="Attendance Request" /> */}
 
         {showForm ? <AttndanceRequestForm onClose={() => { setShowForm(false) }} /> :
             <div className="p-4">

@@ -17,7 +17,7 @@ const LayoutHeader = ({ path, tab, onBack, icon = 'chevron' }: LayoutHeaderProps
         } else if (path) {
             navigate(path)
         } else {
-            navigate(-1)
+            navigate("/webapp")
         }
     }
 
@@ -25,8 +25,8 @@ const LayoutHeader = ({ path, tab, onBack, icon = 'chevron' }: LayoutHeaderProps
 
     return (
         <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="relative h-16 flex items-center justify-center">
+            <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8">
+                <div className="relative  flex items-center justify-center">
                     <button
                         onClick={handleBack}
                         className="absolute left-0 flex items-center gap-2 text-gray-600 hover:text-black transition-colors"
@@ -34,7 +34,7 @@ const LayoutHeader = ({ path, tab, onBack, icon = 'chevron' }: LayoutHeaderProps
                         <BackIcon className="w-5 h-5" />
                     </button>
 
-                    <div className="flex items-center gap-2 text-lg font-semibold">
+                    <div className="w-full text-lg justify-center text-center font-semibold text-gray-800">
                         <span>{tab}</span>
                     </div>
                 </div>

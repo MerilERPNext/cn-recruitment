@@ -37,6 +37,7 @@ import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
 import LeaveApp from "./components/Leaves/LeaveApp";
 import Holidays from "./components/Leaves/Holidays";
 import HolidaysFull from "./components/Leaves/HolidaysFull";
+import AllPendingRequests from "./components/Attendance/TeamAttendanceDetails/AllPendingRequests";
 
 export interface AppRoute {
   index?: boolean,
@@ -120,6 +121,7 @@ export const routesConfig: AppRoute[] = [
       { path: 'team-attendance-details', element: <TeamAttendanceDetails /> },
     ],
   },
+  { path: '/webapp/attendance/team-attendance-details/pendings', element: <AllPendingRequests /> },
   //Leaves routes
   {
     path: "/webapp/leave-app",

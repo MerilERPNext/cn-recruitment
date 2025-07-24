@@ -1,4 +1,3 @@
-import LayoutHeader from "../../shared/LayoutHeader"
 import DatePicker from "react-datepicker"
 import EmployeeStatusCard from "./EmployeeStatusCard"
 import FrappeListView from "../../ListView";
@@ -36,7 +35,7 @@ const TeamAttendance = () => {
 
     const navigate = useNavigate()
     return <div className="bg-gray-100">
-        <LayoutHeader tab="Team Attendance" />
+        {/* <LayoutHeader tab="Team Attendance" /> */}
         <div className="flex flex-col gap-4 mt-2 px-4 pb-4">
             <h1 className="text-2xl font-semibold">Team Attendance</h1>
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}

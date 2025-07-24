@@ -3,6 +3,10 @@ import React, { useState, useMemo } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import LayoutHeader from "../../shared/LayoutHeader";
+import { useCreateNewAttendanceRequest } from "../../../hooks/useAttendance";
+import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 
 const baseFormComponents = (isForOthers: boolean) => {
     const components = [
@@ -18,15 +22,15 @@ const baseFormComponents = (isForOthers: boolean) => {
                     ? [
                         {
                             label: "Employee Name",
-                            key: "employeeName",
+                            key: "employee",
                             type: "textfield",
                             input: true,
                             placeholder: "John Doe",
                             customClass: "mb-4"
                         },
                         {
-                            label: "Department",
-                            key: "department",
+                            label: "Company",
+                            key: "company",
                             type: "textfield",
                             input: true,
                             placeholder: "Design",
@@ -42,7 +46,7 @@ const baseFormComponents = (isForOthers: boolean) => {
                             components: [
                                 {
                                     label: "From Date",
-                                    key: "fromDate",
+                                    key: "from_date",
                                     type: "datetime",
                                     input: true,
                                     widget: { type: "calendar" },
@@ -57,7 +61,7 @@ const baseFormComponents = (isForOthers: boolean) => {
                             components: [
                                 {
                                     label: "To Date",
-                                    key: "toDate",
+                                    key: "to_date",
                                     type: "datetime",
                                     input: true,
                                     widget: { type: "calendar" },
@@ -79,12 +83,8 @@ const baseFormComponents = (isForOthers: boolean) => {
                     customClass: "mb-4",
                     data: {
                         values: [
-                            { label: "Work From Home", value: "work-from-home" },
-                            { label: "Sick Leave", value: "sick-leave" },
-                            { label: "Vacation", value: "vacation" },
-                            { label: "Personal Leave", value: "personal-leave" },
-                            { label: "Training", value: "training" },
-                            { label: "Other", value: "other" }
+                            { label: "Work From Home", value: "Work From Home" },
+                            { label: "On Duty", value: "On Duty" },
                         ]
                     }
                 },
@@ -117,6 +117,10 @@ interface AttndanceRequestFormProps {
 }
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) => {
     const [isForOthers, setIsForOthers] = useState(false);
+    const { data: user_id } = useLoggedInUser();
+
+    const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
+    const mutation = useCreateNewAttendanceRequest()
 
     const formSchema = useMemo(() => ({
         title: "Attendance Request",
@@ -125,12 +129,20 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         display: "form",
         components: baseFormComponents(isForOthers),
     }), [isForOthers]);
-
     const handleSubmit = (submission: any) => {
         console.log("Form data:", submission.data);
+        const body = {
+            company: isForOthers ? submission?.data?.company : user?.company,
+            employee: isForOthers ? submission?.data?.employee : user?.employee,
+            explanation: submission?.data?.explanation,
+            reason: submission?.data?.reason,
+            from_date: formatDateToYYYYMMDD(new Date(submission?.data?.from_date)),
+            to_date: formatDateToYYYYMMDD(new Date(submission?.data?.to_date)),
+            include_holidays: 1
+        };
+        mutation.mutate(body)
         // API call or further logic here
     };
-
     return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
         <LayoutHeader
             tab="Attendance Request"

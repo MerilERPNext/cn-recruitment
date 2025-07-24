@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react'
-import LayoutHeader from '../../shared/LayoutHeader'
 import { BulkActionBar } from './BulkActionBar'
 import { RequestCard } from './RequestCard'
 import { useAllAttendanceRequests } from '../../../hooks/useAttendance'
 import { AttendanceRequest } from '../../../types/attendance'
 import { AttendanceDetailView } from '../AttendanceDetails'
+import { useNavigate } from 'react-router'
 
 const TeamAttendanceDetails = () => {
-    const { data = [] } = useAllAttendanceRequests() as { data: AttendanceRequest[] }
+    const { data = [] } = useAllAttendanceRequests(5) as { data: AttendanceRequest[] }
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [selectedRequest, setSelectedRequest] = useState<AttendanceRequest | null>(null)
     const { pendingRequests, actionedRequests } = useMemo(() => {
@@ -34,16 +34,17 @@ const TeamAttendanceDetails = () => {
             setSelectedIds(pendingRequests.map((r) => r.name))
         }
     }
-
+    const navigate = useNavigate()
     return (
         <>
-            <LayoutHeader tab="Team Attendance Details" />
             <div className="p-4 bg-gray-100">
                 {/* Pending */}
                 {pendingRequests?.length > 0 && <>
                     <div className="flex justify-between mb-4">
                         <h2 className="text-2xl font-semibold">Pending Requests</h2>
-                        <button>View All</button>
+                        <button
+                            onClick={() => { navigate("/webapp/attendance/team-attendance-details/pendings") }}
+                        >View All</button>
                     </div>
 
                     <BulkActionBar
@@ -72,7 +73,7 @@ const TeamAttendanceDetails = () => {
                 </>}
 
                 {/* Actioned */}
-                <div className="my-6">
+                {actionedRequests?.length > 0 && <div className="my-6">
                     <h2 className="text-2xl font-semibold mb-2">Actioned Requests</h2>
                     <div className="space-y-3">
                         {actionedRequests.map((request) => (
@@ -85,7 +86,7 @@ const TeamAttendanceDetails = () => {
                             />
                         ))}
                     </div>
-                </div>
+                </div>}
             </div>
             {selectedRequest && (
                 <AttendanceDetailView

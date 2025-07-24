@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react"
-import LayoutHeader from "../../shared/LayoutHeader"
 import DatePicker from "react-datepicker"
 import { ArrowLeft, Plus, XCircle } from "lucide-react"
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser"
@@ -103,7 +102,7 @@ const EmployeeAttendance = () => {
     }, [userId]);
 
     return <div>
-        <LayoutHeader tab="Attendance" />
+        {/* <LayoutHeader tab="Attendance" /> */}
         <div className="flex flex-col gap-4 mt-2 px-4 pb-4">
 
             {/* ------------------------------------------------- Info Card Start---------------------------------------------- */}
@@ -128,7 +127,7 @@ const EmployeeAttendance = () => {
             {/* ------------------------------------------------- Info Card End---------------------------------------------- */}
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
-            <div className="mb-2 w-full  pb-2 border-2 border-gray-200 rounded-xl">
+            <div className="mb-2 w-full  pb-2 border-2 bg-white border-gray-200 rounded-xl">
                 <DatePicker
                     selected={selectedDate}
                     onChange={(date) => setSelectedDate(date)}

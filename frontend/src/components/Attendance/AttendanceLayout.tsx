@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import LayoutHeader from '../shared/LayoutHeader';
 
 const tabs = [
     { name: 'Employee Attendance', key: 'emp-attendance' },
@@ -31,7 +32,9 @@ const AttendanceLayout: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
-            <div className="flex border-b border-gray-200 gap-4 bg-white sticky top-0 z-10 overflow-x-auto whitespace-nowrap no-scrollbar">
+            <LayoutHeader tab={activeTab.name} />
+
+            <div className="sticky top-[52px] flex border-b border-gray-200 gap-4 bg-white sticky top-0 z-5 overflow-x-auto whitespace-nowrap no-scrollbar">
                 {tabs.map((tab) => (
                     <button
                         key={tab.key}

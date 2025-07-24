@@ -5,9 +5,14 @@ import "formiojs/dist/formio.full.css"; // Ensure you import default styles if n
 import LayoutHeader from "../../shared/LayoutHeader";
 import { useLeaveType } from "../../../hooks/useAttendance";
 import { useMemo } from "react";
+import { useRequestCompOff } from "../../../hooks/useLeaves";
+import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 
 const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
     const { data } = useLeaveType();
+    const mutation = useRequestCompOff()
     const reqCompensatoryOff = useMemo(() => {
         return {
             title: "Request Compensatory Off",
@@ -25,7 +30,7 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
                     components: [
                         {
                             label: "Leave Type",
-                            key: "leave-type",
+                            key: "leave_type",
                             type: "select",
                             input: true,
                             placeholder: "Select a leave type",
@@ -33,12 +38,7 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
                             data: {
                                 values: data && data?.length > 0 ?
                                     data?.map((item: { name: any; leave_type_name: any; }) => { return { label: item?.name, value: item?.leave_type_name } }) : []
-                                // values: [
-                                //     { label: "Compensatory Off", value: "compensatory-off" },
-                                //     { label: "Sick Leave", value: "sick-leave" },
-                                //     { label: "Vacation", value: "vacation" },
-                                //     { label: "Personal Leave", value: "personal-leave" },
-                                // ]
+
                             }
                         },
                         {
@@ -78,7 +78,7 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
                         },
                         {
                             label: "Reason for Comp Off",
-                            key: "reason-for-comp-off",
+                            key: "reason",
                             type: "textarea",
                             input: true,
                             placeholder: "Provide additional details...",
@@ -99,10 +99,22 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
             ]
         };
     }, [data])
-    console.log(reqCompensatoryOff)
+    const { data: user_id } = useLoggedInUser();
 
+    const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
     const handleSubmit = (submission: any) => {
         console.log("Form data:", submission.data);
+        const body = {
+            leave_type: submission?.data?.leave_type,
+            work_from_date: formatDateToYYYYMMDD(new Date(submission?.data?.fromDate)),
+            work_end_date: formatDateToYYYYMMDD(new Date(submission?.data?.toDate)),
+            reason: submission?.data?.reason,
+            include_holidays: 1,
+            employee_name: user?.employee_name,
+            department: user?.department,
+            employee: user?.employee,
+        };
+        mutation.mutate(body)
         // Send data to API here
     };
 
