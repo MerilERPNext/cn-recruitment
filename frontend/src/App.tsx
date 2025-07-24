@@ -152,6 +152,18 @@ const Dashboard: React.FC = () => {
               Manage ID Cards
             </Link>
           </div>
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Attendance</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Generate, view, and manage employee attendance.
+            </p>
+            <Link
+              to="/webapp/attendance"
+              className="inline-block bg-cyan-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+            >
+              Manage Attendance
+            </Link>
+          </div>
 
           <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
             <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Expenses App</h2>

@@ -1,0 +1,100 @@
+import { useState, useMemo } from 'react'
+import LayoutHeader from '../../shared/LayoutHeader'
+import { BulkActionBar } from './BulkActionBar'
+import { RequestCard } from './RequestCard'
+import { useAllAttendanceRequests } from '../../../hooks/useAttendance'
+import { AttendanceRequest } from '../../../types/attendance'
+import { AttendanceDetailView } from '../AttendanceDetails'
+
+const TeamAttendanceDetails = () => {
+    const { data = [] } = useAllAttendanceRequests() as { data: AttendanceRequest[] }
+    const [selectedIds, setSelectedIds] = useState<string[]>([])
+    const [selectedRequest, setSelectedRequest] = useState<AttendanceRequest | null>(null)
+    const { pendingRequests, actionedRequests } = useMemo(() => {
+        const pending = data.filter((req) => req.docstatus === 0)
+        const actioned = data.filter((req) => req.docstatus === 1)
+        return {
+            pendingRequests: pending,
+            actionedRequests: actioned,
+        }
+    }, [data])
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+        )
+    }
+
+    const isSelected = (id: string) => selectedIds.includes(id)
+
+    const selectAll = () => {
+        if (selectedIds.length === pendingRequests.length) {
+            setSelectedIds([])
+        } else {
+            setSelectedIds(pendingRequests.map((r) => r.name))
+        }
+    }
+
+    return (
+        <>
+            <LayoutHeader tab="Team Attendance Details" />
+            <div className="p-4 bg-gray-100">
+                {/* Pending */}
+                {pendingRequests?.length > 0 && <>
+                    <div className="flex justify-between mb-4">
+                        <h2 className="text-2xl font-semibold">Pending Requests</h2>
+                        <button>View All</button>
+                    </div>
+
+                    <BulkActionBar
+                        selectedIds={selectedIds}
+                        pendingRequests={pendingRequests}
+                        onSelectAll={selectAll}
+                        onBulkAction={() => {
+                            console.log("Selected Pending IDs:", selectedIds)
+                            setSelectedIds([])
+                        }}
+                    />
+
+                    <div className="space-y-3">
+                        {pendingRequests.map((request) => (
+                            <RequestCard
+                                key={request.name}
+                                request={request}
+                                isActionedCard={false}
+                                isSelected={isSelected(request.name)}
+                                onToggleSelect={toggleSelect}
+                                onClick={(request) => setSelectedRequest(request)}
+
+                            />
+                        ))}
+                    </div>
+                </>}
+
+                {/* Actioned */}
+                <div className="my-6">
+                    <h2 className="text-2xl font-semibold mb-2">Actioned Requests</h2>
+                    <div className="space-y-3">
+                        {actionedRequests.map((request) => (
+                            <RequestCard
+                                key={request.name}
+                                request={request}
+                                isActionedCard={true}
+                                onClick={(request) => setSelectedRequest(request)}
+
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+            {selectedRequest && (
+                <AttendanceDetailView
+                    data={selectedRequest}
+                    onClose={() => setSelectedRequest(null)}
+                />
+            )}
+        </>
+    )
+}
+
+export default TeamAttendanceDetails

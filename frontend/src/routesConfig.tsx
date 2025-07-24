@@ -16,6 +16,13 @@ import ReferralList from "./components/ReferralList";
 import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
+import AttendanceLayout from "./components/Attendance/AttendanceLayout";
+import { Navigate } from "react-router";
+import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
+import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
+import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
+import TeamAttendanceDetails from "./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails";
+
 import ExpensesApp from "./components/Expenses-App/ExpensesApp";
 import ExpensesList from "./components/Expenses-App/ExpensesList";
 import NewExpenseType from "./components/Expenses-App/NewExpenseType";
@@ -32,6 +39,7 @@ import Holidays from "./components/Leaves/Holidays";
 import HolidaysFull from "./components/Leaves/HolidaysFull";
 
 export interface AppRoute {
+  index?: boolean,
   path: string;
   element: ReactElement;
   children?: AppRoute[];
@@ -98,6 +106,20 @@ export const routesConfig: AppRoute[] = [
     element: <AddRequisition />,
   },
 
+  {
+    path: '/webapp/attendance',
+    element: <AttendanceLayout />,
+    children: [
+      {
+        index: true, element: <Navigate to="emp-attendance" replace />,
+        path: ""
+      },
+      { path: 'emp-attendance', element: <EmployeeAttendance /> },
+      { path: 'team-attendance', element: <TeamAttendance /> },
+      { path: 'attendance-request', element: <AttendanceRequest /> },
+      { path: 'team-attendance-details', element: <TeamAttendanceDetails /> },
+    ],
+  },
   //Leaves routes
   {
     path: "/webapp/leave-app",
@@ -116,6 +138,7 @@ export const routesConfig: AppRoute[] = [
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
 
     ],
+  },
   {
     path: "/webapp/expenses-app/expenses-list/new-expense-type",
     element: <NewExpenseType />,
