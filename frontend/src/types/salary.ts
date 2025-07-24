@@ -1,0 +1,105 @@
+// types/salary.ts
+
+export interface SalarySlipDetail {
+    name: string;
+    owner: string;
+    creation: string;
+    modified: string;
+    modified_by: string;
+    docstatus: number;
+    idx: number;
+    employee: string;
+    employee_name: string;
+    company: string;
+    department: string;
+    designation: string;
+    branch: string;
+    posting_date: string;
+    letter_head: string;
+    status: string;
+    currency: string;
+    exchange_rate: number;
+    payroll_frequency: string;
+    start_date: string;
+    end_date: string;
+    salary_structure: string;
+    payroll_entry: string;
+    mode_of_payment: string;
+    salary_slip_based_on_timesheet: number;
+    deduct_tax_for_unclaimed_employee_benefits: number;
+    deduct_tax_for_unsubmitted_tax_exemption_proof: number;
+    total_working_days: number;
+    unmarked_days: number;
+    leave_without_pay: number;
+    absent_days: number;
+    payment_days: number;
+    total_working_hours: number;
+    hour_rate: number;
+    base_hour_rate: number;
+    gross_pay: number;
+    base_gross_pay: number;
+    gross_year_to_date: number;
+    base_gross_year_to_date: number;
+    total_deduction: number;
+    base_total_deduction: number;
+    net_pay: number;
+    base_net_pay: number;
+    rounded_total: number;
+    base_rounded_total: number;
+    year_to_date: number;
+    base_year_to_date: number;
+    month_to_date: number;
+    base_month_to_date: number;
+    total_in_words: string;
+    base_total_in_words: string;
+    ctc: number;
+    income_from_other_sources: number;
+    total_earnings: number;
+    non_taxable_earnings: number;
+    standard_tax_exemption_amount: number;
+    tax_exemption_declaration: number;
+    deductions_before_tax_calculation: number;
+    annual_taxable_amount: number;
+    income_tax_deducted_till_date: number;
+    current_month_income_tax: number;
+    future_income_tax_deductions: number;
+    total_income_tax: number;
+    doctype: string;
+    leave_details: unknown[]; // If structured, update accordingly
+    earnings: SalaryComponent[];
+    deductions: SalaryComponent[];
+    timesheets: unknown[]; // If structured, update accordingly
+  }
+  
+  export interface SalaryComponent {
+    name: string;
+    owner?: string;
+    creation?: string;
+    modified?: string;
+    modified_by?: string;
+    docstatus?: number;
+    idx?: number;
+    salary_component?: string;
+    abbr?: string;
+    amount?: number;
+    year_to_date?: number;
+    is_recurring_additional_salary?: number;
+    statistical_component?: number;
+    depends_on_payment_days?: number;
+    exempted_from_income_tax?: number;
+    is_tax_applicable?: number;
+    is_flexible_benefit?: number;
+    variable_based_on_taxable_salary?: number;
+    do_not_include_in_total?: number;
+    deduct_full_tax_on_selected_payroll_date?: number;
+    amount_based_on_formula?: number;
+    default_amount?: number;
+    additional_amount?: number;
+    tax_on_flexible_benefit?: number;
+    tax_on_additional_salary?: number;
+    parent?: string;
+    parentfield?: string;
+    parenttype?: string;
+    doctype?: string;
+  }
+  
