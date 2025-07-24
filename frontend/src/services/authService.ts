@@ -8,3 +8,4 @@ export const authService = {
     return response as string;
   },
 };
+

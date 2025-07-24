@@ -165,7 +165,6 @@ const Dashboard: React.FC = () => {
               View Expenses
             </Link>
           </div>
-        </div>
 
           <div
             className="rounded-lg shadow-md p-6"
@@ -175,6 +174,7 @@ const Dashboard: React.FC = () => {
               className="text-xl font-semibold mb-4"
               style={{ color: "var(--text-primary)" }}
             >
+
               My Profile
             </h2>
             <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
@@ -195,6 +195,7 @@ const Dashboard: React.FC = () => {
               className="text-xl font-semibold mb-4"
               style={{ color: "var(--text-primary)" }}
             >
+
               Leaves
             </h2>
             <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
