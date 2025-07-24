@@ -17,4 +17,12 @@ export interface ShiftRequest {
     to_date: string | null;
     amended_from: string | null;
   }
-  
+  export interface ShiftType {
+    name: string;
+    start_time: string;
+    end_time: string;
+  }
+
+  export interface ShiftTypeResponse {
+    data: ShiftType[];
+  }

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
-import { ShiftRequest } from "../types/shift";
+import { ShiftRequest,ShiftType } from "../types/shift";
 
 export const ShiftRequestService = {
   getDraftShiftRequests: async (): Promise<ShiftRequest[]> => {
@@ -41,3 +41,15 @@ export const ShiftRequestService = {
       });
   },
 };
+
+export const getAllShiftTypes = async (): Promise<{ data: ShiftType[] }> => {
+    const res = await FrappeAPI.getDocumentList("Shift Type", {
+      fields: ["name", "start_time", "end_time"],
+      orderBy: "creation desc",
+    });
+  
+    // Cast the data safely
+    return {
+      data: res.data as ShiftType[],
+    };
+  };
