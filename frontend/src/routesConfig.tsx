@@ -1,6 +1,5 @@
 import { ReactElement } from "react";
 import SearchMembers from "./components/SearchMembers";
-import Notices from "./components/Notices";
 import IdCard from "./components/IdCard";
 import RecruitmentApp from "./components/RecruitmentApp";
 import InterviewPage from "./components/InterviewDetails";
@@ -15,6 +14,9 @@ import ReferralList from "./components/ReferralList";
 import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
+import NoticesLayout from "./components/Notices/NoticesLayout";
+import NoticesTab from "./components/Notices/NoticesTab";
+import NoticeDetails from "./components/Notices/NoticeDetails";
 
 export interface AppRoute {
   path: string;
@@ -25,15 +27,7 @@ export interface AppRoute {
 export const routesConfig: AppRoute[] = [
   // Standalone Routes
   { path: "/webapp/search-members", element: <SearchMembers /> },
-  { path: "/webapp/notices", element: <
-  
-  
-  
-  
-  
-  
-  
-  /> },
+
   { path: "/webapp/id-card", element: <IdCard /> },
   { path: "/webapp/id-card/:employeeId", element: <IdCard /> },
   {
