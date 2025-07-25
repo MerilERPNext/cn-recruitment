@@ -42,6 +42,12 @@ export class NoticeService {
     }
   }
 
+  // Stub for getAllNoticeReadStatus
+  async getAllNoticeReadStatus(_filters: any[]): Promise<any[]> {
+    // TODO: Replace with real API call
+    return [];
+  }
+
   // Get a single notice by ID
   static async getNotice(noticeId: string): Promise<Notice | null> {
     try {

@@ -7,5 +7,8 @@
     "build": "cd frontend && yarn && yarn build",
     "dev": "cd frontend && yarn dev --host",
     "postinstall": "cd frontend && yarn install --check-files"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
   }
 }

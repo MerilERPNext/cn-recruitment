@@ -1,11 +1,11 @@
 import SearchMembers from '../components/SearchMembers';
-import Notices from '../components/Notices';
+import NoticesTabWrapper from '../components/Notices/NoticesTabWrapper';
 import IdCard from '../components/IdCard';
 
 // Component mapping for dynamic routing
 export const componentMap: { [key: string]: React.ComponentType } = {
   '/search-members': SearchMembers,
-  '/notices': Notices,
+  '/notices': NoticesTabWrapper,
   '/id-card': IdCard,
 };
 
@@ -20,7 +20,7 @@ export const routes = [
   },
   {
     path: '/notices',
-    component: Notices,
+    component: NoticesTabWrapper,
     title: 'Notices',
     description: 'View company announcements and notices',
     icon: '📢'

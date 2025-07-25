@@ -64,23 +64,6 @@ function isEmployeeListItemArray(obj: unknown): obj is EmployeeListItem[] {
 
 // Employee API service
 // Mock employee data for fallback scenarios
-const MOCK_EMPLOYEE: Employee = {
-  name: "EMP-001",
-  employee: "EMP-001",
-  employee_name: "Demo Employee",
-  first_name: "Demo",
-  last_name: "Employee",
-  employee_number: "EMP-001",
-  designation: "Software Developer",
-  department: "IT Department",
-  company: "Demo Company",
-  date_of_joining: "2024-01-01",
-  date_of_birth: "1990-01-01",
-  gender: "Other",
-  status: "Active",
-  cell_number: "+1234567890",
-  company_email: "demo@company.com",
-};
 
 export class EmployeeService {
   // Get a single employee by ID/name

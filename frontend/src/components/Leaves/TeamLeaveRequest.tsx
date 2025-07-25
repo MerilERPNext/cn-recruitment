@@ -4,17 +4,29 @@ import LeaveRequestDetails from "./LeaveRequestDetails";
 import TeamLeaveRequestItem from "./TeamLeaveRequestItem";
 import FrappeListView from "../ListView";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import { LeaveApplication } from "../../types/leaves";
+import type { TeamLeaveRequest } from "../../types/leaves";
 
 const TeamLeaveRequest = () => {
   const [selectedRequest, setSelectedRequest] =
-    useState<LeaveApplication | null>(null);
+    useState<TeamLeaveRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
 
-  const handleCardClick = (request: LeaveApplication) => {
-    setSelectedRequest(request);
+  const handleCardClick = (request: any) => {
+    // Map the item to TeamLeaveRequest type, adding a dummy id if missing
+    const teamRequest: TeamLeaveRequest = {
+      id: request.id || request.name || '',
+      name: request.name,
+      employee_name: request.employee_name,
+      leave_type: request.leave_type,
+      from_date: request.from_date,
+      to_date: request.to_date,
+      status: request.status,
+      description: request.description,
+      department: request.department,
+    };
+    setSelectedRequest(teamRequest);
     setIsModalOpen(true);
   };
 
