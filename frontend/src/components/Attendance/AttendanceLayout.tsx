@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import LayoutHeader from '../shared/LayoutHeader';
 
 const tabs = [
+    { name: 'Summary', key: 'summary' },
     { name: 'Employee Attendance', key: 'emp-attendance' },
     { name: 'Team Attendance', key: 'team-attendance' },
     { name: 'Attendance Request', key: 'attendance-request' },

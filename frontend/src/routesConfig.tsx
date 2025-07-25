@@ -38,6 +38,8 @@ import LeaveApp from "./components/Leaves/LeaveApp";
 import Holidays from "./components/Leaves/Holidays";
 import HolidaysFull from "./components/Leaves/HolidaysFull";
 import AllPendingRequests from "./components/Attendance/TeamAttendanceDetails/AllPendingRequests";
+import AttendanceSummary from "./components/Attendance/AttendanceSummary";
+import AllEmpAttendance from "./components/Attendance/AllEmpAttendance/AllEmpAttendance";
 
 export interface AppRoute {
   index?: boolean,
@@ -112,9 +114,10 @@ export const routesConfig: AppRoute[] = [
     element: <AttendanceLayout />,
     children: [
       {
-        index: true, element: <Navigate to="emp-attendance" replace />,
+        index: true, element: <Navigate to="summary" replace />,
         path: ""
       },
+      { path: 'summary', element: <AttendanceSummary /> },
       { path: 'emp-attendance', element: <EmployeeAttendance /> },
       { path: 'team-attendance', element: <TeamAttendance /> },
       { path: 'attendance-request', element: <AttendanceRequest /> },
@@ -122,6 +125,7 @@ export const routesConfig: AppRoute[] = [
     ],
   },
   { path: '/webapp/attendance/team-attendance-details/pendings', element: <AllPendingRequests /> },
+  { path: '/webapp/attendance/emp-attendance/all', element: <AllEmpAttendance /> },
   //Leaves routes
   {
     path: "/webapp/leave-app",

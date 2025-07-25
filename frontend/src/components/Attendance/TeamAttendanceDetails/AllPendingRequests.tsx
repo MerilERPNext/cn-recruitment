@@ -25,42 +25,47 @@ const AllPendingRequests = () => {
             setSelectedIds(data.map((r) => r.name))
         }
     }
-    return (<>
+    return (<div>
         <LayoutHeader tab={"Pending Attendants"} onBack={() => {
             navigate(-1)
         }} />
-        <div className='p-2'>
+        <div className='p-4'>
 
-            <BulkActionBar
-                selectedIds={selectedIds}
-                pendingRequests={data}
-                onSelectAll={selectAll}
-                onBulkAction={() => {
-                    console.log("Selected Pending IDs:", selectedIds)
-                    setSelectedIds([])
-                }}
-            />
-            <div className="space-y-3">
-                {data.map((request) => (
-                    <RequestCard
-                        key={request.name}
-                        request={request}
-                        isActionedCard={false}
-                        isSelected={isSelected(request.name)}
-                        onToggleSelect={toggleSelect}
-                        onClick={(request) => setSelectedRequest(request)}
+            <div className='p-2 bg-white rounded-xl border-2 border-gray-200'>
+                <div className=" border-b-2 pb-4 border-gray-200 mb-2">
 
+                    <BulkActionBar
+                        selectedIds={selectedIds}
+                        pendingRequests={data}
+                        onSelectAll={selectAll}
+                        onBulkAction={() => {
+                            console.log("Selected Pending IDs:", selectedIds)
+                            setSelectedIds([])
+                        }}
                     />
-                ))}
+                </div>
+                <div className="space-y-3">
+                    {data.map((request) => (
+                        <RequestCard
+                            key={request.name}
+                            isActionedCard={false}
+                            request={request}
+                            isSelected={isSelected(request.name)}
+                            onToggleSelect={toggleSelect}
+                            onClick={(request) => setSelectedRequest(request)}
+
+                        />
+                    ))}
+                </div>
+                {selectedRequest && (
+                    <AttendanceDetailView
+                        data={selectedRequest}
+                        onClose={() => setSelectedRequest(null)}
+                    />
+                )}
             </div>
-            {selectedRequest && (
-                <AttendanceDetailView
-                    data={selectedRequest}
-                    onClose={() => setSelectedRequest(null)}
-                />
-            )}
         </div>
-    </>
+    </div>
     )
 }
 

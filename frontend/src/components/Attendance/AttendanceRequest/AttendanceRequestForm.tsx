@@ -18,6 +18,7 @@ const baseFormComponents = (isForOthers: boolean) => {
             hideLabel: true,
             customClass: "bg-white rounded-lg",
             components: [
+
                 ...(isForOthers
                     ? [
                         {
@@ -33,11 +34,27 @@ const baseFormComponents = (isForOthers: boolean) => {
                             key: "company",
                             type: "textfield",
                             input: true,
-                            placeholder: "Design",
+                            placeholder: "Hybrowlabs Technologies",
                             customClass: "mb-4",
                         },
                     ]
                     : []),
+                {
+                    label: "Request Type",
+                    key: "request-type",
+                    type: "select",
+                    input: true,
+                    placeholder: "Select a Request Type",
+                    customClass: "mb-4",
+                    data: {
+                        values: [
+                            { label: "Attendance Request", value: "Attendance Request" },
+                            { label: "Clockin", value: "Clockin" },
+                            { label: "Out Duty", value: "Out Duty" },
+                            { label: "Shift Cha ge", value: "Shift Change" },
+                        ]
+                    }
+                },
                 {
                     customClass: "mb-4",
                     type: "columns",
@@ -75,6 +92,27 @@ const baseFormComponents = (isForOthers: boolean) => {
                     ]
                 },
                 {
+                    "label": "Break Duration",
+                    "tableView": true,
+                    "validateWhenHidden": false,
+                    "key": "break_duration",
+                    "type": "time",
+                    "input": true,
+                    "inputMask": "99:99"
+
+                },
+
+
+                {
+                    type: "checkbox",
+                    key: "overnight_clockout",
+                    label: "Overnight Clockout ?",
+                    input: true,
+                    labelPosition: "bottom",
+                    customClass: "custom-halfday-toggle border border-gray-300 rounded-lg shadow-sm p-2 bg-white mb-4 text-xl font-semibold "
+                },
+
+                {
                     label: "Reason",
                     key: "reason",
                     type: "select",
@@ -98,13 +136,29 @@ const baseFormComponents = (isForOthers: boolean) => {
                     customClass: "mb-4"
                 },
                 {
+                    label: "Attachments",
+                    tableView: false,
+                    webcam: true,
+                    fileTypes: [
+                        { label: "Images", value: "image/*" },
+                        { label: "Documents", value: "application/*" },
+                    ],
+                    image: true,
+                    imageSize: "200",
+                    storage: "base64", // Or 'url' if you have a backend for file storage
+                    key: "attachments",
+                    type: "file",
+                    input: true,
+                    tooltip: "Upload receipts or supporting documents.",
+                },
+                {
                     type: "button",
                     label: "Submit",
                     key: "submit",
                     disableOnInvalid: true,
                     input: true,
                     theme: "transparent",
-                    customClass: "text-black w-full"
+                    customClass: "text-white w-full bg-black rounded-lg"
                 }
             ]
         }
@@ -143,7 +197,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         mutation.mutate(body)
         // API call or further logic here
     };
-    return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
+    return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white overflow-scroll">
         <LayoutHeader
             tab="Attendance Request"
             onBack={() => {
@@ -178,7 +232,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
                     submitButton: false,
                     noAlerts: true
                 }}
-                className="formio-no-border"
+                className="formio-no-border address-form-container"
             />
         </div>
     </div>

@@ -23,7 +23,7 @@ const AttendanceRequestCard = ({ data }: { data: AttendanceRequest }) => {
 
 
     return (
-        <div className="border-b border-gray-300">
+        <div className="border-b border-gray-200">
             <div className="px-4 py-2">
                 <div className="flex items-center justify-between gap-1">
                     <div>

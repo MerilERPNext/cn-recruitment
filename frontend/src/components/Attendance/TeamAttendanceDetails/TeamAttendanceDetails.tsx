@@ -38,62 +38,72 @@ const TeamAttendanceDetails = () => {
     return (
         <>
             <div className="p-4 bg-gray-100">
-                {/* Pending */}
-                {pendingRequests?.length > 0 && <>
-                    <div className="flex justify-between mb-4">
-                        <h2 className="text-2xl font-semibold">Pending Requests</h2>
-                        <button
-                            onClick={() => { navigate("/webapp/attendance/team-attendance-details/pendings") }}
-                        >View All</button>
-                    </div>
+                <div className='bg-white rounded-xl p-4 border-2 bordery-gray-200 shadow-sm'>
+                    {/* Pending */}
 
-                    <BulkActionBar
-                        selectedIds={selectedIds}
-                        pendingRequests={pendingRequests}
-                        onSelectAll={selectAll}
-                        onBulkAction={() => {
-                            console.log("Selected Pending IDs:", selectedIds)
-                            setSelectedIds([])
-                        }}
-                    />
+                    {pendingRequests?.length > 0 && <>
+                        <div className="flex justify-between mb-4">
+                            <h2 className="text-2xl font-semibold">Pending Requests</h2>
+                            <button
+                                onClick={() => { navigate("/webapp/attendance/team-attendance-details/pendings") }}
+                            >View All</button>
+                        </div>
+                        <div className='mb-4'>
 
-                    <div className="space-y-3">
-                        {pendingRequests.map((request) => (
-                            <RequestCard
-                                key={request.name}
-                                request={request}
-                                isActionedCard={false}
-                                isSelected={isSelected(request.name)}
-                                onToggleSelect={toggleSelect}
-                                onClick={(request) => setSelectedRequest(request)}
-
+                            <BulkActionBar
+                                selectedIds={selectedIds}
+                                pendingRequests={pendingRequests}
+                                onSelectAll={selectAll}
+                                onBulkAction={() => {
+                                    console.log("Selected Pending IDs:", selectedIds)
+                                    setSelectedIds([])
+                                }}
                             />
-                        ))}
-                    </div>
-                </>}
+                        </div>
+
+                        <div className="space-y-3 border-t-2 border-gray-200 pt-2">
+                            {pendingRequests.map((request) => (
+                                <RequestCard
+                                    key={request.name}
+                                    request={request}
+                                    isActionedCard={false}
+                                    isSelected={isSelected(request.name)}
+                                    onToggleSelect={toggleSelect}
+                                    onClick={(request) => setSelectedRequest(request)}
+
+                                />
+                            ))}
+                        </div>
+                    </>
+                    }
+                </div>
 
                 {/* Actioned */}
-                {actionedRequests?.length > 0 && <div className="my-6">
-                    <h2 className="text-2xl font-semibold mb-2">Actioned Requests</h2>
-                    <div className="space-y-3">
-                        {actionedRequests.map((request) => (
-                            <RequestCard
-                                key={request.name}
-                                request={request}
-                                isActionedCard={true}
-                                onClick={(request) => setSelectedRequest(request)}
+                <div className='bg-white rounded-xl p-4 border-2 bordery-gray-200 my-4'>
 
-                            />
-                        ))}
-                    </div>
-                </div>}
-            </div>
+                    {actionedRequests?.length > 0 && <div>
+                        <h2 className="text-2xl font-semibold mb-2 border-b-2 border-gray-200 pb-3">Actioned Requests</h2>
+                        <div className="space-y-3">
+                            {actionedRequests.map((request) => (
+                                <RequestCard
+                                    key={request.name}
+                                    request={request}
+                                    isActionedCard={true}
+                                    onClick={(request) => setSelectedRequest(request)}
+
+                                />
+                            ))}
+                        </div>
+                    </div>}
+                </div>
+            </div >
             {selectedRequest && (
                 <AttendanceDetailView
                     data={selectedRequest}
                     onClose={() => setSelectedRequest(null)}
                 />
-            )}
+            )
+            }
         </>
     )
 }

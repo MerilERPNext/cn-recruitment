@@ -34,39 +34,57 @@ const TeamAttendance = () => {
     const hasFilters = searchParams.has("filters")
 
     const navigate = useNavigate()
+
+    const CardSkeleton = () => (
+        <div className="rounded-xl bg-gray-100 animate-pulse">
+            <div className="px-4 py-2 flex gap-2">
+                <div className="h-10 w-10 bg-gray-300 rounded-full"></div>
+                <div className="flex items-center justify-between gap-1">
+                    <div>
+                        <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+                        <div className="h-3 w-24 bg-gray-300 rounded"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    );
+
     return <div className="bg-gray-100">
         {/* <LayoutHeader tab="Team Attendance" /> */}
         <div className="flex flex-col gap-4 mt-2 px-4 pb-4">
-            <h1 className="text-2xl font-semibold">Team Attendance</h1>
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
-            <div className="bg-white w-full border-2 border-gray-200 rounded-xl p-2 flex items-end flex-col">
+            <div className=" bg-white w-full border-2 border-gray-200 rounded-xl p-2">
+
+                <div className=" flex items-end flex-col">
 
 
-                <DatePicker
-                    inline
-                    selected={selectedDate}
-                    onChange={(date) => {
-                        if (!date) return
-                        setSelectedDate(date)
-                        const filters = {
-                            attendance_date: date,
-                        }
-                        navigate(
-                            "/webapp/attendance/team-attendance?filters=" +
-                            encodeURIComponent(JSON.stringify(filters))
-                        )
-                    }}
-                />
-                {/* Clear Button */}
-                {hasFilters && (
-                    <button
-                        onClick={clearFilters}
-                        className="top-2 right-2 text-gray-500 hover:text-black transition"
-                        title="Clear Filters"
-                    >
-                        Clear Filters
-                    </button>
-                )}
+                    <DatePicker
+                        inline
+                        selected={selectedDate}
+                        onChange={(date) => {
+                            if (!date) return
+                            setSelectedDate(date)
+                            const filters = {
+                                attendance_date: date,
+                            }
+                            navigate(
+                                "/webapp/attendance/team-attendance?filters=" +
+                                encodeURIComponent(JSON.stringify(filters))
+                            )
+                        }}
+                    />
+                    {/* Clear Button */}
+                    {hasFilters && (
+                        <button
+                            onClick={clearFilters}
+                            className="top-2 right-2 text-gray-500 hover:text-black transition"
+                            title="Clear Filters"
+                        >
+                            Clear Filters
+                        </button>
+                    )}
+                </div>
             </div>
             {/* ------------------------------------------------- Calendar End ---------------------------------------------- */}
 
@@ -80,9 +98,11 @@ const TeamAttendance = () => {
                         />
                     );
                 }}
+                SkeletonComponent={CardSkeleton}
                 onItemClick={() => { }}
                 infiniteScroll={true}
                 isFilter={false}
+                showRefereshButton={false}
                 defaultFields={[
                     "employee_name",
                     "status",

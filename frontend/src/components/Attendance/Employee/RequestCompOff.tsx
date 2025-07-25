@@ -92,7 +92,7 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
                             disableOnInvalid: true,
                             input: true,
                             theme: "transparent",
-                            customClass: "fixed bottom-0 left-0 custom-w-fill-available bg-white border-t p-4 m-4 text-black [&>button]:border-1 border-black py-2 rounded-lg"
+                            customClass: "fixed bottom-0 left-0 custom-w-fill-available bg-white border-t p-4 m-4 text-white [&>button]:bg-black border-black py-2 rounded-lg"
                         }
                     ]
                 }
