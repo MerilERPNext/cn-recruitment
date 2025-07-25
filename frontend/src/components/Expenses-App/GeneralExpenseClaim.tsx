@@ -199,7 +199,7 @@ const GeneralExpenseClaim: React.FC = () => {
                     <p className="font-medium text-gray-900">{item.type}</p>
                     <p className="text-sm text-gray-600">Date: {item.date}</p>
                     <p className="text-sm text-gray-600">
-                      Amount: {item.amount.toFixed(2)}
+                      Amount: ₹{item.amount.toFixed(2)}
                     </p>
                     <p className="text-sm text-gray-600">{item.description}</p>
                   </div>
@@ -286,15 +286,15 @@ const GeneralExpenseClaim: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border p-4 space-y-2">
             <div className="flex justify-between text-gray-700">
               <span>Total Amount</span>
-              <span className="font-medium">{totalAmount.toFixed(2)}</span>
+              <span className="font-medium">₹{totalAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-gray-700">
               <span>Advances</span>
-              <span className="font-medium">{advances.toFixed(2)}</span>
+              <span className="font-medium">₹{advances.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-gray-900 font-bold text-lg border-t pt-2 mt-2">
               <span>Net Payable</span>
-              <span>{netPayable.toFixed(2)}</span>
+              <span>₹{netPayable.toFixed(2)}</span>
             </div>
           </div>
         </div>

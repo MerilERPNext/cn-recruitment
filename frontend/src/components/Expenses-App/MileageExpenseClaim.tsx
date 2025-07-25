@@ -381,7 +381,7 @@ const MileageExpense: React.FC = () => {
               Calculated Amount
             </span>
             <span className="text-lg font-bold text-gray-900">
-              ${calculatedAmount.toFixed(2)}
+              ₹{calculatedAmount.toFixed(2)}
             </span>
           </div>
         </div>
