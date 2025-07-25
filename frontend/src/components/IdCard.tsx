@@ -21,9 +21,9 @@ const MailIcon = () => (
   </svg>
 );
 
-const DownloadIcon = () => (
-  <svg fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg">
-    <path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-91.51-2.49a8,8,0,0,0,11,0l48-48.05a8,8,0,0,0-11.31-11.31L136,124.69V32a8,8,0,0,0-16,0v92.69L75.51,82.15A8,8,0,0,0,64.2,93.46Z"></path>
+const WhatsAppIcon = () => (
+  <svg fill="currentColor" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.488"/>
   </svg>
 );
 
@@ -76,17 +76,19 @@ const EmployeeAvatar = ({ imageUrl, name, size = "h-32 w-32" }: { imageUrl?: str
   };
 
   return (
-    <div 
-      className={`bg-center bg-no-repeat aspect-square bg-cover rounded-full ${size} border-4 border-white shadow-md overflow-hidden`}
+    <div
+      className={`relative rounded-full ${size} border-4 border-white shadow-md overflow-hidden flex-shrink-0`}
       role="img"
       aria-label={`${name}'s profile picture`}
+      style={{ aspectRatio: '1 / 1' }}
     >
       <img
         src={imageSrc}
         alt={`${name}'s profile picture`}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover object-center"
         onError={handleImageError}
         loading="lazy"
+        style={{ aspectRatio: '1 / 1' }}
       />
     </div>
   );
@@ -178,17 +180,17 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
 );
 
 // Action Buttons Component
-const ActionButtons = ({ onDownload, onCall }: any) => (
+const ActionButtons = ({ onWhatsApp, onCall }: any) => (
   <div className="mt-8 flex gap-4">
-    <ActionButton 
-      variant="primary" 
-      icon={DownloadIcon}
-      onClick={onDownload}
+    <ActionButton
+      variant="primary"
+      icon={WhatsAppIcon}
+      onClick={onWhatsApp}
     >
-      Download
+      WhatsApp
     </ActionButton>
-    <ActionButton 
-      variant="secondary" 
+    <ActionButton
+      variant="secondary"
       icon={CallIcon}
       onClick={onCall}
     >
@@ -269,6 +271,16 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
   const error = targetEmployeeId ? specificError : currentError;
   const refetch = targetEmployeeId ? refetchSpecific : refetchCurrent;
 
+  // Add debug logging
+  console.log("IdCard component state:", {
+    targetEmployeeId,
+    employee,
+    isLoading,
+    error: error?.message,
+    hasSpecificEmployee: !!specificEmployee,
+    hasCurrentEmployee: !!currentEmployee
+  });
+
   // Event handlers
   const handleBackClick = () => {
     console.log('Back button clicked');
@@ -281,272 +293,11 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     }
   };
 
-    const handleDownload = () => {
-    if (employee) {
-      // Create a new window for printing only the ID card
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        // Create print-optimized HTML with only the ID card content
-        const printContent = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>${employee.employee_name} - ID Card</title>
-            <style>
-              /* Print-specific optimizations */
-              @page {
-                size: A4;
-                margin: 0.5in;
-              }
-              
-              @media print {
-                * {
-                  -webkit-print-color-adjust: exact !important;
-                  color-adjust: exact !important;
-                  print-color-adjust: exact !important;
-                }
-                
-                body {
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  background: white !important;
-                }
-                
-                .id-card-container {
-                  page-break-inside: avoid;
-                  break-inside: avoid;
-                }
-                
-                .no-print { display: none !important; }
-              }
-              
-              /* Base styles optimized for print */
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                background: white;
-                margin: 0;
-                padding: 0;
-                line-height: 1.4;
-                color: #000;
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              }
-              
-              /* ID Card Layout - clean and elegant */
-              .id-card-container {
-                width: 100%;
-                max-width: 400px;
-                margin: 0;
-                background: #f3f4f6;
-                border-radius: 12px;
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                overflow: hidden;
-              }
-              
-              /* Employee info section */
-              .employee-info {
-                padding: 24px;
-                text-align: center;
-                background: white;
-                border-radius: 12px 12px 0 0;
-              }
-              
-              .employee-avatar {
-                width: 128px;
-                height: 128px;
-                border-radius: 50%;
-                border: 4px solid white;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                object-fit: cover;
-                margin: 0 auto 24px;
-                display: block;
-              }
-              
-              .employee-name {
-                color: #1f2937;
-                font-size: 24px;
-                font-weight: bold;
-                margin: 16px 0 8px;
-                line-height: 1.2;
-              }
-              
-              .employee-department {
-                color: #6b7280;
-                font-size: 16px;
-                margin-bottom: 4px;
-              }
-              
-              .employee-id {
-                color: #3b82f6;
-                font-size: 14px;
-                font-weight: 500;
-                margin-bottom: 4px;
-              }
-              
-              .employee-designation {
-                color: #6b7280;
-                font-size: 14px;
-              }
-              
-              /* Info section */
-              .info-section {
-                padding: 24px;
-                background: #f3f4f6;
-              }
-              
-              .info-row {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 0;
-                border-bottom: 1px solid #e5e7eb;
-              }
-              
-              .info-row:last-child {
-                border-bottom: none;
-              }
-              
-              .info-label {
-                color: #6b7280;
-                font-size: 14px;
-                font-weight: 500;
-              }
-              
-              .info-value {
-                color: #1f2937;
-                font-size: 14px;
-                font-weight: 500;
-                text-align: right;
-              }
-              
-              /* QR Code section */
-              .qr-section {
-                text-align: center;
-                padding: 24px;
-                background: white;
-                border-radius: 0 0 12px 12px;
-              }
-              
-              .qr-code {
-                width: 192px;
-                height: 192px;
-                margin: 0 auto;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                background: white;
-                padding: 8px;
-              }
-              
-              .qr-code img {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-                border-radius: 4px;
-              }
-              
-              /* Print-specific adjustments */
-              @media print {
-                .id-card-container {
-                  box-shadow: none;
-                  border: 1px solid #e5e7eb;
-                }
-                
-                .employee-info {
-                  background: white !important;
-                }
-                
-                .info-section {
-                  background: #f3f4f6 !important;
-                }
-                
-                .qr-section {
-                  background: white !important;
-                }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="id-card-container">
-              <!-- Employee Info -->
-              <div class="employee-info">
-                <img 
-                  src="${employee.avatar || getDefaultAvatarURL(employee.employee_name)}" 
-                  alt="${employee.employee_name}'s profile picture"
-                  class="employee-avatar"
-                  onerror="this.src='${getDefaultAvatarURL(employee.employee_name)}'"
-                />
-                <h2 class="employee-name">${employee.employee_name}</h2>
-                <p class="employee-department">${employee.department} Department</p>
-                <p class="employee-id">ID: ${employee.employee_number || employee.id}</p>
-                ${employee.designation ? `<p class="employee-designation">${employee.designation}</p>` : ''}
-              </div>
-              
-              <!-- Info Section -->
-              <div class="info-section">
-                <div class="info-row">
-                  <span class="info-label">Employee ID</span>
-                  <span class="info-value">${employee.employee_number || employee.id}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Department</span>
-                  <span class="info-value">${employee.department}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Location</span>
-                  <span class="info-value">${employee.location || 'Not Specified'}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Start Date</span>
-                  <span class="info-value">${formatDate(employee.startDate)}</span>
-                </div>
-                ${employee.designation ? `
-                  <div class="info-row">
-                    <span class="info-label">Designation</span>
-                    <span class="info-value">${employee.designation}</span>
-                  </div>
-                ` : ''}
-                ${employee.contact ? `
-                  <div class="info-row">
-                    <span class="info-label">Contact</span>
-                    <span class="info-value">${employee.contact}</span>
-                  </div>
-                ` : ''}
-                ${employee.email ? `
-                  <div class="info-row">
-                    <span class="info-label">Email</span>
-                    <span class="info-value">${employee.email}</span>
-                  </div>
-                ` : ''}
-              </div>
-              
-              <!-- QR Code -->
-              <div class="qr-section">
-                <img 
-                  src="${generateEmployeeQRCodeURL(employee, 200)}" 
-                  alt="QR Code for ${employee.employee_name}"
-                  class="qr-code"
-                />
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
-        
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        
-        // Wait for images to load before printing
-        printWindow.onload = () => {
-          setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-          }, 1000);
-        };
+     const handleWhatsApp = () => {
+      if (employee?.contact) {
+        window.location.href = `https://wa.me/${employee.contact}?text=Hello, I am ${employee.employee_name} from ${employee.department} Department.`;
       }
-    }
-  };
+     }
 
   const handleCall = () => {
     if (employee?.contact) {
@@ -588,11 +339,21 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
           
           {employee && !isLoading && !error && (
             <>
-              <EmployeeCard employee={employee} />
-              <ActionButtons 
-                onDownload={handleDownload}
-                onCall={handleCall}
-              />
+              {/* Validate essential employee data before rendering */}
+              {employee.employee_name && employee.id ? (
+                <>
+                  <EmployeeCard employee={employee} />
+                  <ActionButtons
+                    onWhatsApp={handleWhatsApp}
+                    onCall={handleCall}
+                  />
+                </>
+              ) : (
+                <ErrorCard
+                  message="Employee data is incomplete or invalid. Please try again or contact support."
+                  onRetry={() => refetch()}
+                />
+              )}
             </>
           )}
         </div>

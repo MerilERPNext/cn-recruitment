@@ -24,7 +24,7 @@
     "@tsed/formio": "^8.13.5",
     "@tsed/react-formio": "^2.3.6",
     "@tsed/tailwind-formio": "^2.3.6",
-    "@types/node": "^22.13.4",
+    "@types/node": "^24.1.0",
     "axios": "^1.8.4",
     "chatnext-ui": "^0.22.34",
     "date-fns": "^2.30.0",
