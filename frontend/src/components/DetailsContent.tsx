@@ -115,7 +115,7 @@ const DetailsContent: React.FC<DetailsContentProps> = ({ data }) => {
         <h3 className="font-bold text-lg mb-3">Next Steps</h3>
         <div className="space-y-2">
           <button
-            onClick={() => (window.open('/app/interview/new'))}
+            onClick={() => (window.open(window.location.origin+'/app/interview/new'))}
             className="w-full flex items-center gap-3 py-3 px-4 text-left rounded-lg hover:bg-gray-100"
           >
             <FaPlusCircle className="text-[var(--primary-color)]" />

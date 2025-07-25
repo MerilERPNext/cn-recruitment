@@ -28,9 +28,9 @@ const RecruitmentApp: React.FC = () => {
   }, [location.pathname]);
   const handleAddNew = () => {
     if (activeTab === 'Referrals') navigate('/webapp/recruitment-app/referrals/add-new-referral');
-    if (activeTab === 'Requisitions') window.open('/app/job-requisition/new');
+    if (activeTab === 'Requisitions') window.open(window.location.origin+'/app/job-requisition/new');
   }
-  // On initial load, redirect to saved tab if user comes to /webapp/recruitment-app
+  
   useEffect(() => {
     if (location.pathname === '/webapp/recruitment-app') {
       const savedTab = sessionStorage.getItem('activeTab') as TabName | null;

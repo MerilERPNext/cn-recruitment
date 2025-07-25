@@ -17,7 +17,7 @@ export default function MyShiftAssignment() {
     );
 
   return (
-    <div className=" flex flex-col gap-2">
+    <div className=" flex flex-col mb-24 gap-2">
       {shiftTypes?.data.map((item, index) => (
         <div
           key={index}
@@ -25,11 +25,11 @@ export default function MyShiftAssignment() {
         >
           <div className="mb-0">
             {item.status === "Active" ? (
-              <h3 className="text-sm font-medium text-gray-600 mb-2">
+              <h3 className="text-sm font-semibold text-green-600 mb-2">
                 Current Shift
               </h3>
             ) : (
-              <h3 className="text-sm font-medium text-gray-600 mb-2">
+              <h3 className="text-sm font-semibold text-gray-600 mb-2">
                 Past Shift
               </h3>
             )}
