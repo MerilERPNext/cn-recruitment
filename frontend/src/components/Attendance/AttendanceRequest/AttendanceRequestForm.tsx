@@ -129,7 +129,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         console.log("Form data:", submission.data);
         // API call or further logic here
     };
-
+    console.log(formSchema)
     return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
         <LayoutHeader
             tab="Attendance Request"

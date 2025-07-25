@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import SearchMembers from '../components/SearchMembers';
-import Notices from '../components/Notices';
 import IdCard from '../components/IdCard';
+import NoticesLayout from '../components/Notices/NoticesLayout';
 
 // Custom hook to get current path
 export const useCurrentPath = () => {
@@ -15,7 +15,7 @@ export const usePathBasedComponent = () => {
   
   const componentMap: { [key: string]: React.ComponentType } = {
     '/search-members': SearchMembers,
-    '/notices': Notices,
+    '/notices': NoticesLayout,
     '/id-card': IdCard,
   };
   

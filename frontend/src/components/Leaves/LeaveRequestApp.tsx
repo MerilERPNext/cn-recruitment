@@ -25,10 +25,10 @@ export default function LeaveRequestApp() {
   }, [location.pathname, navigate]);
 
   return (
-    <div className="h-screen flex flex-col">
-      <div style={{ height: "var(--leave-header-height)" }} className="fixed top-[6rem] left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-4">
+    <div className="flex flex-col ">
+      <div style={{ height: "var(--leave-header-height)" }} className="fixed left-0 left-0 w-full">
         <div className="max-w-md mx-auto">
-          <div className="flex bg-gray-200 rounded-lg w-full p-1">
+          <div className="flex bg-gray-200 w-full p-1">
             {tabConfig.map((tab) => (
               <button
                 key={tab.value}
@@ -45,7 +45,7 @@ export default function LeaveRequestApp() {
         </div>
       </div>
       <div
-        className="flex-1 overflow-y-auto px-4 pb-6"
+        className="flex-1 px-4 max-w-md"
         style={{ paddingTop: "var(--leave-header-height)" }}
       >
         <Outlet />
