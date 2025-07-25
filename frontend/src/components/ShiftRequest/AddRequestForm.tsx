@@ -1,22 +1,19 @@
 import React from "react";
-import {ArrowLeft} from "lucide-react";
-import {Form} from "@tsed/react-formio";
-import {useNavigate} from "react-router";
-import {useShiftTypes} from "../../hooks/useShift";
+import { Form } from "@tsed/react-formio";
+import { useNavigate } from "react-router";
+import { useShiftTypes } from "../../hooks/useShift";
+import HeaderBar from "../HeaderBar";
 
 const ShiftChangeForm: React.FC = () => {
   const navigate = useNavigate();
   const { data: shiftTypes, isLoading, error } = useShiftTypes();
-  console.log(shiftTypes,"=======")
 
   const handleBack = () => navigate(-1);
 
   if (isLoading) return <div>Loading shifts…</div>;
   if (error)
     return (
-      <div className="text-red-600">
-        Error loading shifts: {error.message}
-      </div>
+      <div className="text-red-600">Error loading shifts: {error.message}</div>
     );
 
   const formSchema = {
@@ -94,13 +91,7 @@ const ShiftChangeForm: React.FC = () => {
 
   return (
     <div>
-      <header className="flex justify-between items-center p-4">
-        <ArrowLeft
-          onClick={handleBack}
-          className="w-6 h-6 text-gray-600 cursor-pointer"
-        />
-        <div className="text-xl font-sans font-bold">Shift Request Form</div>
-      </header>
+      <HeaderBar title="Shift Request Form" onBack={handleBack} />
       <div className="max-w-full mx-auto p-4">
         <Form form={formSchema} />
       </div>

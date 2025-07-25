@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import HeaderBar from "../HeaderBar";
 
 type TabName =
   | "My Shift Assignment"
@@ -52,7 +53,11 @@ const ShiftRequestApp: React.FC = () => {
   useEffect(() => {
     const activeRef = tabRefs.current[activeTab];
     if (activeRef) {
-      activeRef.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      activeRef.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
     }
   }, [activeTab]);
 
@@ -85,10 +90,7 @@ const ShiftRequestApp: React.FC = () => {
 
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="flex items-center justify-center p-2">
-          <h1 className="text-xl font-semibold text-slate-900">{activeTab}</h1>
-        </div>
-
+        <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
         {/* Tabs */}
         <nav className="px-2 flex overflow-x-auto scrollbar-hidden">
           {(Object.keys(tabRoutes) as TabName[]).map((tab) => (

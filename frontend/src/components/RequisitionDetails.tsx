@@ -591,8 +591,7 @@ const RequisitionDetails: React.FC = () => {
             <button
               className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               onClick={() => {
-                console.log(`📝 Opening edit requisition for ${requisitionId}`);
-                window.open(`/app/job-requisition/${requisitionId}`);
+                window.open(window.location.origin +`/app/job-requisition/${requisitionId}`);
               }}
             >
               Edit Requisition

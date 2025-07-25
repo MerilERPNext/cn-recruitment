@@ -35,7 +35,6 @@ import AttendanceRequest from "./components/Attendance/AttendanceRequest/Attenda
 import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
 import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
 import TeamAttendanceDetails from "./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails";
-import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim";
 import SalarySlipApp from "./components/SalarySlip/SalarySlipApp";
 import SalarySlipsList from "./components/SalarySlip/SalarySlipList";
 import ShiftChangeForm from "./components/ShiftRequest/AddRequestForm";
@@ -46,24 +45,10 @@ import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
 import TeamShift from "./components/ShiftRequest/TeamShift";
 import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
 import Policies from "./components/Policies";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
 
 export interface AppRoute {
-  index?: boolean,
+  index?: boolean;
   path: string;
   element: ReactElement;
   children?: AppRoute[];
@@ -82,7 +67,6 @@ export const routesConfig: AppRoute[] = [
     element: <JobApplicantDetails />,
   },
 
-
   // Nested Recruitment App Routes
   {
     path: "/webapp/recruitment-app",
@@ -95,13 +79,11 @@ export const routesConfig: AppRoute[] = [
       { path: "job-applicant-list", element: <JobApplicantList /> },
     ],
   },
-  //salary slip route 
+  //salary slip route
   {
     path: "/webapp/salary-slip-app",
     element: <SalarySlipApp />,
-    children: [
-      { path: "salary-slip-list", element: <SalarySlipsList /> },
-    ],
+    children: [{ path: "salary-slip-list", element: <SalarySlipsList /> }],
   },
   {
     path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
@@ -123,7 +105,6 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/shift-request/shift-change-form",
     element: <ShiftChangeForm />,
   },
-
 
   {
     path: "/webapp/my-profile",
@@ -164,17 +145,18 @@ export const routesConfig: AppRoute[] = [
   },
 
   {
-    path: '/webapp/attendance',
+    path: "/webapp/attendance",
     element: <AttendanceLayout />,
     children: [
       {
-        index: true, element: <Navigate to="emp-attendance" replace />,
-        path: ""
+        index: true,
+        element: <Navigate to="emp-attendance" replace />,
+        path: "",
       },
-      { path: 'emp-attendance', element: <EmployeeAttendance /> },
-      { path: 'team-attendance', element: <TeamAttendance /> },
-      { path: 'attendance-request', element: <AttendanceRequest /> },
-      { path: 'team-attendance-details', element: <TeamAttendanceDetails /> },
+      { path: "emp-attendance", element: <EmployeeAttendance /> },
+      { path: "team-attendance", element: <TeamAttendance /> },
+      { path: "attendance-request", element: <AttendanceRequest /> },
+      { path: "team-attendance-details", element: <TeamAttendanceDetails /> },
     ],
   },
   //Leaves routes
@@ -193,7 +175,6 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
-
     ],
   },
   {

@@ -1,13 +1,15 @@
-import React, {useMemo} from "react";
-import {Form} from "@tsed/react-formio";
-import {PersonalInfoProps} from "./MyProfile";
+import React, { useMemo } from "react";
+import { Form } from "@tsed/react-formio";
+import { PersonalInfoProps } from "./MyProfile";
+import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
+import { useGenderTypes } from "../../hooks/useEmployee";
 
 export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
-  const personalInfoForm = useMemo(() => {
-    const fullName = [user?.first_name, user?.middle_name, user?.last_name]
-      .filter(Boolean)
-      .join(" ");
+  const updateEmployeeMutation = useUpdateFrappeDocument();
 
+  const { data: genderTypes } = useGenderTypes();
+
+  const personalInfoForm = useMemo(() => {
     return {
       components: [
         {
@@ -23,12 +25,13 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
               components: [
                 {
                   type: "textfield",
-                  key: "fullName",
+                  key: "employee_name",
                   label: "Full Name",
                   input: true,
+                  disabled: true,
                   validate: { required: true },
                   customClass: "px-2",
-                  defaultValue: fullName ?? "",
+                  defaultValue: user?.employee_name ?? "",
                   placeholder: "John Doe",
                   autofocus: false,
                 },
@@ -43,6 +46,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                           type: "datetime",
                           key: "date_of_birth",
                           label: "Date of Birth",
+                          disabled: true,
                           enableTime: false,
                           input: true,
                           defaultValue: user?.date_of_birth ?? "",
@@ -62,14 +66,13 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                           label: "Gender",
                           input: true,
                           validate: { required: true },
-                          placeholder: "Male",
+                          placeholder: "Eg.. Male",
                           defaultValue: user?.gender ?? "",
                           data: {
-                            values: [
-                              { value: "male", label: "Male" },
-                              { value: "female", label: "Female" },
-                              { value: "other", label: "Other" },
-                            ],
+                            values: genderTypes?.data.map((s) => ({
+                              label: s?.name,
+                              value: s?.name,
+                            })),
                           },
                           customClass: "appearance-none",
                           autofocus: false,
@@ -174,13 +177,13 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
               action: "submit",
               label: "Save Changes",
               theme: "primary",
-              customClass: "my-6 w-full black",
+              customClass: "px-2 my-3 w-full",
             },
           ],
         },
       ],
     };
-  }, [user]);
+  }, [user, genderTypes]);
 
   return (
     <div className="address-form-container max-w-md mx-auto rounded-lg bg-white shadow-md">
@@ -200,9 +203,15 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
           validateOnChange: false,
         }}
         className="space-y-6"
-        onSubmit={(submission: { data: never }) =>
-          console.log("Form data:", submission?.data)
-        }
+        onSubmit={async (submission: { data: never }) => {
+          await updateEmployeeMutation.mutateAsync({
+            doctype: "Employee",
+            name: user?.name ?? "",
+            data: { data: submission.data },
+          });
+
+          return Promise.resolve();
+        }}
       />
     </div>
   );
