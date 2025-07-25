@@ -3,9 +3,9 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import FrappeListView from "../ListView";
 import { format } from "date-fns";
+import { LeaveApplicationItem } from "../../types/leaves";
 
-
-const LeaveRequestItem = ({ item }: { item: any }) => {
+const LeaveRequestItem = ({ item }: { item: LeaveApplicationItem }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Approved":
@@ -35,7 +35,8 @@ const LeaveRequestItem = ({ item }: { item: any }) => {
   };
 
   const formatDateRange = (fromDate: string, toDate: string) => {
-    const formatDate = (dateStr: string) => format(new Date(dateStr), "MMM d, yyyy");
+    const formatDate = (dateStr: string) =>
+      format(new Date(dateStr), "MMM d, yyyy");
     const from = formatDate(fromDate);
     const to = formatDate(toDate);
     return from === to ? from : `${from} - ${to}`;
@@ -62,7 +63,9 @@ const LeaveRequestItem = ({ item }: { item: any }) => {
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 text-sm">{item.leave_type}</h3>
+            <h3 className="font-semibold text-gray-900 text-sm">
+              {item.leave_type}
+            </h3>
             <p className="text-xs text-gray-500 mt-1">{dateRange}</p>
             {item.description && (
               <p className="text-xs text-gray-600 mt-2">{item.description}</p>
@@ -83,17 +86,35 @@ const LeaveRequestItem = ({ item }: { item: any }) => {
 };
 
 const MyLeaveRequest: React.FC = () => {
-  const { data: userId } = useLoggedInUser();
-  const { data: currentEmployee } = useEmployeeByUserId(userId);
+  const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
+  const { data: currentEmployee, isLoading: isEmployeeLoading } =
+    useEmployeeByUserId(userId);
+
+  const isLoading = isUserLoading || isEmployeeLoading;
+
+  if (isLoading || !currentEmployee?.name) {
+    return (
+      <div className="text-gray-500 p-4 text-center">
+        Loading leave requests...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 mt-2">
       <FrappeListView
         doctype="Leave Application"
         ItemComponent={LeaveRequestItem}
-        defaultFields={["name", "leave_type", "from_date", "to_date", "status", "description"]}
+        defaultFields={[
+          "name",
+          "leave_type",
+          "from_date",
+          "to_date",
+          "status",
+          "description",
+        ]}
         defaultFilters={{
-          employee: currentEmployee?.name || "",
+          employee: currentEmployee.name,
         }}
         isSearch={false}
         infiniteScroll={true}

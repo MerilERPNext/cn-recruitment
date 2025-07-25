@@ -4,15 +4,16 @@ import LeaveRequestDetails from "./LeaveRequestDetails";
 import TeamLeaveRequestItem from "./TeamLeaveRequestItem";
 import FrappeListView from "../ListView";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { LeaveApplication } from "../../types/leaves";
 
 const TeamLeaveRequest = () => {
-  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [selectedRequest, setSelectedRequest] =
+    useState<LeaveApplication | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: userId } = useLoggedInUser();
+  const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
 
-
-  const handleCardClick = (request: any) => {
+  const handleCardClick = (request: LeaveApplication) => {
     setSelectedRequest(request);
     setIsModalOpen(true);
   };
@@ -24,13 +25,19 @@ const TeamLeaveRequest = () => {
 
   const handleApprove = (id: string) => {
     console.log(`Approving leave request ${id}`);
-
   };
 
   const handleReject = (id: string) => {
     console.log(`Rejecting leave request ${id}`);
-
   };
+
+  if (isUserLoading || !userId) {
+    return (
+      <div className="p-4 text-gray-500 text-center">
+        Loading team leave requests...
+      </div>
+    );
+  }
 
   return (
     <div className="py-4 mt-2">
@@ -69,7 +76,6 @@ const TeamLeaveRequest = () => {
               className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
             >
               <FiArrowLeft className="w-5 h-5 mr-2" />
-
             </button>
             <h2 className="text-lg font-semibold text-center">
               Leave Request Details

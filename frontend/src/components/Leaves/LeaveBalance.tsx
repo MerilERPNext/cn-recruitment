@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 const leaveData = [
   {
@@ -49,33 +48,41 @@ const transactionData = [
     monthly: Array(12).fill(0),
   },
   {
-    type: "Unpaid",
-    total: 34,
-    monthly: Array(12).fill(0),
+    type: "Unpaid - Study Leave",
+    total: 12,
+    monthly: [0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0],
   },
   {
-    type: "Unpaid",
-    total: 34,
-    monthly: Array(12).fill(0),
+    type: "Unpaid - Medical",
+    total: 10,
+    monthly: [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
   },
   {
-    type: "Unpaid",
-    total: 34,
-    monthly: Array(12).fill(0),
+    type: "Unpaid - Travel",
+    total: 18,
+    monthly: [0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0],
   },
   {
-    type: "Unpaid",
-    total: 34,
-    monthly: Array(12).fill(0),
-  },
-  {
-    type: "Unpaid",
-    total: 34,
-    monthly: Array(12).fill(0),
+    type: "Unpaid - Miscellaneous",
+    total: 7,
+    monthly: [0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0],
   },
 ];
 
-const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const monthLabels = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 const LeaveTransactionCard = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -83,13 +90,18 @@ const LeaveTransactionCard = () => {
   return (
     <div className=" max-w-md mx-auto pb-8">
       {transactionData.map((leave, index) => (
-        <div key={index} className="border border-gray-200 rounded-lg mb-2 shadow-md">
+        <div
+          key={index}
+          className="border border-gray-200 rounded-lg mb-2 shadow-md"
+        >
           <button
             className="w-full flex justify-between items-center p-4 bg-white rounded-lg"
             onClick={() => setOpenIndex(openIndex === index ? null : index)}
           >
             <span className="font-medium">{leave.type}</span>
-            <span className="text-lg font-bold text-gray-700">{leave.total.toString().padStart(2, "0")}</span>
+            <span className="text-lg font-bold text-gray-700">
+              {leave.total.toString().padStart(2, "0")}
+            </span>
           </button>
           {openIndex === index && (
             <div className="grid grid-cols-4 gap-2 p-4 bg-gray-50">
@@ -117,11 +129,6 @@ const inactiveBg = "bg-[#FFF]";
 const LeaveBalance: React.FC = () => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [showTransactions, setShowTransactions] = useState(false);
-  const navigate = useNavigate();
-
-  const handleViewTransactions = () => {
-    navigate('/webapp/leave-app/leaves/transactions');
-  };
 
   return (
     <div className="min-h-screen px-4 pb-4 bg-[#F8FBFC] relative">
@@ -129,8 +136,9 @@ const LeaveBalance: React.FC = () => {
         {leaveData.map((leave, idx) => (
           <div
             key={leave.type}
-            className={`rounded-xl mb-4 p-4 shadow-sm cursor-pointer transition-colors ${idx === activeIdx ? activeBg : inactiveBg
-              }`}
+            className={`rounded-xl mb-4 p-4 shadow-sm cursor-pointer transition-colors ${
+              idx === activeIdx ? activeBg : inactiveBg
+            }`}
             onClick={() => setActiveIdx(idx)}
           >
             <div className={`text-xl font-semibold mb-3 ${labelColor}`}>
@@ -172,8 +180,19 @@ const LeaveBalance: React.FC = () => {
               onClick={() => setShowTransactions(false)}
               className="text-gray-500 hover:text-gray-700 p-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>

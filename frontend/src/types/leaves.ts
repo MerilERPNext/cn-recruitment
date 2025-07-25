@@ -35,3 +35,24 @@ export interface LeaveBalance {
   expires_on?: string;
   carry_forwarded_leaves?: number;
 }
+
+type LeaveStatus = "Open" | "Approved" | "Rejected" | "Cancelled";
+
+export interface LeaveApplicationItem {
+  name: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  status: LeaveStatus;
+  description?: string;
+}
+
+export interface LeaveApplication {
+  name: string;
+  employee_name: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  status: "Open" | "Approved" | "Rejected" | "Cancelled" | string;
+  description?: string;
+}
