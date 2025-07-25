@@ -432,7 +432,7 @@ const AddNewReferral: React.FC = () => {
         <div className="flex justify-between gap-4  sm:px-8">
           <button
             type="button"
-            className="!w-auto bg-gray-100 text-black font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition"
+            className="w-auto bg-gray-100 text-black font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition"
           >
             Save as Draft
           </button>
@@ -440,7 +440,7 @@ const AddNewReferral: React.FC = () => {
             type="button"
             onClick={handleSubmit}
             disabled={uploading}
-            className="!w-auto bg-blue-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-700 transition"
+            className="w-auto bg-blue-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-700 transition"
           >
             {uploading ? "Submitting..." : "Submit Referral"}
           </button>
