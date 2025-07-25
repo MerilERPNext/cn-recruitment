@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FrappeAPI } from '../utils/frappeAPI';
-import { Notice, NoticeFilters, NoticeStatusReadStatus } from '../types/notice';
-import { FilterCondition } from '../types/frappe';
+import { Notice, NoticeFilters } from '../types/notice';
 
 // Notice API service
 export class NoticeService {
@@ -48,18 +47,6 @@ export class NoticeService {
     try {
       const notice = await FrappeAPI.getDocument('Notice', noticeId);
       return this.transformFromFrappe(notice);
-    } catch (error) {
-      console.error('Error fetching notice:', error);
-      return null;
-    }
-  }
-  static async getAllNoticeReadStatus(filters: FilterCondition[]): Promise<NoticeStatusReadStatus[] | null> {
-    try {
-      const notice = await FrappeAPI.getDocumentList('Notice Read Status', {
-      fields: ["*"],
-      filters,
-    });
-      return notice?.data as NoticeStatusReadStatus[];
     } catch (error) {
       console.error('Error fetching notice:', error);
       return null;
@@ -129,37 +116,22 @@ export class NoticeService {
   // Get unread count
   async getUnreadNoticesCount(): Promise<number> {
     try {
-      console.log('📡 Fetching unread notices count...');
+      // const response = await fetch(`${this.baseUrl}.get_unread_notices_count`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Accept': 'application/json',
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({}),
+      // });
 
-      // Try the API method first
-      try {
-        const result = await FrappeAPI.callMethod(
-          'recruitment.api.get_unread_notices_count'
-        );
-
-        if (typeof result === 'number') {
-          console.log('📡 Got unread count from API:', result);
-          return result;
-        }
-      } catch (apiError) {
-        console.warn('📡 API method failed, using fallback:', apiError);
-      }
-
-      // Fallback: Use document count from Frappe API
-      try {
-        const count = await FrappeAPI.getDocumentCount('Notice', {
-          'status': ['!=', 'dismissed'],
-          'is_unread': 1
-        });
-        console.log('📡 Got unread count from document count:', count);
-        return count || 0;
-      } catch (countError) {
-        console.warn('📡 Document count failed, using mock data:', countError);
-      }
+      // If all methods fail, return 0 as default
+      console.warn('📡 All methods failed, returning default count of 0');
+      return 0;
 
     } catch (error) {
       console.error('📡 Error fetching unread notices count:', error);
-      throw error;
+      return 0;
     }
   }
 
