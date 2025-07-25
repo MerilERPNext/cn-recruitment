@@ -1,10 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, {useCallback, useEffect, useMemo, useRef, useState,} from "react";
-import {useNavigate} from "react-router-dom";
-import {File as FileIcon, FileText, Trash2} from "lucide-react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import { File as FileIcon, FileText, Trash2 } from "lucide-react";
 import defaultReceipt from "../../assets/Receipt.svg";
 
-import {Form} from "@tsed/react-formio";
+import { Form } from "@tsed/react-formio";
 import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
 import HeaderBar from "../HeaderBar";
 
@@ -21,6 +27,7 @@ interface ExpenseItem {
 }
 
 const GeneralExpenseClaim: React.FC = () => {
+  const CURRENCY_SYMBOL = "₹";
   const navigate = useNavigate();
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -199,7 +206,8 @@ const GeneralExpenseClaim: React.FC = () => {
                     <p className="font-medium text-gray-900">{item.type}</p>
                     <p className="text-sm text-gray-600">Date: {item.date}</p>
                     <p className="text-sm text-gray-600">
-                      Amount: {item.amount.toFixed(2)}
+                      Amount: {CURRENCY_SYMBOL}
+                      {item.amount.toFixed(2)}
                     </p>
                     <p className="text-sm text-gray-600">{item.description}</p>
                   </div>
@@ -286,15 +294,24 @@ const GeneralExpenseClaim: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border p-4 space-y-2">
             <div className="flex justify-between text-gray-700">
               <span>Total Amount</span>
-              <span className="font-medium">{totalAmount.toFixed(2)}</span>
+              <span className="font-medium">
+                {CURRENCY_SYMBOL}
+                {totalAmount.toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between text-gray-700">
               <span>Advances</span>
-              <span className="font-medium">{advances.toFixed(2)}</span>
+              <span className="font-medium">
+                {CURRENCY_SYMBOL}
+                {advances.toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between text-gray-900 font-bold text-lg border-t pt-2 mt-2">
               <span>Net Payable</span>
-              <span>{netPayable.toFixed(2)}</span>
+              <span>
+                {CURRENCY_SYMBOL}
+                {netPayable.toFixed(2)}
+              </span>
             </div>
           </div>
         </div>

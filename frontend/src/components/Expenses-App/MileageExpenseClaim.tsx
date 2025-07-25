@@ -158,7 +158,7 @@ const notesSchema = {
 
 const MileageExpense: React.FC = () => {
   const navigate = useNavigate();
-
+  const CURRENCY_SYMBOL = "₹";
   // Refs for each Form.io instance
   const basicDetailsRef = useRef<HTMLDivElement>(null);
   const basicDetailsFormInstanceRef = useRef<any>(null);
@@ -381,7 +381,8 @@ const MileageExpense: React.FC = () => {
               Calculated Amount
             </span>
             <span className="text-lg font-bold text-gray-900">
-              ${calculatedAmount.toFixed(2)}
+              {CURRENCY_SYMBOL}
+              {calculatedAmount.toFixed(2)}
             </span>
           </div>
         </div>
