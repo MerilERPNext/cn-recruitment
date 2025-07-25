@@ -1,15 +1,13 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import {
-  useCurrentEmployeeIdCard,
-  useEmployeeIdCard,
-} from "../hooks/useEmployee";
-import { EmployeeIdCard } from "../types/employee";
-import {
-  generateEmployeeQRCodeURL,
-  formatDate,
-  getDefaultAvatarURL,
-} from "../utils/qrCodeUtils";
+
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useCurrentEmployeeIdCard, useEmployeeIdCard } from '../hooks/useEmployee';
+import { EmployeeIdCard } from '../types/employee';
+import { 
+  generateEmployeeQRCodeURL, 
+  formatDate, 
+  getDefaultAvatarURL 
+} from '../utils/qrCodeUtils';
 
 // Icon Components
 const BackIcon = () => (
@@ -379,19 +377,8 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     }
   }, [toast]);
 
-  // Add debug logging
-  console.log("IdCard component state:", {
-    targetEmployeeId,
-    employee,
-    isLoading,
-    error: error?.message,
-    hasSpecificEmployee: !!specificEmployee,
-    hasCurrentEmployee: !!currentEmployee
-  });
-
   // Event handlers
   const handleBackClick = () => {
-    console.log("Back button clicked");
     window.history.back();
   };
 
@@ -410,12 +397,16 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
       const phoneNumber = employee.contact.replace(/\D/g, "");
 
       if (phoneNumber) {
-        window.open(`https://wa.me/${phoneNumber}`, "_blank");
+        window.nativeInterface.execute('openWhatsApp', {
+          payloadNumber: employee.contact,
+          payloadText: `Hello, I am ${employee.employee_name} from ${employee.department} Department.`
+        });
       } else {
         showToast(
           "Invalid phone number format. Please check the contact information.",
           "error"
         );
+
       }
     } else {
       showToast("No contact number available for this employee.", "info");

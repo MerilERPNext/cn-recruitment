@@ -55,7 +55,7 @@ export const jobOpeningService = {
         job_title: params.job_title || requisitionData.designation || "Job Opening",
         designation: params.designation || requisitionData.designation,
         department: params.department || requisitionData.department,
-        company: "Chat Next", // Required field
+        company: requisitionData.company, // Required field
         planned_vacancies: params.planned_vacancies || requisitionData.no_of_positions || 1,
         posted_on: params.posted_on || new Date().toISOString().split('T')[0],
         status: "Open",

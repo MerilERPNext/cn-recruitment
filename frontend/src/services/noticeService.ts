@@ -144,14 +144,9 @@ export class NoticeService {
         console.warn('📡 Document count failed, using mock data:', countError);
       }
 
-      // Final fallback: Return mock count for development
-      const mockCount = Math.floor(Math.random() * 5) + 1; // Random 1-5
-      console.log('📡 Using mock unread count:', mockCount);
-      return mockCount;
-
     } catch (error) {
       console.error('📡 Error fetching unread notices count:', error);
-      return 0;
+      throw error;
     }
   }
 

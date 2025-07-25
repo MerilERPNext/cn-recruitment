@@ -124,7 +124,7 @@ const MobileDashboard: React.FC = () => {
   const handleSearch = () => {
     if (searchQuery.trim()) {
       // Navigate to search members page with query
-      window.location.href = `/webapp/search-members?q=${encodeURIComponent(searchQuery)}`;
+      navigate(`/webapp/search-members?q=${encodeURIComponent(searchQuery)}`);
     }
   };
 

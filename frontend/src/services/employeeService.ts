@@ -215,13 +215,7 @@ export class EmployeeService {
       console.error("Error fetching current employee:", error);
       console.error("Error details:", error instanceof Error ? error.message : error);
 
-      // In development, provide mock data as last resort
-      if (import.meta.env.MODE === 'development') {
-        console.warn("Using mock employee data for development");
-        return MOCK_EMPLOYEE;
-      }
-
-      return null;
+      throw error;
     }
   }
   static async getCurrentEmployeeAllDetails(user_id : string): Promise<Employee | null> {

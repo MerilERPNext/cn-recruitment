@@ -20,6 +20,7 @@ import {
 import { useCreateJobOpeningFromRequisition } from "../hooks/useJobOpening";
 import type { StatusDisplay } from "../types/requisition";
 import DOMPurify from "dompurify";
+import { toast } from "react-hot-toast";
 
 const RequisitionDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -185,10 +186,7 @@ const RequisitionDetails: React.FC = () => {
       });
 
             if (result.status === "success") {
-        // Show success message or redirect
-        console.log(`✅ Job opening created: ${result.name}`);
-        alert("Job opening created successfully!");
-        // Optionally redirect to the new job opening
+              toast.success("Job opening created successfully!");
         if (result.name) {
           window.open(`/app/job-opening/${result.name}`, '_blank');
         }

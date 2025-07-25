@@ -60,7 +60,7 @@ export const useCurrentUser = (): UseQueryResult<CurrentUser | null, Error> => {
         
       } catch (error) {
         console.error("Error fetching current user:", error);
-        return null;
+        throw error;
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
