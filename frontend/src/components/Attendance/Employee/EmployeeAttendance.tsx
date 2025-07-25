@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import DatePicker from "react-datepicker"
-import { ArrowLeft, CalendarDays, Plus, XCircle } from "lucide-react"
+import { ArrowLeft, ArrowUpRight, Plus, XCircle } from "lucide-react"
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser"
 import { useAttendance } from "../../../hooks/useAttendance"
 import FrappeListView from "../../ListView"
@@ -10,6 +10,7 @@ import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard"
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm"
 import RequestCompOff from "./RequestCompOff"
 import CheckIn from "../CheckIn/CheckIn"
+import LayoutHeader from "../../shared/LayoutHeader"
 
 const EmployeeAttendance = () => {
     const navigate = useNavigate()
@@ -123,12 +124,13 @@ const EmployeeAttendance = () => {
     }, [userId]);
 
     return <div>
+        <LayoutHeader tab={"My Attendance"} />
         {/* <LayoutHeader tab="Attendance" /> */}
-        <div className="flex flex-col gap-4 mt-2 px-4 pb-4">
+        <div className="flex flex-col">
 
             {/* ------------------------------------------------- Info Card Start---------------------------------------------- */}
 
-            <div className="p-4 border-2 border-gray-200 rounded-xl bg-white">
+            <div className="px-6 py-4 border-b-1 border-gray-200 bg-white">
                 <h1 className="text-lg font-semibold text-gray-900 mb-4">Today's Attendance</h1>
 
                 <div className="flex items-center justify-between gap-1">
@@ -151,7 +153,18 @@ const EmployeeAttendance = () => {
             {/* ------------------------------------------------- Info Card End---------------------------------------------- */}
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
-            <div className=" w-full  pb-2 border-2 bg-white border-gray-200 rounded-xl">
+            <div className=" w-full  pb-2 bg-white border-b-1 border-gray-200">
+                <div className="w-full flex justify-end">
+
+                    <button
+                        className="text-gray-500 px-2 my-4 flex gap-1 justify-center items-center"
+                        onClick={() => {
+                            navigate("/webapp/attendance/emp-attendance/all")
+                        }}>
+                        View In List
+                        <ArrowUpRight className="h-5 w-5" />
+                    </button>
+                </div>
                 <DatePicker
                     selected={selectedDate}
                     onChange={(date) => setSelectedDate(date)}
@@ -215,14 +228,8 @@ const EmployeeAttendance = () => {
             {/* Request Attendance Correction */}
 
 
-            <div className="bg-white rounded-xl p-4 border-1 border-gray-200" >
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Attendance</h3>
+            <div className="bg-white p-4 border-b-1 border-gray-200" >
                 <div className="flex gap-2">
-
-                    <button onClick={() => { navigate("/webapp/attendance/emp-attendance/all") }} className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
-                        <CalendarDays className="w-4 h-4 mr-2 font-bold" />
-                        All Attendances
-                    </button>
                     <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm"
                         onClick={() => {
                             setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
@@ -238,7 +245,7 @@ const EmployeeAttendance = () => {
 
 
             {/* Work Hour Exceptions */}
-            <div className="bg-white rounded-xl p-4 border-1 border-gray-200" >
+            <div className="bg-white rou p-4 border-b-1 border-gray-200" >
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Work Hour Exceptions</h3>
                 <div className="flex gap-2">
                     <button onClick={() => { setShowReqCompOff(!showReqCompOff) }} className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
@@ -254,8 +261,8 @@ const EmployeeAttendance = () => {
             {/* Work Hour Exceptions */}
 
             {/* My Attendance Requests */}
-            <div className="bg-white rounded-lg p-2 shadow">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1 px-4">My Attendance Requests</h3>
+            <div className="bg-white">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1 p-4">My Attendance Requests</h3>
                 <FrappeListView
                     doctype="Attendance Request"
                     isSearch={false}

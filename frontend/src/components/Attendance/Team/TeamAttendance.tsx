@@ -4,6 +4,7 @@ import FrappeListView from "../../ListView";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useSearchParams } from "react-router-dom";
+import LayoutHeader from "../../shared/LayoutHeader";
 
 const TeamAttendance = () => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -50,11 +51,11 @@ const TeamAttendance = () => {
 
     );
 
-    return <div className="bg-gray-100">
-        {/* <LayoutHeader tab="Team Attendance" /> */}
-        <div className="flex flex-col gap-2 mt-2 px-4 pb-4">
+    return <div className="bg-white">
+        <LayoutHeader tab="Team Attendance" />
+        <div className="flex flex-col gap-2 pb-4">
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
-            <div className=" bg-white w-full border-2 border-gray-200 rounded-xl p-2">
+            <div className=" bg-white w-full border-b-1 border-gray-200  p-2">
 
                 <div className=" flex items-end flex-col">
 
@@ -89,7 +90,7 @@ const TeamAttendance = () => {
             {/* ------------------------------------------------- Calendar End ---------------------------------------------- */}
 
             {/* <EmployeeStatusCard /> */}
-            <div className="bg-white px-4 pt-4 rounded-lg border-2 border-gray-200">
+            <div className="bg-white pt-4 border-gray-200 p-4 ">
 
                 <FrappeListView
                     doctype="Attendance"

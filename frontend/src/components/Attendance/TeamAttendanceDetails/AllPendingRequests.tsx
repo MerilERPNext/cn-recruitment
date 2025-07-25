@@ -29,10 +29,10 @@ const AllPendingRequests = () => {
         <LayoutHeader tab={"Pending Attendants"} onBack={() => {
             navigate(-1)
         }} />
-        <div className='p-4 bg-white'>
+        <div className='bg-white'>
 
             <div>
-                <div className=" mb-4">
+                <div className=" mb-4 p-4">
                     <BulkActionBar
                         selectedIds={selectedIds}
                         pendingRequests={data}

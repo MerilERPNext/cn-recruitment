@@ -28,7 +28,7 @@
 }
 
 .custom-w-fill-available{
-  width: fill-available;
+  width: stretch;
 }
 
 .address-form-container .choices__inner::after {

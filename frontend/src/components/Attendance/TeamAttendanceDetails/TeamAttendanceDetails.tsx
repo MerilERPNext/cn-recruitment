@@ -5,6 +5,7 @@ import { useAllAttendanceRequests } from '../../../hooks/useAttendance'
 import { AttendanceRequest } from '../../../types/attendance'
 import { AttendanceDetailView } from '../AttendanceDetails'
 import { useNavigate } from 'react-router'
+import LayoutHeader from '../../shared/LayoutHeader'
 
 const TeamAttendanceDetails = () => {
     const { data = [] } = useAllAttendanceRequests(5) as { data: AttendanceRequest[] }
@@ -37,18 +38,19 @@ const TeamAttendanceDetails = () => {
     const navigate = useNavigate()
     return (
         <>
+            <LayoutHeader tab='Team  Attendance Details' />
             <div className="bg-white">
-                <div className='bg-white p-4'>
+                <div className='bg-white'>
                     {/* Pending */}
 
                     {pendingRequests?.length > 0 && <>
-                        <div className="flex justify-between mb-4">
+                        <div className="flex justify-between mb-4 p-4">
                             <h2 className="text-2xl font-semibold">Pending Requests</h2>
                             <button
                                 onClick={() => { navigate("/webapp/attendance/team-attendance-details/pendings") }}
                             >View All</button>
                         </div>
-                        <div className='mb-4'>
+                        <div className='mb-4 px-4'>
 
                             <BulkActionBar
                                 selectedIds={selectedIds}
@@ -79,10 +81,10 @@ const TeamAttendanceDetails = () => {
                 </div>
 
                 {/* Actioned */}
-                <div className='bg-white p-4'>
+                <div className='bg-white'>
 
                     {actionedRequests?.length > 0 && <div>
-                        <h2 className="text-2xl font-semibold mb-2 border-b-2 border-gray-200 pb-3">Actioned Requests</h2>
+                        <h2 className="text-2xl font-semibold mb-2 border-b-1 border-gray-200 p-4">Actioned Requests</h2>
                         <div className="space-y-3">
                             {actionedRequests.map((request) => (
                                 <RequestCard

@@ -31,8 +31,8 @@ import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
 import AllPendingRequests from "./components/Attendance/TeamAttendanceDetails/AllPendingRequests";
 import AttendanceSummary from "./components/Attendance/AttendanceSummary";
 import AllEmpAttendance from "./components/Attendance/AllEmpAttendance/AllEmpAttendance";
-import { Navigate } from "react-router";
-import AttendanceLayout from "./components/Attendance/AttendanceLayout";
+// import { Navigate } from "react-router";
+// import AttendanceLayout from "./components/Attendance/AttendanceLayout";
 import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
 import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
 import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
@@ -143,21 +143,18 @@ export const routesConfig: AppRoute[] = [
     element: <AddRequisition />,
   },
 
-  {
-    path: "/webapp/attendance",
-    element: <AttendanceLayout />,
-    children: [
-      {
-        index: true, element: <Navigate to="summary" replace />,
-        path: ""
-      },
-      { path: 'summary', element: <AttendanceSummary /> },
-      { path: 'emp-attendance', element: <EmployeeAttendance /> },
-      { path: 'team-attendance', element: <TeamAttendance /> },
-      { path: 'attendance-request', element: <AttendanceRequest /> },
-      { path: 'team-attendance-details', element: <TeamAttendanceDetails /> },
-    ],
-  },
+  // {
+  //   path: "/webapp/attendance",
+  //   element: <AttendanceLayout />,
+  //   children: [
+
+  //   ],
+  // },
+  { path: '/webapp/attendance', element: <AttendanceSummary /> },
+  { path: '/webapp/attendance/emp-attendance', element: <EmployeeAttendance /> },
+  { path: '/webapp/attendance/team-attendance', element: <TeamAttendance /> },
+  { path: '/webapp/attendance/attendance-request', element: <AttendanceRequest /> },
+  { path: '/webapp/attendance/team-attendance-details', element: <TeamAttendanceDetails /> },
   { path: '/webapp/attendance/team-attendance-details/pendings', element: <AllPendingRequests /> },
   { path: '/webapp/attendance/emp-attendance/all', element: <AllEmpAttendance /> },
   //Leaves routes
