@@ -95,12 +95,28 @@ export const FrappeAPI = {
     return response.data.message
   },
 
-  getDocumentCount: async (doctype: string, filters?: Record<string, unknown>): Promise<number> => {
+    getDocumentCount: async (doctype: string, filters?: Record<string, unknown>): Promise<number> => {
     const response = await apiClient.get(
       `/api/method/frappe.client.get_count?doctype=${doctype}&filters=${JSON.stringify(filters || {})}`,
     )
     return response.data.message
   },
+
+  updateDocument: async (doctype: string, name: string, data: Record<string, unknown>): Promise<unknown> => {
+    const response = await apiClient.put(`/api/resource/${doctype}/${name}`, data)
+    return response.data.data
+  },
+
+  createDocument: async (doctype: string, data: Record<string, unknown>): Promise<unknown> => {
+    const response = await apiClient.post(`/api/resource/${doctype}`, data)
+    return response.data.data
+  },
+
+  deleteDocument: async (doctype: string, name: string): Promise<unknown> => {
+    const response = await apiClient.delete(`/api/resource/${doctype}/${name}`)
+    return response.data.data
+  },
+
 }
 
 export default FrappeAPI

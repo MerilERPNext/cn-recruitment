@@ -1,53 +1,48 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import FrappeListView from "../ListView";
 
 interface APIExpense {
-  name: string; 
-  approval_status: string; 
+  name: string;
+  approval_status: string;
   total_claimed_amount: number;
   creation: string;
 }
-
 
 const ExpensesItem: React.FC<{
   item: APIExpense;
   index?: number;
   doctype: string;
 }> = ({ item }) => {
-
-  const formattedAmount = new Intl.NumberFormat('en-IN', { 
-    style: 'currency',
-    currency: 'INR',
+  const formattedAmount = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
   }).format(item.total_claimed_amount);
 
   // Format the posting date
-  const formattedDate = new Date(item.creation).toLocaleDateString('en-US', {
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric', 
+  const formattedDate = new Date(item.creation).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
 
   const getStatusBadgeClasses = (status: string) => {
     switch (status) {
-      case 'Approved':
-        return 'bg-green-100 text-green-800';
-      case 'Draft':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Rejected':
-        return 'bg-red-100 text-red-800';
+      case "Approved":
+        return "bg-green-100 text-green-800";
+      case "Draft":
+        return "bg-yellow-100 text-yellow-800";
+      case "Rejected":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-return (
+  return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
       <div className="flex justify-between items-start">
         <div className="flex flex-col">
-          <p className="text-xl font-bold text-gray-900">
-            {formattedAmount}
-          </p>
+          <p className="text-xl font-bold text-gray-900">{formattedAmount}</p>
         </div>
         {item.approval_status && (
           <span
@@ -61,17 +56,10 @@ return (
         <span>Submitted on {formattedDate}</span>
       </p>
     </div>
-    
   );
 };
 
 const ExpensesList: React.FC = () => {
-  const navigate = useNavigate();
-
-  const handleGoToRequisition = (id: string) => {
-    navigate(`/webapp/recruitment-app/requisitions/${id}`);
-  };
-
   return (
     <div
       className="relative flex size-full min-h-screen flex-col group/design-root"
@@ -79,7 +67,6 @@ const ExpensesList: React.FC = () => {
     >
       <FrappeListView
         doctype="Expense Claim"
-        onItemClick={(job: APIExpense) => handleGoToRequisition(job.name)}
         ItemComponent={ExpensesItem}
         isSearch={true}
         pageSize={10}
@@ -88,8 +75,6 @@ const ExpensesList: React.FC = () => {
           "approval_status",
           "total_claimed_amount",
           "creation",
-
-
         ]}
         searchFields={[
           "name",

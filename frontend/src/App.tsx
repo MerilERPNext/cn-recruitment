@@ -1,19 +1,12 @@
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  Link,
-} from "react-router-dom";
-// import Navigation from './components/Navigation';
-import { useRouteInfo } from "./hooks/useRouter";
+import { BrowserRouter as Router, Navigate, Route, Routes, } from "react-router-dom";
 import { QueryProvider } from "./providers/QueryProvider";
 import "./App.css";
 
 import { AppRoute, routesConfig } from "./routesConfig";
 // @ts-expect-error ignore
 import { Form } from "@tsed/react-formio";
+import MobileDashboard from "./components/MobileDashboard";
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -125,7 +118,7 @@ const Dashboard: React.FC = () => {
               View and manage company announcements and important notices.
             </p>
             <Link
-              to="/webapp/notices/all"
+              to="/webapp/notices"
               className="inline-block bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
             >
               View Notices
@@ -199,7 +192,7 @@ const Dashboard: React.FC = () => {
               Manage Profile
             </Link>
           </div>
-           <div
+          <div
             className="rounded-lg shadow-md p-6"
             style={{ backgroundColor: "var(--background-light)" }}
           >
@@ -246,7 +239,7 @@ const App: React.FC = () => {
           style={{ backgroundColor: "var(--background-medium)" }}
         >
           <Routes>
-            <Route path="/webapp/" element={<Dashboard />} />
+            <Route path="/webapp/" element={<MobileDashboard />} />
             {renderRoutes(routesConfig)}
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
