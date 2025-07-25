@@ -44,11 +44,11 @@ const WhatsAppIcon = () => (
     width="20"
     height="20"
     aria-hidden="true"
+    aria-label="WhatsApp"
   >
     <path d="M12.04 2C7.3 2 3.4 5.9 3.4 10.61c0 1.5.41 2.92 1.19 4.17L4.01 20l5.04-1.35c1.18.67 2.5 1.04 3.09 1.04 4.74 0 8.63-3.91 8.63-8.62 0-4.72-3.89-8.62-8.63-8.62zm.04 15.48c-1.12 0-2.23-.31-3.18-.93l-.22-.14-2.24.59.6-2.16-.16-.23c-.69-1-1.06-2.2-.97-3.46.22-4.2 3.67-7.65 7.87-7.65 2.06 0 4 .81 5.46 2.28 1.47 1.47 2.28 3.42 2.28 5.48 0 4.21-3.46 7.65-7.66 7.65zm4.4-5.21c-.22-.11-.97-.48-1.12-.53-.15-.05-.27-.07-.38.05-.12.11-.46.53-.56.64-.1.11-.2.12-.37.05-.17-.07-.69-.25-1.31-.8-.48-.42-.81-.94-.91-1.12-.11-.18 0-.17.13-.29.11-.11.25-.29.37-.43.12-.15.16-.25.25-.41.09-.17.05-.31-.02-.43-.07-.12-.38-.91-.52-1.24-.14-.32-.29-.28-.38-.28-.09 0-.2-.04-.31-.04-.11 0-.28.04-.43.19-.15.15-.57.56-.57 1.37 0 .81.58 1.59.66 1.7.09.11 1.14 1.76 2.75 2.45 1.61.69 1.61.47 1.9 1.48.29 1.01.29 1.86.07 2.05-.2.19-.97.29-1.12.2z" />
   </svg>
 );
-
 
 const CallIcon = () => (
   <svg
@@ -178,7 +178,7 @@ const ActionButton = ({
   const variantClasses: any = {
     primary: "bg-blue-500 text-white hover:bg-blue-600",
     secondary: "border border-blue-500 text-blue-500 hover:bg-gray-100",
-    whatsapp: "bg-[#25D366] text-white hover:bg-[#1DA851]" 
+    whatsapp: "bg-green-500 text-white hover:bg-green-600",
   };
 
   return (
@@ -238,9 +238,11 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
 // Action Buttons Component
 const ActionButtons = ({ onWhatsApp, onCall }: any) => (
   <div className="mt-8 flex gap-4">
+    {/* WhatsApp button */}
     <ActionButton variant="whatsapp" icon={WhatsAppIcon} onClick={onWhatsApp}>
       WhatsApp
     </ActionButton>
+    {/* Call button */}
     <ActionButton variant="secondary" icon={CallIcon} onClick={onCall}>
       Call
     </ActionButton>
@@ -306,6 +308,34 @@ const ErrorCard = ({
   </div>
 );
 
+// New Toast Component
+const Toast = ({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "error" | "info";
+  onClose: () => void;
+}) => {
+  const bgColor = type === "error" ? "bg-red-500" : "bg-gray-800";
+  return (
+    <div
+      className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-md text-white shadow-lg z-50 transition-all duration-300 ${bgColor}`}
+    >
+      <div className="flex items-center justify-between">
+        <span>{message}</span>
+        <button
+          onClick={onClose}
+          className="ml-4 text-white opacity-75 hover:opacity-100"
+        >
+          &times;
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Main App Component
 const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
   // Get employee ID from router params if not provided as prop
@@ -334,6 +364,20 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
   const isLoading = targetEmployeeId ? isLoadingSpecific : isLoadingCurrent;
   const error = targetEmployeeId ? specificError : currentError;
   const refetch = targetEmployeeId ? refetchSpecific : refetchCurrent;
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "error" | "info";
+  } | null>(null);
+
+  // Automatically hide the toast after a few seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 4000); // 4 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   // Event handlers
   const handleBackClick = () => {
@@ -347,37 +391,41 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     }
   };
 
+  const showToast = (message: string, type: "error" | "info") => {
+    setToast({ message, type });
+  };
+
   const handleWhatsApp = () => {
     if (employee?.contact) {
-      // Remove any non-numeric characters from the phone number
-      const phoneNumber = employee.contact.replace(/\D/g, '');
+      const phoneNumber = employee.contact.replace(/\D/g, "");
 
       if (phoneNumber) {
-        // Open WhatsApp chat
-        window.open(`https://wa.me/${phoneNumber}`, '_blank');
+        window.open(`https://wa.me/${phoneNumber}`, "_blank");
       } else {
-        alert('Invalid phone number format. Please check the contact information.');
+        showToast(
+          "Invalid phone number format. Please check the contact information.",
+          "error"
+        );
       }
     } else {
-      alert('No contact number available for this employee.');
+      showToast("No contact number available for this employee.", "info");
     }
   };
 
   const handleCall = () => {
     if (employee?.contact) {
-      // Remove any non-numeric characters from the phone number
       const phoneNumber = employee.contact.replace(/\D/g, "");
 
       if (phoneNumber) {
-        // Initiate phone call
         window.location.href = `tel:${phoneNumber}`;
       } else {
-        alert(
-          "Invalid phone number format. Please check the contact information."
+        showToast(
+          "Invalid phone number format. Please check the contact information.",
+          "error"
         );
       }
     } else {
-      alert("No contact number available for this employee.");
+      showToast("No contact number available for this employee.", "info");
     }
   };
 
@@ -414,6 +462,14 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
           )}
         </div>
       </main>
+      {/* Toast notification container */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };
