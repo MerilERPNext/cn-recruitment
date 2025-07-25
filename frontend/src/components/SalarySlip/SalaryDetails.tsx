@@ -21,11 +21,11 @@ const SalarySlipDetails = () => {
   const [showDeductions, setShowDeductions] = useState(false);
   const navigator = useNavigate();
   const { salaryId } = useParams<{ salaryId: string }>();
-    const { data: user_id } = useLoggedInUser();
-  
-    const { data: user } = useCurrentEmployeeAllDetails(user_id || "");
-    
-    
+  const { data: user_id } = useLoggedInUser();
+
+  const { data: user } = useCurrentEmployeeAllDetails(user_id || "");
+
+
   const decodedName = decodeURIComponent(salaryId || "");
 
   const { data, isLoading, error } = useSalarySlipDetails({
@@ -68,7 +68,7 @@ const SalarySlipDetails = () => {
 
   return (
     <div className="max-w-full mx-auto font-roboto font-medium bg-gray-100 min-h-screen">
-      <div className="flex items-center justify-between p-3 border-b border-gray-200">
+      <div className="sticky top-0 flex items-center justify-between p-3 border-b border-gray-200">
         <ArrowLeft onClick={handleBack} className="w-6 h-6 text-gray-600 cursor-pointer" />
         <h1 className="text-xl font-semibold text-gray-900">Salary Slip</h1>
         <div className="w-6"></div>
@@ -78,15 +78,15 @@ const SalarySlipDetails = () => {
         {/* Header Section */}
         <div className="p-4 border-b flex justify-between border-gray-100">
           <div className="flex items-start space-x-3 mb-1">
-            
+
             <div className="relative">
-            <img
-              src={user?.image || defaultProfile}
-              alt="User avatar"
-              className="w-20 h-20 rounded-full object-cover"
-            />
-          </div>
-        
+              <img
+                src={user?.image || defaultProfile}
+                alt="User avatar"
+                className="w-20 h-20 rounded-full object-cover"
+              />
+            </div>
+
             <div>
               <h2 className="text-lg font-semibold text-gray-900">{data?.employee_name || "Employee Name"}</h2>
               <p className="text-sm text-gray-600">{data?.designation || "Designation"}</p>

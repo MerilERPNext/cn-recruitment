@@ -10,9 +10,10 @@ export const attendanceService = {
     });
     return response.data as Attendance[];
   },
-  getAllAttendanceRequests: async (): Promise<AttendanceRequest[]> => {
+  getAllAttendanceRequests: async (pageSize:number): Promise<AttendanceRequest[]> => {
     const response = await FrappeAPI.getDocumentList('Attendance Request', {
       fields: ['*'],
+      limit:pageSize
     });
     return response.data as AttendanceRequest[];
   },
@@ -38,6 +39,26 @@ export const attendanceService = {
     });
     return response.data;
   },
+
+    createAttendanceRequest: async (body: any): Promise<any> => {
+    const response = await fetch(`/api/resource/Attendance Request`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: `Request failed with status ${response.status}` }));
+      throw new Error(error.message);
+    }
+
+    return response.json();
+  }
+
+
 
 //   searchAttendance: async (searchTerm: string): Promise<Attendance[]> => {
 //     const response = await FrappeAPI.getDocumentList('Attendance', {

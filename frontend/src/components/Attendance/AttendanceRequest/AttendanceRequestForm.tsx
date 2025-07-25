@@ -1,7 +1,11 @@
-import React, {useMemo, useState} from "react";
-import {Form} from "@tsed/react-formio";
+import React, { useMemo, useState } from "react";
+import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import LayoutHeader from "../../shared/LayoutHeader";
+import { useCreateNewAttendanceRequest } from "../../../hooks/useAttendance";
+import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 
 const baseFormComponents = (isForOthers: boolean) => {
     const components = [
@@ -13,26 +17,42 @@ const baseFormComponents = (isForOthers: boolean) => {
             hideLabel: true,
             customClass: "bg-white rounded-lg",
             components: [
+
                 ...(isForOthers
                     ? [
                         {
                             label: "Employee Name",
-                            key: "employeeName",
+                            key: "employee",
                             type: "textfield",
                             input: true,
                             placeholder: "John Doe",
                             customClass: "mb-4"
                         },
                         {
-                            label: "Department",
-                            key: "department",
+                            label: "Company",
+                            key: "company",
                             type: "textfield",
                             input: true,
-                            placeholder: "Design",
+                            placeholder: "Hybrowlabs Technologies",
                             customClass: "mb-4",
                         },
                     ]
                     : []),
+                {
+                    label: "Request Type",
+                    key: "request-type",
+                    type: "select",
+                    input: true,
+                    placeholder: "Select a Request Type",
+                    customClass: "mb-4",
+                    data: {
+                        values: [
+                            { label: "Attendance Request", value: "Attendance Request" },
+                            { label: "Clockin", value: "Clockin" },
+                            { label: "Out Duty", value: "Out Duty" },
+                            { label: "Shift Change", value: "Shift Change" },]
+                    }
+                },
                 {
                     customClass: "mb-4",
                     type: "columns",
@@ -41,7 +61,7 @@ const baseFormComponents = (isForOthers: boolean) => {
                             components: [
                                 {
                                     label: "From Date",
-                                    key: "fromDate",
+                                    key: "from_date",
                                     type: "datetime",
                                     input: true,
                                     widget: { type: "calendar" },
@@ -56,7 +76,7 @@ const baseFormComponents = (isForOthers: boolean) => {
                             components: [
                                 {
                                     label: "To Date",
-                                    key: "toDate",
+                                    key: "to_date",
                                     type: "datetime",
                                     input: true,
                                     widget: { type: "calendar" },
@@ -70,6 +90,27 @@ const baseFormComponents = (isForOthers: boolean) => {
                     ]
                 },
                 {
+                    "label": "Break Duration",
+                    "tableView": true,
+                    "validateWhenHidden": false,
+                    "key": "break_duration",
+                    "type": "time",
+                    "input": true,
+                    "inputMask": "99:99"
+
+                },
+
+
+                {
+                    type: "checkbox",
+                    key: "overnight_clockout",
+                    label: "Overnight Clockout ?",
+                    input: true,
+                    labelPosition: "bottom",
+                    customClass: "custom-halfday-toggle border border-gray-300 rounded-lg shadow-sm p-2 bg-white mb-4 text-xl font-semibold "
+                },
+
+                {
                     label: "Reason",
                     key: "reason",
                     type: "select",
@@ -78,12 +119,8 @@ const baseFormComponents = (isForOthers: boolean) => {
                     customClass: "mb-4",
                     data: {
                         values: [
-                            { label: "Work From Home", value: "work-from-home" },
-                            { label: "Sick Leave", value: "sick-leave" },
-                            { label: "Vacation", value: "vacation" },
-                            { label: "Personal Leave", value: "personal-leave" },
-                            { label: "Training", value: "training" },
-                            { label: "Other", value: "other" }
+                            { label: "Work From Home", value: "Work From Home" },
+                            { label: "On Duty", value: "On Duty" },
                         ]
                     }
                 },
@@ -97,13 +134,29 @@ const baseFormComponents = (isForOthers: boolean) => {
                     customClass: "mb-4"
                 },
                 {
+                    label: "Attachments",
+                    tableView: false,
+                    webcam: true,
+                    fileTypes: [
+                        { label: "Images", value: "image/*" },
+                        { label: "Documents", value: "application/*" },
+                    ],
+                    image: true,
+                    imageSize: "200",
+                    storage: "base64", // Or 'url' if you have a backend for file storage
+                    key: "attachments",
+                    type: "file",
+                    input: true,
+                    tooltip: "Upload receipts or supporting documents.",
+                },
+                {
                     type: "button",
                     label: "Submit",
                     key: "submit",
                     disableOnInvalid: true,
                     input: true,
                     theme: "transparent",
-                    customClass: "text-black w-full"
+                    customClass: "text-white w-full bg-black rounded-lg"
                 }
             ]
         }
@@ -116,6 +169,10 @@ interface AttndanceRequestFormProps {
 }
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) => {
     const [isForOthers, setIsForOthers] = useState(false);
+    const { data: user_id } = useLoggedInUser();
+
+    const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
+    const mutation = useCreateNewAttendanceRequest()
 
     const formSchema = useMemo(() => ({
         title: "Attendance Request",
@@ -124,13 +181,27 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         display: "form",
         components: baseFormComponents(isForOthers),
     }), [isForOthers]);
-
     const handleSubmit = (submission: any) => {
         console.log("Form data:", submission.data);
-        // API call or further logic here
+        const body = {
+            company: isForOthers ? submission?.data?.company : user?.company,
+            employee: isForOthers ? submission?.data?.employee : user?.employee,
+            explanation: submission?.data?.explanation,
+            reason: submission?.data?.reason,
+            from_date: submission?.data?.from_date ? formatDateToYYYYMMDD(new Date(submission?.data?.from_date)) : null,
+            to_date: submission?.data?.to_date ? formatDateToYYYYMMDD(new Date(submission?.data?.to_date)) : null,
+            include_holidays: 1
+        };
+        mutation.mutate(body, {
+            onSuccess: () => {
+                onClose();
+            },
+            onError: (error) => {
+                console.error(error)
+            }
+        })
     };
-    console.log(formSchema)
-    return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
+    return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white overflow-scroll">
         <LayoutHeader
             tab="Attendance Request"
             onBack={() => {
@@ -165,7 +236,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
                     submitButton: false,
                     noAlerts: true
                 }}
-                className="formio-no-border"
+                className="formio-no-border address-form-container"
             />
         </div>
     </div>

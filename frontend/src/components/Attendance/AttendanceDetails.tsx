@@ -17,7 +17,7 @@ export function AttendanceDetailView({ data, onClose }: { data: AttendanceReques
             }}
             icon="x"
         />
-        <div className="m-4 p-2 bg-white rounded-lg shadow-md">
+        <div className="m-4 p-2 bg-white rounded-lg ">
 
             {/* Employee Info */}
             <div className="p-4 border-b">
@@ -79,19 +79,22 @@ export function AttendanceDetailView({ data, onClose }: { data: AttendanceReques
 
         </div>
         {/* Action Buttons */}
-        <div className="p-4 flex space-x-3 fixed bottom-0 w-full border-t border-gray-300 ">
-            <button
-                className="bg-red-100 p-2 w-1/2 text-red-700 rounded-xl font-semibold"
-            // onClick={(e) => handleAction("rejected", e)}
-            >
-                Reject
-            </button>
-            <button
-                className="bg-green-200 p-2 w-1/2 text-green-700 rounded-xl font-semibold"
-            // onClick={(e) => handleAction("approved", e)}
-            >
-                Approve
-            </button>
+        <div className="p-4 flex  fixed bottom-0 w-full  ">
+
+            <div className=" w-full space-x-3 flex bg-white p-4 rounded-xl">
+                <button
+                    className="bg-red-100 p-2 w-1/2 text-red-700 rounded-xl font-semibold"
+                // onClick={(e) => handleAction("rejected", e)}
+                >
+                    Reject
+                </button>
+                <button
+                    className="bg-green-200 p-2 w-1/2 text-green-700 rounded-xl font-semibold"
+                // onClick={(e) => handleAction("approved", e)}
+                >
+                    Approve
+                </button>
+            </div>
         </div>
     </div> : null
 

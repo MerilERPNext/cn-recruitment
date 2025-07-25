@@ -28,7 +28,7 @@ const EmployeeStatusCard = ({ data }: any) => {
     const statusColors = getStatusIndicatorColor(data?.status?.toLowerCase() || "default");
 
     return (
-        <div className="w-full px-4 py-2 bg-white rounded-xl">
+        <div className="w-full border-b-2 border-gray-100 py-2 bg-white ">
             <div className="flex gap-4 mb-2">
                 <Avatar
                     name={data?.employee_name}

@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react"
-import LayoutHeader from "../../shared/LayoutHeader"
 import DatePicker from "react-datepicker"
-import { ArrowLeft, Plus, XCircle } from "lucide-react"
+import { ArrowLeft, ArrowUpRight, Plus, XCircle } from "lucide-react"
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser"
 import { useAttendance } from "../../../hooks/useAttendance"
 import FrappeListView from "../../ListView"
@@ -10,6 +9,8 @@ import { useNavigate } from "react-router"
 import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard"
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm"
 import RequestCompOff from "./RequestCompOff"
+import CheckIn from "../CheckIn/CheckIn"
+import LayoutHeader from "../../shared/LayoutHeader"
 
 const EmployeeAttendance = () => {
     const navigate = useNavigate()
@@ -23,6 +24,7 @@ const EmployeeAttendance = () => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(new Date(2025, 6, 17))
     const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] = useState<boolean>(false)
     const [showReqCompOff, setShowReqCompOff] = useState<boolean>(false)
+    const [showFaceRecognition, setShowFaceRecognition] = useState<boolean>(false)
     type Status = | "present"
         | "absent"
         | "on-leave"
@@ -97,18 +99,38 @@ const EmployeeAttendance = () => {
             </div>
         )
     }
+
+
+
+    const CardSkeleton = () => (
+        <div className="rounded-xl bg-gray-100 animate-pulse">
+            <div className="px-4 py-2">
+                <div className="flex items-center justify-between gap-1">
+                    <div>
+                        <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+                        <div className="h-3 w-24 bg-gray-300 rounded"></div>
+                    </div>
+                    <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+                </div>
+            </div>
+        </div>
+
+    );
+
+
     const defaultFilters = useMemo(() => {
         if (!userId) return undefined;
         return { owner: userId };
     }, [userId]);
 
     return <div>
-        <LayoutHeader tab="Attendance" />
-        <div className="flex flex-col gap-4 mt-2 px-4 pb-4">
+        <LayoutHeader tab={"My Attendance"} />
+        {/* <LayoutHeader tab="Attendance" /> */}
+        <div className="flex flex-col">
 
             {/* ------------------------------------------------- Info Card Start---------------------------------------------- */}
 
-            <div className="p-4 border-2 border-gray-200 rounded-xl bg-white">
+            <div className="px-6 py-4 border-b-1 border-gray-200 bg-white">
                 <h1 className="text-lg font-semibold text-gray-900 mb-4">Today's Attendance</h1>
 
                 <div className="flex items-center justify-between gap-1">
@@ -122,13 +144,27 @@ const EmployeeAttendance = () => {
                         <div className="text-lg font-semibold text-gray-900">{todayAttendance?.working_hours || "-- --"}</div>
                     </div>
 
-                    <button className="bg-blue-100 hover:bg-blue-200 px-6 py-2">Check Out</button>
+                    <button className="bg-blue-100 hover:bg-blue-200 px-6 py-2"
+
+                        onClick={() => { setShowFaceRecognition(!showFaceRecognition) }}
+                    > {todayAttendance?.in_time ? "Check Out" : "Check In"}</button>
                 </div>
             </div>
             {/* ------------------------------------------------- Info Card End---------------------------------------------- */}
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
-            <div className="mb-2 w-full  pb-2 border-2 border-gray-200 rounded-xl">
+            <div className=" w-full  pb-2 bg-white border-b-1 border-gray-200">
+                <div className="w-full flex justify-end">
+
+                    <button
+                        className="text-gray-500 px-2 my-4 flex gap-1 justify-center items-center"
+                        onClick={() => {
+                            navigate("/webapp/attendance/emp-attendance/all")
+                        }}>
+                        View In List
+                        <ArrowUpRight className="h-5 w-5" />
+                    </button>
+                </div>
                 <DatePicker
                     selected={selectedDate}
                     onChange={(date) => setSelectedDate(date)}
@@ -190,34 +226,43 @@ const EmployeeAttendance = () => {
             {/* ------------------------------------------------- Calendar End---------------------------------------------- */}
 
             {/* Request Attendance Correction */}
-            <button className="w-full text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2"
-                onClick={() => {
-                    setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
-                }}>
-                <Plus className="w-5 h-5 mr-2 font-bold" />
-                Request Attendance Correction
-            </button>
+
+
+            <div className="bg-white p-4 border-b-1 border-gray-200" >
+                <div className="flex gap-2">
+                    <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm"
+                        onClick={() => {
+                            setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
+                        }}>
+                        <Plus className="w-4 h-4 mr-2 font-bold" />
+                        Attendance Request
+                    </button>
+                </div>
+            </div>
+
             {/* Request Attendance Correction */}
 
 
 
             {/* Work Hour Exceptions */}
-            <h3 className="text-lg font-semibold text-gray-900">Work Hour Exceptions</h3>
-            <div className="flex gap-3">
-                <button onClick={() => { setShowReqCompOff(!showReqCompOff) }} className="flex-1 text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2">
-                    <Plus className="w-4 h-4 mr-2 font-bold" />
-                    Request Comp Off
-                </button>
-                <button className="flex-1 text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2">
-                    <Plus className="w-4 h-4 mr-2 font-bold" />
-                    Request Overtime
-                </button>
+            <div className="bg-white rou p-4 border-b-1 border-gray-200" >
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Work Hour Exceptions</h3>
+                <div className="flex gap-2">
+                    <button onClick={() => { setShowReqCompOff(!showReqCompOff) }} className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
+                        <Plus className="w-4 h-4 mr-2 font-bold " />
+                        Request Comp Off
+                    </button>
+                    <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
+                        <Plus className="w-4 h-4 mr-2 font-bold" />
+                        Request Overtime
+                    </button>
+                </div>
             </div>
             {/* Work Hour Exceptions */}
 
             {/* My Attendance Requests */}
-            <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">My Attendance Requests</h3>
+            <div className="bg-white">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1 p-4">My Attendance Requests</h3>
                 <FrappeListView
                     doctype="Attendance Request"
                     isSearch={false}
@@ -228,6 +273,7 @@ const EmployeeAttendance = () => {
                             />
                         );
                     }}
+                    SkeletonComponent={CardSkeleton}
                     defaultFilters={defaultFilters}
                     showRefereshButton={false}
                     onItemClick={() => { }}
@@ -235,9 +281,7 @@ const EmployeeAttendance = () => {
                     isFilter={false}
                     pageSize={5}
                     defaultFields={[
-                        // '*',
                         "reason",
-                        // "label",
                         "modified",
                         "creation",
                         "docstatus"
@@ -246,13 +290,16 @@ const EmployeeAttendance = () => {
 
 
             </div>
-            {showReqAttendanceCorrection &&
+            {
+                showReqAttendanceCorrection &&
                 <AttndanceRequestForm onClose={() => { setShowReqAttendanceCorrection(false) }} />
             }
             {
                 showReqCompOff && <RequestCompOff onClose={() => setShowReqCompOff(false)} />
             }
-            {/* My Attendance Requests */}
+            {
+                showFaceRecognition && <CheckIn onClose={() => setShowFaceRecognition(false)} />
+            }
         </div>
     </div >
 

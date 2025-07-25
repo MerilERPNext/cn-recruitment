@@ -1,11 +1,16 @@
-import {Form} from "@tsed/react-formio";
+import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css"; // Ensure you import default styles if not already
 import LayoutHeader from "../../shared/LayoutHeader";
-import {useLeaveType} from "../../../hooks/useAttendance";
-import {useMemo} from "react";
+import { useLeaveType } from "../../../hooks/useAttendance";
+import { useMemo } from "react";
+import { useRequestCompOff } from "../../../hooks/useLeaves";
+import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 
 const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
   const { data } = useLeaveType();
+  const mutation = useRequestCompOff()
   const reqCompensatoryOff = useMemo(() => {
     return {
       title: "Request Compensatory Off",
@@ -23,28 +28,16 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
           components: [
             {
               label: "Leave Type",
-              key: "leave-type",
+              key: "leave_type",
               type: "select",
               input: true,
               placeholder: "Select a leave type",
               customClass: "mb-4",
               data: {
-                values:
-                  data && data?.length > 0
-                    ? data?.map((item: { name: any; leave_type_name: any }) => {
-                        return {
-                          label: item?.name,
-                          value: item?.leave_type_name,
-                        };
-                      })
-                    : [],
-                // values: [
-                //     { label: "Compensatory Off", value: "compensatory-off" },
-                //     { label: "Sick Leave", value: "sick-leave" },
-                //     { label: "Vacation", value: "vacation" },
-                //     { label: "Personal Leave", value: "personal-leave" },
-                // ]
-              },
+                values: data && data?.length > 0 ?
+                  data?.map((item: { name: any; leave_type_name: any; }) => { return { label: item?.name, value: item?.leave_type_name } }) : []
+
+              }
             },
             {
               type: "columns",
@@ -59,10 +52,10 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
                       widget: { type: "calendar" },
                       format: "yyyy-MM-dd",
                       placeholder: "yyyy-mm-dd",
-                      customClass: "mb-4",
-                    },
+                      customClass: "mb-4"
+                    }
                   ],
-                  width: 6,
+                  width: 6
                 },
                 {
                   components: [
@@ -74,21 +67,21 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
                       placeholder: "yyyy-mm-dd",
                       widget: { type: "calendar" },
                       format: "yyyy-MM-dd",
-                      customClass: "mb-4 mt-4",
-                    },
+                      customClass: "mb-4 mt-4"
+                    }
                   ],
-                  width: 6,
-                },
-              ],
+                  width: 6
+                }
+              ]
             },
             {
               label: "Reason for Comp Off",
-              key: "reason-for-comp-off",
+              key: "reason",
               type: "textarea",
               input: true,
               placeholder: "Provide additional details...",
               rows: 4,
-              customClass: "mb-4 mt-4",
+              customClass: "mb-4 mt-4"
             },
             {
               type: "button",
@@ -97,18 +90,30 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
               disableOnInvalid: true,
               input: true,
               theme: "transparent",
-              customClass:
-                "fixed bottom-0 left-0 custom-w-fill-available bg-white border-t p-4 m-4 text-black [&>button]:border-1 border-black py-2 rounded-lg",
-            },
-          ],
-        },
-      ],
+              customClass: "fixed bottom-0 left-0 custom-w-fill-available bg-white border-t p-4 m-4 text-white [&>button]:bg-black border-black py-2 rounded-lg"
+            }
+          ]
+        }
+      ]
     };
-  }, [data]);
-  console.log(reqCompensatoryOff);
+  }, [data])
 
+  const { data: user_id } = useLoggedInUser();
+
+  const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
   const handleSubmit = (submission: any) => {
     console.log("Form data:", submission.data);
+    const body = {
+      leave_type: submission?.data?.leave_type,
+      work_from_date: submission?.data?.fromDate ? formatDateToYYYYMMDD(new Date(submission?.data?.fromDate)) : null,
+      work_end_date: submission?.data?.toDate ? formatDateToYYYYMMDD(new Date(submission?.data?.toDate)) : null,
+      reason: submission?.data?.reason,
+      include_holidays: 1,
+      employee_name: user?.employee_name,
+      department: user?.department,
+      employee: user?.employee,
+    };
+    mutation.mutate(body)
     // Send data to API here
   };
 

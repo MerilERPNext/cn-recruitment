@@ -1,4 +1,4 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { attendanceService } from '../services/attendanceService';
 import type { Attendance, AttendanceRequest } from '../types/attendance';
 import { FilterCondition } from '../types/frappe';
@@ -29,10 +29,10 @@ export const useAllAttendance = (): UseQueryResult<Attendance[], Error> => {
     ...defaultQueryOptions,
   });
 };
-export const useAllAttendanceRequests = (): UseQueryResult<AttendanceRequest[], Error> => {
+export const useAllAttendanceRequests = (pageSize:number): UseQueryResult<AttendanceRequest[], Error> => {
   return useQuery<AttendanceRequest[], Error>({
     queryKey: ['attendance', 'all'],
-    queryFn: () => attendanceService.getAllAttendanceRequests(),
+    queryFn: () => attendanceService.getAllAttendanceRequests(pageSize),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
@@ -75,3 +75,18 @@ export const useLeaveType = (
     gcTime: defaultGcTime,
   });
 };
+
+export function useCreateNewAttendanceRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: any) => attendanceService.createAttendanceRequest(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+    },
+    onError:(e)=>{
+      console.log(e)
+    }
+  });
+}
