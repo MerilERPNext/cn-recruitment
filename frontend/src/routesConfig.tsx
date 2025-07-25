@@ -2,6 +2,7 @@ import { ReactElement } from "react";
 import SearchMembers from "./components/SearchMembers";
 import Notices from "./components/Notices";
 import IdCard from "./components/IdCard";
+import Expenses from "./components/Expenses";
 import RecruitmentApp from "./components/RecruitmentApp";
 import MyProfile from "./components/MyProfile/MyProfile";
 import InterviewPage from "./components/InterviewDetails";
@@ -46,6 +47,7 @@ import ShiftChangeRequest from "./components/ShiftRequest/ShiftChangeRequest";
 import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
 import TeamShift from "./components/ShiftRequest/TeamShift";
 import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
+import Policies from "./components/Policies";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
 
 export interface AppRoute {
@@ -61,6 +63,8 @@ export const routesConfig: AppRoute[] = [
   { path: "/webapp/notices", element: <Notices /> },
   { path: "/webapp/id-card", element: <IdCard /> },
   { path: "/webapp/id-card/:employeeId", element: <IdCard /> },
+  { path: "/webapp/expenses", element: <Expenses /> },
+  { path: "/webapp/policies", element: <Policies /> },
   {
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
     element: <JobApplicantDetails />,
