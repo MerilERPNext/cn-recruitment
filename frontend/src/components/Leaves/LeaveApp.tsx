@@ -95,7 +95,7 @@ const LeaveApp: React.FC = () => {
         </nav>
       </header>
 
-      <main className="flex-grow overflow-y-auto">
+      <main className="flex-grow">
         <Outlet />
       </main>
 

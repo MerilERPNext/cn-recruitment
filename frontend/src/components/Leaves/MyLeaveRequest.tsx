@@ -87,7 +87,7 @@ const MyLeaveRequest: React.FC = () => {
   const { data: currentEmployee } = useEmployeeByUserId(userId);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mt-2">
       <FrappeListView
         doctype="Leave Application"
         ItemComponent={LeaveRequestItem}

@@ -33,7 +33,7 @@ const TeamLeaveRequest = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="py-4 mt-2">
       <FrappeListView
         doctype="Leave Application"
         ItemComponent={({ item }) => (
