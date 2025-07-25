@@ -5,7 +5,6 @@ import App from './App.tsx'
 import "chatnext-ui/dist/index.css";
 import "chatnext-ui/dist/index";
 
-
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
