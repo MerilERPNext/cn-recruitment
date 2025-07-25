@@ -45,19 +45,26 @@ const dailyAllowanceExpenseFormSchema = {
     },
     {
       label: "Attachments",
+      key: "attachments",
+      type: "file",
+      storage: "base64",
       tableView: false,
+      input: true,
       webcam: true,
+      validate: {
+        required: true,
+      },
       fileTypes: [
         { label: "Images", value: "image/*" },
         { label: "Documents", value: "application/*" },
       ],
-      image: true,
-      imageSize: "200",
-      storage: "base64", // Or 'url' if you have a backend for file storage
-      key: "attachments",
-      type: "file",
-      input: true,
+      image: false,
       tooltip: "Upload receipts or supporting documents.",
+      fileViewTemplate:
+        '<div class="flex items-center space-x-2">' +
+        '<svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6a2 2 0 012-2h6l4 4v6a2 2 0 01-2 2H9a2 2 0 01-2-2z"/></svg>' +
+        '<a class="text-blue-600 underline" href="${url}" target="_blank" rel="noreferrer">${originalName}</a>' +
+        "</div>",
     },
   ],
 };
