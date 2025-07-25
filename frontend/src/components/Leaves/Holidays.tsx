@@ -29,16 +29,14 @@ const HolidayCard: React.FC<{ holiday: Holiday }> = ({ holiday }) => {
     const weekday = format(dateObj, "EEEE");
 
     return (
-        <div className="flex items-center gap-3 bg-white shadow-sm rounded-xl p-3 mb-2">
-            {/* Date Badge */}
-            <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-blue-50 text-blue-600 font-semibold text-xs">
+        <div className="flex items-center gap-3 bg-white shadow-sm rounded-xl p-2 mb-2">
+            <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-semibold text-xs">
                 <span className="uppercase leading-none">{month}</span>
-                <span className="text-lg">{day}</span>
+                <span className="text-md">{day}</span>
             </div>
-            {/* Details */}
             <div className="flex flex-col">
                 <span className="font-medium text-gray-900">{holiday.name}</span>
-                <span className="text-gray-500 text-sm">{weekday}</span>
+                <span className="text-blue-700 text-sm">{weekday}</span>
             </div>
         </div>
     );
@@ -49,46 +47,77 @@ const Holidays: React.FC = () => {
     const [showAllRegular, setShowAllRegular] = React.useState(false);
     const [showAllOptional, setShowAllOptional] = React.useState(false);
 
-    const displayedRegular = showAllRegular ? regularHolidays : regularHolidays.slice(0, 2);
-    const displayedOptional = showAllOptional ? optionalHolidays : optionalHolidays.slice(0, 2);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcomingRegularHolidays = React.useMemo(() => {
+        return regularHolidays
+            .filter(holiday => new Date(holiday.date) >= today)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }, []);
+
+    const upcomingOptionalHolidays = React.useMemo(() => {
+        return optionalHolidays
+            .filter(holiday => new Date(holiday.date) >= today)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }, []);
+
+    const displayedRegular = showAllRegular ? upcomingRegularHolidays : upcomingRegularHolidays.slice(0, 3);
+    const displayedOptional = showAllOptional ? upcomingOptionalHolidays : upcomingOptionalHolidays.slice(0, 3);
 
     return (
         <div className="p-4 bg-gray-50 min-h-full pb-24">
-            {/* Regular Holidays */}
             <section className="mb-8">
-                <h2 className="text-lg font-semibold mb-4">Regular Holidays</h2>
-                {displayedRegular.map((holiday) => (
-                    <HolidayCard key={holiday.date} holiday={holiday} />
-                ))}
-                {regularHolidays.length > 2 && (
-                    <button
-                        onClick={() => {
-                            navigate("/webapp/leave-app/leaves/holidays/all");
-
-                        }}
-                        className="w-full bg-black text-white py-3 my-2 rounded-lg font-medium"
-                    >
-                        {showAllRegular ? "View Less" : "View More"}
-                    </button>
+                <h2 className="text-lg font-semibold mb-4">Upcoming Regular Holidays</h2>
+                {upcomingRegularHolidays.length > 0 ? (
+                    <>
+                        {displayedRegular.map((holiday) => (
+                            <HolidayCard key={`${holiday.date}-${holiday.name}`} holiday={holiday} />
+                        ))}
+                        {upcomingRegularHolidays.length > 3 && (
+                            <button
+                                onClick={() => setShowAllRegular(!showAllRegular)}
+                                className="w-full bg-black text-white py-2 my-2 rounded-lg font-medium"
+                            >
+                                {showAllRegular ? "View Less" : `View More (${upcomingRegularHolidays.length - 3} more)`}
+                            </button>
+                        )}
+                        <button
+                            onClick={() => navigate("/webapp/leave-app/leaves/holidays/all")}
+                            className="w-full bg-black text-white py-2 my-2 rounded-lg font-medium"
+                        >
+                            View More
+                        </button>
+                    </>
+                ) : (
+                    <p className="text-gray-500 text-center py-4">No upcoming regular holidays</p>
                 )}
             </section>
 
-
             <section>
-                <h2 className="text-lg font-semibold mb-4">Optional Holidays</h2>
-                {displayedOptional.map((holiday) => (
-                    <HolidayCard key={holiday.date} holiday={holiday} />
-                ))}
-                {optionalHolidays.length > 2 && (
-                    <button
-                        onClick={() => {
-                            navigate("/webapp/leave-app/leaves/holidays/all");
-
-                        }}
-                        className="w-full bg-black text-white py-3 my-2 rounded-lg font-medium"
-                    >
-                        {showAllOptional ? "View Less" : "View More"}
-                    </button>
+                <h2 className="text-lg font-semibold mb-4">Upcoming Optional Holidays</h2>
+                {upcomingOptionalHolidays.length > 0 ? (
+                    <>
+                        {displayedOptional.map((holiday) => (
+                            <HolidayCard key={`${holiday.date}-${holiday.name}`} holiday={holiday} />
+                        ))}
+                        {upcomingOptionalHolidays.length > 3 && (
+                            <button
+                                onClick={() => setShowAllOptional(!showAllOptional)}
+                                className="w-full bg-black text-white py-2 my-2 rounded-lg font-medium"
+                            >
+                                {showAllOptional ? "View Less" : `View More (${upcomingOptionalHolidays.length - 3} more)`}
+                            </button>
+                        )}
+                        <button
+                            onClick={() => navigate("/webapp/leave-app/leaves/holidays/all")}
+                            className="w-full bg-black text-white py-2 my-2 rounded-lg font-medium"
+                        >
+                            View More
+                        </button>
+                    </>
+                ) : (
+                    <p className="text-gray-500 text-center py-4">No upcoming optional holidays</p>
                 )}
             </section>
         </div>

@@ -29,16 +29,16 @@ const LeaveBalance: React.FC = () => {
   const [activeIdx, setActiveIdx] = useState(0);
 
   return (
-    <div className=" min-h-screen px-4 pb-4">
-      <div className="mt-4">
+    <div className=" min-h-screen px-4 pb-4 bg-[#F8FBFC]">
+      <div className="pt-4">
         {leaveData.map((leave, idx) => (
           <div
             key={leave.type}
-            className={`rounded-2xl mb-4 p-5 shadow-sm cursor-pointer transition-colors ${idx === activeIdx ? activeBg : inactiveBg
+            className={`rounded-xl mb-4 p-4 shadow-sm cursor-pointer transition-colors ${idx === activeIdx ? activeBg : inactiveBg
               }`}
             onClick={() => setActiveIdx(idx)}
           >
-            <div className={`text-xl font-semibold mb-4 ${labelColor}`}>
+            <div className={`text-xl font-semibold mb-3 ${labelColor}`}>
               {leave.type}
             </div>
             <div className="flex justify-between">
@@ -57,6 +57,9 @@ const LeaveBalance: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+      <div className="w-full">
+        <button className="bg-black rounded-lg text-white w-full py-2">Show Detailed View</button>
       </div>
     </div>
   );

@@ -25,8 +25,8 @@ export default function LeaveRequestApp() {
   }, [location.pathname, navigate]);
 
   return (
-    <div className="h-screen flex flex-col">
-      <div style={{ height: "var(--leave-header-height)" }} className="fixed top-[6rem] left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-4">
+    <div className="h-screen flex flex-col ">
+      <div style={{ height: "var(--leave-header-height)" }} className="fixed top-[6rem] left-0 right-0 z-50 bg-white border-b mt-2 px-4 py-4">
         <div className="max-w-md mx-auto">
           <div className="flex bg-gray-200 rounded-lg w-full p-1">
             {tabConfig.map((tab) => (
