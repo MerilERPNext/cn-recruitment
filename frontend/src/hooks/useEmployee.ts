@@ -1,6 +1,7 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { EmployeeService } from "../services/employeeService";
 import { Employee, EmployeeIdCard, EmployeeListItem } from "../types/employee";
+import { profileService } from "../services/profileService";
 
 // Hook to get a single employee by ID
 export const useEmployee = (
@@ -98,5 +99,13 @@ export const useEmployeeByUserId = (userId?: string) => {
     queryFn: () => EmployeeService.getEmployeeByUserId(userId!),
     enabled: !!userId,
     staleTime: 1000 * 60 * 5,
+  });
+};
+
+
+export const useGenderTypes = () => {
+  return useQuery({
+    queryKey: ["gender-types"],
+    queryFn: () => profileService.getGenders(),
   });
 };

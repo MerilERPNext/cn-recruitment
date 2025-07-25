@@ -2,9 +2,12 @@ import React, { useMemo } from "react";
 import { Form } from "@tsed/react-formio";
 import { PersonalInfoProps } from "./MyProfile";
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
+import { useGenderTypes } from "../../hooks/useEmployee";
 
 export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   const updateEmployeeMutation = useUpdateFrappeDocument();
+
+  const { data: genderTypes } = useGenderTypes();
 
   const personalInfoForm = useMemo(() => {
     return {
@@ -63,14 +66,13 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                           label: "Gender",
                           input: true,
                           validate: { required: true },
-                          placeholder: "Male",
+                          placeholder: "Eg.. Male",
                           defaultValue: user?.gender ?? "",
                           data: {
-                            values: [
-                              { value: "Male", label: "Male" },
-                              { value: "Female", label: "Female" },
-                              { value: "Other", label: "Other" },
-                            ],
+                            values: genderTypes?.data.map((s) => ({
+                              label: s?.name,
+                              value: s?.name,
+                            })),
                           },
                           customClass: "appearance-none",
                           autofocus: false,
@@ -175,13 +177,13 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
               action: "submit",
               label: "Save Changes",
               theme: "primary",
-              customClass: "my-6 w-full black",
+              customClass: "px-2 my-3 w-full",
             },
           ],
         },
       ],
     };
-  }, [user]);
+  }, [user, genderTypes]);
 
   return (
     <div className="address-form-container max-w-md mx-auto rounded-lg bg-white shadow-md">

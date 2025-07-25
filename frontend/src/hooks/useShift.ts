@@ -45,14 +45,15 @@ export const useRejectShiftRequest = () => {
 };
 
 export const useShiftTypes = () => {
-    return useQuery({
-      queryKey: ["shift-types"],
-      queryFn: getAllShiftTypes,
-    });
-  };
-  export const useMyCurrentShiftAssignment = () => {
-    return useQuery({
-      queryKey: ["shift-assignment"],
-      queryFn: getCurrentMyShiftAssignment,
-    });
-  };
+  return useQuery({
+    queryKey: ["shift-types"],
+    queryFn: getAllShiftTypes,
+  });
+};
+
+export const useMyCurrentShiftAssignment = () => {
+  return useQuery({
+    queryKey: ["shift-assignment"],
+    queryFn: getCurrentMyShiftAssignment,
+  });
+};
