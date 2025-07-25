@@ -45,6 +45,8 @@ interface FrappeListViewProps<T extends BaseItem> {
   infiniteScroll?: boolean
   permissionErrorMessage?: string
   showRefereshButton?: boolean
+  onRefetchAvailable?: (refetch: () => void) => void;
+
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -61,6 +63,7 @@ const FrappeListView = <T extends BaseItem>({
   infiniteScroll = false,
   showRefereshButton = true,
   permissionErrorMessage,
+  onRefetchAvailable
 }: FrappeListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
@@ -90,7 +93,6 @@ const FrappeListView = <T extends BaseItem>({
       setQueryParamsFilters({});
     }
   }, [filtersString]);
-
   // Console log component props
   console.log(`🎯 FrappeListView initialized for doctype: ${doctype}`, {
     pageSize,
@@ -175,6 +177,14 @@ const FrappeListView = <T extends BaseItem>({
       enabled: !infiniteScroll,
     },
   )
+
+  useEffect(() => {
+    if (onRefetchAvailable) {
+      onRefetchAvailable(() => {
+        queryClient.invalidateQueries({ queryKey: ["documents-infinite"] })
+      });
+    }
+  }, [onRefetchAvailable]);
 
   // Log query results
   useEffect(() => {
@@ -274,6 +284,7 @@ const FrappeListView = <T extends BaseItem>({
     queryClient.invalidateQueries({ queryKey: ["documents-infinite", doctype] })
     queryClient.invalidateQueries({ queryKey: ["document-count", doctype] })
   }
+
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {

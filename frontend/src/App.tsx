@@ -1,9 +1,14 @@
 import React from "react";
-import {BrowserRouter as Router, Navigate, Route, Routes,} from "react-router-dom";
-import {QueryProvider} from "./providers/QueryProvider";
+import {
+  BrowserRouter as Router,
+  Navigate,
+  Route,
+  Routes,
+} from "react-router-dom";
+import { QueryProvider } from "./providers/QueryProvider";
 import "./App.css";
 
-import {AppRoute, routesConfig} from "./routesConfig";
+import { AppRoute, routesConfig } from "./routesConfig";
 import MobileDashboard from "./components/MobileDashboard";
 
 const App: React.FC = () => {

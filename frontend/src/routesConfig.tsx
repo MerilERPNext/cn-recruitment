@@ -1,6 +1,5 @@
 import { ReactElement } from "react";
 import SearchMembers from "./components/SearchMembers";
-import Notices from "./components/Notices";
 import IdCard from "./components/IdCard";
 import Expenses from "./components/Expenses";
 import RecruitmentApp from "./components/RecruitmentApp";
@@ -17,6 +16,9 @@ import ReferralList from "./components/ReferralList";
 import JobOpeningsUI from "./components/JobOpening/JobOpening";
 import JobApplicantList from "./components/JobApplicantList";
 import JobApplicantDetails from "./components/JobApplicantDetail";
+import NoticesLayout from "./components/Notices/NoticesLayout";
+import NoticesTab from "./components/Notices/NoticesTab";
+import NoticeDetails from "./components/Notices/NoticeDetails";
 import ExpensesApp from "./components/Expenses-App/ExpensesApp";
 import ExpensesList from "./components/Expenses-App/ExpensesList";
 import GeneralExpenseClaim from "./components/Expenses-App/GeneralExpenseClaim";
@@ -60,7 +62,7 @@ export interface AppRoute {
 export const routesConfig: AppRoute[] = [
   // Standalone Routes
   { path: "/webapp/search-members", element: <SearchMembers /> },
-  { path: "/webapp/notices", element: <Notices /> },
+
   { path: "/webapp/id-card", element: <IdCard /> },
   { path: "/webapp/id-card/:employeeId", element: <IdCard /> },
   { path: "/webapp/expenses", element: <Expenses /> },
@@ -109,6 +111,17 @@ export const routesConfig: AppRoute[] = [
     element: <ShiftChangeForm />,
   },
 
+  {
+    path: '/webapp/notices',
+    element: <NoticesLayout />,
+    children: [
+      { path: 'all', element: <NoticesTab tab="all" /> },
+      { path: 'unread', element: <NoticesTab tab="unread" /> },
+      // { path: 'archived', element: <NoticesTab tab="archived" /> },
+    ],
+  },
+
+  { path: '/webapp/notices/:id', element: <NoticeDetails /> },
   {
     path: "/webapp/my-profile",
     element: <MyProfile />,
