@@ -40,24 +40,22 @@ export const attendanceService = {
     return response.data;
   },
 
-  createAttendanceRequest:async (body: any): Promise<any> => {
-      try {
-      const response = await fetch(`/api/resource/Attendance Request`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
+    createAttendanceRequest: async (body: any): Promise<any> => {
+    const response = await fetch(`/api/resource/Attendance Request`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
 
-      const result = await response.json();
-      return result
-    } catch (error) {
-      console.error('📡 Error archiving notice:', error);
-      return false;
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: `Request failed with status ${response.status}` }));
+      throw new Error(error.message);
     }
 
+    return response.json();
   }
 
 

@@ -34,7 +34,7 @@ const AttendanceRequest = () => {
         {/* <LayoutHeader tab="Attendance Request" /> */}
 
         {showForm ? <AttndanceRequestForm onClose={() => { setShowForm(false) }} /> :
-            <div className="p-4">
+            <div className="p-4 bg-white h-screen">
                 <FrappeListView
                     doctype="Attendance Request"
                     isSearch={false}

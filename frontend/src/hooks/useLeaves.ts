@@ -17,7 +17,7 @@ export function useRequestCompOff() {
     mutationFn: (body: any) => leaveService.requestCompOffLeave(body),
     onSuccess: () => {
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ["request-comp-off"] });
+      queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
     },
     onError:(e)=>{
       console.log(e)

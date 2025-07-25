@@ -34,9 +34,7 @@ const SelectByMonth = ({ onClose, onChange }: { onClose: () => void, onChange: (
             <LayoutHeader
                 tab="Select By Month"
                 onBack={() => {
-                    onChange(selectedMonth)
                     onClose()
-
                 }}
                 icon="x"
             />

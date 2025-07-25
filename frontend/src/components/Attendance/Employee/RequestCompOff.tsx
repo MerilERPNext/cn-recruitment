@@ -105,8 +105,8 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
     console.log("Form data:", submission.data);
     const body = {
       leave_type: submission?.data?.leave_type,
-      work_from_date: formatDateToYYYYMMDD(new Date(submission?.data?.fromDate)),
-      work_end_date: formatDateToYYYYMMDD(new Date(submission?.data?.toDate)),
+      work_from_date: submission?.data?.fromDate ? formatDateToYYYYMMDD(new Date(submission?.data?.fromDate)) : null,
+      work_end_date: submission?.data?.toDate ? formatDateToYYYYMMDD(new Date(submission?.data?.toDate)) : null,
       reason: submission?.data?.reason,
       include_holidays: 1,
       employee_name: user?.employee_name,

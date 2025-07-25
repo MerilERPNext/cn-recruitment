@@ -21,8 +21,7 @@ const CheckIn = ({ onClose }: { onClose: () => void; }) => {
                             <div className="absolute inset-4">
                                 {/* Face Placeholder */}
                                 <div className="absolute inset-8  flex items-center justify-center overflow-hidden">
-                                    <img src={defaultProfile} />
-                                </div>
+                                    <img src={defaultProfile} alt="Face recognition placeholder" />                                </div>
                             </div>
 
                             {/* Corner Brackets */}

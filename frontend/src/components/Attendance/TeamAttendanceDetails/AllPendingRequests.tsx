@@ -8,7 +8,7 @@ import LayoutHeader from '../../shared/LayoutHeader'
 import { useNavigate } from 'react-router'
 
 const AllPendingRequests = () => {
-    const { data = [] } = useAllAttendanceRequests(20) as { data: AttendanceRequest[] }
+    const { data = [] } = useAllAttendanceRequests(20)
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [selectedRequest, setSelectedRequest] = useState<AttendanceRequest | null>(null)
     const navigate = useNavigate()
@@ -29,9 +29,9 @@ const AllPendingRequests = () => {
         <LayoutHeader tab={"Pending Attendants"} onBack={() => {
             navigate(-1)
         }} />
-        <div className='p-4'>
+        <div className='p-4 bg-white'>
 
-            <div className='p-2'>
+            <div>
                 <div className=" mb-4">
                     <BulkActionBar
                         selectedIds={selectedIds}

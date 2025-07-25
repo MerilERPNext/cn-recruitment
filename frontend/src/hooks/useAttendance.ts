@@ -83,10 +83,10 @@ export function useCreateNewAttendanceRequest() {
     mutationFn: (body: any) => attendanceService.createAttendanceRequest(body),
     onSuccess: () => {
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ["new-attendance-request"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
     },
     onError:(e)=>{
-      console.log(e,"----------------->")
+      console.log(e)
     }
   });
 }

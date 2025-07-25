@@ -35,7 +35,7 @@ const AttendanceLayout: React.FC = () => {
         <div className="min-h-screen bg-gray-100 flex flex-col">
             <LayoutHeader tab={activeTab.name} />
 
-            <div className="sticky top-[52px] flex border-b border-gray-200 gap-4 bg-white sticky top-0 z-5 overflow-x-auto whitespace-nowrap no-scrollbar">
+            <div className="top-[52px] flex border-b border-gray-200 gap-4 bg-white sticky top-0 z-5 overflow-x-auto whitespace-nowrap no-scrollbar">
                 {tabs.map((tab) => (
                     <button
                         key={tab.key}

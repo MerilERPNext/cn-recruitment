@@ -44,9 +44,9 @@ const LayoutHeader = ({ path, tab, onBack, icon = 'chevron', children }: LayoutH
                     </div>
 
                     {/* Right: Children */}
-                    {<div className="flex items-center justify-end overflow-hidden max-w-20">
+                    <div className="flex items-center justify-end overflow-hidden max-w-20">
                         {children}
-                    </div>}
+                    </div>
                 </div>
             </div>
         </div>

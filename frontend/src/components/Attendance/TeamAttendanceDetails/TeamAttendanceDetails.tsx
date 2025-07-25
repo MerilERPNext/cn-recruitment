@@ -37,8 +37,8 @@ const TeamAttendanceDetails = () => {
     const navigate = useNavigate()
     return (
         <>
-            <div className="p-4 bg-gray-100">
-                <div className='bg-white rounded-xl p-4 border-2 bordery-gray-200 shadow-sm'>
+            <div className="bg-white">
+                <div className='bg-white p-4'>
                     {/* Pending */}
 
                     {pendingRequests?.length > 0 && <>
@@ -61,7 +61,7 @@ const TeamAttendanceDetails = () => {
                             />
                         </div>
 
-                        <div className="space-y-3 border-t-2 border-gray-200 pt-2">
+                        <div className="space-y-3 border-t-1 border-gray-300 pt-2">
                             {pendingRequests.map((request) => (
                                 <RequestCard
                                     key={request.name}
@@ -79,7 +79,7 @@ const TeamAttendanceDetails = () => {
                 </div>
 
                 {/* Actioned */}
-                <div className='bg-white rounded-xl p-4 border-2 bordery-gray-200 my-4'>
+                <div className='bg-white p-4'>
 
                     {actionedRequests?.length > 0 && <div>
                         <h2 className="text-2xl font-semibold mb-2 border-b-2 border-gray-200 pb-3">Actioned Requests</h2>

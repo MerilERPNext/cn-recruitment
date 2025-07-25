@@ -96,8 +96,8 @@ const attendanceData: AttendanceDay[] = [
     },
     {
         date: 11,
-        month: "Fri",
-        day: "Tue",
+        month: "Jul",
+        day: "Fri",
         status: "Unpaid",
         location: "General (Office)",
         statusColor: "text-purple-600",
@@ -119,8 +119,9 @@ const AllEmpAttendance = () => {
         return date.toLocaleString("default", { month: "short" }) // "Jul"
     }
 
+    const monthAbbr = getMonthAbbreviation(selectedMonth.value)
     const filteredAttendance = attendanceData.filter(
-        (day) => day.month === getMonthAbbreviation(selectedMonth.value)
+        (day) => day.month === monthAbbr
     )
 
     return (
@@ -135,11 +136,11 @@ const AllEmpAttendance = () => {
                 }
             />
 
-            <div className="max-w-md mx-auto bg-gray-100">
+            <div className="max-w-md mx-auto bg-white">
                 <h2 className="font-semibold text-lg text-center py-2">{selectedMonth?.label}</h2>
                 <div className="divide-y divide-gray-200">
-                    {filteredAttendance?.length > 0 ? filteredAttendance.map((day, index) => (
-                        <div key={index} className="flex items-center py-4 px-6">
+                    {filteredAttendance?.length > 0 ? filteredAttendance.map((day) => (
+                        <div key={day.date} className="flex items-center py-4 px-6">
                             <div className="flex flex-col items-center w-12 mr-6">
                                 <div className="text-lg font-semibold text-gray-900">{day.date}</div>
                                 <div className="text-xs text-gray-500 uppercase tracking-wide">{day.month}</div>

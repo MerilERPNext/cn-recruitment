@@ -10,14 +10,14 @@ import { AttendanceRequest } from "../../types/attendance"
 export function AttendanceDetailView({ data, onClose }: { data: AttendanceRequest, onClose: () => void }) {
 
 
-    return data?.name ? <div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-gray-100">
+    return data?.name ? <div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
         <LayoutHeader tab="Attendance Request"
             onBack={() => {
                 onClose()
             }}
             icon="x"
         />
-        <div className="m-4 p-2 bg-white rounded-lg shadow-sm ">
+        <div className="m-4 p-2 bg-white rounded-lg ">
 
             {/* Employee Info */}
             <div className="p-4 border-b">
@@ -81,7 +81,7 @@ export function AttendanceDetailView({ data, onClose }: { data: AttendanceReques
         {/* Action Buttons */}
         <div className="p-4 flex  fixed bottom-0 w-full  ">
 
-            <div className=" w-full space-x-3 flex shadow-sm bg-white p-4 rounded-xl">
+            <div className=" w-full space-x-3 flex bg-white p-4 rounded-xl">
                 <button
                     className="bg-red-100 p-2 w-1/2 text-red-700 rounded-xl font-semibold"
                 // onClick={(e) => handleAction("rejected", e)}

@@ -1,5 +1,5 @@
-import React, {useMemo, useState} from "react";
-import {Form} from "@tsed/react-formio";
+import React, { useMemo, useState } from "react";
+import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import LayoutHeader from "../../shared/LayoutHeader";
 import { useCreateNewAttendanceRequest } from "../../../hooks/useAttendance";
@@ -50,8 +50,7 @@ const baseFormComponents = (isForOthers: boolean) => {
                             { label: "Attendance Request", value: "Attendance Request" },
                             { label: "Clockin", value: "Clockin" },
                             { label: "Out Duty", value: "Out Duty" },
-                            { label: "Shift Cha ge", value: "Shift Change" },
-                        ]
+                            { label: "Shift Change", value: "Shift Change" },]
                     }
                 },
                 {
@@ -189,12 +188,18 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
             employee: isForOthers ? submission?.data?.employee : user?.employee,
             explanation: submission?.data?.explanation,
             reason: submission?.data?.reason,
-            from_date: formatDateToYYYYMMDD(new Date(submission?.data?.from_date)),
-            to_date: formatDateToYYYYMMDD(new Date(submission?.data?.to_date)),
+            from_date: submission?.data?.from_date ? formatDateToYYYYMMDD(new Date(submission?.data?.from_date)) : null,
+            to_date: submission?.data?.to_date ? formatDateToYYYYMMDD(new Date(submission?.data?.to_date)) : null,
             include_holidays: 1
         };
-        mutation.mutate(body)
-        // API call or further logic here
+        mutation.mutate(body, {
+            onSuccess: () => {
+                onClose();
+            },
+            onError: (error) => {
+                console.error(error)
+            }
+        })
     };
     return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white overflow-scroll">
         <LayoutHeader

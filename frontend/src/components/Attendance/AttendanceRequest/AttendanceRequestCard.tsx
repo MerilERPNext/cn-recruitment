@@ -26,7 +26,7 @@ const AttendanceRequestCard = ({ data }: { data: AttendanceRequest }) => {
     const status = getStatus(data?.docstatus);
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 ease-in-out">
+        <div className="bg-white border-b-1 border-gray-200">
             <div className="p-4">
                 <div className="flex items-start justify-between">
                     <div>

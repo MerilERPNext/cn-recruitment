@@ -215,18 +215,22 @@ const EmployeeAttendance = () => {
             {/* Request Attendance Correction */}
 
 
-            <div className="flex gap-2">
-                <button onClick={() => { navigate("/webapp/attendance/emp-attendance/all") }} className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
-                    <CalendarDays className="w-4 h-4 mr-2 font-bold" />
-                    All Attendances
-                </button>
-                <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm"
-                    onClick={() => {
-                        setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
-                    }}>
-                    <Plus className="w-4 h-4 mr-2 font-bold" />
-                    Attendance Request
-                </button>
+            <div className="bg-white rounded-xl p-4 border-1 border-gray-200" >
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Attendance</h3>
+                <div className="flex gap-2">
+
+                    <button onClick={() => { navigate("/webapp/attendance/emp-attendance/all") }} className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
+                        <CalendarDays className="w-4 h-4 mr-2 font-bold" />
+                        All Attendances
+                    </button>
+                    <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm"
+                        onClick={() => {
+                            setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
+                        }}>
+                        <Plus className="w-4 h-4 mr-2 font-bold" />
+                        Attendance Request
+                    </button>
+                </div>
             </div>
 
             {/* Request Attendance Correction */}
@@ -234,7 +238,7 @@ const EmployeeAttendance = () => {
 
 
             {/* Work Hour Exceptions */}
-            <div >
+            <div className="bg-white rounded-xl p-4 border-1 border-gray-200" >
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Work Hour Exceptions</h3>
                 <div className="flex gap-2">
                     <button onClick={() => { setShowReqCompOff(!showReqCompOff) }} className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
@@ -251,7 +255,7 @@ const EmployeeAttendance = () => {
 
             {/* My Attendance Requests */}
             <div className="bg-white rounded-lg p-2 shadow">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">My Attendance Requests</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1 px-4">My Attendance Requests</h3>
                 <FrappeListView
                     doctype="Attendance Request"
                     isSearch={false}
@@ -270,11 +274,10 @@ const EmployeeAttendance = () => {
                     isFilter={false}
                     pageSize={5}
                     defaultFields={[
-                        '*',
-                        // "reason",
-                        // "modified",
-                        // "creation",
-                        // "docstatus"
+                        "reason",
+                        "modified",
+                        "creation",
+                        "docstatus"
                     ]}
                 />
 

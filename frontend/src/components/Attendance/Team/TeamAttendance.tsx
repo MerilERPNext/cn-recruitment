@@ -52,7 +52,7 @@ const TeamAttendance = () => {
 
     return <div className="bg-gray-100">
         {/* <LayoutHeader tab="Team Attendance" /> */}
-        <div className="flex flex-col gap-4 mt-2 px-4 pb-4">
+        <div className="flex flex-col gap-2 mt-2 px-4 pb-4">
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
             <div className=" bg-white w-full border-2 border-gray-200 rounded-xl p-2">
 
@@ -89,28 +89,31 @@ const TeamAttendance = () => {
             {/* ------------------------------------------------- Calendar End ---------------------------------------------- */}
 
             {/* <EmployeeStatusCard /> */}
-            <FrappeListView
-                doctype="Attendance"
-                ItemComponent={(props: { item: any }) => {
-                    return (
-                        <EmployeeStatusCard
-                            data={props?.item}
-                        />
-                    );
-                }}
-                SkeletonComponent={CardSkeleton}
-                onItemClick={() => { }}
-                infiniteScroll={true}
-                isFilter={false}
-                showRefereshButton={false}
-                defaultFields={[
-                    "employee_name",
-                    "status",
-                    "in_time",
-                    "out_time"
-                ]}
+            <div className="bg-white px-4 pt-4 rounded-lg border-2 border-gray-200">
 
-            />
+                <FrappeListView
+                    doctype="Attendance"
+                    ItemComponent={(props: { item: any }) => {
+                        return (
+                            <EmployeeStatusCard
+                                data={props?.item}
+                            />
+                        );
+                    }}
+                    SkeletonComponent={CardSkeleton}
+                    onItemClick={() => { }}
+                    infiniteScroll={true}
+                    isFilter={false}
+                    showRefereshButton={false}
+                    defaultFields={[
+                        "employee_name",
+                        "status",
+                        "in_time",
+                        "out_time"
+                    ]}
+
+                />
+            </div>
 
         </div>
     </div >
