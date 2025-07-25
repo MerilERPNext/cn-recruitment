@@ -284,7 +284,7 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     const handleDownload = () => {
     if (employee) {
       // Create a new window for printing only the ID card
-      const printWindow = window.open(window.location.origin+'', '_blank');
+      const printWindow = window.open('', '_blank');
       if (printWindow) {
         // Create print-optimized HTML with only the ID card content
         const printContent = `

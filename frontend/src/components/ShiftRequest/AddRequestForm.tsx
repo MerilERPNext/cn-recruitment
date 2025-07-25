@@ -77,13 +77,15 @@ const ShiftChangeForm: React.FC = () => {
         placeholder: "Enter reason",
         input: true,
       },
-            {
-              type: "button",
-              action: "submit",
-              label: "Submit",
-              theme: "primary",
-              customClass: "my-6 w-full black",
-            },
+      {
+        type: "button" as const,
+        action: "submit",
+        label: "Submit",
+        theme: "primary",
+        block: true,
+        key: "submitButton",
+        customClass: "text-sm flex justify-center",
+      },
     ],
   };
 
