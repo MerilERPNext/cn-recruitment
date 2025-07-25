@@ -49,7 +49,7 @@ interface NavigationProps {
 // Navigation Tab Component
 const NavTab = ({ label, isActive, hasNotification, onClick }: NavTabProps) => (
   <button
-    className={`flex flex-col items-center justify-center border-b-[3px] pb-3 pt-3 flex-1 relative cursor-pointer min-w-28 ${
+    className={`flex flex-col items-center justify-center rounded-none border-t-0 border-l-0 border-r-0 border-b-[3px] pb-3 pt-3 flex-1 outline-none  focus:outline-none focus:ring-0 relative cursor-pointer min-w-28 ${
       isActive
         ? "border-b-blue-500 text-blue-500"
         : "border-b-transparent text-gray-600 hover:text-gray-800"

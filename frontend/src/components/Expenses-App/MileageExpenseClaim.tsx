@@ -1,11 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { Formio } from "formiojs";
-
-// =============================================================================
-// Form.io Schemas - Split into three parts for interleaved rendering
-// =============================================================================
+import HeaderBar from "../HeaderBar";
 
 // Schema for Basic Expense Details
 const basicDetailsSchema = {
@@ -29,6 +26,7 @@ const basicDetailsSchema = {
         enableTime: false,
         mode: "single",
       },
+      defaultValue: new Date().toISOString().slice(0, 10),
     },
     {
       label: "Vehicle Category",
@@ -46,7 +44,7 @@ const basicDetailsSchema = {
       key: "vehicleCategory",
       type: "select",
       input: true,
-      widget: "html5",
+      customClass: "appearance-none",
       placeholder: "Select Category",
       validate: {
         required: true,
@@ -67,7 +65,7 @@ const basicDetailsSchema = {
       key: "fuelCategory",
       type: "select",
       input: true,
-      widget: "html5",
+      customClass: "appearance-none",
       placeholder: "Select Category",
       validate: {
         required: true,
@@ -76,14 +74,13 @@ const basicDetailsSchema = {
   ],
 };
 
-// Schema for Travel Fields (Distance/Odometer) - includes hidden field for conditional logic
 const travelFieldsSchema = {
   display: "form",
   components: [
     {
       type: "hidden",
       key: "travelTypeHidden",
-      defaultValue: "distance", // Default value to match initial state
+      defaultValue: "distance",
       input: true,
     },
     {
@@ -101,7 +98,7 @@ const travelFieldsSchema = {
       allowDecimals: true,
       placeholder: "Enter Distance",
       conditional: {
-        json: { '==': [{ var: 'data.travelTypeHidden' }, 'distance'] },
+        json: { "==": [{ var: "data.travelTypeHidden" }, "distance"] },
       },
     },
     {
@@ -119,7 +116,7 @@ const travelFieldsSchema = {
       allowDecimals: true,
       placeholder: "Enter Start Reading",
       conditional: {
-        json: { '==': [{ var: 'data.travelTypeHidden' }, 'odometer'] },
+        json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
       },
     },
     {
@@ -137,7 +134,7 @@ const travelFieldsSchema = {
       allowDecimals: true,
       placeholder: "Enter End Reading",
       conditional: {
-        json: { '==': [{ var: 'data.travelTypeHidden' }, 'odometer'] },
+        json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
       },
     },
   ],
@@ -159,12 +156,9 @@ const notesSchema = {
   ],
 };
 
-// =============================================================================
-// MileageExpense Component
-// =============================================================================
 const MileageExpense: React.FC = () => {
   const navigate = useNavigate();
-
+  const CURRENCY_SYMBOL = "₹";
   // Refs for each Form.io instance
   const basicDetailsRef = useRef<HTMLDivElement>(null);
   const basicDetailsFormInstanceRef = useRef<any>(null);
@@ -181,12 +175,8 @@ const MileageExpense: React.FC = () => {
   );
   const [calculatedAmount, setCalculatedAmount] = useState<number>(0);
 
-  // States to hold form data from each Form.io instance
-  // These states are primarily for React to react to changes,
-  // the actual submission data will be collected directly from form instances.
-  const [basicDetailsFormData, setBasicDetailsFormData] = useState<any>({});
+  // Only keep travelFieldsFormData as it's used for calculation
   const [travelFieldsFormData, setTravelFieldsFormData] = useState<any>({});
-  const [notesFormData, setNotesFormData] = useState<any>({});
 
   // Handler for the back button
   const handleBack = useCallback(() => {
@@ -208,15 +198,14 @@ const MileageExpense: React.FC = () => {
         .then((form: any) => {
           basicDetailsFormInstanceRef.current = form;
           form.submission = { data: {} };
-          form.on("change", (submission: any) => {
-            setBasicDetailsFormData(submission.data);
-          });
+          // Removed setBasicDetailsFormData as its value is not read
           form.on("error", (errors: any) => {
             console.error("Basic Details Form.io validation errors:", errors);
-            // alert("Please correct the errors in Basic Details form."); // Use custom modal in real app
           });
         })
-        .catch((err: any) => console.error("Error creating Basic Details Form.io form:", err));
+        .catch((err: any) =>
+          console.error("Error creating Basic Details Form.io form:", err)
+        );
 
       return () => {
         if (basicDetailsFormInstanceRef.current) {
@@ -225,7 +214,7 @@ const MileageExpense: React.FC = () => {
         }
       };
     }
-  }, []); // Empty dependency array: create once on mount
+  }, []);
 
   // Effect to initialize Travel Fields Form.io instance
   useEffect(() => {
@@ -238,14 +227,15 @@ const MileageExpense: React.FC = () => {
           // Set initial hidden field value
           form.submission = { data: { travelTypeHidden: travelType } };
           form.on("change", (submission: any) => {
-            setTravelFieldsFormData(submission.data);
+            setTravelFieldsFormData(submission.data); // This state is used for calculation
           });
           form.on("error", (errors: any) => {
             console.error("Travel Fields Form.io validation errors:", errors);
-            // alert("Please correct the errors in Travel Fields form."); // Use custom modal in real app
           });
         })
-        .catch((err: any) => console.error("Error creating Travel Fields Form.io form:", err));
+        .catch((err: any) =>
+          console.error("Error creating Travel Fields Form.io form:", err)
+        );
 
       return () => {
         if (travelFieldsFormInstanceRef.current) {
@@ -254,7 +244,7 @@ const MileageExpense: React.FC = () => {
         }
       };
     }
-  }, []); // Empty dependency array: create once on mount
+  }, []);
 
   // Effect to initialize Notes Form.io instance
   useEffect(() => {
@@ -265,15 +255,14 @@ const MileageExpense: React.FC = () => {
         .then((form: any) => {
           notesFormInstanceRef.current = form;
           form.submission = { data: {} };
-          form.on("change", (submission: any) => {
-            setNotesFormData(submission.data);
-          });
+          // Removed setNotesFormData as its value is not read
           form.on("error", (errors: any) => {
             console.error("Notes Form.io validation errors:", errors);
-            // alert("Please correct the errors in Notes form."); // Use custom modal in real app
           });
         })
-        .catch((err: any) => console.error("Error creating Notes Form.io form:", err));
+        .catch((err: any) =>
+          console.error("Error creating Notes Form.io form:", err)
+        );
 
       return () => {
         if (notesFormInstanceRef.current) {
@@ -282,10 +271,9 @@ const MileageExpense: React.FC = () => {
         }
       };
     }
-  }, []); // Empty dependency array: create once on mount
+  }, []);
 
-  // Effect to update Form.io's hidden travelType field when React state changes
-  // This triggers Form.io's conditional logic without re-creating the whole form
+  // Effect to update travelTypeHidden in the Form.io instance when travelType changes
   useEffect(() => {
     if (travelFieldsFormInstanceRef.current) {
       travelFieldsFormInstanceRef.current.setSubmission({
@@ -295,7 +283,7 @@ const MileageExpense: React.FC = () => {
         },
       });
     }
-  }, [travelType]); // Only re-run when travelType changes
+  }, [travelType]);
 
   // Effect to update calculated amount when relevant form data changes
   useEffect(() => {
@@ -312,70 +300,36 @@ const MileageExpense: React.FC = () => {
 
   // Handle overall form submission
   const handleSubmit = useCallback(async () => {
-    let isValid = true;
     const allFormData: any = {};
-
-    // Trigger validation and get data from each Form.io instance
-    // We explicitly call .submit() to trigger validation and get the latest data.
-    // The .submit() method returns a Promise that resolves with the submission object.
     try {
       if (basicDetailsFormInstanceRef.current) {
-        const basicSubmission = await basicDetailsFormInstanceRef.current.submit();
-        console.log("Basic Details Submission:", basicSubmission); // Added log
-        if (!basicSubmission.isValid) isValid = false;
+        const basicSubmission =
+          await basicDetailsFormInstanceRef.current.submit();
         Object.assign(allFormData, basicSubmission.data);
       }
       if (travelFieldsFormInstanceRef.current) {
-        const travelSubmission = await travelFieldsFormInstanceRef.current.submit();
-        console.log("Travel Fields Submission:", travelSubmission); // Added log
-        if (!travelSubmission.isValid) isValid = false;
+        const travelSubmission =
+          await travelFieldsFormInstanceRef.current.submit();
         Object.assign(allFormData, travelSubmission.data);
       }
       if (notesFormInstanceRef.current) {
         const notesSubmission = await notesFormInstanceRef.current.submit();
-        console.log("Notes Submission:", notesSubmission); // Added log
-        if (!notesSubmission.isValid) isValid = false;
         Object.assign(allFormData, notesSubmission.data);
       }
     } catch (error) {
-      // Catching errors from Form.io's submit method (e.g., validation errors)
       console.error("Form submission error:", error);
-      isValid = false; // Ensure isValid is false if an error occurs during submission
+      // Optionally, you might want to show an error message to the user here
+      return; // Stop submission if there are validation errors
     }
 
-
-    console.log("Overall isValid status:", isValid); // Added log
-    if (isValid) {
-      // This is the console log you want to see with the combined form data
-      console.log("Mileage Expense Submitted Data:", allFormData);
-      alert("Mileage Expense Submitted!"); // Use a custom modal in a real app
-      // Optionally reset all forms here after successful submission
-      // basicDetailsFormInstanceRef.current.submission = { data: {} };
-      // travelFieldsFormInstanceRef.current.submission = { data: { travelTypeHidden: travelType } };
-      // notesFormInstanceRef.current.submission = { data: {} };
-    } else {
-      alert("Please correct the errors in the form.");
-    }
-  }, [travelType]); // Added travelType to dependency array as it influences conditional fields
-
+    console.log("Mileage Expense Submitted Data:", allFormData);
+    // Here you would typically send allFormData to your backend
+    // e.g., apiClient.post('/api/mileage-expense', allFormData);
+  }, []); // Dependencies remain minimal as Form.io instances handle data gathering
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b px-4 py-4 sticky top-0 z-10">
-        <div className="flex items-center max-w-4xl mx-auto">
-          <button
-            onClick={handleBack}
-            className="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <h1 className="text-xl m-auto font-bold text-gray-900">
-            Mileage Expense
-          </h1>
-        </div>
-      </div>
+      <HeaderBar title="Mileage Expense" onBack={handleBack} />
 
       {/* Main Content Area */}
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
@@ -427,7 +381,8 @@ const MileageExpense: React.FC = () => {
               Calculated Amount
             </span>
             <span className="text-lg font-bold text-gray-900">
-              ${calculatedAmount.toFixed(2)}
+              {CURRENCY_SYMBOL}
+              {calculatedAmount.toFixed(2)}
             </span>
           </div>
         </div>
@@ -456,5 +411,3 @@ const MileageExpense: React.FC = () => {
 };
 
 export default MileageExpense;
-
-

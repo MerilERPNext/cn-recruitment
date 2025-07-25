@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo } from "react";
+import React, {useMemo} from "react";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import { Form } from "@tsed/react-formio";
-import { PersonalInfoProps } from "./MyProfile";
+import {Form} from "@tsed/react-formio";
+import {PersonalInfoProps} from "./MyProfile";
 
 export const AddressInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   const addressForm = useMemo(() => {

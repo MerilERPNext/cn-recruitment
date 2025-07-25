@@ -7,7 +7,6 @@
   @apply w-full;
 }
 
-
 /* styles form io */
 .formio-component .border {
   border: none !important;
@@ -26,7 +25,8 @@
   left: 50% !important;
   transform: translateX(-50%) !important;
 }
-.custom-w-fill-available{
+
+.custom-w-fill-available {
   width: stretch;
 }
 

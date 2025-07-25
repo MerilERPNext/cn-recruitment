@@ -1,6 +1,6 @@
 import * as React from "react";
-import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import {format} from "date-fns";
+import {useNavigate} from "react-router-dom";
 
 type Holiday = {
     name: string;
@@ -44,8 +44,8 @@ const HolidayCard: React.FC<{ holiday: Holiday }> = ({ holiday }) => {
 
 const Holidays: React.FC = () => {
     const navigate = useNavigate();
-    const [showAllRegular, setShowAllRegular] = React.useState(false);
-    const [showAllOptional, setShowAllOptional] = React.useState(false);
+    const [showAllRegular,] = React.useState(false);
+    const [showAllOptional,] = React.useState(false);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);

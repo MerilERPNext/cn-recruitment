@@ -65,15 +65,17 @@ const FrappeListView = <T extends BaseItem>({
   permissionErrorMessage,
   onRefetchAvailable
 }: FrappeListViewProps<T>) => {
-  const [searchTerm, setSearchTerm] = useState("")
+  const { search } = useLocation();
+  const queryParam = new URLSearchParams(search);
+  const initialSearchQuery = queryParam.get('q') || "";
+
+  const [searchTerm, setSearchTerm] = useState(initialSearchQuery)
   const [filters, setFilters] = useState(defaultFilters)
   const [showFilters, setShowFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(initialSearchQuery)
   const queryClient = useQueryClient()
 
-  const { search } = useLocation();
-  const queryParam = new URLSearchParams(search);
   const filtersString = queryParam.get('filters');
   const [queryParamsFilters, setQueryParamsFilters] = useState({});
 
