@@ -16,7 +16,7 @@ export function RequestCard({
     onClick?: (request: RequestCardProps['request']) => void
 }) {
     return (
-        <div className="cursor-pointer bg-white border-b-2 border-gray-100 rounded-lg "
+        <div className="cursor-pointer bg-white border-b-2 border-gray-100 rounded-lg"
             onClick={() => onClick?.(request)}
         >
             <div className="p-4">

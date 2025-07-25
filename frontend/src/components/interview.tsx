@@ -54,7 +54,7 @@ const InterViewItem: React.FC<{ item: Interview; index?: number; doctype: string
             {interview.job_applicant}
           </p>
           <span
-            className={`flex items-center justify-center text-xs font-medium px-2 rounded-full ${interview.status === "Cleared"
+            className={`flex items-center justify-center text-xs font-medium px-2 rounded-xl ${interview.status === "Cleared"
               ? "bg-green-100 text-green-800"
               : interview.status === "Rejected"
                 ? "bg-red-100 text-red-800"

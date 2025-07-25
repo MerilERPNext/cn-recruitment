@@ -119,4 +119,36 @@ export const frappeService = {
       throw error;
     }
   },
+  
+  createDocument: async (doctype: string, data: Record<string, unknown>): Promise<DocumentItem> => {
+    try {
+      console.log(`📝 Creating document in doctype: ${doctype}`, data);
+      const result = await FrappeAPI.createDocument(doctype, data);
+      return result as DocumentItem;
+    } catch (error) {
+      console.error(`❌ Failed to create document in ${doctype}:`, error);
+      throw error;
+    }
+  },
+
+  updateDocument: async (doctype: string, name: string, data: Record<string, unknown>): Promise<DocumentItem> => {
+    try {
+      console.log(`✏️ Updating document ${name} in doctype: ${doctype}`, data);
+      const result = await FrappeAPI.updateDocument(doctype, name, data);
+      return result as DocumentItem;
+    } catch (error) {
+      console.error(`❌ Failed to update document ${name} in ${doctype}:`, error);
+      throw error;
+    }
+  },
+
+  deleteDocument: async (doctype: string, name: string): Promise<void> => {
+    try {
+      console.log(`🗑️ Deleting document ${name} from doctype: ${doctype}`);
+      await FrappeAPI.deleteDocument(doctype, name);
+    } catch (error) {
+      console.error(`❌ Failed to delete document ${name} from ${doctype}:`, error);
+      throw error;
+    }
+  },
 };

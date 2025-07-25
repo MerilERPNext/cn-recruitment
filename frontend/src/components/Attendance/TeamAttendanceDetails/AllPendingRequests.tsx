@@ -31,9 +31,8 @@ const AllPendingRequests = () => {
         }} />
         <div className='p-4'>
 
-            <div className='p-2 bg-white rounded-xl border-2 border-gray-200'>
-                <div className=" border-b-2 pb-4 border-gray-200 mb-2">
-
+            <div className='p-2'>
+                <div className=" mb-4">
                     <BulkActionBar
                         selectedIds={selectedIds}
                         pendingRequests={data}

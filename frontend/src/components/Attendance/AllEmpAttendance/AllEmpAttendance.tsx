@@ -135,9 +135,9 @@ const AllEmpAttendance = () => {
                 }
             />
 
-            <div className="max-w-md mx-auto bg-white">
+            <div className="max-w-md mx-auto bg-gray-100">
                 <h2 className="font-semibold text-lg text-center py-2">{selectedMonth?.label}</h2>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-gray-200">
                     {filteredAttendance?.length > 0 ? filteredAttendance.map((day, index) => (
                         <div key={index} className="flex items-center py-4 px-6">
                             <div className="flex flex-col items-center w-12 mr-6">

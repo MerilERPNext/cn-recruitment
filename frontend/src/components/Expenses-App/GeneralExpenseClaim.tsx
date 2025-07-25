@@ -1,8 +1,18 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, X, FileText, File as FileIcon } from "lucide-react";
+import { File as FileIcon, FileText, Trash2 } from "lucide-react";
+import defaultReceipt from "../../assets/Receipt.svg";
 
-import { Formio } from "formiojs";
+import { Form } from "@tsed/react-formio";
+import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
+import HeaderBar from "../HeaderBar";
 
 interface ExpenseItem {
   id: string;
@@ -16,230 +26,41 @@ interface ExpenseItem {
   fileObject?: File;
 }
 
-const MOCK_EXPENSE_ITEMS: ExpenseItem[] = [
-  {
-    id: "exp1",
-    type: "Travel",
-    date: "2024-07-28",
-    amount: 150.0,
-    description: "Flight to San Francisco",
-    attachmentUrl: "https://placehold.co/80x80/e0e0e0/000000?text=Receipt",
-    attachmentType: "image/png",
-  },
-];
-
-const newExpenseItemFormSchema = {
-  display: "form",
-  components: [
-    {
-      label: "Expense Type",
-      tableView: true,
-      dataSrc: "values",
-      data: {
-        values: [
-          { label: "Travel", value: "Travel" },
-          { label: "Food", value: "Food" },
-          { label: "Accommodation", value: "Accommodation" },
-          { label: "Supplies", value: "Supplies" },
-          { label: "Other", value: "Other" },
-        ],
-      },
-      key: "expenseType",
-      type: "select",
-      input: true,
-      widget: "html5",
-      placeholder: "Select type...",
-      validate: {
-        required: true,
-      },
-    },
-    {
-      label: "Amount",
-      tableView: true,
-      validate: {
-        required: true,
-        min: 0,
-        pattern: "\\d+(\\.\\d{1,2})?",
-      },
-      key: "amount",
-      type: "number",
-      input: true,
-      decimalLimit: 2,
-      allowDecimals: true,
-      placeholder: "0.00",
-    },
-    {
-      label: "Description",
-      tableView: true,
-      validate: {
-        required: true,
-      },
-      key: "description",
-      type: "textarea",
-      input: true,
-      rows: 3,
-      placeholder: "Add a description...",
-    },
-    {
-      label: "Date",
-      tableView: true,
-      validate: {
-        required: true,
-      },
-      key: "date",
-      type: "datetime",
-      input: true,
-      format: "yyyy-MM-dd",
-      enableTime: false,
-      widget: {
-        type: "calendar",
-        altInput: true,
-        dateFormat: "yyyy-MM-dd",
-        enableTime: false,
-        mode: "single",
-      },
-    },
-    {
-      label: "Attachments",
-      tableView: false,
-      webcam: true,
-      fileTypes: [
-        { label: "Images", value: "image/*" },
-        { label: "Documents", value: "application/*" },
-      ],
-      image: true,
-      imageSize: "200",
-      storage: "base64",
-      key: "attachments",
-      type: "file",
-      input: true,
-      tooltip: "Upload receipts or supporting documents.",
-    },
-  ],
-};
-
-interface FormioModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (submission: any, fileObject?: File | null) => void;
-}
-
-const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-}) => {
-  const formioContainerRef = useRef<HTMLDivElement>(null);
-  const formInstanceRef = useRef<any>(null);
-  const [localFile, setLocalFile] = useState<File | null>(null);
-
-  useEffect(() => {
-    if (isOpen && formioContainerRef.current) {
-      Formio.createForm(formioContainerRef.current, newExpenseItemFormSchema, {
-        render: {
-          submit: false,
-          cancel: false,
-        },
-      })
-        .then((form: any) => {
-          formInstanceRef.current = form;
-
-          form.on("change", (submission: any) => {
-            if (
-              submission.data &&
-              submission.data.attachments &&
-              submission.data.attachments.length > 0
-            ) {
-              const attachment = submission.data.attachments[0];
-              if (attachment.file instanceof File) {
-                setLocalFile(attachment.file);
-              } else {
-                setLocalFile(null);
-              }
-            } else {
-              setLocalFile(null);
-            }
-          });
-
-          form.on("submit", (submission: any) => {
-            console.log("Form.io internal submit event fired:", submission);
-            onSubmit(submission.data, localFile);
-            onClose();
-          });
-
-          form.on("error", (errors: any) => {
-            console.error("Form.io validation errors:", errors);
-            alert("Please correct the errors in the form.");
-          });
-        })
-        .catch((err: any) => {
-          console.error("Error creating Form.io form:", err);
-        });
-
-      return () => {
-        if (formInstanceRef.current) {
-          formInstanceRef.current.destroy();
-          formInstanceRef.current = null;
-        }
-      };
-    }
-  }, [isOpen, onSubmit, onClose, localFile]);
-
-  const handleSaveClick = () => {
-    if (formInstanceRef.current) {
-      formInstanceRef.current.submit();
-    } else {
-      console.warn("Form.io instance not ready yet for submission.");
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
-      <div className="bg-white rounded-t-xl w-full max-w-md p-6 shadow-lg flex flex-col max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
-          <h2 className="text-lg m-auto font-semibold text-gray-800">
-            New Expense Item
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
-        </div>
-
-        <div className="flex-grow" ref={formioContainerRef}>
-          {/* Form.io will inject its HTML here */}
-        </div>
-
-        <div className="flex justify-between space-x-4 pt-6 border-t border-gray-200 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-3xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSaveClick}
-            className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const GeneralExpenseClaim: React.FC = () => {
+  const CURRENCY_SYMBOL = "₹";
   const navigate = useNavigate();
-  const [expenseItems, setExpenseItems] =
-    useState<ExpenseItem[]>(MOCK_EXPENSE_ITEMS);
+  const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const objectUrls = useRef<Record<string, string>>({}); // Using a ref to hold object URLs for cleanup
+
+  const ExpenseTravelPoliciesForm = useMemo(() => {
+    return {
+      components: [
+        {
+          type: "select",
+          key: "travel_policy",
+          label: "Expense Travel Policy (Optional)",
+          input: true,
+          validate: { required: true },
+          placeholder: "Local Commute",
+          data: {
+            values: [
+              {
+                value: "domestic_travel",
+                label: "Policy A - Domestic Travel",
+              },
+              {
+                value: "international_travel",
+                label: "Policy B - International Travel",
+              },
+              { value: "local_commute", label: "Policy C - Local Commute" },
+            ],
+          },
+          customClass: "appearance-none",
+        },
+      ],
+    };
+  }, []);
 
   const handleBack = useCallback(() => {
     navigate(-1);
@@ -266,14 +87,13 @@ const GeneralExpenseClaim: React.FC = () => {
   const handleAddExpenseItem = useCallback(
     (formData: any, fileObjectFromModal: File | null | undefined) => {
       const newId = `exp${expenseItems.length + 1}-${Date.now()}`;
-      let attachmentUrl: string =
-        "https://placehold.co/80x80/e0e0e0/000000?text=Receipt";
+      let attachmentUrl: string = defaultReceipt;
       let attachmentType: string = "image/png";
       let fileName: string | undefined;
 
       if (fileObjectFromModal) {
         attachmentUrl = URL.createObjectURL(fileObjectFromModal);
-        objectUrls.current[newId] = attachmentUrl; // Store for revocation
+        objectUrls.current[newId] = attachmentUrl;
         attachmentType = fileObjectFromModal.type;
         fileName = fileObjectFromModal.name;
       } else if (formData.attachments && formData.attachments.length > 0) {
@@ -324,19 +144,7 @@ const GeneralExpenseClaim: React.FC = () => {
         onSubmit={handleAddExpenseItem}
       />
 
-      <div className="bg-white shadow-sm border-b px-4 py-4 sticky top-0 z-10">
-        <div className="flex items-center max-w-4xl mx-auto">
-          <button
-            onClick={handleBack}
-            className="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <h1 className="text-xl m-auto font-bold text-gray-900">
-            General Expense Claim
-          </h1>
-        </div>
-      </div>
+      <HeaderBar title="General Expense Claim" onBack={handleBack} />
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
         <div className="bg-white rounded-lg shadow-sm border p-4 flex items-center space-x-4">
@@ -362,25 +170,23 @@ const GeneralExpenseClaim: React.FC = () => {
             <p className="text-sm text-gray-600">Sales Department</p>
           </div>
         </div>
-
-        <div className="bg-white p-4">
-          <label
-            htmlFor="expensePolicy"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Expense Travel Policy (Optional)
-          </label>
-          <select
-            id="expensePolicy"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none "
-          >
-            <option value="">Select Policy...</option>
-            <option value="policyA">Policy A - Domestic Travel</option>
-            <option value="policyB">Policy B - International Travel</option>
-            <option value="policyC">Policy C - Local Commute</option>
-          </select>
-        </div>
-
+        <Form
+          form={ExpenseTravelPoliciesForm}
+          options={{
+            builder: { styles: false },
+            submitButton: false,
+            formClass: "space-y-6",
+            rowClass: "flex flex-col",
+            labelClass: "mb-1 font-medium text-gray-700",
+            inputClass:
+              "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
+            validateOnInit: false,
+            validateOnBlur: false,
+            validateOnChange: false,
+          }}
+          className="space-y-6"
+        />
+        {/* Expense Item */}
         <div className="bg-white p-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Expense Items
@@ -400,7 +206,8 @@ const GeneralExpenseClaim: React.FC = () => {
                     <p className="font-medium text-gray-900">{item.type}</p>
                     <p className="text-sm text-gray-600">Date: {item.date}</p>
                     <p className="text-sm text-gray-600">
-                      Amount: {item.amount.toFixed(2)}
+                      Amount: {CURRENCY_SYMBOL}
+                      {item.amount.toFixed(2)}
                     </p>
                     <p className="text-sm text-gray-600">{item.description}</p>
                   </div>
@@ -482,21 +289,29 @@ const GeneralExpenseClaim: React.FC = () => {
             <span className="text-xl mr-2">+</span> Add Expense Item
           </button>
         </div>
-
         <div className="bg-white p-4 space-y-2">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Summary</h2>
           <div className="bg-white rounded-lg shadow-sm border p-4 space-y-2">
             <div className="flex justify-between text-gray-700">
               <span>Total Amount</span>
-              <span className="font-medium">{totalAmount.toFixed(2)}</span>
+              <span className="font-medium">
+                {CURRENCY_SYMBOL}
+                {totalAmount.toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between text-gray-700">
               <span>Advances</span>
-              <span className="font-medium">{advances.toFixed(2)}</span>
+              <span className="font-medium">
+                {CURRENCY_SYMBOL}
+                {advances.toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between text-gray-900 font-bold text-lg border-t pt-2 mt-2">
               <span>Net Payable</span>
-              <span>{netPayable.toFixed(2)}</span>
+              <span>
+                {CURRENCY_SYMBOL}
+                {netPayable.toFixed(2)}
+              </span>
             </div>
           </div>
         </div>

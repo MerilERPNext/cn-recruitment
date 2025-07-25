@@ -120,12 +120,11 @@ export class EmployeeService {
   static async getCurrentEmployeeAllDetails(user_id : string): Promise<Employee | null> {
     try {
       const result = await FrappeAPI.getDocumentList("Employee", {
-      fields: ["*"],
-      filters: [
-        ["user_id", "=", user_id]
-      ],
-    });
-
+        fields: ["*"],
+        filters: [
+          ["user_id", "=", user_id]
+        ],
+      });
       if (!isEmployee(result.data[0])) {
         console.error('Invalid employee data received from API');
         return null;

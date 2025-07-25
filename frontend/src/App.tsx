@@ -1,19 +1,12 @@
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  Link,
-} from "react-router-dom";
+import {BrowserRouter as Router, Link, Navigate, Route, Routes,} from "react-router-dom";
 // import Navigation from './components/Navigation';
-import { useRouteInfo } from "./hooks/useRouter";
-import { QueryProvider } from "./providers/QueryProvider";
+import {useRouteInfo} from "./hooks/useRouter";
+import {QueryProvider} from "./providers/QueryProvider";
 import "./App.css";
 
-import { AppRoute, routesConfig } from "./routesConfig";
-// @ts-expect-error ignore
-import { Form } from "@tsed/react-formio";
+import {AppRoute, routesConfig} from "./routesConfig";
+import {Form} from "@tsed/react-formio";
 
 // Home/Dashboard component
 const Dashboard: React.FC = () => {
@@ -68,19 +61,10 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div
-            className="rounded-lg shadow-md p-6"
-            style={{ backgroundColor: "var(--background-light)" }}
-          >
-            <h2
-              className="text-xl font-semibold mb-4"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Search Members
-            </h2>
-            <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
-              Streamline your recruitment process and manage job applicants with
-              ease.
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Recruitment</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Streamline your recruitment process and manage job applicants with ease.
             </p>
             <Link
               to="/webapp/recruitment-app"
@@ -153,6 +137,30 @@ const Dashboard: React.FC = () => {
             </Link>
           </div>
           <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Salary slip</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Generate, view, and manage employee salary slip cards.
+            </p>
+            <Link
+              to="/webapp/salary-slip-app"
+              className="inline-block bg-black text-white px-4 py-2 rounded-md  transition-colors"
+            >
+              Salary Slips
+            </Link>
+          </div>
+          <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Shift Management</h2>
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Generate, view, and manage employee shift management cards.
+            </p>
+            <Link
+              to="/webapp/shift-request"
+              className="inline-block bg-red-500 text-white px-4 py-2 rounded-md  transition-colors"
+            >
+              Shift Management
+              </Link>
+              </div>
+              <div className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--background-light)' }}>
             <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Attendance</h2>
             <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
               Generate, view, and manage employee attendance.

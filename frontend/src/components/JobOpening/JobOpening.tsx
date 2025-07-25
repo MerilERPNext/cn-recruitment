@@ -83,7 +83,7 @@ const JobOpeningItem: React.FC<{
         </div>
         <div className="flex items-center gap-2">
           <span
-            className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors.bg} ${statusColors.text} ${statusColors.border}`}
+            className={`px-3  rounded-xl text-xs font-medium border ${statusColors.bg} ${statusColors.text} ${statusColors.border}`}
           >
             {item.status}
           </span>
@@ -129,7 +129,7 @@ const JobOpeningItem: React.FC<{
             e.stopPropagation();
             handleViewApplicants();
           }}
-          className="flex-1 rounded-full bg-gray-100 py-2 text-sm font-medium text-gray-900"
+          className="flex-1 rounded-3xl bg-gray-100 py-2 text-sm font-medium text-gray-900"
         >
           View Applicants
         </button>
@@ -138,7 +138,7 @@ const JobOpeningItem: React.FC<{
             e.stopPropagation();
             handleEditRequisition();
           }}
-          className="rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white"
+          className="rounded-3xl bg-blue-500 px-4 py-2 text-sm font-medium text-white"
         >
           Edit
         </button>

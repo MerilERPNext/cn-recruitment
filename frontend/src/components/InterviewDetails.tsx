@@ -68,7 +68,6 @@ const InterviewPage = () => {
   }
 
   const handleButtonClick = () => {
-    console.log(`📝 Navigating to feedback for interview ${interviewId}`)
     navigate(`/webapp/recruitment-app/interviews/interview-feedback/${interviewId}`)
   }
 
