@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ChevronUp,
   ChevronDown,
@@ -22,6 +22,7 @@ const SalarySlipDetails = () => {
   const navigator = useNavigate();
   const { salaryId } = useParams<{ salaryId: string }>();
   const { data: user_id } = useLoggedInUser();
+  const handleBack = useCallback(() => navigator(-1), [navigator]);
 
   const { data: user } = useCurrentEmployeeAllDetails(user_id || "");
 
@@ -65,7 +66,7 @@ const SalarySlipDetails = () => {
 
   return (
     <div className="max-w-full mx-auto font-roboto font-medium bg-gray-100 min-h-screen">
-     <HeaderBar title="Salary Slip" onBack={() => navigator(-1)}/>
+     <HeaderBar title="Salary Slip" onBack={handleBack}/>
 
       <div>
         {/* Header Section */}
