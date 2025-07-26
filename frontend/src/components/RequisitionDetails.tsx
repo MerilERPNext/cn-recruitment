@@ -202,6 +202,7 @@ const RequisitionDetails: React.FC = () => {
           alert(`Failed to create job opening: ${result.message}`);
         }
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error(`❌ Error creating job opening:`, error);
       alert(`Error creating job opening: ${error.message || 'Unknown error'}`);

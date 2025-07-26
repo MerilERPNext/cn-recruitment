@@ -5,7 +5,6 @@ import {
   Eye,
   EyeOff,
   Download,
-  ArrowLeft,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import { useSalarySlipDetails, useDownloadSalarySlipPDF } from "../../hooks/useSalaryDetails";
@@ -14,6 +13,7 @@ import { UseMutationResult } from "@tanstack/react-query";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import defaultProfile from "../../assets/user.png";
+import HeaderBar from "../HeaderBar";
 
 const SalarySlipDetails = () => {
   const [showSalary, setShowSalary] = useState(false);
@@ -36,9 +36,6 @@ const SalarySlipDetails = () => {
     mutate: downloadPDF,
     isPending: isDownloading,
   }: UseMutationResult<void, Error, string> = useDownloadSalarySlipPDF();
-
-  const handleBack = () => navigator(-1);
-
   const formatMonthYear = (startDate: string | undefined): string => {
     if (!startDate) return "N/A";
     const start = new Date(startDate);
@@ -68,11 +65,7 @@ const SalarySlipDetails = () => {
 
   return (
     <div className="max-w-full mx-auto font-roboto font-medium bg-gray-100 min-h-screen">
-      <div className="flex items-center justify-between p-3 border-b border-gray-200">
-        <ArrowLeft onClick={handleBack} className="w-6 h-6 text-gray-600 cursor-pointer" />
-        <h1 className="text-xl font-semibold text-gray-900">Salary Slip</h1>
-        <div className="w-6"></div>
-      </div>
+     <HeaderBar title="Salary Slip" onBack={() => navigator(-1)}/>
 
       <div>
         {/* Header Section */}
