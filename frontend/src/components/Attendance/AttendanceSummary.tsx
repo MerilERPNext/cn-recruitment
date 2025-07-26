@@ -92,24 +92,24 @@ const AttendanceSummary = () => {
                     <h2 className="text-xl font-semibold ">Quick Links</h2>
 
 
-                    <div className="flex gap-4 py-4 ">
+                    <div className="flex gap-4 py-4 overflow-x-auto scrollbar-hide">
                         <button
-                            className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-blue-500"
+                            className="w-32 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-blue-500 flex-shrink-0"
                             onClick={() => { navigate("/webapp/attendance/team-attendance") }}>
                             <Users className="h-6 w-6" />
-                            Team Attendance
+                            <span className="text-xs text-center leading-tight">Team Attendance</span>
                         </button>
                         <button
-                            className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-blue-500"
+                            className="w-32 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-blue-500 flex-shrink-0"
                             onClick={() => { navigate("/webapp/attendance/attendance-request") }}>
                             <ListCheck className="h-6 w-6" />
-                            Attendance Requests
+                            <span className="text-xs text-center leading-tight">My Attendance Requests</span>
                         </button>
                         <button
-                            className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-blue-500"
+                            className="w-32 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-blue-500 flex-shrink-0"
                             onClick={() => { navigate("/webapp/attendance/team-attendance-details") }}>
                             <Logs className="h-6 w-6" />
-                            Team Attendance Details
+                            <span className="text-xs text-center leading-tight">Team Attendance Details</span>
                         </button>
                     </div>
                 </div>

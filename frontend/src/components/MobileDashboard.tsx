@@ -170,9 +170,12 @@ const MobileDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans max-w-md mx-auto">
       {/* Header */}
-      <div className="bg-white px-4 py-3 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-4 py-3 shadow-sm sticky top-0 z-10">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <button
+            onClick={() => navigate('/webapp/my-profile')}
+            className="flex items-center space-x-3 hover:bg-black/5 rounded-lg p-2 -m-2 transition-colors"
+          >
             <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
               <User className="w-5 h-5 text-white" />
             </div>
@@ -180,7 +183,7 @@ const MobileDashboard: React.FC = () => {
               <h1 className="text-lg font-bold text-gray-900">Welcome, {getDisplayName()}</h1>
               <p className="text-xs text-gray-600">Let's get to work!</p>
             </div>
-          </div>
+          </button>
           <button
             onClick={handleNotificationClick}
             className="relative p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -310,7 +313,7 @@ const MobileDashboard: React.FC = () => {
         </div>
 
         {/* Leave Balance */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4 sm:mb-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold text-gray-900">Leave Balance</h3>
             <Link to="/webapp/leave-app" className="text-primary text-sm font-semibold hover:text-primary-600">
@@ -342,7 +345,7 @@ const MobileDashboard: React.FC = () => {
         </div>
 
         {/* Pending Expense Claims */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4 sm:mb-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold text-gray-900">Pending Expense Claims</h3>
             <Link to="/webapp/expenses-app" className="text-primary text-sm font-semibold hover:text-primary-600">
@@ -362,7 +365,7 @@ const MobileDashboard: React.FC = () => {
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-gray-900">$245.50</p>
+                <p className="font-bold text-gray-900">₹245.50</p>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                   Pending
                 </span>
@@ -380,7 +383,7 @@ const MobileDashboard: React.FC = () => {
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-gray-900">$89.25</p>
+                <p className="font-bold text-gray-900">₹89.25</p>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                   Approved
                 </span>
@@ -390,7 +393,7 @@ const MobileDashboard: React.FC = () => {
         </div>
 
         {/* Attendance Summary */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4 sm:mb-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold text-gray-900">Attendance Summary</h3>
             <Link to="/webapp/attendance" className="text-primary text-sm font-semibold hover:text-primary-600">

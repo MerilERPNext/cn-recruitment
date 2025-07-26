@@ -203,7 +203,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
     };
     return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white overflow-scroll">
         <LayoutHeader
-            tab="Attendance Request"
+            tab="Create Attendance Request"
             onBack={() => {
                 onClose()
             }}

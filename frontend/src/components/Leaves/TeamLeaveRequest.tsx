@@ -45,14 +45,17 @@ const TeamLeaveRequest = () => {
 
   if (isUserLoading || !userId) {
     return (
-      <div className="p-4 text-gray-500 text-center">
-        Loading team leave requests...
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-3"></div>
+          <p className="text-gray-500">Loading team leave requests...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="py-4 mt-2">
+    <div className="space-y-3">
       <FrappeListView
         doctype="Leave Application"
         ItemComponent={({ item }) => (
@@ -82,18 +85,18 @@ const TeamLeaveRequest = () => {
 
       {isModalOpen && selectedRequest && (
         <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center">
+          <div className="bg-white border-b border-gray-200 p-4 flex items-center sticky top-0">
             <button
               onClick={handleCloseModal}
               className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
             >
               <FiArrowLeft className="w-5 h-5 mr-2" />
             </button>
-            <h2 className="text-lg font-semibold text-center">
+            <h2 className="text-lg font-semibold">
               Leave Request Details
             </h2>
           </div>
-          <div className="p-4">
+          <div className="p-4 max-w-md mx-auto">
             <LeaveRequestDetails request={selectedRequest} />
           </div>
         </div>

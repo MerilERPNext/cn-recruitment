@@ -114,7 +114,7 @@ const SalarySlipDetails = () => {
             <div className="px-4 py-3 border-t space-y-3">
               {earningsData.length > 0 ? (
                 earningsData.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center">
+                  <div key={`earning-${item.salary_component}-${index}`} className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">{item.salary_component}</span>
                     <span className={`text-sm font-medium text-gray-900 ${!showSalary ? "blur-sm select-none" : ""}`}>
                       {formatAmount(item.amount)}
@@ -138,7 +138,7 @@ const SalarySlipDetails = () => {
             <div className="border-t py-3 space-y-3 px-4">
               {deductionsData.length > 0 ? (
                 deductionsData.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center">
+                  <div key={`deduction-${item.salary_component}-${index}`} className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">{item.salary_component}</span>
                     <span className={`text-sm font-medium text-red-600 ${!showSalary ? "blur-sm select-none" : ""}`}>
                       -{formatAmount(item.amount)}

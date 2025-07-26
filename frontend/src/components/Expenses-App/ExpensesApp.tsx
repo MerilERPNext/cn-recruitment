@@ -71,7 +71,7 @@ const ExpensesApp: React.FC = () => {
       {activeTab === "Expenses" && (
         <button
           onClick={handleAddNew}
-          className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
+          className="bg-black text-white w-16 h-16 rounded-full hover:bg-gray-800 fixed bottom-20 right-4 z-50 flex items-center justify-center text-xl sm:text-3xl sm:font-semibold"
         >
           +
         </button>

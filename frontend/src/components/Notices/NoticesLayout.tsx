@@ -24,10 +24,34 @@ const NoticesLayout: React.FC = () => {
         navigate(`/webapp/notices/${tabKey}`);
     };
 
+    const handleBackNavigation = () => {
+        navigate('/webapp');
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            <div className="flex items-center justify-center p-2">
-                <h1 className="text-xl font-semibold text-slate-900 capitalize">{activeTab}</h1>
+            <div className="flex items-center p-4 bg-white shadow-sm">
+                <button
+                    onClick={handleBackNavigation}
+                    className="p-2 -ml-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                    <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                        />
+                    </svg>
+                </button>
+                <h1 className="text-xl font-semibold text-slate-900 capitalize absolute left-1/2 transform -translate-x-1/2">
+                    {activeTab}
+                </h1>
             </div>
             <div className="flex border-b border-gray-200 px-4 gap-4 bg-white sticky top-0 z-10">
                 {tabs.map((tab) => (

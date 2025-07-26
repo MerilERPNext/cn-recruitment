@@ -595,7 +595,7 @@ const FrappeListView = <T extends BaseItem>({
               }
               return (
                 <div
-                  key={item.name || index}
+                  key={item.name || `${doctype}-${index}`}
                   onClick={() => {
                     console.log(`👆 Item clicked for ${doctype}:`, item)
                     onItemClick?.(item) // Use optional chaining
