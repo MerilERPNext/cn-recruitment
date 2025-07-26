@@ -68,7 +68,7 @@ const SalarySlipDetails = () => {
 
   return (
     <div className="max-w-full mx-auto font-roboto font-medium bg-gray-100 min-h-screen">
-      <div className="sticky top-0 flex items-center justify-between p-3 border-b border-gray-200">
+      <div className="flex items-center justify-between p-3 border-b border-gray-200">
         <ArrowLeft onClick={handleBack} className="w-6 h-6 text-gray-600 cursor-pointer" />
         <h1 className="text-xl font-semibold text-gray-900">Salary Slip</h1>
         <div className="w-6"></div>
