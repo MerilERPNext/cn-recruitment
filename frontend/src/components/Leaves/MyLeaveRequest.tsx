@@ -94,14 +94,17 @@ const MyLeaveRequest: React.FC = () => {
 
   if (isLoading || !currentEmployee?.name) {
     return (
-      <div className="text-gray-500 p-4 text-center">
-        Loading leave requests...
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-3"></div>
+          <p className="text-gray-500">Loading leave requests...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 mt-2">
+    <div className="space-y-3">
       <FrappeListView
         doctype="Leave Application"
         ItemComponent={LeaveRequestItem}

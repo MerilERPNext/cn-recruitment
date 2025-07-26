@@ -91,7 +91,7 @@ const LeaveTransactionCard = () => {
     <div className=" max-w-md mx-auto pb-8">
       {transactionData.map((leave, index) => (
         <div
-          key={index}
+          key={`transaction-${leave.type}-${index}`}
           className="border border-gray-200 rounded-lg mb-2 shadow-md"
         >
           <button
@@ -107,7 +107,7 @@ const LeaveTransactionCard = () => {
             <div className="grid grid-cols-4 gap-2 p-4 bg-gray-50">
               {leave.monthly.map((count, i) => (
                 <div
-                  key={i}
+                  key={`monthly-${leave.type}-${i}`}
                   className="text-sm text-center p-2 border rounded-lg bg-white shadow-sm"
                 >
                   <div className="font-medium">{monthLabels[i]}</div>

@@ -32,7 +32,7 @@ const AttendanceRequest = () => {
 
     );
     return (<>
-        <LayoutHeader tab="Attendance Request" />
+        <LayoutHeader tab="My Attendance Request" />
 
         {showForm ? <AttndanceRequestForm onClose={() => { setShowForm(false) }} /> :
             <div className="bg-white h-screen">

@@ -18,7 +18,7 @@ const LayoutHeader = ({ path, tab, onBack, icon = 'chevron', children }: LayoutH
         } else if (path) {
             navigate(path)
         } else {
-            navigate("/webapp")
+            navigate(-1) // Go back in browser history
         }
     }
 

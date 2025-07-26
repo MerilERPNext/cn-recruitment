@@ -20,7 +20,7 @@ export default function MyShiftAssignment() {
     <div className=" flex flex-col mb-24 gap-2">
       {shiftTypes?.data.map((item, index) => (
         <div
-          key={index}
+          key={`shift-${item.name || item.shift_type || index}`}
           className="bg-white rounded-lg border border-gray-200 p-4"
         >
           <div className="mb-0">
