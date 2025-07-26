@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router'
 import LayoutHeader from '../../shared/LayoutHeader'
 
 const TeamAttendanceDetails = () => {
-    const { data = [], isLoading, error } = useAllAttendanceRequests(5) as { data: AttendanceRequest[], isLoading: boolean, error: Error | null }
+    const { data = [], isLoading, error, refetch } = useAllAttendanceRequests(5);
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [selectedRequest, setSelectedRequest] = useState<AttendanceRequest | null>(null)
     const { pendingRequests, actionedRequests } = useMemo(() => {
@@ -80,7 +80,9 @@ const TeamAttendanceDetails = () => {
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Attendance Requests</h3>
                             <p className="text-gray-500 mb-6">There are currently no attendance requests to display.</p>
                             <button
-                                onClick={() => window.location.reload()}
+                                onClick={() => {
+                                    refetch()   
+                                }}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                             >
                                 Refresh
