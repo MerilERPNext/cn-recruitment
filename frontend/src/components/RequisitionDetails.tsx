@@ -202,9 +202,11 @@ const RequisitionDetails: React.FC = () => {
           alert(`Failed to create job opening: ${result.message}`);
         }
       }
-    } catch (error: any) {
+    
+    } catch (error: unknown) {
       console.error(`❌ Error creating job opening:`, error);
-      alert(`Error creating job opening: ${error.message || 'Unknown error'}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error creating job opening: ${message}`);
     } finally {
       setIsCreatingJobOpening(false);
     }
