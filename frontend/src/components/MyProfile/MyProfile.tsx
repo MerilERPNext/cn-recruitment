@@ -1,17 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import PersonalInfo from "./PersonalInfo";
 import ContactInfo from "./ContactInfo";
 import AddressInfo from "./AddressInfo";
 import CompanyInfo from "./CompanyInfo";
 import SalaryInfo from "./SalaryInfo";
+import HRLetters from "./HRLetters";
 import HeaderBar from "../HeaderBar";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { Employee } from "../../types/employee";
 import { Pencil } from "lucide-react";
 import defaultProfile from "../../assets/user.png";
-import HRLetters from "./HRLetters";
 
 type TabKey =
   | "personal-info"
@@ -47,30 +47,34 @@ interface NavigationProps {
 }
 
 // Navigation Tab Component
-const NavTab = ({ label, isActive, hasNotification, onClick }: NavTabProps) => (
+const NavTab: React.FC<NavTabProps> = ({
+  label,
+  isActive,
+  hasNotification,
+  onClick,
+}) => (
   <button
-    className={`flex flex-col items-center justify-center rounded-none border-t-0 border-l-0 border-r-0 border-b-[3px] pb-3 pt-3 flex-1 outline-none  focus:outline-none focus:ring-0 relative cursor-pointer min-w-28 ${
+    className={`flex flex-col items-center justify-center border-b-4 pb-3 pt-3 flex-1 outline-none focus:outline-none relative cursor-pointer min-w-[7rem] ${
       isActive
         ? "border-b-blue-500 text-blue-500"
         : "border-b-transparent text-gray-600 hover:text-gray-800"
     }`}
     onClick={onClick}
   >
-    <p className="text-sm font-semibold">{label}</p>
+    <span className="text-sm font-semibold">{label}</span>
     {hasNotification && (
-      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
     )}
   </button>
 );
 
-// Navigation Component
 const Navigation: React.FC<NavigationProps> = ({
   tabs,
   activeTab,
   onTabChange,
 }) => (
-  <nav className="sticky top-0 z-10 bg-white pb-0">
-    <div className="flex overflow-x-auto flex-nowrap border-b border-gray-200 px-4 space-x-4 hide-scrollbar">
+  <nav className="sticky top-0 z-10 bg-white">
+    <div className="flex overflow-x-auto border-b border-gray-200 px-4 hide-scrollbar">
       {tabs.map((tab) => (
         <NavTab
           key={tab.key}
@@ -84,24 +88,27 @@ const Navigation: React.FC<NavigationProps> = ({
   </nav>
 );
 
-// Main component
 const MyProfile: React.FC = () => {
-  const tabs: Tab[] = [
-    { key: "personal-info", label: "Personal Info" },
-    { key: "contact-info", label: "Contact Info" },
-    { key: "address", label: "Address" },
-    { key: "company-info", label: "Company Info" },
-    { key: "salary-info", label: "Salary Info" },
-    { key: "hr-letters", label: "HR letters" },
-  ];
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: user_id } = useLoggedInUser();
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
-  const { data: user } = useCurrentEmployeeAllDetails(user_id || "");
+  const tabs: Tab[] = useMemo(
+    () => [
+      { key: "personal-info", label: "Personal Info" },
+      { key: "contact-info", label: "Contact Info" },
+      { key: "address", label: "Address" },
+      { key: "company-info", label: "Company Info" },
+      { key: "salary-info", label: "Salary Info" },
+      { key: "hr-letters", label: "HR Letters" },
+    ],
+    []
+  );
 
-  // State to track active tab
   const [activeTab, setActiveTab] = useState<TabKey>(tabs[0].key);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   const tabContent: Record<TabKey, React.ReactNode> = useMemo(
     () => ({
@@ -115,20 +122,40 @@ const MyProfile: React.FC = () => {
     [user]
   );
 
+  const handleImageClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedImage(URL.createObjectURL(file));
+    }
+  };
+
   return (
     <div className="bg-white font-sans">
-      {/* User Info Header */}
       <div className="bg-white shadow">
         <HeaderBar title="My Profile" onBack={() => navigate(-1)} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          id="upload-image"
+          className="hidden"
+          onChange={handleFileChange}
+        />
         <div className="flex flex-col items-center py-6">
           <div className="relative">
             <img
-              src={user?.image || defaultProfile}
+              src={uploadedImage || user?.image || defaultProfile}
               alt="User avatar"
               className="w-24 h-24 rounded-full object-cover"
             />
-            <button className="absolute bottom-0 right-0 bg-white p-1 rounded-full shadow">
-              <Pencil />
+            <button
+              onClick={handleImageClick}
+              className="absolute bottom-0 right-0 bg-white p-1 rounded-full shadow focus:outline-none"
+              aria-label="Upload new avatar"
+            >
+              <Pencil size={16} />
             </button>
           </div>
           <h1 className="mt-4 text-xl font-semibold">{user?.employee_name}</h1>
@@ -137,14 +164,11 @@ const MyProfile: React.FC = () => {
         </div>
       </div>
       <div className="min-h-screen bg-gray-100">
-        {/* Sticky Tabs */}
         <Navigation
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
-
-        {/* Tab Content */}
         <div className="flex-grow p-4">{tabContent[activeTab]}</div>
       </div>
     </div>
