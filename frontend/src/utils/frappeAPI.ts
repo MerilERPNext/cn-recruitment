@@ -56,7 +56,8 @@ apiClient.interceptors.response.use(
         return apiClient.request(config);
       } catch (refreshError) {
         console.error("Failed to refresh CSRF token:", refreshError);
-        // Don't throw here, let it fall through to other error handlers
+        throw refreshError;
+      }
       }
     }
 
