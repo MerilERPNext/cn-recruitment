@@ -58,7 +58,6 @@ apiClient.interceptors.response.use(
         console.error("Failed to refresh CSRF token:", refreshError);
         throw refreshError;
       }
-      }
     }
 
     if (error.response?.status === 403) {
