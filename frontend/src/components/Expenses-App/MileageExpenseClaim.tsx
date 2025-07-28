@@ -4,7 +4,19 @@ import { useNavigate } from "react-router-dom";
 import { Formio } from "formiojs";
 import HeaderBar from "../HeaderBar";
 
-// Schema for Basic Expense Details 
+interface MileageExpenseData {
+  expenseDate: string;
+  purpose: string;
+  travelTypeHidden: 'distance' | 'odometer';
+  distance?: number;
+  startOdometer?: number;
+  endOdometer?: number;
+  startOdometerAttachment?: any[]; // Or a more specific Form.io file type
+  endOdometerAttachment?: any[];
+  notes?: string;
+}
+
+// Schema for Basic Expense Details
 const basicDetailsSchema = {
   display: "form",
   components: [
@@ -74,6 +86,29 @@ const basicDetailsSchema = {
   ],
 };
 
+// Helper function to create the file attachment component configuration
+const createOdometerAttachmentField = (key: string, label: string) => ({
+  label,
+  key,
+  type: "file",
+  storage: "base64",
+  tableView: false,
+  input: true,
+  webcam: false,
+  validate: {
+    required: false,
+  },
+  fileTypes: [
+    { label: "Images", value: "image/*" },
+    { label: "Documents", value: "application/*" },
+  ],
+  image: true,
+  conditional: {
+    json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
+  },
+  fileViewTemplate: `<div class="flex items-center space-x-2"><a class="text-blue-600 underline" href="\${url}" target="_blank" rel="noreferrer">\${originalName}</a></div>`,
+});
+
 // Schema for travel fields with conditional file uploads
 const travelFieldsSchema = {
   display: "form",
@@ -120,30 +155,11 @@ const travelFieldsSchema = {
         json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
       },
     },
-    {
-      label: "Start Reading Attachment",
-      key: "startOdometerAttachment",
-      type: "file",
-      storage: "base64",
-      tableView: false,
-      input: true,
-      webcam: false,
-      validate: {
-        required: false, // Changed to false to make it optional
-      },
-      fileTypes: [
-        { label: "Images", value: "image/*" },
-        { label: "Documents", value: "application/*" },
-      ],
-      image: true,
-      conditional: {
-        json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
-      },
-      fileViewTemplate:
-        '<div class="flex items-center space-x-2">' +
-        '<a class="text-blue-600 underline" href="${url}" target="_blank" rel="noreferrer">${originalName}</a>' +
-        "</div>",
-    },
+    // Use the helper function to define the file attachment fields
+    createOdometerAttachmentField(
+      "startOdometerAttachment",
+      "Start Reading Attachment"
+    ),
     {
       label: "Odometer End Reading",
       tableView: true,
@@ -162,30 +178,11 @@ const travelFieldsSchema = {
         json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
       },
     },
-    {
-      label: "End Reading Attachment",
-      key: "endOdometerAttachment",
-      type: "file",
-      storage: "base64",
-      tableView: false,
-      input: true,
-      webcam: false,
-      validate: {
-        required: false, // Changed to false to make it optional
-      },
-      fileTypes: [
-        { label: "Images", value: "image/*" },
-        { label: "Documents", value: "application/*" },
-      ],
-      image: true,
-      conditional: {
-        json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
-      },
-      fileViewTemplate:
-        '<div class="flex items-center space-x-2">' +
-        '<a class="text-blue-600 underline" href="${url}" target="_blank" rel="noreferrer">${originalName}</a>' +
-        "</div>",
-    },
+    // Use the helper function again for the end attachment
+    createOdometerAttachmentField(
+      "endOdometerAttachment",
+      "End Reading Attachment"
+    ),
   ],
 };
 
@@ -230,7 +227,7 @@ const MileageExpense: React.FC = () => {
     return dist * ratePerKm;
   }, []);
 
-  // Effect to initialize Basic Details Form.io instance 
+  // Effect to initialize Basic Details Form.io instance
   useEffect(() => {
     if (basicDetailsRef.current) {
       Formio.createForm(basicDetailsRef.current, basicDetailsSchema, {
@@ -285,7 +282,7 @@ const MileageExpense: React.FC = () => {
     }
   }, [travelType]);
 
-  // Effect to initialize Notes Form.io instance 
+  // Effect to initialize Notes Form.io instance
   useEffect(() => {
     if (notesRef.current) {
       Formio.createForm(notesRef.current, notesSchema, {
@@ -335,27 +332,30 @@ const MileageExpense: React.FC = () => {
     setCalculatedAmount(calculateAmount(distanceValue));
   }, [travelFieldsFormData, travelType, calculateAmount]);
 
-  // Removed handleRemoveOdometerFile as Formio handles file removal automatically
-
   // Handle overall form submission
   const handleSubmit = useCallback(async () => {
-    const allFormData: any = {};
+    const allFormData: Partial<MileageExpenseData> = {};
     try {
       // First, submit each form individually to trigger validation
-      const basicSubmission = await basicDetailsFormInstanceRef.current.submit();
-      const travelSubmission = await travelFieldsFormInstanceRef.current.submit();
+      const basicSubmission =
+        await basicDetailsFormInstanceRef.current.submit();
+      const travelSubmission =
+        await travelFieldsFormInstanceRef.current.submit();
       const notesSubmission = await notesFormInstanceRef.current.submit();
 
       // If all submissions are successful, merge the data
-      Object.assign(allFormData, basicSubmission.data, travelSubmission.data, notesSubmission.data);
-      
+      Object.assign(
+        allFormData,
+        basicSubmission.data,
+        travelSubmission.data,
+        notesSubmission.data
+      );
+
       console.log("Mileage Expense Submitted Data:", allFormData);
       // Here you would typically send allFormData to your backend,
       // which now includes the file data encoded in base64.
-
     } catch (error) {
       console.error("Form submission error:", error);
-      alert("Please correct the errors in the form before submitting.");
     }
   }, []);
 
