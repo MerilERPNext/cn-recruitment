@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAllShiftTypes, getCurrentMyShiftAssignment, ShiftRequestService } from "../services/shiftRequests";
+import { getAllShiftTypes, getCurrentMyShiftAssignment, getTeamShift, ShiftRequestService } from "../services/shiftRequests";
 import { ShiftRequest } from "../types/shift";
 import { toast } from "react-hot-toast"; // Optional: for notifications
 
@@ -51,9 +51,17 @@ export const useShiftTypes = () => {
   });
 };
 
-export const useMyCurrentShiftAssignment = () => {
+export const useMyCurrentShiftAssignment = (employee_id: string) => {
+  return useQuery({
+    queryKey: ["shift-assignment", employee_id],
+    queryFn: () => getCurrentMyShiftAssignment(employee_id),
+    enabled: !!employee_id, 
+  });
+};
+
+export const useTeamShiftAssignment = () => {
   return useQuery({
     queryKey: ["shift-assignment"],
-    queryFn: getCurrentMyShiftAssignment,
+    queryFn:  getTeamShift,
   });
 };

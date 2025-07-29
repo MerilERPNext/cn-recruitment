@@ -3,7 +3,7 @@ import { useShiftRequests, useApproveShiftRequest, useRejectShiftRequest } from 
 import { useState } from "react";
 
 export default function ShiftChangeRequests() {
-  const { data = [], isLoading } = useShiftRequests();
+  const { data = [], isLoading, error } = useShiftRequests();
   const approveShiftRequest = useApproveShiftRequest();
   const rejectShiftRequest = useRejectShiftRequest();
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
@@ -46,14 +46,31 @@ export default function ShiftChangeRequests() {
     }
   };
 
+  // Centered loader
   if (isLoading) {
     return (
-      <div className="w-full mx-auto flex justify-center items-center h-64">
-        <div className="text-gray-500">Loading shift requests...</div>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="text-gray-600">Loading shift requests...</p>
+        </div>
       </div>
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="text-red-600 mb-2">Error loading shift requests</div>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No data state
   if (mappedRequests.length === 0) {
     return (
       <div className="w-full mx-auto space-y-6">
@@ -63,13 +80,25 @@ export default function ShiftChangeRequests() {
             Pending shift change requests from your subordinates.
           </p>
         </div>
-        <div className="bg-white shadow rounded-xl p-8 text-center border border-gray-200">
-          <p className="text-gray-500 font-semibold">No pending shift requests found.</p>
+
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <div className="text-center">
+            <div className="text-gray-400 mb-4">
+              <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No shift requests found</h3>
+            <p className="text-gray-600 max-w-sm mx-auto">
+              There are currently no pending shift change requests from your team members.
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
+  // Data available - render requests list
   return (
     <div className="w-full mx-auto space-y-6">
       <div>

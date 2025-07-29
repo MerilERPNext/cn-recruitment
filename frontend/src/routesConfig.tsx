@@ -51,6 +51,7 @@ import TeamShift from "./components/ShiftRequest/TeamShift";
 import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
 import Policies from "./components/Policies";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
+import CTCSalaryUI from "./components/SalarySlip/CTCSalaryBreakdown";
 
 export interface AppRoute {
   index?: boolean;
@@ -88,7 +89,9 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/salary-slip-app",
     element: <SalarySlipApp />,
-    children: [{ path: "salary-slip-list", element: <SalarySlipsList /> }],
+    children: [{ path: "salary-slip-list", element: <SalarySlipsList /> },
+      {path: "ctc-salary-breakdown", element: <CTCSalaryUI />},
+    ],
   },
   {
     path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",

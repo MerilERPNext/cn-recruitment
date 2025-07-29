@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 
-type TabName = "Salary Slip";
+type TabName = 'Salary Slip' | 'CTC Salary Breakdown';
 
 const tabRoutes: Record<TabName, string> = {
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
+  "CTC Salary Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
+
 };
 
 const SalarySlipApp: React.FC = () => {

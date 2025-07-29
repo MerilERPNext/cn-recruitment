@@ -28,12 +28,11 @@ const RequisitionDetails: React.FC = () => {
   const [showEdit, setShowEdit] = useState(false);
   const [isCreatingJobOpening, setIsCreatingJobOpening] = useState(false);
 
-  // Hook for creating job opening
   const createJobOpeningMutation = useCreateJobOpeningFromRequisition();
 
   console.log(`🎯 RequisitionDetails initialized with ID: ${requisitionId}`);
 
-  // Use React Query hook
+
   const {
     data: requisitionResponse,
     isLoading,
