@@ -22,8 +22,7 @@ const Modal: React.FC<ModalProps> = ({ show, title, message, onClose }) => {
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="p-8 text-center">
           <div
-            className={`w-16 h-16 ${isSuccess ? "bg-green-100" : "bg-red-100"
-              } rounded-full flex items-center justify-center mx-auto mb-4`}
+            className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isSuccess ? "bg-green-100" : "bg-red-100"}`}
           >
             {isSuccess ? (
               <svg
@@ -60,10 +59,7 @@ const Modal: React.FC<ModalProps> = ({ show, title, message, onClose }) => {
           <p className="text-gray-600 mb-6">{message}</p>
           <button
             onClick={onClose}
-            className={`${isSuccess
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-red-600 hover:bg-red-700"
-              } text-white py-2 px-6 rounded-lg font-medium transition-colors`}
+            className={`text-white py-2 px-6 rounded-lg font-medium transition-colors ${isSuccess ? "bg-blue-600 hover:bg-blue-700" : "bg-red-600 hover:bg-red-700"}`}
           >
             Ok
           </button>
@@ -429,7 +425,7 @@ const AddNewReferral: React.FC = () => {
       </main>
 
       <footer className="sticky bottom-0 w-full justify-between bg-white border-t border-gray-200 p-4">
-        <div className="flex justify-between gap-4  sm:px-8">
+        <div className="flex justify-between gap-4 sm:px-8">
           <button
             type="button"
             className="w-auto bg-gray-100 text-black font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition"
