@@ -1,6 +1,7 @@
 import axios, { AxiosRequestConfig } from "axios"
 import { PermissionError } from "../types/interview"
 import { FilterCondition } from "../types/frappe";
+import { refreshCsrfToken } from "./csrf";
 
 // Base configuration for Frappe API calls
 const API_BASE = window.location.origin
@@ -18,14 +19,46 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
-    "X-Frappe-CSRF-Token": window.csrf_token, // ✅ Now TypeScript understands
+    // "X-Frappe-CSRF-Token": window.csrf_token, // ✅ Now TypeScript understands
   },
 });
+
+// Request interceptor to add CSRF token dynamically
+apiClient.interceptors.request.use(
+  async (config) => {
+    if (typeof window !== 'undefined' && window.csrf_token && window.csrf_token !== '{{ csrf_token }}') {
+      config.headers['X-Frappe-CSRF-Token'] = window.csrf_token;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config as CustomAxiosRequestConfig
+
+    // Handle CSRF token refresh on 400 errors
+    if (error.response?.status === 400 && !config._retry) {
+      try {
+        config._retry = true;
+        const csrfToken = await refreshCsrfToken();
+        
+        // Update global CSRF token, ensuring csrfToken is a string
+        if (csrfToken) {
+          window.csrf_token = csrfToken;
+          if(config.headers){
+            config.headers["X-Frappe-CSRF-Token"] = csrfToken;
+          }
+        }
+        
+        return apiClient.request(config);
+      } catch (refreshError) {
+        console.error("Failed to refresh CSRF token:", refreshError);
+        throw refreshError;
+      }
+    }
 
     if (error.response?.status === 403) {
       if (!config._retry) {
