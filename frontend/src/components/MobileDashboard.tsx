@@ -7,31 +7,70 @@ import {
   Shield,
   Bell,
   Search,
-  FileText,
   CheckCircle,
   AlertCircle,
   TrendingUp,
   User,
-  DollarSign
+  DollarSign,
+  Check
 } from 'lucide-react';
 import { useUnreadNoticesCount } from '../hooks/useNotices';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useAttendance } from '../hooks/useAttendance';
+import { useGetLeaveBalance } from '../hooks/useLeaves';
+import { useExpenseClaim } from '../hooks/useExpense';
+import { formatDateString } from '../utils/helperUtils';
+import defaultProfile from "../assets/user.png";
+
+const statusStyles = {
+  draft: {
+    bg: 'bg-orange-50',
+    border: 'border-orange-100',
+    iconBg: 'bg-orange-200',
+    iconText: 'text-orange-600',
+    badgeBg: 'bg-orange-200',
+    badgeText: 'text-orange-800',
+  },
+  approved: {
+    bg: 'bg-green-50',
+    border: 'border-green-100',
+    iconBg: 'bg-green-100',
+    iconText: 'text-green-600',
+    badgeBg: 'bg-green-100',
+    badgeText: 'text-green-800',
+  },
+  rejected: {
+    bg: 'bg-red-50',
+    border: 'border-red-100',
+    iconBg: 'bg-red-100',
+    iconText: 'text-red-600',
+    badgeBg: 'bg-red-100',
+    badgeText: 'text-red-800',
+  },
+};
+
 
 const MobileDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [checkInTime, setCheckInTime] = useState<string>('09:05 AM');
   const [checkOutTime, setCheckOutTime] = useState<string>('--:--');
   const [isCheckedIn, setIsCheckedIn] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [checkInTimestamp, setCheckInTimestamp] = useState<Date>(new Date());
   const [checkOutTimestamp, setCheckOutTimestamp] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   // Get unread notifications count
   const { data: unreadCount = 0 } = useUnreadNoticesCount();
-
+  const { data: expenseData } = useExpenseClaim([["status", "=", "draft"]])
   // Get current user data
   const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
+
+  const filters = currentUser?.name ? [["owner", "=", currentUser?.name], ["attendance_date", "=", new Date().toISOString().split("T")[0]]] : [];
+  const { data: todayAttendance } = useAttendance(filters as any, {
+    enabled: !!currentUser?.name,
+  });
+  const { data: leaveBalance } = useGetLeaveBalance(todayAttendance?.[0]?.employee)
+
 
   // Timer effect to update current time every second
   useEffect(() => {
@@ -42,12 +81,12 @@ const MobileDashboard: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Initialize check-in timestamp on component mount
-  useEffect(() => {
-    const now = new Date();
-    now.setHours(9, 5, 0, 0); // Set to 09:05 AM today
-    setCheckInTimestamp(now);
-  }, []);
+  // // Initialize check-in timestamp on component mount
+  // useEffect(() => {
+  //   const now = new Date();
+  //   now.setHours(9, 5, 0, 0); // Set to 09:05 AM today
+  //   setCheckInTimestamp(now);
+  // }, []);
 
   const formatElapsedTime = (startTime: Date, endTime: Date = currentTime): string => {
     const diffMs = endTime.getTime() - startTime.getTime();
@@ -75,11 +114,11 @@ const MobileDashboard: React.FC = () => {
   };
 
   const getTotalHours = (): string => {
-    if (checkOutTimestamp && !isCheckedIn) {
+    if (checkOutTimestamp && !todayAttendance?.[0]?.in_time) {
       // User has checked out, calculate from effective start time
       const effectiveStart = getEffectiveStartTime();
       return formatElapsedTime(effectiveStart, checkOutTimestamp);
-    } else if (isCheckedIn) {
+    } else if (todayAttendance?.[0]?.in_time) {
       // User is checked in, calculate from effective start time
       const effectiveStart = getEffectiveStartTime();
 
@@ -121,12 +160,6 @@ const MobileDashboard: React.FC = () => {
     setIsCheckedIn(false);
   };
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      // Navigate to search members page with query
-      navigate(`/webapp/search-members?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
 
   const handleNotificationClick = () => {
     navigate('/webapp/notices');
@@ -177,7 +210,14 @@ const MobileDashboard: React.FC = () => {
             className="flex items-center space-x-3 hover:bg-black/5 rounded-lg p-2 -m-2 transition-colors"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-              <User className="w-5 h-5 text-white" />
+              {/* <User className="w-5 h-5 text-white" /> */}
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                <img
+                  src={currentUser?.user_image || defaultProfile}
+                  alt="User avatar"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              </div>
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-900">Welcome, {getDisplayName()}</h1>
@@ -199,75 +239,67 @@ const MobileDashboard: React.FC = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="px-4 py-2 bg-white border-b border-gray-100">
+      <div className="px-4 py-2 mt-2 bg-white border-b border-gray-100">
         <div className="relative">
           <input
             type="text"
             placeholder="Search members..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
+            onClick={() => navigate("/webapp/search-members")}
+            // onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          {searchQuery && (
-            <button
-              onClick={handleSearch}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white px-2 py-1 rounded text-xs font-medium hover:bg-primary-600 transition-colors"
-            >
-              Search
-            </button>
-          )}
         </div>
       </div>
 
       {/* Check In/Out Section */}
       <div className="px-4 py-3">
+
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="text-center bg-white p-3 rounded-lg shadow-sm">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Check In</p>
-            <p className="text-xl font-bold text-gray-900">{checkInTime}</p>
+          <div className="text-center bg-gray-100 border-1 border-gray-200 p-3 rounded-xl">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Shift Start</p>
+            <p className="text-xl font-bold text-gray-900">{todayAttendance?.[0]?.in_time || "--:--"}</p>
           </div>
-          <div className="text-center bg-white p-3 rounded-lg shadow-sm">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Check Out</p>
-            <p className="text-xl font-bold text-gray-900">{checkOutTime}</p>
+          <div className="text-center bg-gray-100 border-1 border-gray-200 p-3 rounded-xl">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Check In</p>
+            <p className="text-xl font-bold text-gray-900">{todayAttendance?.[0]?.out_time || "--:--"}</p>
           </div>
         </div>
 
-        {/* Check In/Out Button */}
-        <div className="mb-4">
-          <button
-            onClick={isCheckedIn ? handleCheckOut : handleCheckIn}
-            className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-              isCheckedIn
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-primary text-white hover:bg-primary-600'
-            }`}
-          >
-            {isCheckedIn ? 'Check Out' : 'Check In'}
-          </button>
-        </div>
 
         {/* Shift Information */}
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="text-center bg-white p-3 rounded-lg shadow-sm">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">My Shift</p>
-            <p className="text-sm font-bold text-gray-900">10:00 AM -</p>
-            <p className="text-sm font-bold text-gray-900">07:00 PM</p>
+          <div className="text-center bg-gray-100 border-1 border-gray-200 p-3 rounded-xl">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Shift End</p>
+            <p className="text-xl font-bold text-gray-900 ">--:--</p>
+            {/* <p className="text-sm font-bold text-gray-900">{todayAttendance?.[0]?.shift}</p> */}
           </div>
-          <div className="text-center bg-white p-3 rounded-lg shadow-sm">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Hours</p>
-            <p className="text-xl font-bold text-gray-900 font-mono">{getTotalHours()}</p>
+          <div className="text-center bg-gray-100 border-1 border-gray-200 p-3 rounded-xl">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Check Out</p>
+            <p className="text-xl font-bold text-gray-900">--:--</p>
           </div>
         </div>
+        {/* Check In/Out Button */}
+        <div className="mb-4 flex gap-2">
+          <button
+            onClick={todayAttendance?.[0]?.in_time ? handleCheckOut : handleCheckIn}
+            className={`w-full bg-black text-white py-3 rounded-lg font-semibold flex-1`}
+          >
+            {todayAttendance?.[0]?.in_time ? 'Check Out' : 'Check In'}
+          </button>
+          <div className='flex flex-col flex-1 justify-center items-center bg-gray-100 border-1 border-gray-200 p-3 rounded-xl'>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Hours</p>
+            <p className="text-xl font-bold text-gray-900">{getTotalHours()}</p>
+          </div>
 
+        </div>
         {/* Quick Links */}
         <div className="mb-5">
           <h3 className="text-lg font-bold text-gray-900 mb-3">Quick Links</h3>
 
           <div className="grid grid-cols-3 gap-3 mb-4">
             <Link to="/webapp/leave-app" className="flex flex-col items-center group">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-2 group-hover:bg-blue-100 transition-colors shadow-sm">
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-2 group-hover:bg-gray-100 transition-colors shadow-sm">
                 <Calendar className="w-6 h-6 text-blue-600" />
               </div>
               <span className="text-xs font-medium text-gray-700 text-center">My Leaves</span>
@@ -320,82 +352,14 @@ const MobileDashboard: React.FC = () => {
               View All
             </Link>
           </div>
-
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700 font-medium">Casual Leave</span>
-                <span className="text-lg font-bold text-gray-900">06 / 12</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-lg h-2 overflow-hidden">
-                <div className="bg-primary h-full rounded-lg transition-all duration-300" style={{ width: '50%' }}></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700 font-medium">Sick Leave</span>
-                <span className="text-lg font-bold text-gray-900">02 / 06</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-lg h-2 overflow-hidden">
-                <div className="bg-green-500 h-full rounded-lg transition-all duration-300" style={{ width: '33%' }}></div>
-              </div>
-            </div>
-          </div>
+          {leaveBalance && <LeaveProgress leaveData={leaveBalance as LeaveData} />}
         </div>
 
-        {/* Pending Expense Claims */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4 sm:mb-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Pending Expense Claims</h3>
-            <Link to="/webapp/expenses-app" className="text-primary text-sm font-semibold hover:text-primary-600">
-              View All
-            </Link>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Receipt className="w-4 h-4 text-orange-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Travel Expense</p>
-                  <p className="text-xs text-gray-600">Dec 15, 2024</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-gray-900">₹245.50</p>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                  Pending
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Office Supplies</p>
-                  <p className="text-xs text-gray-600">Dec 12, 2024</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-gray-900">₹89.25</p>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Approved
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Attendance Summary */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4 sm:mb-5">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Attendance Summary</h3>
+            <h3 className="text-lg font-bold text-gray-900">Attendance</h3>
             <Link to="/webapp/attendance" className="text-primary text-sm font-semibold hover:text-primary-600">
               View Details
             </Link>
@@ -428,6 +392,47 @@ const MobileDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Pending Expense Claims */}
+        {expenseData?.length > 0 && <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4 sm:mb-5">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Unpaid Expense Claims</h3>
+            <Link to="/webapp/expenses-app" className="text-primary text-sm font-semibold hover:text-primary-600">
+              View All
+            </Link>
+          </div>
+
+
+
+          <div className="space-y-3">
+
+            {expenseData?.map((item: { name: string, creation: string, total_claimed_amount: string, status: string }) => {
+              const styles = statusStyles[item.status as keyof typeof statusStyles] || statusStyles.draft;
+
+              return (
+                <div className={`flex items-center justify-between p-3 ${styles.bg} rounded-lg border ${styles.border}`}>
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 ${styles.iconBg} rounded-lg flex items-center justify-center`}>
+                      <Check className={`w-4 h-4 ${styles.iconText}`} />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{item?.name}</p>
+                      <p className="text-xs text-gray-600">{formatDateString(item?.creation)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-gray-900">{item?.total_claimed_amount} Rs</p>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium ${styles.badgeBg} ${styles.badgeText}`}>
+                      {item?.status}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+          </div>
+        </div>}
+
       </div>
 
     </div>
@@ -435,3 +440,59 @@ const MobileDashboard: React.FC = () => {
 };
 
 export default MobileDashboard;
+
+type LeaveType = {
+  allocated_leaves: number;
+  balance_leaves: number;
+};
+
+export type LeaveData = {
+  [leaveName: string]: LeaveType;
+};
+
+type LeaveProgressProps = {
+  leaveData: LeaveData;
+};
+
+const LeaveProgress = ({ leaveData }: LeaveProgressProps) => {
+  return (
+    <div className="space-y-4">
+      {Object.entries(leaveData).map(
+        ([leaveType, { allocated_leaves, balance_leaves }], index) => {
+          const percentage =
+            allocated_leaves > 0
+              ? (balance_leaves / allocated_leaves) * 100
+              : 0;
+
+          const progressBarColors = [
+            "bg-primary",
+            "bg-green-500",
+            "bg-yellow-500",
+            "bg-blue-500",
+            "bg-red-500",
+          ];
+
+          const colorClass = progressBarColors[index % progressBarColors.length];
+
+          return (
+            <div key={leaveType}>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-700 font-medium">{leaveType}</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {balance_leaves.toString().padStart(2, "0")} /{" "}
+                  {allocated_leaves.toString().padStart(2, "0")}
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-lg h-2 overflow-hidden">
+                <div
+                  className={`${colorClass} h-full rounded-lg transition-all duration-300`}
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            </div>
+          );
+        }
+      )}
+    </div>
+  );
+};

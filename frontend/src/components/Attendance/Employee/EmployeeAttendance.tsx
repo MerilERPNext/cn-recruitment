@@ -8,8 +8,6 @@ import { Attendance } from "../../../types/attendance"
 import { useNavigate } from "react-router"
 import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard"
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm"
-import RequestCompOff from "./RequestCompOff"
-import CheckIn from "../CheckIn/CheckIn"
 import LayoutHeader from "../../shared/LayoutHeader"
 
 const EmployeeAttendance = () => {
@@ -19,24 +17,27 @@ const EmployeeAttendance = () => {
     const { data: allAttendance, isError, error } = useAttendance(filters as any, {
         enabled: !!userId,
     });
-    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
-    const todayAttendance = allAttendance?.filter((record) => record.attendance_date === today)?.[0];
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date(2025, 6, 17))
+    // const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+    // const todayAttendance = allAttendance?.filter((record) => record.attendance_date === today)?.[0];
+    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
     const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] = useState<boolean>(false)
-    const [showReqCompOff, setShowReqCompOff] = useState<boolean>(false)
-    const [showFaceRecognition, setShowFaceRecognition] = useState<boolean>(false)
     type Status = | "present"
         | "absent"
         | "on-leave"
         | "half-day"
+        | "half-day-first-half"
+        | "half-day-second-half"
         | "work-from-home"
         | "default";
 
     const createAttendanceStatusGetter = (attendances: Attendance[] = []) => {
         const statusMap: Record<string, Status> = {};
 
+        const formatDateKey = (date: Date): string =>
+            date.toLocaleDateString("en-CA");
+
         attendances.forEach((record) => {
-            const dateKey = new Date(record.attendance_date).toISOString().split("T")[0];
+            const dateKey = formatDateKey(new Date(record.attendance_date));
             const rawStatus = record.status?.toLowerCase().trim();
 
             let status: Status = "default";
@@ -53,7 +54,15 @@ const EmployeeAttendance = () => {
                     break;
                 case "half day":
                 case "half-day":
-                    status = "half-day";
+                    if (record?.custom_half_day_type === "First Half") {
+
+                        status = "half-day-first-half";
+                    } else if (record?.custom_half_day_type === "Second Half") {
+
+                        status = "half-day-second-half";
+                    } else {
+                        status = 'half-day'
+                    }
                     break;
                 case "work from home":
                 case "wfh":
@@ -67,10 +76,11 @@ const EmployeeAttendance = () => {
         });
 
         return (date: Date): Status => {
-            const key = date.toISOString().split("T")[0];
+            const key = formatDateKey(date); // avoid UTC shift here too
             return statusMap[key] || "default";
         };
     };
+
 
 
     const getAttendanceStatus = useMemo(() => {
@@ -118,18 +128,43 @@ const EmployeeAttendance = () => {
     );
 
 
+
+
     const defaultFilters = useMemo(() => {
-        if (!userId) return undefined;
-        return { owner: userId };
-    }, [userId]);
+        if (!userId || !selectedDate) return undefined;
+
+        const start = new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            1
+        )
+            .toISOString()
+            .slice(0, 10);
+
+        const end = new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth() + 1,
+            1
+        )
+            .toISOString()
+            .slice(0, 10);
+
+        return {
+            owner: userId,
+            creation: ["between", [start, end]],
+        };
+    }, [userId, selectedDate]);
+
 
     return <div>
-        <LayoutHeader tab={"My Attendance"} />
+        <LayoutHeader
+            tab={"Attendance Details"}
+        />
         {/* <LayoutHeader tab="Attendance" /> */}
         <div className="flex flex-col">
 
             {/* ------------------------------------------------- Info Card Start---------------------------------------------- */}
-
+            {/* 
             <div className="px-6 py-4 border-b-1 border-gray-200 bg-white">
                 <h1 className="text-lg font-semibold text-gray-900 mb-4">Today's Attendance</h1>
 
@@ -144,12 +179,12 @@ const EmployeeAttendance = () => {
                         <div className="text-lg font-semibold text-gray-900">{todayAttendance?.working_hours || "-- --"}</div>
                     </div>
 
-                    <button className="bg-blue-100 hover:bg-blue-200 px-6 py-2"
+                    <button className="bg-blue-100 hover:bg-blue-200 px-6 py-2 rounded-md"
 
                         onClick={() => { setShowFaceRecognition(!showFaceRecognition) }}
                     > {todayAttendance?.in_time ? "Check Out" : "Check In"}</button>
                 </div>
-            </div>
+            </div> */}
             {/* ------------------------------------------------- Info Card End---------------------------------------------- */}
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -178,13 +213,17 @@ const EmployeeAttendance = () => {
                         const highlightClass = (() => {
                             switch (status) {
                                 case "present":
-                                    return "!bg-green-100 !text-green-800 border border-green-200";
+                                    return "!bg-green-100 !text-green-800 ";
                                 case "absent":
-                                    return "!bg-red-100 !text-red-800 border border-red-200";
+                                    return "!bg-red-100 !text-red-800 ";
                                 case "on-leave":
-                                    return "!bg-orange-100 !text-orange-800 border border-orange-200";
+                                    return "!bg-orange-100 !text-orange-800 ";
                                 case "half-day":
-                                    return "!bg-yellow-100 !text-yellow-800 border border-yellow-200";
+                                    return "bg-yellow-100 !text-yellow-800 ";
+                                case "half-day-first-half":
+                                    return "hard-gradient-green-to-yellow !text-yellow-800 ";
+                                case "half-day-second-half":
+                                    return "hard-gradient-yellow-to-green !text-yellow-800 ";
                                 case "work-from-home":
                                     return "!bg-purple-100 !text-purple-800 border border-purple-200";
                                 default:
@@ -230,7 +269,7 @@ const EmployeeAttendance = () => {
 
             <div className="bg-white p-4 border-b-1 border-gray-200" >
                 <div className="flex gap-2">
-                    <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm"
+                    <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center p-2 items-center text-md"
                         onClick={() => {
                             setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
                         }}>
@@ -242,23 +281,6 @@ const EmployeeAttendance = () => {
 
             {/* Request Attendance Correction */}
 
-
-
-            {/* Work Hour Exceptions */}
-            <div className="bg-white rou p-4 border-b-1 border-gray-200" >
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Work Hour Exceptions</h3>
-                <div className="flex gap-2">
-                    <button onClick={() => { setShowReqCompOff(!showReqCompOff) }} className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
-                        <Plus className="w-4 h-4 mr-2 font-bold " />
-                        Request Comp Off
-                    </button>
-                    <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
-                        <Plus className="w-4 h-4 mr-2 font-bold" />
-                        Request Overtime
-                    </button>
-                </div>
-            </div>
-            {/* Work Hour Exceptions */}
 
             {/* My Attendance Requests */}
             <div className="bg-white">
@@ -274,17 +296,18 @@ const EmployeeAttendance = () => {
                         );
                     }}
                     SkeletonComponent={CardSkeleton}
-                    defaultFilters={defaultFilters}
+                    defaultFilters={defaultFilters as any}
                     showRefereshButton={false}
                     onItemClick={() => { }}
                     infiniteScroll={true}
                     isFilter={false}
                     pageSize={5}
                     defaultFields={[
-                        "reason",
-                        "modified",
-                        "creation",
-                        "docstatus"
+                        "*"
+                        // "reason",
+                        // "modified",
+                        // "creation",
+                        // "docstatus"
                     ]}
                 />
 
@@ -294,12 +317,8 @@ const EmployeeAttendance = () => {
                 showReqAttendanceCorrection &&
                 <AttndanceRequestForm onClose={() => { setShowReqAttendanceCorrection(false) }} />
             }
-            {
-                showReqCompOff && <RequestCompOff onClose={() => setShowReqCompOff(false)} />
-            }
-            {
-                showFaceRecognition && <CheckIn onClose={() => setShowFaceRecognition(false)} />
-            }
+
+
         </div>
     </div >
 

@@ -51,6 +51,7 @@ import TeamShift from "./components/ShiftRequest/TeamShift";
 import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
 import Policies from "./components/Policies";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
+import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
 
 export interface AppRoute {
   index?: boolean;
@@ -169,6 +170,7 @@ export const routesConfig: AppRoute[] = [
   // },
   { path: '/webapp/attendance', element: <AttendanceSummary /> },
   { path: '/webapp/attendance/emp-attendance', element: <EmployeeAttendance /> },
+  { path: '/webapp/attendance/emp-attendance/request-compoff', element: <RequestCompOff /> },
   { path: '/webapp/attendance/team-attendance', element: <TeamAttendance /> },
   { path: '/webapp/attendance/attendance-request', element: <AttendanceRequest /> },
   { path: '/webapp/attendance/team-attendance-details', element: <TeamAttendanceDetails /> },

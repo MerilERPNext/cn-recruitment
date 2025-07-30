@@ -9,6 +9,14 @@ export const useMyLeaveRequests = (employeeId: string | undefined) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+export const useGetLeaveBalance = (employeeId: string | undefined) => {
+  return useQuery({
+    queryKey: ["leave-balance", employeeId],
+    queryFn: () => leaveService.getLeaveBalance(employeeId as string),
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000,
+  });
+};
 
 export function useRequestCompOff() {
   const queryClient = useQueryClient();

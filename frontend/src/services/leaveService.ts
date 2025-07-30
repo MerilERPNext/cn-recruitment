@@ -1,5 +1,6 @@
 import FrappeAPI from "../utils/frappeAPI";
 import type { LeaveRequest } from "../types/leaves";
+import { LeaveData } from "../components/MobileDashboard";
 
 // Add this to leaveService.ts
 export interface LeaveBalance {
@@ -47,15 +48,13 @@ export const leaveService = {
   },
   getLeaveBalance: async (
     employeeId: string,
-    date: string
-  ): Promise<LeaveBalance[]> => {
+  ): Promise<LeaveData> => {
     const response = await FrappeAPI.callMethod(
-      "hrms.hr.doctype.leave_application.leave_application.get_leave_details",
+      "hrms.api.get_leave_balance_map",
       {
         employee: employeeId,
-        date: date,
       }
     );
-    return response as LeaveBalance[];
+    return response as LeaveData;
   },
 };

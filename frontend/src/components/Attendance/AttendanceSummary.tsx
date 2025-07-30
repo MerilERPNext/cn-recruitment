@@ -17,7 +17,9 @@ const AttendanceSummary = () => {
     };
     return (
         <>
-            <LayoutHeader tab={"Summary"} />
+            <LayoutHeader tab={"Attendance"}
+                path="/webapp"
+            />
             <div className="min-h-screen bg-white">
                 {/* Header Card */}
                 <div className=" mb-4 ">
@@ -46,23 +48,33 @@ const AttendanceSummary = () => {
                     </div>
 
                     {/* Statistics Grid */}
-                    <div className="space-y-4  border-b-2 bg-white border-gray-200 px-6 py-4 pt-0">
+                    <div className="space-y-2  border-b-2 bg-white border-gray-200 px-6 py-4 pt-0">
                         <h2 className="text-xl font-semibold ">Quick Summary</h2>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 text-center">
-                                <div className="text-2xl font-bold text-gray-900 mb-1 ">21.0</div>
-                                <div className="text-sm text-gray-700 font-medium">Leave Days</div>
-                            </div>
+                        <div className="grid grid-cols-2 gap-2">
                             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 text-center">
                                 <div className="text-2xl font-bold text-gray-900 mb-1">0.0</div>
                                 <div className="text-sm text-gray-700 font-medium">Present Days</div>
                             </div>
+                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 text-center">
+                                <div className="text-2xl font-bold text-gray-900 mb-1 ">8h</div>
+                                <div className="text-sm text-gray-700 font-medium">Avg. Work Duration</div>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-2">
                             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 text-center">
                                 <div className="text-2xl font-bold text-gray-900 mb-1">0.0</div>
+                                <div className="text-sm text-gray-700 font-medium">Leaves</div>
+                            </div>
+                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 text-center">
+                                <div className="text-2xl font-bold text-gray-900 mb-1">00:00</div>
                                 <div className="text-sm text-gray-700 font-medium">Absent Days</div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 text-center">
+                                <div className="text-2xl font-bold text-gray-900 mb-1">00:00</div>
+                                <div className="text-sm text-gray-700 font-medium">Avg. Overtime</div>
                             </div>
                             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 text-center">
                                 <div className="text-2xl font-bold text-gray-900 mb-1">00:00</div>
@@ -70,12 +82,7 @@ const AttendanceSummary = () => {
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-gray-900 mb-1">00:00</div>
-                                <div className="text-sm text-gray-700 font-medium">Avg. Overtime</div>
-                            </div>
-                        </div>
+
                         <div className="mt-4">
                             <button
                                 onClick={() => { navigate("/webapp/attendance/emp-attendance") }}
@@ -94,19 +101,19 @@ const AttendanceSummary = () => {
 
                     <div className="flex gap-4 py-4 overflow-x-auto scrollbar-hide">
                         <button
-                            className="w-32 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-blue-500 flex-shrink-0"
+                            className="w-32 bg-black rounded-xl p-4 border border-gray-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-white flex-shrink-0"
                             onClick={() => { navigate("/webapp/attendance/team-attendance") }}>
                             <Users className="h-6 w-6" />
                             <span className="text-xs text-center leading-tight">Team Attendance</span>
                         </button>
                         <button
-                            className="w-32 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-blue-500 flex-shrink-0"
+                            className="w-32 bg-black rounded-xl p-4 border border-gray-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-white flex-shrink-0"
                             onClick={() => { navigate("/webapp/attendance/attendance-request") }}>
                             <ListCheck className="h-6 w-6" />
                             <span className="text-xs text-center leading-tight">My Attendance Requests</span>
                         </button>
                         <button
-                            className="w-32 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-blue-500 flex-shrink-0"
+                            className="w-32 bg-black rounded-xl p-4 border border-gray-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-white flex-shrink-0"
                             onClick={() => { navigate("/webapp/attendance/team-attendance-details") }}>
                             <Logs className="h-6 w-6" />
                             <span className="text-xs text-center leading-tight">Team Attendance Details</span>

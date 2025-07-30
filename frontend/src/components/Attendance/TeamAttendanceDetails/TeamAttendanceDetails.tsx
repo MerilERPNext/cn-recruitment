@@ -81,7 +81,7 @@ const TeamAttendanceDetails = () => {
                             <p className="text-gray-500 mb-6">There are currently no attendance requests to display.</p>
                             <button
                                 onClick={() => {
-                                    refetch()   
+                                    refetch()
                                 }}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                             >
@@ -120,7 +120,7 @@ const TeamAttendanceDetails = () => {
                             />
                         </div>
 
-                        <div className="space-y-3 border-t-1 border-gray-300 pt-2">
+                        <div className="space-y-3 border-t-1 border-gray-300 pt-2 px-[2px]">
                             {pendingRequests.map((request) => (
                                 <RequestCard
                                     key={request.name}

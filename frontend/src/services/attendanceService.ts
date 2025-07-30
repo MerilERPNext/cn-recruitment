@@ -25,7 +25,7 @@ export const attendanceService = {
     return result as Attendance;
   },
 
-  getAttendance: async (filters: FilterCondition[]): Promise<Attendance[]> => {
+  getAttendance: async (filters?: FilterCondition[]): Promise<Attendance[]> => {
     const response = await FrappeAPI.getDocumentList("Attendance", {
       fields: ["*"],
       filters,
