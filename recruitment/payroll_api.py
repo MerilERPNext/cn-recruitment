@@ -4,7 +4,7 @@ import frappe
 from frappe.utils import getdate
 from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def generate_salary_slip(employee):
     earning_component_part_of_ctc = []
     deduction_component_part_of_ctc = []
