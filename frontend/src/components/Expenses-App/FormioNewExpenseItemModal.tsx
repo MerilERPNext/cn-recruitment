@@ -1,106 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { X } from "lucide-react";
 
 import { Formio } from "formiojs";
-
-const newExpenseItemFormSchema = {
-  display: "form",
-  components: [
-    {
-      label: "Expense Type",
-      tableView: true,
-      dataSrc: "values",
-      data: {
-        values: [
-          { label: "Travel", value: "Travel" },
-          { label: "Food", value: "Food" },
-          { label: "Accommodation", value: "Accommodation" },
-          { label: "Supplies", value: "Supplies" },
-          { label: "Other", value: "Other" },
-        ],
-      },
-      key: "expenseType",
-      type: "select",
-      input: true,
-      customClass: "appearance-none",
-      placeholder: "Select type...",
-      validate: {
-        required: true,
-      },
-    },
-    {
-      label: "Amount",
-      tableView: true,
-      validate: {
-        required: true,
-        min: 0,
-        pattern: "\\d+(\\.\\d{1,2})?",
-      },
-      key: "amount",
-      type: "number",
-      input: true,
-      decimalLimit: 2,
-      allowDecimals: true,
-      placeholder: "0.00",
-    },
-    {
-      label: "Description",
-      tableView: true,
-      validate: {
-        required: true,
-      },
-      key: "description",
-      type: "textarea",
-      input: true,
-      rows: 3,
-      placeholder: "Add a description...",
-    },
-    {
-      label: "Date",
-      tableView: true,
-      validate: {
-        required: true,
-      },
-      key: "date",
-      type: "datetime",
-      input: true,
-      format: "yyyy-MM-dd",
-      enableTime: false,
-      placeholder: "2025-07-24",
-      widget: {
-        type: "calendar",
-        altInput: true,
-        dateFormat: "yyyy-MM-dd",
-        enableTime: false,
-        mode: "single",
-      },
-    },
-    {
-      label: "Attachments",
-      key: "attachments",
-      type: "file",
-      storage: "base64",
-      tableView: false,
-      input: true,
-      webcam: true,
-      validate: {
-        required: true,
-      },
-      fileTypes: [
-        { label: "Images", value: "image/*" },
-        { label: "Documents", value: "application/*" },
-      ],
-      image: false,
-      tooltip: "Upload receipts or supporting documents.",
-      fileViewTemplate:
-        '<div class="flex items-center space-x-2">' +
-        '<svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6a2 2 0 012-2h6l4 4v6a2 2 0 01-2 2H9a2 2 0 01-2-2z"/></svg>' +
-        '<a class="text-blue-600 underline" href="${url}" target="_blank" rel="noreferrer">${originalName}</a>' +
-        "</div>",
-    },
-  ],
-};
 
 interface FormioModalProps {
   isOpen: boolean;
@@ -113,6 +15,106 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const newExpenseItemFormSchema = useMemo(
+    () => ({
+      display: "form",
+      components: [
+        {
+          label: "Expense Type",
+          tableView: true,
+          dataSrc: "values",
+          data: {
+            values: [
+              { label: "Travel", value: "Travel" },
+              { label: "Food", value: "Food" },
+              { label: "Accommodation", value: "Accommodation" },
+              { label: "Supplies", value: "Supplies" },
+              { label: "Other", value: "Other" },
+            ],
+          },
+          key: "expenseType",
+          type: "select",
+          input: true,
+          customClass: "appearance-none",
+          placeholder: "Select type...",
+          validate: {
+            required: true,
+          },
+        },
+        {
+          label: "Amount",
+          tableView: true,
+          validate: {
+            required: true,
+            min: 0,
+            pattern: "\\d+(\\.\\d{1,2})?",
+          },
+          key: "amount",
+          type: "number",
+          input: true,
+          decimalLimit: 2,
+          allowDecimals: true,
+          placeholder: "0.00",
+        },
+        {
+          label: "Description",
+          tableView: true,
+          validate: {
+            required: true,
+          },
+          key: "description",
+          type: "textarea",
+          input: true,
+          rows: 3,
+          placeholder: "Add a description...",
+        },
+        {
+          label: "Date",
+          tableView: true,
+          validate: {
+            required: true,
+          },
+          key: "date",
+          type: "datetime",
+          input: true,
+          format: "yyyy-MM-dd",
+          enableTime: false,
+          placeholder: "2025-07-24",
+          widget: {
+            type: "calendar",
+            altInput: true,
+            dateFormat: "yyyy-MM-dd",
+            enableTime: false,
+            mode: "single",
+          },
+        },
+        {
+          label: "Attachments",
+          key: "attachments",
+          type: "file",
+          storage: "base64",
+          tableView: false,
+          input: true,
+          webcam: true,
+          validate: {
+            required: true,
+          },
+          fileTypes: [
+            { label: "Images", value: "image/*" },
+            { label: "Documents", value: "application/*" },
+          ],
+          image: false,
+          tooltip: "Upload receipts or supporting documents.",
+          fileViewTemplate:
+            '<div class="flex items-center space-x-2">' +
+            '<svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6a2 2 0 012-2h6l4 4v6a2 2 0 01-2 2H9a2 2 0 01-2-2z"/></svg>' +
+            '<a class="text-blue-600 underline" href="${url}" target="_blank" rel="noreferrer">${originalName}</a>' +
+            "</div>",
+        },
+      ],
+    }),
+    []
+  );
   const formioContainerRef = useRef<HTMLDivElement>(null);
   const formInstanceRef = useRef<any>(null);
   const [localFile, setLocalFile] = useState<File | null>(null);
@@ -167,7 +169,7 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
         }
       };
     }
-  }, [isOpen, onSubmit, onClose, localFile]);
+  }, [isOpen, onSubmit, onClose, localFile, newExpenseItemFormSchema]);
 
   const handleSaveClick = () => {
     if (formInstanceRef.current) {

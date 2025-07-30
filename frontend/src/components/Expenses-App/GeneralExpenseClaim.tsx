@@ -13,6 +13,9 @@ import defaultReceipt from "../../assets/Receipt.svg";
 import { Form } from "@tsed/react-formio";
 import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
 import HeaderBar from "../HeaderBar";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import defaultProfile from "../../assets/user.png";
 
 interface ExpenseItem {
   id: string;
@@ -32,6 +35,9 @@ const GeneralExpenseClaim: React.FC = () => {
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const objectUrls = useRef<Record<string, string>>({}); // Using a ref to hold object URLs for cleanup
+
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
   const ExpenseTravelPoliciesForm = useMemo(() => {
     return {
@@ -144,30 +150,24 @@ const GeneralExpenseClaim: React.FC = () => {
         onSubmit={handleAddExpenseItem}
       />
 
-      <HeaderBar title="General Expense Claim" onBack={handleBack} />
+    <HeaderBar title="General Expense Claim" onBack={handleBack} />
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
         <div className="bg-white rounded-lg shadow-sm border p-4 flex items-center space-x-4">
-          <div className="flex-shrink-0 p-3 bg-gray-200 rounded-full">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-user h-6 w-6 text-gray-600"
-            >
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
+          <div className="flex-shrink-0 bg-gray-200 rounded-full">
+            <img
+              src={user?.image || defaultProfile}
+              alt="User avatar"
+              className="w-12 h-12 rounded-full object-cover"
+            />
           </div>
           <div>
-            <p className="text-lg font-semibold text-gray-900">John Doe</p>
-            <p className="text-sm text-gray-600">Sales Department</p>
+            <p className="text-sm font-semibold text-gray-900">
+              {user?.employee_name} {user?.employee && <>({user.employee})</>}
+            </p>
+            <p className="text-sm text-gray-600">
+              {user?.department} | Standard Travel Policy
+            </p>
           </div>
         </div>
         <Form
