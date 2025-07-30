@@ -5,6 +5,9 @@ import { useNavigate } from "react-router-dom";
 import HeaderBar from "../../HeaderBar";
 import FormioDailyAllowanceExpenseModal from "./FormioDailyAllowanceExpenseModal";
 import MultipleDaysSection from "./MultipleDaysSection";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import defaultProfile from "../../../assets/user.png";
 
 // Define interfaces for data structures
 interface ExpenseItem {
@@ -27,32 +30,6 @@ const getTodayDate = (): string => {
   return `${year}-${month}-${day}`;
 };
 
-// Form.io Schema for a single Daily Allowance Expense Item
-
-interface EmployeeInfoCardProps {
-  employeeName: string;
-  employeeId: string;
-  expensePolicy: string;
-}
-
-const EmployeeInfoCard: React.FC<EmployeeInfoCardProps> = ({
-  employeeName,
-  employeeId,
-  expensePolicy,
-}) => (
-  <div className="bg-white rounded-lg shadow-sm border p-4 space-y-1">
-    <p className="text-sm text-gray-700">
-      <span className="font-medium">Employee Name:</span> {employeeName}
-    </p>
-    <p className="text-sm text-gray-700">
-      <span className="font-medium">Employee ID:</span> {employeeId}
-    </p>
-    <p className="text-sm text-gray-700">
-      <span className="font-medium">Expense Policy:</span> {expensePolicy}
-    </p>
-  </div>
-);
-
 // Main Component
 const DailyAllowanceClaim: React.FC = () => {
   const navigate = useNavigate();
@@ -62,6 +39,8 @@ const DailyAllowanceClaim: React.FC = () => {
   const [singleDate, setSingleDate] = useState<string>(getTodayDate());
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const objectUrls = useRef<Record<string, string>>({});
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([
     {
@@ -209,11 +188,23 @@ const DailyAllowanceClaim: React.FC = () => {
       <HeaderBar onBack={handleBack} title="Daily Allowance Claim" />
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
-        <EmployeeInfoCard
-          employeeName="John Doe"
-          employeeId="EMP/001"
-          expensePolicy="Standard Travel Policy"
-        />
+        <div className="bg-white rounded-lg shadow-sm border p-4 flex items-center space-x-4">
+          <div className="flex-shrink-0 bg-gray-200 rounded-full">
+            <img
+              src={user?.image || defaultProfile}
+              alt="User avatar"
+              className="w-12 h-12 rounded-full object-cover"
+            />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">
+              {user?.employee_name} ({user?.employee})
+            </p>
+            <p className="text-sm text-gray-600">
+              {user?.department} | Standard Travel Policy
+            </p>
+          </div>
+        </div>
 
         <MultipleDaysSection
           isMultipleDays={isMultipleDays}

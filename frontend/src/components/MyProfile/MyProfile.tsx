@@ -12,6 +12,7 @@ import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { Employee } from "../../types/employee";
 import { Pencil } from "lucide-react";
 import defaultProfile from "../../assets/user.png";
+import { Toaster } from "react-hot-toast";
 
 type TabKey =
   | "personal-info"
@@ -23,6 +24,7 @@ type TabKey =
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
+  refetch?: () => void;
 }
 
 interface Tab {
@@ -93,7 +95,7 @@ const MyProfile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user, refetch } = useCurrentEmployeeAllDetails(userId || "");
 
   const tabs: Tab[] = useMemo(
     () => [
@@ -112,9 +114,9 @@ const MyProfile: React.FC = () => {
 
   const tabContent: Record<TabKey, React.ReactNode> = useMemo(
     () => ({
-      "personal-info": <PersonalInfo user={user} />,
-      "contact-info": <ContactInfo user={user} />,
-      address: <AddressInfo user={user} />,
+      "personal-info": <PersonalInfo user={user} refetch={refetch} />,
+      "contact-info": <ContactInfo user={user} refetch={refetch} />,
+      address: <AddressInfo user={user} refetch={refetch} />,
       "company-info": <CompanyInfo user={user} />,
       "salary-info": <SalaryInfo user={user} />,
       "hr-letters": <HRLetters />,
@@ -171,6 +173,7 @@ const MyProfile: React.FC = () => {
         />
         <div className="flex-grow p-4">{tabContent[activeTab]}</div>
       </div>
+      <Toaster position="top-center" containerClassName="z-50" />
     </div>
   );
 };
