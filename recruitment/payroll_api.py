@@ -1,5 +1,3 @@
-# cn_indian_payroll/cn_indian_payroll/overrides/api.py
-
 import frappe
 from frappe.utils import getdate
 from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
@@ -10,7 +8,6 @@ def generate_salary_slip(employee):
     deduction_component_part_of_ctc = []
     reimbursement_component_part_of_ctc = []
     monthly_ctc = 0
-    annual_ctc = 0
 
     try:
         if not employee:
@@ -19,7 +16,7 @@ def generate_salary_slip(employee):
         salary_structure = frappe.get_list(
             "Salary Structure Assignment",
             filters={"employee": employee, "docstatus": 1},
-            fields=["*"],
+            fields=["name", "salary_structure", "from_date"],
             order_by="from_date desc",
             limit=1
         )
@@ -37,61 +34,66 @@ def generate_salary_slip(employee):
             posting_date=assignment.from_date
         )
 
-        # Earnings
-        if slip and slip.earnings:
-            for earning in slip.earnings:
-                try:
-                    earning_component = frappe.get_doc("Salary Component", earning.salary_component)
-                    if earning_component.custom_is_part_of_ctc == 1:
-                        monthly_ctc += round(earning.amount)
-                        
-                        earning_component_part_of_ctc.append({
-                            "component": earning_component.name,
-                            "amount": round(earning.amount),
-                            "annual_amount": round(earning.amount * 12)
-                        })
-                except:
-                    pass
+        # ---- Optimize by fetching components in one go ----
+        component_names = list({
+            e.salary_component for e in slip.earnings if e.salary_component
+        }.union({
+            d.salary_component for d in slip.deductions if d.salary_component
+        }))
 
-        # Deductions
-        if slip and slip.deductions:
-            for deduction in slip.deductions:
-                try:
-                    deduction_component = frappe.get_doc("Salary Component", deduction.salary_component)
-                    if deduction_component.custom_is_part_of_ctc == 1:
-                        monthly_ctc += round(deduction.amount)
-                        
-                        deduction_component_part_of_ctc.append({
-                            "component": deduction_component.name,
-                            "amount": round(deduction.amount),
-                            "annual_amount": round(deduction.amount * 12)
-                        })
-                except:
-                    pass
+        ctc_component_names = set()
+        if component_names:
+            ctc_components = frappe.get_all(
+                "Salary Component",
+                filters={"name": ["in", component_names], "custom_is_part_of_ctc": 1},
+                fields=["name"]
+            )
+            ctc_component_names = {comp.name for comp in ctc_components}
 
-        net_pay = slip.rounded_total or 0
+        # ---- Process Earnings ----
+        for earning in slip.earnings:
+            if earning.salary_component in ctc_component_names:
+                amount = round(earning.amount)
+                monthly_ctc += amount
+                earning_component_part_of_ctc.append({
+                    "component": earning.salary_component,
+                    "amount": amount,
+                    "annual_amount": amount * 12
+                })
 
+        # ---- Process Deductions ----
+        for deduction in slip.deductions:
+            if deduction.salary_component in ctc_component_names:
+                amount = round(deduction.amount)
+                monthly_ctc += amount
+                deduction_component_part_of_ctc.append({
+                    "component": deduction.salary_component,
+                    "amount": amount,
+                    "annual_amount": amount * 12
+                })
+
+        # ---- Reimbursements ----
         assignment_doc = frappe.get_doc("Salary Structure Assignment", assignment.name)
 
         if hasattr(assignment_doc, "custom_employee_reimbursements"):
             for reimbursement in assignment_doc.custom_employee_reimbursements:
-                monthly_ctc += round(reimbursement.monthly_total_amount)
-                
+                amount = round(reimbursement.monthly_total_amount)
+                monthly_ctc += amount
                 reimbursement_component_part_of_ctc.append({
                     "component": reimbursement.reimbursements,
-                    "amount": round(reimbursement.monthly_total_amount),
-                    "annual_amount": round(reimbursement.monthly_total_amount * 12)
+                    "amount": amount,
+                    "annual_amount": amount * 12
                 })
 
+        net_pay = slip.rounded_total or 0
+
         return {
-            # "salary_slip": slip,
-            
             "earning_component_part_of_ctc": earning_component_part_of_ctc,
             "deduction_component_part_of_ctc": deduction_component_part_of_ctc,
             "reimbursements_part_of_ctc": reimbursement_component_part_of_ctc,
             "total_reimbursement_amount": assignment_doc.custom_total_reimbursement_amount,
             "monthly_ctc": monthly_ctc,
-            "annual_ctc": round(monthly_ctc)*12,
+            "annual_ctc": monthly_ctc * 12,
             "net_pay": net_pay,
         }
 
