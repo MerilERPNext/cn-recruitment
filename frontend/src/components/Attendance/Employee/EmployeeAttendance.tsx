@@ -303,11 +303,10 @@ const EmployeeAttendance = () => {
                     isFilter={false}
                     pageSize={5}
                     defaultFields={[
-                        "*"
-                        // "reason",
-                        // "modified",
-                        // "creation",
-                        // "docstatus"
+                        "reason",
+                        "modified",
+                        "creation",
+                        "docstatus"
                     ]}
                 />
 

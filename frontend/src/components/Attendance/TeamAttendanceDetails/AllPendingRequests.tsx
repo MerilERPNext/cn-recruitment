@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router'
 
 const AllPendingRequests = () => {
     const { data = [] } = useAllAttendanceRequests(20, [["custom_status", "=", "Pending"]])
-    console.log(data)
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [selectedRequest, setSelectedRequest] = useState<AttendanceRequest | null>(null)
     const navigate = useNavigate()

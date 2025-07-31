@@ -1,6 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { leaveService } from "../services/leaveService";
 
+
+export type LeaveType = {
+  allocated_leaves: number;
+  balance_leaves: number;
+};
+
+export type LeaveData = {
+  [leaveName: string]: LeaveType;
+};
+
+export type LeaveProgressProps = {
+  leaveData: LeaveData;
+};
+
+
 export const useMyLeaveRequests = (employeeId: string | undefined) => {
   return useQuery({
     queryKey: ["my-leave-requests", employeeId],

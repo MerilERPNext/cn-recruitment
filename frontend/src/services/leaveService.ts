@@ -1,6 +1,6 @@
 import FrappeAPI from "../utils/frappeAPI";
 import type { LeaveRequest } from "../types/leaves";
-import { LeaveData } from "../components/MobileDashboard";
+import { LeaveData } from "../hooks/useLeaves";
 
 // Add this to leaveService.ts
 export interface LeaveBalance {

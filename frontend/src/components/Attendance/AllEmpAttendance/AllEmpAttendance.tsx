@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import SelectByMonth, { MonthOption } from "./SelectByMonth";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import FrappeListView from "../../ListView";
+import { BaseItem } from "../../Notices/types/noticeItem";
 
 const AllEmpAttendance = () => {
     const navigate = useNavigate();
@@ -50,7 +51,22 @@ const AllEmpAttendance = () => {
         }
     };
 
-    const transformItem = (item: any) => {
+    type AttendanceItem = BaseItem & {
+        attendance_date: string;
+        status?: string;
+        shift?: string;
+    };
+
+    type TransformedItem = {
+        date: number;
+        month: string;
+        day: string;
+        status: string;
+        statusLabel: string;
+        location: string;
+    };
+
+    const transformItem = (item: AttendanceItem): TransformedItem => {
         const dateObj = new Date(item.attendance_date);
         const date = dateObj.getDate();
         const month = dateObj.toLocaleString("default", { month: "short" });
@@ -105,9 +121,9 @@ const AllEmpAttendance = () => {
                     isSearch={false}
                     showRefereshButton={false}
                     ItemComponent={({ item }) => {
-                        const day = transformItem(item);
+                        const day = transformItem(item as AttendanceItem);
                         return (
-                            <div className="flex items-center py-2 px-6 border-b-1 border-gray-200">
+                            <div className="flex items-center py-2 px-6 border-b border-gray-200">
                                 <div className="flex flex-col items-center w-12 mr-6">
                                     <div className="text-lg font-semibold text-gray-900">{day.date}</div>
                                     <div className="text-xs text-gray-500 uppercase tracking-wide">{day.month}</div>

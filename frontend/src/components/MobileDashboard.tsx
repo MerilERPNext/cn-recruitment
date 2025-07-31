@@ -16,7 +16,7 @@ import {
 import { useUnreadNoticesCount } from '../hooks/useNotices';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useCheckInOutService, useHomeSummaryDetails } from '../hooks/useAttendance';
-import { useGetLeaveBalance } from '../hooks/useLeaves';
+import { LeaveData, LeaveProgressProps, useGetLeaveBalance } from '../hooks/useLeaves';
 import { useExpenseClaim } from '../hooks/useExpense';
 import { formatDateString, formatTo24HourTime } from '../utils/helperUtils';
 import defaultProfile from "../assets/face-rec.png";
@@ -358,7 +358,7 @@ const MobileDashboard: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-gray-900">{item?.total_claimed_amount} Rs</p>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium bg-gray-200 tex-gray-500`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium bg-gray-200 text-gray-500`}>
                       {item?.status}
                     </span>
                   </div>
@@ -377,18 +377,6 @@ const MobileDashboard: React.FC = () => {
 
 export default MobileDashboard;
 
-type LeaveType = {
-  allocated_leaves: number;
-  balance_leaves: number;
-};
-
-export type LeaveData = {
-  [leaveName: string]: LeaveType;
-};
-
-type LeaveProgressProps = {
-  leaveData: LeaveData;
-};
 
 const LeaveProgress = ({ leaveData }: LeaveProgressProps) => {
   return (

@@ -52,8 +52,7 @@ export function AttendanceDetailView({ data, onClose }: { data: AttendanceReques
                                 <p className="text-xs text-gray-500">{data?.custom_checkin_type || ""}</p>
                             </div>
                         </div>
-                        <p className="text-sm text-gray-500 mb-2">{data.custom_in_time ? formatDateToYYYYMMDD(new Date(data.custom_in_time)) : "--"}</p>
-                    </div>
+                        <p className="text-sm text-gray-500 mb-2">{data?.custom_in_time ? formatDateToYYYYMMDD(new Date(data?.custom_in_time)) : "--"}</p>                    </div>
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -65,7 +64,7 @@ export function AttendanceDetailView({ data, onClose }: { data: AttendanceReques
                                 <p className="text-xs text-gray-500">{data?.custom_checkout_time || ""}</p>
                             </div>
                         </div>
-                        <p className="text-sm text-gray-500 mb-2">{data.custom_out_time ? formatDateToYYYYMMDD(new Date(data.custom_out_time)) : "--"}</p>
+                        <p className="text-sm text-gray-500 mb-2">{data?.custom_out_time ? formatDateToYYYYMMDD(new Date(data?.custom_out_time)) : "--"}</p>
                     </div>
                 </div>
             </div>
