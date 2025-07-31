@@ -1,6 +1,6 @@
 // services/attendanceService.ts
 import FrappeAPI from '../utils/frappeAPI';
-import type { Attendance, AttendanceRequest } from '../types/attendance';
+import type { Attendance, AttendanceRequest, EmployeeCheckInLog } from '../types/attendance';
 import { FilterCondition } from '../types/frappe';
 
 export const attendanceService = {
@@ -10,10 +10,49 @@ export const attendanceService = {
     });
     return response.data as Attendance[];
   },
-  getAllAttendanceRequests: async (pageSize:number): Promise<AttendanceRequest[]> => {
+
+  getHomeSummaryDetails: async (userId:string,filters:{}): Promise<EmployeeCheckInLog[]> => {
+    try {
+      const response = await fetch(`api/method/cn_leave_shift_managment.api.get_shift_checkins?user=${userId}&filters=${filters}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      return result?.message as EmployeeCheckInLog[];
+    } catch (error) {
+      console.error('📡 Error marking notice as read:', error);
+      throw error;
+    }
+  },
+
+  checkInOutService: async (body:any): Promise<any> => {
+    try {
+      const response = await fetch(`api/method/cn_leave_shift_managment.api.create_employee_checkin `, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const result = await response.json();
+      return response.ok && result.message === true;
+    } catch (error) {
+      console.error('📡 Error marking notice as read:', error);
+      return false;
+    }
+  },
+
+  getAllAttendanceRequests: async (pageSize:number,filters?: FilterCondition[]): Promise<AttendanceRequest[]> => {
     const response = await FrappeAPI.getDocumentList('Attendance Request', {
       fields: ['*'],
-      limit:pageSize
+      limit:pageSize,
+      filters:filters
     });
     return response.data as AttendanceRequest[];
   },
@@ -25,7 +64,7 @@ export const attendanceService = {
     return result as Attendance;
   },
 
-  getAttendance: async (filters: FilterCondition[]): Promise<Attendance[]> => {
+  getAttendance: async (filters?: FilterCondition[]): Promise<Attendance[]> => {
     const response = await FrappeAPI.getDocumentList("Attendance", {
       fields: ["*"],
       filters,

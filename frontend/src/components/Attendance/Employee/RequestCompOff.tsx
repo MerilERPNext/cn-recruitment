@@ -8,7 +8,7 @@ import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 
-const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
+const RequestCompOff = () => {
   const { data } = useLeaveType();
   const mutation = useRequestCompOff()
   const reqCompensatoryOff = useMemo(() => {
@@ -45,14 +45,14 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
                 {
                   components: [
                     {
-                      label: "From Date",
+                      type: "datetime" as const,
                       key: "fromDate",
-                      type: "datetime",
+                      label: "From Date",
                       input: true,
-                      widget: { type: "calendar" },
-                      format: "yyyy-MM-dd",
-                      placeholder: "yyyy-mm-dd",
-                      customClass: "mb-4"
+                      format: "dd/MM/yyyy",
+                      enableDate: true,
+                      enableTime: false,
+                      defaultValue: "2024-05-10",
                     }
                   ],
                   width: 6
@@ -75,6 +75,28 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
               ]
             },
             {
+              type: "checkbox",
+              key: "halfDay",
+              label: "Half-Day Leave",
+              description: "Apply for a morning or afternoon leave",
+              input: true,
+              labelPosition: "bottom",
+              customClass: "custom-halfday-toggle border border-gray-300 rounded-lg mt-6 shadow-sm p-2 bg-white mb-4"
+            },
+            {
+              type: 'radio',
+              key: 'halfDayOption',
+              label: 'Select Half-Day Option',
+              values: [
+                { label: 'First Half', value: 'first_half' },
+                { label: 'Second Half', value: 'second_half' },
+              ],
+              input: true,
+              validate: { required: true },
+              conditional: { show: true, when: 'halfDay', eq: true },
+              customClass: 'mb-4 ml-4',
+            },
+            {
               label: "Reason for Comp Off",
               key: "reason",
               type: "textarea",
@@ -90,7 +112,8 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
               disableOnInvalid: true,
               input: true,
               theme: "transparent",
-              customClass: "fixed bottom-0 left-0 custom-w-fill-available bg-white border-t p-4 m-4 text-white [&>button]:bg-black border-black py-2 rounded-lg"
+
+              customClass: "custom-w-fill-available bg-white  w-full text-white [&>button]:bg-black border-black py-2 px-0 rounded-lg"
             }
           ]
         }
@@ -113,32 +136,38 @@ const RequestCompOff = ({ onClose }: { onClose: () => void }) => {
       department: user?.department,
       employee: user?.employee,
     };
-    mutation.mutate(body)
+    mutation.mutate(body, {
+      onSuccess() {
+        // onClose()
+      },
+      onError(e) {
+        console.log(e)
+        // onClose()
+      }
+    })
     // Send data to API here
   };
 
   return (
-    <div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
+    <>
       <LayoutHeader
         tab="Request Compensatory Off"
-        onBack={() => {
-          onClose();
-        }}
-        icon="x"
       />
-      <div className="max-w-2xl h-full w-full mx-auto p-4">
-        <Form
-          form={reqCompensatoryOff}
-          onSubmit={handleSubmit}
-          options={{
-            builder: { styles: false },
-            submitButton: false,
-            noAlerts: true,
-          }}
-          className="formio-no-border"
-        />
+      <div className="z-20 w-full mx-auto left-0 bg-white">
+        <div className="max-w-full mx-auto p-4">
+          <Form
+            form={reqCompensatoryOff}
+            onSubmit={handleSubmit}
+            options={{
+              builder: { styles: false },
+              submitButton: false,
+              noAlerts: true,
+            }}
+            className="formio-no-border"
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

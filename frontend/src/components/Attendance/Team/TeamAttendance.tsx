@@ -7,7 +7,7 @@ import { useSearchParams } from "react-router-dom";
 import LayoutHeader from "../../shared/LayoutHeader";
 
 const TeamAttendance = () => {
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
 
 
     const [searchParams] = useSearchParams()
@@ -28,7 +28,7 @@ const TeamAttendance = () => {
     }, [searchParams])
 
     const clearFilters = () => {
-        setSelectedDate(null)
+        setSelectedDate(new Date())
         navigate("/webapp/attendance/team-attendance") // Remove query entirely
     }
 
@@ -52,7 +52,9 @@ const TeamAttendance = () => {
     );
 
     return <div className="bg-white">
-        <LayoutHeader tab="Team Attendance" />
+        <LayoutHeader tab="Team Attendance"
+            path="/webapp/attendance"
+        />
         <div className="flex flex-col gap-2 pb-4">
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
             <div className=" bg-white w-full border-b-1 border-gray-200  p-2">
@@ -65,9 +67,10 @@ const TeamAttendance = () => {
                         selected={selectedDate}
                         onChange={(date) => {
                             if (!date) return
+                            const localDateStr = date.toISOString().split("T")[0];
                             setSelectedDate(date)
                             const filters = {
-                                attendance_date: date,
+                                attendance_date: localDateStr,
                             }
                             navigate(
                                 "/webapp/attendance/team-attendance?filters=" +
@@ -105,6 +108,11 @@ const TeamAttendance = () => {
                     onItemClick={() => { }}
                     infiniteScroll={true}
                     isFilter={false}
+                    defaultFilters={
+                        {
+                            attendance_date: new Date().toISOString(),
+                        }
+                    }
                     showRefereshButton={false}
                     defaultFields={[
                         "employee_name",
