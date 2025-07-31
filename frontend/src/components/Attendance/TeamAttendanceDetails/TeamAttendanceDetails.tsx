@@ -12,8 +12,8 @@ const TeamAttendanceDetails = () => {
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [selectedRequest, setSelectedRequest] = useState<AttendanceRequest | null>(null)
     const { pendingRequests, actionedRequests } = useMemo(() => {
-        const pending = data.filter((req) => req.docstatus === 0)
-        const actioned = data.filter((req) => req.docstatus === 1)
+        const pending = data.filter((req) => req.custom_status === "Pending")
+        const actioned = data.filter((req) => req.custom_status === "Approved" || req.custom_status === "Rejected")
         return {
             pendingRequests: pending,
             actionedRequests: actioned,

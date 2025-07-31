@@ -2,7 +2,7 @@
 import { Check, X } from "lucide-react"
 import Avatar from "../shared/Avatar"
 import LayoutHeader from "../shared/LayoutHeader"
-import { formatDateString } from "../../utils/helperUtils"
+import { formatDateString, formatDateToYYYYMMDD } from "../../utils/helperUtils"
 import { AttendanceRequest } from "../../types/attendance"
 
 
@@ -48,10 +48,11 @@ export function AttendanceDetailView({ data, onClose }: { data: AttendanceReques
                             </div>
                             <div>
                                 <p className="font-medium text-sm">Check In</p>
-                                {/* <p className="text-xs text-gray-500">{data?.checkInType}</p> */}
+
+                                <p className="text-xs text-gray-500">{data?.custom_checkin_type || ""}</p>
                             </div>
                         </div>
-                        {/* <p className="font-medium">{data?.checkIn || "--:--"}</p> */}
+                        <p className="text-sm text-gray-500 mb-2">{data.custom_in_time ? formatDateToYYYYMMDD(new Date(data.custom_in_time)) : "--"}</p>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -61,10 +62,10 @@ export function AttendanceDetailView({ data, onClose }: { data: AttendanceReques
                             </div>
                             <div>
                                 <p className="font-medium text-sm">Check Out</p>
-                                {/* <p className="text-xs text-gray-500">{requestData.checkOut}</p> */}
+                                <p className="text-xs text-gray-500">{data?.custom_checkout_time || ""}</p>
                             </div>
                         </div>
-                        {/* <p className="font-medium">{data?.checkOut || "--:--"}</p> */}
+                        <p className="text-sm text-gray-500 mb-2">{data.custom_out_time ? formatDateToYYYYMMDD(new Date(data.custom_out_time)) : "--"}</p>
                     </div>
                 </div>
             </div>

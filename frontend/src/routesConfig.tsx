@@ -52,6 +52,7 @@ import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
 import Policies from "./components/Policies";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
 import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
+import RequestOvertime from "./components/Attendance/RequestOvertime/RequestOvertime";
 
 export interface AppRoute {
   index?: boolean;
@@ -176,6 +177,7 @@ export const routesConfig: AppRoute[] = [
   { path: '/webapp/attendance/team-attendance-details', element: <TeamAttendanceDetails /> },
   { path: '/webapp/attendance/team-attendance-details/pendings', element: <AllPendingRequests /> },
   { path: '/webapp/attendance/emp-attendance/all', element: <AllEmpAttendance /> },
+  { path: '/webapp/attendance/request-overtime', element: <RequestOvertime /> },
   //Leaves routes
   {
     path: "/webapp/leave-app",

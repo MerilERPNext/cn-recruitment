@@ -1,5 +1,6 @@
 
 import { RequestCardProps } from "../../../types/attendance"
+import { formatDateToYYYYMMDD } from "../../../utils/helperUtils"
 import Avatar from "../../shared/Avatar"
 import Badge from "../../shared/Badge"
 
@@ -15,6 +16,29 @@ export function RequestCard({
     onToggleSelect?: (id: string) => void
     onClick?: (request: RequestCardProps['request']) => void
 }) {
+
+
+    const getStatus = (status: string) => {
+        if (status === "Pending") {
+            return {
+                label: "Pending",
+                statusColor: "bg-yellow-100 text-yellow-600",
+            };
+        } else if (status === "Approved") {
+            return {
+                label: "Approved",
+                statusColor: "bg-green-100 text-green-600",
+            };
+        } else if (status === 'Rejected') {
+            return {
+                label: "Rejected",
+                statusColor: "bg-red-100 text-red-600",
+            };
+        }
+    };
+
+    const status = getStatus(request?.custom_status);
+
     return (
         <div className="cursor-pointer bg-white border-b-2 border-gray-100 px-2"
             onClick={() => onClick?.(request)}
@@ -38,9 +62,9 @@ export function RequestCard({
                             <div className="flex-1">
                                 <div className="flex items-center justify-between ">
                                     <h3 className="font-semibold text-sm">{request.name}</h3>
-                                    <Badge label="Pending" backgroundColor="bg-yellow-100 text-yellow-800" />
+                                    <Badge label={status?.label as string} backgroundColor={status?.statusColor} />
                                 </div>
-                                <p className="text-sm text-gray-500 mb-2">{request.from_date}</p>
+                                <p className="text-sm text-gray-500 mb-2">{request.custom_in_time ? formatDateToYYYYMMDD(new Date(request.custom_in_time)) : "--"} - {request.custom_out_time ? formatDateToYYYYMMDD(new Date(request.custom_out_time)) : "--"}</p>
                             </div>
                         </div>
 
