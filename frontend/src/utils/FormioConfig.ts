@@ -21,5 +21,6 @@ const customProvider = {
     },
   };
   
-  Formio.providers.addProvider('storage', customProvider);
+// @ts-expect-error error in formiojs types
+  Formio.Providers.addProvider('storage', customProvider);
   
