@@ -50,6 +50,8 @@ import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
 import TeamShift from "./components/ShiftRequest/TeamShift";
 import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
 import Policies from "./components/Policies";
+import PoliciesEnforced from "./components/PoliciesEnforced";
+import PolicySignOff from "./components/PolicySignOff";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
 
 export interface AppRoute {
@@ -67,6 +69,8 @@ export const routesConfig: AppRoute[] = [
   { path: "/webapp/id-card/:employeeId", element: <IdCard /> },
   { path: "/webapp/expenses", element: <Expenses /> },
   { path: "/webapp/policies", element: <Policies /> },
+  { path: "/webapp/policies-enforced", element: <PoliciesEnforced /> },
+  { path: "/webapp/policies-enforced/view/:policyId", element: <PolicySignOff /> },
   {
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
     element: <JobApplicantDetails />,

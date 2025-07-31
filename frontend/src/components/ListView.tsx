@@ -1,6 +1,6 @@
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { UseInfiniteQueryResult, useQueryClient } from "@tanstack/react-query"
 import {
   Search,
   Filter,
@@ -20,10 +20,35 @@ import {
   isPermissionError,
 } from "../hooks/useFrappeQuery"
 import { useLocation } from "react-router"
-import { FilterCondition } from "../types/frappe"
+import { FilterCondition, FrappePageResponse } from "../types/frappe"
 
 interface BaseItem {
   name: string;
+}
+
+
+export interface PreListComponentProps {
+  doctype: string;
+  ListQuery: UseInfiniteQueryResult<FrappePageResponse, Error>;
+  setCurrentPage: (page: number) => void;
+  currentPage: number;
+  totalPages: number;
+  startIndex: number;
+  endIndex: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface PostListComponentProps {
+  doctype: string;
+  ListQuery: UseInfiniteQueryResult<FrappePageResponse, Error>;
+  setCurrentPage: (page: number) => void;
+  currentPage: number;
+  totalPages: number;
+  startIndex: number;
+  endIndex: number;
+  pageSize: number;
+  totalCount: number;
 }
 
 type PageData = {
@@ -34,6 +59,8 @@ type PageData = {
 interface FrappeListViewProps<T extends BaseItem> {
   doctype: string
   ItemComponent: React.ComponentType<{ item: T; index?: number; doctype: string }>
+  PreListComponent?: React.ComponentType<PreListComponentProps>
+  PostListComponent?: React.ComponentType<PostListComponentProps>
   SkeletonComponent?: React.ComponentType
   isSearch?: boolean
   isFilter?: boolean
@@ -52,6 +79,8 @@ interface FrappeListViewProps<T extends BaseItem> {
 const FrappeListView = <T extends BaseItem>({
   doctype,
   ItemComponent,
+  PreListComponent,
+  PostListComponent,
   SkeletonComponent,
   isSearch = true,
   isFilter = false,
@@ -518,6 +547,7 @@ const FrappeListView = <T extends BaseItem>({
 
       {/* Content */}
       <div className="min-h-96">
+        {PreListComponent && <PreListComponent doctype={doctype} ListQuery={infiniteQueryResult} setCurrentPage={setCurrentPage} currentPage={currentPage} totalPages={totalPages} startIndex={startIndex} endIndex={endIndex} pageSize={pageSize} totalCount={totalCount} />}
         {error ? (
           <div className="flex items-center justify-center py-12">
             <div className="max-w-md mx-auto text-center">
@@ -617,6 +647,7 @@ const FrappeListView = <T extends BaseItem>({
             )}
           </div>
         )}
+        {PostListComponent && <PostListComponent doctype={doctype} ListQuery={infiniteQueryResult} setCurrentPage={setCurrentPage} currentPage={currentPage} totalPages={totalPages} startIndex={startIndex} endIndex={endIndex} pageSize={pageSize} totalCount={totalCount} />}
       </div>
 
       {/* Pagination */}

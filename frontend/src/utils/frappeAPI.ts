@@ -19,7 +19,10 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
-    // "X-Frappe-CSRF-Token": window.csrf_token, // ✅ Now TypeScript understands
+    ...(import.meta.env.DEV ? {
+      'Authorization': 'token ' + import.meta.env.VITE_DEV_FRAPPE_API_TOKEN,
+    } : {}),
+    "X-Frappe-CSRF-Token": window.csrf_token, // ✅ Now TypeScript understands
   },
 });
 
@@ -147,6 +150,18 @@ export const FrappeAPI = {
 
   deleteDocument: async (doctype: string, name: string): Promise<unknown> => {
     const response = await apiClient.delete(`/api/resource/${doctype}/${name}`)
+    return response.data.data
+  },
+
+  uploadFile: async (file: File, _file_name?: string, _docname?: string, _doctype?: string, _folder?: string, _is_private?: string): Promise<unknown> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    if(_file_name) formData.append("file_name", _file_name);
+    if(_is_private) formData.append("is_private", _is_private);
+    if(_doctype) formData.append("doctype", _doctype);
+    if(_folder) formData.append("folder", _folder);
+    if(_docname) formData.append("docname", _docname);
+    const response = await apiClient.post(`/api/method/upload_file`, formData)
     return response.data.data
   },
 
