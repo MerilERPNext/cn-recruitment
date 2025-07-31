@@ -24,6 +24,17 @@ export const frappeService = {
     }
   },
 
+  getDocument: async (doctype: string, name: string, fields?: string[]): Promise<unknown> => {
+    try {
+      console.log(`🔍 Fetching document for doctype: ${doctype}`, { name, fields });
+      const response = await FrappeAPI.getDocument(doctype, name, fields);
+      return response;
+    } catch (error) {
+      console.error(`❌ Failed to load document for ${doctype}:`, error);
+      throw error;
+    }
+  },
+
   getDocumentsPage: async ({
     doctype,
     pageParam = 0,

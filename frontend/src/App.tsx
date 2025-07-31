@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import { QueryProvider } from "./providers/QueryProvider";
 import "./App.css";
+import "./utils/FormioConfig";
 
 import { AppRoute, routesConfig } from "./routesConfig";
 import MobileDashboard from "./components/MobileDashboard";

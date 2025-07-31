@@ -90,6 +90,14 @@ export const useFrappeDocuments = (
   })
 }
 
+// Hook for fetching a single document
+export const useFrappeDocument = (doctype: string, name: string, fields?: string[]) => {
+  return useQuery({
+    queryKey: ["document", doctype, name, fields],
+    queryFn: () => frappeService.getDocument(doctype, name, fields),
+  })
+}
+
 // Hook for document count
 export const useFrappeDocumentCount = (
   params: GetCountParams,
