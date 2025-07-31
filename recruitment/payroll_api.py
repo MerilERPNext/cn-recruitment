@@ -1,14 +1,26 @@
-# recruitment.payroll_api.generate_salary_slip
 import frappe
 from frappe.utils import getdate
 from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
 
+def process_components(components, ctc_component_names):
+    component_list = []
+    total = 0
+    for comp in components:
+        if comp.salary_component in ctc_component_names:
+            amount = round(comp.amount)
+            total += amount
+            component_list.append({
+                "component": comp.salary_component,
+                "amount": amount,
+                "annual_amount": amount * 12
+            })
+    return component_list, total
 
 @frappe.whitelist()
 def generate_salary_slip(employee):
     earning_component_part_of_ctc = []
     deduction_component_part_of_ctc = []
-    reimbursement_component_part_of_ctc = []
+    reimbursements_part_of_ctc = []
     monthly_ctc = 0
 
     try:
@@ -24,9 +36,7 @@ def generate_salary_slip(employee):
         )
 
         if not salary_structure:
-            return {
-                "error": f"No active Salary Structure Assignment found for {employee}"
-            }
+            return {"error": f"No active Salary Structure Assignment found for {employee}"}
 
         assignment = salary_structure[0]
 
@@ -38,7 +48,7 @@ def generate_salary_slip(employee):
             posting_date=assignment.from_date,
         )
 
-        # ---- Optimize by fetching components in one go ----
+        # Collect component names
         component_names = list(
             {e.salary_component for e in slip.earnings if e.salary_component}.union(
                 {d.salary_component for d in slip.deductions if d.salary_component}
@@ -54,53 +64,31 @@ def generate_salary_slip(employee):
             )
             ctc_component_names = {comp.name for comp in ctc_components}
 
-        # ---- Process Earnings ----
-        for earning in slip.earnings:
-            if earning.salary_component in ctc_component_names:
-                amount = round(earning.amount)
-                monthly_ctc += amount
-                earning_component_part_of_ctc.append(
-                    {
-                        "component": earning.salary_component,
-                        "amount": amount,
-                        "annual_amount": amount * 12,
-                    }
-                )
+        # Process earnings (included in CTC)
+        earning_component_part_of_ctc, earnings_total = process_components(slip.earnings, ctc_component_names)
+        monthly_ctc += earnings_total
 
-        # ---- Process Deductions ----
-        for deduction in slip.deductions:
-            if deduction.salary_component in ctc_component_names:
-                amount = round(deduction.amount)
-                monthly_ctc += amount
-                deduction_component_part_of_ctc.append(
-                    {
-                        "component": deduction.salary_component,
-                        "amount": amount,
-                        "annual_amount": amount * 12,
-                    }
-                )
+        # Deductions are NOT part of CTC by default, so we skip adding their value to CTC.
+        deduction_component_part_of_ctc, _ = process_components(slip.deductions, ctc_component_names)
 
-        # ---- Reimbursements ----
+        # Process reimbursements
         assignment_doc = frappe.get_doc("Salary Structure Assignment", assignment.name)
-
         if hasattr(assignment_doc, "custom_employee_reimbursements"):
             for reimbursement in assignment_doc.custom_employee_reimbursements:
                 amount = round(reimbursement.monthly_total_amount)
                 monthly_ctc += amount
-                reimbursement_component_part_of_ctc.append(
-                    {
-                        "component": reimbursement.reimbursements,
-                        "amount": amount,
-                        "annual_amount": amount * 12,
-                    }
-                )
+                reimbursements_part_of_ctc.append({
+                    "component": reimbursement.reimbursements,
+                    "amount": amount,
+                    "annual_amount": amount * 12
+                })
 
         net_pay = slip.rounded_total or 0
 
         return {
             "earning_component_part_of_ctc": earning_component_part_of_ctc,
             "deduction_component_part_of_ctc": deduction_component_part_of_ctc,
-            "reimbursements_part_of_ctc": reimbursement_component_part_of_ctc,
+            "reimbursements_part_of_ctc": reimbursements_part_of_ctc,
             "total_reimbursement_amount": assignment_doc.custom_total_reimbursement_amount,
             "monthly_ctc": monthly_ctc,
             "annual_ctc": monthly_ctc * 12,
@@ -109,4 +97,4 @@ def generate_salary_slip(employee):
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error in generate_salary_slip")
-        return {"error": str(e)}
+        return {"error": "An unexpected error occurred while generating the salary slip."}
