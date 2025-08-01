@@ -5,8 +5,6 @@ import { useNavigate } from "react-router-dom";
 import HeaderBar from "../../HeaderBar";
 import FormioDailyAllowanceExpenseModal from "./FormioDailyAllowanceExpenseModal";
 import MultipleDaysSection from "./MultipleDaysSection";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import ExpensesUserInfo from "../ExpensesUserInfo";
 
 // Define interfaces for data structures
@@ -39,9 +37,6 @@ const DailyAllowanceClaim: React.FC = () => {
   const [singleDate, setSingleDate] = useState<string>(getTodayDate());
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const objectUrls = useRef<Record<string, string>>({});
-  const { data: userId } = useLoggedInUser();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([
     {

@@ -13,8 +13,6 @@ import defaultReceipt from "../../assets/Receipt.svg";
 import { Form } from "@tsed/react-formio";
 import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
 import HeaderBar from "../HeaderBar";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useExpenseTravelPolicies } from "../../hooks/useExpense";
 import ExpensesUserInfo from "./ExpensesUserInfo";
 
@@ -37,10 +35,7 @@ const GeneralExpenseClaim: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const objectUrls = useRef<Record<string, string>>({}); // Using a ref to hold object URLs for cleanup
 
-  const { data: userId } = useLoggedInUser();
   const ExpenseTravelPolicies = useExpenseTravelPolicies();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
   const ExpenseTravelPoliciesForm = useMemo(() => {
     return {
