@@ -205,21 +205,23 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({
 
   return (
     <div className="address-form-container h-full max-w-md mx-auto bg-gray-100 rounded-lg">
-      <Form
-        key={user?.employee || "loading"}
-        form={personalInfoForm}
-        onFormReady={(instance: any) =>
-          (formPersonalInfoInstance.current = instance)
-        }
-        options={{
-          submitButton: false,
-        }}
-      />
+      <div className="p-4">
+        <Form
+          key={user?.employee || "loading"}
+          form={personalInfoForm}
+          onFormReady={(instance: any) =>
+            (formPersonalInfoInstance.current = instance)
+          }
+          options={{
+            submitButton: false,
+          }}
+        />
+      </div>
       <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full z-50">
         <div className="max-w-4xl mx-auto flex">
           <button
             onClick={handleSubmit}
-            className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit
           </button>

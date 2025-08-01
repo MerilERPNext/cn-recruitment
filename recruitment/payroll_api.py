@@ -102,7 +102,6 @@ def generate_salary_slip(employee):
 
 
 
-
 @frappe.whitelist()
 def address_details(user_id):
     try:
@@ -112,7 +111,6 @@ def address_details(user_id):
                 "message": _("Missing required parameter: user_id")
             }
 
-        
         employee_name = frappe.get_value("Employee", {"user_id": user_id, "status": "Active"}, "name")
 
         if not employee_name:
@@ -121,7 +119,6 @@ def address_details(user_id):
                 "message": _("Active employee not found for the given user ID.")
             }
 
-        
         addresses = frappe.get_all(
             "Address",
             filters={"custom_employee": employee_name},
@@ -131,21 +128,21 @@ def address_details(user_id):
             ]
         )
 
-        
-        current_address = []
-        permanent_address = []
-        emergency_address = []
+        # Default all as None (object format)
+        current_address = None
+        permanent_address = None
+        emergency_address = None
 
         for addr in addresses:
             addr_data = addr.copy()
-            addr_data.pop("address_type", None)  # Remove type field from output
+            addr_data.pop("address_type", None)
 
             if addr["address_type"] == "Current":
-                current_address.append(addr_data)
+                current_address = addr_data
             elif addr["address_type"] == "Permanent":
-                permanent_address.append(addr_data)
+                permanent_address = addr_data
             elif addr["address_type"] == "Emergency":
-                emergency_address.append(addr_data)
+                emergency_address = addr_data
 
         return {
             "status": "success",
@@ -157,9 +154,9 @@ def address_details(user_id):
         }
 
     except Exception:
-        
         frappe.log_error(frappe.get_traceback(), title="Error in address_details API")
         return {
             "status": "error",
             "message": _("An unexpected error occurred while fetching address details.")
         }
+
