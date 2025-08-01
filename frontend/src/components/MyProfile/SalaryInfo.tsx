@@ -15,7 +15,7 @@ const InfoRow: React.FC<{
 
 export const SalaryInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   return (
-    <div className="rounded-xl space-y-6 max-w-md mx-auto">
+    <div className="rounded-xl space-y-6 max-w-md m-4">
       {/* Salary Info */}
       <div>
         <h2 className="text-base font-semibold text-gray-900 mb-2">

@@ -1,6 +1,7 @@
 import frappe
 from frappe.utils import getdate
 from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
+from frappe import _
 
 def process_components(components, ctc_component_names):
     component_list = []
@@ -98,3 +99,64 @@ def generate_salary_slip(employee):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error in generate_salary_slip")
         return {"error": "An unexpected error occurred while generating the salary slip."}
+
+
+
+@frappe.whitelist()
+def address_details(user_id):
+    try:
+        if not user_id:
+            return {
+                "status": "error",
+                "message": _("Missing required parameter: user_id")
+            }
+
+        employee_name = frappe.get_value("Employee", {"user_id": user_id, "status": "Active"}, "name")
+
+        if not employee_name:
+            return {
+                "status": "error",
+                "message": _("Active employee not found for the given user ID.")
+            }
+
+        addresses = frappe.get_all(
+            "Address",
+            filters={"custom_employee": employee_name},
+            fields=[
+                "name", "address_title", "address_line1", "address_line2", "city",
+                "county", "state", "country", "pincode", "email_id", "phone", "address_type"
+            ]
+        )
+
+        # Default all as None (object format)
+        current_address = None
+        permanent_address = None
+        emergency_address = None
+
+        for addr in addresses:
+            addr_data = addr.copy()
+            addr_data.pop("address_type", None)
+
+            if addr["address_type"] == "Current":
+                current_address = addr_data
+            elif addr["address_type"] == "Permanent":
+                permanent_address = addr_data
+            elif addr["address_type"] == "Emergency":
+                emergency_address = addr_data
+
+        return {
+            "status": "success",
+            "data": {
+                "current_address": current_address,
+                "permanent_address": permanent_address,
+                "emergency_address": emergency_address
+            }
+        }
+
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), title="Error in address_details API")
+        return {
+            "status": "error",
+            "message": _("An unexpected error occurred while fetching address details.")
+        }
+

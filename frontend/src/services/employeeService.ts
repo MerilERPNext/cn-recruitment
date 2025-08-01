@@ -220,6 +220,19 @@ export class EmployeeService {
       return null;
     }
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static async getCurrentEmployeeAddress(user_id : string): Promise<any> {
+    try {
+      const result = await FrappeAPI.callMethod("recruitment.payroll_api.address_details", {
+        user_id: user_id,
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching current employee:', error);
+      return null;
+    }
+  }
 
   // Transform Employee data to EmployeeIdCard format
   static transformToIdCard(employee: Employee): EmployeeIdCard {

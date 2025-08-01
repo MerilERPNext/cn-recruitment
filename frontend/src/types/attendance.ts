@@ -48,6 +48,11 @@ export interface AttendanceRequest {
   reason: string;
   explanation: string | null;
   amended_from: string | null;
+  custom_status:string;
+  custom_in_time:string;
+  custom_out_time:string;
+  custom_checkin_type:string;
+  custom_checkout_time:string;
 }
 
 export interface RequestCardProps {
@@ -62,3 +67,15 @@ export interface BulkActionProps {
   onSelectAll: () => void
   onBulkAction: (action: "approved" | "rejected") => void
 }
+
+export type EmployeeCheckInLog = {
+  name: string;
+  employee: string;
+  time: string; 
+  log_type: "IN" | "OUT";
+  shift: string;
+  shift_start: string; 
+  shift_end: string;   
+  shift_actual_start: string; 
+  shift_actual_end: string;   
+};

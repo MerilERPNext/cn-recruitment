@@ -201,21 +201,23 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
 
   return (
     <div className="h-full address-form-container max-w-md mx-auto bg-gray-100 rounded-lg">
-      <Form
-        form={addressForm}
-        options={{
-          submitButton: false,
-          rowClass: "flex 1234567 flex-nowrap bg-red-200",
-        }}
-        onFormReady={(instance: any) =>
-          (formAddressInstance.current = instance)
-        }
-      />
+      <div className="p-4">
+        <Form
+          form={addressForm}
+          options={{
+            submitButton: false,
+            rowClass: "flex 1234567 flex-nowrap bg-red-200",
+          }}
+          onFormReady={(instance: any) =>
+            (formAddressInstance.current = instance)
+          }
+        />
+      </div>
       <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full mt-6 z-50">
         <div className="max-w-4xl mx-auto flex">
           <button
             onClick={handleSubmit}
-            className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit
           </button>

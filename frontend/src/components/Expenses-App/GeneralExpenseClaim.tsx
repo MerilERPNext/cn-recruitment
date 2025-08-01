@@ -15,7 +15,8 @@ import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
 import HeaderBar from "../HeaderBar";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import defaultProfile from "../../assets/user.png";
+import { useExpenseTravelPolicies } from "../../hooks/useExpense";
+import ExpensesUserInfo from "./ExpensesUserInfo";
 
 interface ExpenseItem {
   id: string;
@@ -37,6 +38,8 @@ const GeneralExpenseClaim: React.FC = () => {
   const objectUrls = useRef<Record<string, string>>({}); // Using a ref to hold object URLs for cleanup
 
   const { data: userId } = useLoggedInUser();
+  const ExpenseTravelPolicies = useExpenseTravelPolicies();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
   const ExpenseTravelPoliciesForm = useMemo(() => {
@@ -50,23 +53,16 @@ const GeneralExpenseClaim: React.FC = () => {
           validate: { required: true },
           placeholder: "Local Commute",
           data: {
-            values: [
-              {
-                value: "domestic_travel",
-                label: "Policy A - Domestic Travel",
-              },
-              {
-                value: "international_travel",
-                label: "Policy B - International Travel",
-              },
-              { value: "local_commute", label: "Policy C - Local Commute" },
-            ],
+            values: ExpenseTravelPolicies?.data?.map((policy: any) => ({
+              value: policy?.name,
+              label: policy?.name,
+            })),
           },
           customClass: "appearance-none",
         },
       ],
     };
-  }, []);
+  }, [ExpenseTravelPolicies]);
 
   const handleBack = useCallback(() => {
     navigate(-1);
@@ -143,51 +139,37 @@ const GeneralExpenseClaim: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <FormioNewExpenseItemModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddExpenseItem}
       />
 
-    <HeaderBar title="General Expense Claim" onBack={handleBack} />
+      <HeaderBar title="General Expense Claim" onBack={handleBack} />
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
-        <div className="bg-white rounded-lg shadow-sm border p-4 flex items-center space-x-4">
-          <div className="flex-shrink-0 bg-gray-200 rounded-full">
-            <img
-              src={user?.image || defaultProfile}
-              alt="User avatar"
-              className="w-12 h-12 rounded-full object-cover"
-            />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              {user?.employee_name} {user?.employee && <>({user.employee})</>}
-            </p>
-            <p className="text-sm text-gray-600">
-              {user?.department} | Standard Travel Policy
-            </p>
-          </div>
+        <ExpensesUserInfo />
+        <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
+          <Form
+            form={ExpenseTravelPoliciesForm}
+            options={{
+              builder: { styles: false },
+              submitButton: false,
+              formClass: "space-y-6",
+              rowClass: "flex flex-col",
+              labelClass: "mb-1 font-medium text-gray-700",
+              inputClass:
+                "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
+              validateOnInit: false,
+              validateOnBlur: false,
+              validateOnChange: false,
+            }}
+            className="space-y-6"
+          />
         </div>
-        <Form
-          form={ExpenseTravelPoliciesForm}
-          options={{
-            builder: { styles: false },
-            submitButton: false,
-            formClass: "space-y-6",
-            rowClass: "flex flex-col",
-            labelClass: "mb-1 font-medium text-gray-700",
-            inputClass:
-              "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
-            validateOnInit: false,
-            validateOnBlur: false,
-            validateOnChange: false,
-          }}
-          className="space-y-6"
-        />
         {/* Expense Item */}
-        <div className="bg-white p-4">
+        <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Expense Items
           </h2>
@@ -204,7 +186,9 @@ const GeneralExpenseClaim: React.FC = () => {
                 >
                   <div className="flex flex-col space-y-1">
                     <p className="font-medium text-gray-900">{item.type}</p>
-                    <p className="text-sm text-gray-600">Date: {item.date}</p>
+                    <p className="text-sm text-gray-600">
+                      Date: {new Date(item.date).toLocaleDateString("en-CA")}
+                    </p>
                     <p className="text-sm text-gray-600">
                       Amount: {CURRENCY_SYMBOL}
                       {item.amount.toFixed(2)}
@@ -284,12 +268,12 @@ const GeneralExpenseClaim: React.FC = () => {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full flex items-center justify-center py-3 mt-4 border border-gray-300 rounded-3xl text-blue-600 font-medium hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-center py-2 mt-4 border border-gray-300 rounded-lg font-medium bg-blue-600"
           >
-            <span className="text-xl mr-2">+</span> Add Expense Item
+            <span className="text-lg mr-2 text-white">+ Add Expense Item</span>
           </button>
         </div>
-        <div className="bg-white p-4 space-y-2">
+        <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Summary</h2>
           <div className="bg-white rounded-lg shadow-sm border p-4 space-y-2">
             <div className="flex justify-between text-gray-700">
@@ -320,14 +304,8 @@ const GeneralExpenseClaim: React.FC = () => {
       <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
         <div className="max-w-4xl mx-auto flex space-x-4">
           <button
-            onClick={() => console.log("Save as Draft clicked")}
-            className="flex-1 py-3 rounded-3xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-          >
-            Save as Draft
-          </button>
-          <button
             onClick={() => console.log("Submit clicked")}
-            className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit
           </button>

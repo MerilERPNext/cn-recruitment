@@ -53,6 +53,8 @@ import Policies from "./components/Policies";
 import PoliciesEnforced from "./components/PoliciesEnforced";
 import PolicySignOff from "./components/PolicySignOff";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
+import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
+import RequestOvertime from "./components/Attendance/RequestOvertime/RequestOvertime";
 
 export interface AppRoute {
   index?: boolean;
@@ -173,11 +175,13 @@ export const routesConfig: AppRoute[] = [
   // },
   { path: '/webapp/attendance', element: <AttendanceSummary /> },
   { path: '/webapp/attendance/emp-attendance', element: <EmployeeAttendance /> },
+  { path: '/webapp/attendance/emp-attendance/request-compoff', element: <RequestCompOff /> },
   { path: '/webapp/attendance/team-attendance', element: <TeamAttendance /> },
   { path: '/webapp/attendance/attendance-request', element: <AttendanceRequest /> },
   { path: '/webapp/attendance/team-attendance-details', element: <TeamAttendanceDetails /> },
   { path: '/webapp/attendance/team-attendance-details/pendings', element: <AllPendingRequests /> },
   { path: '/webapp/attendance/emp-attendance/all', element: <AllEmpAttendance /> },
+  { path: '/webapp/attendance/request-overtime', element: <RequestOvertime /> },
   //Leaves routes
   {
     path: "/webapp/leave-app",

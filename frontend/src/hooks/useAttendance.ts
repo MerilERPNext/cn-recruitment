@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { attendanceService } from '../services/attendanceService';
-import type { Attendance, AttendanceRequest } from '../types/attendance';
+import type { Attendance, AttendanceRequest, EmployeeCheckInLog } from '../types/attendance';
 import { FilterCondition } from '../types/frappe';
 
 // Retry logic (same as other hooks)
@@ -29,10 +29,19 @@ export const useAllAttendance = (): UseQueryResult<Attendance[], Error> => {
     ...defaultQueryOptions,
   });
 };
-export const useAllAttendanceRequests = (pageSize:number): UseQueryResult<AttendanceRequest[], Error> => {
+export const useHomeSummaryDetails = (userId:string,filters:{}): UseQueryResult<EmployeeCheckInLog[], Error> => {
+  return useQuery<EmployeeCheckInLog[], Error>({
+    queryKey: ['home-summary-details'],
+    queryFn: () => attendanceService.getHomeSummaryDetails(userId,filters),
+    enabled:!!userId,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+export const useAllAttendanceRequests = (pageSize:number,filters?: FilterCondition[]): UseQueryResult<AttendanceRequest[], Error> => {
   return useQuery<AttendanceRequest[], Error>({
-    queryKey: ['attendance', 'all'],
-    queryFn: () => attendanceService.getAllAttendanceRequests(pageSize),
+    queryKey: ['attendance', 'all',filters],
+    queryFn: () => attendanceService.getAllAttendanceRequests(pageSize,filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
@@ -84,6 +93,20 @@ export function useCreateNewAttendanceRequest() {
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+    },
+    onError:(e)=>{
+      console.log(e)
+    }
+  });
+}
+export function useCheckInOutService() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: any) => attendanceService.checkInOutService(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["checkin-checkout"] });
     },
     onError:(e)=>{
       console.log(e)

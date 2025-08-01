@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { X } from "lucide-react";
 
 import { Formio } from "formiojs";
+import { useExpenseTypes } from "../../hooks/useExpense";
 
 interface FormioModalProps {
   isOpen: boolean;
@@ -15,6 +16,11 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const expenseType = useExpenseTypes();
+  const formioContainerRef = useRef<HTMLDivElement>(null);
+  const formInstanceRef = useRef<any>(null);
+  const [localFile, setLocalFile] = useState<File | null>(null);
+
   const newExpenseItemFormSchema = useMemo(
     () => ({
       display: "form",
@@ -24,15 +30,12 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
           tableView: true,
           dataSrc: "values",
           data: {
-            values: [
-              { label: "Travel", value: "Travel" },
-              { label: "Food", value: "Food" },
-              { label: "Accommodation", value: "Accommodation" },
-              { label: "Supplies", value: "Supplies" },
-              { label: "Other", value: "Other" },
-            ],
+            values: expenseType?.data?.map((e: { name: string }) => ({
+              label: e?.name,
+              value: e?.name,
+            })),
           },
-          key: "expenseType",
+          key: "expense-claim-type",
           type: "select",
           input: true,
           customClass: "appearance-none",
@@ -93,7 +96,7 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
           key: "attachments",
           type: "file",
           storage: "base64",
-          tableView: false,
+          tableView: true,
           input: true,
           webcam: true,
           validate: {
@@ -113,11 +116,8 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
         },
       ],
     }),
-    []
+    [expenseType]
   );
-  const formioContainerRef = useRef<HTMLDivElement>(null);
-  const formInstanceRef = useRef<any>(null);
-  const [localFile, setLocalFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (isOpen && formioContainerRef.current) {
@@ -204,13 +204,13 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
         <div className="flex justify-between space-x-4 pt-6 border-t border-gray-200 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-3xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSaveClick}
-            className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Save
           </button>
