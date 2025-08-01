@@ -43,6 +43,18 @@ export const useCurrentEmployeeAllDetails = (
     enabled: !!user_id
   })
 }
+export const useCurrentEmployeeAddress = (
+  user_id: string
+) => {
+  return useQuery<Employee | null, Error>({
+    queryKey: ["currentEmployeeAddress", user_id],
+    queryFn: () => EmployeeService.getCurrentEmployeeAddress(user_id),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
+    retry: 1,
+    enabled: !!user_id
+  })
+}
 
 // Hook to search employees by name
 export const useEmployeeSearch = (

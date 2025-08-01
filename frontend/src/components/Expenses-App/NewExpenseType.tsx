@@ -25,7 +25,7 @@ const NewExpenseType: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center w-full min-h-screen bg-white">
+    <div className="flex justify-center w-full min-h-screen bg-white font-sans">
       <div className="w-full  bg-white flex flex-col">
         {/* Header Section */}
         <div className="flex w-full  items-center sticky top-0 justify-between px-4 py-3 bg-white shadow-sm z-50">

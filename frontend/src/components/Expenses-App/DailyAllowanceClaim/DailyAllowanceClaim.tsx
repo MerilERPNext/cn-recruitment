@@ -7,7 +7,7 @@ import FormioDailyAllowanceExpenseModal from "./FormioDailyAllowanceExpenseModal
 import MultipleDaysSection from "./MultipleDaysSection";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import defaultProfile from "../../../assets/user.png";
+import ExpensesUserInfo from "../ExpensesUserInfo";
 
 // Define interfaces for data structures
 interface ExpenseItem {
@@ -40,6 +40,7 @@ const DailyAllowanceClaim: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const objectUrls = useRef<Record<string, string>>({});
   const { data: userId } = useLoggedInUser();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([
@@ -184,27 +185,10 @@ const DailyAllowanceClaim: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddExpenseItem}
       />
-
-      <HeaderBar onBack={handleBack} title="Daily Allowance Claim" />
+      <HeaderBar title="Daily Allowance Claim" onBack={handleBack} />
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
-        <div className="bg-white rounded-lg shadow-sm border p-4 flex items-center space-x-4">
-          <div className="flex-shrink-0 bg-gray-200 rounded-full">
-            <img
-              src={user?.image || defaultProfile}
-              alt="User avatar"
-              className="w-12 h-12 rounded-full object-cover"
-            />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              {user?.employee_name} ({user?.employee})
-            </p>
-            <p className="text-sm text-gray-600">
-              {user?.department} | Standard Travel Policy
-            </p>
-          </div>
-        </div>
+        <ExpensesUserInfo />
 
         <MultipleDaysSection
           isMultipleDays={isMultipleDays}
@@ -242,14 +226,8 @@ const DailyAllowanceClaim: React.FC = () => {
       <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
         <div className="max-w-4xl mx-auto flex space-x-4">
           <button
-            onClick={() => console.log("Save as Draft clicked")}
-            className="flex-1 py-3 rounded-3xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-          >
-            Save as Draft
-          </button>
-          <button
             onClick={handleSubmit}
-            className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit
           </button>

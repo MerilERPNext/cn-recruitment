@@ -56,14 +56,14 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                 },
                 {
                   type: "textfield",
-                  key: "whatsapp_number",
+                  key: "custom_whatsapp_no",
                   label: "WhatsApp Number (Optional)",
                   input: true,
                   placeholder: "Enter WhatsApp Number",
                 },
                 {
                   type: "email",
-                  key: "emergency_email",
+                  key: "custom_emergency_email",
                   label: "Emergency Email (Optional)",
                   input: true,
                   placeholder: "Enter Emergency Email",
@@ -95,20 +95,22 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
 
   return (
     <div className="h-full max-w-md mx-auto bg-gray-100 rounded-lg">
-      <Form
-        form={contactInfoForm}
-        onFormReady={(instance: any) =>
-          (formContactInfoInstance.current = instance)
-        }
-        options={{
-          submitButton: false,
-        }}
-      />
+      <div className="p-4">
+        <Form
+          form={contactInfoForm}
+          onFormReady={(instance: any) =>
+            (formContactInfoInstance.current = instance)
+          }
+          options={{
+            submitButton: false,
+          }}
+        />
+      </div>
       <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full z-50">
         <div className="max-w-4xl mx-auto flex">
           <button
             onClick={handleSubmit}
-            className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit
           </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 
@@ -11,24 +11,6 @@ const tabRoutes: Record<TabName, string> = {
 const ExpensesApp: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabName>("Expenses");
-
-  // Detect tab based on current route
-  useEffect(() => {
-    const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-      location.pathname.startsWith(tabRoutes[tab])
-    );
-
-    if (matchedTab) {
-      setActiveTab(matchedTab);
-      sessionStorage.setItem("activeTab", matchedTab);
-    }
-  }, [location.pathname]);
-
-  const handleAddNew = () => {
-    if (activeTab === "Expenses")
-      navigate("/webapp/expenses-app/expenses-list/new-expense-type");
-  };
 
   useEffect(() => {
     if (location.pathname === "/webapp/expenses-app") {
@@ -39,6 +21,10 @@ const ExpensesApp: React.FC = () => {
       navigate(tabRoutes[redirectTab], { replace: true });
     }
   }, [location.pathname, navigate]);
+
+  const handleAddNew = () => {
+    navigate("/webapp/expenses-app/expenses-list/new-expense-type");
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -68,14 +54,16 @@ const ExpensesApp: React.FC = () => {
         <Outlet />
       </main>
 
-      {activeTab === "Expenses" && (
-        <button
-          onClick={handleAddNew}
-          className="bg-black text-white w-16 h-16 rounded-full hover:bg-gray-800 fixed bottom-20 right-4 z-50 flex items-center justify-center text-xl sm:text-3xl sm:font-semibold"
-        >
-          +
-        </button>
-      )}
+      <div className="sticky mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
+        <div className="max-w-4xl mx-auto flex space-x-4">
+          <button
+            onClick={handleAddNew}
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
+            + Add Expense
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

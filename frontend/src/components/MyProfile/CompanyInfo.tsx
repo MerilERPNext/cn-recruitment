@@ -14,7 +14,7 @@ const companyData = {
 
 export const CompanyInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   return (
-    <div className="bg-white rounded-xl shadow-sm max-w-md p-6 mx-auto">
+    <div className="bg-white rounded-xl shadow-sm max-w-md p-6 m-4">
       <InfoRow label="Employee ID" value={user?.employee} />
       <InfoRow label="Department" value={user?.department} />
       <InfoRow label="Designation" value={user?.designation} />
