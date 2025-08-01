@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FrappeListView from './ListView';
+import { useCurrentEmployee } from '../hooks/useEmployee';
 
 // Skeleton component for loading states
 const PolicyItemSkeleton: React.FC = () => {
@@ -85,7 +86,8 @@ const PolicyItem: React.FC<PolicyItemProps> = ({ item }) => {
 const PoliciesEnforced: React.FC = () => {
   const [mandatoryPoliciesExpanded, setMandatoryPoliciesExpanded] = useState(true);
   const [completedPoliciesExpanded, setCompletedPoliciesExpanded] = useState(false);
-  
+  const {data: currentEmployee } = useCurrentEmployee();
+
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white min-h-screen">
       {/* Action Required Alert */}
@@ -153,7 +155,7 @@ const PoliciesEnforced: React.FC = () => {
               doctype="Policy Details"
               ItemComponent={PolicyItem}
               SkeletonComponent={PolicyItemSkeleton}
-              defaultFilters={{ status: "Pending" }}
+              defaultFilters={{ status: "Pending", employee_id: currentEmployee?.name || "" }}
               defaultFields={["name", "status", "policy", "sign_off_mandatory"]}
               infiniteScroll={true}
               isSearch={true}
@@ -191,7 +193,7 @@ const PoliciesEnforced: React.FC = () => {
               doctype="Policy Details"
               ItemComponent={PolicyItem}
               SkeletonComponent={PolicyItemSkeleton}
-              defaultFilters={{ status: "Acknowledged" }}
+              defaultFilters={{ status: "Acknowledged", employee_id: currentEmployee?.name || "" }}
               defaultFields={["name", "status", "policy"]}
               infiniteScroll={true}
               isSearch={true}
