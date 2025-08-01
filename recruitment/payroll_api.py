@@ -101,38 +101,33 @@ def generate_salary_slip(employee):
         return {"error": "An unexpected error occurred while generating the salary slip."}
 
 
+
+
 @frappe.whitelist()
 def address_details(user_id):
     try:
         if not user_id:
             return {
                 "status": "error",
-                "message": _("Missing user_id")
+                "message": _("Missing required parameter: user_id")
             }
 
         
-        employee = frappe.get_list(
-            "Employee",
-            filters={"user_id": user_id, "status": "Active"},
-            fields=["name"]
-        )
+        employee_name = frappe.get_value("Employee", {"user_id": user_id, "status": "Active"}, "name")
 
-        if not employee:
+        if not employee_name:
             return {
                 "status": "error",
-                "message": _("No active employee found for this user_id")
+                "message": _("Active employee not found for the given user ID.")
             }
 
-        employee_name = employee[0].name
-
         
-        address_list = frappe.get_all(
+        addresses = frappe.get_all(
             "Address",
             filters={"custom_employee": employee_name},
             fields=[
-                "name", "address_title", "address_line1", "address_line2",
-                "city", "county", "state", "country", "pincode",
-                "email_id", "phone", "address_type"
+                "name", "address_title", "address_line1", "address_line2", "city",
+                "county", "state", "country", "pincode", "email_id", "phone", "address_type"
             ]
         )
 
@@ -141,32 +136,19 @@ def address_details(user_id):
         permanent_address = []
         emergency_address = []
 
-        
-        for addr in address_list:
-            address_data = {
-                "name": addr.name,
-                "address_title": addr.address_title,
-                "address_line1": addr.address_line1,
-                "address_line2": addr.address_line2,
-                "city": addr.city,
-                "county": addr.county,
-                "state": addr.state,
-                "country": addr.country,
-                "pincode": addr.pincode,
-                "email_id": addr.email_id,
-                "phone": addr.phone,
-            }
+        for addr in addresses:
+            addr_data = addr.copy()
+            addr_data.pop("address_type", None)  # Remove type field from output
 
-            if addr.address_type == "Current":
-                current_address.append(address_data)
-            elif addr.address_type == "Permanent":
-                permanent_address.append(address_data)
-            elif addr.address_type == "Emergency":
-                emergency_address.append(address_data)
+            if addr["address_type"] == "Current":
+                current_address.append(addr_data)
+            elif addr["address_type"] == "Permanent":
+                permanent_address.append(addr_data)
+            elif addr["address_type"] == "Emergency":
+                emergency_address.append(addr_data)
 
         return {
             "status": "success",
-            "message": _("Address details fetched successfully"),
             "data": {
                 "current_address": current_address,
                 "permanent_address": permanent_address,
@@ -174,10 +156,10 @@ def address_details(user_id):
             }
         }
 
-    except Exception as e:
-        frappe.log_error(message=str(e), title="Error in address_details API")
+    except Exception:
+        
+        frappe.log_error(frappe.get_traceback(), title="Error in address_details API")
         return {
             "status": "error",
-            "message": _("An unexpected error occurred"),
-            "error": str(e)
+            "message": _("An unexpected error occurred while fetching address details.")
         }
