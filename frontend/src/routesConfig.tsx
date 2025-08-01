@@ -35,7 +35,7 @@ import AllPendingRequests from "./components/Attendance/TeamAttendanceDetails/Al
 import AttendanceSummary from "./components/Attendance/AttendanceSummary";
 import AllEmpAttendance from "./components/Attendance/AllEmpAttendance/AllEmpAttendance";
 // import { Navigate } from "react-router";
-// import AttendanceLayout from "./components/Attendance/AttendanceLayout";
+import AttendanceLayout from "./components/Attendance/AttendanceLayout";
 import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
 import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
 import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
@@ -53,8 +53,9 @@ import Policies from "./components/Policies";
 import PoliciesEnforced from "./components/PoliciesEnforced";
 import PolicySignOff from "./components/PolicySignOff";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
-import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
+// import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
 import RequestOvertime from "./components/Attendance/RequestOvertime/RequestOvertime";
+import { Navigate } from "react-router";
 
 export interface AppRoute {
   index?: boolean;
@@ -166,22 +167,24 @@ export const routesConfig: AppRoute[] = [
     element: <AddRequisition />,
   },
 
-  // {
-  //   path: "/webapp/attendance",
-  //   element: <AttendanceLayout />,
-  //   children: [
-
-  //   ],
-  // },
-  { path: '/webapp/attendance', element: <AttendanceSummary /> },
-  { path: '/webapp/attendance/emp-attendance', element: <EmployeeAttendance /> },
-  { path: '/webapp/attendance/emp-attendance/request-compoff', element: <RequestCompOff /> },
-  { path: '/webapp/attendance/team-attendance', element: <TeamAttendance /> },
-  { path: '/webapp/attendance/attendance-request', element: <AttendanceRequest /> },
-  { path: '/webapp/attendance/team-attendance-details', element: <TeamAttendanceDetails /> },
+  {
+    path: "/webapp/attendance",
+    element: <AttendanceLayout />,
+    children: [
+      {
+        index: true, element: <Navigate to="summary" replace />,
+        path: ""
+      },
+      { path: 'summary', element: <AttendanceSummary /> },
+      { path: 'emp-attendance', element: <EmployeeAttendance /> },
+      { path: 'team-attendance', element: <TeamAttendance /> },
+      { path: 'attendance-request', element: <AttendanceRequest /> },
+      { path: 'team-attendance-requests', element: <TeamAttendanceDetails /> },
+    ],
+  },
+  { path: '/webapp/attendance/overtime', element: <RequestOvertime /> },
   { path: '/webapp/attendance/team-attendance-details/pendings', element: <AllPendingRequests /> },
   { path: '/webapp/attendance/emp-attendance/all', element: <AllEmpAttendance /> },
-  { path: '/webapp/attendance/request-overtime', element: <RequestOvertime /> },
   //Leaves routes
   {
     path: "/webapp/leave-app",

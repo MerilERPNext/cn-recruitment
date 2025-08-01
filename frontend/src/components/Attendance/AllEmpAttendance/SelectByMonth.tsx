@@ -11,6 +11,8 @@ export interface MonthOption {
 }
 
 const monthOptions: MonthOption[] = [
+    { id: "1", label: "Sept-2025", value: "2025-09" },
+    { id: "1", label: "Aug-2025", value: "2025-08" },
     { id: "1", label: "Jul-2025", value: "2025-07" },
     { id: "2", label: "Jun-2025", value: "2025-06" },
     { id: "3", label: "May-2025", value: "2025-05" },
@@ -19,6 +21,7 @@ const monthOptions: MonthOption[] = [
     { id: "6", label: "Feb-2025", value: "2025-02" },
     { id: "7", label: "Jan-2025", value: "2025-01" },
     { id: "8", label: "Dec-2024", value: "2024-12" },
+
 ]
 
 const SelectByMonth = ({ onClose, onChange }: { onClose: () => void, onChange: (value: MonthOption) => void }) => {
@@ -30,7 +33,7 @@ const SelectByMonth = ({ onClose, onChange }: { onClose: () => void, onChange: (
     }
 
     return (
-        <div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
+        <div className="fixed overflow-scroll top-0 z-50 w-full mx-auto left-0 h-screen bg-white">
             <LayoutHeader
                 tab="Select By Month"
                 onBack={() => {
@@ -40,7 +43,7 @@ const SelectByMonth = ({ onClose, onChange }: { onClose: () => void, onChange: (
             />
 
             {/* Month Selection List */}
-            <div className="px-4 py-6">
+            <div className="px-0 pb-22 pt-12">
                 <div className="space-y-1">
                     {monthOptions.map((month) => (
                         <button
@@ -67,7 +70,7 @@ const SelectByMonth = ({ onClose, onChange }: { onClose: () => void, onChange: (
             </div>
 
             {/* Apply Button */}
-            <div className="absolute bottom-8 left-4 right-4">
+            <div className="fixed bottom-4 left-4 right-4">
                 <button
                     onClick={handleApply}
                     className="w-full bg-black hover:bg-gray-800 text-white font-semibold py-4 rounded-xl transition-colors shadow-sm"

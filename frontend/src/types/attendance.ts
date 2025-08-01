@@ -79,3 +79,5 @@ export type EmployeeCheckInLog = {
   shift_actual_start: string; 
   shift_actual_end: string;   
 };
+
+export type EmployeeShift = {shift:string}

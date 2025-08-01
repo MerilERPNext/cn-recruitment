@@ -231,7 +231,7 @@ code {
 }
 
 .react-datepicker__day--selected {
-  background-color: #2563eb !important;
+  background-color: #447df9 !important;
   color: white !important;
   /* border-radius: 50% !important; */
 }

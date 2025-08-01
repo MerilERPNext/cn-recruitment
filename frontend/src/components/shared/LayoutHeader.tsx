@@ -18,16 +18,16 @@ const LayoutHeader = ({ path, tab, onBack, icon = 'chevron', children }: LayoutH
         } else if (path) {
             navigate(path)
         } else {
-            navigate(-1) // Go back in browser history
+            navigate(-1)
         }
     }
 
     const BackIcon = icon === 'x' ? X : ChevronLeft
 
     return (
-        <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
-            <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between relative">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-14">
+            <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8 h-full">
+                <div className="flex items-center justify-between h-full">
                     {/* Left: Icon */}
                     <div className="flex items-center">
                         <button
@@ -39,7 +39,7 @@ const LayoutHeader = ({ path, tab, onBack, icon = 'chevron', children }: LayoutH
                     </div>
 
                     {/* Center: Tab Title */}
-                    <div className=" text-lg font-semibold text-gray-800">
+                    <div className="text-lg font-semibold text-gray-800 truncate">
                         {tab}
                     </div>
 

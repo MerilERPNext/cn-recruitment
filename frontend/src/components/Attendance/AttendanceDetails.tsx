@@ -10,14 +10,14 @@ import { AttendanceRequest } from "../../types/attendance"
 export function AttendanceDetailView({ data, onClose }: { data: AttendanceRequest, onClose: () => void }) {
 
 
-    return data?.name ? <div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
+    return data?.name ? <div className="fixed top-0 z-50 w-full mx-auto left-0 h-screen bg-white">
         <LayoutHeader tab="Attendance Request"
             onBack={() => {
                 onClose()
             }}
             icon="x"
         />
-        <div className="m-4 bg-white rounded-lg ">
+        <div className="m-4 bg-white rounded-lg py-10 ">
 
             {/* Employee Info */}
             <div className="py-4 border-b">
@@ -79,7 +79,7 @@ export function AttendanceDetailView({ data, onClose }: { data: AttendanceReques
 
         </div>
         {/* Action Buttons */}
-        <div className="py-4 px-2 flex  fixed bottom-0 w-full  ">
+        {data?.custom_status === 'Pending' && <div className="py-4 px-2 flex  fixed bottom-0 w-full  ">
 
             <div className=" w-full space-x-3 flex bg-white p-2 rounded-xl">
                 <button
@@ -95,7 +95,7 @@ export function AttendanceDetailView({ data, onClose }: { data: AttendanceReques
                     Approve
                 </button>
             </div>
-        </div>
+        </div>}
     </div> : null
 
 }
