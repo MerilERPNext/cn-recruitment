@@ -1,6 +1,6 @@
 // services/attendanceService.ts
 import FrappeAPI from '../utils/frappeAPI';
-import type { Attendance, AttendanceRequest, EmployeeCheckInLog, EmployeeShift } from '../types/attendance';
+import type { Attendance, AttendanceRequest, EmployeeCheckInLog, EmployeeShift, EmployeeShiftSummary } from '../types/attendance';
 import { FilterCondition } from '../types/frappe';
 
 export const attendanceService = {
@@ -41,13 +41,13 @@ export const attendanceService = {
       const result = await response.json();
       return result?.message as EmployeeShift;
     } catch (error) {
-      console.error('📡 Error marking notice as read:', error);
+      console.error('📡 Error in fetching employee shift:', error);
       throw error;
     }
   },
 
 
-  getQuickAttendanceSummary: async (employeeId:string,fromDate:string,toDate:string): Promise<any> => {
+  getQuickAttendanceSummary: async (employeeId:string,fromDate:string,toDate:string): Promise<EmployeeShiftSummary> => {
     try {
       const response = await fetch(`/api/method/cn_leave_shift_managment.api.get_quick_summary?employee=${employeeId}&from_date=${fromDate}&to_date=${toDate}`, {
         method: 'GET',
@@ -58,10 +58,10 @@ export const attendanceService = {
       });
 
       const result = await response.json();
-      return result?.message as any;
+      return result?.message as EmployeeShiftSummary;
     } catch (error) {
-      console.error('📡 Error marking notice as read:', error);
-      throw error;
+      console.error('📡 Error fetching quick attendance summary:', error);
+            throw error;
     }
   },
 

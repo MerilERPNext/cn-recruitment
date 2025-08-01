@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { attendanceService } from '../services/attendanceService';
-import type { Attendance, AttendanceRequest, EmployeeCheckInLog, EmployeeShift } from '../types/attendance';
+import type { Attendance, AttendanceRequest, EmployeeCheckInLog, EmployeeShift, EmployeeShiftSummary } from '../types/attendance';
 import { FilterCondition } from '../types/frappe';
 
 // Retry logic (same as other hooks)
@@ -39,7 +39,7 @@ export const useHomeSummaryDetails = (userId:string,filters:{}): UseQueryResult<
   });
 };
 
-export const useGetEmployeeShift = (userId:string,filters?:{}): UseQueryResult<any, Error> => {
+export const useGetEmployeeShift = (userId:string,filters?:{}): UseQueryResult<EmployeeShift, Error> => {
   return useQuery<EmployeeShift, Error>({
     queryKey: ['employee-shift'],
     queryFn: () => attendanceService.getEmployeeShift(userId,filters),
@@ -51,7 +51,7 @@ export const useGetEmployeeShift = (userId:string,filters?:{}): UseQueryResult<a
 
 
 export const useGetQuickAttendanceSummary = (employeeId:string,fromDate:string,toDate:string): UseQueryResult<any, Error> => {
-  return useQuery<EmployeeShift, Error>({
+  return useQuery<EmployeeShiftSummary, Error>({
     queryKey: ['employee-attendance-summary',fromDate],
     queryFn: () => attendanceService.getQuickAttendanceSummary(employeeId,fromDate,toDate),
     enabled:!!employeeId,

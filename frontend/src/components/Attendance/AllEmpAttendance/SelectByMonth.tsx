@@ -11,8 +11,8 @@ export interface MonthOption {
 }
 
 const monthOptions: MonthOption[] = [
-    { id: "1", label: "Sept-2025", value: "2025-09" },
-    { id: "1", label: "Aug-2025", value: "2025-08" },
+    { id: "9", label: "Sept-2025", value: "2025-09" },
+    { id: "10", label: "Aug-2025", value: "2025-08" },
     { id: "1", label: "Jul-2025", value: "2025-07" },
     { id: "2", label: "Jun-2025", value: "2025-06" },
     { id: "3", label: "May-2025", value: "2025-05" },
@@ -43,7 +43,7 @@ const SelectByMonth = ({ onClose, onChange }: { onClose: () => void, onChange: (
             />
 
             {/* Month Selection List */}
-            <div className="px-0 pb-22 pt-12">
+            <div className="px-0 pb-20 pt-12">
                 <div className="space-y-1">
                     {monthOptions.map((month) => (
                         <button

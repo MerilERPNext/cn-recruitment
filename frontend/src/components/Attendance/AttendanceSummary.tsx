@@ -68,8 +68,7 @@ const AttendanceSummary = () => {
                             {/* Avg. Work Duration - Blue */}
                             <div className="text-center bg-blue-50 border-2 border-blue-100 p-3 rounded-lg">
                                 <Clock className="w-6 h-6 text-blue-600 mx-auto mb-1" />
-                                <p className="text-lg font-bold text-blue-800">{employeeAttendanceSummary?.employeeAttendanceSummary || 0}</p>
-                                <p className="text-xs font-medium text-blue-700">Avg. Work Duration</p>
+                                <p className="text-lg font-bold text-blue-800">{employeeAttendanceSummary?.avg_working_hours || 0}</p>                                <p className="text-xs font-medium text-blue-700">Avg. Work Duration</p>
                             </div>
 
                             {/* Leaves - Yellow */}

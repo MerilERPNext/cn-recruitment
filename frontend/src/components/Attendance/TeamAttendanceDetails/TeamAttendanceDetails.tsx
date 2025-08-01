@@ -140,7 +140,7 @@ const TeamAttendanceDetails = () => {
                 {/* Actioned */}
                 <div className='bg-white'>
                     {actionedRequests?.length > 0 && <div>
-                        <h2 className="text-lg font-semibold text-gray-800mb-2 border-b-1 border-gray-200 p-4">Actioned Requests</h2>
+                        <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 p-4">Actioned Requests</h2>
                         <div className="space-y-3">
                             {actionedRequests.map((request) => (
                                 <RequestCard
