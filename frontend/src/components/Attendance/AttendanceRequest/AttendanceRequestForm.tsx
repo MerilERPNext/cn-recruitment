@@ -202,26 +202,26 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         });
     };
 
-    return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white overflow-scroll">
-        <LayoutHeader
-            tab="Create Attendance Request"
-            onBack={() => {
-                onClose()
-            }}
-            icon="x"
-        />
-        <div className=" p-4 ">
+    return (<div className="fixed top-0 left-0 w-full h-screen bg-white z-50 flex flex-col">
+        {/* Fixed Header */}
+        <div className="z-10">
+            <LayoutHeader
+                tab="Create Attendance Request"
+                onBack={onClose}
+                icon="x"
+            />
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto pt-14 pb-28 px-4">
             <div className="flex gap-2 mb-2 bg-gray-200 p-1 rounded-md">
                 <button
-                    style={{ outline: "none", border: "none" }}
-                    className={`w-full p-2 rounded text-gray-500  ${!isForOthers ? "bg-white text-black" : ""}`}
+                    className={`w-full p-2 rounded text-gray-500 ${!isForOthers ? "bg-white text-black" : ""}`}
                     onClick={() => setIsForOthers(false)}
                 >
                     Self
                 </button>
                 <button
-                    style={{ outline: "none", border: "none" }}
-
                     className={`w-full p-2 rounded text-gray-500 ${isForOthers ? "bg-white text-black" : ""}`}
                     onClick={() => setIsForOthers(true)}
                 >
@@ -242,16 +242,17 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
                 }
                 className="formio-no-border address-form-container"
             />
-            <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full mt-6 z-50">
-                <div className="max-w-4xl mx-auto flex">
-                    <button
-                        onClick={() => formAddressInstance.current.submit()}
-                        className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-                    >
-                        Submit
-                    </button>
+        </div>
 
-                </div>
+        {/* Sticky Submit Button */}
+        <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-4 z-20">
+            <div className="max-w-4xl mx-auto">
+                <button
+                    onClick={() => formAddressInstance.current.submit()}
+                    className="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold"
+                >
+                    Submit
+                </button>
             </div>
         </div>
     </div>

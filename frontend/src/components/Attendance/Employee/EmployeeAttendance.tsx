@@ -8,18 +8,21 @@ import { Attendance } from "../../../types/attendance"
 import { useNavigate } from "react-router"
 import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard"
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm"
-import LayoutHeader from "../../shared/LayoutHeader"
+import { endOfMonth, format, startOfMonth } from "date-fns"
 
 const EmployeeAttendance = () => {
     const navigate = useNavigate()
+    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
     const { data: userId } = useLoggedInUser();
-    const filters = userId ? [["owner", "=", userId]] : [];
+    const start = format(startOfMonth(selectedDate as Date), 'yyyy-MM-dd')
+    const end = format(endOfMonth(selectedDate as Date), 'yyyy-MM-dd')
+
+    const filters = userId ? [["owner", "=", userId], ["creation", "between", [start, end]]] : [];
     const { data: allAttendance, isError, error } = useAttendance(filters as any, {
         enabled: !!userId,
     });
     // const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
     // const todayAttendance = allAttendance?.filter((record) => record.attendance_date === today)?.[0];
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
     const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] = useState<boolean>(false)
     type Status = | "present"
         | "absent"
@@ -132,23 +135,6 @@ const EmployeeAttendance = () => {
 
     const defaultFilters = useMemo(() => {
         if (!userId || !selectedDate) return undefined;
-
-        const start = new Date(
-            selectedDate.getFullYear(),
-            selectedDate.getMonth(),
-            1
-        )
-            .toISOString()
-            .slice(0, 10);
-
-        const end = new Date(
-            selectedDate.getFullYear(),
-            selectedDate.getMonth() + 1,
-            1
-        )
-            .toISOString()
-            .slice(0, 10);
-
         return {
             owner: userId,
             creation: ["between", [start, end]],
@@ -157,10 +143,6 @@ const EmployeeAttendance = () => {
 
 
     return <div>
-        <LayoutHeader
-            tab={"Attendance Details"}
-        />
-        {/* <LayoutHeader tab="Attendance" /> */}
         <div className="flex flex-col">
 
             {/* ------------------------------------------------- Info Card Start---------------------------------------------- */}
@@ -196,13 +178,16 @@ const EmployeeAttendance = () => {
                         onClick={() => {
                             navigate("/webapp/attendance/emp-attendance/all")
                         }}>
-                        View In List
+                        List View
                         <ArrowUpRight className="h-5 w-5" />
                     </button>
                 </div>
                 <DatePicker
                     selected={selectedDate}
                     onChange={(date) => setSelectedDate(date)}
+                    onMonthChange={(date) => setSelectedDate(date)}
+
+                    openToDate={selectedDate as Date}
                     inline
                     dayClassName={(date) => {
                         const status = getAttendanceStatus(date);
@@ -213,21 +198,21 @@ const EmployeeAttendance = () => {
                         const highlightClass = (() => {
                             switch (status) {
                                 case "present":
-                                    return "!bg-green-100 !text-green-800 ";
+                                    return "!bg-green-100 !text-green-800 rounded-md";
                                 case "absent":
-                                    return "!bg-red-100 !text-red-800 ";
+                                    return "!bg-red-100 !text-red-800 rounded-md";
                                 case "on-leave":
-                                    return "!bg-orange-100 !text-orange-800 ";
+                                    return "!bg-orange-100 !text-orange-800 rounded-md";
                                 case "half-day":
-                                    return "bg-yellow-100 !text-yellow-800 ";
+                                    return "bg-yellow-100 !text-yellow-800 rounded-md";
                                 case "half-day-first-half":
-                                    return "hard-gradient-green-to-yellow !text-yellow-800 ";
+                                    return "hard-gradient-green-to-yellow !text-yellow-800 rounded-md";
                                 case "half-day-second-half":
-                                    return "hard-gradient-yellow-to-green !text-yellow-800 ";
+                                    return "hard-gradient-yellow-to-green !text-yellow-800 rounded-md";
                                 case "work-from-home":
-                                    return "!bg-purple-100 !text-purple-800 border border-purple-200";
+                                    return "!bg-purple-100 !text-purple-800 border border-purple-200 rounded-md";
                                 default:
-                                    return "hover:!bg-gray-100 !text-gray-700";
+                                    return "hover:!bg-gray-100 !text-gray-700 rounded-md";
                             }
                         })();
 
@@ -269,7 +254,8 @@ const EmployeeAttendance = () => {
 
             <div className="bg-white p-4 border-b-1 border-gray-200" >
                 <div className="flex gap-2">
-                    <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center p-2 items-center text-md"
+                    <button className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold flex-1 flex items-center justify-center text-md"
+
                         onClick={() => {
                             setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
                         }}>
@@ -284,7 +270,13 @@ const EmployeeAttendance = () => {
 
             {/* My Attendance Requests */}
             <div className="bg-white">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1 p-4">My Attendance Requests</h3>
+                <div className="flex justify-between items-center w-full p-4">
+
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 ">My Attendance Requests</h3>
+                    <p
+                        onClick={() => navigate("/webapp/attendance/attendance-request")}
+                        className="text-sm text-blue-500">View All</p>
+                </div>
                 <FrappeListView
                     doctype="Attendance Request"
                     isSearch={false}

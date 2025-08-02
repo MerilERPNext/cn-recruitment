@@ -1,6 +1,6 @@
 // services/attendanceService.ts
 import FrappeAPI from '../utils/frappeAPI';
-import type { Attendance, AttendanceRequest, EmployeeCheckInLog } from '../types/attendance';
+import type { Attendance, AttendanceRequest, EmployeeCheckInLog, EmployeeShift, EmployeeShiftSummary } from '../types/attendance';
 import { FilterCondition } from '../types/frappe';
 
 export const attendanceService = {
@@ -13,7 +13,7 @@ export const attendanceService = {
 
   getHomeSummaryDetails: async (userId:string,filters:{}): Promise<EmployeeCheckInLog[]> => {
     try {
-      const response = await fetch(`api/method/cn_leave_shift_managment.api.get_shift_checkins?user=${userId}&filters=${filters}`, {
+      const response = await fetch(`/api/method/cn_leave_shift_managment.api.get_shift_checkins?user=${userId}&filters=${filters}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -28,10 +28,46 @@ export const attendanceService = {
       throw error;
     }
   },
+  getEmployeeShift: async (userId:string,filters?:{}): Promise<EmployeeShift> => {
+    try {
+      const response = await fetch(`/api/method/cn_leave_shift_managment.api.get_employee_shift?user=${userId}&filters=${filters}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      return result?.message as EmployeeShift;
+    } catch (error) {
+      console.error('📡 Error in fetching employee shift:', error);
+      throw error;
+    }
+  },
+
+
+  getQuickAttendanceSummary: async (employeeId:string,fromDate:string,toDate:string): Promise<EmployeeShiftSummary> => {
+    try {
+      const response = await fetch(`/api/method/cn_leave_shift_managment.api.get_quick_summary?employee=${employeeId}&from_date=${fromDate}&to_date=${toDate}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      return result?.message as EmployeeShiftSummary;
+    } catch (error) {
+      console.error('📡 Error fetching quick attendance summary:', error);
+            throw error;
+    }
+  },
 
   checkInOutService: async (body:any): Promise<any> => {
     try {
-      const response = await fetch(`api/method/cn_leave_shift_managment.api.create_employee_checkin `, {
+      const response = await fetch(`/api/method/cn_leave_shift_managment.api.create_employee_checkin `, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

@@ -1,12 +1,20 @@
-import { addMonths, format, subMonths } from "date-fns";
-import { ChevronLeft, ChevronRight, EyeIcon, Clock, Users, Calendar, Shield, ListCheck, Logs, Timer } from "lucide-react"
+import { addMonths, endOfMonth, format, startOfMonth, subMonths } from "date-fns";
+import { ChevronLeft, ChevronRight, Clock, Users, Calendar, Shield, CheckCircle, AlertCircle, Timer, Clock8, } from "lucide-react"
 import { useState } from "react";
-import { useNavigate } from "react-router"
-import LayoutHeader from "../shared/LayoutHeader";
+import { useGetQuickAttendanceSummary } from "../../hooks/useAttendance";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import useCurrentUser from "../../hooks/useCurrentUser";
+// import { useNavigate } from "react-router"
 
 const AttendanceSummary = () => {
-    const navigate = useNavigate()
+    // const navigate = useNavigate()
     const [currentDate, setCurrentDate] = useState(new Date());
+    const { data: currentUser } = useCurrentUser();
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails(currentUser?.name as string)
+
+    const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(currentEmployee?.employee as string, format(startOfMonth(currentDate), 'yyyy-MM-dd'), format(endOfMonth(currentDate), 'yyyy-MM-dd'))
+
+
 
     const goToPreviousMonth = () => {
         setCurrentDate(prev => subMonths(prev, 1));
@@ -17,9 +25,6 @@ const AttendanceSummary = () => {
     };
     return (
         <>
-            <LayoutHeader tab={"Attendance"}
-                path="/webapp"
-            />
             <div className="min-h-screen bg-white">
                 {/* Header Card */}
                 <div className=" mb-4 ">
@@ -48,97 +53,73 @@ const AttendanceSummary = () => {
                     </div>
 
                     {/* Statistics Grid */}
-                    <div className="space-y-2  border-b-2 bg-white border-gray-200 px-6 py-4 pt-0">
-                        <h2 className="text-xl font-semibold ">Quick Summary</h2>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-gray-200 rounded-xl p-4  text-center">
-                                <div className="text-2xl font-bold text-gray-900 mb-1">0.0</div>
-                                <div className="text-sm text-gray-700 font-medium">Present Days</div>
+                    <div className="space-y-4 border-b-2 bg-white border-gray-200 px-6 py-4 pt-0">
+                        <h2 className="text-xl font-semibold">Quick Summary</h2>
+
+                        {/* First Row */}
+                        <div className="grid grid-cols-3 gap-3">
+                            {/* Present Days - Green */}
+                            <div className="text-center bg-green-50 border-2 border-green-100 p-3 rounded-lg">
+                                <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-green-800">{employeeAttendanceSummary?.present || 0}</p>
+                                <p className="text-xs font-medium text-green-700">Present Days</p>
                             </div>
-                            <div className="bg-gray-200 rounded-xl p-4  text-center">
-                                <div className="text-2xl font-bold text-gray-900 mb-1 ">8h</div>
-                                <div className="text-sm text-gray-700 font-medium">Avg. Work Duration</div>
+
+                            {/* Avg. Work Duration - Blue */}
+                            <div className="text-center bg-blue-50 border-2 border-blue-100 p-3 rounded-lg">
+                                <Clock className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-blue-800">{employeeAttendanceSummary?.avg_working_hours || 0}</p>                                <p className="text-xs font-medium text-blue-700">Avg. Work Duration</p>
+                            </div>
+
+                            {/* Leaves - Yellow */}
+                            <div className="text-center bg-yellow-50 border-2 border-yellow-100 p-3 rounded-lg">
+                                <Calendar className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-yellow-800">{employeeAttendanceSummary?.leaves || 0}</p>
+                                <p className="text-xs font-medium text-yellow-700">Leaves</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-gray-200 rounded-xl p-4  text-center">
-                                <div className="text-2xl font-bold text-gray-900 mb-1">0.0</div>
-                                <div className="text-sm text-gray-700 font-medium">Leaves</div>
+                        {/* Second Row */}
+                        <div className="grid grid-cols-3 gap-3">
+                            {/* Absent Days - Red */}
+                            <div className="text-center bg-red-50 border-2 border-red-100 p-3 rounded-lg">
+                                <AlertCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-red-800">{employeeAttendanceSummary?.absent || 0}</p>
+                                <p className="text-xs font-medium text-red-700">Absent Days</p>
                             </div>
-                            <div className="bg-gray-200 rounded-xl p-4  text-center">
-                                <div className="text-2xl font-bold text-gray-900 mb-1">00:00</div>
-                                <div className="text-sm text-gray-700 font-medium">Absent Days</div>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-gray-200 rounded-xl p-4  text-center">
-                                <div className="text-2xl font-bold text-gray-900 mb-1">00:00</div>
-                                <div className="text-sm text-gray-700 font-medium">Avg. Overtime</div>
-                            </div>
-                            <div className="bg-gray-200 rounded-xl p-4  text-center">
-                                <div className="text-2xl font-bold text-gray-900 mb-1">00:00</div>
-                                <div className="text-sm text-gray-700 font-medium">Avg. Late By</div>
-                            </div>
-                        </div>
 
+                            {/* Avg. Overtime - Indigo */}
+                            <div className="text-center bg-indigo-50 border-2 border-indigo-100 p-3 rounded-lg">
+                                <Timer className="w-6 h-6 text-indigo-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-indigo-800">{employeeAttendanceSummary?.avg_overtime || 0}</p>
+                                <p className="text-xs font-medium text-indigo-700">Avg. Overtime</p>
+                            </div>
 
-                        <div className="mt-4">
-                            <button
-                                onClick={() => { navigate("/webapp/attendance/emp-attendance") }}
-                                className="w-full bg-black hover:bg-gray-800 text-white rounded-xl font-semibold flex items-center justify-center gap-3 p-4 transition-all duration-200 shadow-sm hover:shadow-lg">
-                                <EyeIcon className="h-5 w-5" />
-                                <span>View Detailed Attendance</span>
-                            </button>
+                            {/* Avg. Late By - Orange */}
+                            <div className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg">
+                                <Clock8 className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-orange-800">{employeeAttendanceSummary?.avg_late_by || 0}</p>
+                                <p className="text-xs font-medium text-orange-700">Avg. Late By</p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Attendance View Button */}
-                </div>
-                <div className="px-6 border-b-2 border-gray-200">
-                    <h2 className="text-xl font-semibold ">Quick Links</h2>
-
-
-                    <div className="flex gap-4 py-4 overflow-x-auto scrollbar-hide">
-                        <button
-                            className="w-32 bg-gray-200 rounded-xl p-4 border border-gray-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-gray-600 flex-shrink-0"
-                            onClick={() => { navigate("/webapp/attendance/team-attendance") }}>
-                            <Users className="h-6 w-6" />
-                            <span className="text-xs text-center leading-tight">Team Attendance</span>
-                        </button>
-                        <button
-                            className="w-32 bg-gray-200 rounded-xl p-4 border border-gray-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-gray-600 flex-shrink-0"
-                            onClick={() => { navigate("/webapp/attendance/attendance-request") }}>
-                            <ListCheck className="h-6 w-6" />
-                            <span className="text-xs text-center leading-tight">My Attendance Requests</span>
-                        </button>
-                        <button
-                            className="w-32 bg-gray-200 rounded-xl p-4 border border-gray-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-gray-600 flex-shrink-0"
-                            onClick={() => { navigate("/webapp/attendance/team-attendance-details") }}>
-                            <Logs className="h-6 w-6" />
-                            <span className="text-xs text-center leading-tight">Team Attendance Details</span>
-                        </button>
-                        <button
-                            className="w-32 bg-gray-200 rounded-xl p-4 border border-gray-200 flex justify-center items-center flex-col font-semibold font-medium gap-1 text-gray-600 flex-shrink-0"
-                            onClick={() => { navigate("/webapp/attendance/request-overtime") }}>
-                            <Timer className="h-6 w-6" />
-                            <span className="text-xs text-center leading-tight">Request Overtime</span>
-                        </button>
-                    </div>
                 </div>
 
 
                 {/* Settings Card */}
                 <div className=" border-b-2 bg-white border-gray-200 p-4 ">
                     <div className="space-y-4">
-                        {/* Clock in priority */}
+                        {/* Attendance Method */}
                         <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                             <div className="p-2 bg-gray-200 rounded-lg">
                                 <Clock className="h-4 w-4 text-gray-700" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900 mb-1">Clock in Priority</h3>
+                                <h3 className="font-semibold text-gray-900 mb-1">Attendance Method</h3>
                                 <p className="text-gray-600 text-sm">Biometric verification required</p>
+                                <p className="text-gray-600 text-sm">GEOFENCING FOR CHECK-IN</p>
                             </div>
                         </div>
 
@@ -159,14 +140,12 @@ const AttendanceSummary = () => {
                                 <Shield className="h-4 w-4 text-gray-700" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900">Active Policies</h3>
+                                <h3 className="font-semibold text-gray-900">Attendance Policies</h3>
                                 <div>
                                     <button className=" w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
                                         GENERAL SHIFT POLICY
                                     </button>
-                                    <button className=" w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
-                                        GEOFENCING FOR CHECK-IN
-                                    </button>
+
                                 </div>
                             </div>
                         </div>
@@ -177,17 +156,22 @@ const AttendanceSummary = () => {
                                 <Calendar className="h-4 w-4 text-gray-700" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900">Weekly Schedule</h3>
+                                <h3 className="font-semibold text-gray-900">Week Off & Week Off Pattern</h3>
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-gray-200">
-                                        <span className="text-sm text-gray-600">Weekly Off Pattern</span>
-                                        <span className="text-sm font-medium text-gray-900">Physicswallah</span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-2 bg-white rounded-lg border border-gray-200">
-                                        <span className="text-sm text-gray-600">Off Days</span>
+
+                                    <div className="flex items-center justify-between p-2">
+                                        <span className="text-sm text-gray-900">Off Days</span>
                                         <span className="text-sm font-medium text-gray-900">1st, 2nd, 4th Sunday</span>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="p-2 bg-gray-200 rounded-lg">
+                                <Timer className="h-4 w-4 text-gray-700" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900">Overtime Policies</h3>
                             </div>
                         </div>
                     </div>

@@ -79,3 +79,14 @@ export type EmployeeCheckInLog = {
   shift_actual_start: string; 
   shift_actual_end: string;   
 };
+
+export type EmployeeShift = {shift:string}
+
+export type EmployeeShiftSummary = {
+  present: number;
+  absent: number;
+  leaves: number;
+  avg_overtime: string;
+  avg_late_by: string;
+  avg_working_hours: string;
+}
