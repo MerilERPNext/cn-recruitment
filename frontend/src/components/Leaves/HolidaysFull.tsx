@@ -3,11 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { isBefore, startOfToday } from "date-fns";
 import { FaSortAmountDownAlt, FaSortAmountUp } from "react-icons/fa";
 import { HolidayCard } from "./Holidays";
-
-export type Holiday = {
-  name: string;
-  date: string;
-};
+import { Holiday } from "../../types/leaves";
 
 const REGULAR_HOLIDAYS: Holiday[] = [
   { name: "New Year's Day", date: "2025-01-01" },

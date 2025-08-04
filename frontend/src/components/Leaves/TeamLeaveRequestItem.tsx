@@ -1,5 +1,4 @@
 import { format } from "date-fns";
-
 const TeamLeaveRequestItem = ({
   item,
   onClick,
