@@ -37,11 +37,11 @@ const statusStyles = {
     icon: <FileEdit className="w-4 h-4 text-yellow-600" />
   },
   approved: {
-    bg: 'bg-green-50',
-    border: 'border-green-100',
-    iconBg: 'bg-green-100',
+    bg: 'bg-green-100',
+    border: 'border-green-200',
+    iconBg: 'bg-green-200',
     iconText: 'text-green-600',
-    badgeBg: 'bg-green-100',
+    badgeBg: 'bg-green-200',
     badgeText: 'text-green-800',
     icon: <CheckCircle className="w-4 h-4 text-green-600" />,
   },
@@ -67,7 +67,7 @@ const MobileDashboard: React.FC = () => {
 
   // Get unread notifications count
   const { data: unreadCount = 0 } = useUnreadNoticesCount();
-  const { data: expenseData } = useExpenseClaim([["status", "=", "draft"]])
+  const { data: expenseData } = useExpenseClaim()
   // Get current user data
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(currentUser?.name as string)
@@ -302,7 +302,7 @@ const MobileDashboard: React.FC = () => {
 
 
         {/* Attendance Summary */}
-        <div className="p-4 mb-4 sm:mb-5">
+        <div className="mb-4 sm:mb-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold">Attendance</h3>
             <Link
@@ -322,7 +322,7 @@ const MobileDashboard: React.FC = () => {
 
             <div className="text-center bg-red-50 border-2 border-red-100 p-3 rounded-lg">
               <AlertCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-red-800">{employeeAttendanceSummary?.absent}</p>
+              <p className="text-lg font-bold text-red-800">{employeeAttendanceSummary?.absent || 0}</p>
               <p className="text-xs font-medium text-red-700">Absent Days</p>
             </div>
 
@@ -347,7 +347,7 @@ const MobileDashboard: React.FC = () => {
         {leaveBalance && <LeaveProgress leaveData={leaveBalance as LeaveData} />}
 
         {/* Pending Expense Claims */}
-        {expenseData?.length > 0 && <div className="rounded-xl p-4  border border-gray-100 mb-4 sm:mb-5">
+        {expenseData?.length > 0 && <div className="rounded-xl  border border-gray-100 mb-4 sm:mb-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold text-gray-900">Unpaid Expense Claims</h3>
             <Link to="/webapp/expenses-app" className="text-blue-500 text-sm font-semibold hover:text-blue-600">
@@ -358,9 +358,9 @@ const MobileDashboard: React.FC = () => {
 
 
           <div className="space-y-3">
-            {expenseData?.map((item: { employee_name: string, creation: string, total_claimed_amount: string, status: string }) => {
+            {expenseData?.map((item: { employee_name: string, creation: string, total_claimed_amount: string, approval_status: string }) => {
 
-              const styles = statusStyles[item.status as keyof typeof statusStyles] || statusStyles.draft;
+              const styles = statusStyles[item.approval_status?.toLowerCase() as keyof typeof statusStyles] || statusStyles.draft;
               // const StatusIcon = statusIcons[statusKey] || statusIcons.draft;
 
               return (
@@ -377,7 +377,7 @@ const MobileDashboard: React.FC = () => {
                   <div className="text-right">
                     <p className="font-bold text-gray-900">{item?.total_claimed_amount} Rs</p>
                     <span className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium ${styles.badgeBg} ${styles.badgeText}`}>
-                      {item?.status}
+                      {item?.approval_status}
                     </span>
                   </div>
                 </div>
@@ -397,7 +397,7 @@ export default MobileDashboard;
 
 const LeaveProgress = ({ leaveData }: LeaveProgressProps) => {
   return (
-    <div className="rounded-xl p-4  mb-4 sm:mb-5">
+    <div className="rounded-xl mb-4 sm:mb-5">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold text-gray-900">Leave Balance</h3>
         <Link to="/webapp/leave-app" className="text-blue-500 text-sm font-semibold hover:text-blue-600">

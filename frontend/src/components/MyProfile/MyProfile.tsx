@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import PersonalInfo from "./PersonalInfo";
 import ContactInfo from "./ContactInfo";
 import AddressInfo from "./AddressInfo";
@@ -96,12 +96,6 @@ const Navigation: React.FC<NavigationProps> = ({
 const MyProfile: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const { data: userId } = useLoggedInUser();
-  const { data: user, refetch } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: userAddress, refetch: refetchAddress } =
-    useCurrentEmployeeAddress(userId || "");
-
   const tabs: Tab[] = useMemo(
     () => [
       { key: "personal-info", label: "Personal Info" },
@@ -113,9 +107,17 @@ const MyProfile: React.FC = () => {
     ],
     []
   );
-
   const [activeTab, setActiveTab] = useState<TabKey>(tabs[0].key);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+
+  const { data: userId } = useLoggedInUser();
+  const { data: user, refetch } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: userAddress, refetch: refetchAddress } =
+    useCurrentEmployeeAddress(userId || "");
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [activeTab]);
 
   const tabContent: Record<TabKey, React.ReactNode> = useMemo(
     () => ({
@@ -139,7 +141,7 @@ const MyProfile: React.FC = () => {
   };
 
   return (
-    <div className="bg-white font-sans">
+    <div className="bg-white font-sans scroll-smooth">
       <div className="bg-white shadow">
         <HeaderBar title="My Profile" onBack={() => navigate(-1)} />
         <input

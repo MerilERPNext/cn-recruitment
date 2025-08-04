@@ -32,7 +32,7 @@ const ExpensesUserInfo = () => {
           {user?.employee_name} {user?.employee && <>({user.employee})</>}
         </p>
         <p className="text-sm text-gray-600">
-          {user?.department} | {expensePolicies?.[0].expense_travel_policy}
+          {user?.department} | {expensePolicies?.[0]?.expense_travel_policy}
         </p>
       </div>
       <Toaster position="top-center" />

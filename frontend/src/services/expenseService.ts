@@ -35,10 +35,13 @@ export const expenseService = {
   getExpenseClaims: async (filters?: FilterCondition[]): Promise<any> => {
     const result = await FrappeAPI.getDocumentList("Expense Claim", {
       fields: [
-        "*"
+        "employee_name",
+        "creation",
+        "total_claimed_amount",
+        "approval_status"
       ],
       filters,
-      limit: 50,
+      limit: 3,
     });
     return result.data as any;
   },
