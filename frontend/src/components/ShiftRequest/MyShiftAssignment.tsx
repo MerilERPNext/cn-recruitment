@@ -1,6 +1,6 @@
-import { Plus } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useMyCurrentShiftAssignment } from "../../hooks/useShift";
+import RequestShiftChangeButton from "./RequestShiftChangeButton";
 
 export default function MyShiftAssignment() {
   const navigatore = useNavigate();
@@ -52,15 +52,7 @@ export default function MyShiftAssignment() {
         </div>
       ))}
 
-      <div className="fixed bottom-0 left-0 w-full p-4 flex justify-center items-center bg-white border-t border-gray-200">
-        <button
-          onClick={handleshiftForm}
-          className="w-[90%] flex items-center justify-center gap-2 py-3 px-4 border border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-        >
-          <Plus size={18} />
-          Request Shift Change
-        </button>
-      </div>
+      <RequestShiftChangeButton onClick={handleshiftForm} />
     </div>
   );
 }
