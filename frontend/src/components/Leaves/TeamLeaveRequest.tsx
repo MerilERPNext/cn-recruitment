@@ -6,6 +6,7 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import type { TeamLeaveRequest } from "../../types/leaves";
 import { TeamLeaveRequestSkeleton } from "./LeaveSkeletons";
 import { FaPencilRuler } from "react-icons/fa";
+import { format } from "date-fns";
 
 const TeamLeaveRequest = () => {
   const [selectedRequest, setSelectedRequest] =
@@ -74,64 +75,6 @@ const TeamLeaveRequest = () => {
         showRefereshButton={true}
         SkeletonComponent={TeamLeaveRequestSkeleton}
       />
-
-      {/* {isModalOpen && selectedRequest && (
-        <div className="fixed inset-0 z-50 bg-white flex flex-col h-screen">
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center z-10">
-            <button
-              onClick={handleCloseModal}
-              className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
-            >
-              <FiArrowLeft className="w-5 h-5 mr-2" />
-            </button>
-            <h2 className="text-lg font-semibold">Leave Request Details</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto bg-gray-100 py-8 px-4 flex justify-center">
-            <div className="bg-white rounded-xl shadow-md w-full max-w-md p-6 space-y-4">
-              <div className="flex justify-between text-sm">
-                <span className="font-bold text-gray-600">Employee Name:</span>
-                <span className="text-gray-900">
-                  {selectedRequest.employee_name}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="font-bold text-gray-600">Leave Type:</span>
-                <span className="text-gray-900">
-                  {selectedRequest.leave_type}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="font-bold text-gray-600">From:</span>
-                <span className="text-gray-900">
-                  {selectedRequest.from_date}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="font-bold text-gray-600">To:</span>
-                <span className="text-gray-900">{selectedRequest.to_date}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="font-bold text-gray-600">Status:</span>
-                <span className="text-gray-900">
-                  {selectedRequest.status === "Open"
-                    ? "Pending"
-                    : selectedRequest.status}
-                </span>
-              </div>
-              {selectedRequest.description && (
-                <div className="text-sm">
-                  <span className="font-bold text-gray-600 block mb-1">
-                    Description:
-                  </span>
-                  <p className="text-gray-900 whitespace-pre-wrap">
-                    {selectedRequest.description}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )} */}
       {isModalOpen && selectedRequest && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col h-screen">
           <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-2 flex items-center z-10">
@@ -171,12 +114,14 @@ const TeamLeaveRequest = () => {
                 <div>
                   <div className="font-semibold">From</div>
                   <div className="text-gray-900">
-                    {selectedRequest.from_date}
+                    {format(new Date(selectedRequest.from_date), "MMM d, yyyy")}
                   </div>
                 </div>
                 <div>
                   <div className="font-semibold">To</div>
-                  <div className="text-gray-900">{selectedRequest.to_date}</div>
+                  <div className="text-gray-900">
+                    {format(new Date(selectedRequest.to_date), "MMM d, yyyy")}
+                  </div>
                 </div>
               </div>
 

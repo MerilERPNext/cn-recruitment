@@ -2,8 +2,6 @@ import React, { useState, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { isBefore, startOfToday } from "date-fns";
 import { FaSortAmountDownAlt, FaSortAmountUp } from "react-icons/fa";
-
-import RequestLeave from "./RequestLeave";
 import { HolidayCard } from "./Holidays";
 
 export type Holiday = {
@@ -37,8 +35,6 @@ type HolidayType = "regular" | "optional";
 
 const HolidaysFull: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [showModal, setShowModal] = useState(false);
-  const [selectedHoliday, setSelectedHoliday] = useState<Holiday | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,20 +57,10 @@ const HolidaysFull: React.FC = () => {
     setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
   }, []);
 
-  const handleApplyClick = useCallback((holiday: Holiday) => {
-    setSelectedHoliday(holiday);
-    setShowModal(true);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setShowModal(false);
-    setSelectedHoliday(null);
-  }, []);
-
   return (
     <div className="flex flex-col bg-white">
       <header className="sticky top-0 bg-white shadow-sm border-b border-gray-200">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between px-4 py-1">
           <div className="flex items-center">
             <button
               type="button"
@@ -139,13 +125,6 @@ const HolidaysFull: React.FC = () => {
           })}
         </div>
       </main>
-      {showModal && selectedHoliday && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white shadow-lg max-w-md w-full max-h-screen overflow-y-auto">
-            <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

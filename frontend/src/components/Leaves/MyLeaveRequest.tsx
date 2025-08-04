@@ -7,6 +7,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 import { MyLeaveRequestSkeleton } from "./LeaveSkeletons";
 import { FaPencilRuler } from "react-icons/fa";
+import { format } from "date-fns";
 
 const LeaveRequestItem = ({
   item,
@@ -68,7 +69,8 @@ const LeaveRequestItem = ({
               {item.leave_type}
             </h3>
             <p className="text-xs text-gray-500 mt-1">
-              {item.from_date} - {item.to_date}
+              {format(new Date(item.from_date), "MMM d")} -{" "}
+              {format(new Date(item.to_date), "MMM d, yyyy")}
             </p>
           </div>
         </div>
@@ -172,12 +174,14 @@ const MyLeaveRequest: React.FC = () => {
                 <div>
                   <div className="font-semibold">From</div>
                   <div className="text-gray-900">
-                    {selectedRequest.from_date}
+                    {format(new Date(selectedRequest.from_date), "MMM d, yyyy")}
                   </div>
                 </div>
                 <div>
                   <div className="font-semibold">To</div>
-                  <div className="text-gray-900">{selectedRequest.to_date}</div>
+                  <div className="text-gray-900">
+                    {format(new Date(selectedRequest.to_date), "MMM d, yyyy")}
+                  </div>
                 </div>
               </div>
 
