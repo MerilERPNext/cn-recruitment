@@ -13,7 +13,7 @@ export default function LeaveRequestApp() {
 
   return (
     <div className="h-full">
-      <div className="p-4 h-full overflow-y-auto">
+      <div className="px-4 pt-4 h-full overflow-y-auto">
         <Outlet />
       </div>
     </div>
