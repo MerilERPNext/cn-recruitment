@@ -358,7 +358,7 @@ const MobileDashboard: React.FC = () => {
 
 
           <div className="space-y-3">
-            {expenseData?.map((item: { name: string, creation: string, total_claimed_amount: string, status: string }) => {
+            {expenseData?.map((item: { employee_name: string, creation: string, total_claimed_amount: string, status: string }) => {
 
               const styles = statusStyles[item.status as keyof typeof statusStyles] || statusStyles.draft;
               // const StatusIcon = statusIcons[statusKey] || statusIcons.draft;
@@ -370,7 +370,7 @@ const MobileDashboard: React.FC = () => {
                       {styles.icon}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">{item?.name}</p>
+                      <p className="font-semibold text-gray-900">{item?.employee_name}</p>
                       <p className="text-xs text-gray-600">{formatDateString(item?.creation)}</p>
                     </div>
                   </div>

@@ -53,7 +53,7 @@ const AttendanceSummary = () => {
                     </div>
 
                     {/* Statistics Grid */}
-                    <div className="space-y-4 border-b-2 bg-white border-gray-200 px-6 py-4 pt-0">
+                    <div className="space-y-3 border-b-2 bg-white border-gray-200 px-6 py-4 pt-0">
                         <h2 className="text-xl font-semibold">Quick Summary</h2>
 
                         {/* First Row */}
@@ -64,6 +64,29 @@ const AttendanceSummary = () => {
                                 <p className="text-lg font-bold text-green-800">{employeeAttendanceSummary?.present || 0}</p>
                                 <p className="text-xs font-medium text-green-700">Present Days</p>
                             </div>
+                            {/* Absent Days - Red */}
+                            <div className="text-center bg-red-50 border-2 border-red-100 p-3 rounded-lg">
+                                <AlertCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-red-800">{employeeAttendanceSummary?.absent || 0}</p>
+                                <p className="text-xs font-medium text-red-700">Absent Days</p>
+                            </div>
+                            {/* Avg. Overtime - Indigo */}
+                            <div className="text-center bg-yellow-50 border-2 border-yellow-100 p-3 rounded-lg">
+                                <Timer className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-yellow-800">{employeeAttendanceSummary?.avg_overtime || 0}</p>
+                                <p className="text-xs font-medium text-yellow-700">Avg. Overtime</p>
+                            </div>
+
+                        </div>
+
+                        {/* Second Row */}
+                        <div className="grid grid-cols-3 gap-3">
+                            {/* Leaves - Orange */}
+                            <div className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg">
+                                <Calendar className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-orange-800">{employeeAttendanceSummary?.leaves || 0}</p>
+                                <p className="text-xs font-medium text-orange-700">Leaves</p>
+                            </div>
 
                             {/* Avg. Work Duration - Blue */}
                             <div className="text-center bg-blue-50 border-2 border-blue-100 p-3 rounded-lg">
@@ -71,35 +94,11 @@ const AttendanceSummary = () => {
                                 <p className="text-lg font-bold text-blue-800">{employeeAttendanceSummary?.avg_working_hours || 0}</p>                                <p className="text-xs font-medium text-blue-700">Avg. Work Duration</p>
                             </div>
 
-                            {/* Leaves - Yellow */}
-                            <div className="text-center bg-yellow-50 border-2 border-yellow-100 p-3 rounded-lg">
-                                <Calendar className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
-                                <p className="text-lg font-bold text-yellow-800">{employeeAttendanceSummary?.leaves || 0}</p>
-                                <p className="text-xs font-medium text-yellow-700">Leaves</p>
-                            </div>
-                        </div>
-
-                        {/* Second Row */}
-                        <div className="grid grid-cols-3 gap-3">
-                            {/* Absent Days - Red */}
-                            <div className="text-center bg-red-50 border-2 border-red-100 p-3 rounded-lg">
-                                <AlertCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
-                                <p className="text-lg font-bold text-red-800">{employeeAttendanceSummary?.absent || 0}</p>
-                                <p className="text-xs font-medium text-red-700">Absent Days</p>
-                            </div>
-
-                            {/* Avg. Overtime - Indigo */}
-                            <div className="text-center bg-indigo-50 border-2 border-indigo-100 p-3 rounded-lg">
-                                <Timer className="w-6 h-6 text-indigo-600 mx-auto mb-1" />
-                                <p className="text-lg font-bold text-indigo-800">{employeeAttendanceSummary?.avg_overtime || 0}</p>
-                                <p className="text-xs font-medium text-indigo-700">Avg. Overtime</p>
-                            </div>
-
-                            {/* Avg. Late By - Orange */}
-                            <div className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg">
-                                <Clock8 className="w-6 h-6 text-orange-600 mx-auto mb-1" />
-                                <p className="text-lg font-bold text-orange-800">{employeeAttendanceSummary?.avg_late_by || 0}</p>
-                                <p className="text-xs font-medium text-orange-700">Avg. Late By</p>
+                            {/* Avg. Late By - purple */}
+                            <div className="text-center bg-purple-50 border-2 border-purple-100 p-3 rounded-lg">
+                                <Clock8 className="w-6 h-6 text-purple-600 mx-auto mb-1" />
+                                <p className="text-lg font-bold text-purple-800">{employeeAttendanceSummary?.avg_late_by || 0}</p>
+                                <p className="text-xs font-medium text-purple-700">Avg. Late By</p>
                             </div>
                         </div>
                     </div>

@@ -57,11 +57,11 @@ export function RequestCard({
                         />
                     )}                    <div className="w-full">
                         <div className="flex items-start space-x-3">
-                            <Avatar name={request.name} />
+                            <Avatar name={request?.employee_name} />
 
                             <div className="flex-1">
                                 <div className="flex items-center justify-between ">
-                                    <h3 className="font-semibold text-sm">{request.name}</h3>
+                                    <h3 className="font-semibold text-sm">{request?.employee_name}</h3>
                                     <Badge label={status?.label as string} backgroundColor={status?.statusColor} />
                                 </div>
                                 <p className="text-sm text-gray-500 mb-2">{request.custom_in_time ? formatDateToYYYYMMDD(new Date(request.custom_in_time)) : "--"} - {request.custom_out_time ? formatDateToYYYYMMDD(new Date(request.custom_out_time)) : "--"}</p>

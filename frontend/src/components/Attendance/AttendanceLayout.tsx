@@ -55,8 +55,8 @@ const AttendanceLayout: React.FC = () => {
                         }}
                         key={tab.key}
                         onClick={() => handleTabChange(tab)}
-                        className={`w-fit px-4 py-3 border-b-2 border-t-0 border-l-0 border-r-0 bg-transparent text-sm font-medium rounded-none outline-none focus:outline-none focus:ring-0 ${activeTab.key === tab.key
-                            ? 'border-b-[3px] border-b-black text-black'
+                        className={`w-fit px-4 py-3 border-t-0 border-l-0 border-r-0 bg-transparent text-sm font-medium rounded-none outline-none focus:outline-none focus:ring-0 ${activeTab.key === tab.key
+                            ? 'border-b-[3px] border-b-blue-600 text-blue-600'
                             : 'text-[var(--text-secondary)]'
                             }`}
                     >

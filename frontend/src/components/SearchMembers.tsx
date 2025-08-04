@@ -97,7 +97,7 @@ const SearchMembersApp = () => {
     // Handle member selection/navigation
   };
 
-  return (<>
+  return (<div className='pt-12'>
     <LayoutHeader
       tab='Search Members'
       onBack={() => navigate("/webapp")}
@@ -115,7 +115,7 @@ const SearchMembersApp = () => {
         searchFields={['name', "first_name", "last_name", "department", "designation", "status"]}
       />
     </div>
-  </>
+  </div>
   );
 };
 
