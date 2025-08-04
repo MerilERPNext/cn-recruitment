@@ -3,14 +3,16 @@ import { FiArrowLeft } from "react-icons/fi";
 import { FaPencilRuler } from "react-icons/fa";
 import { format } from "date-fns";
 
+interface RequestDetails {
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  status: string;
+  description?: string;
+}
+
 type Props = {
-  request: {
-    leave_type: string;
-    from_date: string;
-    to_date: string;
-    status: string;
-    description?: string;
-  };
+  request: RequestDetails;
   onClose: () => void;
   actions?: React.ReactNode;
 };
@@ -21,14 +23,28 @@ const RequestDetailsModal: React.FC<Props> = ({
   actions,
 }) => {
   const getStatusBadge = (status: string) => {
-    const isPending = status === "Open";
+    let colorClasses = "";
+
+    switch (status) {
+      case "Approved":
+        colorClasses = "bg-green-100 text-green-800";
+        break;
+      case "Open":
+        colorClasses = "bg-yellow-100 text-yellow-800";
+        break;
+      case "Rejected":
+      case "Cancelled":
+        colorClasses = "bg-red-100 text-red-800";
+        break;
+      default:
+        colorClasses = "bg-gray-100 text-gray-800";
+    }
+
     return (
       <span
-        className={`text-sm font-medium px-3 py-1 rounded-xl ${
-          isPending ? "bg-yellow-100 text-yellow-800" : ""
-        }`}
+        className={`text-sm font-medium px-3 py-1 rounded-xl ${colorClasses}`}
       >
-        {isPending ? "Pending" : status}
+        {status === "Open" ? "Pending" : status}
       </span>
     );
   };

@@ -3,10 +3,8 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import FrappeListView from "../ListView";
 import { LeaveApplicationItem } from "../../types/leaves";
-
 import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 import { MyLeaveRequestSkeleton } from "./LeaveSkeletons";
-
 import { format } from "date-fns";
 import RequestDetailsModal from "./RequestDetailsModal";
 
