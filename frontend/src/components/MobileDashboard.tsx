@@ -39,7 +39,7 @@ const statusStyles = {
   approved: {
     bg: 'bg-green-100',
     border: 'border-green-200',
-    iconBg: 'bg-green-100',
+    iconBg: 'bg-green-200',
     iconText: 'text-green-600',
     badgeBg: 'bg-green-200',
     badgeText: 'text-green-800',
@@ -302,7 +302,7 @@ const MobileDashboard: React.FC = () => {
 
 
         {/* Attendance Summary */}
-        <div className="p-4 mb-4 sm:mb-5">
+        <div className="mb-4 sm:mb-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold">Attendance</h3>
             <Link
@@ -347,7 +347,7 @@ const MobileDashboard: React.FC = () => {
         {leaveBalance && <LeaveProgress leaveData={leaveBalance as LeaveData} />}
 
         {/* Pending Expense Claims */}
-        {expenseData?.length > 0 && <div className="rounded-xl p-4  border border-gray-100 mb-4 sm:mb-5">
+        {expenseData?.length > 0 && <div className="rounded-xl  border border-gray-100 mb-4 sm:mb-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold text-gray-900">Unpaid Expense Claims</h3>
             <Link to="/webapp/expenses-app" className="text-blue-500 text-sm font-semibold hover:text-blue-600">
@@ -397,7 +397,7 @@ export default MobileDashboard;
 
 const LeaveProgress = ({ leaveData }: LeaveProgressProps) => {
   return (
-    <div className="rounded-xl p-4  mb-4 sm:mb-5">
+    <div className="rounded-xl mb-4 sm:mb-5">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold text-gray-900">Leave Balance</h3>
         <Link to="/webapp/leave-app" className="text-blue-500 text-sm font-semibold hover:text-blue-600">

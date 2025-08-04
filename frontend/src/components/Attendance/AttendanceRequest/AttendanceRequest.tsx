@@ -57,7 +57,7 @@ const AttendanceRequest = () => {
                 />
             </div>
         }
-        <div className=" fixed bottom-0 w-full p-2">
+        <div className=" fixed bottom-0 w-full p-2 border-t border-gray-300 pt-4">
 
             <button className={`flex justify-center gap-2  w-full rounded-xl bg-black text-white py-4 px-2 z-10`}
                 onClick={() => {

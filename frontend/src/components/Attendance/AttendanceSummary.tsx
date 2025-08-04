@@ -53,7 +53,7 @@ const AttendanceSummary = () => {
                     </div>
 
                     {/* Statistics Grid */}
-                    <div className="space-y-3 border-b-2 bg-white border-gray-200 px-6 py-4 pt-0">
+                    <div className="space-y-3 border-b-2 bg-white border-gray-200 p-4 pt-0">
                         <h2 className="text-xl font-semibold">Quick Summary</h2>
 
                         {/* First Row */}
