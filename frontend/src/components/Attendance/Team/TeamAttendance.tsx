@@ -54,7 +54,7 @@ const TeamAttendance = () => {
 
         <div className="flex flex-col gap-2 pb-4">
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
-            <div className=" bg-white w-full border-b-1 border-gray-200  p-2">
+            <div className=" bg-white w-full border-b-1 border-gray-200">
 
                 <div className=" flex items-end flex-col">
 
