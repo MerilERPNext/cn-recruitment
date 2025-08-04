@@ -80,11 +80,12 @@ const ShiftChangeForm: React.FC = () => {
       {
         type: "button" as const,
         action: "submit",
-        label: "Submit",
-        theme: "primary",
-        block: true,
+        label: "Submit Request",
         key: "submitButton",
-        customClass: "text-sm flex justify-center",
+        input: true,
+        theme: "",
+        customClass:
+          "bg-black font-medium rounded-lg text-white px-6 py-1.5 max-w-md mx-auto block",
       },
     ],
   };
