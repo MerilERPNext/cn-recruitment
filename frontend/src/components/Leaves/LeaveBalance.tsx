@@ -106,11 +106,7 @@ const LeaveBalance: React.FC = () => {
     data,
     isLoading: isLeaveLoading,
     isError,
-  } = useGetLeaveBalance(employeeId, today) as {
-    data?: LeaveBalanceResponse;
-    isLoading: boolean;
-    isError: boolean;
-  };
+  } = useGetLeaveBalance(employeeId, today);
 
   const openTransactions = useCallback(() => setShowTransactions(true), []);
   const closeTransactions = useCallback(() => setShowTransactions(false), []);
