@@ -170,7 +170,7 @@ const EmployeeAttendance = () => {
             {/* ------------------------------------------------- Info Card End---------------------------------------------- */}
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
-            <div className=" w-full  pb-2 bg-white border-b-1 border-gray-200">
+            <div className=" w-full pb-2 bg-white border-b-1 border-gray-200">
                 <div className="w-full flex justify-end">
 
                     <button

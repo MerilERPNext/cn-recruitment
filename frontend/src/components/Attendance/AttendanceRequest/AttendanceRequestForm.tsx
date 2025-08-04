@@ -213,16 +213,16 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto pt-14 pb-28 px-4">
-            <div className="flex gap-2 mb-2 bg-gray-200 p-1 rounded-md">
+        <div className="flex-1 overflow-y-auto pt-14 pb-28 px-2">
+            <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
                 <button
-                    className={`w-full p-2 rounded text-gray-500 ${!isForOthers ? "bg-white text-black" : ""}`}
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-black text-white" : ""}`}
                     onClick={() => setIsForOthers(false)}
                 >
                     Self
                 </button>
                 <button
-                    className={`w-full p-2 rounded text-gray-500 ${isForOthers ? "bg-white text-black" : ""}`}
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-black text-white" : ""}`}
                     onClick={() => setIsForOthers(true)}
                 >
                     For Others
@@ -245,11 +245,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         </div>
 
         {/* Sticky Submit Button */}
-        <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-4 z-20">
+        <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-2 z-20">
             <div className="max-w-4xl mx-auto">
                 <button
                     onClick={() => formAddressInstance.current.submit()}
-                    className="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold"
+                    className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold"
                 >
                     Submit
                 </button>
