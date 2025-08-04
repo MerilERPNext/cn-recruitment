@@ -1,73 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
+import { useGetLeaveBalance } from "../../hooks/useLeaves";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import { LeaveBalanceSkeleton } from "./LeaveSkeletons";
+import { FaRegCalendarCheck } from "react-icons/fa";
+import { TbBeach } from "react-icons/tb";
+import { FaClockRotateLeft } from "react-icons/fa6";
+import { AiOutlinePieChart } from "react-icons/ai";
+import { FiPieChart } from "react-icons/fi";
 
-const leaveData = [
-  {
-    type: "Casual Leave",
-    entitled: 10,
-    availed: 5,
-    balance: 5,
-  },
-  {
-    type: "Sick Leave",
-    entitled: 10,
-    availed: 2,
-    balance: 8,
-  },
-  {
-    type: "Vacation Leave",
-    entitled: 20,
-    availed: 10,
-    balance: 10,
-  },
-];
+type LeaveBalanceEntry = {
+  type: string;
+  entitled: number;
+  availed: number;
+  balance: number;
+  carry_over: number;
+};
 
-const transactionData = [
-  {
-    type: "Wedding Leave",
-    total: 0,
-    monthly: Array(12).fill(0),
-  },
-  {
-    type: "EL - One 15",
-    total: 0,
-    monthly: Array(12).fill(0),
-  },
-  {
-    type: "Loss of Pay",
-    total: 9,
-    monthly: [0, 0, 0, 0, 4, 0, 5, 0, 0, 0, 0, 0],
-  },
-  {
-    type: "Sick leave",
-    total: 0,
-    monthly: Array(12).fill(0),
-  },
-  {
-    type: "Unpaid",
-    total: 34,
-    monthly: Array(12).fill(0),
-  },
-  {
-    type: "Unpaid - Study Leave",
-    total: 12,
-    monthly: [0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0],
-  },
-  {
-    type: "Unpaid - Medical",
-    total: 10,
-    monthly: [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
-  },
-  {
-    type: "Unpaid - Travel",
-    total: 18,
-    monthly: [0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0],
-  },
-  {
-    type: "Unpaid - Miscellaneous",
-    total: 7,
-    monthly: [0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0],
-  },
-];
+type LeaveTransactionEntry = {
+  type: string;
+  total: number;
+  monthly: number[];
+};
+
+type LeaveBalanceResponse = {
+  leave_balance: LeaveBalanceEntry[];
+  leave_transactions: LeaveTransactionEntry[];
+};
 
 const monthLabels = [
   "Jan",
@@ -84,33 +43,43 @@ const monthLabels = [
   "Dec",
 ];
 
-const LeaveTransactionCard = () => {
+const LeaveTransactionCard: React.FC<{
+  data: LeaveTransactionEntry[];
+}> = ({ data }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+  const toggle = useCallback(
+    (index: number) => setOpenIndex((prev) => (prev === index ? null : index)),
+    []
+  );
+
   return (
-    <div className=" max-w-md mx-auto pb-8">
-      {transactionData.map((leave, index) => (
+    <div className="max-w-md mx-auto pb-8">
+      {data.map((entry, idx) => (
         <div
-          key={`transaction-${leave.type}-${index}`}
+          key={`${entry.type}-${idx}`}
           className="border border-gray-200 rounded-lg mb-2 shadow-md"
         >
           <button
+            type="button"
+            aria-expanded={openIndex === idx}
             className="w-full flex justify-between items-center p-4 bg-white rounded-lg"
-            onClick={() => setOpenIndex(openIndex === index ? null : index)}
+            onClick={() => toggle(idx)}
           >
-            <span className="font-medium">{leave.type}</span>
+            <span className="font-medium">{entry.type}</span>
             <span className="text-lg font-bold text-gray-700">
-              {leave.total.toString().padStart(2, "0")}
+              {entry.total.toString().padStart(2, "0")}
             </span>
           </button>
-          {openIndex === index && (
+
+          {openIndex === idx && (
             <div className="grid grid-cols-4 gap-2 p-4 bg-gray-50">
-              {leave.monthly.map((count, i) => (
+              {entry.monthly.map((count, mIdx) => (
                 <div
-                  key={`monthly-${leave.type}-${i}`}
+                  key={`${entry.type}-${mIdx}`}
                   className="text-sm text-center p-2 border rounded-lg bg-white shadow-sm"
                 >
-                  <div className="font-medium">{monthLabels[i]}</div>
+                  <div className="font-medium">{monthLabels[mIdx]}</div>
                   <div className="text-blue-600 font-bold">{count}</div>
                 </div>
               ))}
@@ -123,62 +92,103 @@ const LeaveTransactionCard = () => {
 };
 
 const labelColor = "text-[#0094FF]";
-const activeBg = "bg-[#EAF6FF]";
 const inactiveBg = "bg-[#FFF]";
 
 const LeaveBalance: React.FC = () => {
-  const [activeIdx, setActiveIdx] = useState(0);
   const [showTransactions, setShowTransactions] = useState(false);
 
+  const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
+  const { data: currentEmployee, isLoading: isEmployeeLoading } =
+    useEmployeeByUserId(userId);
+  const today = new Date().toISOString().split("T")[0];
+  const employeeId = currentEmployee?.name ?? "";
+  const {
+    data,
+    isLoading: isLeaveLoading,
+    isError,
+  } = useGetLeaveBalance(employeeId, today) as {
+    data?: LeaveBalanceResponse;
+    isLoading: boolean;
+    isError: boolean;
+  };
+
+  const openTransactions = useCallback(() => setShowTransactions(true), []);
+  const closeTransactions = useCallback(() => setShowTransactions(false), []);
+
+  if (isUserLoading || isEmployeeLoading || isLeaveLoading) {
+    return <LeaveBalanceSkeleton />;
+  }
+  if (isError || !data) {
+    return (
+      <div className="p-4 text-center text-red-600">
+        Failed to load leave data
+      </div>
+    );
+  }
+
+  const leaveBalance = data?.leave_balance ?? [];
+  const transactions = data?.leave_transactions ?? [];
+
   return (
-    <div className="min-h-screen px-4 pb-4 bg-[#F8FBFC] relative">
+    <div className=" pb-4 relative">
       <div className="pt-4">
-        {leaveData.map((leave, idx) => (
-          <div
-            key={leave.type}
-            className={`rounded-xl mb-4 p-4 shadow-sm cursor-pointer transition-colors ${
-              idx === activeIdx ? activeBg : inactiveBg
-            }`}
-            onClick={() => setActiveIdx(idx)}
-          >
-            <div className={`text-xl font-semibold mb-3 ${labelColor}`}>
-              {leave.type}
+        {leaveBalance.map((leave) => (
+          <div key={leave.type} className={`rounded-xl p-4 ${inactiveBg}`}>
+            <div
+              className={`text-xl font-semibold mb-3 ${labelColor} flex justify-between items-center`}
+            >
+              <span>{leave.type}</span>
+
+              <span className="text-sm text-green-800">
+                {leave.carry_over > 0 ? "+" : ""}
+                {leave.carry_over} Carry Forwarded
+              </span>
             </div>
-            <div className="flex justify-between">
-              <div className="flex-1 text-center">
-                <div className="text-xl font-bold">{leave.entitled}</div>
-                <div className="text-[#7A7A7A] text-sm mt-1">Entitled</div>
+
+            <div className="flex justify-between mt-2 gap-2 ">
+              <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-column items-center justify-center bg-blue-50">
+                <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-blue-800">
+                  {leave.entitled}
+                </p>
+                <p className="text-xs font-medium text-blue-700">Entitled</p>
               </div>
-              <div className="flex-1 text-center border-x">
-                <div className="text-xl font-bold">{leave.availed}</div>
-                <div className="text-[#7A7A7A] text-sm mt-1">Availed</div>
+              <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-column items-center justify-center bg-green-50">
+                <FaClockRotateLeft className="w-6 h-6 text-green-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-green-800">
+                  {leave.availed}
+                </p>
+                <p className="text-xs font-medium text-green-700">Availed</p>
               </div>
-              <div className="flex-1 text-center">
-                <div className="text-xl font-bold">{leave.balance}</div>
-                <div className="text-[#7A7A7A] text-sm mt-1">Balance</div>
+              <div className="flex-1 text-center border border-orange-100 rounded-lg py- flex flex-column items-center justify-center bg-orange-50">
+                <FiPieChart className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-orange-800">
+                  {leave.balance}
+                </p>
+                <p className="text-xs font-medium text-orange-700">Balance</p>
               </div>
             </div>
           </div>
         ))}
       </div>
-      <div className="w-full mt-6">
+      <div className="w-full mt-6 px-4">
         <button
-          className="bg-black rounded-lg text-white w-full py-2"
-          onClick={() => setShowTransactions(true)}
+          type="button"
+          className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          onClick={openTransactions}
         >
           Leave Transactions
         </button>
       </div>
-
-      {/* Transactions Modal */}
       {showTransactions && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col">
-          {/* Header */}
-          <div className="bg-white p-4 border-b flex justify-between items-center sticky top-0 z-10">
+          <header className="bg-white px-4 py-2 border-b flex justify-between items-center sticky top-0">
             <h2 className="text-xl font-semibold">Transactions History</h2>
             <button
-              onClick={() => setShowTransactions(false)}
+              type="button"
+              aria-label="Close transactions"
               className="text-gray-500 hover:text-gray-700 p-2"
+              onClick={closeTransactions}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -195,12 +205,11 @@ const LeaveBalance: React.FC = () => {
                 />
               </svg>
             </button>
-          </div>
+          </header>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <LeaveTransactionCard />
-          </div>
+          <main className="flex-1 overflow-y-auto p-4">
+            <LeaveTransactionCard data={transactions} />
+          </main>
         </div>
       )}
     </div>

@@ -27,13 +27,22 @@ export interface TeamLeaveRequest {
 }
 
 export interface LeaveBalance {
-  leave_type: string;
-  total_leaves: number;
-  leaves_taken: number;
-  remaining_leaves: number;
-  allocated_leaves?: number;
-  expires_on?: string;
-  carry_forwarded_leaves?: number;
+  type: string;
+  entitled: number;
+  availed: number;
+  balance: number;
+  carry_over: number;
+}
+
+export interface LeaveTransaction {
+  type: string;
+  total: number;
+  monthly: number[];
+}
+
+export interface LeaveDetailsResponse {
+  leave_balance: LeaveBalance[];
+  leave_transactions: LeaveTransaction[];
 }
 
 type LeaveStatus = "Open" | "Approved" | "Rejected" | "Cancelled";
@@ -55,4 +64,10 @@ export interface LeaveApplication {
   to_date: string;
   status: "Open" | "Approved" | "Rejected" | "Cancelled" | string;
   description?: string;
+}
+
+export interface Holiday {
+  name: string;
+  date: string;
+  optional?: boolean;
 }

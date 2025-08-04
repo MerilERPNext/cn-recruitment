@@ -1,190 +1,289 @@
-import React, { useEffect, useRef } from "react";
-import { Form as FormioForm } from "formiojs";
-import 'formiojs/dist/formio.form.css';
+import React, { useMemo, useState, useEffect, useCallback } from "react";
+import { Form } from "@tsed/react-formio";
+import "formiojs/dist/formio.form.css";
+import {
+  useCreateFrappeDocument,
+  useFrappeDocuments,
+} from "../../hooks/useFrappeQuery";
+import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
+import { useRequestLeaveModal } from "./RequestLeaveModalContext";
+import HeaderBar from "../HeaderBar";
+import { toast } from "react-hot-toast";
 
-interface FormioSubmission {
-    data: {
-        leaveType: string;
-        fromDate: string;
-        toDate: string;
-        halfDay: boolean;
-        reason: string;
-        attachment?: {
-            name: string;
-            size: number;
-            type: string;
-            url: string;
-        }[];
-    };
+interface FormSubmissionData {
+  leaveType?: string;
+  fromDate?: string;
+  toDate?: string;
+  halfDay?: boolean;
+  halfDayOption?: "First Half" | "Second Half";
+  description?: string;
+  attachment?: { url: string }[];
 }
 
 interface RequestLeaveProps {
-    onSuccess?: () => void;
-    onCancel?: () => void;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-const formSchema = {
-    title: "Leave Request Form",
-    name: "leaveRequestForm",
-    display: "form",
-    components: [
-        {
-            type: "select",
-            key: "leaveType",
-            label: "Leave Type",
-            placeholder: "Select Leave Type",
-            data: {
-                values: [
-                    { label: "Sick Leave", value: "sick" },
-                    { label: "Casual Leave", value: "casual" },
-                    { label: "Annual Leave", value: "annual" },
-                ],
-            },
-            validate: { required: true },
-            input: true,
-            customClass: "mb-4"
-        },
-        {
-            type: "columns",
-            key: "dateColumns",
-            columns: [
-                {
-                    width: 6,
-                    components: [
-                        {
-                            type: "datetime",
-                            key: "fromDate",
-                            label: "From Date",
-                            placeholder: "Select Date",
-                            format: "yyyy-MM-dd",
-                            enableDate: true,
-                            enableTime: false,
-                            validate: { required: true },
-                            input: true,
-                            customClass: "mb-4"
-                        },
-                    ],
-                },
-                {
-                    width: 6,
-                    components: [
-                        {
-                            type: "datetime",
-                            key: "toDate",
-                            label: "To Date",
-                            placeholder: "Select Date",
-                            format: "yyyy-MM-dd",
-                            enableDate: true,
-                            enableTime: false,
-                            validate: { required: true },
-                            input: true,
-                            customClass: "mb-4"
-                        },
-                    ],
-                },
-            ],
-        },
-        {
-            type: "checkbox",
-            key: "halfDay",
-            label: "Half-Day Leave",
-            description: "Apply for a morning or afternoon leave",
-            input: true,
-            labelPosition: "bottom",
-            customClass: "custom-halfday-toggle border border-gray-300 rounded-lg mt-6 shadow-sm p-2 bg-white mb-4"
-        },
-        {
-            type: 'radio',
-            key: 'halfDayOption',
-            label: 'Select Half-Day Option',
-            values: [
-                { label: 'First Half (Morning)', value: 'first_half' },
-                { label: 'Second Half (Afternoon)', value: 'second_half' },
-            ],
-            input: true,
-            validate: { required: true },
-            conditional: { show: true, when: 'halfDay', eq: true },
-            customClass: 'mb-4 ml-4',
-        },
-        {
-            type: "textarea",
-            key: "reason",
-            label: "Reason",
-            placeholder: "Enter the reason for leave",
-            rows: 3,
-            validate: { required: true, minLength: 10 },
-            input: true,
-            customClass: "mb-4"
-        },
-        {
-            type: "file",
-            key: "attachment",
-            label: "Attachment (Optional)",
-            fileTypes: [
-                { label: "Documents", value: ".pdf,.doc,.docx" },
-                { label: "Images", value: ".jpg,.jpeg,.png" }
-            ],
-            filePattern: "*/*",
-            storage: "base64",
-            image: false,
-            input: true,
-            customClass: "mb-6"
-        },
-        {
-            type: "button",
-            action: "submit",
-            label: "Submit Requests",
-            key: "submit",
-            input: true,
-            theme: "",
-            customClass: "bg-black w-full font-medium rounded-lg text-white"
-        },
-    ],
-};
-
 const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
-    const formRef = useRef<HTMLDivElement>(null);
-    const formioInstance = useRef<any>(null);
+  const { data: userId } = useLoggedInUser();
+  const { data: currentEmployee } = useEmployeeByUserId(userId);
+  const { data: leaveTypesData } = useFrappeDocuments({
+    doctype: "Leave Type",
+    fields: ["name"],
+    pageParam: 0,
+    pageSize: 10,
+    searchFields: [],
+  });
 
-    useEffect(() => {
-        if (formRef.current) {
-            formioInstance.current = new FormioForm(formRef.current, formSchema);
-            formioInstance.current.form = formSchema;
-            formioInstance.current.on('submit', (submission: FormioSubmission) => {
-                console.log('Form submitted:', submission.data);
-                if (onSuccess) {
-                    onSuccess();
-                }
-            });
-            formioInstance.current.on('render', () => {
-                const formElement = formRef.current?.querySelector('.formio-form');
-                if (formElement) {
-                    formElement.classList.add('space-y-4');
-                }
-            });
+  const { triggerRefetch } = useLeaveRequestRefresh();
+  const createLeaveMutation = useCreateFrappeDocument({
+    onSuccess: () => {
+      toast.success("Leave request submitted successfully!");
+      triggerRefetch();
+      onSuccess?.();
+    },
+    onError: (err: any) => {
+      let errorMsg = "Submission failed. Please try again.";
+      try {
+        const raw = err?.response?.data?._server_messages;
+        if (raw) {
+          const first = JSON.parse(JSON.parse(raw)[0]);
+          errorMsg = first?.message?.replace(/<[^>]*>/g, "").trim() || errorMsg;
         }
-        return () => {
-            if (formioInstance.current) {
-                formioInstance.current.destroy(true);
-            }
-        };
-    }, [onSuccess]);
-    return (
-        <div className="p-6 bg-white rounded-lg shadow-md">
-            <div ref={formRef} className="formio-container"></div>
-            {onCancel && (
-                <div className="mt-4 flex justify-end">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-};
-export default RequestLeave;
+      } catch (_) {}
+      toast.error(errorMsg);
+    },
+  });
 
+  const [formData, setFormData] = useState<FormSubmissionData>({});
+  const [leaveDays, setLeaveDays] = useState<number | null>(null);
+  const leaveTypeOptions = useMemo(() => {
+    if (!leaveTypesData?.data) return [];
+    return leaveTypesData.data.map((t) => ({ label: t.name, value: t.name }));
+  }, [leaveTypesData]);
+
+  const calculateLeaveDays = useCallback((data: FormSubmissionData) => {
+    const { fromDate, toDate, halfDay } = data;
+    if (!fromDate || !toDate) return setLeaveDays(null);
+
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+
+    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from)
+      return setLeaveDays(null);
+
+    const diffMs = to.getTime() - from.getTime();
+    const days = diffMs / (1000 * 60 * 60 * 24) + 1;
+    setLeaveDays(halfDay ? days - 0.5 : days);
+  }, []);
+
+  const { defaults } = useRequestLeaveModal();
+
+  useEffect(() => {
+    if (defaults?.fromDate && defaults?.toDate) {
+      const initial: FormSubmissionData = {
+        fromDate: defaults.fromDate,
+        toDate: defaults.toDate,
+        halfDay: formData.halfDay || false,
+      };
+      setFormData(initial);
+      calculateLeaveDays(initial);
+    }
+  }, [defaults, calculateLeaveDays, formData.halfDay]);
+
+  const leaveForm = useMemo(
+    () => ({
+      components: [
+        {
+          type: "panel",
+          key: "leavePanel",
+          title: "Leave Application",
+          hideLabel: true,
+          customClass: "px-2",
+          components: [
+            {
+              type: "select",
+              key: "leaveType",
+              label: "Leave Type",
+              placeholder: "Select Leave Type",
+              input: true,
+              defaultValue: defaults?.leaveType ?? "",
+              validate: { required: true },
+              data: { values: leaveTypeOptions },
+              customClass: "px-2 mb-4",
+            },
+            {
+              type: "columns",
+              key: "dateColumns",
+              customClass: "px-2",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "datetime",
+                      key: "fromDate",
+                      label: "From Date",
+                      placeholder: "YYYY-MM-DD",
+                      enableDate: true,
+                      enableTime: false,
+                      defaultValue: defaults?.fromDate
+                        ? `${defaults.fromDate}T00:00:00`
+                        : "",
+                      validate: { required: true },
+                      input: true,
+                      customClass: "mb-4",
+                      format: "yyyy-MM-dd",
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "datetime",
+                      key: "toDate",
+                      label: "To Date",
+                      placeholder: "YYYY-MM-DD",
+                      enableDate: true,
+                      enableTime: false,
+                      defaultValue: defaults?.toDate
+                        ? `${defaults.toDate}T00:00:00`
+                        : "",
+                      validate: { required: true },
+                      input: true,
+                      customClass: "mb-4",
+                      format: "yyyy-MM-dd",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              type: "checkbox",
+              key: "halfDay",
+              label: "Half-Day Leave",
+              input: true,
+              labelPosition: "bottom",
+              description: "Apply for morning or afternoon leave",
+              customClass:
+                "custom-halfday-toggle ml-2 my-3 border rounded-lg shadow-sm bg-white p-2",
+            },
+            {
+              type: "radio",
+              key: "halfDayOption",
+              label: "Select Half-Day Option",
+              input: true,
+              validate: { required: true },
+              values: [
+                { label: "First Half", value: "First Half" },
+                { label: "Second Half", value: "Second Half" },
+              ],
+              conditional: { show: true, when: "halfDay", eq: true },
+              customClass: "px-2 mb-4 ml-4",
+            },
+            {
+              type: "textarea",
+              key: "description",
+              label: "Reason",
+              placeholder: "Enter the reason for leave",
+              rows: 3,
+              validate: { required: true, minLength: 3 },
+              input: true,
+              customClass: "px-2 mb-4",
+            },
+            {
+              type: "file",
+              key: "attachment",
+              label: "Attachment (Optional)",
+              input: true,
+              storage: "base64",
+              fileTypes: [
+                { label: "Documents", value: ".pdf,.doc,.docx" },
+                { label: "Images", value: ".jpg,.jpeg,.png" },
+              ],
+              filePattern: "*/*",
+              customClass: "px-2 mb-6",
+            },
+            {
+              type: "button",
+              action: "submit",
+              label: "Submit Request",
+              input: true,
+              theme: "",
+              customClass:
+                "px-2 w-full bg-black text-white font-medium rounded-lg hover:text-white hover:bg-black",
+            },
+          ],
+        },
+      ],
+    }),
+    [leaveTypeOptions, defaults]
+  );
+
+  return (
+    <div className="max-w-md mx-auto bg-white rounded-lg">
+      <div className="z-[60]">
+        <HeaderBar title="Request Leave" onBack={onCancel} />
+      </div>
+
+      <div
+        className="ml-6 mt-4 text-sm text-gray-700"
+        style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}
+      >
+        <strong>Applying for:</strong> {leaveDays}{" "}
+        {leaveDays === 1 ? "Day" : "Days"}
+      </div>
+
+      <Form
+        form={leaveForm}
+        options={{
+          builder: { styles: false },
+          submitButton: false,
+          alerts: false,
+          disableOnSubmit: true,
+          formClass: "space-y-6",
+          rowClass: "flex flex-col",
+          labelClass: "mb-1 font-medium text-gray-700",
+          inputClass:
+            "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
+          validateOnInit: false,
+          validateOnBlur: false,
+          validateOnChange: false,
+        }}
+        onChange={({ data }: { data: FormSubmissionData }) => {
+          setFormData(data);
+          calculateLeaveDays(data);
+        }}
+        onSubmit={async ({ data }: { data: FormSubmissionData }) => {
+          if (!currentEmployee?.name) {
+            alert("Employee data not loaded.");
+            return;
+          }
+
+          await createLeaveMutation.mutateAsync({
+            doctype: "Leave Application",
+            data: {
+              employee: currentEmployee.name,
+              leave_type: data.leaveType,
+              from_date: data.fromDate?.split("T")[0],
+              to_date: data.toDate?.split("T")[0],
+              half_day: data.halfDay,
+              half_day_date: data.halfDay
+                ? data.fromDate?.split("T")[0]
+                : undefined,
+              half_day_session: data.halfDay ? data.halfDayOption : undefined,
+              description: data.description,
+              attachment: data.attachment?.[0]?.url,
+            },
+          });
+        }}
+      />
+    </div>
+  );
+};
+
+export default RequestLeave;
