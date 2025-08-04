@@ -50,10 +50,17 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       try {
         const raw = err?.response?.data?._server_messages;
         if (raw) {
-          const first = JSON.parse(JSON.parse(raw)[0]);
-          errorMsg = first?.message?.replace(/<[^>]*>/g, "").trim() || errorMsg;
+          const messages = JSON.parse(raw);
+          if (Array.isArray(messages) && messages.length > 0) {
+            const firstMessage = JSON.parse(messages[0]);
+            if (firstMessage?.message) {
+              errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
+            }
+          }
         }
-      } catch (_) {}
+      } catch (e) {
+        console.error("Failed to parse server error message:", e);
+      }
       toast.error(errorMsg);
     },
   });
