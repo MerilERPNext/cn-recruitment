@@ -4,18 +4,10 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { LeaveBalanceSkeleton } from "./LeaveSkeletons";
 import { FaRegCalendarCheck } from "react-icons/fa";
-import { TbBeach } from "react-icons/tb";
 import { FaClockRotateLeft } from "react-icons/fa6";
-import { AiOutlinePieChart } from "react-icons/ai";
 import { FiPieChart } from "react-icons/fi";
 
-type LeaveBalanceEntry = {
-  type: string;
-  entitled: number;
-  availed: number;
-  balance: number;
-  carry_over: number;
-};
+
 
 type LeaveTransactionEntry = {
   type: string;
@@ -23,10 +15,7 @@ type LeaveTransactionEntry = {
   monthly: number[];
 };
 
-type LeaveBalanceResponse = {
-  leave_balance: LeaveBalanceEntry[];
-  leave_transactions: LeaveTransactionEntry[];
-};
+
 
 const monthLabels = [
   "Jan",

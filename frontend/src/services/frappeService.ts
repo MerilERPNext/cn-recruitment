@@ -7,7 +7,6 @@ import type {
   FilterOperator,
   DocumentItem,
   GetCountParams,
-  GetCountResponse,
 } from "../types/frappe";
 
 type FilterCondition = [string, FilterOperator, unknown];
@@ -106,7 +105,7 @@ export const frappeService = {
   },
 
   // Added getDocumentCount method
-  getDocumentCount: async ({ doctype, searchTerm, filters }: GetCountParams): Promise<GetCountResponse> => {
+  getDocumentCount: async ({ doctype, searchTerm, filters }: GetCountParams): Promise<number> => {
     try {
       console.log(`🔢 Fetching count for doctype: ${doctype}`, { searchTerm, filters });
       const apiFilters: FilterCondition[] = filters || [];
@@ -122,7 +121,7 @@ export const frappeService = {
         doctype,
         filters: apiFilters.length > 0 ? apiFilters : undefined,
         or_filters: orFilters.length > 0 ? orFilters : undefined,
-      }) as { message: number };
+      }) as number;
 
       return result;
     } catch (error) {

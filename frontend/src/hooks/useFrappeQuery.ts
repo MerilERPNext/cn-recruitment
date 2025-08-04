@@ -8,7 +8,6 @@ import type {
   FrappePageResponse,
   FrappeDocumentsResponse,
   GetCountParams,
-  GetCountResponse,
   CreateDocumentParams,
   UpdateDocumentParams,
   DeleteDocumentParams,
@@ -101,7 +100,7 @@ export const useFrappeDocument = (doctype: string, name: string, fields?: string
 // Hook for document count
 export const useFrappeDocumentCount = (
   params: GetCountParams,
-  options?: Omit<UseQueryOptions<GetCountResponse>, "queryKey" | "queryFn">,
+  options?: Omit<UseQueryOptions<number>, "queryKey" | "queryFn">,
 ) => {
   return useQuery({
     queryKey: ["document-count", params.doctype, params.filters],

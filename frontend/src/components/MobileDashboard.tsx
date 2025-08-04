@@ -81,7 +81,8 @@ const MobileDashboard: React.FC = () => {
   };
 
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const { data: leaveBalance } = useGetLeaveBalance(currentEmployee?.employee)
+  const today = new Date().toISOString().split("T")[0];
+  const { data: leaveBalance } = useGetLeaveBalance(currentEmployee?.employee, today)
   const { data: homeSummary, refetch: refetchHomeSummary, isRefetching } = useHomeSummaryDetails(currentEmployee?.user_id as string, encodedFilters)
   const { data: employeeShift } = useGetEmployeeShift(currentEmployee?.user_id as string)
   const checkIns = homeSummary?.filter(log => log.log_type === 'IN') ?? [];
@@ -344,7 +345,17 @@ const MobileDashboard: React.FC = () => {
 
         {/* Leave Balance */}
 
-        {leaveBalance && <LeaveProgress leaveData={leaveBalance as LeaveData} />}
+        {leaveBalance && (
+          <LeaveProgress 
+            leaveData={leaveBalance.leave_balance.reduce((acc, leave) => ({
+              ...acc,
+              [leave.type]: {
+                allocated_leaves: leave.entitled,
+                balance_leaves: leave.balance
+              }
+            }), {} as LeaveData)} 
+          />
+        )}
 
         {/* Pending Expense Claims */}
         {expenseData?.length > 0 && <div className="rounded-xl  border border-gray-100 mb-4 sm:mb-5">

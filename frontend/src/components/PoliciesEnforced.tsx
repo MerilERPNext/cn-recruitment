@@ -47,6 +47,7 @@ const PolicyItem: React.FC<PolicyItemProps> = ({ item }) => {
     navigate(`/webapp/policies-enforced/view/${policyId}`);
   };
 
+
   const isComplete = status === 'Complete' || status === 'Completed' || status === 'Acknowledged';
 
   return (
@@ -86,7 +87,7 @@ const PolicyItem: React.FC<PolicyItemProps> = ({ item }) => {
 const PoliciesEnforced: React.FC = () => {
   const [mandatoryPoliciesExpanded, setMandatoryPoliciesExpanded] = useState(true);
   const [completedPoliciesExpanded, setCompletedPoliciesExpanded] = useState(false);
-  const {data: currentEmployee } = useCurrentEmployee();
+  const {data: currentEmployee, isLoading: isCurrentEmployeeLoading } = useCurrentEmployee();
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white min-h-screen">
@@ -153,6 +154,7 @@ const PoliciesEnforced: React.FC = () => {
           <div className="mt-4 space-y-4">
             <FrappeListView
               doctype="Policy Details"
+              isLoading={isCurrentEmployeeLoading}
               ItemComponent={PolicyItem}
               SkeletonComponent={PolicyItemSkeleton}
               defaultFilters={{ status: "Pending", employee_id: currentEmployee?.name || "" }}
@@ -191,6 +193,7 @@ const PoliciesEnforced: React.FC = () => {
           <div className="mt-4 space-y-4">
             <FrappeListView
               doctype="Policy Details"
+              isLoading={isCurrentEmployeeLoading}
               ItemComponent={PolicyItem}
               SkeletonComponent={PolicyItemSkeleton}
               defaultFilters={{ status: "Acknowledged", employee_id: currentEmployee?.name || "" }}
