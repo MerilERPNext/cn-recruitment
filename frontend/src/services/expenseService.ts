@@ -41,7 +41,7 @@ export const expenseService = {
         "approval_status"
       ],
       filters,
-      limit: 5,
+      limit: 3,
     });
     return result.data as any;
   },
