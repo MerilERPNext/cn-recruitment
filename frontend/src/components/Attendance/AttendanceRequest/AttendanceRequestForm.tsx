@@ -7,6 +7,7 @@ import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails, useGetAllEmployees } from "../../../hooks/useEmployee";
 import { Toaster, toast } from "react-hot-toast";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 
 
 interface AttndanceRequestFormProps {
@@ -15,6 +16,8 @@ interface AttndanceRequestFormProps {
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) => {
     const [isForOthers, setIsForOthers] = useState(false);
     const { data: user_id } = useLoggedInUser();
+    const { data: currentUser } = useCurrentUser();
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails(currentUser?.name as string)
     const { data: employeeList } = useGetAllEmployees()
     interface FormioFormInstance {
         submit: () => void;
@@ -24,7 +27,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
     const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
     const mutation = useCreateNewAttendanceRequest()
 
-
+    console.log(currentEmployee)
     const baseFormComponents = (isForOthers: boolean) => {
         const components = [
             {
@@ -54,6 +57,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
                             {
                                 label: "Company",
                                 key: "company",
+                                defaultValue: currentEmployee?.company,
                                 type: "textfield",
                                 input: true,
                                 placeholder: "Hybrowlabs Technologies",
@@ -165,7 +169,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         path: "attendance-request",
         display: "form",
         components: baseFormComponents(isForOthers),
-    }), [isForOthers, employeeList]);
+    }), [isForOthers, employeeList, currentEmployee]);
 
     interface AttendanceFormData {
         company?: string;

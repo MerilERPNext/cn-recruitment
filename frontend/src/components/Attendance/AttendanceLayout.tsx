@@ -44,11 +44,13 @@ const AttendanceLayout: React.FC = () => {
         <div className="min-h-screen bg-white">
             {/* Fixed Header */}
             <HeaderBar title={activeTab.label} onBack={() => navigate("/webapp")} />
-            <NavigationTabs
-                tabs={tabs}
-                activeTab={activeTab?.key}
-                onTabChange={(tab) => { handleTabChange(tabs.find((item) => item.key === tab) as Tab) }}
-            />
+            <div className='sticky top-[60px] z-50'>
+                <NavigationTabs
+                    tabs={tabs}
+                    activeTab={activeTab?.key}
+                    onTabChange={(tab) => { handleTabChange(tabs.find((item) => item.key === tab) as Tab) }}
+                />
+            </div>
             {/* Page Content (with top padding to avoid overlap) */}
             <div className="">
                 <Outlet />

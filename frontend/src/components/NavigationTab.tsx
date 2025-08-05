@@ -43,7 +43,7 @@ const NavigationTabs: React.FC<NavigationProps> = ({
   }, [activeTab, tabs]);
 
   return (
-    <nav className="sticky top-10 z-10 bg-white px-4">
+    <nav className="sticky top-0 z-10 bg-white px-4">
       <div
         ref={containerRef}
         className="relative flex overflow-x-auto hide-scrollbar gap-4"
