@@ -25,23 +25,26 @@ const NewExpenseType: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center w-full min-h-screen bg-white">
+    <div className="flex justify-center w-full min-h-screen bg-white font-sans">
       <div className="w-full  bg-white flex flex-col">
         {/* Header Section */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <button
-            onClick={handleClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
-          <h2 className="text-lg font-semibold text-gray-800">New Expense</h2>
-          <div className="w-5 h-5" /> {/* Placeholder to balance the header */}
+        <div className="flex w-full  items-center sticky top-0 justify-between px-4 py-3 bg-white shadow-sm z-50">
+          <div className="flex items-center w-full">
+            <button
+              onClick={handleClose}
+              className="rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+            <h2 className="text-lg w-full text-center font-semibold text-gray-800">
+              New Expense
+            </h2>
+          </div>
         </div>
 
         {/* Content Section */}
-        <div className="p-6 flex-grow overflow-y-auto">
+        <div className="p-4 flex-grow overflow-y-auto">
           <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             What type of expense?
           </h1>

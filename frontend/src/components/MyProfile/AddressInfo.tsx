@@ -1,26 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import { Form } from "@tsed/react-formio";
 import { PersonalInfoProps } from "./MyProfile";
+import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
+import toast from "react-hot-toast";
 
-export const AddressInfo: React.FC<PersonalInfoProps> = ({ user }) => {
+export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
+  const updateEmployeeMutation = useUpdateFrappeDocument();
+  const formAddressInstance = useRef<any>(null);
+
   const addressForm = useMemo(() => {
     return {
+      type: "form",
+      display: "form",
       components: [
         {
-          type: "panel",
-          key: "addressPanel",
-          title: "Address Info",
-          hideLabel: true,
-          customClass: "bg-white rounded-lg shadow-md",
+          customClass: "bg-white rounded-lg shadow-md px-4 mb-6",
           components: [
             {
               type: "fieldset",
               key: "currentAddress",
               legend: "Current Address",
-              customClass: "px-2 py-2",
+              customClass: "py-2",
               components: [
                 {
                   type: "textarea",
@@ -93,21 +95,22 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user }) => {
               key: "sameAsCurrent",
               label: "Same as current",
               input: true,
-              customClass: "px-2",
             },
             {
               type: "fieldset",
-              key: "permanentAddress",
+              key: "permanent_address",
               legend: "Permanent Address",
+              customClass: "py-2 mb-6",
               components: [
                 {
                   type: "textarea",
-                  key: "permanentFullAddress",
+                  key: "permanent_address",
                   label: "Address",
                   placeholder: "Enter your full address",
                   input: true,
+                  defaultValue: user?.permanent_address,
                   calculateValue:
-                    "value = data.sameAsCurrent ? data.currentFullAddress : value",
+                    "value = data.sameAsCurrent ? data.current_address : value",
                 },
                 {
                   type: "columns",
@@ -164,6 +167,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                           label: "Country",
                           placeholder: "e.g. India",
                           input: true,
+                          customClass: "pb-2",
                           calculateValue:
                             "value = data.sameAsCurrent ? data.currentCountry : value",
                         },
@@ -172,14 +176,6 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                   ],
                 },
               ],
-              customClass: "px-2 py-2",
-            },
-            {
-              type: "button",
-              action: "submit",
-              label: "Save Changes",
-              theme: "primary",
-              customClass: "my-3 w-full px-2",
             },
           ],
         },
@@ -187,18 +183,46 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user }) => {
     };
   }, [user]);
 
+  const handleSubmit = useCallback(async () => {
+    try {
+      const basicSubmission = await formAddressInstance.current.submit();
+      await updateEmployeeMutation.mutateAsync({
+        doctype: "Employee",
+        name: user?.name ?? "",
+        data: basicSubmission.data,
+      });
+      refetch?.();
+      toast.success("Employee details updated successfully!");
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast.error("Failed to update employee details. Please try again.");
+    }
+  }, []);
+
   return (
-    <div className="address-form-container rounded-xl max-w-md mx-auto bg-gray-100">
-      <Form
-        form={addressForm}
-        options={{
-          submitButton: false,
-          rowClass: "flex 1234567 flex-nowrap bg-red-200",
-        }}
-        onSubmit={(submission: any) =>
-          console.log("Address form submitted:", submission)
-        }
-      />
+    <div className="h-full address-form-container max-w-md mx-auto bg-gray-100 rounded-lg">
+      <div className="p-4">
+        <Form
+          form={addressForm}
+          options={{
+            submitButton: false,
+            rowClass: "flex 1234567 flex-nowrap bg-red-200",
+          }}
+          onFormReady={(instance: any) =>
+            (formAddressInstance.current = instance)
+          }
+        />
+      </div>
+      <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full mt-6 z-50">
+        <div className="max-w-4xl mx-auto flex">
+          <button
+            onClick={handleSubmit}
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

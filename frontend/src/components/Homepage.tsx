@@ -149,7 +149,7 @@ const Homepage: React.FC = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div key={`stat-${stat.title}-${index}`} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <span className={`material-icons ${stat.color} text-2xl`}>{stat.icon}</span>
               </div>
@@ -170,7 +170,7 @@ const Homepage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action, index) => (
               <button
-                key={index}
+                key={`action-${action.title}-${index}`}
                 onClick={() => handleQuickAction(action.route)}
                 className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow text-left group"
               >
@@ -227,4 +227,4 @@ const Homepage: React.FC = () => {
   );
 };
 
-export default Homepage; 
+export default Homepage;

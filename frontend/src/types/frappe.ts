@@ -75,10 +75,6 @@ export interface GetCountParams {
   filters?: FilterCondition[]
 }
 
-export interface GetCountResponse {
-  message: number
-}
-
 // API Filter Types
 export type FilterOperator =
   | "="
@@ -145,3 +141,24 @@ export interface PaginationInfo {
   hasNextPage: boolean
   hasPreviousPage: boolean
 }
+
+// Mutation Types for CRUD operations
+export interface CreateDocumentParams {
+  doctype: string;
+  data: Record<string, unknown>;
+}
+
+export interface UpdateDocumentParams {
+  doctype: string;
+  name: string;
+  data: Record<string, unknown>;
+}
+
+export interface DeleteDocumentParams {
+  doctype: string;
+  name: string;
+}
+
+export type CreateDocumentResult = DocumentItem;
+export type UpdateDocumentResult = DocumentItem;
+export type DeleteDocumentResult = void;

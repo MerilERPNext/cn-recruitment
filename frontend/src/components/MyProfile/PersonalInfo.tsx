@@ -1,21 +1,31 @@
-import React, { useMemo } from "react";
-// @ts-expect-error ignore
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useCallback, useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { PersonalInfoProps } from "./MyProfile";
+import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
+import { useGenderTypes } from "../../hooks/useEmployee";
+import toast from "react-hot-toast";
 
-export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
+export const PersonalInfo: React.FC<PersonalInfoProps> = ({
+  user,
+  refetch,
+}) => {
+  const updateEmployeeMutation = useUpdateFrappeDocument();
+  const formPersonalInfoInstance = useRef<any>(null);
+
+  const { data: genderTypes } = useGenderTypes();
+
   const personalInfoForm = useMemo(() => {
-    const fullName = [user?.first_name, user?.middle_name, user?.last_name]
-      .filter(Boolean)
-      .join(" ");
-
     return {
+      type: "form",
+      display: "form",
       components: [
         {
           type: "panel",
           key: "personalPanel",
           title: "Personal Info",
           hideLabel: true,
+          customClass: "bg-white rounded-lg shadow-md mb-6",
           components: [
             {
               type: "fieldset",
@@ -24,12 +34,13 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
               components: [
                 {
                   type: "textfield",
-                  key: "fullName",
+                  key: "employee_name",
                   label: "Full Name",
                   input: true,
+                  disabled: true,
                   validate: { required: true },
                   customClass: "px-2",
-                  defaultValue: fullName ?? "",
+                  defaultValue: user?.employee_name ?? "",
                   placeholder: "John Doe",
                   autofocus: false,
                 },
@@ -44,6 +55,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                           type: "datetime",
                           key: "date_of_birth",
                           label: "Date of Birth",
+                          disabled: true,
                           enableTime: false,
                           input: true,
                           defaultValue: user?.date_of_birth ?? "",
@@ -63,14 +75,13 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                           label: "Gender",
                           input: true,
                           validate: { required: true },
-                          placeholder: "Male",
+                          placeholder: "Eg.. Male",
                           defaultValue: user?.gender ?? "",
                           data: {
-                            values: [
-                              { value: "male", label: "Male" },
-                              { value: "female", label: "Female" },
-                              { value: "other", label: "Other" },
-                            ],
+                            values: genderTypes?.data.map((s) => ({
+                              label: s?.name,
+                              value: s?.name,
+                            })),
                           },
                           customClass: "appearance-none",
                           autofocus: false,
@@ -136,15 +147,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                     },
                   ],
                 },
-                {
-                  type: "textfield",
-                  key: "nationality",
-                  label: "Nationality",
-                  input: true,
-                  validate: { required: true },
-                  customClass: "px-2 pb-2",
-                  placeholder: "India",
-                },
               ],
               customClass: "rounded-lg mb-6",
               autofocus: false,
@@ -179,41 +181,52 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                 },
               ],
             },
-            {
-              type: "button",
-              action: "submit",
-              label: "Save Changes",
-              theme: "primary",
-              customClass: "my-6 w-full black",
-            },
           ],
         },
       ],
     };
-  }, [user]);
+  }, [user, genderTypes]);
+
+  const handleSubmit = useCallback(async () => {
+    try {
+      const basicSubmission = await formPersonalInfoInstance.current.submit();
+      await updateEmployeeMutation.mutateAsync({
+        doctype: "Employee",
+        name: user?.name ?? "",
+        data: basicSubmission.data,
+      });
+      refetch?.();
+      toast.success("Employee details updated successfully!");
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast.error("Failed to update employee details. Please try again.");
+    }
+  }, []);
 
   return (
-    <div className="address-form-container max-w-md mx-auto rounded-lg bg-gray-100 shadow-md">
-      <Form
-        key={user?.employee || "loading"}
-        form={personalInfoForm}
-        options={{
-          builder: { styles: false },
-          submitButton: false,
-          formClass: "space-y-6",
-          rowClass: "flex flex-col",
-          labelClass: "mb-1 font-medium text-gray-700",
-          inputClass:
-            "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
-          validateOnInit: false,
-          validateOnBlur: false,
-          validateOnChange: false,
-        }}
-        className="space-y-6"
-        onSubmit={(submission: { data: never }) =>
-          console.log("Form data:", submission?.data)
-        }
-      />
+    <div className="address-form-container h-full max-w-md mx-auto bg-gray-100 rounded-lg">
+      <div className="p-4">
+        <Form
+          key={user?.employee || "loading"}
+          form={personalInfoForm}
+          onFormReady={(instance: any) =>
+            (formPersonalInfoInstance.current = instance)
+          }
+          options={{
+            submitButton: false,
+          }}
+        />
+      </div>
+      <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full z-50">
+        <div className="max-w-4xl mx-auto flex">
+          <button
+            onClick={handleSubmit}
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

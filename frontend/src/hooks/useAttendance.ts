@@ -1,6 +1,6 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { attendanceService } from '../services/attendanceService';
-import type { Attendance, AttendanceRequest } from '../types/attendance';
+import type { Attendance, AttendanceRequest, EmployeeCheckInLog, EmployeeShift, EmployeeShiftSummary } from '../types/attendance';
 import { FilterCondition } from '../types/frappe';
 
 // Retry logic (same as other hooks)
@@ -29,10 +29,40 @@ export const useAllAttendance = (): UseQueryResult<Attendance[], Error> => {
     ...defaultQueryOptions,
   });
 };
-export const useAllAttendanceRequests = (): UseQueryResult<AttendanceRequest[], Error> => {
+export const useHomeSummaryDetails = (userId:string,filters:string): UseQueryResult<EmployeeCheckInLog[], Error> => {
+  return useQuery<EmployeeCheckInLog[], Error>({
+    queryKey: ['home-summary-details'],
+    queryFn: () => attendanceService.getHomeSummaryDetails(userId,filters),
+    enabled:!!userId,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
+export const useGetEmployeeShift = (userId:string,filters?:object): UseQueryResult<EmployeeShift, Error> => {
+  return useQuery<EmployeeShift, Error>({
+    queryKey: ['employee-shift'],
+    queryFn: () => attendanceService.getEmployeeShift(userId,filters),
+    enabled:!!userId,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
+
+export const useGetQuickAttendanceSummary = (employeeId:string,fromDate:string,toDate:string): UseQueryResult<EmployeeShiftSummary, Error> => {
+  return useQuery<EmployeeShiftSummary, Error>({
+    queryKey: ['employee-attendance-summary',fromDate],
+    queryFn: () => attendanceService.getQuickAttendanceSummary(employeeId,fromDate,toDate),
+    enabled:!!employeeId,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+export const useAllAttendanceRequests = (pageSize:number,filters?: FilterCondition[]): UseQueryResult<AttendanceRequest[], Error> => {
   return useQuery<AttendanceRequest[], Error>({
-    queryKey: ['attendance', 'all'],
-    queryFn: () => attendanceService.getAllAttendanceRequests(),
+    queryKey: ['attendance', 'all',filters],
+    queryFn: () => attendanceService.getAllAttendanceRequests(pageSize,filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
@@ -56,7 +86,7 @@ export const useAttendance = (
   queryKeySuffix: unknown = filters,
 ): UseQueryResult<Attendance[], Error> => {
   return useQuery<Attendance[], Error>({
-    queryKey: ["attendance", queryKeySuffix],
+    queryKey: ["attendance", queryKeySuffix,filters],
     queryFn: () => attendanceService.getAttendance(filters),
     staleTime: defaultStaleTime,
     gcTime: defaultGcTime,
@@ -75,3 +105,32 @@ export const useLeaveType = (
     gcTime: defaultGcTime,
   });
 };
+
+export function useCreateNewAttendanceRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: object) => attendanceService.createAttendanceRequest(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+    },
+    onError:(e)=>{
+      console.log(e)
+    }
+  });
+}
+export function useCheckInOutService() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body : object) => attendanceService.checkInOutService(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["checkin-checkout"] });
+    },
+    onError:(e)=>{
+      console.log(e)
+    }
+  });
+}

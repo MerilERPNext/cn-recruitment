@@ -1,21 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import RequestLeave from "./RequestLeave";
+import HeaderBar from "../HeaderBar";
+import { Toaster } from "react-hot-toast";
+import { LeaveRequestRefreshProvider } from "./LeaveRequestRefreshContext";
+import {
+  useRequestLeaveModal,
+  RequestLeaveModalProvider,
+} from "./RequestLeaveModalContext";
 
-type TabName = "Leave Balance" | "Leave Requests" | "Holidays";
+type TabName = "Leave Balance" | "Requests Status" | "Holidays";
+type SubTabName = "My Requests" | "Team Requests";
 
 const tabRoutes: Record<TabName, string> = {
-  "Leave Requests": "/webapp/leave-app/leaves/leave-requests",
   "Leave Balance": "/webapp/leave-app/leaves/leave-balance",
-  "Holidays": "/webapp/leave-app/leaves/holidays",
+  Holidays: "/webapp/leave-app/leaves/holidays",
+  "Requests Status": "/webapp/leave-app/leaves/leave-requests",
 };
 
-const LeaveApp: React.FC = () => {
+const subTabRoutes: Record<SubTabName, string> = {
+  "My Requests": "/webapp/leave-app/leaves/leave-requests/my",
+  "Team Requests": "/webapp/leave-app/leaves/leave-requests/team",
+};
+
+const LeaveAppInner: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabName>("Leave Requests");
-  const [showRequestLeave, setShowRequestLeave] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabName>("Leave Balance");
+  const [activeSubTab, setActiveSubTab] = useState<SubTabName>("My Requests");
 
+  const { showModal, openModal, closeModal } = useRequestLeaveModal();
+
+  const isLeaveRequestsActive = activeTab === "Requests Status";
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
@@ -24,139 +40,145 @@ const LeaveApp: React.FC = () => {
 
     if (matchedTab) {
       setActiveTab(matchedTab);
-      sessionStorage.setItem("activeTab", matchedTab);
+    }
+
+    if (location.pathname.includes("/leave-requests/")) {
+      const matchedSubTab = (Object.keys(subTabRoutes) as SubTabName[]).find(
+        (subTab) => location.pathname.startsWith(subTabRoutes[subTab])
+      );
+      if (matchedSubTab) {
+        setActiveSubTab(matchedSubTab);
+      }
     }
   }, [location.pathname]);
 
-
   useEffect(() => {
     if (location.pathname === "/webapp/leave-app") {
-      navigate(tabRoutes["Leave Requests"], { replace: true });
+      navigate(tabRoutes["Leave Balance"], { replace: true });
+    }
+    if (location.pathname === "/webapp/leave-app/leaves/leave-requests") {
+      navigate(subTabRoutes["My Requests"], { replace: true });
     }
   }, [location.pathname, navigate]);
 
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showModal]);
+
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
-    sessionStorage.setItem("activeTab", tab);
-    navigate(tabRoutes[tab]);
+    if (tab === "Requests Status") {
+      navigate(subTabRoutes[activeSubTab]);
+    } else {
+      navigate(tabRoutes[tab]);
+    }
   };
 
-  const handleRequestLeaveClick = () => {
-    setShowRequestLeave(true);
-  };
-
-  const handleCloseRequestLeave = () => {
-    setShowRequestLeave(false);
-  };
-
-  const handleBackNavigation = () => {
-
-    navigate("/webapp");
+  const handleSubTabChange = (subTab: SubTabName) => {
+    setActiveSubTab(subTab);
+    navigate(subTabRoutes[subTab]);
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="flex items-center p-2 relative">
-          <button
-            onClick={handleBackNavigation}
-            className="p-2 -ml-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <h1 className="text-xl font-semibold text-slate-900 absolute left-1/2 transform -translate-x-1/2">{activeTab}</h1>
-        </div>
+      <style>{`
+         .scrollbar-hidden {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .scrollbar-hidden::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
 
-        <nav className="px-2 flex">
+      <header className="sticky top-0 z-50 bg-white shadow-sm">
+        <HeaderBar
+          title={"Leaves & Holidays"}
+          onBack={() => navigate("/webapp")}
+        />
+
+        <nav className="px-2 flex overflow-x-auto scrollbar-hidden">
           {(Object.keys(tabRoutes) as TabName[]).map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`flex-1 px-4 py-3 border-b-2 text-sm font-medium whitespace-nowrap ${activeTab === tab
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500"
-                }`}
+              className={`flex-1 py-3 border-b-2 text-sm font-medium transition-colors ${
+                activeTab === tab
+                  ? "border-b-blue-500 text-blue-500"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               {tab}
             </button>
           ))}
         </nav>
+
+        {isLeaveRequestsActive && (
+          <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+            <div className="flex bg-white rounded-lg p-1 border border-gray-200">
+              {(Object.keys(subTabRoutes) as SubTabName[]).map((subTab) => (
+                <button
+                  key={subTab}
+                  onClick={() => handleSubTabChange(subTab)}
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                    activeSubTab === subTab
+                      ? "bg-black text-white shadow-sm"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {subTab}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </header>
 
-      <main className="flex-grow overflow-y-auto">
+      <main className="z-100 flex-grow overflow-y-auto">
         <Outlet />
       </main>
 
-
-      <footer className="sticky bottom-0 z-50 bg-white border-t border-gray-200 shadow-lg">
-        <button
-          onClick={handleRequestLeaveClick}
-          className="w-full border-t hover:bg-blue-700 text-black font-medium py-3 px-4 transition-colors duration-200 flex items-center justify-center gap-2"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Request Leave
-        </button>
-      </footer>
-
-
-      {showRequestLeave && (
-        <div className="fixed inset-0 z-[60] bg-white flex flex-col">
-
-          <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
-            <div className="flex items-center p-4">
-              <button
-                onClick={handleCloseRequestLeave}
-                className="mr-3 p-2 -ml-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              <h1 className="text-xl font-semibold text-slate-900">Request Leave</h1>
-            </div>
-          </header>
-
-          <main className="flex-1 overflow-y-auto">
-            <RequestLeave onSuccess={handleCloseRequestLeave} />
-          </main>
+      {!showModal && activeTab === "Requests Status" && (
+        <div className="sticky bottom-0 bg-white rounded-md shadow-lg py-4 px-4 w-full z-50">
+          <div className="max-w-4xl mx-auto flex">
+            <button
+              onClick={() => openModal()}
+              className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            >
+              + Request Leave
+            </button>
+          </div>
         </div>
       )}
+
+      {showModal && (
+        <div className="fixed inset-0 z-[60] bg-white overflow-y-auto">
+          <div className="max-w-md min-h-screen mx-auto">
+            <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
+          </div>
+        </div>
+      )}
+
+      <Toaster />
     </div>
+  );
+};
+
+const LeaveApp: React.FC = () => {
+  return (
+    <LeaveRequestRefreshProvider>
+      <RequestLeaveModalProvider>
+        <LeaveAppInner />
+      </RequestLeaveModalProvider>
+    </LeaveRequestRefreshProvider>
   );
 };
 

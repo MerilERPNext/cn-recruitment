@@ -6,6 +6,7 @@ import './index.css';
 declare global {
   interface Window {
     csrf_token: string;
+    isApp: boolean;
     nativeInterface: {
       execute: (method: string, params?: any) => Promise<any>;
       logToNative: (params: any) => Promise<void>;

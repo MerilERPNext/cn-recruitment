@@ -9,19 +9,27 @@ import {
   RefreshCw,
   BriefcaseBusiness,
   MapPin,
+  Plus,
+  Loader2,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   useRequisitionDetails,
   isPermissionError,
 } from "../hooks/useRequisition";
+import { useCreateJobOpeningFromRequisition } from "../hooks/useJobOpening";
 import type { StatusDisplay } from "../types/requisition";
 import DOMPurify from "dompurify";
+import { toast } from "react-hot-toast";
 
 const RequisitionDetails: React.FC = () => {
   const navigate = useNavigate();
   const { requisitionId } = useParams<{ requisitionId: string }>();
   const [showEdit, setShowEdit] = useState(false);
+  const [isCreatingJobOpening, setIsCreatingJobOpening] = useState(false);
+
+  // Hook for creating job opening
+  const createJobOpeningMutation = useCreateJobOpeningFromRequisition();
 
   console.log(`🎯 RequisitionDetails initialized with ID: ${requisitionId}`);
 
@@ -149,7 +157,7 @@ const RequisitionDetails: React.FC = () => {
     []
   );
 
-  const formatDate = useCallback((dateString: string) => {
+    const formatDate = useCallback((dateString: string) => {
     if (!dateString) return "N/A";
     try {
       return new Date(dateString).toLocaleDateString();
@@ -157,6 +165,60 @@ const RequisitionDetails: React.FC = () => {
       return dateString;
     }
   }, []);
+
+  const handleCreateJobOpening = useCallback(async () => {
+    if (!job || !requisitionId) return;
+
+    setIsCreatingJobOpening(true);
+
+    try {
+      const result = await createJobOpeningMutation.mutateAsync({
+        job_requisition: requisitionId,
+        job_title: job.designation,
+        designation: job.designation,
+        department: job.department,
+        employment_type: job.employment_type,
+        location: job.location,
+        planned_vacancies: job.no_of_positions,
+        closes_on: job.deadline,
+        description: job.description || "",
+        publish: true
+      });
+
+            if (result.status === "success") {
+              toast.success("Job opening created successfully!");
+        if (result.name) {
+          window.open(`/app/job-opening/${result.name}`, '_blank');
+        }
+      } else {
+        console.error(`❌ Failed to create job opening: ${result.message}`);
+        // Handle duplicate job opening case differently
+        if (result.message.includes("already exists") && result.name) {
+          const shouldView = confirm(`${result.message}\n\nWould you like to view the existing job opening?`);
+          if (shouldView) {
+            window.open(`/app/job-opening/${result.name}`, '_blank');
+          }
+        } else {
+          alert(`Failed to create job opening: ${result.message}`);
+        }
+      }
+    
+    } catch (error: unknown) {
+      console.error(`❌ Error creating job opening:`, error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error creating job opening: ${message}`);
+    } finally {
+      setIsCreatingJobOpening(false);
+    }
+  }, [job, requisitionId, createJobOpeningMutation]);
+
+  const canCreateJobOpening = useMemo(() => {
+    if (!job) return false;
+
+    // Allow creation if status is "Open & Approved" or "Pending"
+    const status = job.status?.toLowerCase() || "";
+    return status === "open & approved" || status === "pending";
+  }, [job?.status]);
 
   // Loading state
   if (isLoading) {
@@ -505,13 +567,31 @@ const RequisitionDetails: React.FC = () => {
           </section>
         </main>
 
-        <footer className="sticky bottom-0 bg-white border-t shadow-lg">
-          <div className="border-gray-200 p-4 max-w-4xl mx-auto px-6 py-4">
+                <footer className="sticky bottom-0 bg-white border-t shadow-lg">
+          <div className="border-gray-200 p-4 max-w-4xl mx-auto px-6 py-4 space-y-3">
+            {canCreateJobOpening && (
+              <button
+                className="w-full bg-primary hover:bg-primary-700 text-white py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                onClick={handleCreateJobOpening}
+                disabled={isCreatingJobOpening || createJobOpeningMutation.isPending}
+              >
+                {isCreatingJobOpening || createJobOpeningMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Creating Job Opening...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    Create Job Opening
+                  </>
+                )}
+              </button>
+            )}
             <button
               className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               onClick={() => {
-                console.log(`📝 Opening edit requisition for ${requisitionId}`);
-                window.open(`/app/job-requisition/${requisitionId}`);
+                window.open(window.location.origin +`/app/job-requisition/${requisitionId}`);
               }}
             >
               Edit Requisition

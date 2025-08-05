@@ -3,17 +3,71 @@ export interface LeaveRequest {
   leave_type: string;
   from_date: string;
   to_date: string;
-  status: "Approved" | "Open" | "Rejected" | "Cancelled";
+  status: "Approved" | "Open" | "Rejected" | "Cancelled" | "Pending";
   employee_name: string;
   description?: string;
+  department?: string;
 }
 
 export interface TeamLeaveRequest {
   id: string;
-  employeeName: string;
-  employeePhoto: string;
-  leaveType: string;
-  dateRange: string;
-  reason: string;
-  status: "Pending" | "Approved" | "Rejected";
+  name: string;
+  employee_name: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  status: "Pending" | "Approved" | "Rejected" | "Open" | "Cancelled";
+  description?: string;
+  department?: string;
+  employeeName?: string;
+  employeePhoto?: string;
+  leaveType?: string;
+  dateRange?: string;
+  reason?: string;
+}
+
+export interface LeaveBalance {
+  type: string;
+  entitled: number;
+  availed: number;
+  balance: number;
+  carry_over: number;
+}
+
+export interface LeaveTransaction {
+  type: string;
+  total: number;
+  monthly: number[];
+}
+
+export interface LeaveDetailsResponse {
+  leave_balance: LeaveBalance[];
+  leave_transactions: LeaveTransaction[];
+}
+
+type LeaveStatus = "Open" | "Approved" | "Rejected" | "Cancelled";
+
+export interface LeaveApplicationItem {
+  name: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  status: LeaveStatus;
+  description?: string;
+}
+
+export interface LeaveApplication {
+  name: string;
+  employee_name: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  status: "Open" | "Approved" | "Rejected" | "Cancelled" | string;
+  description?: string;
+}
+
+export interface Holiday {
+  name: string;
+  date: string;
+  optional?: boolean;
 }

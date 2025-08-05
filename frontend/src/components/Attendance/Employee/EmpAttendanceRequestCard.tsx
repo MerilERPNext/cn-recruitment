@@ -1,6 +1,7 @@
+import { AttendanceRequest } from "../../../types/attendance"
 import Badge from "../../shared/Badge"
 
-const EmpAttendanceRequestCard = ({ data }: { data: any }) => {
+const EmpAttendanceRequestCard = ({ data }: { data: AttendanceRequest }) => {
 
     const getStatus = (status: number) => {
         if (status === 0) {
@@ -21,7 +22,7 @@ const EmpAttendanceRequestCard = ({ data }: { data: any }) => {
 
 
     return (
-        <div className="rounded-xl bg-gray-200">
+        <div className="bg-white border-b-1 border-gray-200">
             <div className="px-4 py-2">
                 <div className="flex items-center justify-between gap-1">
                     <div>

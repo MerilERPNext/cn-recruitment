@@ -1,6 +1,8 @@
 import FrappeAPI from "../utils/frappeAPI";
 import type { LeaveRequest } from "../types/leaves";
 
+import type { LeaveDetailsResponse } from "../types/leaves";
+
 export const leaveService = {
   getMyLeaveRequests: async (employeeId: string): Promise<LeaveRequest[]> => {
     const result = await FrappeAPI.getDocumentList("Leave Application", {
@@ -18,5 +20,40 @@ export const leaveService = {
       limit: 50,
     });
     return result.data as LeaveRequest[];
+  },
+
+  requestCompOffLeave: async (body: any): Promise<any> => {
+    const response = await fetch(`/api/resource/Compensatory Leave Request`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        message: `Request failed with status ${response.status}`,
+      }));
+      throw new Error(error.message);
+    }
+
+    return response.json();
+  },
+
+  getLeaveBalance: async (
+    employeeId: string,
+    date: string
+  ): Promise<LeaveDetailsResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.custom_get_leave_details",
+      {
+        employee: employeeId,
+        date: date,
+      }
+    );
+
+    return response as LeaveDetailsResponse;
   },
 };

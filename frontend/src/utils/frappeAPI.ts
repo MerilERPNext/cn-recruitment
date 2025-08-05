@@ -1,6 +1,7 @@
 import axios, { AxiosRequestConfig } from "axios"
 import { PermissionError } from "../types/interview"
 import { FilterCondition } from "../types/frappe";
+import { refreshCsrfToken } from "./csrf";
 
 // Base configuration for Frappe API calls
 const API_BASE = window.location.origin
@@ -18,14 +19,49 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
+    ...(import.meta.env.DEV ? {
+      'Authorization': 'token ' + import.meta.env.VITE_DEV_FRAPPE_API_TOKEN,
+    } : {}),
     "X-Frappe-CSRF-Token": window.csrf_token, // ✅ Now TypeScript understands
   },
 });
+
+// Request interceptor to add CSRF token dynamically
+apiClient.interceptors.request.use(
+  async (config) => {
+    if (typeof window !== 'undefined' && window.csrf_token && window.csrf_token !== '{{ csrf_token }}') {
+      config.headers['X-Frappe-CSRF-Token'] = window.csrf_token;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config as CustomAxiosRequestConfig
+
+    // Handle CSRF token refresh on 400 errors
+    if (error.response?.status === 400 && !config._retry) {
+      try {
+        config._retry = true;
+        const csrfToken = await refreshCsrfToken();
+        
+        // Update global CSRF token, ensuring csrfToken is a string
+        if (csrfToken) {
+          window.csrf_token = csrfToken;
+          if(config.headers){
+            config.headers["X-Frappe-CSRF-Token"] = csrfToken;
+          }
+        }
+        
+        return apiClient.request(config);
+      } catch (refreshError) {
+        console.error("Failed to refresh CSRF token:", refreshError);
+        throw refreshError;
+      }
+    }
 
     if (error.response?.status === 403) {
       if (!config._retry) {
@@ -95,12 +131,40 @@ export const FrappeAPI = {
     return response.data.message
   },
 
-  getDocumentCount: async (doctype: string, filters?: Record<string, unknown>): Promise<number> => {
+    getDocumentCount: async (doctype: string, filters?: Record<string, unknown>): Promise<number> => {
     const response = await apiClient.get(
       `/api/method/frappe.client.get_count?doctype=${doctype}&filters=${JSON.stringify(filters || {})}`,
     )
     return response.data.message
   },
+
+  updateDocument: async (doctype: string, name: string, data: Record<string, unknown>): Promise<unknown> => {
+    const response = await apiClient.put(`/api/resource/${doctype}/${name}`, data)
+    return response.data.data
+  },
+
+  createDocument: async (doctype: string, data: Record<string, unknown>): Promise<unknown> => {
+    const response = await apiClient.post(`/api/resource/${doctype}`, data)
+    return response.data.data
+  },
+
+  deleteDocument: async (doctype: string, name: string): Promise<unknown> => {
+    const response = await apiClient.delete(`/api/resource/${doctype}/${name}`)
+    return response.data.data
+  },
+
+  uploadFile: async (file: File, _file_name?: string, _docname?: string, _doctype?: string, _folder?: string, _is_private?: string): Promise<unknown> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    if(_file_name) formData.append("file_name", _file_name);
+    if(_is_private) formData.append("is_private", _is_private);
+    if(_doctype) formData.append("doctype", _doctype);
+    if(_folder) formData.append("folder", _folder);
+    if(_docname) formData.append("docname", _docname);
+    const response = await apiClient.post(`/api/method/upload_file`, formData)
+    return response.data.data
+  },
+
 }
 
 export default FrappeAPI

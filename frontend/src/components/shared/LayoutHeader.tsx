@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router'
 interface LayoutHeaderProps {
     tab: string
     path?: string
-    onBack?: () => void // Optional function instead of default navigation
-    icon?: 'chevron' | 'x' // Optional: choose icon style
+    onBack?: () => void
+    icon?: 'chevron' | 'x'
+    children?: React.ReactNode
 }
 
-const LayoutHeader = ({ path, tab, onBack, icon = 'chevron' }: LayoutHeaderProps) => {
+const LayoutHeader = ({ path, tab, onBack, icon = 'chevron', children }: LayoutHeaderProps) => {
     const navigate = useNavigate()
 
     const handleBack = () => {
@@ -24,18 +25,27 @@ const LayoutHeader = ({ path, tab, onBack, icon = 'chevron' }: LayoutHeaderProps
     const BackIcon = icon === 'x' ? X : ChevronLeft
 
     return (
-        <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="relative h-16 flex items-center justify-center">
-                    <button
-                        onClick={handleBack}
-                        className="absolute left-0 flex items-center gap-2 text-gray-600 hover:text-black transition-colors"
-                    >
-                        <BackIcon className="w-5 h-5" />
-                    </button>
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-14">
+            <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8 h-full">
+                <div className="flex items-center justify-between h-full">
+                    {/* Left: Icon */}
+                    <div className="flex items-center">
+                        <button
+                            onClick={handleBack}
+                            className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors"
+                        >
+                            <BackIcon className="w-5 h-5" />
+                        </button>
+                    </div>
 
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                        <span>{tab}</span>
+                    {/* Center: Tab Title */}
+                    <div className="text-lg font-semibold text-gray-800 truncate">
+                        {tab}
+                    </div>
+
+                    {/* Right: Children */}
+                    <div className="flex items-center justify-end overflow-hidden max-w-20">
+                        {children}
                     </div>
                 </div>
             </div>

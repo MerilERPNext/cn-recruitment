@@ -1,4 +1,5 @@
 import { useQuery, useInfiniteQuery, type UseQueryOptions, type UseInfiniteQueryOptions } from "@tanstack/react-query"
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query"
 import { frappeService } from "../services/frappeService"
 import { PermissionError } from "../types/frappe"
 import type {
@@ -7,8 +8,12 @@ import type {
   FrappePageResponse,
   FrappeDocumentsResponse,
   GetCountParams,
-  GetCountResponse,
-
+  CreateDocumentParams,
+  UpdateDocumentParams,
+  DeleteDocumentParams,
+  CreateDocumentResult,
+  UpdateDocumentResult,
+  DeleteDocumentResult,
 } from "../types/frappe"
 
 // Utility to check if error is permission-related
@@ -84,10 +89,18 @@ export const useFrappeDocuments = (
   })
 }
 
+// Hook for fetching a single document
+export const useFrappeDocument = (doctype: string, name: string, fields?: string[]) => {
+  return useQuery({
+    queryKey: ["document", doctype, name, fields],
+    queryFn: () => frappeService.getDocument(doctype, name, fields),
+  })
+}
+
 // Hook for document count
 export const useFrappeDocumentCount = (
   params: GetCountParams,
-  options?: Omit<UseQueryOptions<GetCountResponse>, "queryKey" | "queryFn">,
+  options?: Omit<UseQueryOptions<number>, "queryKey" | "queryFn">,
 ) => {
   return useQuery({
     queryKey: ["document-count", params.doctype, params.filters],
@@ -101,3 +114,33 @@ export const useFrappeDocumentCount = (
 
 // Export utility function
 export { isPermissionError }
+
+// Mutation hook for creating a document
+export const useCreateFrappeDocument = (
+  options?: UseMutationOptions<CreateDocumentResult, unknown, CreateDocumentParams>
+) => {
+  return useMutation<CreateDocumentResult, unknown, CreateDocumentParams>({
+    mutationFn: ({ doctype, data }) => frappeService.createDocument(doctype, data),
+    ...options,
+  })
+}
+
+// Mutation hook for updating a document
+export const useUpdateFrappeDocument = (
+  options?: UseMutationOptions<UpdateDocumentResult, unknown, UpdateDocumentParams>
+) => {
+  return useMutation<UpdateDocumentResult, unknown, UpdateDocumentParams>({
+    mutationFn: ({ doctype, name, data }) => frappeService.updateDocument(doctype, name, data),
+    ...options,
+  })
+}
+
+// Mutation hook for deleting a document
+export const useDeleteFrappeDocument = (
+  options?: UseMutationOptions<DeleteDocumentResult, unknown, DeleteDocumentParams>
+) => {
+  return useMutation<DeleteDocumentResult, unknown, DeleteDocumentParams>({
+    mutationFn: ({ doctype, name }) => frappeService.deleteDocument(doctype, name),
+    ...options,
+  })
+}

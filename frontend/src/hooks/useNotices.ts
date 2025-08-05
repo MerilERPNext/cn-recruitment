@@ -87,15 +87,15 @@ export function useArchiveNotice() {
 export function useGetNoticeById(noticeId: string) {
   return useQuery({
     queryKey: [QUERY_KEYS.notices, noticeId],
-    queryFn: () => NoticeService.getNotice(noticeId),
+    queryFn: () => NoticeService.getNotice(noticeId), // keep static usage, as getNotice is static
     enabled: !!noticeId, // avoids firing when ID is undefined
   });
 }
 
-export function useGetAllNoticeReadStatus(filters: FilterCondition[],enabled:boolean) {
+export function useGetAllNoticeReadStatus(filters: FilterCondition[], enabled: boolean) {
   return useQuery({
     queryKey: [QUERY_KEYS.notices],
-    queryFn: () => NoticeService.getAllNoticeReadStatus(filters),
+    queryFn: () => noticeService.getAllNoticeReadStatus(filters),
     enabled: enabled,
   });
 }

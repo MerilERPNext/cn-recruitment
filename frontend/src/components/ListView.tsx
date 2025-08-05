@@ -1,6 +1,6 @@
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { UseInfiniteQueryResult, useQueryClient } from "@tanstack/react-query"
 import {
   Search,
   Filter,
@@ -20,10 +20,35 @@ import {
   isPermissionError,
 } from "../hooks/useFrappeQuery"
 import { useLocation } from "react-router"
-import { FilterCondition } from "../types/frappe"
+import { FilterCondition, FrappePageResponse } from "../types/frappe"
 
 interface BaseItem {
   name: string;
+}
+
+
+export interface PreListComponentProps {
+  doctype: string;
+  ListQuery: UseInfiniteQueryResult<FrappePageResponse, Error>;
+  setCurrentPage: (page: number) => void;
+  currentPage: number;
+  totalPages: number;
+  startIndex: number;
+  endIndex: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface PostListComponentProps {
+  doctype: string;
+  ListQuery: UseInfiniteQueryResult<FrappePageResponse, Error>;
+  setCurrentPage: (page: number) => void;
+  currentPage: number;
+  totalPages: number;
+  startIndex: number;
+  endIndex: number;
+  pageSize: number;
+  totalCount: number;
 }
 
 type PageData = {
@@ -34,9 +59,12 @@ type PageData = {
 interface FrappeListViewProps<T extends BaseItem> {
   doctype: string
   ItemComponent: React.ComponentType<{ item: T; index?: number; doctype: string }>
+  PreListComponent?: React.ComponentType<PreListComponentProps>
+  PostListComponent?: React.ComponentType<PostListComponentProps>
   SkeletonComponent?: React.ComponentType
   isSearch?: boolean
   isFilter?: boolean
+  isLoading?: boolean
   pageSize?: number
   defaultFilters?: Record<string, string>
   defaultFields?: string[]
@@ -52,6 +80,9 @@ interface FrappeListViewProps<T extends BaseItem> {
 const FrappeListView = <T extends BaseItem>({
   doctype,
   ItemComponent,
+  isLoading,
+  PreListComponent,
+  PostListComponent,
   SkeletonComponent,
   isSearch = true,
   isFilter = false,
@@ -65,15 +96,17 @@ const FrappeListView = <T extends BaseItem>({
   permissionErrorMessage,
   onRefetchAvailable
 }: FrappeListViewProps<T>) => {
-  const [searchTerm, setSearchTerm] = useState("")
+  const { search } = useLocation();
+  const queryParam = new URLSearchParams(search);
+  const initialSearchQuery = queryParam.get('q') || "";
+
+  const [searchTerm, setSearchTerm] = useState(initialSearchQuery)
   const [filters, setFilters] = useState(defaultFilters)
   const [showFilters, setShowFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(initialSearchQuery)
   const queryClient = useQueryClient()
 
-  const { search } = useLocation();
-  const queryParam = new URLSearchParams(search);
   const filtersString = queryParam.get('filters');
   const [queryParamsFilters, setQueryParamsFilters] = useState({});
 
@@ -146,7 +179,7 @@ const FrappeListView = <T extends BaseItem>({
 
   // Infinite query for infinite scroll
   const infiniteQueryResult = useFrappeInfiniteQuery(queryParams, {
-    enabled: infiniteScroll,
+    enabled: infiniteScroll && !isLoading,
   })
 
   // Traditional pagination query
@@ -156,7 +189,7 @@ const FrappeListView = <T extends BaseItem>({
       pageParam: (currentPage - 1) * pageSize,
     },
     {
-      enabled: !infiniteScroll,
+      enabled: !infiniteScroll && !isLoading,
     },
   )
 
@@ -238,7 +271,7 @@ const FrappeListView = <T extends BaseItem>({
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll
     ? (infiniteQueryResult.data?.pages[0] as unknown as PageData)?.totalCount || 0
-    : countData?.message || 0
+    : countData || 0
   const totalPages = Math.ceil(totalCount / pageSize)
   const startIndex = (currentPage - 1) * pageSize
   const endIndex = Math.min(startIndex + pageSize, totalCount)
@@ -458,13 +491,13 @@ const FrappeListView = <T extends BaseItem>({
     )
   }
 
-  const isLoading = queryResult.isLoading || schemaLoading
+  const isListLoading = queryResult.isLoading || schemaLoading || isLoading
   const error = queryResult.error
 
   // Log loading and error states
   useEffect(() => {
-    console.log(`⏳ Loading state for ${doctype}:`, { isLoading, schemaLoading, queryLoading: queryResult.isLoading })
-  }, [isLoading, schemaLoading, queryResult.isLoading, doctype])
+    console.log(`⏳ Loading state for ${doctype}:`, { isListLoading, schemaLoading, queryLoading: queryResult.isLoading })
+  }, [isListLoading, schemaLoading, queryResult.isLoading, doctype])
 
   useEffect(() => {
     if (error) {
@@ -502,10 +535,10 @@ const FrappeListView = <T extends BaseItem>({
             )}
             {showRefereshButton && <button
               onClick={refreshData}
-              disabled={isLoading}
+              disabled={isListLoading}
               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${isListLoading ? "animate-spin" : ""}`} />
             </button>}
           </div>
         </div>
@@ -516,6 +549,7 @@ const FrappeListView = <T extends BaseItem>({
 
       {/* Content */}
       <div className="min-h-96">
+        {PreListComponent && <PreListComponent doctype={doctype} ListQuery={infiniteQueryResult} setCurrentPage={setCurrentPage} currentPage={currentPage} totalPages={totalPages} startIndex={startIndex} endIndex={endIndex} pageSize={pageSize} totalCount={totalCount} />}
         {error ? (
           <div className="flex items-center justify-center py-12">
             <div className="max-w-md mx-auto text-center">
@@ -568,7 +602,7 @@ const FrappeListView = <T extends BaseItem>({
               )}
             </div>
           </div>
-        ) : isLoading && processedData.length === 0 ? (
+        ) : isListLoading && processedData.length === 0 ? (
           SkeletonComponent ? (
             Array.from({ length: 3 }).map((_, index) => (
               <SkeletonComponent key={index} />
@@ -593,7 +627,7 @@ const FrappeListView = <T extends BaseItem>({
               }
               return (
                 <div
-                  key={item.name || index}
+                  key={item.name || `${doctype}-${index}`}
                   onClick={() => {
                     console.log(`👆 Item clicked for ${doctype}:`, item)
                     onItemClick?.(item) // Use optional chaining
@@ -615,10 +649,11 @@ const FrappeListView = <T extends BaseItem>({
             )}
           </div>
         )}
+        {PostListComponent && <PostListComponent doctype={doctype} ListQuery={infiniteQueryResult} setCurrentPage={setCurrentPage} currentPage={currentPage} totalPages={totalPages} startIndex={startIndex} endIndex={endIndex} pageSize={pageSize} totalCount={totalCount} />}
       </div>
 
       {/* Pagination */}
-      {!isLoading && !error && processedData.length > 0 && renderPagination()}
+      {!isListLoading && !error && processedData.length > 0 && renderPagination()}
     </>
   )
 }

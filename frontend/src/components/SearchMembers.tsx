@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import FrappeListView from './ListView';
+import LayoutHeader from './shared/LayoutHeader';
 
 const ChevronRightIcon = () => (
   <svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
@@ -47,8 +48,8 @@ const MemberCard = ({ item, onClick }: any) => {
   // Status color
   const statusColor = status === 'Active' ? 'bg-green-100 text-green-700' :
     status === 'Inactive' ? 'bg-gray-100 text-gray-500' :
-    status === 'Suspended' ? 'bg-yellow-100 text-yellow-700' :
-    status === 'Left' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500';
+      status === 'Suspended' ? 'bg-yellow-100 text-yellow-700' :
+        status === 'Left' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500';
 
   return (
     <div
@@ -89,26 +90,32 @@ const MemberCard = ({ item, onClick }: any) => {
 // Main App Component
 const SearchMembersApp = () => {
   const navigate = useNavigate();
+  // const [searchQuery, setSearchQuery] = useState<string>('');
 
   const handleMemberClick = (member: any) => {
     navigate(`/webapp/id-card/${member.name}`);
     // Handle member selection/navigation
   };
 
-  return (
-    <div className="flex-grow h-full w-full bg-white overflow-y-auto p-4">
+  return (<div className='pt-12'>
+    <LayoutHeader
+      tab='Search Members'
+      onBack={() => navigate("/webapp")}
+    />
+    <div className="flex-grow h-screen w-full bg-white overflow-y-auto p-4">
 
       <FrappeListView
         doctype="Employee"
         ItemComponent={MemberCard}
         onItemClick={handleMemberClick}
         infiniteScroll={true}
-        isSearch={true}
+        showRefereshButton={false}
         // isFilter={true}
         defaultFields={['name', "first_name", "last_name", "department", "designation", "status", "image"]}
         searchFields={['name', "first_name", "last_name", "department", "designation", "status"]}
       />
     </div>
+  </div>
   );
 };
 

@@ -1,6 +1,7 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { EmployeeService } from "../services/employeeService";
 import { Employee, EmployeeIdCard, EmployeeListItem } from "../types/employee";
+import { profileService } from "../services/profileService";
 
 // Hook to get a single employee by ID
 export const useEmployee = (
@@ -36,6 +37,18 @@ export const useCurrentEmployeeAllDetails = (
   return useQuery<Employee | null, Error>({
     queryKey: ["currentEmployeeAllDetails", user_id],
     queryFn: () => EmployeeService.getCurrentEmployeeAllDetails(user_id),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
+    retry: 1,
+    enabled: !!user_id
+  })
+}
+export const useCurrentEmployeeAddress = (
+  user_id: string
+) => {
+  return useQuery<Employee | null, Error>({
+    queryKey: ["currentEmployeeAddress", user_id],
+    queryFn: () => EmployeeService.getCurrentEmployeeAddress(user_id),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 1,
@@ -97,6 +110,22 @@ export const useEmployeeByUserId = (userId?: string) => {
     queryKey: ["employee-by-user-id", userId],
     queryFn: () => EmployeeService.getEmployeeByUserId(userId!),
     enabled: !!userId,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+export const useGetAllEmployees = () => {
+  return useQuery({
+    queryKey: ["all-employees-list"],
+    queryFn: () => EmployeeService.getAllEmployees(),
+    // staleTime: 1000 * 60 * 5,
+  });
+};
+
+
+export const useGenderTypes = () => {
+  return useQuery({
+    queryKey: ["gender-types"],
+    queryFn: () => profileService.getGenders(),
     staleTime: 1000 * 60 * 5,
   });
 };
