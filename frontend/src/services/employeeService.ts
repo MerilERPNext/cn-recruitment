@@ -16,32 +16,29 @@ function hasRequiredProperties<T extends Record<string, unknown>>(
 
 // Type guards for runtime validation
 function isEmployee(obj: unknown): obj is Employee {
-  // Check if the basic structure is an object
   if (!obj || typeof obj !== "object") {
-    console.error("Employee validation failed: not an object", obj);
     return false;
   }
 
   const employee = obj as Record<string, unknown>;
 
-  // Only check for truly required fields that are always present
   const requiredFields = ["name", "employee_name"];
-
   for (const field of requiredFields) {
     if (!(field in employee) || typeof employee[field] !== "string" || !employee[field]) {
-      console.error(`Employee validation failed: missing or invalid required field '${field}'`, employee);
       return false;
     }
   }
 
-  // If status is provided, validate it
-  if (employee.status && !["Active", "Inactive", "Suspended", "Left"].includes(employee.status as string)) {
-    console.error("Employee validation failed: invalid status", employee.status);
+  if (
+    employee.status &&
+    !["Active", "Inactive", "Suspended", "Left"].includes(employee.status as string)
+  ) {
     return false;
   }
 
   return true;
 }
+
 
 function isEmployeeListItem(obj: unknown): obj is EmployeeListItem {
   if (!hasRequiredProperties(obj, ["name", "employee_name", "status"])) {
