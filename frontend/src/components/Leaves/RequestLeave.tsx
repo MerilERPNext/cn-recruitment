@@ -119,7 +119,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const handleSubmit = useCallback(async () => {
     if (!currentEmployee?.name) {
-      alert("Employee data not loaded.");
+      toast.error("Employee data not loaded.");
       return;
     }
 
@@ -146,6 +146,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       });
     } catch (error) {
       console.error("Form submit error:", error);
+      toast.error("Failed to submit leave request. Please try again.");
     }
   }, [currentEmployee, createLeaveMutation]);
 
