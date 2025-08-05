@@ -32,7 +32,7 @@ const AllEmpAttendance = () => {
             employee: currentEmployee?.employee,
             attendance_date: ["between", [startOfMonth, end]],
         } as const;
-    }, [userId, selectedMonth]);
+    }, [userId, selectedMonth, currentEmployee]);
 
     const getStatusColor = (status: string) => {
         switch (status) {

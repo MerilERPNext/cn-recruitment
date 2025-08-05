@@ -115,7 +115,7 @@ export const attendanceService = {
     return response.data as [];
   },
 
-    createAttendanceRequest: async (body: object): Promise<boolean | string> => {
+    createAttendanceRequest: async (body: object): Promise<boolean> => {
     const response = await fetch(`/api/resource/Attendance Request`, {
       method: 'POST',
       headers: {

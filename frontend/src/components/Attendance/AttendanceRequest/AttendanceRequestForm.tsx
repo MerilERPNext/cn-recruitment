@@ -253,7 +253,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
                     noAlerts: true
                 }}
                 onFormReady={(instance: FormioFormInstance) => {
-                    formAddressInstance.current = instance as FormioFormInstance;
+                    formAddressInstance.current = instance;
                 }}
                 className="formio-no-border address-form-container"
             />
@@ -263,11 +263,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-2 z-20">
             <div className="max-w-4xl mx-auto">
                 <button
-                    onClick={() => {
-                        if (formAddressInstance.current) {
-                            formAddressInstance.current.submit();
-                        }
-                    }}
+                    onClick={() => formAddressInstance.current?.submit()}
                     className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold"
                 >
                     Submit
