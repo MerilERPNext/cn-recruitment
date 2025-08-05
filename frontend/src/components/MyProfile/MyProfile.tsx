@@ -4,7 +4,7 @@ import ContactInfo from "./ContactInfo";
 import AddressInfo from "./AddressInfo";
 import CompanyInfo from "./CompanyInfo";
 import SalaryInfo from "./SalaryInfo";
-import HRLetters from "./HRLetters";
+// import HRLetters from "./HRLetters";
 import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router-dom";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
@@ -16,82 +16,12 @@ import { Employee } from "../../types/employee";
 import { Pencil } from "lucide-react";
 import defaultProfile from "../../assets/user.png";
 import { Toaster } from "react-hot-toast";
-
-type TabKey =
-  | "personal-info"
-  | "contact-info"
-  | "address"
-  | "company-info"
-  | "salary-info"
-  | "hr-letters";
+import NavigationTabs, { Tab } from "../NavigationTab";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
   refetch?: () => void;
 }
-
-interface Tab {
-  key: TabKey;
-  label: string;
-  hasNotification?: boolean;
-}
-
-// Props for each navigation tab
-interface NavTabProps {
-  label: string;
-  isActive: boolean;
-  hasNotification?: boolean;
-  onClick: () => void;
-}
-
-// Props for Navigation container
-interface NavigationProps {
-  tabs: Tab[];
-  activeTab: TabKey;
-  onTabChange: (tab: TabKey) => void;
-}
-
-// Navigation Tab Component
-const NavTab: React.FC<NavTabProps> = ({
-  label,
-  isActive,
-  hasNotification,
-  onClick,
-}) => (
-  <button
-    className={`flex flex-col items-center justify-center border-b-4 pb-3 pt-3 flex-1 outline-none focus:outline-none relative cursor-pointer min-w-[7rem] ${
-      isActive
-        ? "border-b-blue-500 text-blue-500"
-        : "border-b-transparent text-gray-600 hover:text-gray-800"
-    }`}
-    onClick={onClick}
-  >
-    <span className="text-sm font-semibold">{label}</span>
-    {hasNotification && (
-      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-    )}
-  </button>
-);
-
-const Navigation: React.FC<NavigationProps> = ({
-  tabs,
-  activeTab,
-  onTabChange,
-}) => (
-  <nav className="sticky top-0 z-10 bg-white">
-    <div className="flex overflow-x-auto border-b border-gray-200 px-4 hide-scrollbar">
-      {tabs.map((tab) => (
-        <NavTab
-          key={tab.key}
-          label={tab.label}
-          isActive={activeTab === tab.key}
-          hasNotification={tab.hasNotification}
-          onClick={() => onTabChange(tab.key)}
-        />
-      ))}
-    </div>
-  </nav>
-);
 
 const MyProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -103,11 +33,11 @@ const MyProfile: React.FC = () => {
       { key: "address", label: "Address" },
       { key: "company-info", label: "Company Info" },
       { key: "salary-info", label: "Salary Info" },
-      { key: "hr-letters", label: "HR Letters" },
+      // { key: "hr-letters", label: "HR Letters" },
     ],
     []
   );
-  const [activeTab, setActiveTab] = useState<TabKey>(tabs[0].key);
+  const [activeTab, setActiveTab] = useState<string>(tabs[0].key);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   const { data: userId } = useLoggedInUser();
@@ -119,14 +49,14 @@ const MyProfile: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [activeTab]);
 
-  const tabContent: Record<TabKey, React.ReactNode> = useMemo(
+  const tabContent: Record<string, React.ReactNode> = useMemo(
     () => ({
       "personal-info": <PersonalInfo user={user} refetch={refetch} />,
       "contact-info": <ContactInfo user={user} refetch={refetch} />,
       address: <AddressInfo user={userAddress} refetch={refetchAddress} />,
       "company-info": <CompanyInfo user={user} />,
       "salary-info": <SalaryInfo user={user} />,
-      "hr-letters": <HRLetters />,
+      // "hr-letters": <HRLetters />,
     }),
     [user, userAddress]
   );
@@ -173,7 +103,7 @@ const MyProfile: React.FC = () => {
         </div>
       </div>
       <div className="bg-gray-100">
-        <Navigation
+        <NavigationTabs
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}

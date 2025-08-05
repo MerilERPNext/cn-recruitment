@@ -4,25 +4,29 @@ import { ArrowLeft, ArrowUpRight, Plus, XCircle } from "lucide-react"
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser"
 import { useAttendance } from "../../../hooks/useAttendance"
 import FrappeListView from "../../ListView"
-import { Attendance } from "../../../types/attendance"
+import { Attendance, AttendanceRequest } from "../../../types/attendance"
 import { useNavigate } from "react-router"
 import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard"
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm"
 import { endOfMonth, format, startOfMonth } from "date-fns"
+import { FilterCondition } from "../../../types/frappe"
+import useCurrentUser from "../../../hooks/useCurrentUser"
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee"
 
 const EmployeeAttendance = () => {
     const navigate = useNavigate()
     const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
     const { data: userId } = useLoggedInUser();
+    const { data: currentUser } = useCurrentUser();
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails(currentUser?.name as string)
     const start = format(startOfMonth(selectedDate as Date), 'yyyy-MM-dd')
     const end = format(endOfMonth(selectedDate as Date), 'yyyy-MM-dd')
 
-    const filters = userId ? [["owner", "=", userId], ["creation", "between", [start, end]]] : [];
-    const { data: allAttendance, isError, error } = useAttendance(filters as any, {
+    const filters = userId ? [["employee", "=", currentEmployee?.employee], ["attendance_date", "between", [start, end]]] : [];
+    const { data: allAttendance, isError, error } = useAttendance(filters as FilterCondition[], {
         enabled: !!userId,
     });
-    // const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
-    // const todayAttendance = allAttendance?.filter((record) => record.attendance_date === today)?.[0];
+
     const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] = useState<boolean>(false)
     type Status = | "present"
         | "absent"
@@ -32,6 +36,15 @@ const EmployeeAttendance = () => {
         | "half-day-second-half"
         | "work-from-home"
         | "default";
+
+    const defaultFilters = useMemo(() => {
+        if (!currentEmployee?.employee || !selectedDate) return undefined;
+        return {
+            employee: currentEmployee?.employee,
+            creation: ["between", [start, end]],
+        };
+    }, [currentEmployee, selectedDate, start, end]);
+
 
     const createAttendanceStatusGetter = (attendances: Attendance[] = []) => {
         const statusMap: Record<string, Status> = {};
@@ -68,6 +81,8 @@ const EmployeeAttendance = () => {
                     }
                     break;
                 case "work from home":
+                    status = "work-from-home";
+                    break;
                 case "wfh":
                     status = "work-from-home";
                     break;
@@ -133,13 +148,6 @@ const EmployeeAttendance = () => {
 
 
 
-    const defaultFilters = useMemo(() => {
-        if (!userId || !selectedDate) return undefined;
-        return {
-            owner: userId,
-            creation: ["between", [start, end]],
-        };
-    }, [userId, selectedDate]);
 
 
     return <div>
@@ -280,7 +288,7 @@ const EmployeeAttendance = () => {
                 <FrappeListView
                     doctype="Attendance Request"
                     isSearch={false}
-                    ItemComponent={(props: { item: any }) => {
+                    ItemComponent={(props: { item: AttendanceRequest }) => {
                         return (
                             <EmpAttendanceRequestCard
                                 data={props?.item}
@@ -288,6 +296,7 @@ const EmployeeAttendance = () => {
                         );
                     }}
                     SkeletonComponent={CardSkeleton}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     defaultFilters={defaultFilters as any}
                     showRefereshButton={false}
                     onItemClick={() => { }}
