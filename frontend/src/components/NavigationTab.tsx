@@ -46,7 +46,7 @@ const NavigationTabs: React.FC<NavigationProps> = ({
     <nav className="sticky top-0 z-10 bg-white px-4">
       <div
         ref={containerRef}
-        className="relative flex overflow-x-auto hide-scrollbar gap-2"
+        className="relative flex overflow-x-auto hide-scrollbar gap-4"
       >
         {tabs.map((tab, idx) => (
           <button
@@ -55,7 +55,7 @@ const NavigationTabs: React.FC<NavigationProps> = ({
               tabRefs.current[idx] = el;
             }}
             onClick={() => onTabChange(tab.key)}
-            className={`flex-1 text-center py-3 outline-none focus:outline-none font-semibold min-w-[7rem] transition-colors duration-200
+            className={`flex-1 min-w-fit text-center w-fit px-2 py-3 outline-none focus:outline-none font-semibold  transition-colors duration-200
               ${activeTab === tab.key ? "text-blue-500" : "text-gray-600 "}`}
           >
             {tab.label}

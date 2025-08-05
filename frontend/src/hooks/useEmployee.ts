@@ -113,11 +113,19 @@ export const useEmployeeByUserId = (userId?: string) => {
     staleTime: 1000 * 60 * 5,
   });
 };
+export const useGetAllEmployees = () => {
+  return useQuery({
+    queryKey: ["all-employees-list"],
+    queryFn: () => EmployeeService.getAllEmployees(),
+    // staleTime: 1000 * 60 * 5,
+  });
+};
 
 
 export const useGenderTypes = () => {
   return useQuery({
     queryKey: ["gender-types"],
     queryFn: () => profileService.getGenders(),
+    staleTime: 1000 * 60 * 5,
   });
 };

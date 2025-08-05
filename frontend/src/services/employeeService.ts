@@ -287,6 +287,19 @@ export class EmployeeService {
 
     return response[0];
   }
+
+  static async getAllEmployees(): Promise<Employee[]> {
+    const response = FrappeAPI.getDocumentList('Employee', {
+      fields: ["name","employee_name"],
+      limit:20,
+      filters:[["status","=","Active"]]
+    });
+    const data = await response;
+    if (!response || data?.data?.length === 0) {
+      throw new Error("No employee found for this user");
+    }
+    return data?.data as Employee[];
+  }
 }
 
 export default EmployeeService;
