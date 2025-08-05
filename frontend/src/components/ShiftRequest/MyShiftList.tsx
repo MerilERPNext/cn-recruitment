@@ -52,14 +52,6 @@ const ShiftRequestItem: React.FC<{
   index?: number;
   doctype: string;
 }> = ({ item }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -87,6 +79,14 @@ const ShiftRequestItem: React.FC<{
     }
   };
 
+  const formatToIndianDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   return (
     <div
       key={item.name}
@@ -103,8 +103,8 @@ const ShiftRequestItem: React.FC<{
             Shift Type: <span className="font-medium">{item.shift_type}</span>
           </p>
           <p>
-            From: {formatDate(item.from_date)} <br /> To:{" "}
-            {formatDate(item.to_date)}
+            From: {formatToIndianDate (item.from_date)} <br /> To:{" "}
+            {formatToIndianDate (item.to_date)}
           </p>
         </div>
       </div>

@@ -5,9 +5,8 @@ import HeaderBar from "../HeaderBar";
 type TabName = 'Salary Slip' | 'CTC Salary Breakdown';
 
 const tabRoutes: Record<TabName, string> = {
-  "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
   "CTC Salary Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
-
+  "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
 };
 
 const SalarySlipApp: React.FC = () => {
@@ -85,6 +84,7 @@ const SalarySlipApp: React.FC = () => {
       <main className="p-4 z-100 flex-grow overflow-y-auto">
         <Outlet />
       </main>
+      
     </div>
   );
 };

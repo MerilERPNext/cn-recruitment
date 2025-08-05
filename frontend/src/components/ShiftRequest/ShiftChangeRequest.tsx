@@ -10,7 +10,7 @@ export default function ShiftChangeRequests() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mappedRequests = data.map((item: any) => ({
-    id: item.name, // Frappe document name/id
+    id: item.name, 
     name: item.employee_name || "Unknown",
     date: item.creation ? item.creation.split(" ")[0] : "",
     currentShift: "", 

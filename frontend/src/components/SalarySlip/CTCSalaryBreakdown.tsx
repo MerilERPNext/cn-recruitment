@@ -145,13 +145,13 @@ const CTCSalaryUI = () => {
             <div className="space-y-4">
               {salaryComponents.map((component) => (
                 <div key={component.key} className="group">
-                  <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors duration-200">
+                  <div className="flex justify-between items-center py-1 hover:bg-gray-100 transition-colors duration-200">
                     <div>
                       <h3 className="text-sm font-medium text-gray-800">{component.label}</h3>
                       <p className="text-xs text-gray-500">{component.description}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-gray-800">{formatCurrency(component.value)}</p>
+                      <p className="text-sm font-bold text-gray-800">{formatCurrency(component.value)}</p>
                     </div>
                   </div>
                 </div>
