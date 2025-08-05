@@ -17,7 +17,7 @@ def process_components(components, ctc_component_names):
             })
     return component_list, total
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def generate_salary_slip(employee):
     earning_component_part_of_ctc = []
     deduction_component_part_of_ctc = []
@@ -85,6 +85,7 @@ def generate_salary_slip(employee):
                 })
 
         net_pay = slip.rounded_total or 0
+        gross_pay = slip.gross_pay or 0
 
         return {
             "earning_component_part_of_ctc": earning_component_part_of_ctc,
@@ -94,6 +95,7 @@ def generate_salary_slip(employee):
             "monthly_ctc": monthly_ctc,
             "annual_ctc": monthly_ctc * 12,
             "net_pay": net_pay,
+            "gross_pay":gross_pay
         }
 
     except Exception as e:
@@ -102,7 +104,70 @@ def generate_salary_slip(employee):
 
 
 
-@frappe.whitelist()
+# @frappe.whitelist(allow_guest=True)
+# def address_details(user_id):
+#     try:
+#         if not user_id:
+#             return {
+#                 "status": "error",
+#                 "message": _("Missing required parameter: user_id")
+#             }
+
+#         # Make sure quotes are not passed in query string
+#         user_id = user_id.replace('"', '').strip()
+
+#         employee_name = frappe.get_value("Employee", {"user_id": user_id, "status": "Active"}, "name")
+
+#         if not employee_name:
+#             return {
+#                 "status": "error",
+#                 "message": _("Active employee not found for the given user ID.")
+#             }
+
+#         addresses = frappe.get_all(
+#             "Address",
+#             filters={"custom_employee": employee_name},
+#             fields=[
+#                 "name", "address_title", "address_line1", "address_line2", "city",
+#                 "county", "state", "country", "pincode", "email_id", "phone", "address_type"
+#             ]
+#         )
+
+#         # Initialize address types
+#         current_address = None
+#         permanent_address = None
+#         emergency_address = None
+
+#         for addr in addresses:
+#             addr_data = addr.copy()
+#             addr_data.pop("address_type", None)
+
+#             if addr["address_type"] == "Current":
+#                 current_address = addr_data
+#             elif addr["address_type"] == "Permanent":
+#                 permanent_address = addr_data
+#             elif addr["address_type"] == "Emergency":
+#                 emergency_address = addr_data
+
+#         return {
+#             "status": "success",
+#             "data": {
+#                 "current_address": current_address,
+#                 "permanent_address": permanent_address,
+#                 "emergency_address": emergency_address
+#             }
+#         }
+
+#     except Exception:
+#         frappe.log_error(frappe.get_traceback(), title="Error in address_details API")
+#         return {
+#             "status": "error",
+#             "message": _("An unexpected error occurred while fetching address details.")
+#         }
+
+
+
+@frappe.whitelist(allow_guest=True)
 def address_details(user_id):
     try:
         if not user_id:
@@ -110,6 +175,8 @@ def address_details(user_id):
                 "status": "error",
                 "message": _("Missing required parameter: user_id")
             }
+
+        user_id = user_id.replace('"', '').strip()
 
         employee_name = frappe.get_value("Employee", {"user_id": user_id, "status": "Active"}, "name")
 
@@ -128,10 +195,24 @@ def address_details(user_id):
             ]
         )
 
-        # Default all as None (object format)
-        current_address = None
-        permanent_address = None
-        emergency_address = None
+        # Default empty structure
+        default_address = {
+            "name": "",
+            "address_title": "",
+            "address_line1": "",
+            "address_line2": "",
+            "city": "",
+            "county": "",
+            "state": "",
+            "country": "",
+            "pincode": "",
+            "email_id": "",
+            "phone": ""
+        }
+
+        current_address = default_address.copy()
+        permanent_address = default_address.copy()
+        emergency_address = default_address.copy()
 
         for addr in addresses:
             addr_data = addr.copy()
@@ -159,4 +240,3 @@ def address_details(user_id):
             "status": "error",
             "message": _("An unexpected error occurred while fetching address details.")
         }
-
