@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
 import {
@@ -30,15 +36,22 @@ interface RequestLeaveProps {
 const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useEmployeeByUserId(userId);
-  const { data: leaveTypesData } = useFrappeDocuments({
-    doctype: "Leave Type",
-    fields: ["name"],
-    pageParam: 0,
-    pageSize: 10,
+
+  const { data: leaveAllocations } = useFrappeDocuments({
+    doctype: "Leave Allocation",
+    fields: ["leave_type"],
+    filters: {
+      employee: currentEmployee?.name,
+      docstatus: 1,
+      to_date: [">=", new Date().toISOString().split("T")[0]],
+    },
     searchFields: [],
+    pageParam: 0,
+    pageSize: 100,
   });
 
   const { triggerRefetch } = useLeaveRequestRefresh();
+  const { defaults } = useRequestLeaveModal();
   const createLeaveMutation = useCreateFrappeDocument({
     onSuccess: () => {
       toast.success("Leave request submitted successfully!");
@@ -67,10 +80,15 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const [formData, setFormData] = useState<FormSubmissionData>({});
   const [leaveDays, setLeaveDays] = useState<number | null>(null);
+  const formInstance = useRef<any>(null);
+
   const leaveTypeOptions = useMemo(() => {
-    if (!leaveTypesData?.data) return [];
-    return leaveTypesData.data.map((t) => ({ label: t.name, value: t.name }));
-  }, [leaveTypesData]);
+    if (!leaveAllocations?.data) return [];
+    const uniqueTypes = Array.from(
+      new Set(leaveAllocations.data.map((entry) => entry.leave_type))
+    );
+    return uniqueTypes.map((type) => ({ label: type, value: type }));
+  }, [leaveAllocations]);
 
   const calculateLeaveDays = useCallback((data: FormSubmissionData) => {
     const { fromDate, toDate, halfDay } = data;
@@ -87,8 +105,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     setLeaveDays(halfDay ? days - 0.5 : days);
   }, []);
 
-  const { defaults } = useRequestLeaveModal();
-
   useEffect(() => {
     if (defaults?.fromDate && defaults?.toDate) {
       const initial: FormSubmissionData = {
@@ -100,6 +116,38 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       calculateLeaveDays(initial);
     }
   }, [defaults, calculateLeaveDays, formData.halfDay]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!currentEmployee?.name) {
+      alert("Employee data not loaded.");
+      return;
+    }
+
+    try {
+      const submission = await formInstance.current.submit();
+
+      await createLeaveMutation.mutateAsync({
+        doctype: "Leave Application",
+        data: {
+          employee: currentEmployee.name,
+          leave_type: submission.data.leaveType,
+          from_date: submission.data.fromDate?.split("T")[0],
+          to_date: submission.data.toDate?.split("T")[0],
+          half_day: submission.data.halfDay,
+          half_day_date: submission.data.halfDay
+            ? submission.data.fromDate?.split("T")[0]
+            : undefined,
+          half_day_session: submission.data.halfDay
+            ? submission.data.halfDayOption
+            : undefined,
+          description: submission.data.description,
+          attachment: submission.data.attachment?.[0]?.url,
+        },
+      });
+    } catch (error) {
+      console.error("Form submit error:", error);
+    }
+  }, [currentEmployee, createLeaveMutation]);
 
   const leaveForm = useMemo(
     () => ({
@@ -215,15 +263,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               filePattern: "*/*",
               customClass: "px-2 mb-6",
             },
-            {
-              type: "button",
-              action: "submit",
-              label: "Submit Request",
-              input: true,
-              theme: "",
-              customClass:
-                "px-2 w-full bg-black text-white font-medium rounded-lg hover:text-white hover:bg-black",
-            },
           ],
         },
       ],
@@ -247,6 +286,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
       <Form
         form={leaveForm}
+        onFormReady={(instance: any) => {
+          formInstance.current = instance;
+        }}
         options={{
           builder: { styles: false },
           submitButton: false,
@@ -265,30 +307,16 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           setFormData(data);
           calculateLeaveDays(data);
         }}
-        onSubmit={async ({ data }: { data: FormSubmissionData }) => {
-          if (!currentEmployee?.name) {
-            alert("Employee data not loaded.");
-            return;
-          }
-
-          await createLeaveMutation.mutateAsync({
-            doctype: "Leave Application",
-            data: {
-              employee: currentEmployee.name,
-              leave_type: data.leaveType,
-              from_date: data.fromDate?.split("T")[0],
-              to_date: data.toDate?.split("T")[0],
-              half_day: data.halfDay,
-              half_day_date: data.halfDay
-                ? data.fromDate?.split("T")[0]
-                : undefined,
-              half_day_session: data.halfDay ? data.halfDayOption : undefined,
-              description: data.description,
-              attachment: data.attachment?.[0]?.url,
-            },
-          });
-        }}
       />
+
+      <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-4 z-50">
+        <button
+          onClick={handleSubmit}
+          className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+        >
+          Submit Request
+        </button>
+      </div>
     </div>
   );
 };

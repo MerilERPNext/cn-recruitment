@@ -55,7 +55,7 @@ const NavigationTabs: React.FC<NavigationProps> = ({
               tabRefs.current[idx] = el;
             }}
             onClick={() => onTabChange(tab.key)}
-            className={`flex-1 min-w-fit text-start w-fit px-2 py-3 outline-none focus:outline-none font-semibold  transition-colors duration-200
+            className={`flex-1 min-w-fit text-center w-fit px-2 py-3 outline-none focus:outline-none font-semibold  transition-colors duration-200
               ${activeTab === tab.key ? "text-blue-500" : "text-gray-600 "}`}
           >
             {tab.label}
