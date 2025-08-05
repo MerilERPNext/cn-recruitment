@@ -65,3 +65,4 @@ const PoliciesCategory: React.FC = () => {
 };
 
 export default PoliciesCategory;
+

@@ -217,9 +217,13 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
         <div className="max-w-4xl mx-auto flex">
           <button
             onClick={handleSubmit}
-            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 py-3 max-h-12 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors items-center justify-center flex"
           >
-            Submit
+            {updateEmployeeMutation.isPending ? (
+              <div className="w-5 h-5 border-2 my-1 border-t-transparent border-white rounded-full animate-spin"></div>
+            ) : (
+              "Submit"
+            )}
           </button>
         </div>
       </div>

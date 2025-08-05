@@ -1,16 +1,22 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import LayoutHeader from '../shared/LayoutHeader';
+import NavigationTabs, { Tab } from '../NavigationTab';
+import HeaderBar from '../HeaderBar';
 
-const tabs = [
-    { name: 'Summary', key: 'summary' },
-    { name: 'My Attendance Details', key: 'emp-attendance' },
-    { name: 'Team Attendance', key: 'team-attendance' },
-    { name: 'My Attendance Requests', key: 'attendance-request' },
-    { name: 'Team Attendance Requests', key: 'team-attendance-requests' },
-];
+
 
 const AttendanceLayout: React.FC = () => {
+
+    const tabs: Tab[] = useMemo(
+        () => [
+            { label: 'Attendance', key: 'summary' },
+            { label: 'My Attendance Details', key: 'emp-attendance' },
+            { label: 'Team Attendance', key: 'team-attendance' },
+            { label: 'My Attendance Requests', key: 'attendance-request' },
+            { label: 'Team Attendance Requests', key: 'team-attendance-requests' },
+        ],
+        []
+    );
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -25,6 +31,7 @@ const AttendanceLayout: React.FC = () => {
     useEffect(() => {
         const currentTab = getCurrentTab();
         setActiveTab(currentTab);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.pathname]);
 
     const handleTabChange = (tab: typeof tabs[number]) => {
@@ -32,41 +39,20 @@ const AttendanceLayout: React.FC = () => {
         navigate(`/webapp/attendance/${tab.key}`);
     };
 
-    const tabRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
-
-    useEffect(() => {
-        const ref = tabRefs.current[activeTab.key];
-        if (ref) {
-            ref.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-        }
-    }, [activeTab]);
 
     return (
         <div className="min-h-screen bg-white">
             {/* Fixed Header */}
-            <LayoutHeader tab={activeTab.name} onBack={() => navigate("/webapp")} />
-
-            {/* Fixed Tab Bar Below Header */}
-            <div className="fixed top-14 left-0 right-0 z-30 flex border-b border-gray-200 gap-4 bg-white overflow-x-auto whitespace-nowrap no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                {tabs.map((tab) => (
-                    <button
-                        ref={(el) => {
-                            tabRefs.current[tab.key] = el;
-                        }}
-                        key={tab.key}
-                        onClick={() => handleTabChange(tab)}
-                        className={`w-fit px-4 py-3 border-t-0 border-l-0 border-r-0 bg-transparent text-sm font-medium rounded-none outline-none focus:outline-none focus:ring-0 ${activeTab.key === tab.key
-                            ? 'border-b-[3px] border-b-blue-600 text-blue-600'
-                            : 'text-[var(--text-secondary)]'
-                            }`}
-                    >
-                        {tab.name}
-                    </button>
-                ))}
+            <HeaderBar title={activeTab.label} onBack={() => navigate("/webapp")} />
+            <div className='sticky top-[60px] z-50'>
+                <NavigationTabs
+                    tabs={tabs}
+                    activeTab={activeTab?.key}
+                    onTabChange={(tab) => { handleTabChange(tabs.find((item) => item.key === tab) as Tab) }}
+                />
             </div>
-
             {/* Page Content (with top padding to avoid overlap) */}
-            <div className="pt-[104px]">
+            <div className="">
                 <Outlet />
             </div>
         </div>

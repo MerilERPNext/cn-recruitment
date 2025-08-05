@@ -51,8 +51,26 @@ const PolicySignOff: React.FC = () => {
   ) as { data: PolicyDetailsDocument | undefined; isLoading: boolean; error: any };
 
   const handleSignOff = () => {
-    if (isAgreed) {
+    if (policyData?.form_json) {
+      // If form_json exists, open modal with form
       setIsModalOpen(true);
+    } else if (isAgreed) {
+      // If no form_json and checkbox is checked, acknowledge directly
+      updatePolicy({
+        doctype: 'Policy Details',
+        name: policyId || '',
+        data: {
+          status: "Acknowledged",
+        }
+      }).then(() => {
+        toast.success('Policy acknowledged successfully');
+        queryClient.invalidateQueries({ queryKey: ["documents-infinite", "Policy Details"] });
+        queryClient.invalidateQueries({ queryKey: ["document-count", "Policy Details"] });
+        navigate('/webapp/policies-enforced');
+      }).catch((error) => {
+        toast.error('Failed to acknowledge policy');
+        console.error(error);
+      });
     }
   };
 
@@ -194,41 +212,71 @@ const PolicySignOff: React.FC = () => {
           </div>
 
           {/* Action Row */}
-          <div className="flex items-center space-x-3 p-3">
-            <input
-              type="checkbox"
-              id="agreement"
-              checked={isAgreed}
-              onChange={(e) => setIsAgreed(e.target.checked)}
-              className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
-            />
-            <label htmlFor="agreement" className="text-sm text-gray-700 flex-1">
-              I acknowledge that I have read and understood this policy.
-            </label>
-
-            <div className="flex space-x-2">
+          {policyData.form_json ? (
+            // Form present: Show full-width Next button (no checkbox needed)
+            <div className="p-3">
               <button
                 onClick={handleSignOff}
-                disabled={!isAgreed}
-                className={`font-medium py-2 px-4 rounded-md transition-colors text-sm ${
-                  isAgreed
-                    ? 'bg-primary hover:bg-primary-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                className="w-full bg-primary hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
               >
-                Acknowledge
+                Next
               </button>
+            </div>
+          ) : (
+            // No form: Show checkbox on separate line, then buttons
+            <div className="p-3 space-y-3">
+              {/* Checkbox line */}
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="agreement"
+                  checked={isAgreed}
+                  onChange={(e) => setIsAgreed(e.target.checked)}
+                  className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+                />
+                <label htmlFor="agreement" className="text-sm text-gray-700">
+                  I acknowledge that I have read and understood this policy.
+                </label>
+              </div>
 
-              {policyData.allow_decline === 1 && (
+              {/* Button line */}
+              {policyData.allow_decline === 1 ? (
+                // Two buttons in columns when decline is allowed
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleSignOff}
+                    disabled={!isAgreed}
+                    className={`font-medium py-2 px-4 rounded-md transition-colors text-sm ${
+                      isAgreed
+                        ? 'bg-primary hover:bg-primary-700 text-white'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Acknowledge
+                  </button>
+                  <button
+                    onClick={handleDecline}
+                    className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                  >
+                    Decline
+                  </button>
+                </div>
+              ) : (
+                // Single full-width button when no decline option
                 <button
-                  onClick={handleDecline}
-                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                  onClick={handleSignOff}
+                  disabled={!isAgreed}
+                  className={`w-full font-medium py-2 px-4 rounded-md transition-colors text-sm ${
+                    isAgreed
+                      ? 'bg-primary hover:bg-primary-700 text-white'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
                 >
-                  Decline
+                  Acknowledge
                 </button>
               )}
             </div>
-          </div>
+          )}
         </div>
       )}
 
