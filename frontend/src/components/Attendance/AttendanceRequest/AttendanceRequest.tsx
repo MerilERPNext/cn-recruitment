@@ -4,7 +4,6 @@ import AttendanceRequestCard from "./AttendanceRequestCard";
 import AttndanceRequestForm from "./AttendanceRequestForm";
 import { useMemo, useState } from "react";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import LayoutHeader from "../../shared/LayoutHeader";
 
 const AttendanceRequest = () => {
     const { data: userId } = useLoggedInUser();
@@ -32,8 +31,6 @@ const AttendanceRequest = () => {
 
     );
     return (<>
-        <LayoutHeader tab="My Attendance Request" />
-
         {showForm ? <AttndanceRequestForm onClose={() => { setShowForm(false) }} /> :
             <div className="bg-white h-screen">
                 <FrappeListView
@@ -60,11 +57,14 @@ const AttendanceRequest = () => {
                 />
             </div>
         }
-        <button className={`fixed bottom-10 right-5 rounded-full bg-black text-white p-4 z-10 transition duration-150 ease-in-out ${showForm ? "rotate-45" : ""}`}
-            onClick={() => {
-                setShowForm(!showForm)
-            }}
-        ><Plus /></button>
+        <div className=" fixed bottom-0 w-full p-2 border-t border-gray-300 pt-4">
+
+            <button className={`flex justify-center gap-2  w-full rounded-xl bg-black text-white py-4 px-2 z-10`}
+                onClick={() => {
+                    setShowForm(!showForm)
+                }}
+            ><Plus /> <span>Add Attendance Request</span> </button>
+        </div>
     </>
     )
 }

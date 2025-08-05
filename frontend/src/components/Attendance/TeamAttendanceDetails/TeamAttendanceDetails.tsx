@@ -5,15 +5,14 @@ import { useAllAttendanceRequests } from '../../../hooks/useAttendance'
 import { AttendanceRequest } from '../../../types/attendance'
 import { AttendanceDetailView } from '../AttendanceDetails'
 import { useNavigate } from 'react-router'
-import LayoutHeader from '../../shared/LayoutHeader'
 
 const TeamAttendanceDetails = () => {
     const { data = [], isLoading, error, refetch } = useAllAttendanceRequests(5);
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [selectedRequest, setSelectedRequest] = useState<AttendanceRequest | null>(null)
     const { pendingRequests, actionedRequests } = useMemo(() => {
-        const pending = data.filter((req) => req.docstatus === 0)
-        const actioned = data.filter((req) => req.docstatus === 1)
+        const pending = data.filter((req) => req.custom_status === "Pending")
+        const actioned = data.filter((req) => req.custom_status === "Approved" || req.custom_status === "Rejected")
         return {
             pendingRequests: pending,
             actionedRequests: actioned,
@@ -39,7 +38,6 @@ const TeamAttendanceDetails = () => {
     if (isLoading) {
         return (
             <>
-                <LayoutHeader tab='Team Attendance Details' />
                 <div className="bg-white min-h-screen">
                     <div className="flex items-center justify-center py-12">
                         <div className="text-center">
@@ -55,7 +53,6 @@ const TeamAttendanceDetails = () => {
     if (error) {
         return (
             <>
-                <LayoutHeader tab='Team Attendance Details' />
                 <div className="bg-white min-h-screen">
                     <div className="flex items-center justify-center py-12">
                         <div className="text-center">
@@ -72,7 +69,6 @@ const TeamAttendanceDetails = () => {
     if (!data || data.length === 0) {
         return (
             <>
-                <LayoutHeader tab='Team Attendance Details' />
                 <div className="bg-white min-h-screen">
                     <div className="flex flex-col items-center justify-center py-16 px-4">
                         <div className="text-center">
@@ -81,7 +77,7 @@ const TeamAttendanceDetails = () => {
                             <p className="text-gray-500 mb-6">There are currently no attendance requests to display.</p>
                             <button
                                 onClick={() => {
-                                    refetch()   
+                                    refetch()
                                 }}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                             >
@@ -96,13 +92,12 @@ const TeamAttendanceDetails = () => {
 
     return (
         <>
-            <LayoutHeader tab='Team Attendance Details' />
             <div className="bg-white min-h-screen">
                 <div className='bg-white'>
                     {/* Pending */}
                     {pendingRequests?.length > 0 && <>
                         <div className="flex justify-between mb-4 p-4">
-                            <h2 className="text-2xl font-semibold">Pending Requests</h2>
+                            <h2 className=" text-lg font-semibold text-gray-800">Pending Requests</h2>
                             <button
                                 onClick={() => { navigate("/webapp/attendance/team-attendance-details/pendings") }}
                                 className="text-blue-600 hover:text-blue-800 font-medium"
@@ -120,7 +115,7 @@ const TeamAttendanceDetails = () => {
                             />
                         </div>
 
-                        <div className="space-y-3 border-t-1 border-gray-300 pt-2">
+                        <div className="space-y-3 border-t-1 border-gray-300 pt-2 px-[2px]">
                             {pendingRequests.map((request) => (
                                 <RequestCard
                                     key={request.name}
@@ -145,7 +140,7 @@ const TeamAttendanceDetails = () => {
                 {/* Actioned */}
                 <div className='bg-white'>
                     {actionedRequests?.length > 0 && <div>
-                        <h2 className="text-2xl font-semibold mb-2 border-b-1 border-gray-200 p-4">Actioned Requests</h2>
+                        <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 p-4">Actioned Requests</h2>
                         <div className="space-y-3">
                             {actionedRequests.map((request) => (
                                 <RequestCard

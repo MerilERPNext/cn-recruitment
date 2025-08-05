@@ -75,10 +75,6 @@ export interface GetCountParams {
   filters?: FilterCondition[]
 }
 
-export interface GetCountResponse {
-  message: number
-}
-
 // API Filter Types
 export type FilterOperator =
   | "="

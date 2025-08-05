@@ -1,11 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import FrappeListView from "../ListView";
-import { format } from "date-fns";
 import { LeaveApplicationItem } from "../../types/leaves";
+import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
+import { MyLeaveRequestSkeleton } from "./LeaveSkeletons";
+import { format } from "date-fns";
+import RequestDetailsModal from "./RequestDetailsModal";
 
-const LeaveRequestItem = ({ item }: { item: LeaveApplicationItem }) => {
+const LeaveRequestItem = ({
+  item,
+  onClick,
+}: {
+  item: LeaveApplicationItem;
+  onClick?: () => void;
+}) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Approved":
@@ -34,24 +43,16 @@ const LeaveRequestItem = ({ item }: { item: LeaveApplicationItem }) => {
     }
   };
 
-  const formatDateRange = (fromDate: string, toDate: string) => {
-    const formatDate = (dateStr: string) =>
-      format(new Date(dateStr), "MMM d, yyyy");
-    const from = formatDate(fromDate);
-    const to = formatDate(toDate);
-    return from === to ? from : `${from} - ${to}`;
-  };
-
-  const displayStatus = item.status === "Open" ? "Pending" : item.status;
-  const dateRange = formatDateRange(item.from_date, item.to_date);
-
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-3 mb-3 shadow-sm">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start space-x-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+    <div
+      onClick={onClick}
+      className="bg-white rounded-lg border border-gray-200 p-3 mb-3 shadow-sm cursor-pointer"
+    >
+      <div className="flex flex-wrap md:flex-nowrap items-start justify-between gap-3">
+        <div className="flex items-start space-x-3 flex-1 min-w-0">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
             <svg
-              className="w-4 h-4 text-blue-600"
+              className="w-5 h-5 text-blue-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -62,14 +63,14 @@ const LeaveRequestItem = ({ item }: { item: LeaveApplicationItem }) => {
               />
             </svg>
           </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 text-sm">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 text-sm truncate">
               {item.leave_type}
             </h3>
-            <p className="text-xs text-gray-500 mt-1">{dateRange}</p>
-            {item.description && (
-              <p className="text-xs text-gray-600 mt-2">{item.description}</p>
-            )}
+            <p className="text-xs text-gray-500 mt-1">
+              {format(new Date(item.from_date), "MMM d")} -{" "}
+              {format(new Date(item.to_date), "MMM d, yyyy")}
+            </p>
           </div>
         </div>
         <span
@@ -78,7 +79,7 @@ const LeaveRequestItem = ({ item }: { item: LeaveApplicationItem }) => {
           <span
             className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${getBlockColor(item.status)}`}
           ></span>
-          {displayStatus}
+          {item.status === "Open" ? "Pending" : item.status}
         </span>
       </div>
     </div>
@@ -90,24 +91,32 @@ const MyLeaveRequest: React.FC = () => {
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
     useEmployeeByUserId(userId);
 
-  const isLoading = isUserLoading || isEmployeeLoading;
+  const [selectedRequest, setSelectedRequest] =
+    useState<LeaveApplicationItem | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { setRefetch } = useLeaveRequestRefresh();
 
-  if (isLoading || !currentEmployee?.name) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-3"></div>
-          <p className="text-gray-500">Loading leave requests...</p>
-        </div>
-      </div>
-    );
+  const handleCardClick = (item: LeaveApplicationItem) => {
+    setSelectedRequest(item);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRequest(null);
+  };
+
+  if (isUserLoading || isEmployeeLoading || !currentEmployee?.name) {
+    return null;
   }
 
   return (
     <div className="space-y-3">
-      <FrappeListView
+      <FrappeListView<LeaveApplicationItem>
         doctype="Leave Application"
-        ItemComponent={LeaveRequestItem}
+        ItemComponent={({ item }) => (
+          <LeaveRequestItem item={item} onClick={() => handleCardClick(item)} />
+        )}
         defaultFields={[
           "name",
           "leave_type",
@@ -116,13 +125,20 @@ const MyLeaveRequest: React.FC = () => {
           "status",
           "description",
         ]}
-        defaultFilters={{
-          employee: currentEmployee.name,
-        }}
-        isSearch={false}
+        defaultFilters={{ employee: currentEmployee.name }}
+        isSearch={true}
+        searchFields={["name", "leave_type", "status"]}
         infiniteScroll={true}
-        showRefereshButton={false}
+        showRefereshButton={true}
+        onRefetchAvailable={setRefetch}
+        SkeletonComponent={MyLeaveRequestSkeleton}
       />
+      {isModalOpen && selectedRequest && (
+        <RequestDetailsModal
+          request={selectedRequest}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 };

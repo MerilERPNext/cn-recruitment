@@ -1,22 +1,31 @@
-import React, { useMemo } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useCallback, useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { PersonalInfoProps } from "./MyProfile";
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import { useGenderTypes } from "../../hooks/useEmployee";
+import toast from "react-hot-toast";
 
-export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
+export const PersonalInfo: React.FC<PersonalInfoProps> = ({
+  user,
+  refetch,
+}) => {
   const updateEmployeeMutation = useUpdateFrappeDocument();
+  const formPersonalInfoInstance = useRef<any>(null);
 
   const { data: genderTypes } = useGenderTypes();
 
   const personalInfoForm = useMemo(() => {
     return {
+      type: "form",
+      display: "form",
       components: [
         {
           type: "panel",
           key: "personalPanel",
           title: "Personal Info",
           hideLabel: true,
+          customClass: "bg-white rounded-lg shadow-md mb-6",
           components: [
             {
               type: "fieldset",
@@ -172,47 +181,52 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                 },
               ],
             },
-            {
-              type: "button",
-              action: "submit",
-              label: "Save Changes",
-              theme: "primary",
-              customClass: "px-2 my-3 w-full",
-            },
           ],
         },
       ],
     };
   }, [user, genderTypes]);
 
-  return (
-    <div className="address-form-container max-w-md mx-auto rounded-lg bg-white shadow-md">
-      <Form
-        key={user?.employee || "loading"}
-        form={personalInfoForm}
-        options={{
-          builder: { styles: false },
-          submitButton: false,
-          formClass: "space-y-6",
-          rowClass: "flex flex-col",
-          labelClass: "mb-1 font-medium text-gray-700",
-          inputClass:
-            "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
-          validateOnInit: false,
-          validateOnBlur: false,
-          validateOnChange: false,
-        }}
-        className="space-y-6"
-        onSubmit={async (submission: { data: never }) => {
-          await updateEmployeeMutation.mutateAsync({
-            doctype: "Employee",
-            name: user?.name ?? "",
-            data: { data: submission.data },
-          });
+  const handleSubmit = useCallback(async () => {
+    try {
+      const basicSubmission = await formPersonalInfoInstance.current.submit();
+      await updateEmployeeMutation.mutateAsync({
+        doctype: "Employee",
+        name: user?.name ?? "",
+        data: basicSubmission.data,
+      });
+      refetch?.();
+      toast.success("Employee details updated successfully!");
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast.error("Failed to update employee details. Please try again.");
+    }
+  }, []);
 
-          return Promise.resolve();
-        }}
-      />
+  return (
+    <div className="address-form-container h-full max-w-md mx-auto bg-gray-100 rounded-lg">
+      <div className="p-4">
+        <Form
+          key={user?.employee || "loading"}
+          form={personalInfoForm}
+          onFormReady={(instance: any) =>
+            (formPersonalInfoInstance.current = instance)
+          }
+          options={{
+            submitButton: false,
+          }}
+        />
+      </div>
+      <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full z-50">
+        <div className="max-w-4xl mx-auto flex">
+          <button
+            onClick={handleSubmit}
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

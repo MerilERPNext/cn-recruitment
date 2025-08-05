@@ -4,10 +4,9 @@ import FrappeListView from "../../ListView";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useSearchParams } from "react-router-dom";
-import LayoutHeader from "../../shared/LayoutHeader";
 
 const TeamAttendance = () => {
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
 
 
     const [searchParams] = useSearchParams()
@@ -28,7 +27,7 @@ const TeamAttendance = () => {
     }, [searchParams])
 
     const clearFilters = () => {
-        setSelectedDate(null)
+        setSelectedDate(new Date())
         navigate("/webapp/attendance/team-attendance") // Remove query entirely
     }
 
@@ -52,10 +51,10 @@ const TeamAttendance = () => {
     );
 
     return <div className="bg-white">
-        <LayoutHeader tab="Team Attendance" />
+
         <div className="flex flex-col gap-2 pb-4">
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
-            <div className=" bg-white w-full border-b-1 border-gray-200  p-2">
+            <div className=" bg-white w-full border-b-1 border-gray-200">
 
                 <div className=" flex items-end flex-col">
 
@@ -65,24 +64,28 @@ const TeamAttendance = () => {
                         selected={selectedDate}
                         onChange={(date) => {
                             if (!date) return
+                            const localDateStr = date.toISOString().split("T")[0];
                             setSelectedDate(date)
                             const filters = {
-                                attendance_date: date,
+                                attendance_date: localDateStr,
                             }
                             navigate(
                                 "/webapp/attendance/team-attendance?filters=" +
                                 encodeURIComponent(JSON.stringify(filters))
                             )
                         }}
+                        dayClassName={(date) =>
+                            date.toDateString() === selectedDate?.toDateString() ? "bg-blue-100" : "transparent"
+                        }
                     />
                     {/* Clear Button */}
                     {hasFilters && (
                         <button
                             onClick={clearFilters}
                             className="top-2 right-2 text-gray-500 hover:text-black transition"
-                            title="Clear Filters"
+                            title="Today"
                         >
-                            Clear Filters
+                            Today
                         </button>
                     )}
                 </div>
@@ -105,6 +108,11 @@ const TeamAttendance = () => {
                     onItemClick={() => { }}
                     infiniteScroll={true}
                     isFilter={false}
+                    defaultFilters={
+                        {
+                            attendance_date: new Date().toISOString(),
+                        }
+                    }
                     showRefereshButton={false}
                     defaultFields={[
                         "employee_name",

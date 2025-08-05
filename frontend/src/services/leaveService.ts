@@ -1,13 +1,7 @@
 import FrappeAPI from "../utils/frappeAPI";
 import type { LeaveRequest } from "../types/leaves";
 
-// Add this to leaveService.ts
-export interface LeaveBalance {
-  type: string;
-  entitled: number;
-  availed: number;
-  balance: number;
-}
+import type { LeaveDetailsResponse } from "../types/leaves";
 
 export const leaveService = {
   getMyLeaveRequests: async (employeeId: string): Promise<LeaveRequest[]> => {
@@ -30,32 +24,36 @@ export const leaveService = {
 
   requestCompOffLeave: async (body: any): Promise<any> => {
     const response = await fetch(`/api/resource/Compensatory Leave Request`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: `Request failed with status ${response.status}` }));
+      const error = await response.json().catch(() => ({
+        message: `Request failed with status ${response.status}`,
+      }));
       throw new Error(error.message);
     }
 
     return response.json();
   },
+
   getLeaveBalance: async (
     employeeId: string,
     date: string
-  ): Promise<LeaveBalance[]> => {
+  ): Promise<LeaveDetailsResponse> => {
     const response = await FrappeAPI.callMethod(
-      "hrms.hr.doctype.leave_application.leave_application.get_leave_details",
+      "cn_leave_shift_managment.api.custom_get_leave_details",
       {
         employee: employeeId,
         date: date,
       }
     );
-    return response as LeaveBalance[];
+
+    return response as LeaveDetailsResponse;
   },
 };

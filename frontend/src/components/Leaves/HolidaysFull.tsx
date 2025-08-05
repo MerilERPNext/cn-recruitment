@@ -1,14 +1,11 @@
-import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import React, { useState, useMemo, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { isBefore, startOfToday } from "date-fns";
 import { FaSortAmountDownAlt, FaSortAmountUp } from "react-icons/fa";
+import { HolidayCard } from "./Holidays";
+import { Holiday } from "../../types/leaves";
 
-export type Holiday = {
-  name: string;
-  date: string;
-};
-
-const holidays: Holiday[] = [
+const REGULAR_HOLIDAYS: Holiday[] = [
   { name: "New Year's Day", date: "2025-01-01" },
   { name: "Martin Luther King Jr. Day", date: "2025-01-15" },
   { name: "Presidents' Day", date: "2025-02-19" },
@@ -22,30 +19,48 @@ const holidays: Holiday[] = [
   { name: "Christmas Day", date: "2025-12-25" },
 ];
 
-const HolidaysFull: React.FC = () => {
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const year = holidays.length > 0 ? new Date(holidays[0].date).getFullYear() : new Date().getFullYear();
-  const navigate = useNavigate();
+const OPTIONAL_HOLIDAYS: Holiday[] = [
+  { name: "Makar Sankranti", date: "2025-01-14" },
+  { name: "Holi", date: "2025-03-17" },
+  { name: "Eid al-Fitr", date: "2025-03-30" },
+  { name: "Raksha Bandhan", date: "2025-08-18" },
+  { name: "Diwali", date: "2025-10-20" },
+];
 
-  // Sort holidays based on the current sort order
+type HolidayType = "regular" | "optional";
+
+const HolidaysFull: React.FC = () => {
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const holidayType: HolidayType =
+    (location.state as { type?: HolidayType })?.type || "regular";
+
+  const holidays =
+    holidayType === "optional" ? OPTIONAL_HOLIDAYS : REGULAR_HOLIDAYS;
+
   const sortedHolidays = useMemo(() => {
     return [...holidays].sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      const timeA = new Date(a.date).getTime();
+      const timeB = new Date(b.date).getTime();
+      return sortOrder === "asc" ? timeA - timeB : timeB - timeA;
     });
-  }, [sortOrder]);
+  }, [holidays, sortOrder]);
 
-  const toggleSortOrder = () => {
-    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-  };
+  const toggleSortOrder = useCallback(() => {
+    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+  }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col bg-white">
       <header className="sticky top-0 bg-white shadow-sm border-b border-gray-200">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between px-4 py-1">
           <div className="flex items-center">
             <button
+              type="button"
+              aria-label="Go back"
               onClick={() => navigate(-1)}
               className="mr-3 p-2 -ml-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
@@ -63,35 +78,45 @@ const HolidaysFull: React.FC = () => {
                 />
               </svg>
             </button>
-            <h1 className="text-xl font-semibold text-slate-900">{year}</h1>
+
+            <h1 className="text-xl font-semibold text-slate-900">
+              {holidayType === "optional"
+                ? "Optional Holidays"
+                : "Regular Holidays"}
+            </h1>
           </div>
+
           <button
+            type="button"
+            aria-label={`Sort by ${sortOrder === "asc" ? "descending" : "ascending"} date`}
             onClick={toggleSortOrder}
             className="p-2 text-gray-600 hover:text-gray-800 transition-colors flex items-center"
-            aria-label={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}
           >
-            {sortOrder === 'asc' ? (
+            {sortOrder === "asc" ? (
               <FaSortAmountDownAlt className="w-5 h-5" />
             ) : (
               <FaSortAmountUp className="w-5 h-5" />
             )}
             <span className="ml-1 text-sm">
-              {sortOrder === 'asc' ? 'Earliest' : 'Latest'}
+              {sortOrder === "asc" ? "Earliest" : "Latest"}
             </span>
           </button>
         </div>
       </header>
-
       <main className="flex-1 overflow-y-auto p-4">
         <div className="divide-y divide-gray-200">
           {sortedHolidays.map((h) => {
             const dateObj = new Date(h.date);
-            const formatted = format(dateObj, "EEEE, MMMM d, yyyy");
             return (
-              <div key={h.date} className="py-3">
-                <p className="font-medium text-gray-900 mb-0.5">{h.name}</p>
-                <p className="text-sm text-gray-500">{formatted}</p>
-              </div>
+              <HolidayCard
+                key={`${h.date}-${h.name}`}
+                holiday={h}
+                showApply={holidayType === "optional"}
+                disabledApply={
+                  holidayType === "optional" &&
+                  isBefore(dateObj, startOfToday())
+                }
+              />
             );
           })}
         </div>

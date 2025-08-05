@@ -1,3 +1,5 @@
+import { format, parseISO } from "date-fns";
+
 export function timeSinceFormatted(date: Date): string {
   const now = new Date();
   const diffMs: number = now.getTime() - date.getTime();
@@ -29,4 +31,10 @@ export function formatDateString(dateString:string) {
     month: "short",
     day: "numeric",
   });
+}
+
+
+export function formatTo24HourTime(isoString: string): string {
+  const date = parseISO(isoString.replace(" ", "T"));
+  return format(date, 'HH:mm');
 }

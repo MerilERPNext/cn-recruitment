@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import PersonalInfo from "./PersonalInfo";
 import ContactInfo from "./ContactInfo";
 import AddressInfo from "./AddressInfo";
@@ -8,10 +8,14 @@ import HRLetters from "./HRLetters";
 import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router-dom";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import {
+  useCurrentEmployeeAddress,
+  useCurrentEmployeeAllDetails,
+} from "../../hooks/useEmployee";
 import { Employee } from "../../types/employee";
 import { Pencil } from "lucide-react";
 import defaultProfile from "../../assets/user.png";
+import { Toaster } from "react-hot-toast";
 
 type TabKey =
   | "personal-info"
@@ -23,6 +27,7 @@ type TabKey =
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
+  refetch?: () => void;
 }
 
 interface Tab {
@@ -91,10 +96,6 @@ const Navigation: React.FC<NavigationProps> = ({
 const MyProfile: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-
   const tabs: Tab[] = useMemo(
     () => [
       { key: "personal-info", label: "Personal Info" },
@@ -106,20 +107,28 @@ const MyProfile: React.FC = () => {
     ],
     []
   );
-
   const [activeTab, setActiveTab] = useState<TabKey>(tabs[0].key);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
+  const { data: userId } = useLoggedInUser();
+  const { data: user, refetch } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: userAddress, refetch: refetchAddress } =
+    useCurrentEmployeeAddress(userId || "");
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [activeTab]);
+
   const tabContent: Record<TabKey, React.ReactNode> = useMemo(
     () => ({
-      "personal-info": <PersonalInfo user={user} />,
-      "contact-info": <ContactInfo user={user} />,
-      address: <AddressInfo user={user} />,
+      "personal-info": <PersonalInfo user={user} refetch={refetch} />,
+      "contact-info": <ContactInfo user={user} refetch={refetch} />,
+      address: <AddressInfo user={userAddress} refetch={refetchAddress} />,
       "company-info": <CompanyInfo user={user} />,
       "salary-info": <SalaryInfo user={user} />,
       "hr-letters": <HRLetters />,
     }),
-    [user]
+    [user, userAddress]
   );
 
   const handleImageClick = () => fileInputRef.current?.click();
@@ -132,7 +141,7 @@ const MyProfile: React.FC = () => {
   };
 
   return (
-    <div className="bg-white font-sans">
+    <div className="bg-white font-sans scroll-smooth">
       <div className="bg-white shadow">
         <HeaderBar title="My Profile" onBack={() => navigate(-1)} />
         <input
@@ -148,7 +157,7 @@ const MyProfile: React.FC = () => {
             <img
               src={uploadedImage || user?.image || defaultProfile}
               alt="User avatar"
-              className="w-24 h-24 rounded-full object-cover"
+              className="w-24 h-24 rounded-xl object-cover"
             />
             <button
               onClick={handleImageClick}
@@ -163,14 +172,15 @@ const MyProfile: React.FC = () => {
           <p className="text-gray-400 text-sm">Employee ID: {user?.employee}</p>
         </div>
       </div>
-      <div className="min-h-screen bg-gray-100">
+      <div className="bg-gray-100">
         <Navigation
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
-        <div className="flex-grow p-4">{tabContent[activeTab]}</div>
+        <div className="flex-grow">{tabContent[activeTab]}</div>
       </div>
+      <Toaster position="top-center" containerClassName="z-50" />
     </div>
   );
 };

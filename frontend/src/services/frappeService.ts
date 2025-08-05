@@ -7,7 +7,6 @@ import type {
   FilterOperator,
   DocumentItem,
   GetCountParams,
-  GetCountResponse,
 } from "../types/frappe";
 
 type FilterCondition = [string, FilterOperator, unknown];
@@ -20,6 +19,17 @@ export const frappeService = {
       return { data: result };
     } catch (error) {
       console.error(`❌ Failed to load doctype schema for ${doctype}:`, error);
+      throw error;
+    }
+  },
+
+  getDocument: async (doctype: string, name: string, fields?: string[]): Promise<unknown> => {
+    try {
+      console.log(`🔍 Fetching document for doctype: ${doctype}`, { name, fields });
+      const response = await FrappeAPI.getDocument(doctype, name, fields);
+      return response;
+    } catch (error) {
+      console.error(`❌ Failed to load document for ${doctype}:`, error);
       throw error;
     }
   },
@@ -95,7 +105,7 @@ export const frappeService = {
   },
 
   // Added getDocumentCount method
-  getDocumentCount: async ({ doctype, searchTerm, filters }: GetCountParams): Promise<GetCountResponse> => {
+  getDocumentCount: async ({ doctype, searchTerm, filters }: GetCountParams): Promise<number> => {
     try {
       console.log(`🔢 Fetching count for doctype: ${doctype}`, { searchTerm, filters });
       const apiFilters: FilterCondition[] = filters || [];
@@ -111,7 +121,7 @@ export const frappeService = {
         doctype,
         filters: apiFilters.length > 0 ? apiFilters : undefined,
         or_filters: orFilters.length > 0 ? orFilters : undefined,
-      }) as { message: number };
+      }) as number;
 
       return result;
     } catch (error) {

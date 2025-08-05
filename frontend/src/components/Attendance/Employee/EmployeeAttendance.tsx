@@ -8,35 +8,39 @@ import { Attendance } from "../../../types/attendance"
 import { useNavigate } from "react-router"
 import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard"
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm"
-import RequestCompOff from "./RequestCompOff"
-import CheckIn from "../CheckIn/CheckIn"
-import LayoutHeader from "../../shared/LayoutHeader"
+import { endOfMonth, format, startOfMonth } from "date-fns"
 
 const EmployeeAttendance = () => {
     const navigate = useNavigate()
+    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
     const { data: userId } = useLoggedInUser();
-    const filters = userId ? [["owner", "=", userId]] : [];
+    const start = format(startOfMonth(selectedDate as Date), 'yyyy-MM-dd')
+    const end = format(endOfMonth(selectedDate as Date), 'yyyy-MM-dd')
+
+    const filters = userId ? [["owner", "=", userId], ["creation", "between", [start, end]]] : [];
     const { data: allAttendance, isError, error } = useAttendance(filters as any, {
         enabled: !!userId,
     });
-    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
-    const todayAttendance = allAttendance?.filter((record) => record.attendance_date === today)?.[0];
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date(2025, 6, 17))
+    // const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+    // const todayAttendance = allAttendance?.filter((record) => record.attendance_date === today)?.[0];
     const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] = useState<boolean>(false)
-    const [showReqCompOff, setShowReqCompOff] = useState<boolean>(false)
-    const [showFaceRecognition, setShowFaceRecognition] = useState<boolean>(false)
     type Status = | "present"
         | "absent"
         | "on-leave"
         | "half-day"
+        | "half-day-first-half"
+        | "half-day-second-half"
         | "work-from-home"
         | "default";
 
     const createAttendanceStatusGetter = (attendances: Attendance[] = []) => {
         const statusMap: Record<string, Status> = {};
 
+        const formatDateKey = (date: Date): string =>
+            date.toLocaleDateString("en-CA");
+
         attendances.forEach((record) => {
-            const dateKey = new Date(record.attendance_date).toISOString().split("T")[0];
+            const dateKey = formatDateKey(new Date(record.attendance_date));
             const rawStatus = record.status?.toLowerCase().trim();
 
             let status: Status = "default";
@@ -53,7 +57,15 @@ const EmployeeAttendance = () => {
                     break;
                 case "half day":
                 case "half-day":
-                    status = "half-day";
+                    if (record?.custom_half_day_type === "First Half") {
+
+                        status = "half-day-first-half";
+                    } else if (record?.custom_half_day_type === "Second Half") {
+
+                        status = "half-day-second-half";
+                    } else {
+                        status = 'half-day'
+                    }
                     break;
                 case "work from home":
                 case "wfh":
@@ -67,10 +79,11 @@ const EmployeeAttendance = () => {
         });
 
         return (date: Date): Status => {
-            const key = date.toISOString().split("T")[0];
+            const key = formatDateKey(date); // avoid UTC shift here too
             return statusMap[key] || "default";
         };
     };
+
 
 
     const getAttendanceStatus = useMemo(() => {
@@ -118,18 +131,22 @@ const EmployeeAttendance = () => {
     );
 
 
+
+
     const defaultFilters = useMemo(() => {
-        if (!userId) return undefined;
-        return { owner: userId };
-    }, [userId]);
+        if (!userId || !selectedDate) return undefined;
+        return {
+            owner: userId,
+            creation: ["between", [start, end]],
+        };
+    }, [userId, selectedDate]);
+
 
     return <div>
-        <LayoutHeader tab={"My Attendance"} />
-        {/* <LayoutHeader tab="Attendance" /> */}
         <div className="flex flex-col">
 
             {/* ------------------------------------------------- Info Card Start---------------------------------------------- */}
-
+            {/* 
             <div className="px-6 py-4 border-b-1 border-gray-200 bg-white">
                 <h1 className="text-lg font-semibold text-gray-900 mb-4">Today's Attendance</h1>
 
@@ -144,16 +161,16 @@ const EmployeeAttendance = () => {
                         <div className="text-lg font-semibold text-gray-900">{todayAttendance?.working_hours || "-- --"}</div>
                     </div>
 
-                    <button className="bg-blue-100 hover:bg-blue-200 px-6 py-2"
+                    <button className="bg-blue-100 hover:bg-blue-200 px-6 py-2 rounded-md"
 
                         onClick={() => { setShowFaceRecognition(!showFaceRecognition) }}
                     > {todayAttendance?.in_time ? "Check Out" : "Check In"}</button>
                 </div>
-            </div>
+            </div> */}
             {/* ------------------------------------------------- Info Card End---------------------------------------------- */}
             {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
-            <div className=" w-full  pb-2 bg-white border-b-1 border-gray-200">
+            <div className=" w-full pb-2 bg-white border-b-1 border-gray-200">
                 <div className="w-full flex justify-end">
 
                     <button
@@ -161,13 +178,16 @@ const EmployeeAttendance = () => {
                         onClick={() => {
                             navigate("/webapp/attendance/emp-attendance/all")
                         }}>
-                        View In List
+                        List View
                         <ArrowUpRight className="h-5 w-5" />
                     </button>
                 </div>
                 <DatePicker
                     selected={selectedDate}
                     onChange={(date) => setSelectedDate(date)}
+                    onMonthChange={(date) => setSelectedDate(date)}
+
+                    openToDate={selectedDate as Date}
                     inline
                     dayClassName={(date) => {
                         const status = getAttendanceStatus(date);
@@ -178,17 +198,21 @@ const EmployeeAttendance = () => {
                         const highlightClass = (() => {
                             switch (status) {
                                 case "present":
-                                    return "!bg-green-100 !text-green-800 border border-green-200";
+                                    return "!bg-green-100 !text-green-800 rounded-md";
                                 case "absent":
-                                    return "!bg-red-100 !text-red-800 border border-red-200";
+                                    return "!bg-red-100 !text-red-800 rounded-md";
                                 case "on-leave":
-                                    return "!bg-orange-100 !text-orange-800 border border-orange-200";
+                                    return "!bg-orange-100 !text-orange-800 rounded-md";
                                 case "half-day":
-                                    return "!bg-yellow-100 !text-yellow-800 border border-yellow-200";
+                                    return "bg-yellow-100 !text-yellow-800 rounded-md";
+                                case "half-day-first-half":
+                                    return "hard-gradient-green-to-yellow !text-yellow-800 rounded-md";
+                                case "half-day-second-half":
+                                    return "hard-gradient-yellow-to-green !text-yellow-800 rounded-md";
                                 case "work-from-home":
-                                    return "!bg-purple-100 !text-purple-800 border border-purple-200";
+                                    return "!bg-purple-100 !text-purple-800 border border-purple-200 rounded-md";
                                 default:
-                                    return "hover:!bg-gray-100 !text-gray-700";
+                                    return "hover:!bg-gray-100 !text-gray-700 rounded-md";
                             }
                         })();
 
@@ -230,7 +254,8 @@ const EmployeeAttendance = () => {
 
             <div className="bg-white p-4 border-b-1 border-gray-200" >
                 <div className="flex gap-2">
-                    <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm"
+                    <button className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold flex-1 flex items-center justify-center text-md"
+
                         onClick={() => {
                             setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
                         }}>
@@ -243,26 +268,15 @@ const EmployeeAttendance = () => {
             {/* Request Attendance Correction */}
 
 
-
-            {/* Work Hour Exceptions */}
-            <div className="bg-white rou p-4 border-b-1 border-gray-200" >
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Work Hour Exceptions</h3>
-                <div className="flex gap-2">
-                    <button onClick={() => { setShowReqCompOff(!showReqCompOff) }} className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
-                        <Plus className="w-4 h-4 mr-2 font-bold " />
-                        Request Comp Off
-                    </button>
-                    <button className="flex-1 bg-black hover:opacity-75 text-white rounded-lg font-medium flex justify-center items-center p-2 text-sm">
-                        <Plus className="w-4 h-4 mr-2 font-bold" />
-                        Request Overtime
-                    </button>
-                </div>
-            </div>
-            {/* Work Hour Exceptions */}
-
             {/* My Attendance Requests */}
             <div className="bg-white">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1 p-4">My Attendance Requests</h3>
+                <div className="flex justify-between items-center w-full p-4">
+
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 ">My Attendance Requests</h3>
+                    <p
+                        onClick={() => navigate("/webapp/attendance/attendance-request")}
+                        className="text-sm text-blue-500">View All</p>
+                </div>
                 <FrappeListView
                     doctype="Attendance Request"
                     isSearch={false}
@@ -274,7 +288,7 @@ const EmployeeAttendance = () => {
                         );
                     }}
                     SkeletonComponent={CardSkeleton}
-                    defaultFilters={defaultFilters}
+                    defaultFilters={defaultFilters as any}
                     showRefereshButton={false}
                     onItemClick={() => { }}
                     infiniteScroll={true}
@@ -294,12 +308,8 @@ const EmployeeAttendance = () => {
                 showReqAttendanceCorrection &&
                 <AttndanceRequestForm onClose={() => { setShowReqAttendanceCorrection(false) }} />
             }
-            {
-                showReqCompOff && <RequestCompOff onClose={() => setShowReqCompOff(false)} />
-            }
-            {
-                showFaceRecognition && <CheckIn onClose={() => setShowFaceRecognition(false)} />
-            }
+
+
         </div>
     </div >
 

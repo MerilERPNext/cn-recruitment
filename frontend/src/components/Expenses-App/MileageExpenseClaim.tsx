@@ -1,13 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useMemo,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { Formio } from "formiojs";
 import HeaderBar from "../HeaderBar";
+import {
+  useDailyAllowancesVehicleCategories,
+  useExpenseTypes,
+} from "../../hooks/useExpense";
+import ExpensesUserInfo from "./ExpensesUserInfo";
 
 interface MileageExpenseData {
   expenseDate: string;
   purpose: string;
-  travelTypeHidden: 'distance' | 'odometer';
+  travelTypeHidden: "distance" | "odometer";
   distance?: number;
   startOdometer?: number;
   endOdometer?: number;
@@ -17,74 +28,6 @@ interface MileageExpenseData {
 }
 
 // Schema for Basic Expense Details
-const basicDetailsSchema = {
-  display: "form",
-  components: [
-    {
-      label: "Expense Date",
-      tableView: true,
-      validate: {
-        required: true,
-      },
-      key: "expenseDate",
-      type: "datetime",
-      input: true,
-      format: "yyyy-MM-dd",
-      enableTime: false,
-      widget: {
-        type: "calendar",
-        altInput: true,
-        dateFormat: "yyyy-MM-dd",
-        enableTime: false,
-        mode: "single",
-      },
-      defaultValue: new Date().toISOString().slice(0, 10),
-    },
-    {
-      label: "Vehicle Category",
-      tableView: true,
-      dataSrc: "values",
-      data: {
-        values: [
-          { label: "Select Category", value: "" },
-          { label: "Car", value: "car" },
-          { label: "Motorcycle", value: "motorcycle" },
-          { label: "Truck", value: "truck" },
-          { label: "Other", value: "other" },
-        ],
-      },
-      key: "vehicleCategory",
-      type: "select",
-      input: true,
-      customClass: "appearance-none",
-      placeholder: "Select Category",
-      validate: {
-        required: true,
-      },
-    },
-    {
-      label: "Fuel Category",
-      tableView: true,
-      dataSrc: "values",
-      data: {
-        values: [
-          { label: "Select Category", value: "" },
-          { label: "Petrol", value: "petrol" },
-          { label: "Diesel", value: "diesel" },
-          { label: "Electric", value: "electric" },
-        ],
-      },
-      key: "fuelCategory",
-      type: "select",
-      input: true,
-      customClass: "appearance-none",
-      placeholder: "Select Category",
-      validate: {
-        required: true,
-      },
-    },
-  ],
-};
 
 // Helper function to create the file attachment component configuration
 const createOdometerAttachmentField = (key: string, label: string) => ({
@@ -211,6 +154,75 @@ const MileageExpense: React.FC = () => {
   const travelFieldsFormInstanceRef = useRef<any>(null);
   const notesRef = useRef<HTMLDivElement>(null);
   const notesFormInstanceRef = useRef<any>(null);
+  const vehicleCategory = useDailyAllowancesVehicleCategories();
+  const filters = [["custom_is_mileage", "=", "1"]];
+  const expenseType = useExpenseTypes(filters as any);
+
+  const basicDetailsSchema = useMemo(() => {
+    return {
+      display: "form",
+      components: [
+        {
+          label: "Expense Date",
+          tableView: true,
+          validate: {
+            required: true,
+          },
+          key: "expenseDate",
+          type: "datetime",
+          input: true,
+          format: "yyyy-MM-dd",
+          enableTime: false,
+          widget: {
+            type: "calendar",
+            altInput: true,
+            dateFormat: "yyyy-MM-dd",
+            enableTime: false,
+            mode: "single",
+          },
+          defaultValue: new Date().toISOString().slice(0, 10),
+        },
+        {
+          label: "Vehicle Category",
+          tableView: true,
+          dataSrc: "values",
+          data: {
+            values: vehicleCategory?.data?.map((policy: any) => ({
+              value: policy?.name,
+              label: policy?.name,
+            })),
+          },
+          key: "vehicleCategory",
+          type: "select",
+          input: true,
+          customClass: "appearance-none",
+          placeholder: "Select Category",
+          validate: {
+            required: true,
+          },
+        },
+        {
+          label: "Expense Category",
+          key: "expense-category",
+          tableView: true,
+          dataSrc: "values",
+          data: {
+            values: expenseType?.data?.map((policy: any) => ({
+              value: policy?.name,
+              label: policy?.name,
+            })),
+          },
+          type: "select",
+          input: true,
+          customClass: "appearance-none",
+          placeholder: "Select Category",
+          validate: {
+            required: true,
+          },
+        },
+      ],
+    };
+  }, [vehicleCategory, expenseType]);
 
   const [travelType, setTravelType] = useState<"distance" | "odometer">(
     "distance"
@@ -363,6 +375,7 @@ const MileageExpense: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <HeaderBar title="Mileage Expense" onBack={handleBack} />
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
+        <ExpensesUserInfo />
         {/* Basic Expense Details Section */}
         <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -425,7 +438,7 @@ const MileageExpense: React.FC = () => {
         <div className="max-w-4xl mx-auto flex">
           <button
             onClick={handleSubmit}
-            className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit
           </button>

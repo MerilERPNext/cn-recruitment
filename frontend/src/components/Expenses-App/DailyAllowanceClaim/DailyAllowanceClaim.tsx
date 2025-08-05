@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import HeaderBar from "../../HeaderBar";
 import FormioDailyAllowanceExpenseModal from "./FormioDailyAllowanceExpenseModal";
 import MultipleDaysSection from "./MultipleDaysSection";
+import ExpensesUserInfo from "../ExpensesUserInfo";
 
 // Define interfaces for data structures
 interface ExpenseItem {
@@ -26,32 +27,6 @@ const getTodayDate = (): string => {
   const day = String(today.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
-
-// Form.io Schema for a single Daily Allowance Expense Item
-
-interface EmployeeInfoCardProps {
-  employeeName: string;
-  employeeId: string;
-  expensePolicy: string;
-}
-
-const EmployeeInfoCard: React.FC<EmployeeInfoCardProps> = ({
-  employeeName,
-  employeeId,
-  expensePolicy,
-}) => (
-  <div className="bg-white rounded-lg shadow-sm border p-4 space-y-1">
-    <p className="text-sm text-gray-700">
-      <span className="font-medium">Employee Name:</span> {employeeName}
-    </p>
-    <p className="text-sm text-gray-700">
-      <span className="font-medium">Employee ID:</span> {employeeId}
-    </p>
-    <p className="text-sm text-gray-700">
-      <span className="font-medium">Expense Policy:</span> {expensePolicy}
-    </p>
-  </div>
-);
 
 // Main Component
 const DailyAllowanceClaim: React.FC = () => {
@@ -205,15 +180,10 @@ const DailyAllowanceClaim: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddExpenseItem}
       />
-
-      <HeaderBar onBack={handleBack} title="Daily Allowance Claim" />
+      <HeaderBar title="Daily Allowance Claim" onBack={handleBack} />
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
-        <EmployeeInfoCard
-          employeeName="John Doe"
-          employeeId="EMP/001"
-          expensePolicy="Standard Travel Policy"
-        />
+        <ExpensesUserInfo />
 
         <MultipleDaysSection
           isMultipleDays={isMultipleDays}
@@ -251,14 +221,8 @@ const DailyAllowanceClaim: React.FC = () => {
       <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
         <div className="max-w-4xl mx-auto flex space-x-4">
           <button
-            onClick={() => console.log("Save as Draft clicked")}
-            className="flex-1 py-3 rounded-3xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-          >
-            Save as Draft
-          </button>
-          <button
             onClick={handleSubmit}
-            className="flex-1 py-3 rounded-3xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit
           </button>

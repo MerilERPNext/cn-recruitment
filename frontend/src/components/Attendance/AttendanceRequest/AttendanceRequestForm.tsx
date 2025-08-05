@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import LayoutHeader from "../../shared/LayoutHeader";
@@ -8,6 +8,7 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 
 const baseFormComponents = (isForOthers: boolean) => {
+
     const components = [
         {
             type: "panel",
@@ -149,15 +150,7 @@ const baseFormComponents = (isForOthers: boolean) => {
                     input: true,
                     tooltip: "Upload receipts or supporting documents.",
                 },
-                {
-                    type: "button",
-                    label: "Submit",
-                    key: "submit",
-                    disableOnInvalid: true,
-                    input: true,
-                    theme: "transparent",
-                    customClass: "text-white w-full bg-black rounded-lg"
-                }
+
             ]
         }
     ];
@@ -170,6 +163,7 @@ interface AttndanceRequestFormProps {
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) => {
     const [isForOthers, setIsForOthers] = useState(false);
     const { data: user_id } = useLoggedInUser();
+    const formAddressInstance = useRef<any>(null);
 
     const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
     const mutation = useCreateNewAttendanceRequest()
@@ -181,47 +175,54 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         display: "form",
         components: baseFormComponents(isForOthers),
     }), [isForOthers]);
-    const handleSubmit = (submission: any) => {
+    const handleSubmit = async (submission: any) => {
         console.log("Form data:", submission.data);
+
         const body = {
             company: isForOthers ? submission?.data?.company : user?.company,
             employee: isForOthers ? submission?.data?.employee : user?.employee,
             explanation: submission?.data?.explanation,
             reason: submission?.data?.reason,
-            from_date: submission?.data?.from_date ? formatDateToYYYYMMDD(new Date(submission?.data?.from_date)) : null,
-            to_date: submission?.data?.to_date ? formatDateToYYYYMMDD(new Date(submission?.data?.to_date)) : null,
-            include_holidays: 1
+            from_date: submission?.data?.from_date
+                ? formatDateToYYYYMMDD(new Date(submission?.data?.from_date))
+                : null,
+            to_date: submission?.data?.to_date
+                ? formatDateToYYYYMMDD(new Date(submission?.data?.to_date))
+                : null,
+            include_holidays: 1,
         };
+
         mutation.mutate(body, {
             onSuccess: () => {
                 onClose();
             },
             onError: (error) => {
-                console.error(error)
-            }
-        })
+                console.error(error);
+            },
+        });
     };
-    return (<div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white overflow-scroll">
-        <LayoutHeader
-            tab="Create Attendance Request"
-            onBack={() => {
-                onClose()
-            }}
-            icon="x"
-        />
-        <div className=" p-4 ">
-            <div className="flex gap-2 mb-2 bg-gray-200 p-1 rounded-md">
+
+    return (<div className="fixed top-0 left-0 w-full h-screen bg-white z-50 flex flex-col">
+        {/* Fixed Header */}
+        <div className="z-10">
+            <LayoutHeader
+                tab="Create Attendance Request"
+                onBack={onClose}
+                icon="x"
+            />
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto pt-14 pb-28 px-2">
+            <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
                 <button
-                    style={{ outline: "none", border: "none" }}
-                    className={`w-full p-2 rounded text-gray-500  ${!isForOthers ? "bg-white text-black" : ""}`}
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-black text-white" : ""}`}
                     onClick={() => setIsForOthers(false)}
                 >
                     Self
                 </button>
                 <button
-                    style={{ outline: "none", border: "none" }}
-
-                    className={`w-full p-2 rounded text-gray-500 ${isForOthers ? "bg-white text-black" : ""}`}
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-black text-white" : ""}`}
                     onClick={() => setIsForOthers(true)}
                 >
                     For Others
@@ -236,8 +237,23 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
                     submitButton: false,
                     noAlerts: true
                 }}
+                onFormReady={(instance: any) =>
+                    (formAddressInstance.current = instance)
+                }
                 className="formio-no-border address-form-container"
             />
+        </div>
+
+        {/* Sticky Submit Button */}
+        <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-2 z-20">
+            <div className="max-w-4xl mx-auto">
+                <button
+                    onClick={() => formAddressInstance.current.submit()}
+                    className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold"
+                >
+                    Submit
+                </button>
+            </div>
         </div>
     </div>
     );
