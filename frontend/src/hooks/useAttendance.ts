@@ -29,7 +29,7 @@ export const useAllAttendance = (): UseQueryResult<Attendance[], Error> => {
     ...defaultQueryOptions,
   });
 };
-export const useHomeSummaryDetails = (userId:string,filters:{}): UseQueryResult<EmployeeCheckInLog[], Error> => {
+export const useHomeSummaryDetails = (userId:string,filters:string): UseQueryResult<EmployeeCheckInLog[], Error> => {
   return useQuery<EmployeeCheckInLog[], Error>({
     queryKey: ['home-summary-details'],
     queryFn: () => attendanceService.getHomeSummaryDetails(userId,filters),
@@ -39,7 +39,7 @@ export const useHomeSummaryDetails = (userId:string,filters:{}): UseQueryResult<
   });
 };
 
-export const useGetEmployeeShift = (userId:string,filters?:{}): UseQueryResult<EmployeeShift, Error> => {
+export const useGetEmployeeShift = (userId:string,filters?:object): UseQueryResult<EmployeeShift, Error> => {
   return useQuery<EmployeeShift, Error>({
     queryKey: ['employee-shift'],
     queryFn: () => attendanceService.getEmployeeShift(userId,filters),
@@ -50,7 +50,7 @@ export const useGetEmployeeShift = (userId:string,filters?:{}): UseQueryResult<E
 };
 
 
-export const useGetQuickAttendanceSummary = (employeeId:string,fromDate:string,toDate:string): UseQueryResult<any, Error> => {
+export const useGetQuickAttendanceSummary = (employeeId:string,fromDate:string,toDate:string): UseQueryResult<EmployeeShiftSummary, Error> => {
   return useQuery<EmployeeShiftSummary, Error>({
     queryKey: ['employee-attendance-summary',fromDate],
     queryFn: () => attendanceService.getQuickAttendanceSummary(employeeId,fromDate,toDate),
@@ -110,7 +110,7 @@ export function useCreateNewAttendanceRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (body: any) => attendanceService.createAttendanceRequest(body),
+    mutationFn: (body: object) => attendanceService.createAttendanceRequest(body),
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
@@ -124,7 +124,7 @@ export function useCheckInOutService() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (body: any) => attendanceService.checkInOutService(body),
+    mutationFn: (body : object) => attendanceService.checkInOutService(body),
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["checkin-checkout"] });

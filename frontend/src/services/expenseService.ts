@@ -38,7 +38,8 @@ export const expenseService = {
         "employee_name",
         "creation",
         "total_claimed_amount",
-        "approval_status"
+        "approval_status",
+        "status"
       ],
       filters,
       limit: 3,

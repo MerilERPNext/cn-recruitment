@@ -4,6 +4,7 @@ import AttendanceRequestCard from "./AttendanceRequestCard";
 import AttndanceRequestForm from "./AttendanceRequestForm";
 import { useMemo, useState } from "react";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { AttendanceRequest as AttendanceRequestType } from "../../../types/attendance";
 
 const AttendanceRequest = () => {
     const { data: userId } = useLoggedInUser();
@@ -36,7 +37,7 @@ const AttendanceRequest = () => {
                 <FrappeListView
                     doctype="Attendance Request"
                     isSearch={false}
-                    ItemComponent={(props: { item: any }) => {
+                    ItemComponent={(props: { item: AttendanceRequestType }) => {
                         return (
                             <AttendanceRequestCard
                                 data={props?.item}

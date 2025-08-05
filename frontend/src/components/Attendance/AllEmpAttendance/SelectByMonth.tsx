@@ -5,27 +5,26 @@ import { Check, Circle } from "lucide-react"
 import LayoutHeader from "../../shared/LayoutHeader"
 
 export interface MonthOption {
-    id: string
     label: string
     value: string
 }
 
 const monthOptions: MonthOption[] = [
-    { id: "9", label: "Sept-2025", value: "2025-09" },
-    { id: "10", label: "Aug-2025", value: "2025-08" },
-    { id: "1", label: "Jul-2025", value: "2025-07" },
-    { id: "2", label: "Jun-2025", value: "2025-06" },
-    { id: "3", label: "May-2025", value: "2025-05" },
-    { id: "4", label: "Apr-2025", value: "2025-04" },
-    { id: "5", label: "Mar-2025", value: "2025-03" },
-    { id: "6", label: "Feb-2025", value: "2025-02" },
-    { id: "7", label: "Jan-2025", value: "2025-01" },
-    { id: "8", label: "Dec-2024", value: "2024-12" },
+    { label: "Aug-2025", value: "2025-08" },
+    { label: "Sept-2025", value: "2025-09" },
+    { label: "Jul-2025", value: "2025-07" },
+    { label: "Jun-2025", value: "2025-06" },
+    { label: "May-2025", value: "2025-05" },
+    { label: "Apr-2025", value: "2025-04" },
+    { label: "Mar-2025", value: "2025-03" },
+    { label: "Feb-2025", value: "2025-02" },
+    { label: "Jan-2025", value: "2025-01" },
+    { label: "Dec-2024", value: "2024-12" },
 
 ]
 
-const SelectByMonth = ({ onClose, onChange }: { onClose: () => void, onChange: (value: MonthOption) => void }) => {
-    const [selectedMonth, setSelectedMonth] = useState<MonthOption>(monthOptions[0]) // Default: Jul-2025
+const SelectByMonth = ({ onClose, onChange, selected }: { onClose: () => void, onChange: (value: MonthOption) => void, selected: MonthOption }) => {
+    const [selectedMonth, setSelectedMonth] = useState<MonthOption>(selected)
 
     const handleApply = () => {
         onChange(selectedMonth)
@@ -47,7 +46,7 @@ const SelectByMonth = ({ onClose, onChange }: { onClose: () => void, onChange: (
                 <div className="space-y-1">
                     {monthOptions.map((month) => (
                         <button
-                            key={month.id}
+                            key={month.value}
                             onClick={() => setSelectedMonth(month)}
                             className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-lg border-b border-gray-100 last:border-b-0"
                         >

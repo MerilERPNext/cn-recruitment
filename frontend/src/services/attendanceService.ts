@@ -11,7 +11,7 @@ export const attendanceService = {
     return response.data as Attendance[];
   },
 
-  getHomeSummaryDetails: async (userId:string,filters:{}): Promise<EmployeeCheckInLog[]> => {
+  getHomeSummaryDetails: async (userId:string,filters:string): Promise<EmployeeCheckInLog[]> => {
     try {
       const response = await fetch(`/api/method/cn_leave_shift_managment.api.get_shift_checkins?user=${userId}&filters=${filters}`, {
         method: 'GET',
@@ -28,7 +28,7 @@ export const attendanceService = {
       throw error;
     }
   },
-  getEmployeeShift: async (userId:string,filters?:{}): Promise<EmployeeShift> => {
+  getEmployeeShift: async (userId:string,filters?:object): Promise<EmployeeShift> => {
     try {
       const response = await fetch(`/api/method/cn_leave_shift_managment.api.get_employee_shift?user=${userId}&filters=${filters}`, {
         method: 'GET',
@@ -65,7 +65,7 @@ export const attendanceService = {
     }
   },
 
-  checkInOutService: async (body:any): Promise<any> => {
+  checkInOutService: async (body:object): Promise<boolean> => {
     try {
       const response = await fetch(`/api/method/cn_leave_shift_managment.api.create_employee_checkin `, {
         method: 'POST',
@@ -107,15 +107,15 @@ export const attendanceService = {
     });
     return response.data as Attendance[];
   },
-  getLeaveType: async (filters?: FilterCondition[]): Promise<any> => {
+  getLeaveType: async (filters?: FilterCondition[]): Promise<[]> => {
     const response = await FrappeAPI.getDocumentList("Leave Type", {
       fields: ["*"],
       filters,
     });
-    return response.data;
+    return response.data as [];
   },
 
-    createAttendanceRequest: async (body: any): Promise<any> => {
+    createAttendanceRequest: async (body: object): Promise<boolean> => {
     const response = await fetch(`/api/resource/Attendance Request`, {
       method: 'POST',
       headers: {
@@ -130,7 +130,7 @@ export const attendanceService = {
       throw new Error(error.message);
     }
 
-    return response.json();
+    return true
   }
 
 
