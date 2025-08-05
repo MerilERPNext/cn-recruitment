@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import RequestLeave from "./RequestLeave";
 import HeaderBar from "../HeaderBar";
@@ -8,14 +8,15 @@ import {
   useRequestLeaveModal,
   RequestLeaveModalProvider,
 } from "./RequestLeaveModalContext";
+import NavigationTabs, { Tab } from "../NavigationTab";
 
-type TabName = "Leave Balance" | "Requests Status" | "Holidays";
+type TabName = "leave-balance" | "requests-status" | "holidays";
 type SubTabName = "My Requests" | "Team Requests";
 
 const tabRoutes: Record<TabName, string> = {
-  "Leave Balance": "/webapp/leave-app/leaves/leave-balance",
-  Holidays: "/webapp/leave-app/leaves/holidays",
-  "Requests Status": "/webapp/leave-app/leaves/leave-requests",
+  "leave-balance": "/webapp/leave-app/leaves/leave-balance",
+  holidays: "/webapp/leave-app/leaves/holidays",
+  "requests-status": "/webapp/leave-app/leaves/leave-requests",
 };
 
 const subTabRoutes: Record<SubTabName, string> = {
@@ -26,12 +27,21 @@ const subTabRoutes: Record<SubTabName, string> = {
 const LeaveAppInner: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabName>("Leave Balance");
+  const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
   const [activeSubTab, setActiveSubTab] = useState<SubTabName>("My Requests");
+
+  const tabs: Tab[] = useMemo(
+    () => [
+      { key: "leave-balance", label: "Leave Balance" },
+      { key: "holidays", label: "Holidays" },
+      { key: "requests-status", label: "Requests Status" },
+    ],
+    []
+  );
 
   const { showModal, openModal, closeModal } = useRequestLeaveModal();
 
-  const isLeaveRequestsActive = activeTab === "Requests Status";
+  const isLeaveRequestsActive = activeTab === "requests-status";
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
@@ -54,7 +64,7 @@ const LeaveAppInner: React.FC = () => {
 
   useEffect(() => {
     if (location.pathname === "/webapp/leave-app") {
-      navigate(tabRoutes["Leave Balance"], { replace: true });
+      navigate(tabRoutes["leave-balance"], { replace: true });
     }
     if (location.pathname === "/webapp/leave-app/leaves/leave-requests") {
       navigate(subTabRoutes["My Requests"], { replace: true });
@@ -75,7 +85,7 @@ const LeaveAppInner: React.FC = () => {
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
-    if (tab === "Requests Status") {
+    if (tab === "requests-status") {
       navigate(subTabRoutes[activeSubTab]);
     } else {
       navigate(tabRoutes[tab]);
@@ -104,22 +114,11 @@ const LeaveAppInner: React.FC = () => {
           title={"Leaves & Holidays"}
           onBack={() => navigate("/webapp")}
         />
-
-        <nav className="px-2 flex overflow-x-auto scrollbar-hidden">
-          {(Object.keys(tabRoutes) as TabName[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={`flex-1 py-3 border-b-2 text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? "border-b-blue-500 text-blue-500"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
+        <NavigationTabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={(tab) => handleTabChange(tab as TabName)}
+        />
 
         {isLeaveRequestsActive && (
           <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
@@ -146,7 +145,7 @@ const LeaveAppInner: React.FC = () => {
         <Outlet />
       </main>
 
-      {!showModal && activeTab === "Requests Status" && (
+      {!showModal && activeTab === "requests-status" && (
         <div className="sticky bottom-0 bg-white rounded-md shadow-lg py-4 px-4 w-full z-50">
           <div className="max-w-4xl mx-auto flex">
             <button

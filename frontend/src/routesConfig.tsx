@@ -56,6 +56,9 @@ import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/D
 // import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
 import RequestOvertime from "./components/Attendance/RequestOvertime/RequestOvertime";
 import { Navigate } from "react-router";
+import PoliciesApp from "./components/Policies/PoliciesApp";
+import PoliciesCategory from "./components/Policies/PoliciesCategory";
+import PoliciesList from "./components/Policies/PoliciesList";
 
 export interface AppRoute {
   index?: boolean;
@@ -73,7 +76,10 @@ export const routesConfig: AppRoute[] = [
   { path: "/webapp/expenses", element: <Expenses /> },
   { path: "/webapp/policies", element: <Policies /> },
   { path: "/webapp/policies-enforced", element: <PoliciesEnforced /> },
-  { path: "/webapp/policies-enforced/view/:policyId", element: <PolicySignOff /> },
+  {
+    path: "/webapp/policies-enforced/view/:policyId",
+    element: <PolicySignOff />,
+  },
   {
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
     element: <JobApplicantDetails />,
@@ -119,16 +125,16 @@ export const routesConfig: AppRoute[] = [
   },
 
   {
-    path: '/webapp/notices',
+    path: "/webapp/notices",
     element: <NoticesLayout />,
     children: [
-      { path: 'all', element: <NoticesTab tab="all" /> },
-      { path: 'unread', element: <NoticesTab tab="unread" /> },
+      { path: "all", element: <NoticesTab tab="all" /> },
+      { path: "unread", element: <NoticesTab tab="unread" /> },
       // { path: 'archived', element: <NoticesTab tab="archived" /> },
     ],
   },
 
-  { path: '/webapp/notices/:id', element: <NoticeDetails /> },
+  { path: "/webapp/notices/:id", element: <NoticeDetails /> },
   {
     path: "/webapp/my-profile",
     element: <MyProfile />,
@@ -172,19 +178,26 @@ export const routesConfig: AppRoute[] = [
     element: <AttendanceLayout />,
     children: [
       {
-        index: true, element: <Navigate to="summary" replace />,
-        path: ""
+        index: true,
+        element: <Navigate to="summary" replace />,
+        path: "",
       },
-      { path: 'summary', element: <AttendanceSummary /> },
-      { path: 'emp-attendance', element: <EmployeeAttendance /> },
-      { path: 'team-attendance', element: <TeamAttendance /> },
-      { path: 'attendance-request', element: <AttendanceRequest /> },
-      { path: 'team-attendance-requests', element: <TeamAttendanceDetails /> },
+      { path: "summary", element: <AttendanceSummary /> },
+      { path: "emp-attendance", element: <EmployeeAttendance /> },
+      { path: "team-attendance", element: <TeamAttendance /> },
+      { path: "attendance-request", element: <AttendanceRequest /> },
+      { path: "team-attendance-requests", element: <TeamAttendanceDetails /> },
     ],
   },
-  { path: '/webapp/attendance/overtime', element: <RequestOvertime /> },
-  { path: '/webapp/attendance/team-attendance-details/pendings', element: <AllPendingRequests /> },
-  { path: '/webapp/attendance/emp-attendance/all', element: <AllEmpAttendance /> },
+  { path: "/webapp/attendance/overtime", element: <RequestOvertime /> },
+  {
+    path: "/webapp/attendance/team-attendance-details/pendings",
+    element: <AllPendingRequests />,
+  },
+  {
+    path: "/webapp/attendance/emp-attendance/all",
+    element: <AllEmpAttendance />,
+  },
   //Leaves routes
   {
     path: "/webapp/leave-app",
@@ -221,5 +234,15 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/expenses-app/mileage-expense-claim",
     element: <MileageExpenseClaim />,
+  },
+
+  //Policies routes
+  {
+    path: "/webapp/policies-app",
+    element: <PoliciesApp />,
+    children: [
+      { path: "", element: <PoliciesCategory /> },
+      { path: "policies-list", element: <PoliciesList /> },
+    ],
   },
 ];
