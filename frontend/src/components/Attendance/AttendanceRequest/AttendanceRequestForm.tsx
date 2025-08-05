@@ -5,157 +5,9 @@ import LayoutHeader from "../../shared/LayoutHeader";
 import { useCreateNewAttendanceRequest } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails, useGetAllEmployees } from "../../../hooks/useEmployee";
+import { Toaster, toast } from "react-hot-toast";
 
-const baseFormComponents = (isForOthers: boolean) => {
-
-    const components = [
-        {
-            type: "panel",
-            key: "attendanceRequestPanel",
-            label: "Attendance Request",
-            title: "Attendance Request",
-            hideLabel: true,
-            customClass: "bg-white rounded-lg",
-            components: [
-
-                ...(isForOthers
-                    ? [
-                        {
-                            label: "Employee Name",
-                            key: "employee",
-                            type: "textfield",
-                            input: true,
-                            placeholder: "John Doe",
-                            customClass: "mb-4"
-                        },
-                        {
-                            label: "Company",
-                            key: "company",
-                            type: "textfield",
-                            input: true,
-                            placeholder: "Hybrowlabs Technologies",
-                            customClass: "mb-4",
-                        },
-                    ]
-                    : []),
-                {
-                    label: "Request Type",
-                    key: "request-type",
-                    type: "select",
-                    input: true,
-                    placeholder: "Select a Request Type",
-                    customClass: "mb-4",
-                    data: {
-                        values: [
-                            { label: "Attendance Request", value: "Attendance Request" },
-                            { label: "Clockin", value: "Clockin" },
-                            { label: "Out Duty", value: "Out Duty" },
-                            { label: "Shift Change", value: "Shift Change" },]
-                    }
-                },
-                {
-                    customClass: "mb-4",
-                    type: "columns",
-                    columns: [
-                        {
-                            components: [
-                                {
-                                    label: "From Date",
-                                    key: "from_date",
-                                    type: "datetime",
-                                    input: true,
-                                    widget: { type: "calendar" },
-                                    format: "yyyy-MM-dd",
-                                    placeholder: "yyyy-mm-dd",
-                                    customClass: "mb-4"
-                                }
-                            ],
-                            width: 6
-                        },
-                        {
-                            components: [
-                                {
-                                    label: "To Date",
-                                    key: "to_date",
-                                    type: "datetime",
-                                    input: true,
-                                    widget: { type: "calendar" },
-                                    format: "yyyy-MM-dd",
-                                    placeholder: "yyyy-mm-dd",
-                                    customClass: "mb-4"
-                                }
-                            ],
-                            width: 6
-                        }
-                    ]
-                },
-                {
-                    "label": "Break Duration",
-                    "tableView": true,
-                    "validateWhenHidden": false,
-                    "key": "break_duration",
-                    "type": "time",
-                    "input": true,
-                    "inputMask": "99:99"
-
-                },
-
-
-                {
-                    type: "checkbox",
-                    key: "overnight_clockout",
-                    label: "Overnight Clockout ?",
-                    input: true,
-                    labelPosition: "bottom",
-                    customClass: "custom-halfday-toggle border border-gray-300 rounded-lg shadow-sm p-2 bg-white mb-4 text-xl font-semibold "
-                },
-
-                {
-                    label: "Reason",
-                    key: "reason",
-                    type: "select",
-                    input: true,
-                    placeholder: "Select a reason",
-                    customClass: "mb-4",
-                    data: {
-                        values: [
-                            { label: "Work From Home", value: "Work From Home" },
-                            { label: "On Duty", value: "On Duty" },
-                        ]
-                    }
-                },
-                {
-                    label: "Explanation",
-                    key: "explanation",
-                    type: "textarea",
-                    input: true,
-                    placeholder: "Provide additional details...",
-                    rows: 4,
-                    customClass: "mb-4"
-                },
-                {
-                    label: "Attachments",
-                    tableView: false,
-                    webcam: true,
-                    fileTypes: [
-                        { label: "Images", value: "image/*" },
-                        { label: "Documents", value: "application/*" },
-                    ],
-                    image: true,
-                    imageSize: "200",
-                    storage: "base64", // Or 'url' if you have a backend for file storage
-                    key: "attachments",
-                    type: "file",
-                    input: true,
-                    tooltip: "Upload receipts or supporting documents.",
-                },
-
-            ]
-        }
-    ];
-    return components;
-};
 
 interface AttndanceRequestFormProps {
     onClose: () => void;
@@ -163,7 +15,7 @@ interface AttndanceRequestFormProps {
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) => {
     const [isForOthers, setIsForOthers] = useState(false);
     const { data: user_id } = useLoggedInUser();
-
+    const { data: employeeList } = useGetAllEmployees()
     interface FormioFormInstance {
         submit: () => void;
     }
@@ -172,13 +24,148 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
     const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
     const mutation = useCreateNewAttendanceRequest()
 
+
+    const baseFormComponents = (isForOthers: boolean) => {
+        const components = [
+            {
+                type: "panel",
+                key: "attendanceRequestPanel",
+                label: "Attendance Request",
+                title: "Attendance Request",
+                hideLabel: true,
+                customClass: "bg-white rounded-lg",
+                components: [
+
+                    ...(isForOthers
+                        ? [
+                            {
+                                label: "Employee",
+                                key: "employee",
+                                type: "select",
+                                input: true,
+                                placeholder: "Select a leave type",
+                                customClass: "mb-4",
+                                data: {
+                                    values: employeeList && employeeList?.length > 0 ?
+                                        employeeList?.map((item: { name: string; employee_name: string; }) => { return { label: item?.employee_name, value: item?.name } }) : []
+
+                                }
+                            },
+                            {
+                                label: "Company",
+                                key: "company",
+                                type: "textfield",
+                                input: true,
+                                placeholder: "Hybrowlabs Technologies",
+                                customClass: "mb-4",
+                            },
+                        ]
+                        : []),
+                    {
+                        label: "Request Type",
+                        key: "request-type",
+                        type: "select",
+                        input: true,
+                        placeholder: "Select a Request Type",
+                        customClass: "mb-4",
+                        data: {
+                            values: [
+                                { label: "Attendance Request", value: "Attendance Request" },
+                                { label: "Clockin", value: "Clockin" },
+                                { label: "Out Duty", value: "Out Duty" },
+                                { label: "Shift Change", value: "Shift Change" },]
+                        }
+                    },
+                    {
+                        customClass: "mb-4",
+                        type: "columns",
+                        columns: [
+                            {
+                                components: [
+                                    {
+                                        label: "From Date",
+                                        key: "from_date",
+                                        type: "datetime",
+                                        input: true,
+                                        widget: { type: "calendar" },
+                                        format: "yyyy-MM-dd",
+                                        placeholder: "yyyy-mm-dd",
+                                        customClass: "mb-4"
+                                    }
+                                ],
+                                width: 6
+                            },
+                            {
+                                components: [
+                                    {
+                                        label: "To Date",
+                                        key: "to_date",
+                                        type: "datetime",
+                                        input: true,
+                                        widget: { type: "calendar" },
+                                        format: "yyyy-MM-dd",
+                                        placeholder: "yyyy-mm-dd",
+                                        customClass: "mb-4"
+                                    }
+                                ],
+                                width: 6
+                            }
+                        ]
+                    },
+
+                    {
+                        label: "Reason",
+                        key: "reason",
+                        type: "select",
+                        input: true,
+                        placeholder: "Select a reason",
+                        customClass: "mb-4",
+                        data: {
+                            values: [
+                                { label: "Work From Home", value: "Work From Home" },
+                                { label: "On Duty", value: "On Duty" },
+                            ]
+                        }
+                    },
+                    {
+                        label: "Explanation",
+                        key: "explanation",
+                        type: "textarea",
+                        input: true,
+                        placeholder: "Provide additional details...",
+                        rows: 4,
+                        customClass: "mb-4"
+                    },
+                    {
+                        label: "Attachments",
+                        tableView: false,
+                        webcam: true,
+                        fileTypes: [
+                            { label: "Images", value: "image/*" },
+                            { label: "Documents", value: "application/*" },
+                        ],
+                        image: true,
+                        imageSize: "200",
+                        storage: "base64",
+                        key: "attachments",
+                        type: "file",
+                        input: true,
+                        tooltip: "Upload receipts or supporting documents.",
+                    },
+
+                ]
+            }
+        ];
+        return components;
+    };
+
     const formSchema = useMemo(() => ({
         title: "Attendance Request",
         name: "attendanceRequest",
         path: "attendance-request",
         display: "form",
         components: baseFormComponents(isForOthers),
-    }), [isForOthers]);
+    }), [isForOthers, employeeList]);
 
     interface AttendanceFormData {
         company?: string;
@@ -187,11 +174,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         reason?: string;
         from_date?: string | Date;
         to_date?: string | Date;
-        overnight_clockout?: boolean
     }
     const handleSubmit = async (submission: { data: AttendanceFormData }) => {
-        console.log("Form data:", submission.data);
-
         const body = {
             company: isForOthers ? submission?.data?.company : user?.company,
             employee: isForOthers ? submission?.data?.employee : user?.employee,
@@ -204,14 +188,15 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
                 ? formatDateToYYYYMMDD(new Date(submission?.data?.to_date))
                 : null,
             include_holidays: 1,
-            custom_clockin: submission?.data?.overnight_clockout
         };
 
         mutation.mutate(body, {
             onSuccess: () => {
                 onClose();
+                toast.success('Added Attendace Request successfully');
             },
             onError: (error) => {
+                toast.error('Failed to add Attendace Request');
                 console.error(error);
             },
         });
@@ -219,6 +204,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
 
     return (<div className="fixed top-0 left-0 w-full h-screen bg-white z-50 flex flex-col">
         {/* Fixed Header */}
+
         <div className="z-10">
             <LayoutHeader
                 tab="Create Attendance Request"
@@ -259,17 +245,23 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
             />
         </div>
 
-        {/* Sticky Submit Button */}
         <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-2 z-20">
             <div className="max-w-4xl mx-auto">
+
                 <button
                     onClick={() => formAddressInstance.current?.submit()}
-                    className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold"
+                    className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold flex items-center justify-center"
                 >
-                    Submit
+                    {mutation.isPending ? (
+                        <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                    ) : (
+                        "Submit"
+                    )}
                 </button>
+
             </div>
         </div>
+        <Toaster position="top-center" containerClassName="z-50" />
     </div>
     );
 };
