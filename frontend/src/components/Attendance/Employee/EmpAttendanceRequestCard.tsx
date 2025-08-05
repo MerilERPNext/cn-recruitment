@@ -1,6 +1,7 @@
+import { AttendanceRequest } from "../../../types/attendance"
 import Badge from "../../shared/Badge"
 
-const EmpAttendanceRequestCard = ({ data }: { data: any }) => {
+const EmpAttendanceRequestCard = ({ data }: { data: AttendanceRequest }) => {
 
     const getStatus = (status: number) => {
         if (status === 0) {

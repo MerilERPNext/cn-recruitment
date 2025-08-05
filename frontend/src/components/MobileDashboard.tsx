@@ -12,7 +12,8 @@ import {
   DollarSign,
   XCircle,
   FileEdit,
-  Timer
+  Timer,
+  BanknoteX
 } from 'lucide-react';
 import { useUnreadNoticesCount } from '../hooks/useNotices';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -27,6 +28,15 @@ import { compareAsc, compareDesc, differenceInMinutes, endOfDay, endOfMonth, for
 
 
 const statusStyles = {
+  unpaid: {
+    bg: 'bg-yellow-50',
+    border: 'border-yellow-100',
+    iconBg: 'bg-yellow-200',
+    iconText: 'text-yellow-600',
+    badgeBg: 'bg-yellow-200',
+    badgeText: 'text-yellow-800',
+    icon: <BanknoteX className="w-4 h-4 text-yellow-600" />
+  },
   draft: {
     bg: 'bg-orange-50',
     border: 'border-orange-100',
@@ -34,7 +44,7 @@ const statusStyles = {
     iconText: 'text-orange-600',
     badgeBg: 'bg-orange-200',
     badgeText: 'text-orange-800',
-    icon: <FileEdit className="w-4 h-4 text-yellow-600" />
+    icon: <FileEdit className="w-4 h-4 text-orange-600" />
   },
   approved: {
     bg: 'bg-green-100',
@@ -56,18 +66,12 @@ const statusStyles = {
   },
 };
 
-// const statusIcons: Record<string, ReactNode> = {
-//   approved: 
-//   rejected: 
-//   draft: 
-// }
-
 const MobileDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   // Get unread notifications count
   const { data: unreadCount = 0 } = useUnreadNoticesCount();
-  const { data: expenseData } = useExpenseClaim()
+  const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]])
   // Get current user data
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(currentUser?.name as string)
@@ -346,14 +350,14 @@ const MobileDashboard: React.FC = () => {
         {/* Leave Balance */}
 
         {leaveBalance && (
-          <LeaveProgress 
+          <LeaveProgress
             leaveData={leaveBalance.leave_balance.reduce((acc, leave) => ({
               ...acc,
               [leave.type]: {
                 allocated_leaves: leave.entitled,
                 balance_leaves: leave.balance
               }
-            }), {} as LeaveData)} 
+            }), {} as LeaveData)}
           />
         )}
 
@@ -369,9 +373,9 @@ const MobileDashboard: React.FC = () => {
 
 
           <div className="space-y-3">
-            {expenseData?.map((item: { employee_name: string, creation: string, total_claimed_amount: string, approval_status: string }) => {
+            {expenseData?.map((item: { employee_name: string, creation: string, total_claimed_amount: string, status: string }) => {
 
-              const styles = statusStyles[item.approval_status?.toLowerCase() as keyof typeof statusStyles] || statusStyles.draft;
+              const styles = statusStyles[item.status?.toLowerCase() as keyof typeof statusStyles] || statusStyles.draft;
               // const StatusIcon = statusIcons[statusKey] || statusIcons.draft;
 
               return (
@@ -388,7 +392,7 @@ const MobileDashboard: React.FC = () => {
                   <div className="text-right">
                     <p className="font-bold text-gray-900">{item?.total_claimed_amount} Rs</p>
                     <span className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium ${styles.badgeBg} ${styles.badgeText}`}>
-                      {item?.approval_status}
+                      {item?.status}
                     </span>
                   </div>
                 </div>

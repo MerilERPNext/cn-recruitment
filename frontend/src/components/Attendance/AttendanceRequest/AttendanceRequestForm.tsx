@@ -163,7 +163,11 @@ interface AttndanceRequestFormProps {
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose }) => {
     const [isForOthers, setIsForOthers] = useState(false);
     const { data: user_id } = useLoggedInUser();
-    const formAddressInstance = useRef<any>(null);
+
+    interface FormioFormInstance {
+        submit: () => void;
+    }
+    const formAddressInstance = useRef<FormioFormInstance | null>(null);
 
     const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
     const mutation = useCreateNewAttendanceRequest()
@@ -175,7 +179,17 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         display: "form",
         components: baseFormComponents(isForOthers),
     }), [isForOthers]);
-    const handleSubmit = async (submission: any) => {
+
+    interface AttendanceFormData {
+        company?: string;
+        employee?: string;
+        explanation?: string;
+        reason?: string;
+        from_date?: string | Date;
+        to_date?: string | Date;
+        overnight_clockout?: boolean
+    }
+    const handleSubmit = async (submission: { data: AttendanceFormData }) => {
         console.log("Form data:", submission.data);
 
         const body = {
@@ -190,6 +204,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
                 ? formatDateToYYYYMMDD(new Date(submission?.data?.to_date))
                 : null,
             include_holidays: 1,
+            custom_clockin: submission?.data?.overnight_clockout
         };
 
         mutation.mutate(body, {
@@ -237,9 +252,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
                     submitButton: false,
                     noAlerts: true
                 }}
-                onFormReady={(instance: any) =>
-                    (formAddressInstance.current = instance)
-                }
+                onFormReady={(instance: FormioFormInstance) => {
+                    formAddressInstance.current = instance as FormioFormInstance;
+                }}
                 className="formio-no-border address-form-container"
             />
         </div>
@@ -248,7 +263,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({ onClose })
         <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-2 z-20">
             <div className="max-w-4xl mx-auto">
                 <button
-                    onClick={() => formAddressInstance.current.submit()}
+                    onClick={() => {
+                        if (formAddressInstance.current) {
+                            formAddressInstance.current.submit();
+                        }
+                    }}
                     className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold"
                 >
                     Submit

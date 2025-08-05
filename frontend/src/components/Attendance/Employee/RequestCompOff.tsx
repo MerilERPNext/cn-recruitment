@@ -35,7 +35,7 @@ const RequestCompOff = () => {
               customClass: "mb-4",
               data: {
                 values: data && data?.length > 0 ?
-                  data?.map((item: { name: any; leave_type_name: any; }) => { return { label: item?.name, value: item?.leave_type_name } }) : []
+                  data?.map((item: { name: string; leave_type_name: string; }) => { return { label: item?.name, value: item?.leave_type_name } }) : []
 
               }
             },
@@ -124,6 +124,7 @@ const RequestCompOff = () => {
   const { data: user_id } = useLoggedInUser();
 
   const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSubmit = (submission: any) => {
     console.log("Form data:", submission.data);
     const body = {

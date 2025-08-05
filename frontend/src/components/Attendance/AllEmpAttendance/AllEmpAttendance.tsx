@@ -6,31 +6,31 @@ import SelectByMonth, { MonthOption } from "./SelectByMonth";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import FrappeListView from "../../ListView";
 import { BaseItem } from "../../Notices/types/noticeItem";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { endOfMonth, format } from "date-fns";
 
 const AllEmpAttendance = () => {
     const navigate = useNavigate();
     const [showSelectByMonth, setShowSelectByMonth] = useState(false);
     const [selectedMonth, setSelectedMonth] = useState<MonthOption>({
-        id: "1",
-        label: "Jul-2025",
-        value: "2025-07",
+        label: format(new Date(), 'MMM-yyyy'),
+        value: format(new Date(), 'yyyy-MM'),
     });
 
     const { data: userId } = useLoggedInUser();
-
+    const { data: currentUser } = useCurrentUser();
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails(currentUser?.name as string)
     const defaultFilters = useMemo(() => {
         if (!userId) return undefined;
 
         const startOfMonth = `${selectedMonth.value}-01`;
-        const endOfMonth = new Date(
-            new Date(startOfMonth).getFullYear(),
-            new Date(startOfMonth).getMonth() + 1,
-            0
-        ).toISOString().split("T")[0];
+
+        const end = format(endOfMonth(new Date(selectedMonth?.value)), 'yyyy-MM-dd')
 
         return {
-            owner: userId,
-            attendance_date: ["between", [startOfMonth, endOfMonth]],
+            employee: currentEmployee?.employee,
+            attendance_date: ["between", [startOfMonth, end]],
         } as const;
     }, [userId, selectedMonth]);
 
@@ -73,7 +73,7 @@ const AllEmpAttendance = () => {
         const day = dateObj.toLocaleString("default", { weekday: "short" });
 
         let statusKey = item.status?.toLowerCase() || "unknown";
-        let statusLabel = item.status || "Unknown";
+        const statusLabel = item.status || "Unknown";
 
         if (statusKey === "half day" || statusKey === "half-day") {
             statusKey = "half-day";
@@ -115,6 +115,7 @@ const AllEmpAttendance = () => {
                     defaultFields={[
                         "name", "status", "attendance_date", "shift", "employee"
                     ]}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     defaultFilters={defaultFilters as any}
                     infiniteScroll
                     isFilter={false}
@@ -144,6 +145,7 @@ const AllEmpAttendance = () => {
             {showSelectByMonth && (
                 <SelectByMonth
                     onClose={() => setShowSelectByMonth(false)}
+                    selected={selectedMonth}
                     onChange={(monthObj) => {
                         setSelectedMonth(monthObj);
                         setShowSelectByMonth(false);
