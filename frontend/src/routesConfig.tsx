@@ -58,6 +58,10 @@ import RequestOvertime from "./components/Attendance/RequestOvertime/RequestOver
 import { Navigate } from "react-router";
 import CTCSalaryUI from "./components/SalarySlip/CTCSalaryBreakdown";
 
+import PoliciesApp from "./components/Policies/PoliciesApp";
+import PoliciesCategory from "./components/Policies/PoliciesCategory";
+import PoliciesList from "./components/Policies/PoliciesList";
+
 export interface AppRoute {
   index?: boolean;
   path: string;
@@ -225,4 +229,14 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/expenses-app/mileage-expense-claim",
     element: <MileageExpenseClaim />,
   },
+
+    //Policies routes
+    {
+      path: "/webapp/policies-app",
+      element: <PoliciesApp />,
+      children: [
+        { path: "", element: <PoliciesCategory /> },
+        { path: "policies-list", element: <PoliciesList /> },
+      ],
+    },
 ];
