@@ -17,7 +17,7 @@ def process_components(components, ctc_component_names):
             })
     return component_list, total
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def generate_salary_slip(employee):
     earning_component_part_of_ctc = []
     deduction_component_part_of_ctc = []
@@ -95,7 +95,7 @@ def generate_salary_slip(employee):
             "monthly_ctc": monthly_ctc,
             "annual_ctc": monthly_ctc * 12,
             "net_pay": net_pay,
-            "gross_pay":gross_pay
+            "gross_pay": gross_pay
         }
 
     except Exception as e:
@@ -167,8 +167,9 @@ def generate_salary_slip(employee):
 
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def address_details(user_id):
+    
     try:
         if not user_id:
             return {
