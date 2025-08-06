@@ -40,7 +40,7 @@ export function RequestCard({
     const status = getStatus(request?.custom_status);
 
     return (
-        <div className="cursor-pointer bg-white border-b-2 border-gray-100 px-2"
+        <div className="cursor-pointer border border-gray-100 gap-3 bg-white shadow-sm rounded-xl"
             onClick={() => onClick?.(request)}
         >
             <div className="p-4">

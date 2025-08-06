@@ -102,3 +102,9 @@ export interface EmployeeListItem {
   status: string;
   image?: string;
 } 
+
+export interface IReason {
+  name: string;
+  reason: string;
+  reason_type: string;
+}

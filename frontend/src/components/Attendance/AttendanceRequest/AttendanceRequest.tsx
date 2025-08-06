@@ -33,7 +33,7 @@ const AttendanceRequest = () => {
     );
     return (<>
         {showForm ? <AttndanceRequestForm onClose={() => { setShowForm(false) }} /> :
-            <div className="bg-white h-screen">
+            <div className="bg-white h-screen px-4">
                 <FrappeListView
                     doctype="Attendance Request"
                     isSearch={false}
@@ -58,7 +58,7 @@ const AttendanceRequest = () => {
                 />
             </div>
         }
-        <div className=" fixed bottom-0 w-full p-2 border-t border-gray-300 pt-4">
+        <div className=" fixed bottom-0 w-full px-4 border-t border-gray-300 py-2">
 
             <button className={`flex justify-center gap-2  w-full rounded-xl bg-black text-white py-4 px-2 z-10`}
                 onClick={() => {

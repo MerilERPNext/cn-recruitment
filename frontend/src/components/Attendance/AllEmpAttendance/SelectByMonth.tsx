@@ -3,25 +3,24 @@
 import { useState } from "react"
 import { Check, Circle } from "lucide-react"
 import LayoutHeader from "../../shared/LayoutHeader"
+import { format, subMonths } from "date-fns"
 
 export interface MonthOption {
     label: string
     value: string
 }
+const generateMonthOptions = (count: number): MonthOption[] => {
+    const now = new Date();
 
-const monthOptions: MonthOption[] = [
-    { label: "Aug-2025", value: "2025-08" },
-    { label: "Sept-2025", value: "2025-09" },
-    { label: "Jul-2025", value: "2025-07" },
-    { label: "Jun-2025", value: "2025-06" },
-    { label: "May-2025", value: "2025-05" },
-    { label: "Apr-2025", value: "2025-04" },
-    { label: "Mar-2025", value: "2025-03" },
-    { label: "Feb-2025", value: "2025-02" },
-    { label: "Jan-2025", value: "2025-01" },
-    { label: "Dec-2024", value: "2024-12" },
-
-]
+    return Array.from({ length: count }, (_, i) => {
+        const date = subMonths(now, i);
+        return {
+            label: format(date, 'MMM-yyyy'),
+            value: format(date, 'yyyy-MM'),
+        };
+    });
+};
+const monthOptions: MonthOption[] = generateMonthOptions(12)
 
 const SelectByMonth = ({ onClose, onChange, selected }: { onClose: () => void, onChange: (value: MonthOption) => void, selected: MonthOption }) => {
     const [selectedMonth, setSelectedMonth] = useState<MonthOption>(selected)
@@ -32,7 +31,7 @@ const SelectByMonth = ({ onClose, onChange, selected }: { onClose: () => void, o
     }
 
     return (
-        <div className="fixed overflow-scroll top-0 z-50 w-full mx-auto left-0 h-screen bg-white">
+        <div className="fixed overflow-scroll top-0 z-50 w-full mx-auto left-0 h-screen bg-white  ">
             <LayoutHeader
                 tab="Select By Month"
                 onBack={() => {
@@ -42,13 +41,13 @@ const SelectByMonth = ({ onClose, onChange, selected }: { onClose: () => void, o
             />
 
             {/* Month Selection List */}
-            <div className="px-0 pb-20 pt-12">
+            <div className="px-4 pb-20 pt-16">
                 <div className="space-y-1">
                     {monthOptions.map((month) => (
                         <button
                             key={month.value}
                             onClick={() => setSelectedMonth(month)}
-                            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-lg border-b border-gray-100 last:border-b-0"
+                            className="mb-4 w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-lg  last:border-b-0 border-1 border-gray-100 bg-white shadow-sm rounded-xl"
                         >
                             <span className="text-gray-900 font-medium text-left">{month.label}</span>
 

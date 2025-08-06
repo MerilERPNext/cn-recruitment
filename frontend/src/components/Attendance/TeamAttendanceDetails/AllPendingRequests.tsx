@@ -29,10 +29,10 @@ const AllPendingRequests = () => {
         <LayoutHeader tab={"Pending Attendants"} onBack={() => {
             navigate(-1)
         }} />
-        <div className='bg-white'>
+        <div className='bg-white px-4 my-16 h-screen'>
 
             <div>
-                <div className=" mb-4 p-4">
+                <div className="my-4">
                     <BulkActionBar
                         selectedIds={selectedIds}
                         pendingRequests={data}
@@ -56,14 +56,14 @@ const AllPendingRequests = () => {
                         />
                     ))}
                 </div>
-                {selectedRequest && (
-                    <AttendanceDetailView
-                        data={selectedRequest}
-                        onClose={() => setSelectedRequest(null)}
-                    />
-                )}
             </div>
         </div>
+        {selectedRequest && (
+            <AttendanceDetailView
+                data={selectedRequest}
+                onClose={() => setSelectedRequest(null)}
+            />
+        )}
     </div>
     )
 }

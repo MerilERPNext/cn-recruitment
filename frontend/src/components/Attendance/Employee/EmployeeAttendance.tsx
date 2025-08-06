@@ -131,7 +131,7 @@ const EmployeeAttendance = () => {
 
 
     const CardSkeleton = () => (
-        <div className="rounded-xl bg-gray-100 animate-pulse">
+        <div className="rounded-xl bg-gray-100 animate-pulse my-2">
             <div className="px-4 py-2">
                 <div className="flex items-center justify-between gap-1">
                     <div>
@@ -277,41 +277,43 @@ const EmployeeAttendance = () => {
 
 
             {/* My Attendance Requests */}
-            <div className="bg-white">
-                <div className="flex justify-between items-center w-full p-4">
+            <div>
+                <div className="flex justify-between items-center w-full p-4 border-b border-b-gray-200">
 
                     <h3 className="text-lg font-semibold text-gray-900 mb-1 ">My Attendance Requests</h3>
                     <p
                         onClick={() => navigate("/webapp/attendance/attendance-request")}
                         className="text-sm text-blue-500">View All</p>
                 </div>
-                <FrappeListView
-                    doctype="Attendance Request"
-                    isSearch={false}
-                    ItemComponent={(props: { item: AttendanceRequest }) => {
-                        return (
-                            <EmpAttendanceRequestCard
-                                data={props?.item}
-                            />
-                        );
-                    }}
-                    SkeletonComponent={CardSkeleton}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    defaultFilters={defaultFilters as any}
-                    showRefereshButton={false}
-                    onItemClick={() => { }}
-                    infiniteScroll={true}
-                    isFilter={false}
-                    pageSize={5}
-                    defaultFields={[
-                        "reason",
-                        "modified",
-                        "creation",
-                        "docstatus"
-                    ]}
-                />
+                <div className="bg-white px-4">
+                    <FrappeListView
+                        doctype="Attendance Request"
+                        isSearch={false}
+                        ItemComponent={(props: { item: AttendanceRequest }) => {
+                            return (
+                                <EmpAttendanceRequestCard
+                                    data={props?.item}
+                                />
+                            );
+                        }}
+                        SkeletonComponent={CardSkeleton}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        defaultFilters={defaultFilters as any}
+                        showRefereshButton={false}
+                        onItemClick={() => { }}
+                        infiniteScroll={true}
+                        isFilter={false}
+                        pageSize={5}
+                        defaultFields={[
+                            "reason",
+                            "modified",
+                            "creation",
+                            "docstatus"
+                        ]}
+                    />
 
 
+                </div>
             </div>
             {
                 showReqAttendanceCorrection &&

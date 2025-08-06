@@ -22,9 +22,9 @@ const EmpAttendanceRequestCard = ({ data }: { data: AttendanceRequest }) => {
 
 
     return (
-        <div className="bg-white border-b-1 border-gray-200">
-            <div className="px-4 py-2">
-                <div className="flex items-center justify-between gap-1">
+        <div className="w-full flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl">
+            <div className="px-4 py-2 w-full">
+                <div className=" flex items-center justify-between gap-1">
                     <div>
                         <div className="font-medium text-gray-900">
                             {data?.creation

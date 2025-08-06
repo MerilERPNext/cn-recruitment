@@ -105,7 +105,7 @@ const AllEmpAttendance = () => {
                 }
             />
 
-            <div className="max-w-md mx-auto bg-white h-screen mt-14">
+            <div className="max-w-md mx-auto bg-white h-screen mt-14 px-4">
                 <h2 className="font-semibold text-lg text-center py-2">
                     {selectedMonth?.label}
                 </h2>
@@ -124,8 +124,8 @@ const AllEmpAttendance = () => {
                     ItemComponent={({ item }) => {
                         const day = transformItem(item as AttendanceItem);
                         return (
-                            <div className="flex items-center py-2 px-6 border-b border-gray-200">
-                                <div className="flex flex-col items-center w-12 mr-6">
+                            <div className="flex items-center py-2 px-6 border-1 border-gray-100 bg-white shadow-sm rounded-xl">
+                                <div className="flex flex-col items-center w-12 mr-4">
                                     <div className="text-lg font-semibold text-gray-900">{day.date}</div>
                                     <div className="text-xs text-gray-500 uppercase tracking-wide">{day.month}</div>
                                     <div className="text-xs text-gray-500 capitalize">{day.day}</div>
