@@ -194,6 +194,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     reason?: string;
     from_date?: string | Date;
     to_date?: string | Date;
+    attachments?: File[]
   }
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     const body = {
@@ -208,8 +209,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         ? formatDateToYYYYMMDD(new Date(submission?.data?.to_date))
         : null,
       include_holidays: 1,
+      custom_attachments: submission?.data?.attachments?.[0]
     };
-
     mutation.mutate(body, {
       onSuccess: () => {
         onClose();

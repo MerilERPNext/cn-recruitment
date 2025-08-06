@@ -1,3 +1,5 @@
+import { BaseItem } from "../components/Notices/types/noticeItem";
+
 // types/attendance.ts
 export type Attendance = {
   name: string;
@@ -89,4 +91,12 @@ export type EmployeeShiftSummary = {
   avg_overtime: string;
   avg_late_by: string;
   avg_working_hours: string;
+}
+export type EmployeeStatusType = "present" | "absent" | "on leave" | "half day" | "work from home";
+
+export interface EmployeeStatus  extends BaseItem  {
+    employee_name: string;
+    status: EmployeeStatusType;
+    in_time?: string;
+    out_time?: string;
 }

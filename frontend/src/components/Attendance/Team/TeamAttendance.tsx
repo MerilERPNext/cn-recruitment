@@ -4,6 +4,7 @@ import FrappeListView from "../../ListView";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useSearchParams } from "react-router-dom";
+import { EmployeeStatus } from "../../../types/attendance";
 
 const TeamAttendance = () => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
@@ -21,7 +22,7 @@ const TeamAttendance = () => {
                     setSelectedDate(new Date(filters.attendance_date))
                 }
             } catch (err) {
-                console.error("Invalid filter format in URL")
+                console.error("Invalid filter format in URL", err)
             }
         }
     }, [searchParams])
@@ -82,7 +83,7 @@ const TeamAttendance = () => {
                     {hasFilters && (
                         <button
                             onClick={clearFilters}
-                            className="top-2 right-2 text-gray-500 hover:text-black transition"
+                            className="top-2 right-2 pb-2 pr-2 text-gray-500 hover:text-black transition"
                             title="Today"
                         >
                             Today
@@ -97,7 +98,7 @@ const TeamAttendance = () => {
 
                 <FrappeListView
                     doctype="Attendance"
-                    ItemComponent={(props: { item: any }) => {
+                    ItemComponent={(props: { item: EmployeeStatus }) => {
                         return (
                             <EmployeeStatusCard
                                 data={props?.item}

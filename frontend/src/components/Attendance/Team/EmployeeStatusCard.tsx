@@ -1,6 +1,7 @@
+import { EmployeeStatus, EmployeeStatusType } from '../../../types/attendance';
 import Avatar from '../../shared/Avatar';
 
-const EmployeeStatusCard = ({ data }: any) => {
+const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
     const getStatusIndicatorColor = (
         status: "present"
             | "absent"
@@ -25,10 +26,12 @@ const EmployeeStatusCard = ({ data }: any) => {
         }
     };
 
-    const statusColors = getStatusIndicatorColor(data?.status?.toLowerCase() || "default");
+    const statusColors = getStatusIndicatorColor(data?.status?.toLowerCase() as EmployeeStatusType);
 
     return (
-        <div className="w-full border-b-2 border-gray-100 py-2 bg-white ">
+        <div className="w-full p-2 bg-white 
+         border border-gray-100 shadow-sm rounded-xl
+        ">
             <div className="flex gap-4 mb-2">
                 <Avatar
                     name={data?.employee_name}

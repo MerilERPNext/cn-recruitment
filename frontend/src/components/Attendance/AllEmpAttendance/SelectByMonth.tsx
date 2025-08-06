@@ -31,7 +31,7 @@ const SelectByMonth = ({ onClose, onChange, selected }: { onClose: () => void, o
     }
 
     return (
-        <div className="fixed overflow-scroll top-0 z-50 w-full mx-auto left-0 h-screen bg-white">
+        <div className="fixed overflow-scroll top-0 z-50 w-full mx-auto left-0 h-screen bg-white  ">
             <LayoutHeader
                 tab="Select By Month"
                 onBack={() => {
@@ -41,13 +41,13 @@ const SelectByMonth = ({ onClose, onChange, selected }: { onClose: () => void, o
             />
 
             {/* Month Selection List */}
-            <div className="px-0 pb-20 pt-12">
+            <div className="px-4 pb-20 pt-16">
                 <div className="space-y-1">
                     {monthOptions.map((month) => (
                         <button
                             key={month.value}
                             onClick={() => setSelectedMonth(month)}
-                            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-lg border-b border-gray-100 last:border-b-0"
+                            className="mb-4 w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-lg  last:border-b-0 border-1 border-gray-100 bg-white shadow-sm rounded-xl"
                         >
                             <span className="text-gray-900 font-medium text-left">{month.label}</span>
 
