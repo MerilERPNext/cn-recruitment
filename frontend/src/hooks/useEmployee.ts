@@ -120,6 +120,13 @@ export const useGetAllEmployees = () => {
     // staleTime: 1000 * 60 * 5,
   });
 };
+export const useGetAllReasons = () => {
+  return useQuery({
+    queryKey: ["all-reasons-list"],
+    queryFn: () => EmployeeService.getAllReasons(),
+    // staleTime: 1000 * 60 * 5,
+  });
+};
 
 
 export const useGenderTypes = () => {

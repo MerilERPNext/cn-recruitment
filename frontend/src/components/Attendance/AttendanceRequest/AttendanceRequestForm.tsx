@@ -4,10 +4,10 @@ import "formiojs/dist/formio.full.css";
 import LayoutHeader from "../../shared/LayoutHeader";
 import { useCreateNewAttendanceRequest } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import {
   useCurrentEmployeeAllDetails,
   useGetAllEmployees,
+  useGetAllReasons,
 } from "../../../hooks/useEmployee";
 import { Toaster, toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -19,21 +19,18 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
 }) => {
   const [isForOthers, setIsForOthers] = useState(false);
-  const { data: user_id } = useLoggedInUser();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
   const { data: employeeList } = useGetAllEmployees();
+  const { data: reasonList } = useGetAllReasons();
+
   interface FormioFormInstance {
     submit: () => void;
   }
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
-
-  const { data: user } = useCurrentEmployeeAllDetails(user_id as string);
   const mutation = useCreateNewAttendanceRequest();
-
-  console.log(currentEmployee);
   const baseFormComponents = (isForOthers: boolean) => {
     const components = [
       {
@@ -46,37 +43,37 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         components: [
           ...(isForOthers
             ? [
-                {
-                  label: "Employee",
-                  key: "employee",
-                  type: "select",
-                  input: true,
-                  placeholder: "Select a leave type",
-                  customClass: "mb-4",
-                  data: {
-                    values:
-                      employeeList && employeeList?.length > 0
-                        ? employeeList?.map(
-                            (item: { name: string; employee_name: string }) => {
-                              return {
-                                label: item?.employee_name,
-                                value: item?.name,
-                              };
-                            }
-                          )
-                        : [],
-                  },
+              {
+                label: "Employee",
+                key: "employee",
+                type: "select",
+                input: true,
+                placeholder: "Select a leave type",
+                customClass: "mb-4",
+                data: {
+                  values:
+                    employeeList && employeeList?.length > 0
+                      ? employeeList?.map(
+                        (item: { name: string; employee_name: string }) => {
+                          return {
+                            label: item?.employee_name,
+                            value: item?.name,
+                          };
+                        }
+                      )
+                      : [],
                 },
-                {
-                  label: "Company",
-                  key: "company",
-                  defaultValue: currentEmployee?.company,
-                  type: "textfield",
-                  input: true,
-                  placeholder: "Hybrowlabs Technologies",
-                  customClass: "mb-4",
-                },
-              ]
+              },
+              {
+                label: "Company",
+                key: "company",
+                defaultValue: currentEmployee?.company,
+                type: "textfield",
+                input: true,
+                placeholder: "Hybrowlabs Technologies",
+                customClass: "mb-4",
+              },
+            ]
             : []),
           {
             label: "Request Type",
@@ -139,10 +136,13 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "Select a reason",
             customClass: "mb-4",
             data: {
-              values: [
-                { label: "Work From Home", value: "Work From Home" },
-                { label: "On Duty", value: "On Duty" },
-              ],
+              values: reasonList?.map((item) => {
+                return {
+                  label: item?.reason, value: item?.name
+                }
+              })
+
+
             },
           },
           {
@@ -184,7 +184,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       display: "form",
       components: baseFormComponents(isForOthers),
     }),
-    [isForOthers, employeeList, currentEmployee]
+    [isForOthers, employeeList, currentEmployee, reasonList]
   );
 
   interface AttendanceFormData {
@@ -197,10 +197,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   }
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     const body = {
-      company: isForOthers ? submission?.data?.company : user?.company,
-      employee: isForOthers ? submission?.data?.employee : user?.employee,
+      company: isForOthers ? submission?.data?.company : currentEmployee?.company,
+      employee: isForOthers ? submission?.data?.employee : currentEmployee?.employee,
       explanation: submission?.data?.explanation,
-      reason: submission?.data?.reason,
+      custom__request_reason: submission?.data?.reason,
       from_date: submission?.data?.from_date
         ? formatDateToYYYYMMDD(new Date(submission?.data?.from_date))
         : null,
@@ -238,17 +238,15 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       <div className="flex-1 overflow-y-auto pt-14 pb-28 px-2">
         <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
           <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-              !isForOthers ? "bg-black text-white" : ""
-            }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-black text-white" : ""
+              }`}
             onClick={() => setIsForOthers(false)}
           >
             Self
           </button>
           <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-              isForOthers ? "bg-black text-white" : ""
-            }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-black text-white" : ""
+              }`}
             onClick={() => setIsForOthers(true)}
           >
             For Others

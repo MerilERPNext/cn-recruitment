@@ -1,5 +1,5 @@
 import { FrappeAPI } from "../utils/frappeAPI";
-import { Employee, EmployeeIdCard, EmployeeListItem } from "../types/employee";
+import { Employee, EmployeeIdCard, EmployeeListItem, IReason } from "../types/employee";
 
 function hasRequiredProperties<T extends Record<string, unknown>>(
   obj: unknown,
@@ -302,6 +302,18 @@ export class EmployeeService {
       throw new Error("No employee found for this user");
     }
     return data?.data as Employee[];
+  }
+
+  static async getAllReasons(): Promise<IReason[]> {
+    const response = FrappeAPI.getDocumentList('Reason', {
+      fields: ["name","reason","reason_type"],
+      limit:20,
+    });
+    const data = await response;
+    if (!response || data?.data?.length === 0) {
+      throw new Error("No employee found for this user");
+    }
+    return data?.data as IReason[];
   }
 }
 

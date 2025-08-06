@@ -3,25 +3,24 @@
 import { useState } from "react"
 import { Check, Circle } from "lucide-react"
 import LayoutHeader from "../../shared/LayoutHeader"
+import { format, subMonths } from "date-fns"
 
 export interface MonthOption {
     label: string
     value: string
 }
+const generateMonthOptions = (count: number): MonthOption[] => {
+    const now = new Date();
 
-const monthOptions: MonthOption[] = [
-    { label: "Aug-2025", value: "2025-08" },
-    { label: "Sept-2025", value: "2025-09" },
-    { label: "Jul-2025", value: "2025-07" },
-    { label: "Jun-2025", value: "2025-06" },
-    { label: "May-2025", value: "2025-05" },
-    { label: "Apr-2025", value: "2025-04" },
-    { label: "Mar-2025", value: "2025-03" },
-    { label: "Feb-2025", value: "2025-02" },
-    { label: "Jan-2025", value: "2025-01" },
-    { label: "Dec-2024", value: "2024-12" },
-
-]
+    return Array.from({ length: count }, (_, i) => {
+        const date = subMonths(now, i);
+        return {
+            label: format(date, 'MMM-yyyy'),
+            value: format(date, 'yyyy-MM'),
+        };
+    });
+};
+const monthOptions: MonthOption[] = generateMonthOptions(12)
 
 const SelectByMonth = ({ onClose, onChange, selected }: { onClose: () => void, onChange: (value: MonthOption) => void, selected: MonthOption }) => {
     const [selectedMonth, setSelectedMonth] = useState<MonthOption>(selected)
