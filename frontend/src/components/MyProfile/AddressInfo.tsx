@@ -2,11 +2,41 @@
 import React, { useCallback, useMemo, useRef } from "react";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import { Form } from "@tsed/react-formio";
-import { PersonalInfoProps } from "./MyProfile";
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import toast from "react-hot-toast";
+import { Employee } from "../../types/employee";
 
-export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
+export interface Address {
+  name: string;
+  address_title: string;
+  address_line1: string;
+  address_line2: string;
+  city: string;
+  county: string;
+  state: string;
+  country: string;
+  pincode: string;
+  email_id: string;
+  phone: string;
+}
+
+export interface AddressInfoData {
+  current_address: Address;
+  permanent_address: Address;
+  emergency_address: Address;
+}
+
+export interface AddressInfoProps {
+  userAddress: AddressInfoData | undefined;
+  user: Employee | null | undefined;
+  refetch?: () => void;
+}
+
+export const AddressInfo: React.FC<AddressInfoProps> = ({
+  userAddress,
+  user,
+  refetch,
+}) => {
   const updateEmployeeMutation = useUpdateFrappeDocument();
   const formAddressInstance = useRef<any>(null);
 
@@ -28,7 +58,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                   type: "textarea",
                   key: "current_address",
                   label: "Address",
-                  defaultValue: user?.current_address,
+                  defaultValue: userAddress?.current_address?.address_line1,
                   placeholder: "Enter your full address",
                   input: true,
                 },
@@ -43,6 +73,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                           key: "currentPinCode",
                           label: "Pin Code",
                           placeholder: "e.g. 110001",
+                          defaultValue: userAddress?.current_address?.pincode,
                           input: true,
                         },
                       ],
@@ -55,6 +86,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                           key: "currentCity",
                           label: "City",
                           placeholder: "e.g. New Delhi",
+                          defaultValue: userAddress?.current_address?.city,
                           input: true,
                         },
                       ],
@@ -71,6 +103,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                           key: "currentState",
                           label: "State",
                           placeholder: "e.g. Delhi",
+                          defaultValue: userAddress?.current_address?.state,
                           input: true,
                         },
                       ],
@@ -82,6 +115,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                           key: "currentCountry",
                           label: "Country",
                           placeholder: "e.g. India",
+                          defaultValue: userAddress?.current_address?.country,
                           input: true,
                         },
                       ],
@@ -108,7 +142,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                   label: "Address",
                   placeholder: "Enter your full address",
                   input: true,
-                  defaultValue: user?.permanent_address,
+                  defaultValue: userAddress?.permanent_address?.address_line1,
                   calculateValue:
                     "value = data.sameAsCurrent ? data.current_address : value",
                 },
@@ -123,6 +157,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                           label: "Pin Code",
                           placeholder: "e.g. 110001",
                           input: true,
+                          defaultValue: userAddress?.permanent_address?.pincode,
                           calculateValue:
                             "value = data.sameAsCurrent ? data.currentPinCode : value",
                         },
@@ -136,6 +171,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                           label: "City",
                           placeholder: "e.g. New Delhi",
                           input: true,
+                          defaultValue: userAddress?.permanent_address?.city,
                           calculateValue:
                             "value = data.sameAsCurrent ? data.currentCity : value",
                         },
@@ -154,6 +190,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                           label: "State",
                           placeholder: "e.g. Delhi",
                           input: true,
+                          defaultValue: userAddress?.permanent_address?.state,
                           calculateValue:
                             "value = data.sameAsCurrent ? data.currentState : value",
                         },
@@ -167,6 +204,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
                           label: "Country",
                           placeholder: "e.g. India",
                           input: true,
+                          defaultValue: userAddress?.permanent_address?.country,
                           customClass: "pb-2",
                           calculateValue:
                             "value = data.sameAsCurrent ? data.currentCountry : value",
@@ -181,7 +219,7 @@ export const AddressInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
         },
       ],
     };
-  }, [user]);
+  }, [userAddress]);
 
   const handleSubmit = useCallback(async () => {
     try {

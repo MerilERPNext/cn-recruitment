@@ -2,6 +2,7 @@ import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { EmployeeService } from "../services/employeeService";
 import { Employee, EmployeeIdCard, EmployeeListItem } from "../types/employee";
 import { profileService } from "../services/profileService";
+import { AddressInfoData } from "../types/profile";
 
 // Hook to get a single employee by ID
 export const useEmployee = (
@@ -46,7 +47,7 @@ export const useCurrentEmployeeAllDetails = (
 export const useCurrentEmployeeAddress = (
   user_id: string
 ) => {
-  return useQuery<Employee | null, Error>({
+  return useQuery<AddressInfoData, Error>({
     queryKey: ["currentEmployeeAddress", user_id],
     queryFn: () => EmployeeService.getCurrentEmployeeAddress(user_id),
     staleTime: 5 * 60 * 1000, // 5 minutes

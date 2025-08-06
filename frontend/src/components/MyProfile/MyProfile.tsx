@@ -53,7 +53,13 @@ const MyProfile: React.FC = () => {
     () => ({
       "personal-info": <PersonalInfo user={user} refetch={refetch} />,
       "contact-info": <ContactInfo user={user} refetch={refetch} />,
-      address: <AddressInfo user={userAddress} refetch={refetchAddress} />,
+      address: (
+        <AddressInfo
+          userAddress={userAddress?.data}
+          user={user}
+          refetch={refetchAddress}
+        />
+      ),
       "company-info": <CompanyInfo user={user} />,
       "salary-info": <SalaryInfo user={user} />,
       // "hr-letters": <HRLetters />,
