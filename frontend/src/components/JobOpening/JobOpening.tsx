@@ -33,12 +33,15 @@ const JobOpeningItem: React.FC<{
     };
     const encodedFilter = JSON.stringify(filter);
     window.open(
-      `/webapp/recruitment-app/job-applicant-list?filters=${encodedFilter}`
+      window.location.origin +
+        `/webapp/recruitment-app/job-applicant-list?filters=${encodedFilter}`
     );
   };
   const handleEditRequisition = () => {
     const JobOpeningId = encodeURIComponent(item.name);
-    window.open(`/app/job-opening/${JobOpeningId}`);
+    window.open(
+      window.location.origin +
+       `/app/job-opening/${JobOpeningId}`);
   };
 
   const getStatusColor = (status: string) => {

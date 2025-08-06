@@ -1,87 +1,114 @@
 import { User } from "lucide-react";
-import { useNavigate } from "react-router";
-import RequestShiftChangeButton from "./RequestShiftChangeButton"; 
+import FrappeListView from "../ListView"; 
+import { FaSun, FaMoon, FaRegClock } from "react-icons/fa";
 
-const teamShiftData = [
-  {
-    id: 1,
-    name: "Jane Doe",
-    shiftType: "Morning Shift (09:00 - 17:00)",
-    duration: "01-10-2024 to 31-10-2024",
-  },
-  {
-    id: 2,
-    name: "John Smith",
-    shiftType: "Night Shift (21:00 - 05:00)",
-    duration: "01-10-2024 to 31-10-2024",
-  },
-  {
-    id: 3,
-    name: "Peter Jones",
-    shiftType: "Evening Shift (16:00 - 00:00)",
-    duration: "01-10-2024 to 31-10-2024",
-  },
-  {
-    id: 4,
-    name: "Susan Lee",
-    shiftType: "General Shift (10:00 - 18:00)",
-    duration: "01-10-2024 to 31-10-2024",
-  },
-  {
-    id: 4,
-    name: "Susan Lee",
-    shiftType: "General Shift (10:00 - 18:00)",
-    duration: "01-10-2024 to 31-10-2024",
-  },
-  {
-    id: 4,
-    name: "Susan Lee",
-    shiftType: "General Shift (10:00 - 18:00)",
-    duration: "01-10-2024 to 31-10-2024",
-  },
-  {
-    id: 4,
-    name: "Susan Lee",
-    shiftType: "General Shift (10:00 - 18:00)",
-    duration: "01-10-2024 to 31-10-2024",
-  },
-  {
-    id: 4,
-    name: "Susan Lee",
-    shiftType: "General Shift (10:00 - 18:00)",
-    duration: "01-10-2024 to 31-10-2024",
-  },
-];
 
-export default function TeamShift() {
-  const navigate = useNavigate();
+interface TeamShiftItem {
+  name: string;
+  employee: string;
+  employee_name: string;
+  shift_type: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  modified: string;
+}
+const getShiftIcon = (shiftType: string) => {
+  if (shiftType.toLowerCase().includes("morning")) {
+    return <FaSun className="text-yellow-500" />;
+  } else if (shiftType.toLowerCase().includes("night")) {
+    return <FaMoon className="text-black" />;
+  } else {
+    return <FaRegClock className="text-gray-500" />;
+  }
+};
+const TeamShiftItemComponent = ({ item }: { item: TeamShiftItem }) => {
 
-  const handleShiftForm = () => {
-    navigate("/webapp/shift-request/shift-change-form");
+  const formatToIndianDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   return (
-    <div className=" pb-24">
-      <div className="space-y-4">
-        {teamShiftData.map((member) => (
-          <div key={member.id} className="bg-white border-gray-200 p-2">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center">
-                <User size={24} className="text-gray-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900 ">{member.name}</h3>
-                <p className="text-gray-700 font-medium mb-1">
-                  {member.shiftType}
-                </p>
-                <p className="text-sm text-gray-500">{member.duration}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="bg-white border rounded-lg p-4">
+      <div className="flex items-center gap-4">
+        <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center">
+          <User size={24} className="text-gray-600" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-bold text-gray-900">
+            {item.employee_name || "N/A"}
+          </h3>
+          <div className="flex justify-between items-center gap-2 mb-2">
+          <h2 className="text-[15px] font-bold text-gray-900">
+            {item.shift_type}
+          </h2>
+          {getShiftIcon(item.shift_type)}
 
-      <RequestShiftChangeButton onClick={handleShiftForm} />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+        <div className="flex gap-1">
+          <span className="text-gray-500">From:</span>
+          <span className="font-medium text-black">{formatToIndianDate(item.start_date)}</span>
+        </div>
+        <div className="flex gap-1">
+          <span className="text-gray-500">To:</span>
+          <span className="font-medium text-black">{formatToIndianDate(item.end_date)}</span>
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TeamShiftSkeleton = () => {
+  return (
+    <div className="bg-white border-gray-200 p-2 animate-pulse">
+      <div className="flex items-center gap-4">
+        <div className="w-14 h-14 bg-gray-200 rounded-full"></div>
+        <div className="flex-1">
+          <div className="h-5 bg-gray-200 rounded w-32 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+          <div className="h-3 bg-gray-200 rounded w-40"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default function TeamShift() {
+  return (
+    <div className="pb-24">
+      <FrappeListView<TeamShiftItem>
+        doctype="Shift Assignment" 
+        ItemComponent={TeamShiftItemComponent}
+        SkeletonComponent={TeamShiftSkeleton}
+        isSearch={true} 
+        isFilter={false} 
+        showRefereshButton={true}
+        infiniteScroll={true}
+        defaultFilters={{
+        }}
+        defaultFields={[
+          "name",
+          "employee",
+          "employee_name",
+          "shift_type", 
+          "start_date",
+          "end_date",
+          "status",
+          "modified"
+        ]}
+        searchFields={[
+          "employee_name",
+          "shift_type"
+        ]}
+        permissionErrorMessage="You don't have permission to view team shift assignments"
+      />
     </div>
   );
 }

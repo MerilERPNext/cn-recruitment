@@ -58,3 +58,4 @@ const PoliciesList: React.FC = () => {
 };
 
 export default PoliciesList;
+

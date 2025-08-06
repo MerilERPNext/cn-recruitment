@@ -52,8 +52,9 @@ const SalarySlipItem: React.FC<{
   index?: number;
   doctype: string;
 }> = ({ item }) => {
+  if (item.status.toLowerCase() !== "submitted") return null;
+
   const salarySlip = item;
-  
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -63,12 +64,12 @@ const SalarySlipItem: React.FC<{
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatToIndianDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-    });
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   const getStatusColor = (status: string) => {
@@ -89,11 +90,10 @@ const SalarySlipItem: React.FC<{
       key={item.name}
       className="flex justify-between items-center gap-3 bg-white p-4 mt-1 rounded-xl border cursor-pointer hover:shadow-sm transition-shadow"
     >
-       
       <div className="flex-grow">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-[var(--text-primary)] text-base font-semibold">
-            {formatDate(salarySlip.start_date)}
+            {formatToIndianDate(salarySlip.start_date)}
           </h3>
         </div>
         <div className="text-sm text-[var(--secondary-color)] ">
@@ -113,5 +113,6 @@ const SalarySlipItem: React.FC<{
     </div>
   );
 };
+
 
 export default SalarySlipsList;

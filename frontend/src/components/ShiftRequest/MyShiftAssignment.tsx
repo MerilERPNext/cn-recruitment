@@ -1,58 +1,113 @@
-import { useNavigate } from "react-router";
-import { useMyCurrentShiftAssignment } from "../../hooks/useShift";
-import RequestShiftChangeButton from "./RequestShiftChangeButton";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import FrappeListView from "../ListView"; // Adjust path as needed
+import { FaSun, FaMoon, FaRegClock } from "react-icons/fa";
 
-export default function MyShiftAssignment() {
-  const navigatore = useNavigate();
-  const handleshiftForm = () => {
-    navigatore(`/webapp/shift-request/shift-change-form`);
-  };
+// Define types
+interface ShiftAssignmentItem {
+  name: string;
+  employee: string;
+  shift_type: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  modified: string;
+}
+const formatToIndianDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+};
 
-  const { data: shiftTypes, isLoading, error } = useMyCurrentShiftAssignment();
-
-  if (isLoading) return <div>Loading shifts…</div>;
-  if (error)
-    return (
-      <div className="text-red-600">Error loading shifts: {error.message}</div>
-    );
+const getShiftIcon = (shiftType: string) => {
+  if (shiftType.toLowerCase().includes("morning")) {
+    return <FaSun className="text-yellow-500" />;
+  } else if (shiftType.toLowerCase().includes("night")) {
+    return <FaMoon className="text-black" />;
+  } else {
+    return <FaRegClock className="text-gray-500" />;
+  }
+};
+const ShiftAssignmentItem = ({ item }: { item: ShiftAssignmentItem }) => {
 
   return (
-    <div className=" flex flex-col mb-24 gap-2">
-      {shiftTypes?.data.map((item, index) => (
-        <div
-          key={`shift-${item.name || item.shift_type || index}`}
-          className="bg-white rounded-lg border border-gray-200 p-4"
-        >
-          <div className="mb-0">
-            {item.status === "Active" ? (
-              <h3 className="text-sm font-semibold text-green-600 mb-2">
-                Current Shift
-              </h3>
-            ) : (
-              <h3 className="text-sm font-semibold text-gray-600 mb-2">
-                Past Shift
-              </h3>
-            )}
-
-            <h2 className="text-[15px] font-bold text-gray-900 mb-2">
-              {item.shift_type}
-            </h2>
-          </div>
-
-          <div className="space-y-2 mb-2">
-            <div className="flex justify-start gap-2">
-              <span className="text-gray-600">From:</span>
-              <span className="font-medium">{item.start_date}</span>
-            </div>
-            <div className="flex justify-start gap-2">
-              <span className="text-gray-600">To:</span>
-              <span className="font-medium">{item.end_date}</span>
-            </div>
-          </div>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-3">
+      <div>
+      <h3
+        className={`text-xs font-semibold tracking-wide uppercase ${
+          item.status === "Active" ? "text-green-600" : "text-gray-500"
+        }`}
+      >
+        {item.status === "Active" ? "Current Shift" : "Previous Shift"}
+      </h3>
+  
+        <div className="flex justify-between items-center mt-1">
+          <h2 className="text-base font-semibold text-black">
+            {item.shift_type}
+          </h2>
+          {getShiftIcon(item.shift_type)}
         </div>
-      ))}
+      </div>
+  
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+        <div className="flex gap-1">
+          <span className="text-gray-500">From:</span>
+          <span className="font-medium text-black">{formatToIndianDate(item.start_date)}</span>
+        </div>
+        <div className="flex gap-1">
+          <span className="text-gray-500">To:</span>
+          {item.status === "Active" ? (<span className="font-medium text-black">Present</span>)
+           : (<span className="font-medium text-black">{formatToIndianDate(item.end_date)}</span>) }
+          
+        </div>
+      </div>
+    </div>
+  );
+  
+}
 
-      <RequestShiftChangeButton onClick={handleshiftForm} />
+export default function MyShiftAssignment() {
+  const { data: user_id } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(user_id || "");
+  const employee_id = user?.employee;
+
+  if (!employee_id) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="text-gray-600">Loading employee data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col mb-24 gap-2">
+      <FrappeListView<ShiftAssignmentItem>
+        doctype="Shift Assignment"
+        ItemComponent={ShiftAssignmentItem}
+        isSearch={true} 
+        searchFields={["status"]}
+        isFilter={false} 
+        showRefereshButton={true}
+        defaultFilters={{
+          employee: employee_id, 
+        }}
+        infiniteScroll={true}
+        defaultFields={[
+          "name",
+          "employee",
+          "shift_type", 
+          "start_date",
+          "end_date",
+          "status",
+          "modified"
+        ]}
+      permissionErrorMessage="You don't have permission to view shift assignments"
+      />
     </div>
   );
 }

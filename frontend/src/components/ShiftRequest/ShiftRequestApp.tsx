@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
+import RequestShiftChangeButton from "./RequestShiftChangeButton";
 
 type TabName =
   | "My Shift Assignment"
-  | "Team Shift"
+  | "Team Shift Assignment"
   | "My Shift Requests"
   | "Shift Change Request";
 
 const tabRoutes: Record<TabName, string> = {
   "My Shift Assignment": "/webapp/shift-request/my-shift-assignment",
-  "Team Shift": "/webapp/shift-request/team-shift",
+  "Team Shift Assignment": "/webapp/shift-request/team-shift",
   "My Shift Requests": "/webapp/shift-request/shift-list",
   "Shift Change Request": "/webapp/shift-request/shift-change-request",
 };
@@ -23,7 +24,7 @@ const ShiftRequestApp: React.FC = () => {
   // Refs for each tab
   const tabRefs = useRef<Record<TabName, HTMLButtonElement | null>>({
     "My Shift Assignment": null,
-    "Team Shift": null,
+    "Team Shift Assignment": null,
     "My Shift Requests": null,
     "Shift Change Request": null,
   });
@@ -35,13 +36,14 @@ const ShiftRequestApp: React.FC = () => {
 
     if (matchedTab) {
       setActiveTab(matchedTab);
-      sessionStorage.setItem("activeTab", matchedTab);
+      // Use in-memory storage instead of sessionStorage for artifacts
+      localStorage.setItem("activeTab", matchedTab);
     }
   }, [location.pathname]);
 
   useEffect(() => {
     if (location.pathname === "/webapp/shift-request") {
-      const savedTab = sessionStorage.getItem("activeTab") as TabName | null;
+      const savedTab = localStorage.getItem("activeTab") as TabName | null;
       const fallback = "My Shift Assignment";
 
       const redirectTab = savedTab && tabRoutes[savedTab] ? savedTab : fallback;
@@ -63,8 +65,12 @@ const ShiftRequestApp: React.FC = () => {
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
-    sessionStorage.setItem("activeTab", tab);
+    localStorage.setItem("activeTab", tab);
     navigate(tabRoutes[tab]);
+  };
+
+  const handleShiftForm = () => {
+    navigate(`/webapp/shift-request/shift-change-form`);
   };
 
   return (
@@ -115,6 +121,10 @@ const ShiftRequestApp: React.FC = () => {
       <main className="p-4 z-100 flex-grow overflow-y-auto">
         <Outlet />
       </main>
+
+      {activeTab === 'My Shift Assignment' && (
+        <RequestShiftChangeButton onClick={handleShiftForm} />
+      )}
     </div>
   );
 };

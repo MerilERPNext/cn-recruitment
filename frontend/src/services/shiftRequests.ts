@@ -36,19 +36,10 @@ export const getAllShiftTypes = async (): Promise<{ data: ShiftType[] }> => {
       fields: ["name", "start_time", "end_time"],
       orderBy: "creation desc",
     });
-  
     return {
       data: res.data as ShiftType[],
     };
   };
 
-  export const getCurrentMyShiftAssignment = async (): Promise<{ data: ShiftType[] }> => {
-    const result = await FrappeAPI.getDocumentList("Shift Assignment", {
-      fields: ["*"],
-      orderBy: "creation desc",
-    });
+
   
-    return {
-      data: result.data as ShiftType[],
-    };
-  };
