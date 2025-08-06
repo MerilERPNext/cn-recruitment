@@ -103,8 +103,8 @@ export interface EmployeeListItem {
   image?: string;
 } 
 
-export interface IReason{
-  name:string;
-  reason:string;
-  reason_type:string;
+export interface IReason {
+  name: string;
+  reason: string;
+  reason_type: string;
 }

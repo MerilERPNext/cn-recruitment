@@ -307,11 +307,10 @@ export class EmployeeService {
   static async getAllReasons(): Promise<IReason[]> {
     const response = FrappeAPI.getDocumentList('Reason', {
       fields: ["name","reason","reason_type"],
-      limit:20,
     });
     const data = await response;
     if (!response || data?.data?.length === 0) {
-      throw new Error("No employee found for this user");
+      throw new Error("No reasons found.");
     }
     return data?.data as IReason[];
   }
