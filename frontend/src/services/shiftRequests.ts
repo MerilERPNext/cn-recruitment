@@ -12,7 +12,11 @@ export const ShiftRequestService = {
 
     return response.data as ShiftRequest[];
   },
-
+  
+  createShiftRequest: async (payload: Partial<ShiftRequest>): Promise<ShiftRequest> => {
+    const response = await FrappeAPI.createDocument("Shift Request", payload);
+    return response as ShiftRequest;
+  },
  
   approveShiftRequest: async (shiftRequestName: string): Promise<any> => {
     return await FrappeAPI.callMethod("recruitment.api.shift_submit.process_shift_request", {
@@ -41,5 +45,5 @@ export const getAllShiftTypes = async (): Promise<{ data: ShiftType[] }> => {
     };
   };
 
-
+ 
   

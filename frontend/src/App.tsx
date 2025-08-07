@@ -13,6 +13,7 @@ import { AppRoute, routesConfig } from "./routesConfig";
 import MobileDashboard from "./components/MobileDashboard";
 import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
 import { useCurrentEmployee } from "./hooks/useEmployee";
+import { Toaster } from "react-hot-toast";
 
 const App: React.FC = () => {
   const renderRoutes = (routes: AppRoute[]) =>
@@ -28,6 +29,7 @@ const App: React.FC = () => {
 
   return (
     <QueryProvider>
+       <Toaster position="top-center" containerClassName="z-50" />
       <MandatoryPoliciesHandler />
       <Router>
         <div

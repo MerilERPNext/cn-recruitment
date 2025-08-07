@@ -10,10 +10,10 @@ export default function ShiftChangeRequests() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mappedRequests = data.map((item: any) => ({
-    id: item.name, 
+    id: item.name,
     name: item.employee_name || "Unknown",
     date: item.creation ? item.creation.split(" ")[0] : "",
-    currentShift: "", 
+    currentShift: "",
     requestedShift: item.shift_type || "",
     from: item.from_date || "",
     to: item.to_date || "",
@@ -24,6 +24,8 @@ export default function ShiftChangeRequests() {
     setProcessingIds(prev => new Set(prev).add(requestId));
     try {
       await approveShiftRequest.mutateAsync(requestId);
+    } catch {
+      console.error("Failed to approve shift request ❌");
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);
@@ -37,6 +39,8 @@ export default function ShiftChangeRequests() {
     setProcessingIds(prev => new Set(prev).add(requestId));
     try {
       await rejectShiftRequest.mutateAsync(requestId);
+    } catch {
+      console.error("Failed to reject shift request ❌");
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);
@@ -46,7 +50,6 @@ export default function ShiftChangeRequests() {
     }
   };
 
-  // Centered loader
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -58,7 +61,6 @@ export default function ShiftChangeRequests() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -70,7 +72,6 @@ export default function ShiftChangeRequests() {
     );
   }
 
-  // No data state
   if (mappedRequests.length === 0) {
     return (
       <div className="w-full mx-auto space-y-6">
@@ -98,9 +99,9 @@ export default function ShiftChangeRequests() {
     );
   }
 
-  // Data available - render requests list
   return (
     <div className="w-full mx-auto space-y-6">
+     
       <div>
         <h2 className="text-xl font-semibold text-gray-800">Team Requests</h2>
         <p className="text-sm text-gray-500">
@@ -110,7 +111,7 @@ export default function ShiftChangeRequests() {
 
       {mappedRequests.map((request) => {
         const isProcessing = processingIds.has(request.id);
-        
+
         return (
           <div
             key={request.id}
@@ -122,11 +123,11 @@ export default function ShiftChangeRequests() {
                 <p className="text-sm text-gray-500">{request.date}</p>
               </div>
               <span className={`text-xs px-2 py-1 rounded-3xl ${
-                request.status === 'Approved' 
+                request.status === 'Approved'
                   ? 'bg-green-100 text-green-700'
                   : request.status === 'Rejected'
-                  ? 'bg-red-100 text-red-700'
-                  : 'bg-yellow-100 text-yellow-700'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-yellow-100 text-yellow-700'
               }`}>
                 {request.status}
               </span>
@@ -173,22 +174,22 @@ export default function ShiftChangeRequests() {
 
             {request.status === 'Draft' || request.status === 'Pending' ? (
               <div className="flex w-full gap-4 justify-between py-3">
-                <button 
+                <button
                   onClick={() => handleReject(request.id)}
                   disabled={isProcessing}
                   className={`px-6 w-full py-2 text-sm rounded-md transition-colors ${
-                    isProcessing 
+                    isProcessing
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                   }`}
                 >
                   {isProcessing ? 'Processing...' : 'Reject'}
                 </button>
-                <button 
+                <button
                   onClick={() => handleApprove(request.id)}
                   disabled={isProcessing}
                   className={`px-6 w-full py-2 text-sm rounded-md text-white transition-colors ${
-                    isProcessing 
+                    isProcessing
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-gray-800 hover:bg-gray-900'
                   }`}

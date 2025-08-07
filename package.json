@@ -12,6 +12,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "pdfjs-dist": "^5.4.54"
+    "pdfjs-dist": "^5.4.54",
+    "react-hot-toast": "^2.5.2"
   }
 }

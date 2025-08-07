@@ -90,7 +90,7 @@ const CTCSalaryUI = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-2">
-            <h1 className="text-xl  font-bold text-gray-800">CTC Salary Breakdown</h1>
+            <h1 className="text-xl  font-bold text-gray-800">CTC Breakdown</h1>
           </div>
           <p className="text-gray-600 text-sm">Cost to Company - Complete Salary Structure</p>
         </div>

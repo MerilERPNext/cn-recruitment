@@ -15,7 +15,6 @@ import {
 import { Employee } from "../../types/employee";
 import { Pencil } from "lucide-react";
 import defaultProfile from "../../assets/user.png";
-import { Toaster } from "react-hot-toast";
 import NavigationTabs, { Tab } from "../NavigationTab";
 
 export interface PersonalInfoProps {
@@ -110,7 +109,7 @@ const MyProfile: React.FC = () => {
         />
         <div className="flex-grow">{tabContent[activeTab]}</div>
       </div>
-      <Toaster position="top-center" containerClassName="z-50" />
+      
     </div>
   );
 };
