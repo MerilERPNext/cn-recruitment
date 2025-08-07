@@ -19,7 +19,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     <div
       onClick={() =>
         navigate("/webapp/policies-app/policies-list", {
-          state: { name, count },
+          state: { name },
         })
       }
       className="flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 my-2 cursor-pointer"

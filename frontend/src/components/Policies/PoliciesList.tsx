@@ -1,34 +1,36 @@
 import React from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import FrappeListView from "../ListView";
 import { PolicyCardSkeleton } from "./PolicySkeletons";
 
 type PolicyDoc = {
   name: string;
   comments?: string;
-  policy_category: string;
 };
 
 type PolicyState = {
   name: string;
 };
 
-const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => (
-  <div className="flex justify-between items-center border rounded-lg p-4">
-    <div className="mr-2">
-      <h2 className="text-sm font-semibold text-gray-900">{item.name}</h2>
-      <p className="text-xs text-gray-500">{item.comments ?? "—"}</p>
+const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="flex justify-between items-center border rounded-lg p-4">
+      <div className="mr-2">
+        <h2 className="text-sm font-semibold text-gray-900">{item.name}</h2>
+        <p className="text-xs text-gray-500">{item.comments ?? "—"}</p>
+      </div>
+      <div>
+        <button
+          className="text-sm px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          onClick={() => navigate("/webapp")}
+        >
+          View
+        </button>
+      </div>
     </div>
-    <div>
-      <button
-        className="text-sm px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        onClick={() => console.log("View", item.name)}
-      >
-        View
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 const PoliciesList: React.FC = () => {
   const location = useLocation();
@@ -45,7 +47,7 @@ const PoliciesList: React.FC = () => {
           archive: "0",
         }}
         searchFields={["name"]}
-        defaultFields={["name", "comments", "policy_category"]}
+        defaultFields={["name", "comments"]}
         ItemComponent={PolicyItem}
         infiniteScroll={true}
         SkeletonComponent={PolicyCardSkeleton}
