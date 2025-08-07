@@ -28,4 +28,3 @@ const PoliciesApp: React.FC = () => {
 };
 
 export default PoliciesApp;
-
