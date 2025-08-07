@@ -9,6 +9,10 @@ type CategoryCardProps = {
   count: number;
 };
 
+type CategoryDoc = {
+  name: string;
+};
+
 const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
   const navigate = useNavigate();
   return (
@@ -61,7 +65,7 @@ const PoliciesCategory: React.FC = () => {
 
   return (
     <div className="h-full w-full">
-      {categories?.data?.map((item: { name: string }) => (
+      {categories?.data?.map((item: CategoryDoc) => (
         <CategoryCard
           key={item.name}
           name={item.name}
