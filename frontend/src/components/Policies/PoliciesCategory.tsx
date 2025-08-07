@@ -7,14 +7,9 @@ import { usePolicyCountsByCategory } from "../../hooks/usePolicy";
 type CategoryCardProps = {
   name: string;
   count: number;
-  isLoading?: boolean;
 };
 
-const CategoryCard: React.FC<CategoryCardProps> = ({
-  name,
-  count,
-  isLoading,
-}) => {
+const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
   const navigate = useNavigate();
   return (
     <div
@@ -27,11 +22,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     >
       <span className="font-medium text-gray-900">{name}</span>
       <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-semibold">
-        {isLoading ? (
-          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <span className="uppercase leading-none">{count}</span>
-        )}
+        <span className="uppercase leading-none">{count}</span>
       </div>
     </div>
   );
@@ -43,7 +34,7 @@ const PoliciesCategory: React.FC = () => {
       {
         doctype: "HR Category",
         pageParam: 0,
-        pageSize: 100,
+        pageSize: 1000,
         filters: {},
         searchTerm: "",
         fields: ["name"],

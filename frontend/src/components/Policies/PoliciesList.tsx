@@ -48,8 +48,8 @@ const PoliciesList: React.FC = () => {
           policy_category: categoryName,
           archive: "0",
         }}
-        isSearch={false}
-        showRefereshButton={false}
+        isSearch={true}
+        showRefereshButton={true}
         defaultFields={["name", "comments"]}
         ItemComponent={PolicyItem}
         infiniteScroll={true}

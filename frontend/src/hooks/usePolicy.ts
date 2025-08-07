@@ -16,10 +16,10 @@ export const usePolicyCountsByCategory = () => {
       });
 
       const counts: Record<string, number> = {};
-      result.data.forEach(({ policy_category }) => {
-        const key = String(policy_category);
-        if (key) {
-          counts[key] = (counts[key] || 0) + 1;
+      result.data.forEach((item) => {
+        const category = item.policy_category;
+        if (typeof category === "string" && category.trim() !== "") {
+          counts[category] = (counts[category] || 0) + 1;
         }
       });
 
