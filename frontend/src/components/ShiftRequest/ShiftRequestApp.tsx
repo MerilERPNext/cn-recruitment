@@ -39,9 +39,14 @@ const ShiftRequestApp: React.FC = () => {
 
   useEffect(() => {
     if (location.pathname === "/webapp/shift-request") {
-      navigate(tabRoutes["My Shift Assignment"], { replace: true });
+      const savedTab = localStorage.getItem("activeTab") as TabName | null;
+      const fallback = "My Shift Assignment";
+  
+      const redirectTab = savedTab && tabRoutes[savedTab] ? savedTab : fallback;
+      navigate(tabRoutes[redirectTab], { replace: true });
     }
   }, [location.pathname, navigate]);
+  
 
   const handleTabChange = (tabKey: string) => {
     const tab = tabKey as TabName;

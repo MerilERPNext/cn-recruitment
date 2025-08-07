@@ -24,8 +24,6 @@ export default function ShiftChangeRequests() {
     setProcessingIds(prev => new Set(prev).add(requestId));
     try {
       await approveShiftRequest.mutateAsync(requestId);
-    } catch {
-      console.error("Failed to approve shift request ❌");
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);
@@ -34,13 +32,11 @@ export default function ShiftChangeRequests() {
       });
     }
   };
-
+  
   const handleReject = async (requestId: string) => {
     setProcessingIds(prev => new Set(prev).add(requestId));
     try {
       await rejectShiftRequest.mutateAsync(requestId);
-    } catch {
-      console.error("Failed to reject shift request ❌");
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);
@@ -49,6 +45,7 @@ export default function ShiftChangeRequests() {
       });
     }
   };
+  
 
   if (isLoading) {
     return (
