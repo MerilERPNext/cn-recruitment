@@ -1,8 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import FrappeListView from "../ListView";
-import { useFrappeDocumentCount } from "../../hooks/useFrappeQuery";
 import { CategoryCardSkeleton } from "./PolicySkeletons";
+import { useFrappeDocuments } from "../../hooks/useFrappeQuery";
+import { usePolicyCountsByCategory } from "../../hooks/usePolicy";
+
 type CategoryCardProps = {
   name: string;
   count: number;
@@ -36,38 +37,46 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   );
 };
 
-interface HrCategoryItem {
-  name: string;
-}
-
 const PoliciesCategory: React.FC = () => {
+  const { data: categories, isLoading: isCategoriesLoading } =
+    useFrappeDocuments(
+      {
+        doctype: "HR Category",
+        pageParam: 0,
+        pageSize: 100,
+        filters: {},
+        searchTerm: "",
+        fields: ["name"],
+        searchFields: ["name"],
+      },
+      {
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+      }
+    );
+
+  const { data: counts, isLoading: isCountsLoading } =
+    usePolicyCountsByCategory();
+  const isLoading = isCategoriesLoading || isCountsLoading;
+  if (isLoading) {
+    return (
+      <>
+        {[...Array(5)].map((_, i) => (
+          <CategoryCardSkeleton key={i} />
+        ))}
+      </>
+    );
+  }
+
   return (
     <div className="h-full w-full">
-      <FrappeListView
-        doctype="HR Category"
-        ItemComponent={({ item }: { item: HrCategoryItem }) => {
-          const { data: count, isLoading } = useFrappeDocumentCount({
-            doctype: "HR Policies",
-            filters: [
-              ["policy_category", "=", item.name],
-              ["archive", "=", "0"],
-            ],
-          });
-          return (
-            <CategoryCard
-              name={item.name}
-              count={count ?? 0}
-              isLoading={isLoading}
-            />
-          );
-        }}
-        defaultFields={["name"]}
-        isSearch={true}
-        searchFields={["name"]}
-        infiniteScroll={true}
-        showRefereshButton={true}
-        SkeletonComponent={CategoryCardSkeleton}
-      />
+      {categories?.data?.map((item: { name: string }) => (
+        <CategoryCard
+          key={item.name}
+          name={item.name}
+          count={counts?.[item.name] ?? 0}
+        />
+      ))}
     </div>
   );
 };

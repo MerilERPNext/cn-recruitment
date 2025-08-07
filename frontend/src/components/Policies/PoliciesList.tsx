@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate, Navigate } from "react-router";
 import FrappeListView from "../ListView";
 import { PolicyCardSkeleton } from "./PolicySkeletons";
 
@@ -36,7 +36,9 @@ const PoliciesList: React.FC = () => {
   const location = useLocation();
   const categoryName = (location.state as PolicyState | undefined)?.name;
 
-  if (!categoryName) return null;
+  if (!categoryName) {
+    return <Navigate to="/webapp/policies-app/policies-categories" replace />;
+  }
 
   return (
     <div className="max-w-md bg-white rounded-xl shadow-md p-4 space-y-4 border border-gray-100">
@@ -46,7 +48,8 @@ const PoliciesList: React.FC = () => {
           policy_category: categoryName,
           archive: "0",
         }}
-        searchFields={["name"]}
+        isSearch={false}
+        showRefereshButton={false}
         defaultFields={["name", "comments"]}
         ItemComponent={PolicyItem}
         infiniteScroll={true}
