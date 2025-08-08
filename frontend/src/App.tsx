@@ -29,6 +29,7 @@ const App: React.FC = () => {
 
   return (
     <QueryProvider>
+       <Toaster position="top-center" containerClassName="z-50" />
       <MandatoryPoliciesHandler />
       <Router>
         <div

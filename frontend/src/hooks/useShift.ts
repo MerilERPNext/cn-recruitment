@@ -50,3 +50,20 @@ export const useShiftTypes = () => {
     queryFn: getAllShiftTypes,
   });
 };
+
+export const useCreateShiftRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Partial<ShiftRequest>) =>
+      ShiftRequestService.createShiftRequest(payload),
+    onSuccess: () => {
+      toast.success("Shift request submitted successfully!");
+      queryClient.invalidateQueries({ queryKey: ["shift-requests"] });
+    },
+    onError: (error: Error) => {
+      console.error("Error submitting shift request:", error);
+      toast.error("Failed to submit shift request. Please try again.");
+    },
+  });
+};

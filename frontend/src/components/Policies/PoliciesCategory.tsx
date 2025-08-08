@@ -1,68 +1,79 @@
 import React from "react";
 import { useNavigate } from "react-router";
+import { CategoryCardSkeleton } from "./PolicySkeletons";
+import { useFrappeDocuments } from "../../hooks/useFrappeQuery";
+import { usePolicyCountsByCategory } from "../../hooks/usePolicy";
 
-export type CategoryCardProps = {
+type CategoryCardProps = {
   name: string;
   count: number;
+};
+
+type CategoryDoc = {
+  name: string;
 };
 
 const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
   const navigate = useNavigate();
   return (
     <div
-      onClick={() => {
+      onClick={() =>
         navigate("/webapp/policies-app/policies-list", {
-          state: { name, count },
-        });
-      }}
-      className="flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 my-2"
+          state: { name },
+        })
+      }
+      className="flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 my-2 cursor-pointer"
     >
-      <div className="flex items-center justify-between w-full gap-3">
-        <span className="font-medium text-gray-900">{name}</span>
-        <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-semibold">
-          <span className="uppercase leading-none">{count}</span>
-        </div>
+      <span className="font-medium text-gray-900">{name}</span>
+      <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-semibold">
+        <span className="uppercase leading-none">{count}</span>
       </div>
     </div>
   );
 };
 
-const policyCategories = [
-  {
-    name: "Leave Policy",
-    count: 15,
-  },
-  {
-    name: "Expense Reimbursement",
-    count: 8,
-  },
-  {
-    name: "Remote Work Guidelines",
-    count: 5,
-  },
-  {
-    name: "Data Security Policy",
-    count: 10,
-  },
-  {
-    name: "Travel Policy",
-    count: 7,
-  },
-  {
-    name: "Asset Management Policy",
-    count: 4,
-  },
-];
-
 const PoliciesCategory: React.FC = () => {
+  const { data: categories, isLoading: isCategoriesLoading } =
+    useFrappeDocuments(
+      {
+        doctype: "HR Category",
+        pageParam: 0,
+        pageSize: 1000,
+        filters: {},
+        searchTerm: "",
+        fields: ["name"],
+        searchFields: ["name"],
+      },
+      {
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+      }
+    );
+
+  const { data: counts, isLoading: isCountsLoading } =
+    usePolicyCountsByCategory();
+  const isLoading = isCategoriesLoading || isCountsLoading;
+  if (isLoading) {
+    return (
+      <>
+        {[...Array(5)].map((_, i) => (
+          <CategoryCardSkeleton key={i} />
+        ))}
+      </>
+    );
+  }
+
   return (
     <div className="h-full w-full">
-      {policyCategories.map((policy, index) => (
-        <CategoryCard key={index} name={policy.name} count={policy.count} />
+      {categories?.data?.map((item: CategoryDoc) => (
+        <CategoryCard
+          key={item.name}
+          name={item.name}
+          count={counts?.[item.name] ?? 0}
+        />
       ))}
     </div>
   );
 };
 
 export default PoliciesCategory;
-
