@@ -1,5 +1,9 @@
 import { Calendar } from "lucide-react";
-import { useShiftRequests, useApproveShiftRequest, useRejectShiftRequest } from "../../hooks/useShift";
+import {
+  useShiftRequests,
+  useApproveShiftRequest,
+  useRejectShiftRequest,
+} from "../../hooks/useShift";
 import { useState } from "react";
 
 export default function ShiftChangeRequests() {
@@ -21,31 +25,30 @@ export default function ShiftChangeRequests() {
   }));
 
   const handleApprove = async (requestId: string) => {
-    setProcessingIds(prev => new Set(prev).add(requestId));
+    setProcessingIds((prev) => new Set(prev).add(requestId));
     try {
       await approveShiftRequest.mutateAsync(requestId);
     } finally {
-      setProcessingIds(prev => {
+      setProcessingIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(requestId);
         return newSet;
       });
     }
   };
-  
+
   const handleReject = async (requestId: string) => {
-    setProcessingIds(prev => new Set(prev).add(requestId));
+    setProcessingIds((prev) => new Set(prev).add(requestId));
     try {
       await rejectShiftRequest.mutateAsync(requestId);
     } finally {
-      setProcessingIds(prev => {
+      setProcessingIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(requestId);
         return newSet;
       });
     }
   };
-  
 
   if (isLoading) {
     return (
@@ -82,13 +85,26 @@ export default function ShiftChangeRequests() {
         <div className="flex items-center justify-center min-h-[40vh]">
           <div className="text-center">
             <div className="text-gray-400 mb-4">
-              <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              <svg
+                className="mx-auto h-16 w-16"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No shift requests found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No shift requests found
+            </h3>
             <p className="text-gray-600 max-w-sm mx-auto">
-              There are currently no pending shift change requests from your team members.
+              There are currently no pending shift change requests from your
+              team members.
             </p>
           </div>
         </div>
@@ -98,7 +114,6 @@ export default function ShiftChangeRequests() {
 
   return (
     <div className="w-full mx-auto space-y-6">
-     
       <div>
         <h2 className="text-xl font-semibold text-gray-800">Team Requests</h2>
         <p className="text-sm text-gray-500">
@@ -119,25 +134,25 @@ export default function ShiftChangeRequests() {
                 <p className="font-semibold text-gray-800">{request.name}</p>
                 <p className="text-sm text-gray-500">{request.date}</p>
               </div>
-              <span className={`text-xs px-2 py-1 rounded-3xl ${
-                request.status === 'Approved'
-                  ? 'bg-green-100 text-green-700'
-                  : request.status === 'Rejected'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-yellow-100 text-yellow-700'
-              }`}>
+              <span
+                className={`text-xs px-2 py-1 rounded-3xl ${
+                  request.status === "Approved"
+                    ? "bg-green-100 text-green-700"
+                    : request.status === "Rejected"
+                    ? "bg-red-100 text-red-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}
+              >
                 {request.status}
               </span>
             </div>
 
             <div className="text-sm flex flex-col gap-2">
               <p>
-                <strong>Current:</strong>{" "}
-                <span className="text-gray-800">{request.currentShift}</span>
-              </p>
-              <p>
-                <strong>Requested:</strong>{" "}
-                <span className="text-gray-800">{request.requestedShift}</span>
+                <strong>Requested Shift:</strong>{" "}
+                <span className="text-gray-800 ml-2">
+                  {request.requestedShift}
+                </span>
               </p>
             </div>
 
@@ -169,29 +184,30 @@ export default function ShiftChangeRequests() {
               </div>
             </div>
 
-            {request.status === 'Draft' || request.status === 'Pending' ? (
+            {request.status === "Draft" || request.status === "Pending" ? (
               <div className="flex w-full gap-4 justify-between py-3">
                 <button
                   onClick={() => handleReject(request.id)}
                   disabled={isProcessing}
                   className={`px-6 w-full py-2 text-sm rounded-md transition-colors ${
                     isProcessing
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      ? "bg-red-200 text-red-600 cursor-not-allowed"
+                      : "bg-red-200 text-red-600 hover:bg-red-600 hover:text-white"
                   }`}
                 >
-                  {isProcessing ? 'Processing...' : 'Reject'}
+                  {isProcessing ? "Processing..." : "Reject"}
                 </button>
+
                 <button
                   onClick={() => handleApprove(request.id)}
                   disabled={isProcessing}
-                  className={`px-6 w-full py-2 text-sm rounded-md text-white transition-colors ${
+                  className={`px-6 w-full py-2 text-sm rounded-md transition-colors ${
                     isProcessing
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-gray-800 hover:bg-gray-900'
+                      ? "bg-green-200 text-green-600 cursor-not-allowed"
+                      : "bg-green-200 text-green-600 hover:bg-green-900 hover:text-white"
                   }`}
                 >
-                  {isProcessing ? 'Processing...' : 'Approve'}
+                  {isProcessing ? "Processing..." : "Approve"}
                 </button>
               </div>
             ) : (
