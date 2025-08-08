@@ -37,7 +37,6 @@ const EmployeeAttendance = () => {
   } = useAttendance(filters as FilterCondition[], {
     enabled: !!userId,
   });
-  console.log(allAttendance);
 
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState<boolean>(false);

@@ -338,7 +338,7 @@ export class EmployeeService {
 
   static async getAllEmployees(): Promise<Employee[]> {
     const response = FrappeAPI.getDocumentList("Employee", {
-      fields: ["*"],
+      fields: ["name", "employee_name", "company"],
       limit: 20,
       filters: [["status", "=", "Active"]],
     });

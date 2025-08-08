@@ -29,7 +29,7 @@ const App: React.FC = () => {
 
   return (
     <QueryProvider>
-       <Toaster position="top-center" containerClassName="z-50" />
+      <Toaster position="top-center" containerClassName="z-50" />
       <MandatoryPoliciesHandler />
       <Router>
         <div
@@ -41,7 +41,6 @@ const App: React.FC = () => {
             {renderRoutes(routesConfig)}
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
-          <Toaster position="top-center" containerClassName="z-50" />
         </div>
       </Router>
     </QueryProvider>
