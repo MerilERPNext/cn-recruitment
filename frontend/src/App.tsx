@@ -13,6 +13,7 @@ import { AppRoute, routesConfig } from "./routesConfig";
 import MobileDashboard from "./components/MobileDashboard";
 import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
 import { useCurrentEmployee } from "./hooks/useEmployee";
+import { Toaster } from "react-hot-toast";
 
 const App: React.FC = () => {
   const renderRoutes = (routes: AppRoute[]) =>
@@ -39,6 +40,7 @@ const App: React.FC = () => {
             {renderRoutes(routesConfig)}
             <Route path="*" element={<Navigate to="/webapp/" replace />} />
           </Routes>
+          <Toaster position="top-center" containerClassName="z-50" />
         </div>
       </Router>
     </QueryProvider>
@@ -48,20 +50,33 @@ const App: React.FC = () => {
 export default App;
 
 const MandatoryPoliciesHandler = () => {
-  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployee();
-  const { data: mandatoryPoliciesCount, isFetching: isMandatoryPoliciesCountFetching } = useFrappeDocumentCount({
-    doctype: "Policy Details",
-    filters: [
-      ["status", "=", "Pending"],
-      ["employee_id", "=", currentEmployee?.name || ""],
-      ["sign_off_mandatory", "=", 1],
-    ]
-  }, {
-    enabled: !!currentEmployee,
-  });
+  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } =
+    useCurrentEmployee();
+  const {
+    data: mandatoryPoliciesCount,
+    isFetching: isMandatoryPoliciesCountFetching,
+  } = useFrappeDocumentCount(
+    {
+      doctype: "Policy Details",
+      filters: [
+        ["status", "=", "Pending"],
+        ["employee_id", "=", currentEmployee?.name || ""],
+        ["sign_off_mandatory", "=", 1],
+      ],
+    },
+    {
+      enabled: !!currentEmployee,
+    }
+  );
 
   useEffect(() => {
-    if (isCurrentEmployeeFetching || isMandatoryPoliciesCountFetching || mandatoryPoliciesCount === undefined || !window.isApp) return;
+    if (
+      isCurrentEmployeeFetching ||
+      isMandatoryPoliciesCountFetching ||
+      mandatoryPoliciesCount === undefined ||
+      !window.isApp
+    )
+      return;
 
     if (mandatoryPoliciesCount <= 0) {
       window.nativeInterface.logToNative("destroyNestedWebView");
@@ -77,9 +92,12 @@ const MandatoryPoliciesHandler = () => {
         isCloseable: false,
       });
       console.log("openNestedWebView");
-
     }
-  }, [mandatoryPoliciesCount, isCurrentEmployeeFetching, isMandatoryPoliciesCountFetching]);
+  }, [
+    mandatoryPoliciesCount,
+    isCurrentEmployeeFetching,
+    isMandatoryPoliciesCountFetching,
+  ]);
 
   return null;
-}
+};
