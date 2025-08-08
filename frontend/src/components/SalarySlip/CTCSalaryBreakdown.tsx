@@ -39,7 +39,7 @@ const CTCSalaryUI = () => {
     [ctcData]
   );
 
-  const takeHome = totalCTC - pf;
+  const takeHome = totalCTC - (pf * 12);
   const monthlyTakeHome = takeHome / 12;
   const grossMonthly = totalCTC / 12;
 
@@ -69,7 +69,7 @@ const CTCSalaryUI = () => {
     if (salarySlip.total_deduction) {
       baseComponents.push({
         label: 'PF Deduction',
-        value: salarySlip.total_deduction / 12,
+        value: salarySlip.total_deduction,
         type: 'deduction',
       });
     }
@@ -219,7 +219,7 @@ const CTCSalaryUI = () => {
                     Total Deductions
                   </p>
                   <p className="text-xl font-bold text-red-600">
-                    {formatCurrency(pf / 12)}
+                    {formatCurrency(pf)}
                   </p>
                   <p className="text-xs text-gray-500">PF contribution</p>
                 </div>
