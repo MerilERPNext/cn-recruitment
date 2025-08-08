@@ -37,3 +37,27 @@ export interface ShiftRequest {
   export interface ShiftTypeResponse {
     data: ShiftType[];
   }
+
+  export interface ShiftRequestFormData {
+    shiftType: string;
+    fromDate: string;
+    toDate: string;
+    reason?: string;
+  }
+  
+  export interface ShiftRequestActionResponse {
+    message: string;
+  }
+  
+  export type FormioSubmission<T> = {
+    data: T;
+    metadata?: Record<string, unknown>;
+    id?: string;
+    form?: string;
+    state?: string;
+    deleted?: number;
+    owner?: string;
+    created?: string;
+    modified?: string;
+    [key: string]: unknown;
+  };

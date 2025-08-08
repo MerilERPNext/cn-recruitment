@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
+import NavigationTabs, { Tab } from "../NavigationTab"; 
 
-type TabName = 'Salary Slip' | 'CTC Salary Breakdown';
+type TabName = 
+ 'Salary Slip' 
+|'CTC Breakdown';
 
 const tabRoutes: Record<TabName, string> = {
-  "CTC Salary Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
+  "CTC Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
 };
 
@@ -13,6 +16,11 @@ const SalarySlipApp: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("Salary Slip");
+
+  const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
+    key,
+    label: key,
+  }));
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
@@ -25,17 +33,15 @@ const SalarySlipApp: React.FC = () => {
     }
   }, [location.pathname]);
 
-  useEffect(() => {
-    if (location.pathname === "/webapp/salary-slip-app") {
-      const savedTab = sessionStorage.getItem("activeTab") as TabName | null;
-      const fallback = "Salary Slip";
 
-      const redirectTab = savedTab && tabRoutes[savedTab] ? savedTab : fallback;
-      navigate(tabRoutes[redirectTab], { replace: true });
-    }
-  }, [location.pathname, navigate]);
+    useEffect(() => {
+      if (location.pathname === "/webapp/salary-slip-app") {
+        navigate(tabRoutes["CTC Breakdown"], { replace: true });
+      }
+    }, [location.pathname, navigate]);
 
-  const handleTabChange = (tab: TabName) => {
+  const handleTabChange = (tabKey: string) => {
+    const tab = tabKey as TabName;
     setActiveTab(tab);
     sessionStorage.setItem("activeTab", tab);
     navigate(tabRoutes[tab]);
@@ -64,27 +70,16 @@ const SalarySlipApp: React.FC = () => {
 
       <header className="sticky top-0 z-50 bg-white shadow-sm">
         <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
-        <nav className="px-2 flex overflow-x-auto scrollbar-hidden">
-          {(Object.keys(tabRoutes) as TabName[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={`inline-block whitespace-nowrap px-4 py-3 border-b-2 border-t-0 border-l-0 border-r-0 bg-transparent text-sm font-medium rounded-none outline-none focus:outline-none focus:ring-0 ${
-                activeTab === tab
-                  ? "border-b-[3px] border-b-[var(--primary-color)] text-[var(--primary-color)]"
-                  : "border-b-transparent text-[var(--text-secondary)]"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
+        <NavigationTabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        />
       </header>
 
       <main className="p-4 z-100 flex-grow overflow-y-auto">
         <Outlet />
       </main>
-      
     </div>
   );
 };
