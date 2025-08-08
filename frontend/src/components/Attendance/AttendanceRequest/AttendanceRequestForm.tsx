@@ -43,37 +43,38 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         components: [
           ...(isForOthers
             ? [
-              {
-                label: "Employee",
-                key: "employee",
-                type: "select",
-                input: true,
-                placeholder: "Select a leave type",
-                customClass: "mb-4",
-                data: {
-                  values:
-                    employeeList && employeeList?.length > 0
-                      ? employeeList?.map(
-                        (item: { name: string; employee_name: string }) => {
-                          return {
-                            label: item?.employee_name,
-                            value: item?.name,
-                          };
-                        }
-                      )
-                      : [],
+                {
+                  label: "Employee",
+                  key: "employee",
+                  type: "select",
+                  input: true,
+                  placeholder: "Select a employee",
+                  customClass: "mb-4",
+                  data: {
+                    values:
+                      employeeList && employeeList?.length > 0
+                        ? employeeList?.map(
+                            (item: { name: string; employee_name: string }) => {
+                              return {
+                                label: `${item?.employee_name} (${item?.name})`,
+                                value: item?.name,
+                              };
+                            }
+                          )
+                        : [],
+                  },
                 },
-              },
-              {
-                label: "Company",
-                key: "company",
-                defaultValue: currentEmployee?.company,
-                type: "textfield",
-                input: true,
-                placeholder: "Hybrowlabs Technologies",
-                customClass: "mb-4",
-              },
-            ]
+                {
+                  label: "Company",
+                  key: "company",
+                  defaultValue: currentEmployee?.company,
+                  type: "textfield",
+                  input: true,
+                  placeholder: "Company Name",
+                  customClass: "mb-4",
+                  disabled: true,
+                },
+              ]
             : []),
           {
             label: "Request Type",
@@ -138,11 +139,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             data: {
               values: reasonList?.map((item) => {
                 return {
-                  label: item?.reason, value: item?.name
-                }
-              })
-
-
+                  label: item?.reason,
+                  value: item?.name,
+                };
+              }),
             },
           },
           {
@@ -194,12 +194,16 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     reason?: string;
     from_date?: string | Date;
     to_date?: string | Date;
-    attachments?: File[]
+    attachments?: File[];
   }
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     const body = {
-      company: isForOthers ? submission?.data?.company : currentEmployee?.company,
-      employee: isForOthers ? submission?.data?.employee : currentEmployee?.employee,
+      company: isForOthers
+        ? submission?.data?.company
+        : currentEmployee?.company,
+      employee: isForOthers
+        ? submission?.data?.employee
+        : currentEmployee?.employee,
       explanation: submission?.data?.explanation,
       custom__request_reason: submission?.data?.reason,
       from_date: submission?.data?.from_date
@@ -209,7 +213,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         ? formatDateToYYYYMMDD(new Date(submission?.data?.to_date))
         : null,
       include_holidays: 1,
-      custom_attachments: submission?.data?.attachments?.[0]
+      custom_attachments: submission?.data?.attachments?.[0],
     };
     mutation.mutate(body, {
       onSuccess: () => {
@@ -239,15 +243,17 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       <div className="flex-1 overflow-y-auto pt-14 pb-28 px-2">
         <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
           <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-black text-white" : ""
-              }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+              !isForOthers ? "bg-black text-white" : ""
+            }`}
             onClick={() => setIsForOthers(false)}
           >
             Self
           </button>
           <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-black text-white" : ""
-              }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+              isForOthers ? "bg-black text-white" : ""
+            }`}
             onClick={() => setIsForOthers(true)}
           >
             For Others
