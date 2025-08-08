@@ -51,7 +51,7 @@ const CTCSalaryUI = () => {
     }).format(amount);
 
   const salaryComponents = useMemo(() => {
-    if (!salarySlip?.component_part_of_ctc) return [];
+    if (!salarySlip) return [];
     return salarySlip.component_part_of_ctc.map((comp) => ({
       label: comp.component,
       value: comp.annual_amount,
@@ -85,7 +85,7 @@ const CTCSalaryUI = () => {
     );
   }
 
-  if (!ctcData || isError) {
+  if (isError || (!isLoading && !salarySlip)) {
     return (
       <div className="text-center mt-10 text-red-500">
         Failed to load salary data.
@@ -145,9 +145,9 @@ const CTCSalaryUI = () => {
                 Annual CTC Breakdown
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {salaryComponents.map((component, index) => (
+                {salaryComponents.map((component) => (
                   <div
-                    key={index}
+                    key={component.label}
                     className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                   >
                     <h4 className="font-medium text-gray-800">
@@ -188,18 +188,14 @@ const CTCSalaryUI = () => {
               <div className="space-y-4 mb-6">
                 {monthlyComponents.map((component, index) => (
                   <div
-                    key={index}
+                  key={`${component.label}-${index}`}
                     className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg"
                   >
                     <span className="font-medium text-gray-800">
                       {component.label}
                     </span>
                     <span
-                      className={`font-bold text-green-500 ${
-                        component.type === 'deduction'
-                          ? 'text-red-600'
-                          : 'text-gray-800'
-                      }`}
+                     className={`font-bold ${component.type === 'deduction' ? 'text-red-600' : 'text-green-500'}`}
                     >
                       {component.type === 'deduction' ? '-' : ''}
                       {formatCurrency(component.value)}

@@ -146,13 +146,6 @@ const SalarySlipItem: React.FC<{
           </p>
         </div>
       </div>
-      <span
-        className={`flex items-center justify-center text-xs font-medium px-3 py-1 rounded-lg ${(
-          item.status
-        )}`}
-      >
-        
-      </span>
       <button className="text-lg text-[var(--secondary-color)] ml-3">
         <IoIosArrowForward />
       </button>
