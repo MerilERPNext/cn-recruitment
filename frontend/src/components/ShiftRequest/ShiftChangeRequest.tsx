@@ -131,13 +131,10 @@ export default function ShiftChangeRequests() {
             </div>
 
             <div className="text-sm flex flex-col gap-2">
+
               <p>
-                <strong>Current:</strong>{" "}
-                <span className="text-gray-800">{request.currentShift}</span>
-              </p>
-              <p>
-                <strong>Requested:</strong>{" "}
-                <span className="text-gray-800">{request.requestedShift}</span>
+                <strong>Requested Shift:</strong>{" "}
+                <span className="text-gray-800 ml-2">{request.requestedShift}</span>
               </p>
             </div>
 
@@ -176,8 +173,8 @@ export default function ShiftChangeRequests() {
                   disabled={isProcessing}
                   className={`px-6 w-full py-2 text-sm rounded-md transition-colors ${
                     isProcessing
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      ? 'bg-red-200 text-red-600 cursor-not-allowed'
+                      : 'bg-red-200 text-red-600 hover:bg-red-600'
                   }`}
                 >
                   {isProcessing ? 'Processing...' : 'Reject'}
@@ -185,10 +182,10 @@ export default function ShiftChangeRequests() {
                 <button
                   onClick={() => handleApprove(request.id)}
                   disabled={isProcessing}
-                  className={`px-6 w-full py-2 text-sm rounded-md text-white transition-colors ${
+                  className={`px-6 w-full py-2 text-sm rounded-md transition-colors ${
                     isProcessing
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-gray-800 hover:bg-gray-900'
+                      ? 'bg-green-200 text-green-600 cursor-not-allowed'
+                      : 'bg-green-200 text-green-600 hover:bg-green-900'
                   }`}
                 >
                   {isProcessing ? 'Processing...' : 'Approve'}

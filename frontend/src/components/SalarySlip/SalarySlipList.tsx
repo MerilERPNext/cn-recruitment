@@ -125,18 +125,6 @@ const SalarySlipItem: React.FC<{
     return `${day}-${month}-${year}`;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "generated":
-        return "bg-green-100 text-green-800";
-      case "submitted":
-        return "bg-blue-100 text-blue-800";
-      case "draft":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <div
@@ -159,11 +147,11 @@ const SalarySlipItem: React.FC<{
         </div>
       </div>
       <span
-        className={`flex items-center justify-center text-xs font-medium px-3 py-1 rounded-lg ${getStatusColor(
+        className={`flex items-center justify-center text-xs font-medium px-3 py-1 rounded-lg ${(
           item.status
         )}`}
       >
-        {item.status}
+        
       </span>
       <button className="text-lg text-[var(--secondary-color)] ml-3">
         <IoIosArrowForward />
