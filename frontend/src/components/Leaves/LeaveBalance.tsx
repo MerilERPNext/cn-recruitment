@@ -24,11 +24,9 @@ const LeaveTransactionCard: React.FC<{
   defaultOpenType?: string | null;
 }> = ({ data, defaultOpenType }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(() => {
-    if (defaultOpenType) {
-      const defaultIdx = data.findIndex((d) => d.type === defaultOpenType);
-      return defaultIdx !== -1 ? defaultIdx : null;
-    }
-    return null;
+    if (!defaultOpenType) return null;
+    const defaultIdx = data.findIndex((d) => d.type === defaultOpenType);
+    return defaultIdx > -1 ? defaultIdx : null;
   });
 
   const toggle = useCallback(
