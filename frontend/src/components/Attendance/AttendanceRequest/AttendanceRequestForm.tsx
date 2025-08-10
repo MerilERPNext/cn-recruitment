@@ -12,6 +12,7 @@ import {
 import { Toaster, toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 
+
 interface AttndanceRequestFormProps {
   onClose: () => void;
 }
@@ -46,15 +47,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   // Update shift and company fields when employee data changes
   React.useEffect(() => {
     if (formAddressInstance.current) {
-      const formData = formAddressInstance.current.getValue() || {};
-      let company = "Not Assigned";
-      
-      // Update shift field if employeeShift is available
-      if (employeeShift) {
-        formData.employee_shift = employeeShift;
-      }
       
       // Update company field based on selected employee or current user
+      let company = "Not Assigned";
       if (isForOthers && selectedEmployee) {
         const selectedEmp = employeeList?.find(emp => emp.name === selectedEmployee);
         company = selectedEmp?.company || "Not Assigned";
@@ -62,17 +57,21 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         company = currentEmployee.company;
       }
       
-      // Update form fields
-      formData.company = company;
-      
-      // Get the company component and update its value directly
       const companyComponent = formAddressInstance.current.getComponent('company');
       if (companyComponent) {
         companyComponent.setValue(company, { noUpdateEvent: true });
         companyComponent.redraw();
       }
-      
-      formAddressInstance.current.setValue(formData);
+
+      // Update shift field if employeeShift is available
+      if (employeeShift) {
+        const shiftValue = employeeShift.shift || "Not Assigned";
+        const shiftComponent = formAddressInstance.current.getComponent('current_shift');
+        if (shiftComponent) {
+          shiftComponent.setValue(shiftValue, { noUpdateEvent: true });
+          shiftComponent.redraw();
+        }
+      }
     }
   }, [employeeShift, selectedEmployee, isForOthers, currentEmployee, employeeList]);
   
@@ -390,19 +389,21 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     select_shift?: string;
     overnight_out_duty?: boolean;
     attachments?: File[];
+    custom_attachments?: File;
   }
 
   const formatTime = (date: Date | string | undefined): string | undefined => {
     if (!date) return undefined;
     const d = new Date(date);
-    return d.toTimeString().substring(0, 8); // Returns HH:mm:ss
+    // Using 'en-GB' locale is a common way to get 24-hour format HH:mm:ss
+    return d.toLocaleTimeString('en-GB');
   };
 
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     const baseBody = {
       request_type: submission.data.request_type,
       company: isForOthers ? submission.data.company : currentEmployee?.company,
-      employee: isForOthers ? submission.data.employee : currentEmployee?.name,
+      employee: isForOthers ? submission.data.employee : currentEmployee?.employee,
       message: submission.data.message,
       ...(submission.data.from_date && {
         from_date: formatDateToYYYYMMDD(new Date(submission.data.from_date)),
@@ -412,7 +413,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       }),
     };
 
-    let requestBody: any = { ...baseBody };
+    let requestBody: AttendanceFormData = { ...baseBody };
 
     // Handle different request types
     switch (submission.data.request_type) {
