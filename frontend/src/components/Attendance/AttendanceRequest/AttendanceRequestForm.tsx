@@ -38,29 +38,43 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const handleEmployeeChange = (event: any) => {
     // Get the selected value from the form data
     const employeeId = event?.data?.employee || '';
-    console.log("Selected Employee ID:", employeeId);
     
     // Update the selected employee state
     setSelectedEmployee(employeeId);
-    
-    // Update company field immediately
-    if (formAddressInstance.current) {
-      const selectedEmp = employeeList?.find(emp => emp.name === employeeId);
-      if (selectedEmp) {
-        const formData = formAddressInstance.current.getValue() || {};
-        formData.company = selectedEmp.company || '';
-        formAddressInstance.current.setValue(formData);
-      }
-    }
   };
 
-  // Update shift field when employee shift data changes
+  // Update shift and company fields when employee data changes
   React.useEffect(() => {
-    if (formAddressInstance.current && employeeShift) {
+    if (formAddressInstance.current) {
       const formData = formAddressInstance.current.getValue() || {};
+      let company = "Not Assigned";
+      
+      // Update shift field if employeeShift is available
+      if (employeeShift) {
+        formData.employee_shift = employeeShift;
+      }
+      
+      // Update company field based on selected employee or current user
+      if (isForOthers && selectedEmployee) {
+        const selectedEmp = employeeList?.find(emp => emp.name === selectedEmployee);
+        company = selectedEmp?.company || "Not Assigned";
+      } else if (currentEmployee?.company) {
+        company = currentEmployee.company;
+      }
+      
+      // Update form fields
+      formData.company = company;
+      
+      // Get the company component and update its value directly
+      const companyComponent = formAddressInstance.current.getComponent('company');
+      if (companyComponent) {
+        companyComponent.setValue(company, { noUpdateEvent: true });
+        companyComponent.redraw();
+      }
+      
       formAddressInstance.current.setValue(formData);
     }
-  }, [employeeShift]);
+  }, [employeeShift, selectedEmployee, isForOthers, currentEmployee, employeeList]);
   
   // Refetch shift when employee changes
   React.useEffect(() => {
@@ -73,6 +87,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     submit: () => void;
     getValue: () => any;
     setValue: (value: any) => void;
+    redraw: () => void;
+    getComponent: (key: string) => any;
   }
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const mutation = useCreateNewAttendanceRequest();
@@ -112,11 +128,14 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               {
                 label: "Company",
                 key: "company",
-                defaultValue: currentEmployee?.company,
                 type: "textfield",
                 input: true,
-                placeholder: "Company name",
+                placeholder: isForOthers && !selectedEmployee ? "Select an employee first" : "Loading company information...",
                 customClass: "mb-4",
+                disabled: true,
+                defaultValue: currentEmployee?.company || "Not Assigned",
+                value: currentEmployee?.company || "Not Assigned",
+                clearOnHide: false,
               },
             ]
             : []),
