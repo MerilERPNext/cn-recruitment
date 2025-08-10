@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import LayoutHeader from "../../shared/LayoutHeader";
-import { useCreateNewAttendanceRequest } from "../../../hooks/useAttendance";
+import { useCreateNewAttendanceRequest, useGetEmployeeShift } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import {
   useCurrentEmployeeAllDetails,
@@ -25,9 +25,54 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   );
   const { data: employeeList } = useGetAllEmployees();
   const { data: reasonList } = useGetAllReasons();
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('');
+  
+  // Get shift for current employee or selected employee in 'For Others' mode
+  const employeeIdToQuery = isForOthers ? selectedEmployee : (currentEmployee?.employee || '');
+  const { data: employeeShift, refetch: refetchShift } = useGetEmployeeShift(
+    employeeIdToQuery,
+    { employee: employeeIdToQuery } // Pass employee ID as filter
+  );
+
+  // Handle employee selection change
+  const handleEmployeeChange = (event: any) => {
+    // Get the selected value from the form data
+    const employeeId = event?.data?.employee || '';
+    console.log("Selected Employee ID:", employeeId);
+    
+    // Update the selected employee state
+    setSelectedEmployee(employeeId);
+    
+    // Update company field immediately
+    if (formAddressInstance.current) {
+      const selectedEmp = employeeList?.find(emp => emp.name === employeeId);
+      if (selectedEmp) {
+        const formData = formAddressInstance.current.getValue() || {};
+        formData.company = selectedEmp.company || '';
+        formAddressInstance.current.setValue(formData);
+      }
+    }
+  };
+
+  // Update shift field when employee shift data changes
+  React.useEffect(() => {
+    if (formAddressInstance.current && employeeShift) {
+      const formData = formAddressInstance.current.getValue() || {};
+      formAddressInstance.current.setValue(formData);
+    }
+  }, [employeeShift]);
+  
+  // Refetch shift when employee changes
+  React.useEffect(() => {
+    if (employeeIdToQuery) {
+      refetchShift();
+    }
+  }, [employeeIdToQuery, refetchShift]);
 
   interface FormioFormInstance {
     submit: () => void;
+    getValue: () => any;
+    setValue: (value: any) => void;
   }
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const mutation = useCreateNewAttendanceRequest();
@@ -48,8 +93,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                 key: "employee",
                 type: "select",
                 input: true,
-                placeholder: "Select employee",
+                placeholder: "Select Employee",
                 customClass: "mb-4",
+                // Form.io will automatically update the form data
+                onChange: handleEmployeeChange,
                 data: {
                   values:
                     employeeList && employeeList?.length > 0
@@ -73,6 +120,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               },
             ]
             : []),
+          
           {
             label: "Request Type",
             key: "request_type",
@@ -89,6 +137,19 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                 { label: "Shift Change Request", value: "Shift Change" },
               ],
             },
+          },
+          // Employee Shift Information (Read-only)
+          {
+            label: "Current Shift",
+            key: "current_shift",
+            type: "textfield",
+            input: true,
+            placeholder: isForOthers && !selectedEmployee ? "Select an employee first" : "Loading shift information...",
+            customClass: "mb-4",
+            disabled: true,
+            defaultValue: employeeShift?.shift || "Not Assigned",
+            value: employeeShift?.shift || "Not Assigned",
+            clearOnHide: false,
           },
           // Date fields (shown for all request types)
           {
