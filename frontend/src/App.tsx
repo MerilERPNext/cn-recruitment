@@ -29,7 +29,7 @@ const App: React.FC = () => {
 
   return (
     <QueryProvider>
-       <Toaster position="top-center" containerClassName="z-50" />
+      <Toaster position="top-center" containerClassName="z-50" />
       <MandatoryPoliciesHandler />
       <Router>
         <div
@@ -50,20 +50,33 @@ const App: React.FC = () => {
 export default App;
 
 const MandatoryPoliciesHandler = () => {
-  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployee();
-  const { data: mandatoryPoliciesCount, isFetching: isMandatoryPoliciesCountFetching } = useFrappeDocumentCount({
-    doctype: "Policy Details",
-    filters: [
-      ["status", "=", "Pending"],
-      ["employee_id", "=", currentEmployee?.name || ""],
-      ["sign_off_mandatory", "=", 1],
-    ]
-  }, {
-    enabled: !!currentEmployee,
-  });
+  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } =
+    useCurrentEmployee();
+  const {
+    data: mandatoryPoliciesCount,
+    isFetching: isMandatoryPoliciesCountFetching,
+  } = useFrappeDocumentCount(
+    {
+      doctype: "Policy Details",
+      filters: [
+        ["status", "=", "Pending"],
+        ["employee_id", "=", currentEmployee?.name || ""],
+        ["sign_off_mandatory", "=", 1],
+      ],
+    },
+    {
+      enabled: !!currentEmployee,
+    }
+  );
 
   useEffect(() => {
-    if (isCurrentEmployeeFetching || isMandatoryPoliciesCountFetching || mandatoryPoliciesCount === undefined || !window.isApp) return;
+    if (
+      isCurrentEmployeeFetching ||
+      isMandatoryPoliciesCountFetching ||
+      mandatoryPoliciesCount === undefined ||
+      !window.isApp
+    )
+      return;
 
     if (mandatoryPoliciesCount <= 0) {
       window.nativeInterface.logToNative("destroyNestedWebView");
@@ -79,9 +92,12 @@ const MandatoryPoliciesHandler = () => {
         isCloseable: false,
       });
       console.log("openNestedWebView");
-
     }
-  }, [mandatoryPoliciesCount, isCurrentEmployeeFetching, isMandatoryPoliciesCountFetching]);
+  }, [
+    mandatoryPoliciesCount,
+    isCurrentEmployeeFetching,
+    isMandatoryPoliciesCountFetching,
+  ]);
 
   return null;
-}
+};

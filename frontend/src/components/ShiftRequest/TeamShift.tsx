@@ -1,6 +1,5 @@
 import { User } from "lucide-react";
 import FrappeListView from "../ListView"; 
-import { FaSun, FaMoon, FaRegClock } from "react-icons/fa";
 
 
 interface TeamShiftItem {
@@ -13,15 +12,7 @@ interface TeamShiftItem {
   status: string;
   modified: string;
 }
-const getShiftIcon = (shiftType: string) => {
-  if (shiftType.toLowerCase().includes("morning")) {
-    return <FaSun className="text-yellow-500" />;
-  } else if (shiftType.toLowerCase().includes("night")) {
-    return <FaMoon className="text-black" />;
-  } else {
-    return <FaRegClock className="text-gray-500" />;
-  }
-};
+
 const TeamShiftItemComponent = ({ item }: { item: TeamShiftItem }) => {
 
   const formatToIndianDate = (dateString: string): string => {
@@ -46,8 +37,6 @@ const TeamShiftItemComponent = ({ item }: { item: TeamShiftItem }) => {
           <h2 className="text-[15px] font-bold text-gray-900">
             {item.shift_type}
           </h2>
-          {getShiftIcon(item.shift_type)}
-
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
         <div className="flex gap-1">

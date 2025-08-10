@@ -118,7 +118,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                     employeeList && employeeList?.length > 0
                       ? employeeList?.map(
                         (item: { name: string; employee_name: string }) => ({
-                          label: item?.employee_name,
+                          label: `${item?.employee_name} (${item?.name})`,
                           value: item?.name,
                         })
                       )
@@ -421,17 +421,17 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           ...baseBody,
           from_date: formatDateToYYYYMMDD(new Date()),
           to_date: formatDateToYYYYMMDD(new Date()),
-          clockin_time: formatTime(submission.data.clockin_time) || '09:00:00',
-          reason: submission.data.reason || 'ATRN-001',
+          clockin_time: formatTime(submission.data.clockin_time),
+          reason: submission.data.reason,
         };
         break;
 
       case 'Out Duty':
         requestBody = {
           ...baseBody,
-          clockin_time: formatTime(submission.data.clockin_time) || '10:00:00',
-          clockout_time: formatTime(submission.data.clockout_time) || '15:00:00',
-          reason: submission.data.reason || 'ATRN_0002',
+          clockin_time: formatTime(submission.data.clockin_time),
+          clockout_time: formatTime(submission.data.clockout_time),
+          reason: submission.data.reason,
           overnight_out_duty: submission.data.overnight_out_duty || false,
         };
         break;
@@ -441,7 +441,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           ...baseBody,
           from_date: formatDateToYYYYMMDD(new Date(submission.data.from_date || new Date())),
           to_date: formatDateToYYYYMMDD(new Date(submission.data.to_date || new Date())),
-          reason: submission.data.reason || 'ATRN_0002',
+          reason: submission.data.reason,
         };
         break;
 
@@ -450,16 +450,16 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           ...baseBody,
           from_date: formatDateToYYYYMMDD(new Date(submission.data.from_date || new Date())),
           to_date: formatDateToYYYYMMDD(new Date(submission.data.to_date || new Date())),
-          custom_from_time: formatTime(submission.data.custom_from_time) || '09:30:00',
-          custom_to_time: formatTime(submission.data.custom_to_time) || '18:30:00',
-          reason: submission.data.reason || 'ATRN_0002',
+          custom_from_time: formatTime(submission.data.custom_from_time),
+          custom_to_time: formatTime(submission.data.custom_to_time),
+          reason: submission.data.reason,
         };
         break;
 
       case 'Shift Change':
         requestBody = {
           ...baseBody,
-          select_shift: submission.data.select_shift || 'Night Shift',
+          select_shift: submission.data.select_shift,
         };
         break;
     }
@@ -497,15 +497,17 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       <div className="flex-1 overflow-y-auto pt-14 pb-28 px-2">
         <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
           <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-black text-white" : ""
-              }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+              !isForOthers ? "bg-black text-white" : ""
+            }`}
             onClick={() => setIsForOthers(false)}
           >
             Self
           </button>
           <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-black text-white" : ""
-              }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+              isForOthers ? "bg-black text-white" : ""
+            }`}
             onClick={() => setIsForOthers(true)}
           >
             For Others

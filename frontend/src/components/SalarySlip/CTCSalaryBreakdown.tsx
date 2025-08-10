@@ -1,232 +1,232 @@
-import { useState } from 'react';
-import { IndianRupee, PieChart, Calculator, User } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Calculator, TrendingUp, Wallet, PieChart } from 'lucide-react';
+import { useCurrentEmployee } from '../../hooks/useEmployee';
+import { useGenerateSalarySlip } from '../../hooks/useCTC';
 
 const CTCSalaryUI = () => {
-  const [ctcData] = useState({
-    basicSalary: 600000,
-    hra: 240000,
-    allowances: 120000,
-    pf: 21600,
-    gratuity: 28800,
-    medicalInsurance: 15000,
-    bonus: 60000,
-    stockOptions: 0
-  });
+  const { data: employee, isLoading: isEmpLoading } = useCurrentEmployee();
+  const employeeId = employee?.name;
 
-  const totalCTC = Object.values(ctcData).reduce((sum, value) => sum + value, 0);
-  const takeHome = ctcData.basicSalary + ctcData.hra + ctcData.allowances - ctcData.pf;
+  const {
+    data: salarySlip,
+    isLoading: isSalaryLoading,
+    isError,
+  } = useGenerateSalarySlip(employeeId);
+
+  const [activeTab, setActiveTab] = useState<'annual' | 'monthly'>('annual');
+
+  const isLoading = isEmpLoading || isSalaryLoading;
+
+  // Earnings + Reimbursement
+  const earnings = useMemo(() => {
+    if (!salarySlip?.component_part_of_ctc) return [];
+    return salarySlip.component_part_of_ctc.filter(
+      (comp) => comp.type === 'Earning' || comp.type === 'Reimbursement'
+    );
+  }, [salarySlip]);
+
+  // Annual CTC Breakdown
+  const ctcData = useMemo(() => {
+    return earnings.reduce((acc, curr) => {
+      acc[curr.component] = curr.annual_amount;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [earnings]);
+
+  const pf = salarySlip?.total_deduction || 0;
+  const totalCTC = useMemo(
+    () => Object.values(ctcData).reduce((sum, value) => sum + value, 0),
+    [ctcData]
+  );
+
+  const takeHome = totalCTC - (pf * 12);
   const monthlyTakeHome = takeHome / 12;
+  const grossMonthly = totalCTC / 12;
 
-  const formatCurrency = (amount: number | bigint) => {
-    return new Intl.NumberFormat('en-IN', {
+  const formatCurrency = (amount: number | bigint) =>
+    new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(amount);
-  };
 
-  const salaryComponents = [
-    {
-      label: 'Basic Salary',
-      key: 'basicSalary',
-      value: ctcData.basicSalary,
-      color: 'bg-blue-500',
-      description: 'Base salary component'
-    },
-    {
-      label: 'HRA',
-      key: 'hra',
-      value: ctcData.hra,
-      color: 'bg-green-500',
-      description: 'House Rent Allowance'
-    },
-    {
-      label: 'Other Allowances',
-      key: 'allowances',
-      value: ctcData.allowances,
-      color: 'bg-purple-500',
-      description: 'Travel, Food, etc.'
-    },
-    {
-      label: 'Provident Fund',
-      key: 'pf',
-      value: ctcData.pf,
-      color: 'bg-orange-500',
-      description: 'Employee PF contribution'
-    },
-    {
-      label: 'Gratuity',
-      key: 'gratuity',
-      value: ctcData.gratuity,
-      color: 'bg-pink-500',
-      description: 'End of service benefit'
-    },
-    {
-      label: 'Medical Insurance',
-      key: 'medicalInsurance',
-      value: ctcData.medicalInsurance,
-      color: 'bg-red-500',
-      description: 'Health insurance premium'
-    },
-    {
-      label: 'Annual Bonus',
-      key: 'bonus',
-      value: ctcData.bonus,
-      color: 'bg-yellow-500',
-      description: 'Performance bonus'
-    },
-    {
-      label: 'Stock Options',
-      key: 'stockOptions',
-      value: ctcData.stockOptions,
-      color: 'bg-indigo-500',
-      description: 'Equity compensation'
+  const salaryComponents = useMemo(() => {
+    if (!salarySlip) return [];
+    return salarySlip.component_part_of_ctc.map((comp) => ({
+      label: comp.component,
+      value: comp.annual_amount,
+    }));
+  }, [salarySlip]);
+
+  const monthlyComponents = useMemo(() => {
+    if (!salarySlip?.component_part_of_ctc) return [];
+    const baseComponents = salarySlip.component_part_of_ctc.map((comp) => ({
+      label: comp.component,
+      value: comp.amount,
+      type: comp.type === 'Deduction' ? 'deduction' : 'income',
+    }));
+
+    if (salarySlip.total_deduction) {
+      baseComponents.push({
+        label: 'PF Deduction',
+        value: salarySlip.total_deduction,
+        type: 'deduction',
+      });
     }
-  ];
+
+    return baseComponents;
+  }, [salarySlip]);
+
+  if (isLoading) {
+    return (
+      <div className="text-center mt-10 text-gray-500">
+        Loading salary data...
+      </div>
+    );
+  }
+
+  if (isError || (!isLoading && !salarySlip)) {
+    return (
+      <div className="text-center mt-10 text-red-500">
+        Failed to load salary data.
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen rounded-lg to-indigo-100 ">
+    <div className="min-h-screen  ">
+      <div className="flex justify-center w-full mb-8">
+          <button
+            onClick={() => setActiveTab('annual')}
+            className={`px-6 py-2 w-[50%] rounded-l-lg font-medium transition-colors ${
+              activeTab === 'annual'
+                ? 'bg-blue-500 text-white'
+                : 'bg-white border text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            Annual CTC
+          </button>
+          <button
+            onClick={() => setActiveTab('monthly')}
+            className={`px-6 py-2 w-[50%] rounded-r-lg font-medium transition-colors ${
+              activeTab === 'monthly'
+                ? 'bg-green-500 text-white'
+                : 'bg-white border text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            Monthly Salary
+          </button>
+        </div>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-2">
-            <h1 className="text-xl  font-bold text-gray-800">CTC Breakdown</h1>
-          </div>
-          <p className="text-gray-600 text-sm">Cost to Company - Complete Salary Structure</p>
-        </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-blue-500">
-            <div className="flex items-center">
-              <IndianRupee className="w-6 h-8 text-blue-500 mr-2" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total CTC</p>
-                <p className="text-xl font-bold text-gray-800">{formatCurrency(totalCTC)}</p>
-                <p className="text-xs text-gray-500">Per Annum</p>
+  
+
+        {/* Annual View */}
+        {activeTab === 'annual' && (
+          <div>
+            <div className="bg-white rounded-xl shadow-lg p-4 mb-6 text-center border-l-4 border-blue-500">
+              <div className="flex items-center justify-center mb-4">
+                <TrendingUp className="w-8 h-8 text-blue-500 mr-3" />
+                <h2 className="text-xl font-bold text-gray-800">
+                  Annual CTC
+                </h2>
               </div>
+              <p className="text-2xl font-bold text-blue-600 mb-2">
+                {formatCurrency(totalCTC)}
+              </p>
+              <p className="text-gray-500">
+                Cost to Company (Per Annum)
+              </p>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-green-500">
-            <div className="flex items-center">
-              <Calculator className="w-6 h-8 text-green-500 mr-3" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Monthly Take Home</p>
-                <p className="text-xl font-bold text-gray-800">{formatCurrency(monthlyTakeHome)}</p>
-                <p className="text-xs text-gray-500">After PF deduction</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-purple-500">
-            <div className="flex items-center">
-              <PieChart className="w-6 h-8 text-purple-500 mr-3" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Benefits Value</p>
-                <p className="text-xl font-bold text-gray-800">
-                  {formatCurrency(ctcData.pf + ctcData.gratuity + ctcData.medicalInsurance + ctcData.bonus)}
-                </p>
-                <p className="text-xs text-gray-500">Non-cash benefits</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Salary Components */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Salary Components Display */}
-          <div className="bg-white rounded-xl border p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-              <User className="w-6 h-6 mr-2" />
-              Salary Components
-            </h2>
-            
-            <div className="space-y-4">
-              {salaryComponents.map((component) => (
-                <div key={component.key} className="group">
-                  <div className="flex justify-between items-center py-1 hover:bg-gray-100 transition-colors duration-200">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-800">{component.label}</h3>
-                      <p className="text-xs text-gray-500">{component.description}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-gray-800">{formatCurrency(component.value)}</p>
-                    </div>
+            <div className="bg-white rounded-xl shadow-lg border p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <PieChart className="w-6 h-6 mr-2" />
+                Annual CTC Breakdown
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {salaryComponents.map((component) => (
+                  <div
+                    key={component.label}
+                    className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                  >
+                    <h4 className="font-medium text-gray-800">
+                      {component.label}
+                    </h4>
+                    <p className="font-bold text-blue-500">
+                      {formatCurrency(component.value)}
+                    </p>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Visual Breakdown */}
-          <div className="bg-white rounded-xl border p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">Salary Breakdown</h2>
-            
-            {/* Progress Bars */}
-            <div className="space-y-4 mb-6">
-              {salaryComponents.map((component) => {
-                const percentage = totalCTC > 0 ? (component.value / totalCTC) * 100 : 0;
-                return (
-                  <div key={component.key} className="group">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-700">{component.label}</span>
-                      <span className="text-sm text-gray-600">{formatCurrency(component.value)}</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-3xl h-3">
-                      <div
-                        className={`h-3 rounded-3xl ${component.color} transition-all duration-300`}
-                        style={{ width: `${percentage}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">{percentage.toFixed(1)}% of CTC</div>
-                  </div>
-                );
-              })}
+        {/* Monthly View */}
+        {activeTab === 'monthly' && (
+          <div>
+            <div className="bg-white rounded-xl shadow-lg p-4 mb-6 text-center border-l-4 border-green-500">
+              <div className="flex items-center justify-center mb-2">
+                <Wallet className="w-8 h-8 text-green-500 mr-3" />
+                <h2 className="text-xl font-bold text-gray-800">
+                  Monthly Take Home
+                </h2>
+              </div>
+              <p className="text-2xl font-bold text-green-600 mb-2">
+                {formatCurrency(monthlyTakeHome)}
+              </p>
+              <p className="text-gray-500">In-hand Salary (Per Month)</p>
             </div>
 
-            {/* Summary Table */}
-            <div className="border-t pt-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center py-2">
-                  <span className="font-medium text-gray-700">Gross Salary (Annual)</span>
-                  <span className="font-semibold">{formatCurrency(ctcData.basicSalary + ctcData.hra + ctcData.allowances)}</span>
+            <div className="bg-white rounded-xl shadow-lg border p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <Calculator className="w-6 h-6 mr-2" />
+                Monthly Salary Breakdown
+              </h3>
+
+              <div className="space-y-4 mb-6">
+                {monthlyComponents.map((component, index) => (
+                  <div
+                  key={`${component.label}-${index}`}
+                    className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg"
+                  >
+                    <span className="font-medium text-gray-800">
+                      {component.label}
+                    </span>
+                    <span
+                     className={`font-bold ${component.type === 'deduction' ? 'text-red-600' : 'text-green-500'}`}
+                    >
+                      {component.type === 'deduction' ? '-' : ''}
+                      {formatCurrency(component.value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-600">
+                    Gross Monthly
+                  </p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {formatCurrency(grossMonthly)}
+                  </p>
+                  <p className="text-xs text-gray-500">Before deductions</p>
                 </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="font-medium text-gray-700">Benefits & Deductions</span>
-                  <span className="font-semibold">{formatCurrency(totalCTC - (ctcData.basicSalary + ctcData.hra + ctcData.allowances))}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-t border-gray-200">
-                  <span className="font-bold text-lg text-gray-800">Total CTC</span>
-                  <span className="font-bold text-lg text-blue-600">{formatCurrency(totalCTC)}</span>
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Deductions
+                  </p>
+                  <p className="text-xl font-bold text-red-600">
+                    {formatCurrency(pf)}
+                  </p>
+                  <p className="text-xs text-gray-500">PF contribution</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Monthly Breakdown */}
-        <div className="mt-8 bg-white rounded-xl border p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">Monthly Breakdown</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Gross Monthly</p>
-              <p className="text-xl font-bold text-blue-600">{formatCurrency((ctcData.basicSalary + ctcData.hra + ctcData.allowances) / 12)}</p>
-            </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">PF Deduction</p>
-              <p className="text-xl font-bold text-red-600">-{formatCurrency(ctcData.pf / 12)}</p>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Take Home</p>
-              <p className="text-xl font-bold text-green-600">{formatCurrency(monthlyTakeHome)}</p>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Benefits Value</p>
-              <p className="text-xl font-bold text-purple-600">{formatCurrency((ctcData.gratuity + ctcData.medicalInsurance + ctcData.bonus) / 12)}</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
