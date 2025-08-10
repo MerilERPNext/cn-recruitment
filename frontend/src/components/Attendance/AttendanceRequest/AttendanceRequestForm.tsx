@@ -77,23 +77,26 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             : []),
           {
             label: "Request Type",
-            key: "request-type",
+            key: "request_type",
             type: "select",
             input: true,
             placeholder: "Select a Request Type",
             customClass: "mb-4",
             data: {
               values: [
-                { label: "Attendance Request", value: "Attendance Request" },
-                { label: "Clockin", value: "Clockin" },
-                { label: "Out Duty", value: "Out Duty" },
-                { label: "Shift Change", value: "Shift Change" },
+                { label: "Out Duty Request", value: "Out Duty" },
+                { label: "Short Attendance Request", value: "Short Attendance" },
+                { label: "Clockin Request", value: "Clockin" },
+                { label: "Attendance Adjustment", value: "Attendance Adjustment" },
+                { label: "Shift Change Request", value: "Shift Change" },
               ],
             },
           },
+          // Date fields (shown by default, hidden only for Clockin)
           {
             customClass: "mb-4",
             type: "columns",
+            customConditional: "show = !data.request_type || data.request_type !== 'Clockin';",
             columns: [
               {
                 components: [
@@ -126,6 +129,31 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                 width: 6,
               },
             ],
+          },
+          // Current time field for Clockin request
+          {
+            label: "Current Time",
+            key: "current_time",
+            type: "datetime",
+            input: true,
+            enableDate: false,
+            enableTime: true,
+            format: "HH:mm",
+            placeholder: "HH:mm",
+            customClass: "mb-4",
+            conditional: {
+              show: true,
+              when: "request_type",
+              eq: "Clockin"
+            },
+            time_24hr: true,
+            widget: {
+              type: "calendar",
+              time_24hr: true,
+              noCalendar: true,
+              enableTime: true,
+              dateFormat: "H:i"
+            }
           },
 
           {
