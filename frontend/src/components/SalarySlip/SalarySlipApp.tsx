@@ -14,7 +14,6 @@ const tabRoutes: Record<TabName, string> = {
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
 };
 
-// Context to share view mode with child components
 interface ViewModeContextType {
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;

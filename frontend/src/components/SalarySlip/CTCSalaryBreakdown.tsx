@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Calculator, TrendingUp, Wallet, PieChart } from 'lucide-react';
 import { useCurrentEmployee } from '../../hooks/useEmployee';
 import { useGenerateSalarySlip } from '../../hooks/useCTC';
-import { useViewMode } from './SalarySlipApp'; // Import the context hook
+import { useViewMode } from './SalarySlipApp';
+import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 
 const CTCSalaryUI = () => {
   const { data: employee, isLoading: isEmpLoading } = useCurrentEmployee();
@@ -14,9 +15,10 @@ const CTCSalaryUI = () => {
     isError,
   } = useGenerateSalarySlip(employeeId);
 
-  // Use the context instead of local state
   const { viewMode } = useViewMode();
-  const activeTab = viewMode; // Map to existing variable name for minimal changes
+  const activeTab = viewMode;
+
+  const [isMoneyMasked, setIsMoneyMasked] = useState(true);
 
   const isLoading = isEmpLoading || isSalaryLoading;
 
@@ -44,15 +46,29 @@ const CTCSalaryUI = () => {
   const monthlyTakeHome = takeHome / 12;
   const grossMonthly = totalCTC / 12;
 
-  const formatCurrency = (amount: number | bigint) =>
-    new Intl.NumberFormat('en-IN', {
+  const formatCurrency = (amount: number | bigint) => {
+    const formattedAmount = new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 0,
     }).format(amount);
 
+    if (isMoneyMasked) {
+      return (
+        <span className="relative inline-block">
+          <span className="blur-sm select-none">{formattedAmount}</span>
+        </span>
+      );
+    }
+    return formattedAmount;
+  };
+
+  const toggleMoneyMask = () => {
+    setIsMoneyMasked(!isMoneyMasked);
+  };
+
   const salaryComponents = useMemo(() => {
-    if (!salarySlip) return [];
+    if (!salarySlip?.component_part_of_ctc) return [];
     return salarySlip.component_part_of_ctc.map((comp) => ({
       label: comp.component,
       value: comp.annual_amount,
@@ -97,6 +113,27 @@ const CTCSalaryUI = () => {
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto">
+        {/* Money Mask Toggle Button */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={toggleMoneyMask}
+            className="flex items-center gap-2 px-4 py-2 transition-colors duration-200"
+            title={isMoneyMasked ? 'Show amounts' : 'Hide amounts'}
+          >
+            {isMoneyMasked ? (
+              <>
+                <span className="text-sm font-medium">Hide Amounts</span>
+                <BsToggleOff className="w-8 h-8" />
+              </>
+            ) : (
+              <>
+                <span className="text-sm font-medium">Show Amounts</span>
+                <BsToggleOn className="w-8 h-8" />
+              </>
+            )}
+          </button>
+        </div>
+
         {/* Annual View */}
         {activeTab === 'annual' && (
           <div>
@@ -107,7 +144,7 @@ const CTCSalaryUI = () => {
                   Annual CTC
                 </h2>
               </div>
-              <p className="text-2xl font-bold text-blue-600 mb-2">
+              <p className={`text-2xl font-bold text-blue-600 mb-2 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
                 {formatCurrency(totalCTC)}
               </p>
               <p className="text-gray-500">
@@ -123,13 +160,13 @@ const CTCSalaryUI = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {salaryComponents.map((component) => (
                   <div
-                    key={component.label}
+                  key={`${component.label}-${component.value}`}
                     className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                   >
                     <h4 className="font-medium text-gray-800">
                       {component.label}
                     </h4>
-                    <p className="font-bold text-blue-500">
+                    <p className={`font-bold text-blue-500 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
                       {formatCurrency(component.value)}
                     </p>
                   </div>
@@ -149,7 +186,7 @@ const CTCSalaryUI = () => {
                   Monthly Take Home
                 </h2>
               </div>
-              <p className="text-2xl font-bold text-green-600 mb-2">
+              <p className={`text-2xl font-bold text-green-600 mb-2 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
                 {formatCurrency(monthlyTakeHome)}
               </p>
               <p className="text-gray-500">In-hand Salary (Per Month)</p>
@@ -162,16 +199,16 @@ const CTCSalaryUI = () => {
               </h3>
 
               <div className="space-y-4 mb-6">
-                {monthlyComponents.map((component, index) => (
+                {monthlyComponents.map((component) => (
                   <div
-                    key={`${component.label}-${index}`}
+                    key={`${component.label}`}
                     className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg"
                   >
                     <span className="font-medium text-gray-800">
                       {component.label}
                     </span>
                     <span
-                      className={`font-bold ${component.type === 'deduction' ? 'text-red-600' : 'text-green-500'}`}
+                      className={`font-bold ${component.type === 'deduction' ? 'text-red-600' : 'text-green-500'} ${isMoneyMasked ? 'transition-all duration-300' : ''}`}
                     >
                       {component.type === 'deduction' ? '-' : ''}
                       {formatCurrency(component.value)}

@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { IoIosArrowForward } from "react-icons/io";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { BsToggleOff, BsToggleOn } from "react-icons/bs";
+import { Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
+import { useDownloadSalarySlipPDF } from "../../hooks/useSalaryDetails";
+import { UseMutationResult } from "@tanstack/react-query";
+import { FaRegEye } from "react-icons/fa";
 
 interface SalarySlip {
   name: string;
@@ -21,6 +24,11 @@ const SalarySlipsList = () => {
   const [filtersKey, setFiltersKey] = useState(0);
   const [maskSalary, setMaskSalary] = useState(true);
 
+  const {
+    mutate: downloadPDF,
+    isPending: isDownloading,
+  }: UseMutationResult<void, Error, string> = useDownloadSalarySlipPDF();
+
   useEffect(() => {
     setFiltersKey((prev) => prev + 1);
   }, [selectedYear]);
@@ -30,13 +38,17 @@ const SalarySlipsList = () => {
     navigate(`/webapp/salary-slip-app/salary-slip-list/${encodedId}`);
   };
 
-  const filters: Record<string, [string, string]> | undefined = selectedYear
-  ? {
-      start_date: [">=", `${selectedYear}-01-01`],
-      end_date: ["<=", `${selectedYear}-12-31`],
-    }
-  : undefined;
+  const handleDownload = (e: React.MouseEvent, salarySlipName: string) => {
+    e.stopPropagation();
+    downloadPDF(salarySlipName);
+  };
 
+  const filters: Record<string, [string, string]> | undefined = selectedYear
+    ? {
+        start_date: [">=", `${selectedYear}-01-01`],
+        end_date: ["<=", `${selectedYear}-12-31`],
+      }
+    : undefined;
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) =>
@@ -49,11 +61,14 @@ const SalarySlipsList = () => {
         key={filtersKey}
         doctype="Salary Slip"
         ItemComponent={(props) => (
-          <SalarySlipItem {...props} maskSalary={maskSalary} />
+          <SalarySlipItem
+            {...(props as { item: SalarySlip; index?: number; doctype: string })}
+            maskSalary={maskSalary}
+            onDownload={handleDownload}
+            onViewPDF={handleGoToSalarySlip}
+            isDownloading={isDownloading}
+          />
         )}
-        onItemClick={(item: SalarySlip) => {
-          handleGoToSalarySlip(item.name);
-        }}
         isSearch={true}
         pageSize={10}
         defaultFields={[
@@ -71,7 +86,7 @@ const SalarySlipsList = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         defaultFilters={filters as any}
         PreListComponent={() => (
-          <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex-1">
               <select
                 id="yearFilter"
@@ -87,12 +102,23 @@ const SalarySlipsList = () => {
                 ))}
               </select>
             </div>
+
             <button
               onClick={() => setMaskSalary((prev) => !prev)}
-              className="flex items-center justify-center border border-gray-300 rounded p-2 text-gray-600 hover:bg-gray-100 transition"
-              title={maskSalary ? "Unmask Salary" : "Mask Salary"}
+              className="flex items-center gap-2 border rounded px-4 py-1 transition-colors duration-200"
+              title={maskSalary ? "Show amounts" : "Hide amounts"}
             >
-              {maskSalary ? <FaEyeSlash /> : <FaEye />}
+              {maskSalary ? (
+                <>
+                  <span className="text-sm font-medium">Hide Amounts</span>
+                  <BsToggleOff className="w-8 h-8" />
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-medium">Show Amounts</span>
+                  <BsToggleOn className="w-8 h-8" />
+                </>
+              )}
             </button>
           </div>
         )}
@@ -106,7 +132,10 @@ const SalarySlipItem: React.FC<{
   index?: number;
   doctype: string;
   maskSalary: boolean;
-}> = ({ item, maskSalary }) => {
+  onDownload: (e: React.MouseEvent, salarySlipName: string) => void;
+  onViewPDF: (salarySlipName: string) => void;
+  isDownloading: boolean;
+}> = ({ item, maskSalary, onDownload, onViewPDF, isDownloading }) => {
   if (item.status.toLowerCase() !== "submitted") return null;
 
   const formatCurrency = (amount: number) => {
@@ -125,11 +154,10 @@ const SalarySlipItem: React.FC<{
     return `${day}-${month}-${year}`;
   };
 
-
   return (
     <div
       key={item.name}
-      className="flex justify-between items-center gap-3 bg-white p-4 mt-1 rounded-xl border cursor-pointer hover:shadow-sm transition-shadow"
+      className="flex justify-between items-center gap-3 bg-white p-4 mt-1 rounded-xl border hover:shadow-sm transition-shadow"
     >
       <div className="flex-grow">
         <div className="flex items-center justify-between mb-2">
@@ -146,9 +174,23 @@ const SalarySlipItem: React.FC<{
           </p>
         </div>
       </div>
-      <button className="text-lg text-[var(--secondary-color)] ml-3">
-        <IoIosArrowForward />
-      </button>
+
+      <div className="flex items-center gap-2 ml-3">
+        <button
+          onClick={(e) => onDownload(e, item.name)}
+          disabled={isDownloading}
+          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          title="Download Salary Slip"
+        >
+          <Download className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onViewPDF(item.name)}
+          className="flex items-center justify-center p-2  border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+        >
+         <FaRegEye className="w-4 h-4"/>
+        </button>
+      </div>
     </div>
   );
 };
