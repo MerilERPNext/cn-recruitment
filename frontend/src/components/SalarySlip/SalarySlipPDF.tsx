@@ -29,24 +29,24 @@ const ViewSalarySlipModal = () => {
         title="Salary Slip PDF"
         onBack={handleBack}
         rightSlot={
-                      <button
-                      onClick={() => setIsMasked(!isMasked)}
-                        className="flex items-center justify-end gap-2  py-1 transition-colors duration-200"
-                        title={isMasked ? 'Show' : 'Hide'}
-                      >
-                        {isMasked ? (
-                          <>
-                            <span className="text-sm font-medium">Hide</span>
-                            <BsToggleOff className="w-8 h-8" />
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-sm font-medium">Show</span>
-                            <BsToggleOn className="w-8 h-8" />
-                          </>
-                        )}
-                      </button>
-        }
+            <button
+              onClick={() => setIsMasked(!isMasked)}
+              className="flex items-center justify-end gap-2  py-1 transition-colors duration-200"
+              title={isMasked ? 'Show' : 'Hide'}
+            >
+              {isMasked ? (
+                <>
+                  <span className="text-sm font-medium">Hide</span>
+                  <BsToggleOff className="w-8 h-8" />
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-medium">Show</span>
+                  <BsToggleOn className="w-8 h-8" />
+                </>
+              )}
+            </button>
+          }
       />
 
       <div className="fixed inset-0 flex items-center justify-center mt-14">

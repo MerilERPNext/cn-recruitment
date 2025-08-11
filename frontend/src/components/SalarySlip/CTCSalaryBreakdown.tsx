@@ -160,7 +160,7 @@ const CTCSalaryUI = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {salaryComponents.map((component) => (
                   <div
-                    key={component.label}
+                  key={`${component.label}-${component.value}`}
                     className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                   >
                     <h4 className="font-medium text-gray-800">

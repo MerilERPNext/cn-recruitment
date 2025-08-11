@@ -111,7 +111,7 @@ export const routesConfig: AppRoute[] = [
     ],
   },
   {
-    path: "",
+    path: "/webapp/salary-slip-app/",
     element: <SalarySlipDetails />,
   },
   {
