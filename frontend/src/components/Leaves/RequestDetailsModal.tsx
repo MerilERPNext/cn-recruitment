@@ -1,7 +1,7 @@
-import React from "react";
-import { FiArrowLeft } from "react-icons/fi";
+import React, { useEffect } from "react";
 import { FaPencilRuler } from "react-icons/fa";
 import { format } from "date-fns";
+import HeaderBar from "../HeaderBar";
 
 interface RequestDetails {
   leave_type: string;
@@ -22,6 +22,13 @@ const RequestDetailsModal: React.FC<Props> = ({
   onClose,
   actions,
 }) => {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
   const getStatusBadge = (status: string) => {
     let colorClasses = "";
 
@@ -50,18 +57,11 @@ const RequestDetailsModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col h-screen">
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-2 flex items-center z-10">
-        <button
-          onClick={onClose}
-          className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
-        >
-          <FiArrowLeft className="w-5 h-5 mr-2" />
-        </button>
-        <h2 className="text-lg font-semibold">Leave Request Details</h2>
+    <div className="fixed inset-0 z-[60] bg-white flex flex-col min-h-screen overflow-hidden">
+      <div className="shadow-sm">
+        <HeaderBar title="Leave Request Details" onBack={onClose} />
       </div>
-
-      <div className="p-4 flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-4">
         <div className="bg-white border rounded-2xl shadow-md w-full max-w-md p-6 space-y-4 mx-auto">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">

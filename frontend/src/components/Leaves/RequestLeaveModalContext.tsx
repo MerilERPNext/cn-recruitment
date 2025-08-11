@@ -5,6 +5,7 @@ type RequestLeaveDefaults = {
   toDate?: string;
   leaveType?: string;
   source?: "holiday" | "other";
+  hideHalfDayToggle?: boolean;
 };
 type RequestLeaveModalContextType = {
   showModal: boolean;

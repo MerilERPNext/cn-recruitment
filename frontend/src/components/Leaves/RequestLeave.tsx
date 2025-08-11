@@ -150,8 +150,122 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     }
   }, [currentEmployee, createLeaveMutation]);
 
-  const leaveForm = useMemo(
-    () => ({
+  const leaveForm = useMemo(() => {
+    const baseComponents = [
+      {
+        type: "select",
+        key: "leaveType",
+        label: "Leave Type",
+        placeholder: "Select Leave Type",
+        input: true,
+        defaultValue: defaults?.leaveType ?? "",
+        validate: { required: true },
+        data: { values: leaveTypeOptions },
+        customClass: "px-2 mb-4",
+      },
+      {
+        type: "columns",
+        key: "dateColumns",
+        customClass: "px-2",
+        columns: [
+          {
+            width: 6,
+            components: [
+              {
+                type: "datetime",
+                key: "fromDate",
+                label: "From Date",
+                placeholder: "YYYY-MM-DD",
+                enableDate: true,
+                enableTime: false,
+                defaultValue: defaults?.fromDate
+                  ? `${defaults.fromDate}T00:00:00`
+                  : "",
+                validate: { required: true },
+                input: true,
+                customClass: "mb-4",
+                format: "yyyy-MM-dd",
+              },
+            ],
+          },
+          {
+            width: 6,
+            components: [
+              {
+                type: "datetime",
+                key: "toDate",
+                label: "To Date",
+                placeholder: "YYYY-MM-DD",
+                enableDate: true,
+                enableTime: false,
+                defaultValue: defaults?.toDate
+                  ? `${defaults.toDate}T00:00:00`
+                  : "",
+                validate: { required: true },
+                input: true,
+                customClass: "mb-4",
+                format: "yyyy-MM-dd",
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const halfDayComponents = [
+      {
+        type: "checkbox",
+        key: "halfDay",
+        label: "Half-Day Leave",
+        input: true,
+        labelPosition: "bottom",
+        customClass:
+          "custom-halfday-toggle ml-2 my-3 border rounded-lg shadow-sm bg-white p-2",
+      },
+      {
+        type: "radio",
+        key: "halfDayOption",
+        label: "Select Half-Day Option",
+        input: true,
+        validate: { required: true },
+        values: [
+          { label: "First Half", value: "First Half" },
+          { label: "Second Half", value: "Second Half" },
+        ],
+        conditional: { show: true, when: "halfDay", eq: true },
+        customClass: "px-2 mb-4 ml-4",
+      },
+    ];
+
+    const panelComponents = [
+      ...baseComponents,
+      ...(defaults?.hideHalfDayToggle ? [] : halfDayComponents),
+      {
+        type: "textarea",
+        key: "description",
+        label: "Reason",
+        placeholder: "Enter the reason for leave",
+        rows: 3,
+        validate: { required: true, minLength: 3 },
+        input: true,
+        customClass: "px-2 mb-4",
+      },
+      {
+        type: "file",
+        key: "attachment",
+        label: "Attachment (Optional)",
+        input: true,
+        storage: "base64",
+        fileTypes: [
+          { label: "Documents", value: ".pdf,.doc,.docx" },
+          { label: "Images", value: ".jpg,.jpeg,.png" },
+        ],
+        filePattern: "*/*",
+        customClass: "px-2 mb-6",
+      },
+    ];
+
+    return {
       components: [
         {
           type: "panel",
@@ -159,117 +273,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           title: "Leave Application",
           hideLabel: true,
           customClass: "px-2",
-          components: [
-            {
-              type: "select",
-              key: "leaveType",
-              label: "Leave Type",
-              placeholder: "Select Leave Type",
-              input: true,
-              defaultValue: defaults?.leaveType ?? "",
-              validate: { required: true },
-              data: { values: leaveTypeOptions },
-              customClass: "px-2 mb-4",
-            },
-            {
-              type: "columns",
-              key: "dateColumns",
-              customClass: "px-2",
-              columns: [
-                {
-                  width: 6,
-                  components: [
-                    {
-                      type: "datetime",
-                      key: "fromDate",
-                      label: "From Date",
-                      placeholder: "YYYY-MM-DD",
-                      enableDate: true,
-                      enableTime: false,
-                      defaultValue: defaults?.fromDate
-                        ? `${defaults.fromDate}T00:00:00`
-                        : "",
-                      validate: { required: true },
-                      input: true,
-                      customClass: "mb-4",
-                      format: "yyyy-MM-dd",
-                    },
-                  ],
-                },
-                {
-                  width: 6,
-                  components: [
-                    {
-                      type: "datetime",
-                      key: "toDate",
-                      label: "To Date",
-                      placeholder: "YYYY-MM-DD",
-                      enableDate: true,
-                      enableTime: false,
-                      defaultValue: defaults?.toDate
-                        ? `${defaults.toDate}T00:00:00`
-                        : "",
-                      validate: { required: true },
-                      input: true,
-                      customClass: "mb-4",
-                      format: "yyyy-MM-dd",
-                    },
-                  ],
-                },
-              ],
-            },
-            {
-              type: "checkbox",
-              key: "halfDay",
-              label: "Half-Day Leave",
-              input: true,
-              labelPosition: "bottom",
-              description: "Apply for morning or afternoon leave",
-              customClass:
-                "custom-halfday-toggle ml-2 my-3 border rounded-lg shadow-sm bg-white p-2",
-            },
-            {
-              type: "radio",
-              key: "halfDayOption",
-              label: "Select Half-Day Option",
-              input: true,
-              validate: { required: true },
-              values: [
-                { label: "First Half", value: "First Half" },
-                { label: "Second Half", value: "Second Half" },
-              ],
-              conditional: { show: true, when: "halfDay", eq: true },
-              customClass: "px-2 mb-4 ml-4",
-            },
-            {
-              type: "textarea",
-              key: "description",
-              label: "Reason",
-              placeholder: "Enter the reason for leave",
-              rows: 3,
-              validate: { required: true, minLength: 3 },
-              input: true,
-              customClass: "px-2 mb-4",
-            },
-            {
-              type: "file",
-              key: "attachment",
-              label: "Attachment (Optional)",
-              input: true,
-              storage: "base64",
-              fileTypes: [
-                { label: "Documents", value: ".pdf,.doc,.docx" },
-                { label: "Images", value: ".jpg,.jpeg,.png" },
-              ],
-              filePattern: "*/*",
-              customClass: "px-2 mb-6",
-            },
-          ],
+          components: panelComponents,
         },
       ],
-    }),
-    [leaveTypeOptions, defaults]
-  );
+    };
+  }, [leaveTypeOptions, defaults]);
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-lg">
@@ -310,7 +318,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         }}
       />
 
-      <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-4 z-50">
+      <div className="sticky bottom-0 bg-white py-4 px-4 z-50">
         <button
           onClick={handleSubmit}
           className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"

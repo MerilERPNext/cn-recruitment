@@ -62,6 +62,7 @@ import CTCSalaryUI from "./components/SalarySlip/CTCSalaryBreakdown";
 import PoliciesApp from "./components/Policies/PoliciesApp";
 import PoliciesCategory from "./components/Policies/PoliciesCategory";
 import PoliciesList from "./components/Policies/PoliciesList";
+import ViewPolicy from "./components/Policies/ViewPolicy";
 
 export interface AppRoute {
   index?: boolean;
@@ -249,6 +250,7 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "", element: <PoliciesCategory /> },
       { path: "policies-list", element: <PoliciesList /> },
+      { path: "view-policy/:policyName", element: <ViewPolicy /> },
     ],
   },
 ];
