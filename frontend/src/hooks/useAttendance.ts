@@ -178,7 +178,8 @@ export function useCheckInOutService() {
 export function useClockInOutService() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: object) => attendanceService.clockInOutService(body),
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.clockInOutService(body),
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["clockin-clockout"] });

@@ -149,38 +149,45 @@ export const attendanceService = {
       throw error; // You can customize this or return false instead
     }
   },
-  clockInOutService: async (body: object): Promise<boolean> => {
+  clockInOutService: async (
+    body: Record<string, unknown>
+  ): Promise<boolean> => {
     try {
-      const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.create_employee_clockin`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(body),
-        }
+      // const response = await fetch(
+      //     `/api/method/cn_leave_shift_managment.api.create_employee_clockin`,
+      //     {
+      //       method: "POST",
+      //       headers: {
+      //         Accept: "application/json",
+      //         "Content-Type": "application/json",
+      //       },
+      //       body: JSON.stringify(body),
+      //     }
+      //   );
+
+      //   const result = await response.json();
+      //   if (!response.ok) {
+      //     throw new Error(`HTTP error: ${response.status}`);
+      //   }
+
+      //   // Case 2: Application-level error from Frappe
+      //   if (
+      //     typeof result.message === "object" &&
+      //     result.message.success === false
+      //   ) {
+      //     throw result.message.error || "Unknown application error";
+      //   }
+
+      //   // Case 3: Success
+      //   if (result.message?.success === true) {
+      //     return true;
+      //   }
+
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.create_employee_clockin",
+        body
       );
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
-      }
-
-      // Case 2: Application-level error from Frappe
-      if (
-        typeof result.message === "object" &&
-        result.message.success === false
-      ) {
-        throw result.message.error || "Unknown application error";
-      }
-
-      // Case 3: Success
-      if (result.message?.success === true) {
-        return true;
-      }
-
+      return response as boolean;
       // Case 4: Unexpected response
       throw new Error("Unexpected response from server.");
     } catch (error) {

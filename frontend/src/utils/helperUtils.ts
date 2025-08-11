@@ -100,31 +100,23 @@ export type Coordinates = {
 };
 
 export async function getDeviceLocation(): Promise<Coordinates> {
-  if (!navigator.geolocation) {
-    throw new Error("Geolocation is not supported by this browser.");
-  }
-  if (navigator.permissions) {
-    try {
-      const permissionStatus = await navigator.permissions.query({
-        name: "geolocation",
-      });
-
-      if (permissionStatus.state === "denied") {
-        throw new Error("Location permission was denied.");
-      }
-    } catch (err) {
-      console.warn("Could not verify permissions:", err);
+  try {
+    const location = await window.nativeInterface.execute("getLocation");
+    if (location?.mocked) {
+      throw new Error("Mocked location not allowed.");
     }
+    if (
+      !location ||
+      !location.coords ||
+      typeof location.coords.latitude !== "number" ||
+      typeof location.coords.longitude !== "number"
+    ) {
+      throw new Error("Invalid location data received.");
+    }
+
+    const { latitude, longitude } = location.coords;
+    return { latitude, longitude };
+  } catch (error) {
+    throw new Error("Error getting location: " + (error as Error).message);
   }
-  return new Promise<Coordinates>((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      (position: GeolocationPosition) => {
-        const { latitude, longitude } = position.coords;
-        resolve({ latitude, longitude });
-      },
-      (error: GeolocationPositionError) => {
-        reject(new Error("Error getting location: " + error.message));
-      }
-    );
-  });
 }
