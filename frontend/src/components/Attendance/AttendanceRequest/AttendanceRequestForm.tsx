@@ -275,11 +275,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         />
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t shadow-md py-4 px-2 z-20">
+      <div className="sticky bottom-0 bg-white border-t shadow-md p-4 pb-2 z-20">
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => formAddressInstance.current?.submit()}
-            className="w-full max-h-12 bg-gray-900 text-white py-4 rounded-lg font-semibold flex items-center justify-center"
+            className="w-full bg-gray-900 text-white py-4 rounded-xl font-semibold flex items-center justify-center"
           >
             {mutation.isPending ? (
               <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
