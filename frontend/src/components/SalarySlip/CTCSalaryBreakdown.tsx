@@ -162,9 +162,9 @@ const CTCSalaryUI = () => {
               </h3>
 
               <div className="space-y-4 mb-6">
-                {monthlyComponents.map((component, index) => (
+                {monthlyComponents.map((component) => (
                   <div
-                    key={`${component.label}-${index}`}
+                    key={`${component.label}`}
                     className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg"
                   >
                     <span className="font-medium text-gray-800">
