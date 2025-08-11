@@ -58,7 +58,7 @@ export const useGetEmployeeShift = (
   filters?: object
 ): UseQueryResult<EmployeeShift, Error> => {
   return useQuery<EmployeeShift, Error>({
-    queryKey: ["employee-shift"],
+    queryKey: ["employee-shift", userId],
     queryFn: () => attendanceService.getEmployeeShift(userId, filters),
     enabled: !!userId,
     refetchOnWindowFocus: true,
