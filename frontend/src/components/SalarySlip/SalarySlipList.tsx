@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import { useDownloadSalarySlipPDF } from "../../hooks/useSalaryDetails";
 import { UseMutationResult } from "@tanstack/react-query";
+import { FaRegEye } from "react-icons/fa";
 
 interface SalarySlip {
   name: string;
@@ -178,16 +179,16 @@ const SalarySlipItem: React.FC<{
         <button
           onClick={(e) => onDownload(e, item.name)}
           disabled={isDownloading}
-          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
           title="Download Salary Slip"
         >
           <Download className="w-4 h-4" />
         </button>
         <button
           onClick={() => onViewPDF(item.name)}
-          className="flex items-center bg-blue-600 justify-center px-2 py-1 border border-gray-300 rounded text-white hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
+          className="flex items-center justify-center p-2  border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
         >
-          View PDF
+         <FaRegEye className="w-4 h-4"/>
         </button>
       </div>
     </div>
