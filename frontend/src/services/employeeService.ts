@@ -1,5 +1,10 @@
 import { FrappeAPI } from "../utils/frappeAPI";
-import { Employee, EmployeeIdCard, EmployeeListItem, IReason } from "../types/employee";
+import {
+  Employee,
+  EmployeeIdCard,
+  EmployeeListItem,
+  IReason,
+} from "../types/employee";
 
 function hasRequiredProperties<T extends Record<string, unknown>>(
   obj: unknown,
@@ -24,21 +29,26 @@ function isEmployee(obj: unknown): obj is Employee {
 
   const requiredFields = ["name", "employee_name"];
   for (const field of requiredFields) {
-    if (!(field in employee) || typeof employee[field] !== "string" || !employee[field]) {
+    if (
+      !(field in employee) ||
+      typeof employee[field] !== "string" ||
+      !employee[field]
+    ) {
       return false;
     }
   }
 
   if (
     employee.status &&
-    !["Active", "Inactive", "Suspended", "Left"].includes(employee.status as string)
+    !["Active", "Inactive", "Suspended", "Left"].includes(
+      employee.status as string
+    )
   ) {
     return false;
   }
 
   return true;
 }
-
 
 function isEmployeeListItem(obj: unknown): obj is EmployeeListItem {
   if (!hasRequiredProperties(obj, ["name", "employee_name", "status"])) {
@@ -80,7 +90,10 @@ export class EmployeeService {
         );
         console.log("Primary API response for employee:", result);
       } catch (primaryError) {
-        console.warn("Primary API method failed, trying fallback:", primaryError);
+        console.warn(
+          "Primary API method failed, trying fallback:",
+          primaryError
+        );
 
         // Fallback: Try to get employee directly from doctype
         try {
@@ -88,21 +101,30 @@ export class EmployeeService {
           console.log("Fallback API response for employee:", result);
         } catch (fallbackError) {
           console.error("Fallback API method also failed:", fallbackError);
-          throw new Error(`No employee found with ID: ${employeeId}. Please verify the employee ID is correct.`);
+          throw new Error(
+            `No employee found with ID: ${employeeId}. Please verify the employee ID is correct.`
+          );
         }
       }
 
       // Handle undefined/null responses
       if (result === undefined || result === null) {
-        console.error("API returned undefined/null for employee ID:", employeeId);
-        throw new Error(`No employee data found for ID: ${employeeId}. The employee may not exist.`);
+        console.error(
+          "API returned undefined/null for employee ID:",
+          employeeId
+        );
+        throw new Error(
+          `No employee data found for ID: ${employeeId}. The employee may not exist.`
+        );
       }
 
       if (!isEmployee(result)) {
         console.error("Employee validation failed for data:", result);
         console.error("Data type:", typeof result);
         console.error("Data content:", JSON.stringify(result));
-        throw new Error(`Invalid employee data structure received for ID: ${employeeId}`);
+        throw new Error(
+          `Invalid employee data structure received for ID: ${employeeId}`
+        );
       }
 
       console.log("Employee data validated successfully:", result);
@@ -113,7 +135,9 @@ export class EmployeeService {
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error(`Failed to fetch employee details for ID: ${employeeId}. Please try again or contact support.`);
+      throw new Error(
+        `Failed to fetch employee details for ID: ${employeeId}. Please try again or contact support.`
+      );
     }
   }
 
@@ -149,22 +173,33 @@ export class EmployeeService {
         );
         console.log("Primary API response for current employee:", result);
       } catch (primaryError) {
-        console.warn("Primary API method failed, trying fallback:", primaryError);
+        console.warn(
+          "Primary API method failed, trying fallback:",
+          primaryError
+        );
 
         // Fallback: Try to get employee by current user
         try {
-          const userResult = await FrappeAPI.callMethod("frappe.auth.get_logged_user");
-          if (userResult && typeof userResult === 'string') {
-            console.log("Got current user, fetching employee by user ID:", userResult);
+          const userResult = await FrappeAPI.callMethod(
+            "frappe.auth.get_logged_user"
+          );
+          if (userResult && typeof userResult === "string") {
+            console.log(
+              "Got current user, fetching employee by user ID:",
+              userResult
+            );
             const employeeList = await FrappeAPI.getDocumentList("Employee", {
               fields: ["*"],
               filters: [["user_id", "=", userResult]],
-              limit: 1
+              limit: 1,
             });
 
             if (employeeList.data && employeeList.data.length > 0) {
               result = employeeList.data[0];
-              console.log("Fallback API response for current employee:", result);
+              console.log(
+                "Fallback API response for current employee:",
+                result
+              );
             } else {
               console.warn("No employee found for current user:", userResult);
               return null;
@@ -178,7 +213,9 @@ export class EmployeeService {
 
       // Handle undefined/null responses
       if (result === undefined || result === null) {
-        console.warn("API returned undefined/null for current employee. User may not have an employee record.");
+        console.warn(
+          "API returned undefined/null for current employee. User may not have an employee record."
+        );
         return null;
       }
 
@@ -193,40 +230,46 @@ export class EmployeeService {
       return result;
     } catch (error) {
       console.error("Error fetching current employee:", error);
-      console.error("Error details:", error instanceof Error ? error.message : error);
+      console.error(
+        "Error details:",
+        error instanceof Error ? error.message : error
+      );
 
       throw error;
     }
   }
-  static async getCurrentEmployeeAllDetails(user_id : string): Promise<Employee | null> {
+  static async getCurrentEmployeeAllDetails(
+    user_id: string
+  ): Promise<Employee | null> {
     try {
       const result = await FrappeAPI.getDocumentList("Employee", {
         fields: ["*"],
-        filters: [
-          ["user_id", "=", user_id]
-        ],
+        filters: [["user_id", "=", user_id]],
       });
       if (!isEmployee(result.data[0])) {
-        console.error('Invalid employee data received from API');
+        console.error("Invalid employee data received from API");
         return null;
       }
-      
+
       return result?.data[0];
     } catch (error) {
-      console.error('Error fetching current employee:', error);
+      console.error("Error fetching current employee:", error);
       return null;
     }
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static async getCurrentEmployeeAddress(user_id : string): Promise<any> {
+  static async getCurrentEmployeeAddress(user_id: string): Promise<any> {
     try {
-      const result = await FrappeAPI.callMethod("recruitment.payroll_api.address_details", {
-        user_id: user_id,
-      });
-      
+      const result = await FrappeAPI.callMethod(
+        "recruitment.payroll_api.address_details",
+        {
+          user_id: user_id,
+        }
+      );
+
       return result;
     } catch (error) {
-      console.error('Error fetching current employee:', error);
+      console.error("Error fetching current employee:", error);
       return null;
     }
   }
@@ -239,7 +282,8 @@ export class EmployeeService {
       return {
         id: employee.name || "Unknown",
         name: employee.employee_name || employee.first_name || "Unknown",
-        employee_name: employee.employee_name || employee.first_name || "Unknown",
+        employee_name:
+          employee.employee_name || employee.first_name || "Unknown",
         department: employee.department || "Not Specified",
         designation: employee.designation || "Not Specified",
         location: employee.branch || employee.company || "Not Specified",
@@ -249,7 +293,11 @@ export class EmployeeService {
         company: employee.company || "Not Specified",
         employee_number: employee.employee_number || employee.name || "N/A",
         contact: employee.cell_number || undefined,
-        email: employee.prefered_email || employee.company_email || employee.personal_email || undefined,
+        email:
+          employee.prefered_email ||
+          employee.company_email ||
+          employee.personal_email ||
+          undefined,
       };
     } catch (error) {
       console.error("Error transforming employee data:", error, employee);
@@ -289,10 +337,10 @@ export class EmployeeService {
   }
 
   static async getAllEmployees(): Promise<Employee[]> {
-    const response = FrappeAPI.getDocumentList('Employee', {
-      fields: ["name","employee_name"],
-      limit:20,
-      filters:[["status","=","Active"]]
+    const response = FrappeAPI.getDocumentList("Employee", {
+      fields: ["name", "employee_name", "company"],
+      limit: 20,
+      filters: [["status", "=", "Active"]],
     });
     const data = await response;
     if (!response || data?.data?.length === 0) {
@@ -302,8 +350,8 @@ export class EmployeeService {
   }
 
   static async getAllReasons(): Promise<IReason[]> {
-    const response = FrappeAPI.getDocumentList('Reason', {
-      fields: ["name","reason","reason_type"],
+    const response = FrappeAPI.getDocumentList("Reason", {
+      fields: ["name", "reason", "reason_type"],
     });
     const data = await response;
     if (!response || data?.data?.length === 0) {

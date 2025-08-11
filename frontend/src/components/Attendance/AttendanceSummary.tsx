@@ -50,7 +50,7 @@ const AttendanceSummary = () => {
         {/* Header Card */}
         <div className=" mb-4 ">
           {/* Date Navigation */}
-          <div className="flex items-center justify-between mb-4 border-b-2 bg-white border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-4 border-b-1 bg-white border-gray-200 p-4">
             <button
               className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200"
               onClick={goToPreviousMonth}
@@ -74,7 +74,7 @@ const AttendanceSummary = () => {
           </div>
 
           {/* Statistics Grid */}
-          <div className="space-y-3 border-b-2 bg-white border-gray-200 p-4 pt-0">
+          <div className="space-y-3 border-b-1 bg-white border-gray-200 p-4 pt-0">
             <h2 className="text-xl font-semibold">Quick Summary</h2>
 
             {/* First Row */}
@@ -97,7 +97,19 @@ const AttendanceSummary = () => {
                 </p>
                 <p className="text-xs font-medium text-red-700">Absent Days</p>
               </div>
-              {/* Avg. Overtime - Indigo */}
+              {/* Leaves - Orange */}
+              <div className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg">
+                <Calendar className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-orange-800">
+                  {employeeAttendanceSummary?.leaves || 0}
+                </p>
+                <p className="text-xs font-medium text-orange-700">Leaves</p>
+              </div>
+            </div>
+
+            {/* Second Row */}
+            <div className="grid grid-cols-3 gap-3">
+              {/* Avg. Overtime - Yellow */}
               <div className="text-center bg-yellow-50 border-2 border-yellow-100 p-3 rounded-lg">
                 <Timer className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
                 <p className="text-lg font-bold text-yellow-800">
@@ -107,19 +119,6 @@ const AttendanceSummary = () => {
                   Avg. Overtime
                 </p>
               </div>
-            </div>
-
-            {/* Second Row */}
-            <div className="grid grid-cols-3 gap-3">
-              {/* Leaves - Orange */}
-              <div className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg">
-                <Calendar className="w-6 h-6 text-orange-600 mx-auto mb-1" />
-                <p className="text-lg font-bold text-orange-800">
-                  {employeeAttendanceSummary?.leaves || 0}
-                </p>
-                <p className="text-xs font-medium text-orange-700">Leaves</p>
-              </div>
-
               {/* Avg. Work Duration - Blue */}
               <div className="text-center bg-blue-50 border-2 border-blue-100 p-3 rounded-lg">
                 <Clock className="w-6 h-6 text-blue-600 mx-auto mb-1" />
@@ -186,7 +185,7 @@ const AttendanceSummary = () => {
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-900">
-                  Attendance Policies
+                  Attendance Policy
                 </h3>
                 <div>
                   <button className=" w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
@@ -202,12 +201,9 @@ const AttendanceSummary = () => {
                 <Calendar className="h-4 w-4 text-gray-700" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">
-                  Week Off & Week Off Pattern
-                </h3>
+                <h3 className="font-semibold text-gray-900">Week Off</h3>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-2">
-                    <span className="text-sm text-gray-900">Off Days</span>
                     <span className="text-sm font-medium text-gray-900">
                       1st, 2nd, 4th Sunday
                     </span>
@@ -220,9 +216,7 @@ const AttendanceSummary = () => {
                 <Timer className="h-4 w-4 text-gray-700" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">
-                  Overtime Policies
-                </h3>
+                <h3 className="font-semibold text-gray-900">Overtime Policy</h3>
               </div>
             </div>
           </div>

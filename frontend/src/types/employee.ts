@@ -75,6 +75,9 @@ export interface Employee {
   new_workplace?: string;
   reason_for_leaving?: string;
   feedback?: string;
+
+  custom_allow_mobile_checkin ?:boolean;
+  custom_enable_web_clockin ?:boolean;
 }
 
 // Simplified Employee interface for ID Card display

@@ -19,24 +19,26 @@ import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import {
   useCheckInOutService,
+  useClockInOutService,
   useGetEmployeeShift,
   useGetQuickAttendanceSummary,
   useHomeSummaryDetails,
 } from "../hooks/useAttendance";
-import {
-  LeaveData,
-  LeaveProgressProps,
-  useGetLeaveBalance,
-} from "../hooks/useLeaves";
+
 import { useExpenseClaim } from "../hooks/useExpense";
-import { formatDateString, formatTo24HourTime } from "../utils/helperUtils";
+import {
+  Coordinates,
+  formatDateString,
+  formatTo24HourTime,
+  getDeviceLocation,
+  getTotalTime,
+} from "../utils/helperUtils";
 import defaultProfile from "../assets/face-rec.png";
 import logo from "../assets/logo.png";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import {
   compareAsc,
   compareDesc,
-  differenceInMinutes,
   endOfDay,
   endOfMonth,
   format,
@@ -44,6 +46,8 @@ import {
   startOfDay,
   startOfMonth,
 } from "date-fns";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 const statusStyles = {
   unpaid: {
@@ -85,8 +89,22 @@ const statusStyles = {
 };
 
 const MobileDashboard: React.FC = () => {
+  const [location, setLocation] = useState<Coordinates | null>(null);
+
   const navigate = useNavigate();
 
+  useEffect(() => {
+    async function fetchLocation() {
+      try {
+        const coords = await getDeviceLocation();
+        setLocation(coords);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    fetchLocation();
+  }, []);
   // Get unread notifications count
   const { data: unreadCount = 0 } = useUnreadNoticesCount();
   const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
@@ -102,6 +120,8 @@ const MobileDashboard: React.FC = () => {
   );
   const { mutate: checkInCheckOutMutation, isPending: checkInCheckOutPending } =
     useCheckInOutService();
+  const { mutate: clockInCheckOutMutation, isPending: clockInCheckOutPending } =
+    useClockInOutService();
   const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
   const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
 
@@ -110,11 +130,13 @@ const MobileDashboard: React.FC = () => {
   };
 
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const today = new Date().toISOString().split("T")[0];
-  const { data: leaveBalance } = useGetLeaveBalance(
-    currentEmployee?.employee,
-    today
-  );
+  // const today = new Date().toISOString().split("T")[0];
+  // const { data: leaveBalance } = useGetLeaveBalance(
+  //   currentEmployee?.employee,
+  //   today
+  // );
+
+  // This works for both check in/check out and clockin and clock out  -- START
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -155,55 +177,87 @@ const MobileDashboard: React.FC = () => {
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
-
-  const handleCheckIn = () => {
-    checkInCheckOutMutation(
-      {
-        employee: currentEmployee?.employee,
-        shift: employeeShift?.shift,
-        action: "Check In",
-      },
-      {
-        onSuccess: () => {
-          refetchHomeSummary();
+  // This works for both check in/check out and clockin and clock out -- END
+  const handleCheckInOut = (type: string) => {
+    if (type === "checkIn") {
+      checkInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Check In",
+          latitude: location?.latitude,
+          longitude: location?.longitude,
         },
-      }
-    );
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+          },
+          onError: (e) => {
+            toast.error(e.toString() || "Error while Checking In");
+          },
+        }
+      );
+    } else {
+      checkInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Check Out",
+          latitude: location?.latitude,
+          longitude: location?.longitude,
+        },
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+          },
+          onError: (e) => {
+            toast.error(e.toString() || "Error while Checking out");
+          },
+        }
+      );
+    }
   };
 
-  const handleCheckOut = () => {
-    checkInCheckOutMutation(
-      {
-        employee: currentEmployee?.employee,
-        shift: employeeShift?.shift,
-        action: "Check Out",
-      },
-      {
-        onSuccess: () => {
-          refetchHomeSummary();
+  const handleClockInOut = (type: string) => {
+    if (type === "clockIn") {
+      clockInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Clock In",
         },
-      }
-    );
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+          },
+          onError: (e) => {
+            toast.error(e.toString() || "Error while Clocking out");
+          },
+        }
+      );
+    } else {
+      clockInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Clock Out",
+        },
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+          },
+          onError: (e) => {
+            toast.error(e.toString() || "Error while Clocking out");
+          },
+        }
+      );
+    }
   };
 
   const handleNotificationClick = () => {
     navigate("/webapp/notices");
   };
 
-  const getTotalTime = () => {
-    if (firstCheckIn) {
-      const diffMins = differenceInMinutes(
-        new Date(),
-        parseISO(firstCheckIn.time.replace(" ", "T"))
-      );
-      const hours = Math.floor(diffMins / 60);
-      const minutes = diffMins % 60;
-      // Format as HH:mm with leading zeros
-      return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-    } else {
-      return "--:--";
-    }
-  };
   return (
     <div className="min-h-screen bg-white font-sans max-w-md mx-auto">
       {/* Header */}
@@ -260,7 +314,7 @@ const MobileDashboard: React.FC = () => {
 
       <div className="px-4 py-3">
         <div className="grid grid-cols-2 gap-2 mb-2">
-          <div className="text-center bg-gray-200 border-1 border-gray-300 px-2 py-4 rounded-lg">
+          <div className="text-center bg-gray-200 border-1 border-gray-300 px-2 py-2 rounded-lg">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Shift Start
             </p>
@@ -272,10 +326,11 @@ const MobileDashboard: React.FC = () => {
                 : "--:--"}
             </p>
           </div>
-          <div className="text-center bg-gray-200 border-1 border-gray-300  px-2 py-4 rounded-lg">
+          <div className="text-center bg-gray-200 border-1 border-gray-300  px-2 py-2 rounded-lg">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Check In
+              In Time
             </p>
+
             <p className="text-2xl font-bold text-gray-900">
               {firstCheckIn?.time
                 ? formatTo24HourTime((firstCheckIn?.time as string) || "")
@@ -285,7 +340,7 @@ const MobileDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-2">
-          <div className="text-center bg-gray-200 border-1 border-gray-300 px-2 py-4 rounded-lg">
+          <div className="text-center bg-gray-200 border-1 border-gray-300 px-2 py-2 rounded-lg">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Shift End
             </p>
@@ -296,9 +351,9 @@ const MobileDashboard: React.FC = () => {
             </p>{" "}
             {/* <p className="text-sm font-bold text-gray-900">{todayAttendance?.[0]?.shift}</p> */}
           </div>
-          <div className="text-center bg-gray-200 border-1 border-gray-300  px-2 py-4 rounded-lg">
+          <div className="text-center bg-gray-200 border-1 border-gray-300  px-2 py-2 rounded-lg">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Check Out
+              Out Time
             </p>
             <p className="text-2xl font-bold text-gray-900">
               {lastCheckOut?.time
@@ -309,26 +364,52 @@ const MobileDashboard: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-2 mb-4">
-          <div className="flex flex-col flex-1 justify-center items-center bg-gray-200 border-1 border-gray-300  px-2 py-4 rounded-lg">
+          <div className="flex flex-col flex-1 justify-center items-center bg-gray-200 border-1 border-gray-300  px-2 py-2 rounded-lg">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Total Hours
             </p>
-            <p className="text-2xl font-bold text-gray-900">{getTotalTime()}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {getTotalTime(homeSummary)}
+            </p>
           </div>
-          <button
-            onClick={isCurrentlyCheckedIn ? handleCheckOut : handleCheckIn}
-            className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold flex-1 flex items-center justify-center text-md"
-            disabled={checkInCheckOutPending || !employeeShift?.shift}
-          >
-            {checkInCheckOutPending || isRefetching ? (
-              <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
-            ) : isCurrentlyCheckedIn ? (
-              "Check Out"
-            ) : (
-              "Check In"
-            )}
-          </button>
+          {/* Check In / Check Out */}
+          {currentEmployee?.custom_allow_mobile_checkin ? (
+            <button
+              onClick={() =>
+                handleCheckInOut(isCurrentlyCheckedIn ? "checkOut" : "checkIn")
+              }
+              className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold flex-1 flex items-center justify-center text-md"
+              disabled={checkInCheckOutPending || !employeeShift?.shift}
+            >
+              {checkInCheckOutPending || isRefetching ? (
+                <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+              ) : isCurrentlyCheckedIn ? (
+                "Check Out"
+              ) : (
+                "Check In"
+              )}
+            </button>
+          ) : null}
+          {/* Clock In / Clock Out */}
+          {currentEmployee?.custom_enable_web_clockin ? (
+            <button
+              onClick={() =>
+                handleClockInOut(isCurrentlyCheckedIn ? "clockOut" : "clockIn")
+              }
+              className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold flex-1 flex items-center justify-center text-md"
+              disabled={clockInCheckOutPending || !employeeShift?.shift}
+            >
+              {clockInCheckOutPending || isRefetching ? (
+                <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+              ) : isCurrentlyCheckedIn ? (
+                "Clock Out"
+              ) : (
+                "Clock In"
+              )}
+            </button>
+          ) : null}
         </div>
+
         {/* Quick Links */}
         <div className="mb-5">
           <h3 className="text-lg font-bold mb-3">Quick Links</h3>
@@ -439,32 +520,19 @@ const MobileDashboard: React.FC = () => {
               <p className="text-xs font-medium text-red-700">Absent Days</p>
             </div>
 
-            <div className="text-center bg-yellow-50 border-2 border-yellow-100 p-3 rounded-lg">
-              <Timer className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-yellow-800">
-                {employeeAttendanceSummary?.avg_overtime || 0}
+            <div className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg">
+              <Timer className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-orange-800">
+                {employeeAttendanceSummary?.leaves || 0}
               </p>
-              <p className="text-xs font-medium text-yellow-700">
-                Avg. Overtime
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500 text-sm font-semibold">
-                This Month Average Hours:
-              </span>
-              <span className="text-sm font-semibold">
-                {employeeAttendanceSummary?.avg_working_hours}
-              </span>
+              <p className="text-xs font-medium text-orange-700">Leaves</p>
             </div>
           </div>
         </div>
 
         {/* Leave Balance */}
 
-        {leaveBalance && (
+        {/* {leaveBalance && (
           <LeaveProgress
             leaveData={leaveBalance.leave_balance.reduce(
               (acc, leave) => ({
@@ -477,7 +545,7 @@ const MobileDashboard: React.FC = () => {
               {} as LeaveData
             )}
           />
-        )}
+        )} */}
 
         {/* Pending Expense Claims */}
         {expenseData?.length > 0 && (
@@ -551,46 +619,46 @@ const MobileDashboard: React.FC = () => {
 
 export default MobileDashboard;
 
-const LeaveProgress = ({ leaveData }: LeaveProgressProps) => {
-  return (
-    <div className="rounded-xl mb-4 sm:mb-5">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold text-gray-900">Leave Balance</h3>
-        <Link
-          to="/webapp/leave-app"
-          className="text-blue-500 text-sm font-semibold hover:text-blue-600"
-        >
-          View All
-        </Link>
-      </div>
-      <div className="space-y-4">
-        {Object.entries(leaveData).map(
-          ([leaveType, { allocated_leaves, balance_leaves }]) => {
-            const percentage =
-              allocated_leaves > 0
-                ? (balance_leaves / allocated_leaves) * 100
-                : 0;
+// const LeaveProgress = ({ leaveData }: LeaveProgressProps) => {
+//   return (
+//     <div className="rounded-xl mb-4 sm:mb-5">
+//       <div className="flex justify-between items-center mb-4">
+//         <h3 className="text-lg font-bold text-gray-900">Leave Balance</h3>
+//         <Link
+//           to="/webapp/leave-app"
+//           className="text-blue-500 text-sm font-semibold hover:text-blue-600"
+//         >
+//           View All
+//         </Link>
+//       </div>
+//       <div className="space-y-4">
+//         {Object.entries(leaveData).map(
+//           ([leaveType, { allocated_leaves, balance_leaves }]) => {
+//             const percentage =
+//               allocated_leaves > 0
+//                 ? (balance_leaves / allocated_leaves) * 100
+//                 : 0;
 
-            return (
-              <div key={leaveType}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-700 font-medium">{leaveType}</span>
-                  <span className="text-lg font-bold text-gray-900">
-                    {balance_leaves.toString().padStart(2, "0")} /{" "}
-                    {allocated_leaves.toString().padStart(2, "0")}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-lg h-2 overflow-hidden">
-                  <div
-                    className={`bg-blue-600 h-full rounded-lg transition duration-500`}
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-              </div>
-            );
-          }
-        )}
-      </div>
-    </div>
-  );
-};
+//             return (
+//               <div key={leaveType}>
+//                 <div className="flex justify-between items-center mb-2">
+//                   <span className="text-gray-700 font-medium">{leaveType}</span>
+//                   <span className="text-lg font-bold text-gray-900">
+//                     {balance_leaves.toString().padStart(2, "0")} /{" "}
+//                     {allocated_leaves.toString().padStart(2, "0")}
+//                   </span>
+//                 </div>
+//                 <div className="w-full bg-gray-200 rounded-lg h-2 overflow-hidden">
+//                   <div
+//                     className={`bg-blue-600 h-full rounded-lg transition duration-500`}
+//                     style={{ width: `${percentage}%` }}
+//                   />
+//                 </div>
+//               </div>
+//             );
+//           }
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
