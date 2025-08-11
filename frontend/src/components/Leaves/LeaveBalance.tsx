@@ -7,6 +7,7 @@ import { FaRegCalendarCheck } from "react-icons/fa";
 import { FaClockRotateLeft } from "react-icons/fa6";
 import { FiPieChart } from "react-icons/fi";
 import HeaderBar from "../HeaderBar";
+import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 
 type LeaveTransactionEntry = {
   type: string;
@@ -15,8 +16,18 @@ type LeaveTransactionEntry = {
 };
 
 const monthLabels = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 const LeaveTransactionCard: React.FC<{
@@ -78,9 +89,10 @@ const inactiveBg = "bg-[#FFF]";
 const LeaveBalance: React.FC = () => {
   const [showTransactions, setShowTransactions] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
-
+  const { openModal } = useRequestLeaveModal();
   const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
-  const { data: currentEmployee, isLoading: isEmployeeLoading } = useEmployeeByUserId(userId);
+  const { data: currentEmployee, isLoading: isEmployeeLoading } =
+    useEmployeeByUserId(userId);
   const today = new Date().toISOString().split("T")[0];
   const employeeId = currentEmployee?.name ?? "";
   const {
@@ -93,7 +105,6 @@ const LeaveBalance: React.FC = () => {
     setSelectedType(type);
     setShowTransactions(true);
   }, []);
-
 
   const closeTransactions = useCallback(() => {
     setShowTransactions(false);
@@ -119,39 +130,38 @@ const LeaveBalance: React.FC = () => {
     <div className="pb-4 relative">
       <div className="pt-4">
         {leaveBalance.map((leave) => (
-          <div
-            key={leave.type}
-            className={`rounded-xl p-4 mb-4 ${inactiveBg}`}
-          >
+          <div key={leave.type} className={`rounded-xl p-4 mb-4 ${inactiveBg}`}>
             <div
               className={`text-xl font-semibold mb-3 ${labelColor} flex justify-between items-center`}
             >
-              <button
-                onClick={() => openTransactions(leave.type)}
-                className="text-left text-black focus:outline-none"
-              >
-                {leave.type}
-              </button>
+              <span className="text-left text-black">{leave.type}</span>
               <span className="text-sm text-green-800">
-                {leave.carry_over > 0 ? "+" : ""}
                 {leave.carry_over} Carry Forwarded
               </span>
             </div>
-
-            <div className="flex justify-between mt-2 gap-2">
+            <div
+              className="flex justify-between mt-2 gap-2 cursor-pointer"
+              onClick={() => openTransactions(leave.type)}
+            >
               <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-col items-center justify-center bg-blue-50">
                 <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mb-1" />
-                <p className="text-lg font-bold text-blue-800">{leave.entitled}</p>
+                <p className="text-lg font-bold text-blue-800">
+                  {leave.entitled}
+                </p>
                 <p className="text-xs font-medium text-blue-700">Entitled</p>
               </div>
               <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-col items-center justify-center bg-green-50">
                 <FaClockRotateLeft className="w-6 h-6 text-green-600 mb-1" />
-                <p className="text-lg font-bold text-green-800">{leave.availed}</p>
+                <p className="text-lg font-bold text-green-800">
+                  {leave.availed}
+                </p>
                 <p className="text-xs font-medium text-green-700">Availed</p>
               </div>
               <div className="flex-1 text-center border border-orange-100 rounded-lg py-2 flex flex-col items-center justify-center bg-orange-50">
                 <FiPieChart className="w-6 h-6 text-orange-600 mb-1" />
-                <p className="text-lg font-bold text-orange-800">{leave.balance}</p>
+                <p className="text-lg font-bold text-orange-800">
+                  {leave.balance}
+                </p>
                 <p className="text-xs font-medium text-orange-700">Balance</p>
               </div>
             </div>
@@ -163,9 +173,9 @@ const LeaveBalance: React.FC = () => {
         <button
           type="button"
           className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-          onClick={() => openTransactions(null)}
+          onClick={() => openModal()}
         >
-          Leave Transactions
+          + Request Leave
         </button>
       </div>
 

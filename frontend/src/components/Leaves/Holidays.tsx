@@ -67,6 +67,7 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
               toDate: holiday.date,
               leaveType: "Optional Leave",
               source: "holiday",
+              hideHalfDayToggle: true,
             })
           }
           className={`text-sm font-medium border p-2 px-4 rounded-lg transition-colors duration-200
