@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Calculator, TrendingUp, Wallet, PieChart } from 'lucide-react';
 import { useCurrentEmployee } from '../../hooks/useEmployee';
 import { useGenerateSalarySlip } from '../../hooks/useCTC';
+import { useViewMode } from './SalarySlipApp'; // Import the context hook
 
 const CTCSalaryUI = () => {
   const { data: employee, isLoading: isEmpLoading } = useCurrentEmployee();
@@ -13,11 +14,12 @@ const CTCSalaryUI = () => {
     isError,
   } = useGenerateSalarySlip(employeeId);
 
-  const [activeTab, setActiveTab] = useState<'annual' | 'monthly'>('annual');
+  // Use the context instead of local state
+  const { viewMode } = useViewMode();
+  const activeTab = viewMode; // Map to existing variable name for minimal changes
 
   const isLoading = isEmpLoading || isSalaryLoading;
 
-  // Earnings + Reimbursement
   const earnings = useMemo(() => {
     if (!salarySlip?.component_part_of_ctc) return [];
     return salarySlip.component_part_of_ctc.filter(
@@ -25,7 +27,6 @@ const CTCSalaryUI = () => {
     );
   }, [salarySlip]);
 
-  // Annual CTC Breakdown
   const ctcData = useMemo(() => {
     return earnings.reduce((acc, curr) => {
       acc[curr.component] = curr.annual_amount;
@@ -94,33 +95,8 @@ const CTCSalaryUI = () => {
   }
 
   return (
-    <div className="min-h-screen  ">
-      <div className="flex justify-center w-full mb-8">
-          <button
-            onClick={() => setActiveTab('annual')}
-            className={`px-6 py-2 w-[50%] rounded-l-lg font-medium transition-colors ${
-              activeTab === 'annual'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white border text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            Annual CTC
-          </button>
-          <button
-            onClick={() => setActiveTab('monthly')}
-            className={`px-6 py-2 w-[50%] rounded-r-lg font-medium transition-colors ${
-              activeTab === 'monthly'
-                ? 'bg-green-500 text-white'
-                : 'bg-white border text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            Monthly Salary
-          </button>
-        </div>
+    <div className="min-h-screen">
       <div className="max-w-6xl mx-auto">
-
-  
-
         {/* Annual View */}
         {activeTab === 'annual' && (
           <div>
@@ -188,14 +164,14 @@ const CTCSalaryUI = () => {
               <div className="space-y-4 mb-6">
                 {monthlyComponents.map((component, index) => (
                   <div
-                  key={`${component.label}-${index}`}
+                    key={`${component.label}-${index}`}
                     className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg"
                   >
                     <span className="font-medium text-gray-800">
                       {component.label}
                     </span>
                     <span
-                     className={`font-bold ${component.type === 'deduction' ? 'text-red-600' : 'text-green-500'}`}
+                      className={`font-bold ${component.type === 'deduction' ? 'text-red-600' : 'text-green-500'}`}
                     >
                       {component.type === 'deduction' ? '-' : ''}
                       {formatCurrency(component.value)}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, createContext, useContext } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import NavigationTabs, { Tab } from "../NavigationTab"; 
@@ -7,15 +7,35 @@ type TabName =
  'Salary Slip' 
 |'CTC Breakdown';
 
+type ViewMode = 'annual' | 'monthly';
+
 const tabRoutes: Record<TabName, string> = {
   "CTC Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
+};
+
+// Context to share view mode with child components
+interface ViewModeContextType {
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+}
+
+const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const useViewMode = () => {
+  const context = useContext(ViewModeContext);
+  if (!context) {
+    throw new Error('useViewMode must be used within ViewModeProvider');
+  }
+  return context;
 };
 
 const SalarySlipApp: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("Salary Slip");
+  const [viewMode, setViewMode] = useState<ViewMode>("annual");
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
     key,
@@ -33,12 +53,11 @@ const SalarySlipApp: React.FC = () => {
     }
   }, [location.pathname]);
 
-
-    useEffect(() => {
-      if (location.pathname === "/webapp/salary-slip-app") {
-        navigate(tabRoutes["CTC Breakdown"], { replace: true });
-      }
-    }, [location.pathname, navigate]);
+  useEffect(() => {
+    if (location.pathname === "/webapp/salary-slip-app") {
+      navigate(tabRoutes["CTC Breakdown"], { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   const handleTabChange = (tabKey: string) => {
     const tab = tabKey as TabName;
@@ -75,10 +94,40 @@ const SalarySlipApp: React.FC = () => {
           activeTab={activeTab}
           onTabChange={handleTabChange}
         />
+        
+        {/* Annual/Monthly Toggle - Only show on CTC Breakdown page */}
+        {activeTab === "CTC Breakdown" && (
+          <div className="px-4 py-4">
+            <div className="flex bg-white border rounded-lg p-1 justify-center w-full">
+              <button
+                onClick={() => setViewMode('annual')}
+                className={`px-6 py-2 w-[50%] rounded-lg font-medium transition-colors ${
+                  viewMode === 'annual'
+                    ? 'bg-black text-white'
+                    : 'bg-white  text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Annual CTC
+              </button>
+              <button
+                onClick={() => setViewMode('monthly')}
+                className={`px-6 py-2 w-[50%] rounded-lg font-medium transition-colors ${
+                  viewMode === 'monthly'
+                    ? 'bg-black text-white'
+                    : 'bg-white  text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Monthly Salary
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="p-4 z-100 flex-grow overflow-y-auto">
-        <Outlet />
+        <ViewModeContext.Provider value={{ viewMode, setViewMode }}>
+          <Outlet />
+        </ViewModeContext.Provider>
       </main>
     </div>
   );
