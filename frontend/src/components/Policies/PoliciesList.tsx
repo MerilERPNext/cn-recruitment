@@ -54,7 +54,7 @@ const PoliciesList: React.FC = () => {
   }
 
   return (
-    <div className="max-w-md bg-white rounded-xl  space-y-">
+    <div className="max-w-md bg-white rounded-xl">
       <FrappeListView<PolicyDoc>
         doctype="HR Policies"
         defaultFilters={{
