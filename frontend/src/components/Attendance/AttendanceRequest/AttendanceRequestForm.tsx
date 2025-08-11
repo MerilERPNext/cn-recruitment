@@ -83,12 +83,12 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   }, [employeeIdToQuery, refetchShift]);
 
   interface FormioFormInstance {
-    submit: () => void;
-    getValue: () => any;
-    setValue: (value: any) => void;
-    redraw: () => void;
-    getComponent: (key: string) => any;
-  }
+  submit: () => void;
+  getValue: () => { data: AttendanceFormData };
+  setValue: (value: { data: AttendanceFormData }) => void;
+  redraw: () => void;
+  getComponent: (key: string) => any;
+}
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const mutation = useCreateNewAttendanceRequest();
   const baseFormComponents = (isForOthers: boolean) => {
@@ -329,7 +329,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             data: {
               values: reasonList?.map((item) => ({
                 label: item?.reason,
-                value: item?.name
+                value: item?.reason,
               })) || []
             },
           },
@@ -467,7 +467,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         break;
     }
 
-    // Add attachments if any
     if (submission.data.attachments?.[0]) {
       requestBody.custom_attachments = submission.data.attachments[0];
     }
