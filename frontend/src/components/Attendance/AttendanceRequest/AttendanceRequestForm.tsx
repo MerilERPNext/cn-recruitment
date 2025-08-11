@@ -40,7 +40,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   );
 
   // Handle employee selection change
-  const handleEmployeeChange = (event: any) => {
+  const handleEmployeeChange = (event: { data: { employee: string } }) => {
     // Get the selected value from the form data
     const employeeId = event?.data?.employee || "";
 
@@ -515,13 +515,13 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       requestBody.custom_attachments = submission.data.attachments[0];
     }
 
-    mutation.mutate(requestBody, {
+    mutation.mutate(requestBody as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
         toast.success("Added Attendace Request successfully");
       },
       onError: (error) => {
-        toast.error("Failed to add Attendace Request");
+        toast.error(error?.message);
         console.error(error);
       },
     });

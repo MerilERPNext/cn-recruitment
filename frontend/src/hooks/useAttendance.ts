@@ -149,7 +149,7 @@ export function useCreateNewAttendanceRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (body: object) =>
+    mutationFn: (body: Record<string, unknown>) =>
       attendanceService.createAttendanceRequest(body),
     onSuccess: () => {
       // Invalidate relevant queries
@@ -164,7 +164,8 @@ export function useCheckInOutService() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (body: object) => attendanceService.checkInOutService(body),
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.checkInOutService(body),
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["checkin-checkout"] });
