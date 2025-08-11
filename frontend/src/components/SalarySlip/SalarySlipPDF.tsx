@@ -50,7 +50,7 @@ const ViewSalarySlipModal = () => {
       />
 
       <div className="fixed inset-0 flex items-center justify-center mt-14">
-        <div className="bg-white rounded-lg shadow-lg w-full h-full z-[-100] relative overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg w-full h-full relative overflow-hidden">
           
           {/* PDF Viewer */}
           <div className={`w-full h-full ${isMasked ? "blur-lg" : ""}`}>
