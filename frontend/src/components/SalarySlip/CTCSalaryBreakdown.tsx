@@ -100,7 +100,7 @@ const CTCSalaryUI = () => {
             onClick={() => setActiveTab('annual')}
             className={`px-6 py-2 w-[50%] rounded-l-lg font-medium transition-colors ${
               activeTab === 'annual'
-                ? 'bg-blue-500 text-white'
+                ? 'bg-black text-white'
                 : 'bg-white border text-gray-700 hover:bg-gray-100'
             }`}
           >
@@ -110,7 +110,7 @@ const CTCSalaryUI = () => {
             onClick={() => setActiveTab('monthly')}
             className={`px-6 py-2 w-[50%] rounded-r-lg font-medium transition-colors ${
               activeTab === 'monthly'
-                ? 'bg-green-500 text-white'
+                ? 'bg-black text-white'
                 : 'bg-white border text-gray-700 hover:bg-gray-100'
             }`}
           >
