@@ -2,6 +2,8 @@ import React from "react";
 import { useLocation, useNavigate, Navigate } from "react-router";
 import FrappeListView from "../ListView";
 import { PolicyCardSkeleton } from "./PolicySkeletons";
+import { Download } from "lucide-react";
+import { FaRegEye } from "react-icons/fa";
 
 type PolicyDoc = {
   name: string;
@@ -35,12 +37,32 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
         </h2>
         <p className="text-sm text-gray-500 truncate">{item.comments ?? "—"}</p>
       </div>
-      <button
-        onClick={handleView}
-        className="ml-3 text-sm px-3 py-2 bg-blue-600 text-white rounded-md active:bg-blue-700"
-      >
-        View
-      </button>
+
+      <div className="flex items-center gap-2 ml-3">
+        <button
+          onClick={() => {
+            if (item.add_policy_document) {
+              const link = document.createElement("a");
+              link.href = `${window.location.origin}${item.add_policy_document}`;
+              link.download = item.name;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+          }}
+          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          title="Download Policy Document"
+          disabled={!item.add_policy_document}
+        >
+          <Download className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleView}
+          className="flex items-center justify-center p-2  border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+        >
+          <FaRegEye className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
