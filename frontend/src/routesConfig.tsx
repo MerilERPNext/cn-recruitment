@@ -63,6 +63,7 @@ import PoliciesApp from "./components/Policies/PoliciesApp";
 import PoliciesCategory from "./components/Policies/PoliciesCategory";
 import PoliciesList from "./components/Policies/PoliciesList";
 import ViewPolicy from "./components/Policies/ViewPolicy";
+import ViewSalarySlipModal from "./components/SalarySlip/SalarySlipPDF";
 
 export interface AppRoute {
   index?: boolean;
@@ -111,8 +112,12 @@ export const routesConfig: AppRoute[] = [
     ],
   },
   {
-    path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
+    path: "/webapp/salary-slip-app/",
     element: <SalarySlipDetails />,
+  },
+  {
+    path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
+    element: <ViewSalarySlipModal />,
   },
 
   {
