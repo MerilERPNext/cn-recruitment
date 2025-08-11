@@ -23,8 +23,10 @@ export const SalarySlipDetails = {
 };
 
 export const downloadSalarySlipPDF = async (salarySlipName: string) => {
+  const formatName = encodeURIComponent("Salary Slip"); // Print Format ka exact name
+
   const response = await fetch(
-    `/api/method/frappe.utils.print_format.download_pdf?doctype=Salary%20Slip&name=${salarySlipName}&format=Standard&no_letterhead=0`,
+    `/api/method/frappe.utils.print_format.download_pdf?doctype=Salary%20Slip&name=${salarySlipName}&format=${formatName}&no_letterhead=0`,
     {
       method: "GET",
       headers: {
@@ -39,3 +41,5 @@ export const downloadSalarySlipPDF = async (salarySlipName: string) => {
 
   return response.blob();
 };
+
+
