@@ -14,16 +14,17 @@ import MobileDashboard from "./components/MobileDashboard";
 import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
 import { useCurrentEmployee } from "./hooks/useEmployee";
 import { Toaster } from "react-hot-toast";
+import ModalWrapper from "./components/ModalWrapper";
 
 const App: React.FC = () => {
   const renderRoutes = (routes: AppRoute[]) =>
-    routes.map(({ path, element, children }, index) =>
-      children ? (
-        <Route key={`${index}-${path}`} path={path} element={element}>
-          {renderRoutes(children)}
-        </Route>
+    routes.map(({ path, element, children, index }, idx) =>
+      index ? (
+        <Route key={`${idx}-index`} index element={element} />
       ) : (
-        <Route key={`${index}-${path}`} path={path} element={element} />
+        <Route key={`${idx}-${path}`} path={path} element={element}>
+          {children && renderRoutes(children)}
+        </Route>
       )
     );
 
@@ -37,9 +38,11 @@ const App: React.FC = () => {
           style={{ backgroundColor: "var(--background-medium)" }}
         >
           <Routes>
-            <Route path="/webapp/" element={<MobileDashboard />} />
-            {renderRoutes(routesConfig)}
-            <Route path="*" element={<Navigate to="/webapp/" replace />} />
+            <Route element={<ModalWrapper />}>
+              <Route path="/webapp/" element={<MobileDashboard />} />
+              {renderRoutes(routesConfig)}
+              <Route path="*" element={<Navigate to="/webapp/" replace />} />
+            </Route>
           </Routes>
         </div>
       </Router>
