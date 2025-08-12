@@ -75,15 +75,24 @@ const LeaveRequestItem = ({
           </div>
         </div>
         {item.status === "Open" && (
-          <button>
+          <button
+            type="button"
+            onClick={() => {
+              console.log("Nudge button clicked!");
+            }}
+          >
             <PiHandTap className="w-6 h-6 text-gray-500" />
           </button>
         )}
         <span
-          className={`px-2 py-1 flex items-center rounded-[20px] text-xs font-medium ${getStatusColor(item.status)}`}
+          className={`px-2 py-1 flex items-center rounded-[20px] text-xs font-medium ${getStatusColor(
+            item.status
+          )}`}
         >
           <span
-            className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${getBlockColor(item.status)}`}
+            className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${getBlockColor(
+              item.status
+            )}`}
           ></span>
           {item.status === "Open" ? "Pending" : item.status}
         </span>

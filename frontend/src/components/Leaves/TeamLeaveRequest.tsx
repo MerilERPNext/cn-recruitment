@@ -30,13 +30,11 @@ const TeamLeaveRequest: React.FC = () => {
   const BulkBar: React.FC<PreListComponentProps> = ({
     ListQuery,
   }: PreListComponentProps) => {
-    const rows = ListQuery.data?.pages
-      ? ListQuery.data.pages.flatMap((p) => (p as any).data ?? [])
+    const rows: TeamLeaveRequest[] = ListQuery.data?.pages
+      ? ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
       : [];
 
-    const pending = rows.filter(
-      (r: any) => r.status === "Open"
-    ) as TeamLeaveRequest[];
+    const pending = rows.filter((r) => r.status === "Open");
 
     if (!pending.length) return null;
 
