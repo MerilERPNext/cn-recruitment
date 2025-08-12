@@ -52,7 +52,7 @@ const EmployeeAttendanceDetails = () => {
             <p className="text-center text-gray-600">
               No check-ins available for{" "}
               <span className="font-semibold">
-                {validDate ? format(validDate, "yyyy-MM-dd") : "Unknown Date"}
+                {validDate ? format(validDate, "dd/MM/yyyy") : "Unknown Date"}
               </span>
             </p>
           )}
@@ -113,7 +113,7 @@ const AttendanceCard = ({ record }: { record: EmployeeCheckInLog }) => {
       </div>
 
       <div className="text-sm text-gray-600 space-y-1">
-        <p>{format(new Date(record.time), "hh:mm a, dd MMM yyyy")}</p>
+        <p>{format(new Date(record.time), "hh:mm a, dd/MM/yyyy")}</p>
       </div>
     </div>
   );

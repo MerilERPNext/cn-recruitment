@@ -33,10 +33,13 @@ const defaultQueryOptions = {
     Math.min(1000 * 2 ** attemptIndex, 30000),
 };
 
-export const useAllAttendance = (): UseQueryResult<Attendance[], Error> => {
+export const useAllAttendance = (
+  fields?: string[],
+  filters?: FilterCondition[]
+): UseQueryResult<Attendance[], Error> => {
   return useQuery<Attendance[], Error>({
-    queryKey: ["attendance", "all"],
-    queryFn: () => attendanceService.getAllAttendance(),
+    queryKey: ["attendance", "all", filters],
+    queryFn: () => attendanceService.getAllAttendance(fields, filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });

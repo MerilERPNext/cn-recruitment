@@ -11,9 +11,13 @@ import type {
 import { FilterCondition } from "../types/frappe";
 
 export const attendanceService = {
-  getAllAttendance: async (): Promise<Attendance[]> => {
+  getAllAttendance: async (
+    fields?: string[],
+    filters?: FilterCondition[]
+  ): Promise<Attendance[]> => {
     const response = await FrappeAPI.getDocumentList("Attendance", {
-      fields: ["*"],
+      fields: fields && fields?.length > 0 ? fields : ["*"],
+      filters: filters,
     });
     return response.data as Attendance[];
   },

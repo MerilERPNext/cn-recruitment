@@ -1,5 +1,5 @@
+import { format } from "date-fns";
 import { RequestCardProps } from "../../../types/attendance";
-import { formatDateString } from "../../../utils/helperUtils";
 import Avatar from "../../shared/Avatar";
 import Badge from "../../shared/Badge";
 
@@ -68,7 +68,7 @@ export function RequestCard({
                   />
                 </div>
                 <p className="text-sm text-gray-500 mb-2">
-                  {formatDateString(request?.creation) || "--:--"}
+                  {format(new Date(request?.creation), "dd/MM/yyyy") || "--:--"}
                 </p>
               </div>
             </div>
