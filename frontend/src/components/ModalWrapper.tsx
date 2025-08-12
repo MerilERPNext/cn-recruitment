@@ -86,11 +86,9 @@ export default function ModalWrapper() {
 
   const closeModal = useCallback(() => {
     searchParams.delete("showModal");
-    navigate({
-      pathname: window.location.pathname,
-      search: searchParams.toString(),
-    });
+    navigate(-1);
   }, [navigate, searchParams]);
+  
 
   return (
     <>
