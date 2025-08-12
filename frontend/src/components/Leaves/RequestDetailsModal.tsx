@@ -81,13 +81,13 @@ const RequestDetailsModal: React.FC<Props> = ({
             <div>
               <div className="font-semibold">From</div>
               <div className="text-gray-900">
-                {format(new Date(request.from_date), "MMM d, yyyy")}
+                {format(new Date(request.from_date), "d MMM, yyyy")}
               </div>
             </div>
             <div>
               <div className="font-semibold">To</div>
               <div className="text-gray-900">
-                {format(new Date(request.to_date), "MMM d, yyyy")}
+                {format(new Date(request.to_date), "d MMM, yyyy")}
               </div>
             </div>
           </div>

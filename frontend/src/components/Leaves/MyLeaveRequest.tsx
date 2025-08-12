@@ -7,6 +7,7 @@ import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 import { MyLeaveRequestSkeleton } from "./LeaveSkeletons";
 import { format } from "date-fns";
 import RequestDetailsModal from "./RequestDetailsModal";
+import { PiHandTap } from "react-icons/pi";
 
 const LeaveRequestItem = ({
   item,
@@ -68,11 +69,16 @@ const LeaveRequestItem = ({
               {item.leave_type}
             </h3>
             <p className="text-xs text-gray-500 mt-1">
-              {format(new Date(item.from_date), "MMM d")} -{" "}
-              {format(new Date(item.to_date), "MMM d, yyyy")}
+              {format(new Date(item.from_date), "d MMM")} -{" "}
+              {format(new Date(item.to_date), "d MMM, yyyy")}
             </p>
           </div>
         </div>
+        {item.status === "Open" && (
+          <button>
+            <PiHandTap className="w-6 h-6 text-gray-500" />
+          </button>
+        )}
         <span
           className={`px-2 py-1 flex items-center rounded-[20px] text-xs font-medium ${getStatusColor(item.status)}`}
         >

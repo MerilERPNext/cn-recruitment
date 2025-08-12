@@ -1,18 +1,22 @@
 import { format } from "date-fns";
 const TeamLeaveRequestItem = ({
   item,
+  isSelected,
+  onToggleSelect,
   onClick,
   onApprove,
   onReject,
 }: {
   item: any;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
   onClick?: () => void;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
 }) => {
   const formatDateRange = (fromDate: string, toDate: string) => {
     const formatDate = (dateStr: string) =>
-      format(new Date(dateStr), "MMM d, yyyy");
+      format(new Date(dateStr), "d MMM, yyyy");
     const from = formatDate(fromDate);
     const to = formatDate(toDate);
     return from === to ? from : `${from} - ${to}`;
@@ -52,6 +56,15 @@ const TeamLeaveRequestItem = ({
       onClick={onClick}
     >
       <div className="flex items-start space-x-3">
+        {item.status === "Open" && onToggleSelect && (
+          <input
+            type="checkbox"
+            className=""
+            checked={isSelected}
+            onChange={() => onToggleSelect(item.name)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center flex-wrap">
             <div className="ml-0">
