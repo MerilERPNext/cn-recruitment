@@ -82,14 +82,7 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
           input: true,
           format: "dd-MM-yyyy",
           enableTime: false,
-          defaultValue: new Date().toISOString().split("T")[0],
-          widget: {
-            type: "calendar",
-            altInput: true,
-            dateFormat: "dd-MM-yyyy",
-            enableTime: false,
-            mode: "single",
-          },
+          placeholder: "Select Date",
         },
         {
           label: "Attachments",
