@@ -44,8 +44,8 @@ const EmployeeAttendanceDetails = () => {
         <div className="flex-grow overflow-y-auto mt-14 p-4">
           {empCheckIns && empCheckIns.length > 0 ? (
             <div className="flex flex-col gap-3">
-              {empCheckIns.map((record, index) => (
-                <AttendanceCard key={index} record={record} />
+              {empCheckIns.map((record) => (
+                <AttendanceCard key={record?.name} record={record} />
               ))}
             </div>
           ) : (

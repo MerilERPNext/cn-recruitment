@@ -75,7 +75,7 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
             <p className="text-gray-400 text-sm text-center">Check-in</p>
             <h5 className="font-semibold text-center">
               {data?.in_time
-                ? format(new Date(data?.in_time), "yyyy-MM-dd")
+                ? format(new Date(data?.in_time), "HH:mm")
                 : "--:--"}
             </h5>
           </div>
@@ -83,7 +83,7 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
             <p className="text-gray-400 text-sm text-center">Check-out</p>
             <h5 className="font-semibold text-center">
               {data?.out_time
-                ? format(new Date(data?.out_time), "yyyy-MM-dd")
+                ? format(new Date(data?.out_time), "HH:mm")
                 : "--:--"}
             </h5>
           </div>
