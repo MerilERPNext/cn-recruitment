@@ -48,7 +48,9 @@ const EmployeeAttendance = () => {
     | "half-day-first-half"
     | "half-day-second-half"
     | "work-from-home"
-    | "default";
+    | "default"
+    | "holiday"
+    | "week-off";
 
   const defaultFilters = useMemo(() => {
     if (!currentEmployee?.employee || !selectedDate) return undefined;
@@ -79,6 +81,12 @@ const EmployeeAttendance = () => {
         case "on leave":
         case "leave":
           status = "on-leave";
+          break;
+        case "holiday":
+          status = "holiday";
+          break;
+        case "week off":
+          status = "week-off";
           break;
         case "half day":
         case "half-day":
@@ -153,29 +161,6 @@ const EmployeeAttendance = () => {
   return (
     <div>
       <div className="flex flex-col">
-        {/* ------------------------------------------------- Info Card Start---------------------------------------------- */}
-        {/* 
-            <div className="px-6 py-4 border-b-1 border-gray-200 bg-white">
-                <h1 className="text-lg font-semibold text-gray-900 mb-4">Today's Attendance</h1>
-
-                <div className="flex items-center justify-between gap-1">
-                    <div>
-                        <div className="text-sm text-gray-600">Check-In</div>
-                        <div className="text-lg font-semibold text-gray-900">{todayAttendance?.in_time || "-- --"}</div>
-                    </div>
-
-                    <div>
-                        <div className="text-sm text-gray-600">Work Hours</div>
-                        <div className="text-lg font-semibold text-gray-900">{todayAttendance?.working_hours || "-- --"}</div>
-                    </div>
-
-                    <button className="bg-blue-100 hover:bg-blue-200 px-6 py-2 rounded-md"
-
-                        onClick={() => { setShowFaceRecognition(!showFaceRecognition) }}
-                    > {todayAttendance?.in_time ? "Check Out" : "Check In"}</button>
-                </div>
-            </div> */}
-        {/* ------------------------------------------------- Info Card End---------------------------------------------- */}
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
         <div className=" w-full pb-2 bg-white">
@@ -193,14 +178,23 @@ const EmployeeAttendance = () => {
           <div className="p-1">
             <DatePicker
               selected={selectedDate}
-              onChange={(date) => setSelectedDate(date)}
+              onChange={(date) => {
+                setSelectedDate(date);
+                const status = getAttendanceStatus(date as Date);
+
+                if (status !== "default") {
+                  navigate(
+                    `/webapp/attendance/emp-attendance/details?date=${date}&status=${status}`
+                  );
+                }
+              }}
               onMonthChange={(date) => setSelectedDate(date)}
               openToDate={selectedDate as Date}
               inline
               dayClassName={(date) => {
                 const status = getAttendanceStatus(date);
                 const isSelected =
-                  selectedDate?.toDateString() === date.toDateString(); // check selection
+                  selectedDate?.toDateString() === date.toDateString();
                 const baseClasses = "transition-colors duration-200";
 
                 const highlightClass = (() => {
@@ -211,8 +205,10 @@ const EmployeeAttendance = () => {
                       return "!bg-red-100 !text-red-800 rounded-md";
                     case "on-leave":
                       return "!bg-orange-100 !text-orange-800 rounded-md";
-                    // case "half-day":
-                    //   return "bg-yellow-100 !text-yellow-800 rounded-md";
+                    case "holiday":
+                      return "!bg-blue-100 !text-blue-800 rounded-md";
+                    case "week-off":
+                      return "!bg-gray-100 !text-gray-800 rounded-md";
                     case "half-day-first-half":
                       return "hard-gradient-green-to-yellow !text-yellow-800 rounded-md";
                     case "half-day-second-half":
@@ -231,27 +227,30 @@ const EmployeeAttendance = () => {
               }}
             />
           </div>
-          <div className="flex flex-wrap gap-4 text-xs text-gray-600 justify-end px-4">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-green-100 border border-green-200"></div>
-              <span>Present</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-red-100 border border-red-200"></div>
-              <span>Absent</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-orange-100 border border-orange-200"></div>
-              <span>On Leave</span>
-            </div>
-            {/* <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-200"></div>
-              <span>Half Day</span>
-            </div> */}
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-purple-100 border border-purple-200"></div>
-              <span>Work From Home</span>
-            </div>
+          <div className="flex flex-wrap gap-2 text-xs justify-between px-4">
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-green-100 text-green-800 border border-green-200">
+              Present
+            </span>
+
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-red-100 text-red-800 border border-red-200">
+              Absent
+            </span>
+
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-orange-100 text-orange-800 border border-orange-200">
+              On Leave
+            </span>
+
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-purple-100 text-purple-800 border border-purple-200">
+              WFH
+            </span>
+
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-blue-100 text-blue-800 border border-blue-200">
+              Holiday
+            </span>
+
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-gray-200 text-gray-800 border border-gray-300">
+              Week Off
+            </span>
           </div>
         </div>
         {/* Legend */}
@@ -263,7 +262,7 @@ const EmployeeAttendance = () => {
         <div className="bg-white p-4 border-b-1 border-gray-200">
           <div className="flex gap-2">
             <button
-              className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold flex-1 flex items-center justify-center text-md"
+              className="w-full bg-gray-900 text-white flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
               onClick={() => {
                 setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
               }}

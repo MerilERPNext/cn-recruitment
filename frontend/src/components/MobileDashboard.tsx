@@ -18,6 +18,7 @@ import {
 import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import {
+  useCanShowClockIn,
   useCheckInOutService,
   useClockInOutService,
   useGetEmployeeShift,
@@ -31,7 +32,6 @@ import {
   formatDateString,
   formatTo24HourTime,
   getDeviceLocation,
-  getTotalTime,
 } from "../utils/helperUtils";
 import defaultProfile from "../assets/face-rec.png";
 import logo from "../assets/logo.png";
@@ -39,6 +39,7 @@ import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import {
   compareAsc,
   compareDesc,
+  differenceInMinutes,
   endOfDay,
   endOfMonth,
   format,
@@ -113,11 +114,15 @@ const MobileDashboard: React.FC = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+  const { data: canShowClockIn } = useCanShowClockIn({
+    params: { user: currentEmployee?.user_id },
+  });
   const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(
     currentEmployee?.employee as string,
     format(startOfMonth(new Date()), "yyyy-MM-dd"),
     format(endOfMonth(new Date()), "yyyy-MM-dd")
   );
+
   const { mutate: checkInCheckOutMutation, isPending: checkInCheckOutPending } =
     useCheckInOutService();
   const { mutate: clockInCheckOutMutation, isPending: clockInCheckOutPending } =
@@ -258,6 +263,23 @@ const MobileDashboard: React.FC = () => {
     navigate("/webapp/notices");
   };
 
+  const getTotalTime = () => {
+    if (firstCheckIn) {
+      const diffMins = differenceInMinutes(
+        new Date(),
+        parseISO(firstCheckIn.time.replace(" ", "T"))
+      );
+      const hours = Math.floor(diffMins / 60);
+      const minutes = diffMins % 60;
+      // Format as HH:mm with leading zeros
+      return `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}`;
+    } else {
+      return "--:--";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans max-w-md mx-auto">
       {/* Header */}
@@ -368,9 +390,7 @@ const MobileDashboard: React.FC = () => {
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Total Hours
             </p>
-            <p className="text-2xl font-bold text-gray-900">
-              {getTotalTime(homeSummary)}
-            </p>
+            <p className="text-2xl font-bold text-gray-900">{getTotalTime()}</p>
           </div>
           {/* Check In / Check Out */}
           {currentEmployee?.custom_allow_mobile_checkin ? (
@@ -378,7 +398,7 @@ const MobileDashboard: React.FC = () => {
               onClick={() =>
                 handleCheckInOut(isCurrentlyCheckedIn ? "checkOut" : "checkIn")
               }
-              className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold flex-1 flex items-center justify-center text-md"
+              className="w-full flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
               disabled={checkInCheckOutPending || !employeeShift?.shift}
             >
               {checkInCheckOutPending || isRefetching ? (
@@ -391,12 +411,12 @@ const MobileDashboard: React.FC = () => {
             </button>
           ) : null}
           {/* Clock In / Clock Out */}
-          {currentEmployee?.custom_enable_web_clockin ? (
+          {canShowClockIn?.can_show ? (
             <button
               onClick={() =>
                 handleClockInOut(isCurrentlyCheckedIn ? "clockOut" : "clockIn")
               }
-              className="w-full bg-gray-900 text-white py-4 rounded-lg font-semibold flex-1 flex items-center justify-center text-md"
+              className="w-full flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
               disabled={clockInCheckOutPending || !employeeShift?.shift}
             >
               {clockInCheckOutPending || isRefetching ? (

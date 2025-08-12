@@ -146,6 +146,43 @@ const AttendanceSummary = () => {
           {/* Attendance View Button */}
         </div>
 
+        <div className="space-y-3 border-b-1 bg-white border-gray-200 p-4 pt-0">
+          <h2 className="text-xl font-semibold">Team Summary</h2>
+
+          {/* First Row */}
+          <div className="grid grid-cols-3 gap-3">
+            {/* Present Days - Green */}
+            <div className="text-center bg-green-50 border-2 border-green-100 p-3 rounded-lg">
+              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-green-800">
+                {employeeAttendanceSummary?.present || 0}
+              </p>
+              <p className="text-xs font-medium text-green-700">
+                Logged In Employees
+              </p>
+            </div>
+            {/* Absent Days - Red */}
+            <div className="text-center bg-red-50 border-2 border-red-100 p-3 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-red-800">
+                {employeeAttendanceSummary?.absent || 0}
+              </p>
+              <p className="text-xs font-medium text-red-700">
+                Logged Out Employees
+              </p>
+            </div>
+            {/* Leaves - Orange */}
+            <div className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg">
+              <Calendar className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-orange-800">
+                {employeeAttendanceSummary?.leaves || 0}
+              </p>
+              <p className="text-xs font-medium text-orange-700">
+                Employees on Leave
+              </p>
+            </div>
+          </div>
+        </div>
         {/* Settings Card */}
         <div className=" border-b-2 bg-white border-gray-200 p-4 ">
           <div className="space-y-4">
