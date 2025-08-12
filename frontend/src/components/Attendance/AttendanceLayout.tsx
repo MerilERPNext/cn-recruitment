@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import HeaderBar from "../HeaderBar";
+import { LeaveRequestRefreshProvider } from "../Leaves/LeaveRequestRefreshContext";
+import { RequestLeaveModalProvider } from "../Leaves/RequestLeaveModalContext";
 
 const AttendanceLayout: React.FC = () => {
   const tabs: Tab[] = useMemo(
@@ -51,7 +53,11 @@ const AttendanceLayout: React.FC = () => {
       </div>
       {/* Page Content (with top padding to avoid overlap) */}
       <div className="">
-        <Outlet />
+        <LeaveRequestRefreshProvider>
+          <RequestLeaveModalProvider>
+            <Outlet />
+          </RequestLeaveModalProvider>
+        </LeaveRequestRefreshProvider>
       </div>
     </div>
   );

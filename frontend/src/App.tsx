@@ -15,6 +15,7 @@ import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
 import { useCurrentEmployee } from "./hooks/useEmployee";
 import { Toaster } from "react-hot-toast";
 import ModalWrapper from "./components/ModalWrapper";
+import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModalContext";
 
 const App: React.FC = () => {
   const renderRoutes = (routes: AppRoute[]) =>
@@ -30,22 +31,24 @@ const App: React.FC = () => {
 
   return (
     <QueryProvider>
-      <Toaster position="top-center" containerClassName="z-50" />
-      <MandatoryPoliciesHandler />
-      <Router>
-        <div
-          className="min-h-screen"
-          style={{ backgroundColor: "var(--background-medium)" }}
-        >
-          <Routes>
-            <Route element={<ModalWrapper />}>
-              <Route path="/webapp/" element={<MobileDashboard />} />
-              {renderRoutes(routesConfig)}
-              <Route path="*" element={<Navigate to="/webapp/" replace />} />
-            </Route>
-          </Routes>
-        </div>
-      </Router>
+      <RequestLeaveModalProvider>
+        <Toaster position="top-center" containerClassName="z-50" />
+        <MandatoryPoliciesHandler />
+        <Router>
+          <div
+            className="min-h-screen"
+            style={{ backgroundColor: "var(--background-medium)" }}
+          >
+            <Routes>
+              <Route element={<ModalWrapper />}>
+                <Route path="/webapp/" element={<MobileDashboard />} />
+                {renderRoutes(routesConfig)}
+                <Route path="*" element={<Navigate to="/webapp/" replace />} />
+              </Route>
+            </Routes>
+          </div>
+        </Router>
+      </RequestLeaveModalProvider>
     </QueryProvider>
   );
 };

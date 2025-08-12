@@ -12,10 +12,13 @@ import { endOfMonth, format, startOfMonth } from "date-fns";
 import { FilterCondition } from "../../../types/frappe";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import BottomDrawer from "../../shared/BottomDrawer";
+import LeaveRequest from "../LeaveRequest";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+
   const { data: userId } = useLoggedInUser();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -40,6 +43,9 @@ const EmployeeAttendance = () => {
 
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState<boolean>(false);
+  const [showLeaveRequest, setShowLeaveRequest] = useState<boolean>(false);
+
+  const [openDrawer, setOpenDrawer] = useState<boolean>(false);
   type Status =
     | "present"
     | "absent"
@@ -264,11 +270,12 @@ const EmployeeAttendance = () => {
             <button
               className="w-full bg-gray-900 text-white flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
               onClick={() => {
-                setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
+                setOpenDrawer(!openDrawer);
+                // setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
               }}
             >
               <Plus className="w-4 h-4 mr-2 font-bold" />
-              Attendance Request
+              Raise Request
             </button>
           </div>
         </div>
@@ -314,6 +321,42 @@ const EmployeeAttendance = () => {
             }}
           />
         )}
+        {showLeaveRequest && (
+          <LeaveRequest
+            onCancel={() => {
+              setShowLeaveRequest(false);
+            }}
+          />
+        )}
+        <BottomDrawer
+          isOpen={openDrawer}
+          onClose={() => setOpenDrawer(false)}
+          children={
+            <div className="flex flex-col gap-3">
+              <h2 className="font-semibold text-lg">Raise Request</h2>
+
+              <button
+                onClick={() => {
+                  setShowLeaveRequest(true);
+                  setOpenDrawer(false);
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-lg transition-colors "
+              >
+                Leave Request
+              </button>
+              <div className="border-b border-gray-200 m-0 p-0"></div>
+              <button
+                onClick={() => {
+                  setShowReqAttendanceCorrection(true);
+                  setOpenDrawer(false);
+                }}
+                className="w-full text-left px-4 py-2  hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Attendance Request
+              </button>
+            </div>
+          }
+        />
       </div>
     </div>
   );
