@@ -19,7 +19,16 @@ export const CompanyInfo: React.FC<PersonalInfoProps> = ({ user }) => {
       <InfoRow label="Department" value={user?.department} />
       <InfoRow label="Designation" value={user?.designation} />
       <InfoRow label="Reporting Manager" value={user?.reports_to} />
-      <InfoRow label="Date of Joining" value={user?.date_of_joining} />
+      {/* <InfoRow label="Date of Joining" value={user?.date_of_joining} /> */}
+      <InfoRow
+        label="Date of Joining"
+        value={
+          user?.date_of_joining
+            ? user.date_of_joining.split("-").reverse().join("-")
+            : ""
+        }
+      />
+
       <InfoRow label="Employment Type" value={user?.employment_type} />
       <InfoRow label="Work Location" value={companyData.workLocation} />
       <InfoRow label="Shift" value={user?.default_shift} />

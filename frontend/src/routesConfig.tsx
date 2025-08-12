@@ -65,6 +65,7 @@ import PoliciesList from "./components/Policies/PoliciesList";
 import ViewPolicy from "./components/Policies/ViewPolicy";
 import ViewSalarySlipModal from "./components/SalarySlip/SalarySlipPDF";
 import EmployeeAttendanceDetails from "./components/Attendance/Employee/EmployeeAttendanceDetails";
+import HRPayroll from "./components/SalarySlip/HR-Payroll";
 
 export interface AppRoute {
   index?: boolean;
@@ -110,6 +111,7 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
+      { path: "hr-payroll", element: <HRPayroll /> },
     ],
   },
   {

@@ -182,7 +182,14 @@ const GeneralExpenseClaim: React.FC = () => {
                   <div className="flex flex-col space-y-1">
                     <p className="font-medium text-gray-900">{item.type}</p>
                     <p className="text-sm text-gray-600">
-                      Date: {new Date(item.date).toLocaleDateString("en-CA")}
+                      Date:{" "}
+                      {new Date(item.date)
+                        .toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })
+                        .replace(/\//g, "-")}
                     </p>
                     <p className="text-sm text-gray-600">
                       Amount: {CURRENCY_SYMBOL}

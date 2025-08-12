@@ -5,13 +5,15 @@ import NavigationTabs, { Tab } from "../NavigationTab";
 
 type TabName = 
  'Salary Slip' 
-|'CTC Breakdown';
+|'CTC Breakdown'
+| 'Payroll Documents'
 
 type ViewMode = 'annual' | 'monthly';
 
 const tabRoutes: Record<TabName, string> = {
   "CTC Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
+  "Payroll Documents": "/webapp/salary-slip-app/hr-payroll", 
 };
 
 interface ViewModeContextType {

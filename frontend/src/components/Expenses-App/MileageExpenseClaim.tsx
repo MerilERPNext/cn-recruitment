@@ -171,16 +171,9 @@ const MileageExpense: React.FC = () => {
           key: "expenseDate",
           type: "datetime",
           input: true,
-          format: "yyyy-MM-dd",
+          format: "dd-MM-yyyy",
           enableTime: false,
-          widget: {
-            type: "calendar",
-            altInput: true,
-            dateFormat: "yyyy-MM-dd",
-            enableTime: false,
-            mode: "single",
-          },
-          defaultValue: new Date().toISOString().slice(0, 10),
+          placeholder: "Select Date",
         },
         {
           label: "Vehicle Category",

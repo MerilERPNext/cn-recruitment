@@ -28,7 +28,7 @@ const dateRangeFormSchema = {
       key: "fromDate",
       type: "datetime",
       input: true,
-      format: "yyyy-MM-dd",
+      format: "dd-MM-yyyy",
       enableTime: false,
       validate: {
         required: true,
@@ -40,7 +40,7 @@ const dateRangeFormSchema = {
       key: "toDate",
       type: "datetime",
       input: true,
-      format: "yyyy-MM-dd",
+      format: "dd-MM-yyyy",
       enableTime: false,
       validate: {
         required: true,
@@ -59,7 +59,7 @@ const singleDateFormSchema = {
       key: "singleDate",
       type: "datetime",
       input: true,
-      format: "yyyy-MM-dd",
+      format: "dd-MM-yyyy",
       enableTime: false,
       validate: {
         required: true,
