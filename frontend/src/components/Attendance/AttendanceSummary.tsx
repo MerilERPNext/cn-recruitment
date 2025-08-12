@@ -1,7 +1,9 @@
 import {
   addMonths,
+  endOfDay,
   endOfMonth,
   format,
+  startOfDay,
   startOfMonth,
   subMonths,
 } from "date-fns";
@@ -18,7 +20,10 @@ import {
   Clock8,
 } from "lucide-react";
 import { useState } from "react";
-import { useGetQuickAttendanceSummary } from "../../hooks/useAttendance";
+import {
+  useAllAttendance,
+  useGetQuickAttendanceSummary,
+} from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
 // import { useNavigate } from "react-router"
@@ -44,6 +49,20 @@ const AttendanceSummary = () => {
   const goToNextMonth = () => {
     setCurrentDate((prev) => addMonths(prev, 1));
   };
+  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
+  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
+  const { data: teamDataInfo } = useAllAttendance(
+    ["attendance_date", "status"],
+    [["attendance_date", "between", [start, end]]]
+  );
+
+  // This needs to be upldated once we start getting proper response from api
+  function countStatus(statusToCount: string) {
+    return teamDataInfo?.reduce((count: number, record: { status: string }) => {
+      return record.status === statusToCount ? count + 1 : count;
+    }, 0);
+  }
+
   return (
     <>
       <div className="min-h-screen bg-white">
@@ -146,6 +165,37 @@ const AttendanceSummary = () => {
           {/* Attendance View Button */}
         </div>
 
+        <div className="space-y-3 border-b-1 bg-white border-gray-200 p-4 pt-0">
+          <h2 className="text-xl font-semibold">Today's Team Summary</h2>
+
+          {/* First Row */}
+          <div className="grid grid-cols-3 gap-3">
+            {/* Present Days - Green */}
+            <div className="text-center bg-green-50 border-2 border-green-100 p-3 rounded-lg">
+              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-green-800">
+                {countStatus("Present") || 0}
+              </p>
+              <p className="text-xs font-medium text-green-700">Logged In</p>
+            </div>
+            {/* Absent Days - Red */}
+            <div className="text-center bg-red-50 border-2 border-red-100 p-3 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-red-800">
+                {countStatus("Absent") || 0}
+              </p>
+              <p className="text-xs font-medium text-red-700">Not Logged In</p>
+            </div>
+            {/* Leaves - Orange */}
+            <div className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg">
+              <Calendar className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-orange-800">
+                {countStatus("On Leave") || 0}
+              </p>
+              <p className="text-xs font-medium text-orange-700">On Leave</p>
+            </div>
+          </div>
+        </div>
         {/* Settings Card */}
         <div className=" border-b-2 bg-white border-gray-200 p-4 ">
           <div className="space-y-4">

@@ -8,6 +8,7 @@ import { attendanceService } from "../services/attendanceService";
 import type {
   Attendance,
   AttendanceRequest,
+  CanShowClockIn,
   EmployeeCheckInLog,
   EmployeeShift,
   EmployeeShiftSummary,
@@ -32,20 +33,23 @@ const defaultQueryOptions = {
     Math.min(1000 * 2 ** attemptIndex, 30000),
 };
 
-export const useAllAttendance = (): UseQueryResult<Attendance[], Error> => {
+export const useAllAttendance = (
+  fields?: string[],
+  filters?: FilterCondition[]
+): UseQueryResult<Attendance[], Error> => {
   return useQuery<Attendance[], Error>({
-    queryKey: ["attendance", "all"],
-    queryFn: () => attendanceService.getAllAttendance(),
+    queryKey: ["attendance", "all", filters],
+    queryFn: () => attendanceService.getAllAttendance(fields, filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
 };
 export const useHomeSummaryDetails = (
   userId: string,
-  filters: string
+  filters?: string
 ): UseQueryResult<EmployeeCheckInLog[], Error> => {
   return useQuery<EmployeeCheckInLog[], Error>({
-    queryKey: ["home-summary-details"],
+    queryKey: ["home-summary-details", filters],
     queryFn: () => attendanceService.getHomeSummaryDetails(userId, filters),
     enabled: !!userId,
     refetchOnWindowFocus: true,
@@ -105,6 +109,16 @@ export const useAllAttendanceRequests = (
     ...defaultQueryOptions,
   });
 };
+export const useAllEmployeeCheckIns = (
+  filters?: FilterCondition[]
+): UseQueryResult<EmployeeCheckInLog[], Error> => {
+  return useQuery<EmployeeCheckInLog[], Error>({
+    queryKey: ["emp-check-ins", "all", filters],
+    queryFn: () => attendanceService.employeeCheckInDetails(filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
 
 export const useAttendanceById = (
   id: string | null
@@ -140,6 +154,17 @@ export const useLeaveType = (
   return useQuery<[], Error>({
     queryKey: ["leave-type", queryKeySuffix],
     queryFn: () => attendanceService.getLeaveType(filters),
+    staleTime: defaultStaleTime,
+    gcTime: defaultGcTime,
+  });
+};
+
+export const useCanShowClockIn = (
+  params: Record<string, unknown>
+): UseQueryResult<CanShowClockIn, Error> => {
+  return useQuery<CanShowClockIn, Error>({
+    queryKey: ["can-show-clock-in", params],
+    queryFn: () => attendanceService.canShowClockIn(params),
     staleTime: defaultStaleTime,
     gcTime: defaultGcTime,
   });

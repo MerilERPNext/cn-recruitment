@@ -64,6 +64,7 @@ import PoliciesCategory from "./components/Policies/PoliciesCategory";
 import PoliciesList from "./components/Policies/PoliciesList";
 import ViewPolicy from "./components/Policies/ViewPolicy";
 import ViewSalarySlipModal from "./components/SalarySlip/SalarySlipPDF";
+import EmployeeAttendanceDetails from "./components/Attendance/Employee/EmployeeAttendanceDetails";
 import HRPayroll from "./components/SalarySlip/HR-Payroll";
 
 export interface AppRoute {
@@ -110,7 +111,7 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
-      { path: "hr-payroll", element: <HRPayroll/> }, 
+      { path: "hr-payroll", element: <HRPayroll /> },
     ],
   },
   {
@@ -202,6 +203,10 @@ export const routesConfig: AppRoute[] = [
       { path: "attendance-request", element: <AttendanceRequest /> },
       { path: "team-attendance-requests", element: <TeamAttendanceDetails /> },
     ],
+  },
+  {
+    path: "/webapp/attendance/emp-attendance/details",
+    element: <EmployeeAttendanceDetails />,
   },
   { path: "/webapp/attendance/overtime", element: <RequestOvertime /> },
   {

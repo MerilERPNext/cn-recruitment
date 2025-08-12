@@ -51,7 +51,7 @@ interface LogEntry {
   shift_actual_start: string;
   shift_actual_end: string;
 }
-
+// Total time worked between checkin/checkout time from from first checkin to last checkout
 export const getTotalTime = (logs: LogEntry[] | undefined): string => {
   if (!logs || logs.length === 0) return "--:--";
 
@@ -119,4 +119,34 @@ export async function getDeviceLocation(): Promise<Coordinates> {
   } catch (error) {
     throw new Error("Error getting location: " + (error as Error).message);
   }
+}
+
+export async function getDeviceLocationWeb(): Promise<Coordinates> {
+  if (!navigator.geolocation) {
+    throw new Error("Geolocation is not supported by this browser.");
+  }
+  if (navigator.permissions) {
+    try {
+      const permissionStatus = await navigator.permissions.query({
+        name: "geolocation",
+      });
+
+      if (permissionStatus.state === "denied") {
+        throw new Error("Location permission was denied.");
+      }
+    } catch (err) {
+      console.warn("Could not verify permissions:", err);
+    }
+  }
+  return new Promise<Coordinates>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position: GeolocationPosition) => {
+        const { latitude, longitude } = position.coords;
+        resolve({ latitude, longitude });
+      },
+      (error: GeolocationPositionError) => {
+        reject(new Error("Error getting location: " + error.message));
+      }
+    );
+  });
 }

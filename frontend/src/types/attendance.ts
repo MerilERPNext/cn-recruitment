@@ -13,7 +13,7 @@ export type Attendance = {
   employee: string;
   employee_name: string;
   working_hours: number;
-  status: "Present" | "Absent" | "Half Day" | "On Leave" ;
+  status: "Present" | "Absent" | "Half Day" | "On Leave";
   leave_type: string | null;
   custom_half_day_type: string;
   leave_application: string | null;
@@ -50,39 +50,38 @@ export interface AttendanceRequest {
   reason: string;
   explanation: string | null;
   amended_from: string | null;
-  custom_status:string;
-  custom_in_time:string;
-  custom_out_time:string;
-  custom_checkin_type:string;
-  custom_checkout_time:string;
+  custom_status: string;
+  custom_in_time: string;
+  custom_out_time: string;
+  custom_checkin_type: string;
+  custom_checkout_time: string;
 }
 
 export interface RequestCardProps {
-    request: AttendanceRequest
-    isActionedCard?:boolean
-    isSelected?:boolean
-
+  request: AttendanceRequest;
+  isActionedCard?: boolean;
+  isSelected?: boolean;
 }
 export interface BulkActionProps {
-  selectedIds: string[]
-  pendingRequests: AttendanceRequest[]
-  onSelectAll: () => void
-  onBulkAction: (action: "approved" | "rejected") => void
+  selectedIds: string[];
+  pendingRequests: AttendanceRequest[];
+  onSelectAll: () => void;
+  onBulkAction: (action: "approved" | "rejected") => void;
 }
 
 export type EmployeeCheckInLog = {
   name: string;
   employee: string;
-  time: string; 
+  time: string;
   log_type: "IN" | "OUT";
   shift: string;
-  shift_start: string; 
-  shift_end: string;   
-  shift_actual_start: string; 
-  shift_actual_end: string;   
+  shift_start: string;
+  shift_end: string;
+  shift_actual_start: string;
+  shift_actual_end: string;
 };
 
-export type EmployeeShift = {shift:string}
+export type EmployeeShift = { shift: string };
 
 export type EmployeeShiftSummary = {
   present: number;
@@ -91,12 +90,21 @@ export type EmployeeShiftSummary = {
   avg_overtime: string;
   avg_late_by: string;
   avg_working_hours: string;
-}
-export type EmployeeStatusType = "present" | "absent" | "on leave" | "half day" | "work from home";
+};
+export type EmployeeStatusType =
+  | "present"
+  | "absent"
+  | "on leave"
+  | "half day"
+  | "work from home";
 
-export interface EmployeeStatus  extends BaseItem  {
-    employee_name: string;
-    status: EmployeeStatusType;
-    in_time?: string;
-    out_time?: string;
+export interface EmployeeStatus extends BaseItem {
+  employee_name: string;
+  status: EmployeeStatusType;
+  in_time?: string;
+  out_time?: string;
 }
+
+export type CanShowClockIn = {
+  can_show: boolean;
+};

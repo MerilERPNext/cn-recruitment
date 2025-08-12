@@ -387,7 +387,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             ],
             image: true,
             imageSize: "200",
-            storage: "base64",
+            storage: "customBase64",
             key: "attachments",
             type: "file",
             input: true,
@@ -579,7 +579,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => formAddressInstance.current?.submit()}
-            className="w-full bg-gray-900 text-white py-4 rounded-xl font-semibold flex items-center justify-center"
+            className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors flex items-center justify-center"
           >
             {mutation.isPending ? (
               <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>

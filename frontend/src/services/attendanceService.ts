@@ -3,6 +3,7 @@ import FrappeAPI from "../utils/frappeAPI";
 import type {
   Attendance,
   AttendanceRequest,
+  CanShowClockIn,
   EmployeeCheckInLog,
   EmployeeShift,
   EmployeeShiftSummary,
@@ -10,20 +11,26 @@ import type {
 import { FilterCondition } from "../types/frappe";
 
 export const attendanceService = {
-  getAllAttendance: async (): Promise<Attendance[]> => {
+  getAllAttendance: async (
+    fields?: string[],
+    filters?: FilterCondition[]
+  ): Promise<Attendance[]> => {
     const response = await FrappeAPI.getDocumentList("Attendance", {
-      fields: ["*"],
+      fields: fields && fields?.length > 0 ? fields : ["*"],
+      filters: filters,
     });
     return response.data as Attendance[];
   },
 
   getHomeSummaryDetails: async (
     userId: string,
-    filters: string
+    filters?: string
   ): Promise<EmployeeCheckInLog[]> => {
     try {
       const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.get_shift_checkins?user=${userId}&filters=${filters}`,
+        `/api/method/cn_leave_shift_managment.api.get_shift_checkins?user=${userId}&filters=${
+          filters || ""
+        }`,
         {
           method: "GET",
           headers: {
@@ -121,7 +128,35 @@ export const attendanceService = {
       return response as boolean;
     } catch (error) {
       console.error("📡 Error while checking in:", error);
-      throw error; // You can customize this or return false instead
+      throw error;
+    }
+  },
+  canShowClockIn: async (
+    params: Record<string, unknown>
+  ): Promise<CanShowClockIn> => {
+    try {
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.can_show_web_clockin",
+        params
+      );
+      return response as CanShowClockIn;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
+  },
+  employeeCheckInDetails: async (
+    filters?: FilterCondition[]
+  ): Promise<EmployeeCheckInLog[]> => {
+    try {
+      const response = await FrappeAPI.getDocumentList("Employee Checkin", {
+        filters: filters,
+        fields: ["time", "log_type", "custom_checkin_type", "employee"],
+      });
+      return response?.data as EmployeeCheckInLog[];
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
     }
   },
   clockInOutService: async (

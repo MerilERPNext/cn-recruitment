@@ -138,6 +138,13 @@ export const FrappeAPI = {
     };
   },
 
+  getMethod: async (
+    method: string,
+    params: Record<string, unknown> = {}
+  ): Promise<unknown> => {
+    const response = await apiClient.get(`/api/method/${method}`, { params });
+    return response.data.message;
+  },
   callMethod: async (
     method: string,
     args: Record<string, unknown> = {}
