@@ -122,12 +122,12 @@ const CTCSalaryUI = () => {
           >
             {isMoneyMasked ? (
               <>
-                <span className="text-sm font-medium">Hide Amounts</span>
+                <span className="text-sm font-medium"> Show Amounts</span>
                 <BsToggleOff className="w-8 h-8" />
               </>
             ) : (
               <>
-                <span className="text-sm font-medium">Show Amounts</span>
+                <span className="text-sm font-medium">Hide Amounts</span>
                 <BsToggleOn className="w-8 h-8" />
               </>
             )}
