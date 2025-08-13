@@ -183,6 +183,10 @@ const MobileDashboard: React.FC = () => {
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
   // This works for both check in/check out and clockin and clock out -- END
+  type CustomError = Error & {
+    response?: { data?: { message?: { error: string } } };
+  };
+
   const handleCheckInOut = (type: string) => {
     if (type === "checkIn") {
       checkInCheckOutMutation(
@@ -197,8 +201,10 @@ const MobileDashboard: React.FC = () => {
           onSuccess: () => {
             refetchHomeSummary();
           },
-          onError: (e) => {
-            toast.error(e.toString() || "Error while Checking In");
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Checking In"
+            );
           },
         }
       );
@@ -215,8 +221,10 @@ const MobileDashboard: React.FC = () => {
           onSuccess: () => {
             refetchHomeSummary();
           },
-          onError: (e) => {
-            toast.error(e.toString() || "Error while Checking out");
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Checking out"
+            );
           },
         }
       );
@@ -235,8 +243,10 @@ const MobileDashboard: React.FC = () => {
           onSuccess: () => {
             refetchHomeSummary();
           },
-          onError: (e) => {
-            toast.error(e.toString() || "Error while Clocking out");
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Clocking out"
+            );
           },
         }
       );
@@ -251,8 +261,10 @@ const MobileDashboard: React.FC = () => {
           onSuccess: () => {
             refetchHomeSummary();
           },
-          onError: (e) => {
-            toast.error(e.toString() || "Error while Clocking out");
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Clocking out"
+            );
           },
         }
       );
@@ -398,7 +410,7 @@ const MobileDashboard: React.FC = () => {
               onClick={() =>
                 handleCheckInOut(isCurrentlyCheckedIn ? "checkOut" : "checkIn")
               }
-              className="w-full flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
               disabled={checkInCheckOutPending || !employeeShift?.shift}
             >
               {checkInCheckOutPending || isRefetching ? (
@@ -416,7 +428,7 @@ const MobileDashboard: React.FC = () => {
               onClick={() =>
                 handleClockInOut(isCurrentlyCheckedIn ? "clockOut" : "clockIn")
               }
-              className="w-full flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
               disabled={clockInCheckOutPending || !employeeShift?.shift}
             >
               {clockInCheckOutPending || isRefetching ? (

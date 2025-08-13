@@ -13,11 +13,11 @@ import {
 } from "../../hooks/useFrappeQuery";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import HeaderBar from "../HeaderBar";
 import { toast } from "react-hot-toast";
 import { useLeaveRequestRefresh } from "../Leaves/LeaveRequestRefreshContext";
 import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
 import LayoutHeader from "../shared/LayoutHeader";
+import { Formio } from "formiojs";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -59,6 +59,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       triggerRefetch();
       onSuccess?.();
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
       let errorMsg = "Submission failed. Please try again.";
       try {
@@ -81,6 +82,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const [formData, setFormData] = useState<FormSubmissionData>({});
   const [leaveDays, setLeaveDays] = useState<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formInstance = useRef<any>(null);
 
   const leaveTypeOptions = useMemo(() => {
@@ -124,6 +126,9 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       return;
     }
 
+    if (!formInstance?.current) {
+      return;
+    }
     try {
       const submission = await formInstance.current.submit();
 
@@ -298,7 +303,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
         <Form
           form={leaveForm}
-          onFormReady={(instance: any) => {
+          onFormReady={(instance: Formio) => {
             formInstance.current = instance;
           }}
           options={{
