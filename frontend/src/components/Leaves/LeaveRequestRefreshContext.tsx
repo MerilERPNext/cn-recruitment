@@ -29,7 +29,7 @@ export const LeaveRequestRefreshProvider: React.FC<{
     </LeaveRequestRefreshContext.Provider>
   );
 };
-
+// eslint-disable-next-line react-refresh/only-export-components
 export const useLeaveRequestRefresh = () => {
   const ctx = useContext(LeaveRequestRefreshContext);
   if (!ctx)

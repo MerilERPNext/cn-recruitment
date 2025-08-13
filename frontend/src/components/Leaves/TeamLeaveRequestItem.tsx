@@ -1,4 +1,6 @@
 import { format } from "date-fns";
+import type { TeamLeaveRequest } from "../../types/leaves";
+
 const TeamLeaveRequestItem = ({
   item,
   isSelected,
@@ -7,7 +9,7 @@ const TeamLeaveRequestItem = ({
   onApprove,
   onReject,
 }: {
-  item: any;
+  item: TeamLeaveRequest;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
   onClick?: () => void;
