@@ -101,13 +101,13 @@ export function AttendanceDetailView({
         <div className="py-4 px-2 flex  fixed bottom-0 w-full  ">
           <div className=" w-full space-x-3 flex bg-white p-2 rounded-xl">
             <button
-              className="bg-red-100 p-2 w-1/2 text-red-700 rounded-md font-semibold"
+              className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200"
               // onClick={(e) => handleAction("rejected", e)}
             >
               Reject
             </button>
             <button
-              className="bg-green-200 p-2 w-1/2 text-green-700 rounded-md font-semibold"
+              className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200"
               // onClick={(e) => handleAction("approved", e)}
             >
               Approve

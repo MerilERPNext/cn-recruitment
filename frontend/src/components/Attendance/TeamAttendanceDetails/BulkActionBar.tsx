@@ -11,7 +11,7 @@ export function BulkActionBar({
   const allSelected = selectedIds.length === pendingRequests.length;
 
   return (
-    <div className="p-2 px-4 bg-blue-50 rounded-lg">
+    <div className="p-2 px-4 bg-blue-50 rounded-xl">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           <input type="checkbox" checked={allSelected} onChange={onSelectAll} />
@@ -24,13 +24,13 @@ export function BulkActionBar({
       {selectedIds.length > 0 && (
         <div className="flex space-x-2 mt-2">
           <button
-            className="bg-red-100 p-2 w-1/2 text-red-700 rounded-xl font-semibold"
+            className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 shadow-sm text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200"
             onClick={() => onBulkAction("rejected")}
           >
             Bulk Reject ({selectedIds.length})
           </button>
           <button
-            className="bg-green-100 p-2 w-1/2 text-green-700 rounded-xl font-semibold"
+            className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 shadow-sm text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200"
             onClick={() => onBulkAction("approved")}
           >
             Bulk Approve ({selectedIds.length})
