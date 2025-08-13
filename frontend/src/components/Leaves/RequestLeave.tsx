@@ -58,6 +58,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       triggerRefetch();
       onSuccess?.();
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
       let errorMsg = "Submission failed. Please try again.";
       try {
@@ -80,6 +81,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const [formData, setFormData] = useState<FormSubmissionData>({});
   const [leaveDays, setLeaveDays] = useState<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formInstance = useRef<any>(null);
 
   const leaveTypeOptions = useMemo(() => {
@@ -295,6 +297,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
       <Form
         form={leaveForm}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onFormReady={(instance: any) => {
           formInstance.current = instance;
         }}

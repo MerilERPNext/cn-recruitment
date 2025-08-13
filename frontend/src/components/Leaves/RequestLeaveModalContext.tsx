@@ -37,7 +37,7 @@ export const RequestLeaveModalProvider: React.FC<{
     </RequestLeaveModalContext.Provider>
   );
 };
-
+// eslint-disable-next-line react-refresh/only-export-components
 export const useRequestLeaveModal = (): RequestLeaveModalContextType => {
   const context = useContext(RequestLeaveModalContext);
   if (!context) {

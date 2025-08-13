@@ -34,7 +34,7 @@ const LeaveAppInner: React.FC = () => {
     () => [
       { key: "leave-balance", label: "Leave Balance" },
       { key: "holidays", label: "Holidays" },
-      { key: "requests-status", label: "Requests Status" },
+      { key: "requests-status", label: "Request Status" },
     ],
     []
   );
@@ -127,11 +127,10 @@ const LeaveAppInner: React.FC = () => {
                 <button
                   key={subTab}
                   onClick={() => handleSubTabChange(subTab)}
-                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                    activeSubTab === subTab
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeSubTab === subTab
                       ? "bg-black text-white shadow-sm"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   {subTab}
                 </button>
