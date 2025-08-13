@@ -536,7 +536,12 @@ const MobileDashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="text-center bg-green-50 border-2 border-green-100 p-3 rounded-lg">
+            <div
+              className="text-center bg-green-50 border-2 border-green-100 p-3 rounded-lg cursor-pointer"
+              onClick={() => {
+                navigate("/webapp/attendance/summary");
+              }}
+            >
               <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
               <p className="text-lg font-bold text-green-800">
                 {employeeAttendanceSummary?.present || 0}
@@ -544,7 +549,12 @@ const MobileDashboard: React.FC = () => {
               <p className="text-xs font-medium text-green-700">Present Days</p>
             </div>
 
-            <div className="text-center bg-red-50 border-2 border-red-100 p-3 rounded-lg">
+            <div
+              className="text-center bg-red-50 border-2 border-red-100 p-3 rounded-lg cursor-pointer"
+              onClick={() => {
+                navigate("/webapp/attendance/emp-attendance");
+              }}
+            >
               <AlertCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
               <p className="text-lg font-bold text-red-800">
                 {employeeAttendanceSummary?.absent || 0}
@@ -552,7 +562,12 @@ const MobileDashboard: React.FC = () => {
               <p className="text-xs font-medium text-red-700">Absent Days</p>
             </div>
 
-            <div className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg">
+            <div
+              className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg cursor-pointer"
+              onClick={() => {
+                navigate("/webapp/leave-app/leaves/leave-balance");
+              }}
+            >
               <Timer className="w-6 h-6 text-orange-600 mx-auto mb-1" />
               <p className="text-lg font-bold text-orange-800">
                 {employeeAttendanceSummary?.leaves || 0}
