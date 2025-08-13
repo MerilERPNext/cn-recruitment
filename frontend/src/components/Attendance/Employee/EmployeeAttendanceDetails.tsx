@@ -6,6 +6,8 @@ import { useLocation } from "react-router";
 import { endOfDay, format, startOfDay, isValid } from "date-fns";
 import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 import { EmployeeCheckInLog } from "../../../types/attendance";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 
 const EmployeeAttendanceDetails = () => {
   const { search } = useLocation();
@@ -19,7 +21,10 @@ const EmployeeAttendanceDetails = () => {
     const d = new Date(dateParam || "");
     return isValid(d) ? d : null;
   }, [dateParam]);
-
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name as string
+  );
   const { start, end } = useMemo(() => {
     if (!validDate) return { start: "", end: "" };
     return {
@@ -29,7 +34,12 @@ const EmployeeAttendanceDetails = () => {
   }, [validDate]);
 
   const { data: empCheckIns, isLoading } = useAllEmployeeCheckIns(
-    validDate ? [["time", "between", [start, end]]] : []
+    validDate
+      ? [
+          ["time", "between", [start, end]],
+          ["employee", "=", currentEmployee?.employee],
+        ]
+      : []
   );
 
   return (
