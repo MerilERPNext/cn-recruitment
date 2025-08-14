@@ -1,6 +1,6 @@
 import FrappeAPI from "../utils/frappeAPI";
 import type { LeaveRequest } from "../types/leaves";
-
+import { HolidayApiResponse } from "../types/leaves";
 import type { LeaveDetailsResponse, HolidayGroup } from "../types/leaves";
 
 export const leaveService = {
@@ -63,9 +63,7 @@ export const leaveService = {
       "cn_leave_shift_managment.api.get_holidays",
       { employee: employeeId }
     );
-    const typed = response as {
-      message: { status: string; data: HolidayGroup[] };
-    };
+    const typed = response as HolidayApiResponse;
     return typed.message.data;
   },
 };

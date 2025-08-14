@@ -75,6 +75,7 @@ export interface Holiday {
   repeat_next_year: number;
   creation: string;
   modified: string;
+  optional?: boolean;
   owner: string;
   is_repeated: boolean;
   original_doc_name: string;
@@ -86,10 +87,5 @@ export interface HolidayGroup {
 }
 
 export interface HolidayApiResponse {
-  message: {
-    message: {
-      status: string;
-      data: HolidayGroup[];
-    };
-  };
+  message: { status: string; data: HolidayGroup[] };
 }

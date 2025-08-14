@@ -6,15 +6,8 @@ import { useGetHolidays } from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { HolidayCardSkeletonList } from "./LeaveSkeletons";
-
-type Holiday = {
-  name: string;
-  date: string;
-  optional?: boolean;
-  holiday_name: string;
-  type: string;
-  description?: string | null;
-};
+import { Holiday } from "../../types/leaves";
+import { processHolidays } from "./holidayHelper";
 
 interface HolidayCardProps {
   holiday: Holiday;
@@ -22,13 +15,7 @@ interface HolidayCardProps {
   disabledApply?: boolean;
 }
 
-interface HolidayGroup {
-  type_name: string;
-  holidays: Holiday[];
-}
-
 const DISPLAY_LIMIT = 3;
-
 export const HolidayCard: React.FC<HolidayCardProps> = ({
   holiday,
   showApply,
@@ -98,91 +85,8 @@ const Holidays: React.FC = () => {
     return d;
   }, []);
 
-  const { upcomingRegular, upcomingOptional, allRegular, allOptional, optionalStats } = React.useMemo(() => {
-    if (!holidaysData || !Array.isArray(holidaysData)) {
-      return {
-        upcomingRegular: [],
-        upcomingOptional: [],
-        allRegular: [],
-        allOptional: [],
-        optionalStats: { total: 0, availed: 0, remaining: 0 }
-      };
-    }
-
-    const regularHolidays: Holiday[] = [];
-    const optionalHolidays: Holiday[] = [];
-    const allRegularHolidays: Holiday[] = [];
-    const allOptionalHolidays: Holiday[] = [];
-    let totalOptional = 0;
-    const availedOptional = 0;
-
-    holidaysData.forEach((group: HolidayGroup) => {
-      if (!group.holidays || !Array.isArray(group.holidays)) return;
-
-      group.holidays.forEach((holiday) => {
-        const holidayDate = new Date(holiday.date);
-
-        if (group.type_name === 'Optional') {
-
-          allOptionalHolidays.push({
-            ...holiday,
-            optional: true
-          });
-
-          if (holidayDate >= today) {
-            optionalHolidays.push({
-              ...holiday,
-              optional: true
-            });
-          }
-        } else if (group.type_name === 'Mandatory' || group.type_name === 'National Holiday') {
-
-          allRegularHolidays.push({
-            ...holiday,
-            optional: false
-          });
-
-          if (holidayDate >= today) {
-            regularHolidays.push({
-              ...holiday,
-              optional: false
-            });
-          }
-        }
-        if (group.type_name === 'Optional') {
-          totalOptional++;
-        }
-      });
-    });
-
-    const sortedRegular = regularHolidays.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
-    const sortedOptional = optionalHolidays.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
-    const sortedAllRegular = allRegularHolidays.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
-    const sortedAllOptional = allOptionalHolidays.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
-    return {
-      upcomingRegular: sortedRegular,
-      upcomingOptional: sortedOptional,
-      allRegular: sortedAllRegular,
-      allOptional: sortedAllOptional,
-      optionalStats: {
-        total: totalOptional,
-        availed: availedOptional,
-        remaining: totalOptional - availedOptional
-      }
-    };
-  }, [holidaysData, today]);
+  const { upcomingRegular, upcomingOptional, allRegular, allOptional, optionalStats } =
+    React.useMemo(() => processHolidays(holidaysData, today), [holidaysData, today]);
 
   const displayedRegular = upcomingRegular.slice(0, DISPLAY_LIMIT);
   const displayedOptional = upcomingOptional.slice(0, DISPLAY_LIMIT);

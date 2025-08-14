@@ -3,15 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { isBefore, startOfToday } from "date-fns";
 import { FaSortAmountDownAlt, FaSortAmountUp } from "react-icons/fa";
 import { HolidayCard } from "./Holidays";
-
-type Holiday = {
-  name: string;
-  date: string;
-  optional?: boolean;
-  holiday_name: string;
-  type: string;
-  description?: string | null;
-};
+import { Holiday } from "../../types/leaves";
 
 type HolidayType = "regular" | "optional";
 
