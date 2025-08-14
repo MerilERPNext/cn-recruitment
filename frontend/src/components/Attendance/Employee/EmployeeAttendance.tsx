@@ -1,15 +1,13 @@
 import { useMemo, useState } from "react";
 import DatePicker from "react-datepicker";
 import { ArrowLeft, ArrowUpRight, Plus, XCircle } from "lucide-react";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import { useAttendance } from "../../../hooks/useAttendance";
+import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import FrappeListView from "../../ListView";
-import { Attendance, AttendanceRequest } from "../../../types/attendance";
+import { AttendanceRecord, AttendanceRequest } from "../../../types/attendance";
 import { useNavigate } from "react-router";
 import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard";
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import { endOfMonth, format, startOfMonth } from "date-fns";
-import { FilterCondition } from "../../../types/frappe";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import BottomDrawer from "../../shared/BottomDrawer";
@@ -19,7 +17,6 @@ const EmployeeAttendance = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
-  const { data: userId } = useLoggedInUser();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
@@ -27,19 +24,11 @@ const EmployeeAttendance = () => {
   const start = format(startOfMonth(selectedDate as Date), "yyyy-MM-dd");
   const end = format(endOfMonth(selectedDate as Date), "yyyy-MM-dd");
 
-  const filters = userId
-    ? [
-        ["employee", "=", currentEmployee?.employee],
-        ["attendance_date", "between", [start, end]],
-      ]
-    : [];
   const {
     data: allAttendance,
     isError,
     error,
-  } = useAttendance(filters as FilterCondition[], {
-    enabled: !!userId,
-  });
+  } = useGetAllEventsAndAttendance({ start: start, end: end });
 
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState<boolean>(false);
@@ -66,14 +55,16 @@ const EmployeeAttendance = () => {
     };
   }, [currentEmployee, selectedDate, start, end]);
 
-  const createAttendanceStatusGetter = (attendances: Attendance[] = []) => {
+  const createAttendanceStatusGetter = (
+    attendances: AttendanceRecord[] = []
+  ) => {
     const statusMap: Record<string, Status> = {};
 
     const formatDateKey = (date: Date): string =>
       date.toLocaleDateString("en-CA");
 
     attendances.forEach((record) => {
-      const dateKey = formatDateKey(new Date(record.attendance_date));
+      const dateKey = formatDateKey(new Date(record.start));
       const rawStatus = record.status?.toLowerCase().trim();
 
       let status: Status = "default";
@@ -94,16 +85,15 @@ const EmployeeAttendance = () => {
         case "week off":
           status = "week-off";
           break;
-        case "half day":
-        case "half-day":
-          if (record?.custom_half_day_type === "First Half") {
-            status = "half-day-first-half";
-          } else if (record?.custom_half_day_type === "Second Half") {
-            status = "half-day-second-half";
-          } else {
-            status = "half-day";
-          }
-          break;
+        // case "half-day":
+        //   if (record?.custom_half_day_type === "First Half") {
+        //     status = "half-day-first-half";
+        //   } else if (record?.custom_half_day_type === "Second Half") {
+        //     status = "half-day-second-half";
+        //   } else {
+        //     status = "half-day";
+        //   }
+        //   break;
         case "work from home":
           status = "work-from-home";
           break;
@@ -187,14 +177,15 @@ const EmployeeAttendance = () => {
               onChange={(date) => {
                 setSelectedDate(date);
                 const status = getAttendanceStatus(date as Date);
-
-                if (status !== "default") {
+                if (status !== "default" && status !== "holiday") {
                   navigate(
                     `/webapp/attendance/emp-attendance/details?date=${date}&status=${status}`
                   );
                 }
               }}
-              onMonthChange={(date) => setSelectedDate(date)}
+              onMonthChange={(date) => {
+                setSelectedDate(date);
+              }}
               openToDate={selectedDate as Date}
               inline
               dayClassName={(date) => {
@@ -228,7 +219,9 @@ const EmployeeAttendance = () => {
 
                 // Ignore default "selected" styles
                 return `${baseClasses} ${highlightClass} ${
-                  isSelected ? "!bg-inherit !text-inherit border-none" : ""
+                  isSelected && status === "default"
+                    ? "!bg-transparent border-none"
+                    : ""
                 }`;
               }}
             />

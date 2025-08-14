@@ -1,14 +1,11 @@
 import { useNavigate } from "react-router";
 import LayoutHeader from "../../shared/LayoutHeader";
 import { CalendarDays } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import SelectByMonth, { MonthOption } from "./SelectByMonth";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import FrappeListView from "../../ListView";
-import { BaseItem } from "../../Notices/types/noticeItem";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import { endOfMonth, format } from "date-fns";
+
+import { endOfMonth, format, parse, startOfMonth } from "date-fns";
+import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 
 const AllEmpAttendance = () => {
   const navigate = useNavigate();
@@ -18,27 +15,22 @@ const AllEmpAttendance = () => {
     value: format(new Date(), "yyyy-MM"),
   });
 
-  const { data: userId } = useLoggedInUser();
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
-  );
-  const defaultFilters = useMemo(() => {
-    if (!userId) return undefined;
+  const selectedMonthStr =
+    selectedMonth?.value ?? format(new Date(), "yyyy-MM");
+  const parsedDate = parse(selectedMonthStr, "yyyy-MM", new Date());
 
-    const startOfMonth = `${selectedMonth.value}-01`;
+  // Get start and end of the month
+  const start = format(startOfMonth(parsedDate), "yyyy-MM-dd");
+  const end = format(endOfMonth(parsedDate), "yyyy-MM-dd");
+  const { data: allEventsAndAttendance } = useGetAllEventsAndAttendance({
+    start: start,
+    end: end,
+  });
 
-    const end = format(
-      endOfMonth(new Date(selectedMonth?.value)),
-      "yyyy-MM-dd"
-    );
-
-    return {
-      employee: currentEmployee?.employee,
-      attendance_date: ["between", [startOfMonth, end]],
-    } as const;
-  }, [userId, selectedMonth, currentEmployee]);
-
+  // console.log(
+  //   "--------------------------------------------------------------------",
+  //   allEventsAndAttendance
+  // );
   const getStatusColor = (status: string) => {
     switch (status) {
       case "present":
@@ -54,48 +46,6 @@ const AllEmpAttendance = () => {
       default:
         return "hover:bg-gray-100 text-gray-600";
     }
-  };
-
-  type AttendanceItem = BaseItem & {
-    attendance_date: string;
-    status?: string;
-    shift?: string;
-  };
-
-  type TransformedItem = {
-    date: number;
-    month: string;
-    day: string;
-    status: string;
-    statusLabel: string;
-    location: string;
-  };
-
-  const transformItem = (item: AttendanceItem): TransformedItem => {
-    const dateObj = new Date(item.attendance_date);
-    const date = dateObj.getDate();
-    const month = dateObj.toLocaleString("default", { month: "short" });
-    const day = dateObj.toLocaleString("default", { weekday: "short" });
-
-    let statusKey = item.status?.toLowerCase() || "unknown";
-    const statusLabel = item.status || "Unknown";
-
-    if (statusKey === "half day" || statusKey === "half-day") {
-      statusKey = "half-day";
-    } else if (statusKey === "work from home") {
-      statusKey = "work-from-home";
-    } else if (statusKey === "on leave") {
-      statusKey = "on-leave";
-    }
-
-    return {
-      date,
-      month,
-      day,
-      status: statusKey,
-      statusLabel,
-      location: item.shift || "General (Office)",
-    };
   };
 
   return (
@@ -114,8 +64,53 @@ const AllEmpAttendance = () => {
         <h2 className="font-semibold text-lg text-center py-2">
           {selectedMonth?.label}
         </h2>
+        <div className="flex flex-col gap-2">
+          {allEventsAndAttendance &&
+            allEventsAndAttendance?.length > 0 &&
+            allEventsAndAttendance?.map((item) => {
+              const dateObj = new Date(item?.start);
+              const date = dateObj.getDate();
+              const month = dateObj.toLocaleString("default", {
+                month: "short",
+              });
+              const day = dateObj.toLocaleString("default", {
+                weekday: "short",
+              });
 
-        <FrappeListView
+              return (
+                <div className="flex items-center py-3 px-4 border border-gray-200 bg-white shadow-sm rounded-xl hover:shadow-md transition-shadow">
+                  <div className="flex flex-col items-center w-12 mr-4">
+                    <div className="text-lg font-semibold text-gray-900">
+                      {date}
+                    </div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">
+                      {month}
+                    </div>
+                    <div className="text-xs text-gray-500 capitalize">
+                      {day}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div
+                      className={`font-medium ${getStatusColor(
+                        item.status.toLocaleLowerCase()
+                      )} mb-1`}
+                    >
+                      {item?.doctype === "Attendance Request"
+                        ? "Attendance Request - "
+                        : ""}
+                      {item?.status}{" "}
+                    </div>
+                    <div
+                      className="text-sm text-gray-400 [&>div]:p-0 m-0"
+                      dangerouslySetInnerHTML={{ __html: item?.employee }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+        {/* <FrappeListView
           doctype="Attendance"
           defaultFields={[
             "name",
@@ -156,7 +151,7 @@ const AllEmpAttendance = () => {
               </div>
             );
           }}
-        />
+        /> */}
       </div>
 
       {showSelectByMonth && (

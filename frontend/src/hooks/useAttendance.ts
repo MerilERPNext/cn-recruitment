@@ -6,7 +6,9 @@ import {
 } from "@tanstack/react-query";
 import { attendanceService } from "../services/attendanceService";
 import type {
+  AllEventsAndAttendanceT,
   Attendance,
+  AttendanceRecord,
   AttendanceRequest,
   CanShowClockIn,
   EmployeeCheckInLog,
@@ -115,6 +117,16 @@ export const useAllEmployeeCheckIns = (
   return useQuery<EmployeeCheckInLog[], Error>({
     queryKey: ["emp-check-ins", "all", filters],
     queryFn: () => attendanceService.employeeCheckInDetails(filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+export const useGetAllEventsAndAttendance = (
+  filters: AllEventsAndAttendanceT
+): UseQueryResult<AttendanceRecord[], Error> => {
+  return useQuery<AttendanceRecord[], Error>({
+    queryKey: ["get-All-Events-And-Attendance", filters],
+    queryFn: () => attendanceService.getAllEventsAndAttendance(filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
