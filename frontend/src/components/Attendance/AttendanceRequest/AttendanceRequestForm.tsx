@@ -12,6 +12,7 @@ import {
   useGetAllEmployees,
   useGetAllReasons,
 } from "../../../hooks/useEmployee";
+import { useShiftTypes } from "../../../hooks/useShift";
 import { Toaster, toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 
@@ -28,6 +29,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   );
   const { data: employeeList } = useGetAllEmployees();
   const { data: reasonList } = useGetAllReasons();
+  const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
 
   // Get shift for current employee or selected employee in 'For Others' mode
@@ -128,6 +130,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                   customClass: "mb-4",
                   // Form.io will automatically update the form data
                   onChange: handleEmployeeChange,
+                  validate: { required: true },
                   data: {
                     values:
                       employeeList && employeeList?.length > 0
@@ -202,47 +205,34 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           },
           // Date fields (shown for all request types)
           {
+            label: "From Date",
+            key: "from_date",
+            type: "datetime",
+            input: true,
+            widget: { type: "calendar" },
+            format: "yyyy-MM-dd",
+            placeholder: "yyyy-mm-dd",
             customClass: "mb-4",
-            type: "columns",
-            columns: [
-              {
-                components: [
-                  {
-                    label: "From Date",
-                    key: "from_date",
-                    type: "datetime",
-                    input: true,
-                    widget: { type: "calendar" },
-                    format: "yyyy-MM-dd",
-                    placeholder: "yyyy-mm-dd",
-                    customClass: "mb-4",
-                    enableTime: false,
-                  },
-                ],
-                width: 6,
-              },
-              {
-                components: [
-                  {
-                    label: "To Date",
-                    key: "to_date",
-                    type: "datetime",
-                    input: true,
-                    widget: { type: "calendar" },
-                    format: "yyyy-MM-dd",
-                    placeholder: "yyyy-mm-dd",
-                    customClass: "mb-4",
-                    enableTime: false,
-                  },
-                ],
-                width: 6,
-              },
-            ],
+            enableTime: false,
+            validate: { required: true },
           },
-          // Clockin time field (for Clockin and Out Duty)
           {
-            label: "Clockin Time",
-            key: "clockin_time",
+            label: "To Date",
+            key: "to_date",
+            type: "datetime",
+            input: true,
+            widget: { type: "calendar" },
+            format: "yyyy-MM-dd",
+            placeholder: "yyyy-mm-dd",
+            customClass: "mb-4",
+            enableTime: false,
+            validate: { required: true },
+            customConditional:
+              "show = !['Clockin'].includes(data.request_type || '');",
+          },
+          {
+            label: "From Time",
+            key: "custom_from_time",
             type: "datetime",
             input: true,
             enableDate: false,
@@ -251,20 +241,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "HH:mm:ss",
             customClass: "mb-4",
             customConditional:
-              "show = ['Clockin', 'Out Duty'].includes(data.request_type || '');",
-            time_24hr: true,
-            widget: {
-              type: "calendar",
-              time_24hr: true,
-              noCalendar: true,
-              enableTime: true,
-              dateFormat: "H:i",
-            },
+              "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(data.request_type || '');",
           },
-          // Clockout time field (for Out Duty)
           {
-            label: "Clockout Time",
-            key: "clockout_time",
+            label: "To Time",
+            key: "custom_to_time",
             type: "datetime",
             input: true,
             enableDate: false,
@@ -272,17 +253,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             format: "HH:mm:ss",
             placeholder: "HH:mm:ss",
             customClass: "mb-4",
-            customConditional: "show = data.request_type === 'Out Duty';",
-            time_24hr: true,
-            widget: {
-              type: "calendar",
-              time_24hr: true,
-              noCalendar: true,
-              enableTime: true,
-              dateFormat: "H:i",
-            },
+            customConditional:
+              "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
           },
-          // Overnight Out Duty (for Out Duty)
+          // Overnight Out Duty checkbox (for Out Duty)
           {
             label: "Overnight Out Duty",
             key: "overnight_out_duty",
@@ -291,47 +265,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             customConditional: "show = data.request_type === 'Out Duty';",
             defaultValue: false,
-          },
-          // Custom times for Attendance Adjustment
-          {
-            customClass: "mb-4",
-            type: "columns",
-            customConditional:
-              "show = data.request_type === 'Attendance Adjustment';",
-            columns: [
-              {
-                components: [
-                  {
-                    label: "From Time",
-                    key: "custom_from_time",
-                    type: "datetime",
-                    input: true,
-                    enableDate: false,
-                    enableTime: true,
-                    format: "HH:mm:ss",
-                    placeholder: "HH:mm:ss",
-                    customClass: "mb-4",
-                  },
-                ],
-                width: 6,
-              },
-              {
-                components: [
-                  {
-                    label: "To Time",
-                    key: "custom_to_time",
-                    type: "datetime",
-                    input: true,
-                    enableDate: false,
-                    enableTime: true,
-                    format: "HH:mm:ss",
-                    placeholder: "HH:mm:ss",
-                    customClass: "mb-4",
-                  },
-                ],
-                width: 6,
-              },
-            ],
           },
           // Shift selection for Shift Change
           {
@@ -343,11 +276,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             customConditional: "show = data.request_type === 'Shift Change';",
             data: {
-              values: [
-                { label: "Morning Shift", value: "Morning Shift" },
-                { label: "Evening Shift", value: "Evening Shift" },
-                { label: "Night Shift", value: "Night Shift" },
-              ],
+              values:
+                shiftList?.data?.map((item) => ({
+                  label: `${item.name}`,
+                  value: item.name,
+                })) || [],
             },
           },
           // Reason field (shown for all except Shift Change)
@@ -460,7 +393,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           ...baseBody,
           from_date: formatDateToYYYYMMDD(new Date()),
           to_date: formatDateToYYYYMMDD(new Date()),
-          clockin_time: formatTime(submission.data.clockin_time),
+          custom_from_time: formatTime(submission.data.custom_from_time),
           reason: submission.data.reason,
         };
         break;
@@ -468,8 +401,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       case "Out Duty":
         requestBody = {
           ...baseBody,
-          clockin_time: formatTime(submission.data.clockin_time),
-          clockout_time: formatTime(submission.data.clockout_time),
+          custom_from_time: formatTime(submission.data.custom_from_time),
+          custom_to_time: formatTime(submission.data.custom_to_time),
           reason: submission.data.reason,
           overnight_out_duty: submission.data.overnight_out_duty || false,
         };
@@ -484,6 +417,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           to_date: formatDateToYYYYMMDD(
             new Date(submission.data.to_date || new Date())
           ),
+          custom_from_time: formatTime(submission.data.custom_from_time),
+          custom_to_time: formatTime(submission.data.custom_to_time),
           reason: submission.data.reason,
         };
         break;
