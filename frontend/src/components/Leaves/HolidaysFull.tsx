@@ -5,29 +5,12 @@ import { FaSortAmountDownAlt, FaSortAmountUp } from "react-icons/fa";
 import { HolidayCard } from "./Holidays";
 import { Holiday } from "../../types/leaves";
 
-const REGULAR_HOLIDAYS: Holiday[] = [
-  { name: "New Year's Day", date: "2025-01-01" },
-  { name: "Martin Luther King Jr. Day", date: "2025-01-15" },
-  { name: "Presidents' Day", date: "2025-02-19" },
-  { name: "Memorial Day", date: "2025-05-27" },
-  { name: "Juneteenth", date: "2025-06-19" },
-  { name: "Independence Day", date: "2025-07-04" },
-  { name: "Labor Day", date: "2025-09-01" },
-  { name: "Columbus Day", date: "2025-10-14" },
-  { name: "Veterans Day", date: "2025-11-11" },
-  { name: "Thanksgiving Day", date: "2025-11-28" },
-  { name: "Christmas Day", date: "2025-12-25" },
-];
-
-const OPTIONAL_HOLIDAYS: Holiday[] = [
-  { name: "Makar Sankranti", date: "2025-01-14" },
-  { name: "Holi", date: "2025-03-17" },
-  { name: "Eid al-Fitr", date: "2025-03-30" },
-  { name: "Raksha Bandhan", date: "2025-08-18" },
-  { name: "Diwali", date: "2025-10-20" },
-];
-
 type HolidayType = "regular" | "optional";
+
+interface LocationState {
+  type?: HolidayType;
+  holidays?: Holiday[];
+}
 
 const HolidaysFull: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -35,11 +18,12 @@ const HolidaysFull: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const holidayType: HolidayType =
-    (location.state as { type?: HolidayType })?.type || "regular";
-
-  const holidays =
-    holidayType === "optional" ? OPTIONAL_HOLIDAYS : REGULAR_HOLIDAYS;
+  const locationState = location.state as LocationState;
+  const holidayType: HolidayType = locationState?.type || "regular";
+  const holidays: Holiday[] = useMemo(
+    () => locationState?.holidays || [],
+    [locationState?.holidays]
+  );
 
   const sortedHolidays = useMemo(() => {
     return [...holidays].sort((a, b) => {
@@ -104,25 +88,34 @@ const HolidaysFull: React.FC = () => {
         </div>
       </header>
       <main className="flex-1 overflow-y-auto p-4">
-        <div className="divide-y divide-gray-200">
-          {sortedHolidays.map((h) => {
-            const dateObj = new Date(h.date);
-            return (
-              <HolidayCard
-                key={`${h.date}-${h.name}`}
-                holiday={h}
-                showApply={holidayType === "optional"}
-                disabledApply={
-                  holidayType === "optional" &&
-                  isBefore(dateObj, startOfToday())
-                }
-              />
-            );
-          })}
-        </div>
+        {holidays.length === 0 ? (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-gray-500">No holidays available</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {sortedHolidays.map((h) => {
+              const dateObj = new Date(h.date);
+              return (
+                <HolidayCard
+                  key={`${h.date}-${h.holiday_name}`}
+                  holiday={h}
+                  showApply={holidayType === "optional"}
+                  disabledApply={
+                    holidayType === "optional" &&
+                    isBefore(dateObj, startOfToday())
+                  }
+                />
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );
 };
 
 export default HolidaysFull;
+
+
+

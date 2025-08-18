@@ -66,3 +66,31 @@ export const LeaveBalanceSkeleton: React.FC = () => {
     </div>
   );
 };
+
+
+const HolidayCardSkeleton: React.FC = () => {
+  return (
+    <div className="flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 mb-2 animate-pulse">
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-gray-200" />
+
+        <div className="flex flex-col gap-1">
+          <div className="h-4 w-28 bg-gray-200 rounded" />
+          <div className="h-3 w-20 bg-gray-200 rounded" />
+        </div>
+      </div>
+
+      <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+    </div>
+  );
+};
+
+export const HolidayCardSkeletonList: React.FC<{ count?: number }> = ({ count = 6 }) => {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <HolidayCardSkeleton key={i} />
+      ))}
+    </>
+  );
+};

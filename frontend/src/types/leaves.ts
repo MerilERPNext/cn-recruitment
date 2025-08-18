@@ -69,5 +69,23 @@ export interface LeaveApplication {
 export interface Holiday {
   name: string;
   date: string;
+  type: string;
+  holiday_name: string;
+  description: string | null;
+  repeat_next_year: number;
+  creation: string;
+  modified: string;
   optional?: boolean;
+  owner: string;
+  is_repeated: boolean;
+  original_doc_name: string;
+}
+
+export interface HolidayGroup {
+  type_name: string;
+  holidays: Holiday[];
+}
+
+export interface HolidayApiResponse {
+  message: { status: string; data: HolidayGroup[] };
 }
