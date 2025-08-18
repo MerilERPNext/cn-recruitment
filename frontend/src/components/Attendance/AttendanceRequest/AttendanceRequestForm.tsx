@@ -210,8 +210,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             type: "datetime",
             input: true,
             widget: { type: "calendar" },
-            format: "yyyy-MM-dd",
-            placeholder: "yyyy-mm-dd",
+            format: "dd-MM-yyyy",
+            placeholder: "dd-mm-yyyy",
             customClass: "mb-4",
             enableTime: false,
             validate: { required: true },
@@ -222,8 +222,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             type: "datetime",
             input: true,
             widget: { type: "calendar" },
-            format: "yyyy-MM-dd",
-            placeholder: "yyyy-mm-dd",
+            format: "dd-MM-yyyy",
+            placeholder: "dd-mm-yyyy",
             customClass: "mb-4",
             enableTime: false,
             validate: { required: true },
@@ -242,6 +242,13 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             customConditional:
               "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(data.request_type || '');",
+            widget: {
+              type: "calendar",
+              time_24hr: true,
+              noCalendar: true,
+              enableTime: true,
+              dateFormat: "H:i",
+            },
           },
           {
             label: "To Time",
@@ -255,7 +262,22 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             customConditional:
               "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
+            time_24hr: true,
+            widget: {
+              type: "calendar",
+              time_24hr: true,
+              noCalendar: true,
+              enableTime: true,
+              dateFormat: "H:i",widget: {
+              type: "calendar",
+              time_24hr: true,
+              noCalendar: true, 
+              enableTime: true,
+              dateFormat: "H:i", 
+            },
+            },
           },
+
           // Overnight Out Duty checkbox (for Out Duty)
           {
             label: "Overnight Out Duty",
@@ -391,13 +413,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       case "Clockin":
         requestBody = {
           ...baseBody,
-          from_date: formatDateToYYYYMMDD(new Date()),
-          to_date: formatDateToYYYYMMDD(new Date()),
+          to_date: baseBody.from_date,
           custom_from_time: formatTime(submission.data.custom_from_time),
           reason: submission.data.reason,
         };
         break;
-
       case "Out Duty":
         requestBody = {
           ...baseBody,
