@@ -161,4 +161,15 @@ export const frappeService = {
       throw error;
     }
   },
+
+  callMethod: async (method: string, params: Record<string, unknown>): Promise<unknown> => {
+    try {
+      console.log(`🔍 Calling method: ${method}`, params);
+      const result = await FrappeAPI.callMethod(method, params);
+      return result;
+    } catch (error) {
+      console.error(`❌ Failed to call method ${method}:`, error);
+      throw error;
+    }
+  }
 };
