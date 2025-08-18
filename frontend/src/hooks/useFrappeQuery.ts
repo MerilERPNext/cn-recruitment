@@ -74,6 +74,20 @@ export const useFrappeInfiniteQuery = (
   })
 }
 
+// Hook for calling a method
+export const useFrappeMethodInfiniteQuery = (method: string, params: Record<string, unknown>, options?: Omit<UseInfiniteQueryOptions<any>, "queryKey" | "queryFn" | "getNextPageParam" | "initialPageParam">) => {
+  return useInfiniteQuery({
+    queryKey: ["method", method, params],
+    queryFn: ({ pageParam = 0 }) => frappeService.callMethod(method, { ...params, pageParam: pageParam as number }),
+    getNextPageParam: (lastPage: unknown) => lastPage,
+    initialPageParam: 0,
+    staleTime: 2 * 60 * 1000,
+    retry: defaultRetry,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    ...options,
+  })
+}
+
 // Hook for paginated query
 export const useFrappeDocuments = (
   params: GetDocumentsParams,
@@ -85,6 +99,15 @@ export const useFrappeDocuments = (
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: defaultRetry,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    ...options,
+  })
+}
+
+// Hook for calling a method
+export const useFrappeMethodMutation = (method: string, options?: Omit<UseMutationOptions<unknown, unknown, Record<string, unknown>>, "mutationFn">) => {
+  return useMutation<unknown, unknown, Record<string, unknown>>({
+    mutationKey: ["method", method],
+    mutationFn: (params: Record<string, unknown>) => frappeService.callMethod(method, params),
     ...options,
   })
 }
