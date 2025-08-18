@@ -164,6 +164,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         validate: { required: true },
         data: { values: leaveTypeOptions },
         customClass: "px-2 mb-4",
+        disabled: Boolean(defaults?.leaveType),
       },
       {
         type: "columns",
@@ -187,6 +188,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
+                disabled: Boolean(defaults?.fromDate),
               },
             ],
           },
@@ -207,6 +209,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
+                disabled: Boolean(defaults?.toDate),
               },
             ],
           },

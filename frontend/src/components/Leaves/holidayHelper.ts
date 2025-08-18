@@ -5,7 +5,6 @@ export interface ProcessedHolidays {
   upcomingOptional: Holiday[];
   allRegular: Holiday[];
   allOptional: Holiday[];
-  optionalStats: { total: number; availed: number; remaining: number };
 }
 
 export function processHolidays(
@@ -18,7 +17,6 @@ export function processHolidays(
       upcomingOptional: [],
       allRegular: [],
       allOptional: [],
-      optionalStats: { total: 0, availed: 0, remaining: 0 },
     };
   }
 
@@ -26,8 +24,6 @@ export function processHolidays(
   const optionalHolidays: Holiday[] = [];
   const allRegularHolidays: Holiday[] = [];
   const allOptionalHolidays: Holiday[] = [];
-  let totalOptional = 0;
-  const availedOptional = 0;
 
   holidaysData.forEach((group) => {
     if (!group.holidays || !Array.isArray(group.holidays)) return;
@@ -40,7 +36,6 @@ export function processHolidays(
         if (holidayDate >= today) {
           optionalHolidays.push({ ...holiday, optional: true });
         }
-        totalOptional++;
       } else if (
         group.type_name === "Mandatory" ||
         group.type_name === "National Holiday"
@@ -61,10 +56,5 @@ export function processHolidays(
     upcomingOptional: optionalHolidays.sort(sortByDate),
     allRegular: allRegularHolidays.sort(sortByDate),
     allOptional: allOptionalHolidays.sort(sortByDate),
-    optionalStats: {
-      total: totalOptional,
-      availed: availedOptional,
-      remaining: totalOptional - availedOptional,
-    },
   };
 }

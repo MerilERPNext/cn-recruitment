@@ -30,13 +30,13 @@ export const LeaveBulkActionBar: React.FC<LeaveBulkActionBarProps> = ({
       {selectedIds.length > 0 && (
         <div className="flex space-x-2 mt-2">
           <button
-            className="bg-red-100 p-2 w-1/2 text-red-700 rounded-lg font-semibold"
+            className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 shadow-sm text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200"
             onClick={() => onBulkAction("rejected")}
           >
             Bulk Reject ({selectedIds.length})
           </button>
           <button
-            className="bg-green-100 p-2 w-1/2 text-green-700 rounded-lg font-semibold"
+            className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 shadow-sm text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200"
             onClick={() => onBulkAction("approved")}
           >
             Bulk Approve ({selectedIds.length})

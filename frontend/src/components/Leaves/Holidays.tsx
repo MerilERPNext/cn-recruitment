@@ -2,7 +2,7 @@ import React from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
-import { useGetHolidays } from "../../hooks/useLeaves";
+import { useGetHolidays, useGetLeaveBalance } from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { HolidayCardSkeletonList } from "./LeaveSkeletons";
@@ -37,7 +37,9 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
         </div>
 
         <div className="flex flex-col">
-          <span className="font-medium text-gray-900">{holiday.holiday_name}</span>
+          <span className="font-medium text-gray-900">
+            {holiday.holiday_name}
+          </span>
           <span className="text-blue-700 text-sm">{weekday}</span>
         </div>
       </div>
@@ -56,9 +58,10 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
             })
           }
           className={`text-sm font-medium border p-2 px-4 rounded-lg transition-colors duration-200
-            ${disabledApply
-              ? "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
-              : "text-blue-600 border-gray-10 shadow-[0_1px_2px_0_rgba(0,0,0,.1)]"
+            ${
+              disabledApply
+                ? "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
+                : "text-blue-600 border-gray-10 shadow-[0_1px_2px_0_rgba(0,0,0,.1)]"
             }`}
         >
           Apply
@@ -84,14 +87,33 @@ const Holidays: React.FC = () => {
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
+  const currentDate = new Date().toISOString().split("T")[0];
+  const {
+    data: leaveBalance,
+    isLoading: isLeaveBalanceLoading,
+    isError: isLeaveError,
+  } = useGetLeaveBalance(currentEmployee?.name, currentDate);
 
-  const { upcomingRegular, upcomingOptional, allRegular, allOptional, optionalStats } =
-    React.useMemo(() => processHolidays(holidaysData, today), [holidaysData, today]);
+  const optionalBalance = leaveBalance?.leave_balance?.find((b) => {
+    const normalized = b.type.toLowerCase().replace(/[\s\-_]/g, "");
+    return normalized === "optionalleave" || normalized === "optional";
+  });
+
+  const { upcomingRegular, upcomingOptional, allRegular, allOptional } =
+    React.useMemo(
+      () => processHolidays(holidaysData, today),
+      [holidaysData, today]
+    );
 
   const displayedRegular = upcomingRegular.slice(0, DISPLAY_LIMIT);
   const displayedOptional = upcomingOptional.slice(0, DISPLAY_LIMIT);
 
-  if (isLoading || isUserLoading || isEmployeeLoading) {
+  if (
+    isLoading ||
+    isUserLoading ||
+    isEmployeeLoading ||
+    isLeaveBalanceLoading
+  ) {
     return (
       <div className="p-4 min-h-full pb-24">
         <section className="mb-8">
@@ -118,11 +140,13 @@ const Holidays: React.FC = () => {
     );
   }
 
-  if (isError) {
+  if (isError || isLeaveError) {
     return (
       <div className="p-4 min-h-full pb-24">
         <div className="flex items-center justify-center py-8">
-          <div className="text-red-500">Failed to load holidays. Please try again later.</div>
+          <div className="text-red-500">
+            Failed to load holidays. Please try again later.
+          </div>
         </div>
       </div>
     );
@@ -155,7 +179,7 @@ const Holidays: React.FC = () => {
                 navigate("/webapp/leave-app/leaves/holidays/all", {
                   state: {
                     type: "regular",
-                    holidays: allRegular
+                    holidays: allRegular,
                   },
                 })
               }
@@ -174,13 +198,16 @@ const Holidays: React.FC = () => {
           </h2>
           <div className="flex justify-between text-center border py-2 rounded-lg">
             <p className="w-full">
-              Total: <span className="font-semibold">{optionalStats.total}</span>
+              Total:{" "}
+              <span className="font-semibold">{optionalBalance?.entitled}</span>
             </p>
             <p className="border-x border-black w-full">
-              Availed: <span className="font-semibold">{optionalStats.availed}</span>
+              Availed:{" "}
+              <span className="font-semibold">{optionalBalance?.availed}</span>
             </p>
             <p className="w-full">
-              Remaining: <span className="font-semibold">{optionalStats.remaining}</span>
+              Remaining:{" "}
+              <span className="font-semibold">{optionalBalance?.balance}</span>
             </p>
           </div>
         </div>
@@ -205,7 +232,7 @@ const Holidays: React.FC = () => {
                 navigate("/webapp/leave-app/leaves/holidays/all", {
                   state: {
                     type: "optional",
-                    holidays: allOptional
+                    holidays: allOptional,
                   },
                 })
               }

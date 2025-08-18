@@ -92,7 +92,7 @@ const TeamLeaveRequestItem = ({
           {item.status === "Open" && (
             <div className="mt-3 flex gap-2 w-full">
               <button
-                className="bg-red-100 p-2 w-1/2 text-red-700 rounded-md font-semibold"
+                className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200"
                 onClick={(e) => {
                   e.stopPropagation();
                   onReject?.(item.name);
@@ -101,7 +101,7 @@ const TeamLeaveRequestItem = ({
                 Reject
               </button>
               <button
-                className="bg-green-100 p-2 w-1/2 text-green-700 rounded-md font-semibold"
+                className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200"
                 onClick={(e) => {
                   e.stopPropagation();
                   onApprove?.(item.name);
