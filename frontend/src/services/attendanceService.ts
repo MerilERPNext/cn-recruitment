@@ -153,7 +153,7 @@ export const attendanceService = {
     try {
       const response = await FrappeAPI.getDocumentList("Employee Checkin", {
         filters: filters,
-        fields: ["time", "log_type", "custom_checkin_type", "employee"],
+        fields: ["*"],
       });
       return response?.data as EmployeeCheckInLog[];
     } catch (error) {

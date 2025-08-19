@@ -5,6 +5,7 @@ import {
   EmployeeListItem,
   IReason,
 } from "../types/employee";
+import { FilterCondition } from "../types/frappe";
 
 function hasRequiredProperties<T extends Record<string, unknown>>(
   obj: unknown,
@@ -337,11 +338,10 @@ export class EmployeeService {
   }
 
   static async getAllEmployees(): Promise<Employee[]> {
-    const response = FrappeAPI.getDocumentList('Employee', {
-      fields: ["name","employee_name", "company"],
-      limit:20,
-      filters:[["status","=","Active"]]
-
+    const response = FrappeAPI.getDocumentList("Employee", {
+      fields: ["name", "employee_name", "company"],
+      limit: 20,
+      filters: [["status", "=", "Active"]],
     });
     const data = await response;
     if (!response || data?.data?.length === 0) {
@@ -350,9 +350,10 @@ export class EmployeeService {
     return data?.data as Employee[];
   }
 
-  static async getAllReasons(): Promise<IReason[]> {
+  static async getAllReasons(filters?: FilterCondition[]): Promise<IReason[]> {
     const response = FrappeAPI.getDocumentList("Reason", {
       fields: ["name", "reason", "reason_type"],
+      filters: filters,
     });
     const data = await response;
     if (!response || data?.data?.length === 0) {
