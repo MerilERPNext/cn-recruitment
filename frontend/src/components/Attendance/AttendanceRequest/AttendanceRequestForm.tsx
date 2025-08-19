@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import LayoutHeader from "../../shared/LayoutHeader";
@@ -29,12 +29,13 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     currentUser?.name as string
   );
   const { data: employeeList } = useGetAllEmployees();
-  const { data: reasonList } = useGetAllReasons();
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [selectedRequestType, setSelectedRequestType] = useState<string>("");
+
+  const { data: reasonList } = useGetAllReasons(selectedRequestType);
 
   const { data: employeeCheckInLogs } = useAllEmployeeCheckIns();
-  console.log("Employee Check-In Logs:", employeeCheckInLogs);
 
   // ...existing code...
   const employeeIdToShow = isForOthers
@@ -54,15 +55,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const latestCheckIn = sortedLogs?.find((log) => log.log_type === "IN");
   const latestCheckOut = sortedLogs?.find((log) => log.log_type === "OUT");
 
-  console.log("Latest Check-In:", latestCheckIn);
-  console.log("Latest Check-Out:", latestCheckOut);
-
   const latestCheckInTime = latestCheckIn ? latestCheckIn.time : "N/A";
   const latestCheckOutTime = latestCheckOut ? latestCheckOut.time : "N/A";
 
-  console.log("Latest Check-In Time:", latestCheckInTime);
-  console.log("Latest Check-Out Time:", latestCheckOutTime);
-  
   // ...existing code...
 
   // Get shift for current employee or selected employee in 'For Others' mode
@@ -82,27 +77,39 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     // Update the selected employee state
     setSelectedEmployee(employeeId);
   };
+  // Handle employee selection change
+  const handleRequestTypeChange = useCallback(
+    (event: { data: { request_type: string } }) => {
+      const requestType = event?.data?.request_type || "";
+      setSelectedRequestType(requestType);
+    },
+    []
+  );
 
   // ...existing code...
 
-React.useEffect(() => {
-  if (formAddressInstance.current) {
-    // Update Latest Check-In Time
-    const checkInComponent = formAddressInstance.current.getComponent("latest_checkin_time");
-    if (checkInComponent) {
-      checkInComponent.setValue(latestCheckInTime, { noUpdateEvent: true });
-      checkInComponent.redraw();
+  React.useEffect(() => {
+    if (formAddressInstance.current) {
+      // Update Latest Check-In Time
+      const checkInComponent = formAddressInstance.current.getComponent(
+        "latest_checkin_time"
+      );
+      if (checkInComponent) {
+        checkInComponent.setValue(latestCheckInTime, { noUpdateEvent: true });
+        checkInComponent.redraw();
+      }
+      // Update Latest Check-Out Time
+      const checkOutComponent = formAddressInstance.current.getComponent(
+        "latest_checkout_time"
+      );
+      if (checkOutComponent) {
+        checkOutComponent.setValue(latestCheckOutTime, { noUpdateEvent: true });
+        checkOutComponent.redraw();
+      }
     }
-    // Update Latest Check-Out Time
-    const checkOutComponent = formAddressInstance.current.getComponent("latest_checkout_time");
-    if (checkOutComponent) {
-      checkOutComponent.setValue(latestCheckOutTime, { noUpdateEvent: true });
-      checkOutComponent.redraw();
-    }
-  }
-}, [latestCheckInTime, latestCheckOutTime, selectedEmployee, isForOthers]);
+  }, [latestCheckInTime, latestCheckOutTime, selectedEmployee, isForOthers]);
 
-// ...existing code...
+  // ...existing code...
   // Update shift and company fields when employee data changes
   React.useEffect(() => {
     if (formAddressInstance.current) {
@@ -223,6 +230,7 @@ React.useEffect(() => {
             key: "request_type",
             type: "select",
             input: true,
+            onChange: handleRequestTypeChange,
             placeholder: "Select a Request Type",
             customClass: "mb-4",
             data: {
@@ -353,7 +361,8 @@ React.useEffect(() => {
             defaultValue: latestCheckInTime,
             value: latestCheckInTime,
             clearOnHide: false,
-            customConditional: "show = data.request_type === 'Attendance Adjustment';",
+            customConditional:
+              "show = data.request_type === 'Attendance Adjustment';",
           },
           {
             label: "Latest Check-Out Time",
@@ -365,7 +374,8 @@ React.useEffect(() => {
             defaultValue: latestCheckOutTime,
             value: latestCheckOutTime,
             clearOnHide: false,
-            customConditional: "show = data.request_type === 'Attendance Adjustment';",
+            customConditional:
+              "show = data.request_type === 'Attendance Adjustment';",
           },
           // Shift selection for Shift Change
           {
@@ -395,8 +405,10 @@ React.useEffect(() => {
             customConditional: "show = data.request_type !== 'Shift Change';",
             data: {
               values:
-                reasonList?.map((item) => ({
-                  label: item?.reason,
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                reasonList?.map((item: { reason: string }) => ({
+                  label: item?.reason || "",
                   value: item?.reason,
                 })) || [],
             },
