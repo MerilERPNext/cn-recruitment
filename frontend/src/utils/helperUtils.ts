@@ -3,7 +3,7 @@ import { differenceInMinutes, format, isAfter, parseISO } from "date-fns";
 export const gradientClassMap: Record<string, string> = {
   present: "#dcfce7", // green-100
   absent: "#FEE2E2", // red-100
-  leave: "#FFEDD5", // orange-100
+  leave: "#FEF9C3", // orange-100
   "work from home": "#f3e8ff", // purple-100
   holiday: "#dbeafe",
   "week off": "#f3f4f6",

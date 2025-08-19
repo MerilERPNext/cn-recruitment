@@ -216,7 +216,7 @@ const EmployeeAttendance = () => {
                     case "absent":
                       return "!bg-red-100 !text-red-700 rounded-md";
                     case "on-leave":
-                      return "!bg-orange-100 !text-orange-700 rounded-md";
+                      return "!bg-yellow-100 !text-yellow-700 rounded-md";
                     case "holiday":
                       return "!bg-blue-100 !text-blue-700 rounded-md";
                     case "week-off":
@@ -281,7 +281,7 @@ const EmployeeAttendance = () => {
               Absent
             </span>
 
-            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-orange-100 text-orange-700 border border-orange-200">
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-yellow-100 text-orange-700 border border-yellow-200">
               On Leave
             </span>
 

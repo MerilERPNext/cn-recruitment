@@ -36,7 +36,7 @@ const AllEmpAttendance = () => {
       case "absent":
         return "bg-red-100 text-red-700";
       case "on leave":
-        return "bg-orange-100 text-orange-700";
+        return "bg-yellow-100 text-yellow-600";
       case "work from home":
         return "bg-purple-100 text-purple-700";
       case "holiday":
