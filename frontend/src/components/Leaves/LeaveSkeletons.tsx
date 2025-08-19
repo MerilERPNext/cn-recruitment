@@ -1,17 +1,24 @@
 export const MyLeaveRequestSkeleton: React.FC = () => {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-3 mb-3 shadow-sm animate-pulse">
-      <div className="flex flex-wrap md:flex-nowrap items-start justify-between gap-3">
-        <div className="flex items-start space-x-3 flex-1 min-w-0">
-          <div className="w-8 h-8 bg-gray-200 rounded-lg flex-shrink-0" />
-          <div className="flex-1 min-w-0 space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-1/3" />
-            <div className="h-3 bg-gray-200 rounded w-2/3" />
-            <div className="h-3 bg-gray-200 rounded w-3/4 mt-2" />
+    <div>
+      {[...Array(3)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-white rounded-lg border border-gray-200 p-3 mb-3 shadow-sm animate-pulse"
+        >
+          <div className="flex flex-wrap md:flex-nowrap items-start justify-between gap-3">
+            <div className="flex items-start space-x-3 flex-1 min-w-0">
+              <div className="w-8 h-8 bg-gray-200 rounded-lg flex-shrink-0" />
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/3" />
+                <div className="h-3 bg-gray-200 rounded w-2/3" />
+                <div className="h-3 bg-gray-200 rounded w-3/4 mt-2" />
+              </div>
+            </div>
+            <div className="h-5 w-20 bg-gray-200 rounded-xl" />
           </div>
         </div>
-        <div className="h-5 w-20 bg-gray-200 rounded-xl" />
-      </div>
+      ))}
     </div>
   );
 };
@@ -67,7 +74,6 @@ export const LeaveBalanceSkeleton: React.FC = () => {
   );
 };
 
-
 const HolidayCardSkeleton: React.FC = () => {
   return (
     <div className="flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 mb-2 animate-pulse">
@@ -85,7 +91,9 @@ const HolidayCardSkeleton: React.FC = () => {
   );
 };
 
-export const HolidayCardSkeletonList: React.FC<{ count?: number }> = ({ count = 6 }) => {
+export const HolidayCardSkeletonList: React.FC<{ count?: number }> = ({
+  count = 6,
+}) => {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (

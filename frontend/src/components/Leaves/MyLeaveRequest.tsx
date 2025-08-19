@@ -102,9 +102,16 @@ const LeaveRequestItem = ({
 };
 
 const MyLeaveRequest: React.FC = () => {
-  const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
-  const { data: currentEmployee, isLoading: isEmployeeLoading } =
-    useEmployeeByUserId(userId);
+  const {
+    data: userId,
+    isLoading: isUserLoading,
+    error: userError,
+  } = useLoggedInUser();
+  const {
+    data: currentEmployee,
+    isLoading: isEmployeeLoading,
+    error: employeeError,
+  } = useEmployeeByUserId(userId);
 
   const [selectedRequest, setSelectedRequest] =
     useState<LeaveApplicationItem | null>(null);
@@ -121,8 +128,16 @@ const MyLeaveRequest: React.FC = () => {
     setSelectedRequest(null);
   };
 
+  if (userError || employeeError) {
+    return (
+      <div className="p-4 text-center text-red-600">
+        Failed to load Leave Requests. Please try again.
+      </div>
+    );
+  }
+
   if (isUserLoading || isEmployeeLoading || !currentEmployee?.name) {
-    return null;
+    return <MyLeaveRequestSkeleton />;
   }
 
   return (
