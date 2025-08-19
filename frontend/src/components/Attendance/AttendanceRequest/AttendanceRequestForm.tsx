@@ -15,6 +15,7 @@ import {
 import { useShiftTypes } from "../../../hooks/useShift";
 import { Toaster, toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 
 interface AttndanceRequestFormProps {
   onClose: () => void;
@@ -31,6 +32,38 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const { data: reasonList } = useGetAllReasons();
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+
+  const { data: employeeCheckInLogs } = useAllEmployeeCheckIns();
+  console.log("Employee Check-In Logs:", employeeCheckInLogs);
+
+  // ...existing code...
+  const employeeIdToShow = isForOthers
+    ? selectedEmployee
+    : currentEmployee?.employee;
+
+  const filteredLogs = employeeCheckInLogs?.filter(
+    (log) => log.employee === employeeIdToShow
+  );
+
+  // Sort logs by time (descending)
+  const sortedLogs = filteredLogs?.sort(
+    (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+  );
+
+  // Get latest check-in and check-out
+  const latestCheckIn = sortedLogs?.find((log) => log.log_type === "IN");
+  const latestCheckOut = sortedLogs?.find((log) => log.log_type === "OUT");
+
+  console.log("Latest Check-In:", latestCheckIn);
+  console.log("Latest Check-Out:", latestCheckOut);
+
+  const latestCheckInTime = latestCheckIn ? latestCheckIn.time : "N/A";
+  const latestCheckOutTime = latestCheckOut ? latestCheckOut.time : "N/A";
+
+  console.log("Latest Check-In Time:", latestCheckInTime);
+  console.log("Latest Check-Out Time:", latestCheckOutTime);
+  
+  // ...existing code...
 
   // Get shift for current employee or selected employee in 'For Others' mode
   const employeeIdToQuery = isForOthers
@@ -50,6 +83,26 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     setSelectedEmployee(employeeId);
   };
 
+  // ...existing code...
+
+React.useEffect(() => {
+  if (formAddressInstance.current) {
+    // Update Latest Check-In Time
+    const checkInComponent = formAddressInstance.current.getComponent("latest_checkin_time");
+    if (checkInComponent) {
+      checkInComponent.setValue(latestCheckInTime, { noUpdateEvent: true });
+      checkInComponent.redraw();
+    }
+    // Update Latest Check-Out Time
+    const checkOutComponent = formAddressInstance.current.getComponent("latest_checkout_time");
+    if (checkOutComponent) {
+      checkOutComponent.setValue(latestCheckOutTime, { noUpdateEvent: true });
+      checkOutComponent.redraw();
+    }
+  }
+}, [latestCheckInTime, latestCheckOutTime, selectedEmployee, isForOthers]);
+
+// ...existing code...
   // Update shift and company fields when employee data changes
   React.useEffect(() => {
     if (formAddressInstance.current) {
@@ -107,6 +160,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       redraw: () => void;
     } | null;
   }
+
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const mutation = useCreateNewAttendanceRequest();
   const baseFormComponents = (isForOthers: boolean) => {
@@ -268,13 +322,14 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               time_24hr: true,
               noCalendar: true,
               enableTime: true,
-              dateFormat: "H:i",widget: {
-              type: "calendar",
-              time_24hr: true,
-              noCalendar: true, 
-              enableTime: true,
-              dateFormat: "H:i", 
-            },
+              dateFormat: "H:i",
+              widget: {
+                type: "calendar",
+                time_24hr: true,
+                noCalendar: true,
+                enableTime: true,
+                dateFormat: "H:i",
+              },
             },
           },
 
@@ -287,6 +342,30 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             customConditional: "show = data.request_type === 'Out Duty';",
             defaultValue: false,
+          },
+          {
+            label: "Latest Check-In Time",
+            key: "latest_checkin_time",
+            type: "textfield",
+            input: true,
+            disabled: true,
+            customClass: "mb-4",
+            defaultValue: latestCheckInTime,
+            value: latestCheckInTime,
+            clearOnHide: false,
+            customConditional: "show = data.request_type === 'Attendance Adjustment';",
+          },
+          {
+            label: "Latest Check-Out Time",
+            key: "latest_checkout_time",
+            type: "textfield",
+            input: true,
+            disabled: true,
+            customClass: "mb-4",
+            defaultValue: latestCheckOutTime,
+            value: latestCheckOutTime,
+            clearOnHide: false,
+            customConditional: "show = data.request_type === 'Attendance Adjustment';",
           },
           // Shift selection for Shift Change
           {
