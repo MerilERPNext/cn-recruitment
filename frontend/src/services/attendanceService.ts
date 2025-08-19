@@ -1,7 +1,9 @@
 // services/attendanceService.ts
 import FrappeAPI from "../utils/frappeAPI";
 import type {
+  AllEventsAndAttendanceT,
   Attendance,
+  AttendanceRecord,
   AttendanceRequest,
   CanShowClockIn,
   EmployeeCheckInLog,
@@ -183,6 +185,20 @@ export const attendanceService = {
         body
       );
       return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while setting device id:", error);
+      throw error;
+    }
+  },
+  getAllEventsAndAttendance: async (
+    filters: AllEventsAndAttendanceT
+  ): Promise<AttendanceRecord[]> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        `cn_leave_shift_managment.get_events`,
+        filters
+      );
+      return response as AttendanceRecord[];
     } catch (error) {
       console.error("📡 Error while setting device id:", error);
       throw error;

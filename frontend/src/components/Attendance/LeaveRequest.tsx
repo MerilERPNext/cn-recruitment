@@ -286,8 +286,8 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   }, [leaveTypeOptions, defaults]);
 
   return (
-    <div className="fixed top-0 left-0 w-full h-screen bg-white z-50 flex flex-col pt-8">
-      <div className="max-w-md mx-auto bg-white rounded-lg">
+    <div className="absolute inset-0 w-full min-h-screen bg-white z-50 flex flex-col">
+      <div className="max-w-md mx-auto bg-white rounded-lg mt-10">
         <div className="z-[60]">
           <LayoutHeader tab=" Request Leave" onBack={onCancel} icon="x" />
           {/* <HeaderBar title="Request Leave" onBack={onCancel} /> */}
@@ -326,7 +326,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           }}
         />
 
-        <div className="sticky bottom-0 bg-white py-4 px-4 z-50">
+        <div className="fixed w-full bottom-0 bg-white py-4 px-4 z-50">
           <button
             onClick={handleSubmit}
             className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"

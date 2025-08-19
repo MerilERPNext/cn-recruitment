@@ -108,3 +108,24 @@ export interface EmployeeStatus extends BaseItem {
 export type CanShowClockIn = {
   can_show: boolean;
 };
+
+export type AllEventsAndAttendanceT = {
+  start: string;
+  end: string;
+};
+
+export type AttendanceRecord = {
+  name: string;
+  doctype: string;
+  start: string;
+  end: string;
+  title: string;
+  status: string;
+  docstatus: string;
+  employee: string;
+  half_day_status_second_half?: string;
+  half_day_status_first_half?: string;
+  in_time?: string;
+  out_time?: string;
+  shift?: string;
+};
