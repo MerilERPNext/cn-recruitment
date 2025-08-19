@@ -87,8 +87,8 @@ const AllEmpAttendance = () => {
                     style={
                       item.status.toLocaleLowerCase() === "half day"
                         ? getStatusGradient(
-                            item?.half_day_status_first_half as string,
-                            item?.half_day_status_second_half as string
+                            item?.half_day_status_first_half || "",
+                            item?.half_day_status_second_half || ""
                           )
                         : {}
                     }
@@ -166,7 +166,7 @@ const AllEmpAttendance = () => {
                               {item?.in_time
                                 ? format(
                                     parse(
-                                      item?.out_time as string,
+                                      item?.out_time || "",
                                       "HH:mm:ss",
                                       new Date()
                                     ),

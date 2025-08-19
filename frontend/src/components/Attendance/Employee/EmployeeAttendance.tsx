@@ -241,11 +241,11 @@ const EmployeeAttendance = () => {
                 if (attendance?.status === "half-day") {
                   const firstColor =
                     gradientClassMap[
-                      attendance?.firstHalf?.toLowerCase() as string
+                      attendance?.firstHalf?.toLowerCase() || ""
                     ];
                   const secondColor =
                     gradientClassMap[
-                      attendance?.secondHalf?.toLowerCase() as string
+                      attendance?.secondHalf?.toLowerCase() || ""
                     ];
                   const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
 
