@@ -123,4 +123,9 @@ export type AttendanceRecord = {
   status: string;
   docstatus: string;
   employee: string;
+  half_day_status_second_half?: string;
+  half_day_status_first_half?: string;
+  in_time?: string;
+  out_time?: string;
+  shift?: string;
 };

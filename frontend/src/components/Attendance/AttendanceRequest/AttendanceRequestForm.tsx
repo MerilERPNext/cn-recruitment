@@ -528,10 +528,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full h-screen bg-white z-50 flex flex-col">
-      {/* Fixed Header */}
-
-      <div className="z-10">
+    <div className="absolute inset-0 w-full h-screen bg-white z-50 flex flex-col">
+      <div className="max-w-md mx-auto bg-white rounded-lg">
         <LayoutHeader
           tab="Create Attendance Request"
           onBack={onClose}
@@ -540,7 +538,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto pt-14 pb-28 px-2">
+      <div className="overflow-y-auto pt-14 px-2 min-h-screen pb-22">
         <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
           <button
             className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
@@ -575,7 +573,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         />
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t shadow-md p-4 pb-2 z-20">
+      <div className="fixed w-full bottom-0 bg-white border-t shadow-md p-4 z-20">
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => formAddressInstance.current?.submit()}

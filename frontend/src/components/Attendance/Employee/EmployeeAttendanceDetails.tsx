@@ -43,7 +43,7 @@ const EmployeeAttendanceDetails = () => {
   );
 
   return (
-    <div className="h-screen bg-white flex flex-col">
+    <div className="bg-white flex flex-col">
       <LayoutHeader tab="Attendance Details" />
 
       {isLoading ? (

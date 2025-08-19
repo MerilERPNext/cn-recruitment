@@ -1,6 +1,6 @@
-import type React from "react"
-import { useState, useEffect, useMemo } from "react"
-import { UseInfiniteQueryResult, useQueryClient } from "@tanstack/react-query"
+import type React from "react";
+import { useState, useEffect, useMemo } from "react";
+import { UseInfiniteQueryResult, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
   Filter,
@@ -11,21 +11,20 @@ import {
   Loader2,
   Shield,
   RepeatIcon as RetryIcon,
-} from "lucide-react"
+} from "lucide-react";
 import {
   useDoctypeSchema,
   useFrappeInfiniteQuery,
   useFrappeDocuments,
   useFrappeDocumentCount,
   isPermissionError,
-} from "../hooks/useFrappeQuery"
-import { useLocation } from "react-router"
-import { FilterCondition, FrappePageResponse } from "../types/frappe"
+} from "../hooks/useFrappeQuery";
+import { useLocation } from "react-router";
+import { FilterCondition, FrappePageResponse } from "../types/frappe";
 
 interface BaseItem {
   name: string;
 }
-
 
 export interface PreListComponentProps {
   doctype: string;
@@ -57,24 +56,27 @@ type PageData = {
 };
 
 interface FrappeListViewProps<T extends BaseItem> {
-  doctype: string
-  ItemComponent: React.ComponentType<{ item: T; index?: number; doctype: string }>
-  PreListComponent?: React.ComponentType<PreListComponentProps>
-  PostListComponent?: React.ComponentType<PostListComponentProps>
-  SkeletonComponent?: React.ComponentType
-  isSearch?: boolean
-  isFilter?: boolean
-  isLoading?: boolean
-  pageSize?: number
-  defaultFilters?: Record<string, string>
-  defaultFields?: string[]
-  searchFields?: string[]
-  onItemClick?: (item: T) => void
-  infiniteScroll?: boolean
-  permissionErrorMessage?: string
-  showRefereshButton?: boolean
+  doctype: string;
+  ItemComponent: React.ComponentType<{
+    item: T;
+    index?: number;
+    doctype: string;
+  }>;
+  PreListComponent?: React.ComponentType<PreListComponentProps>;
+  PostListComponent?: React.ComponentType<PostListComponentProps>;
+  SkeletonComponent?: React.ComponentType;
+  isSearch?: boolean;
+  isFilter?: boolean;
+  isLoading?: boolean;
+  pageSize?: number;
+  defaultFilters?: Record<string, string>;
+  defaultFields?: string[];
+  searchFields?: string[];
+  onItemClick?: (item: T) => void;
+  infiniteScroll?: boolean;
+  permissionErrorMessage?: string;
+  showRefereshButton?: boolean;
   onRefetchAvailable?: (refetch: () => void) => void;
-
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -94,20 +96,21 @@ const FrappeListView = <T extends BaseItem>({
   infiniteScroll = false,
   showRefereshButton = true,
   permissionErrorMessage,
-  onRefetchAvailable
+  onRefetchAvailable,
 }: FrappeListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
-  const initialSearchQuery = queryParam.get('q') || "";
+  const initialSearchQuery = queryParam.get("q") || "";
 
-  const [searchTerm, setSearchTerm] = useState(initialSearchQuery)
-  const [filters, setFilters] = useState(defaultFilters)
-  const [showFilters, setShowFilters] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(initialSearchQuery)
-  const queryClient = useQueryClient()
+  const [searchTerm, setSearchTerm] = useState(initialSearchQuery);
+  const [filters, setFilters] = useState(defaultFilters);
+  const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] =
+    useState(initialSearchQuery);
+  const queryClient = useQueryClient();
 
-  const filtersString = queryParam.get('filters');
+  const filtersString = queryParam.get("filters");
   const [queryParamsFilters, setQueryParamsFilters] = useState({});
 
   useEffect(() => {
@@ -120,7 +123,7 @@ const FrappeListView = <T extends BaseItem>({
       const parsed = JSON.parse(decodeURIComponent(filtersString));
       setQueryParamsFilters(parsed);
     } catch (e) {
-      console.error('Invalid filters JSON', e);
+      console.error("Invalid filters JSON", e);
       setQueryParamsFilters({});
     }
   }, [filtersString]);
@@ -131,39 +134,40 @@ const FrappeListView = <T extends BaseItem>({
     defaultFields,
     searchFields,
     infiniteScroll,
-  })
+  });
 
   useEffect(() => {
-    setFilters(defaultFilters || {})
-  }, [JSON.stringify(defaultFilters)])
+    setFilters(defaultFilters || {});
+  }, [JSON.stringify(defaultFilters)]);
 
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchTerm])
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Reset to first page when search or filters change
   useEffect(() => {
-    setCurrentPage(1)
-  }, [debouncedSearchTerm, filters])
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, filters]);
 
   // Fetch doctype schema
-  const { data: doctypeSchemaData, isLoading: schemaLoading } = useDoctypeSchema(doctype)
-  const doctypeSchema = doctypeSchemaData?.data
+  const { data: doctypeSchemaData, isLoading: schemaLoading } =
+    useDoctypeSchema(doctype);
+  const doctypeSchema = doctypeSchemaData?.data;
 
   // Log schema data
   useEffect(() => {
     if (doctypeSchemaData) {
-      console.log(`📋 Schema loaded for ${doctype}:`, doctypeSchemaData)
+      console.log(`📋 Schema loaded for ${doctype}:`, doctypeSchemaData);
       console.log(
         `🔍 Available fields for ${doctype}:`,
-        doctypeSchemaData.data?.fields?.map((f) => f.fieldname),
-      )
+        doctypeSchemaData.data?.fields?.map((f) => f.fieldname)
+      );
     }
-  }, [doctypeSchemaData, doctype])
+  }, [doctypeSchemaData, doctype]);
 
   // Common query parameters
   const queryParams = {
@@ -173,14 +177,14 @@ const FrappeListView = <T extends BaseItem>({
     filters: { ...filters, ...queryParamsFilters },
     fields: defaultFields,
     searchFields,
-  }
+  };
 
-  console.log(`🔧 Query params for ${doctype}:`, queryParams)
+  console.log(`🔧 Query params for ${doctype}:`, queryParams);
 
   // Infinite query for infinite scroll
   const infiniteQueryResult = useFrappeInfiniteQuery(queryParams, {
     enabled: infiniteScroll && !isLoading,
-  })
+  });
 
   // Traditional pagination query
   const paginationQueryResult = useFrappeDocuments(
@@ -190,12 +194,16 @@ const FrappeListView = <T extends BaseItem>({
     },
     {
       enabled: !infiniteScroll && !isLoading,
-    },
-  )
+    }
+  );
 
   const combinedFilters = [
-    ...Object.entries(filters || {}).map(([key, value]) => [key, '=', value]),
-    ...Object.entries(queryParamsFilters || {}).map(([key, value]) => [key, '=', value]),
+    ...Object.entries(filters || {}).map(([key, value]) => [key, "=", value]),
+    ...Object.entries(queryParamsFilters || {}).map(([key, value]) => [
+      key,
+      "=",
+      value,
+    ]),
   ];
   // Count query for traditional pagination
   const { data: countData } = useFrappeDocumentCount(
@@ -206,13 +214,13 @@ const FrappeListView = <T extends BaseItem>({
     },
     {
       enabled: !infiniteScroll,
-    },
-  )
+    }
+  );
 
   useEffect(() => {
     if (onRefetchAvailable) {
       onRefetchAvailable(() => {
-        queryClient.invalidateQueries({ queryKey: ["documents-infinite"] })
+        queryClient.invalidateQueries({ queryKey: ["documents-infinite"] });
       });
     }
   }, [onRefetchAvailable]);
@@ -220,61 +228,79 @@ const FrappeListView = <T extends BaseItem>({
   // Log query results
   useEffect(() => {
     if (infiniteScroll && infiniteQueryResult.data) {
-      console.log(`♾️ Infinite query data for ${doctype}:`, infiniteQueryResult.data)
-      console.log(`📄 Total pages loaded for ${doctype}: ${infiniteQueryResult.data.pages.length}`)
+      console.log(
+        `♾️ Infinite query data for ${doctype}:`,
+        infiniteQueryResult.data
+      );
+      console.log(
+        `📄 Total pages loaded for ${doctype}: ${infiniteQueryResult.data.pages.length}`
+      );
       infiniteQueryResult.data.pages.forEach((page: number, index: number) => {
-        console.log(`📄 Page ${index + 1} data for ${doctype}:`, page)
-      })
+        console.log(`📄 Page ${index + 1} data for ${doctype}:`, page);
+      });
     }
-  }, [infiniteQueryResult.data, doctype, infiniteScroll])
+  }, [infiniteQueryResult.data, doctype, infiniteScroll]);
 
   useEffect(() => {
     if (!infiniteScroll && paginationQueryResult.data) {
-      console.log(`📋 Pagination query data for ${doctype}:`, paginationQueryResult.data)
+      console.log(
+        `📋 Pagination query data for ${doctype}:`,
+        paginationQueryResult.data
+      );
     }
-  }, [paginationQueryResult.data, doctype, infiniteScroll])
+  }, [paginationQueryResult.data, doctype, infiniteScroll]);
 
   useEffect(() => {
     if (countData) {
-      console.log(`🔢 Count data for ${doctype}:`, countData)
+      console.log(`🔢 Count data for ${doctype}:`, countData);
     }
-  }, [countData, doctype])
+  }, [countData, doctype]);
 
   // Determine which query result to use
-  const queryResult = infiniteScroll ? infiniteQueryResult : paginationQueryResult
+  const queryResult = infiniteScroll
+    ? infiniteQueryResult
+    : paginationQueryResult;
 
   // Process data based on query type
   const processedData = useMemo(() => {
     let data: T[] = []; // Type as T[] instead of unknown[]
 
     if (infiniteScroll) {
-      const pages = infiniteQueryResult.data?.pages as { data: T[] }[] | undefined
-      data = pages?.flatMap((page) => page.data) || []
-      console.log(data, "gggggggggggggggg")
+      const pages = infiniteQueryResult.data?.pages as
+        | { data: T[] }[]
+        | undefined;
+      data = pages?.flatMap((page) => page.data) || [];
+      console.log(data, "gggggggggggggggg");
     } else {
-      data = (paginationQueryResult.data?.data as unknown as T[]) || []
+      data = (paginationQueryResult.data?.data as unknown as T[]) || [];
     }
 
-    console.log(`📦 Processed data for ${doctype}:`, data)
-    console.log(`📊 Total processed items for ${doctype}: ${data.length}`)
+    console.log(`📦 Processed data for ${doctype}:`, data);
+    console.log(`📊 Total processed items for ${doctype}: ${data.length}`);
 
     if (data.length > 0) {
-      console.log(`🔍 First item sample for ${doctype}:`, data[0])
+      console.log(`🔍 First item sample for ${doctype}:`, data[0]);
       if (data.length > 1) {
-        console.log(`🔍 Second item sample for ${doctype}:`, data[1])
+        console.log(`🔍 Second item sample for ${doctype}:`, data[1]);
       }
     }
 
-    return data
-  }, [infiniteScroll, infiniteQueryResult.data, paginationQueryResult.data, doctype])
+    return data;
+  }, [
+    infiniteScroll,
+    infiniteQueryResult.data,
+    paginationQueryResult.data,
+    doctype,
+  ]);
 
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll
-    ? (infiniteQueryResult.data?.pages[0] as unknown as PageData)?.totalCount || 0
-    : countData || 0
-  const totalPages = Math.ceil(totalCount / pageSize)
-  const startIndex = (currentPage - 1) * pageSize
-  const endIndex = Math.min(startIndex + pageSize, totalCount)
+    ? (infiniteQueryResult.data?.pages[0] as unknown as PageData)?.totalCount ||
+      0
+    : countData || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalCount);
 
   console.log(`📊 Pagination info for ${doctype}:`, {
     totalCount,
@@ -283,53 +309,57 @@ const FrappeListView = <T extends BaseItem>({
     startIndex,
     endIndex,
     pageSize,
-  })
+  });
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(`🔍 Search term changed for ${doctype}:`, e.target.value)
-    setSearchTerm(e.target.value)
-  }
+    console.log(`🔍 Search term changed for ${doctype}:`, e.target.value);
+    setSearchTerm(e.target.value);
+  };
 
   const handleFilterChange = (fieldname: string, value: string) => {
-    console.log(`🔧 Filter changed for ${doctype}:`, { fieldname, value })
+    console.log(`🔧 Filter changed for ${doctype}:`, { fieldname, value });
     setFilters((prev: Record<string, string>) => ({
       ...prev,
       [fieldname]: value,
-    }))
-  }
+    }));
+  };
 
   const clearFilters = () => {
-    console.log(`🧹 Clearing filters for ${doctype}`)
-    setFilters({})
-    setSearchTerm("")
-    setDebouncedSearchTerm("")
-    setQueryParamsFilters({})
+    console.log(`🧹 Clearing filters for ${doctype}`);
+    setFilters({});
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+    setQueryParamsFilters({});
     const url = new URL(window.location.href);
-    url.searchParams.delete('filters');
-    window.history.replaceState({}, '', url);
-  }
+    url.searchParams.delete("filters");
+    window.history.replaceState({}, "", url);
+  };
 
   const refreshData = () => {
-    console.log(`🔄 Refreshing data for ${doctype}`)
-    queryClient.invalidateQueries({ queryKey: ["documents", doctype] })
-    queryClient.invalidateQueries({ queryKey: ["documents-infinite", doctype] })
-    queryClient.invalidateQueries({ queryKey: ["document-count", doctype] })
-  }
-
+    console.log(`🔄 Refreshing data for ${doctype}`);
+    queryClient.invalidateQueries({ queryKey: ["documents", doctype] });
+    queryClient.invalidateQueries({
+      queryKey: ["documents-infinite", doctype],
+    });
+    queryClient.invalidateQueries({ queryKey: ["document-count", doctype] });
+  };
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      console.log(`📄 Going to page ${page} for ${doctype}`)
-      setCurrentPage(page)
+      console.log(`📄 Going to page ${page} for ${doctype}`);
+      setCurrentPage(page);
     }
-  }
+  };
 
   const loadMore = () => {
-    if (infiniteQueryResult.hasNextPage && !infiniteQueryResult.isFetchingNextPage) {
-      console.log(`⬇️ Loading more data for ${doctype}`)
-      infiniteQueryResult.fetchNextPage()
+    if (
+      infiniteQueryResult.hasNextPage &&
+      !infiniteQueryResult.isFetchingNextPage
+    ) {
+      console.log(`⬇️ Loading more data for ${doctype}`);
+      infiniteQueryResult.fetchNextPage();
     }
-  }
+  };
 
   const renderPagination = () => {
     if (infiniteScroll) {
@@ -353,9 +383,8 @@ const FrappeListView = <T extends BaseItem>({
               </button>
             </div>
           ) : null}
-
         </div>
-      )
+      );
     }
 
     return (
@@ -374,28 +403,29 @@ const FrappeListView = <T extends BaseItem>({
             <ChevronLeft className="h-5 w-5" />
           </button>
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNum
+            let pageNum;
             if (totalPages <= 5) {
-              pageNum = i + 1
+              pageNum = i + 1;
             } else if (currentPage <= 3) {
-              pageNum = i + 1
+              pageNum = i + 1;
             } else if (currentPage >= totalPages - 2) {
-              pageNum = totalPages - 4 + i
+              pageNum = totalPages - 4 + i;
             } else {
-              pageNum = currentPage - 2 + i
+              pageNum = currentPage - 2 + i;
             }
             return (
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
+                  currentPage === pageNum
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
               >
                 {pageNum}
               </button>
-            )
+            );
           })}
           <button
             onClick={() => goToPage(currentPage + 1)}
@@ -406,20 +436,23 @@ const FrappeListView = <T extends BaseItem>({
           </button>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   const renderFilters = () => {
-    if (!isFilter || !showFilters || !doctypeSchema) return null
+    if (!isFilter || !showFilters || !doctypeSchema) return null;
 
     const filterableFields = doctypeSchema?.fields?.filter(
-      (field) => field.fieldtype === "Select" || field.fieldtype === "Link",
-    )
+      (field) => field.fieldtype === "Select" || field.fieldtype === "Link"
+    );
 
     return (
       <>
         {/* Backdrop overlay */}
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setShowFilters(false)} />
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setShowFilters(false)}
+        />
         {/* Action sheet */}
         <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
           {/* Handle bar */}
@@ -430,9 +463,22 @@ const FrappeListView = <T extends BaseItem>({
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-              <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -442,11 +488,15 @@ const FrappeListView = <T extends BaseItem>({
             <div className="space-y-4">
               {filterableFields?.map((field) => (
                 <div key={field.fieldname}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{field.label}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {field.label}
+                  </label>
                   {field.fieldtype === "Select" ? (
                     <select
                       value={filters[field.fieldname] || ""}
-                      onChange={(e) => handleFilterChange(field.fieldname, e.target.value)}
+                      onChange={(e) =>
+                        handleFilterChange(field.fieldname, e.target.value)
+                      }
                       className="block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     >
                       <option value="">All {field.label}</option>
@@ -460,7 +510,9 @@ const FrappeListView = <T extends BaseItem>({
                     <input
                       type="text"
                       value={filters[field.fieldname] || ""}
-                      onChange={(e) => handleFilterChange(field.fieldname, e.target.value)}
+                      onChange={(e) =>
+                        handleFilterChange(field.fieldname, e.target.value)
+                      }
                       placeholder={`Filter by ${field.label}`}
                       className="block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
@@ -488,22 +540,26 @@ const FrappeListView = <T extends BaseItem>({
           </div>
         </div>
       </>
-    )
-  }
+    );
+  };
 
-  const isListLoading = queryResult.isLoading || schemaLoading || isLoading
-  const error = queryResult.error
+  const isListLoading = queryResult.isLoading || schemaLoading || isLoading;
+  const error = queryResult.error;
 
   // Log loading and error states
   useEffect(() => {
-    console.log(`⏳ Loading state for ${doctype}:`, { isListLoading, schemaLoading, queryLoading: queryResult.isLoading })
-  }, [isListLoading, schemaLoading, queryResult.isLoading, doctype])
+    console.log(`⏳ Loading state for ${doctype}:`, {
+      isListLoading,
+      schemaLoading,
+      queryLoading: queryResult.isLoading,
+    });
+  }, [isListLoading, schemaLoading, queryResult.isLoading, doctype]);
 
   useEffect(() => {
     if (error) {
-      console.error(`❌ Error for ${doctype}:`, error)
+      console.error(`❌ Error for ${doctype}:`, error);
     }
-  }, [error, doctype])
+  }, [error, doctype]);
 
   return (
     <>
@@ -528,18 +584,24 @@ const FrappeListView = <T extends BaseItem>({
             {isFilter && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${showFilters ? "bg-gray-100" : ""}`}
+                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                  showFilters ? "bg-gray-100" : ""
+                }`}
               >
                 <Filter className="h-4 w-4" />
               </button>
             )}
-            {showRefereshButton && <button
-              onClick={refreshData}
-              disabled={isListLoading}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${isListLoading ? "animate-spin" : ""}`} />
-            </button>}
+            {showRefereshButton && (
+              <button
+                onClick={refreshData}
+                disabled={isListLoading}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isListLoading ? "animate-spin" : ""}`}
+                />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -548,8 +610,20 @@ const FrappeListView = <T extends BaseItem>({
       {renderFilters()}
 
       {/* Content */}
-      <div className="min-h-96">
-        {PreListComponent && <PreListComponent doctype={doctype} ListQuery={infiniteQueryResult} setCurrentPage={setCurrentPage} currentPage={currentPage} totalPages={totalPages} startIndex={startIndex} endIndex={endIndex} pageSize={pageSize} totalCount={totalCount} />}
+      <div className="min-h-full">
+        {PreListComponent && (
+          <PreListComponent
+            doctype={doctype}
+            ListQuery={infiniteQueryResult}
+            setCurrentPage={setCurrentPage}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            pageSize={pageSize}
+            totalCount={totalCount}
+          />
+        )}
         {error ? (
           <div className="flex items-center justify-center py-12">
             <div className="max-w-md mx-auto text-center">
@@ -561,8 +635,12 @@ const FrappeListView = <T extends BaseItem>({
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Access Restricted</h3>
-                    <p className="text-sm text-gray-600 mb-4">{permissionErrorMessage || error.message}</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Access Restricted
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {permissionErrorMessage || error.message}
+                    </p>
                     <div className="flex flex-col sm:flex-row gap-2 justify-center">
                       <button
                         onClick={refreshData}
@@ -572,7 +650,10 @@ const FrappeListView = <T extends BaseItem>({
                         Try Again
                       </button>
                       <button
-                        onClick={() => (window.location.href = "/login?redirect-to=" + window.location.pathname)}
+                        onClick={() =>
+                          (window.location.href =
+                            "/login?redirect-to=" + window.location.pathname)
+                        }
                         className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
                         Try Login Again
@@ -588,8 +669,12 @@ const FrappeListView = <T extends BaseItem>({
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
-                    <p className="text-sm text-gray-600 mb-4">{error.message}</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Error Loading Data
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {error.message}
+                    </p>
                     <button
                       onClick={refreshData}
                       className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -623,20 +708,25 @@ const FrappeListView = <T extends BaseItem>({
           <div>
             {processedData.map((item, index) => {
               if (index < 3) {
-                console.log(`🎨 Rendering item ${index + 1} for ${doctype}:`, item)
+                console.log(
+                  `🎨 Rendering item ${index + 1} for ${doctype}:`,
+                  item
+                );
               }
               return (
                 <div
                   key={item.name || `${doctype}-${index}`}
                   onClick={() => {
-                    console.log(`👆 Item clicked for ${doctype}:`, item)
-                    onItemClick?.(item) // Use optional chaining
+                    console.log(`👆 Item clicked for ${doctype}:`, item);
+                    onItemClick?.(item); // Use optional chaining
                   }}
-                  className={`mb-2 ${onItemClick ? "cursor-pointer hover:bg-gray-50" : ""}`}
+                  className={`mb-2 ${
+                    onItemClick ? "cursor-pointer hover:bg-gray-50" : ""
+                  }`}
                 >
                   <ItemComponent item={item} index={index} doctype={doctype} />
                 </div>
-              )
+              );
             })}
             {/* Loading indicator for fetching more data */}
             {queryResult.isFetching && processedData.length > 0 && (
@@ -649,13 +739,28 @@ const FrappeListView = <T extends BaseItem>({
             )}
           </div>
         )}
-        {PostListComponent && <PostListComponent doctype={doctype} ListQuery={infiniteQueryResult} setCurrentPage={setCurrentPage} currentPage={currentPage} totalPages={totalPages} startIndex={startIndex} endIndex={endIndex} pageSize={pageSize} totalCount={totalCount} />}
+        {PostListComponent && (
+          <PostListComponent
+            doctype={doctype}
+            ListQuery={infiniteQueryResult}
+            setCurrentPage={setCurrentPage}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            pageSize={pageSize}
+            totalCount={totalCount}
+          />
+        )}
       </div>
 
       {/* Pagination */}
-      {!isListLoading && !error && processedData.length > 0 && renderPagination()}
+      {!isListLoading &&
+        !error &&
+        processedData.length > 0 &&
+        renderPagination()}
     </>
-  )
-}
+  );
+};
 
-export default FrappeListView
+export default FrappeListView;
