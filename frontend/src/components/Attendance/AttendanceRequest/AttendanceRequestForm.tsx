@@ -21,6 +21,83 @@ interface AttndanceRequestFormProps {
   onClose: () => void;
   selectedDate?: Date | string;
 }
+
+// A simple, reusable component for the toast message with a close button
+
+const ToastComponent: React.FC<{ message: string; t: any }> = ({
+  message,
+  t,
+}) => (
+  <div
+    className={`p-4 rounded-lg shadow-xl flex items-center justify-between transition-all duration-300 transform ${
+      t.visible ? "translate-y-0" : "translate-y-2"
+    } ${
+      t.type === "success"
+        ? "bg-white border-l-4 border-green-500"
+        : "bg-white border-l-4 border-red-500"
+    }`}
+    style={{ minWidth: "250px" }}
+  >
+    {/* Message and optional icon container */}
+    <div className="flex items-center">
+      {/* Dynamic icon for success or error */}
+      {t.type === "success" ? (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-green-500 mr-2"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      ) : (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-red-500 mr-2"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      )}
+      <span className="text-gray-800 text-sm font-medium">{message}</span>
+    </div>
+
+    {/* Close button with better styling */}
+    <button
+      onClick={() => toast.dismiss(t.id)}
+      className="ml-4 p-1 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 focus:outline-none transition-colors duration-200"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M6 18L18 6M6 6l12 12"
+        />
+      </svg>
+    </button>
+  </div>
+);
+
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
@@ -90,14 +167,15 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const mutation = useCreateNewAttendanceRequest();
 
-  // Add the new handler function here
   const handleFromDateChange = (event: { data: AttendanceFormData }) => {
     const formInstance = formAddressInstance.current;
     if (formInstance) {
       const fromDateValue = event?.data?.from_date;
       const toDateComponent = formInstance.getComponent("to_date");
       if (toDateComponent) {
-        toDateComponent.setValue(fromDateValue as string, { noUpdateEvent: true });
+        toDateComponent.setValue(fromDateValue as string, {
+          noUpdateEvent: true,
+        });
         toDateComponent.redraw();
       }
     }
@@ -163,7 +241,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     }
   }, [employeeIdToQuery, refetchShift]);
 
-
   const baseFormComponents = (isForOthers: boolean) => {
     const components = [
       {
@@ -176,46 +253,46 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         components: [
           ...(isForOthers
             ? [
-              {
-                label: "Employee",
-                key: "employee",
-                type: "select",
-                input: true,
-                placeholder: "Select Employee",
-                customClass: "mb-4",
-                onChange: handleEmployeeChange,
-                validate: { required: true },
-                data: {
-                  values:
-                    employeeList && employeeList?.length > 0
-                      ? employeeList?.map(
-                        (item: {
-                          name: string;
-                          employee_name: string;
-                        }) => ({
-                          label: `${item?.employee_name} (${item?.name})`,
-                          value: item?.name,
-                        })
-                      )
-                      : [],
+                {
+                  label: "Employee",
+                  key: "employee",
+                  type: "select",
+                  input: true,
+                  placeholder: "Select Employee",
+                  customClass: "mb-4",
+                  onChange: handleEmployeeChange,
+                  validate: { required: true },
+                  data: {
+                    values:
+                      employeeList && employeeList?.length > 0
+                        ? employeeList?.map(
+                            (item: {
+                              name: string;
+                              employee_name: string;
+                            }) => ({
+                              label: `${item?.employee_name} (${item?.name})`,
+                              value: item?.name,
+                            })
+                          )
+                        : [],
+                  },
                 },
-              },
-              {
-                label: "Company",
-                key: "company",
-                type: "textfield",
-                input: true,
-                placeholder:
-                  isForOthers && !selectedEmployee
-                    ? "Select an employee first"
-                    : "Loading company information...",
-                customClass: "mb-4",
-                disabled: true,
-                defaultValue: currentEmployee?.company || "Not Assigned",
-                value: currentEmployee?.company || "Not Assigned",
-                clearOnHide: false,
-              },
-            ]
+                {
+                  label: "Company",
+                  key: "company",
+                  type: "textfield",
+                  input: true,
+                  placeholder:
+                    isForOthers && !selectedEmployee
+                      ? "Select an employee first"
+                      : "Loading company information...",
+                  customClass: "mb-4",
+                  disabled: true,
+                  defaultValue: currentEmployee?.company || "Not Assigned",
+                  value: currentEmployee?.company || "Not Assigned",
+                  clearOnHide: false,
+                },
+              ]
             : []),
 
           {
@@ -268,7 +345,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             enableTime: false,
             defaultValue: selectedDate,
-            onChange: handleFromDateChange, // <-- The key change is here
+            onChange: handleFromDateChange,
           },
           {
             label: "To Date",
@@ -549,10 +626,22 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     mutation.mutate(requestBody as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
-        toast.success("Added Attendace Request successfully");
+        // Use toast.custom with the new component for success
+        toast.custom((t) => (
+          <ToastComponent
+            message="Added Attendance Request successfully"
+            t={{ ...t, type: "success" }}
+          />
+        ));
       },
       onError: (error) => {
-        toast.error(error?.message);
+        // Use toast.custom with the new component for error
+        toast.custom((t) => (
+          <ToastComponent
+            message={error?.message}
+            t={{ ...t, type: "error" }}
+          />
+        ));
         console.error(error);
       },
     });
@@ -571,15 +660,17 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       <div className="overflow-y-auto pt-14 px-2 min-h-screen pb-22">
         <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
           <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-black text-white" : ""
-              }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+              !isForOthers ? "bg-black text-white" : ""
+            }`}
             onClick={() => setIsForOthers(false)}
           >
             Self
           </button>
           <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-black text-white" : ""
-              }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+              isForOthers ? "bg-black text-white" : ""
+            }`}
             onClick={() => setIsForOthers(true)}
           >
             For Others
