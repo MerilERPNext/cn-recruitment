@@ -16,7 +16,8 @@ import { useCurrentEmployee } from "./hooks/useEmployee";
 import toast, { ToastBar, Toaster } from "react-hot-toast";
 import ModalWrapper from "./components/ModalWrapper";
 import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModalContext";
-import { X } from "lucide-react";
+// import { X } from "lucide-react";
+import { X, CheckCircle2, CircleX } from "lucide-react";
 
 const App: React.FC = () => {
   const renderRoutes = (routes: AppRoute[]) =>
@@ -37,7 +38,6 @@ const App: React.FC = () => {
           {(t) => (
             <ToastBar
               toast={t}
-              // Remove the animation style prop here
               style={{
                 ...t.style,
                 background: "white",
@@ -50,42 +50,21 @@ const App: React.FC = () => {
                 minWidth: "250px",
                 padding: "1rem",
                 borderRadius: "0.5rem",
-                // Add a transition for smooth movement
                 transition: "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
               }}
             >
               {({ message }) => (
                 <>
                   {t.type === "success" ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
+                    <CheckCircle2
                       className="h-6 w-6 text-green-500 mr-2"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
+                      strokeWidth={2}
+                    />
                   ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
+                    <CircleX
                       className="h-6 w-6 text-red-500 mr-2"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
+                      strokeWidth={2}
+                    />
                   )}
                   {message}
                   {t.type !== "loading" && (
