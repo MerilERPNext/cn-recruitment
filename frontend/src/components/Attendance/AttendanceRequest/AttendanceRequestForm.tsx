@@ -17,10 +17,40 @@ import { Toaster, toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 
+interface AttendanceFormData {
+  request_type?: string;
+  company?: string;
+  employee?: string;
+  message?: string;
+  reason?: string;
+  from_date?: string | Date;
+  to_date?: string | Date;
+  clockin_time?: string | Date;
+  clockout_time?: string | Date;
+  custom_from_time?: string | Date;
+  custom_to_time?: string | Date;
+  select_shift?: string;
+  overnight_out_duty?: boolean;
+  attachments?: File[];
+  custom_attachments?: File;
+}
+
+interface FormioFormInstance {
+  submit: () => void;
+  getValue: () => { data: AttendanceFormData };
+  setValue: (value: { data: AttendanceFormData }) => void;
+  redraw: () => void;
+  getComponent: (key: string) => {
+    setValue: (value: string, options?: { noUpdateEvent?: boolean }) => void;
+    redraw: () => void;
+  } | null;
+}
+
 interface AttndanceRequestFormProps {
   onClose: () => void;
   selectedDate?: Date | string;
 }
+
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
@@ -38,7 +68,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
   const { data: employeeCheckInLogs } = useAllEmployeeCheckIns();
 
-  // ...existing code...
   const employeeIdToShow = isForOthers
     ? selectedEmployee
     : currentEmployee?.employee;
@@ -47,39 +76,29 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     (log) => log.employee === employeeIdToShow
   );
 
-  // Sort logs by time (descending)
   const sortedLogs = filteredLogs?.sort(
     (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
   );
 
-  // Get latest check-in and check-out
   const latestCheckIn = sortedLogs?.find((log) => log.log_type === "IN");
   const latestCheckOut = sortedLogs?.find((log) => log.log_type === "OUT");
 
   const latestCheckInTime = latestCheckIn ? latestCheckIn.time : "N/A";
   const latestCheckOutTime = latestCheckOut ? latestCheckOut.time : "N/A";
 
-  // ...existing code...
-
-  // Get shift for current employee or selected employee in 'For Others' mode
   const employeeIdToQuery = isForOthers
     ? selectedEmployee
     : currentEmployee?.employee || "";
   const { data: employeeShift, refetch: refetchShift } = useGetEmployeeShift(
     employeeIdToQuery,
-    { employee: employeeIdToQuery } // Pass employee ID as filter
+    { employee: employeeIdToQuery }
   );
 
-  // Handle employee selection change
   const handleEmployeeChange = (event: { data: { employee: string } }) => {
-    // Get the selected value from the form data
     const employeeId = event?.data?.employee || "";
-
-    // Update the selected employee state
     setSelectedEmployee(employeeId);
   };
 
-  // Handle employee selection change
   const handleRequestTypeChange = useCallback(
     (event: { data: { request_type: string } }) => {
       const requestType = event?.data?.request_type || "";
@@ -88,11 +107,25 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     []
   );
 
-  // ...existing code...
+  const formAddressInstance = useRef<FormioFormInstance | null>(null);
+  const mutation = useCreateNewAttendanceRequest();
+
+  const handleFromDateChange = (event: { data: AttendanceFormData }) => {
+    const formInstance = formAddressInstance.current;
+    if (formInstance) {
+      const fromDateValue = event?.data?.from_date;
+      const toDateComponent = formInstance.getComponent("to_date");
+      if (toDateComponent) {
+        toDateComponent.setValue(fromDateValue as string, {
+          noUpdateEvent: true,
+        });
+        toDateComponent.redraw();
+      }
+    }
+  };
 
   React.useEffect(() => {
     if (formAddressInstance.current) {
-      // Update Latest Check-In Time
       const checkInComponent = formAddressInstance.current.getComponent(
         "latest_checkin_time"
       );
@@ -100,7 +133,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         checkInComponent.setValue(latestCheckInTime, { noUpdateEvent: true });
         checkInComponent.redraw();
       }
-      // Update Latest Check-Out Time
       const checkOutComponent = formAddressInstance.current.getComponent(
         "latest_checkout_time"
       );
@@ -111,11 +143,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     }
   }, [latestCheckInTime, latestCheckOutTime, selectedEmployee, isForOthers]);
 
-  // ...existing code...
-  // Update shift and company fields when employee data changes
   React.useEffect(() => {
     if (formAddressInstance.current) {
-      // Update company field based on selected employee or current user
       let company = "Not Assigned";
       if (isForOthers && selectedEmployee) {
         const selectedEmp = employeeList?.find(
@@ -125,20 +154,12 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       } else if (currentEmployee?.company) {
         company = currentEmployee.company;
       }
-      // const formData = formAddressInstance.current.getValue();
-      // const toDate = formAddressInstance.current.getComponent("to_date");
-      // if (toDate) {
-      //   toDate.setValue(formData.data?.from_date, { noUpdateEvent: true });
-      //   toDate.redraw();
-      // }
       const companyComponent =
         formAddressInstance.current.getComponent("company");
       if (companyComponent) {
         companyComponent.setValue(company, { noUpdateEvent: true });
         companyComponent.redraw();
       }
-
-      // Update shift field if employeeShift is available
       if (employeeShift) {
         const shiftValue = employeeShift.shift || "Not Assigned";
         const shiftComponent =
@@ -157,24 +178,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     employeeList,
   ]);
 
-  // Refetch shift when employee changes
   React.useEffect(() => {
     if (employeeIdToQuery) {
       refetchShift();
     }
   }, [employeeIdToQuery, refetchShift]);
-  interface FormioFormInstance {
-    submit: () => void;
-    getValue: () => { data: AttendanceFormData };
-    setValue: (value: { data: AttendanceFormData }) => void;
-    redraw: () => void;
-    getComponent: (key: string) => {
-      setValue: (value: string, options?: { noUpdateEvent?: boolean }) => void;
-      redraw: () => void;
-    } | null;
-  }
-  const formAddressInstance = useRef<FormioFormInstance | null>(null);
-  const mutation = useCreateNewAttendanceRequest();
 
   const baseFormComponents = (isForOthers: boolean) => {
     const components = [
@@ -195,7 +203,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                   input: true,
                   placeholder: "Select Employee",
                   customClass: "mb-4",
-                  // Form.io will automatically update the form data
                   onChange: handleEmployeeChange,
                   validate: { required: true },
                   data: {
@@ -255,7 +262,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               ],
             },
           },
-          // Employee Shift Information (Read-only)
           {
             label: "Current Shift",
             key: "current_shift",
@@ -271,7 +277,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             value: employeeShift?.shift || "Not Assigned",
             clearOnHide: false,
           },
-          // Date fields (shown for all request types)
           {
             label: "From Date",
             key: "from_date",
@@ -283,6 +288,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             enableTime: false,
             defaultValue: selectedDate,
+            onChange: handleFromDateChange,
           },
           {
             label: "To Date",
@@ -295,8 +301,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             enableTime: false,
             validate: { required: true },
-            calculateValue: "value = data.from_date;",
-            allowCalculateOverride: true,
+            defaultValue: selectedDate,
             customConditional:
               "show = !['Clockin'].includes(data.request_type || '');",
           },
@@ -349,7 +354,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             },
           },
 
-          // Overnight Out Duty checkbox (for Out Duty)
           {
             label: "Overnight Out Duty",
             key: "overnight_out_duty",
@@ -385,7 +389,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customConditional:
               "show = data.request_type === 'Attendance Adjustment';",
           },
-          // Shift selection for Shift Change
           {
             label: "Select Shift",
             key: "select_shift",
@@ -402,7 +405,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                 })) || [],
             },
           },
-          // Reason field (shown for all except Shift Change)
           {
             label: "Reason",
             key: "reason",
@@ -419,7 +421,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                 })) || [],
             },
           },
-          // Message field (shown for all)
           {
             label: "Message",
             key: "message",
@@ -462,28 +463,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     [isForOthers, employeeList, currentEmployee, reasonList]
   );
 
-  interface AttendanceFormData {
-    request_type?: string;
-    company?: string;
-    employee?: string;
-    message?: string;
-    reason?: string;
-    from_date?: string | Date;
-    to_date?: string | Date;
-    clockin_time?: string | Date;
-    clockout_time?: string | Date;
-    custom_from_time?: string | Date;
-    custom_to_time?: string | Date;
-    select_shift?: string;
-    overnight_out_duty?: boolean;
-    attachments?: File[];
-    custom_attachments?: File;
-  }
-
   const formatTime = (date: Date | string | undefined): string | undefined => {
     if (!date) return undefined;
     const d = new Date(date);
-    // Using 'en-GB' locale is a common way to get 24-hour format HH:mm:ss
     return d.toLocaleTimeString("en-GB");
   };
 
@@ -505,7 +487,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
     let requestBody: AttendanceFormData = { ...baseBody };
 
-    // Handle different request types
     switch (submission.data.request_type) {
       case "Clockin":
         requestBody = {
@@ -570,7 +551,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     mutation.mutate(requestBody as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
-        toast.success("Added Attendace Request successfully");
+        toast.success("Added Attendance Request successfully!");
       },
       onError: (error) => {
         toast.error(error?.message);
@@ -580,7 +561,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   };
 
   return (
-    <div className="absolute inset-0 w-full h-screen bg-white z-50 flex flex-col">
+    <div className="fixed inset-0 w-full h-screen bg-white z-50 flex flex-col">
       <div className="max-w-md mx-auto bg-white rounded-lg">
         <LayoutHeader
           tab="Create Attendance Request"
@@ -589,7 +570,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         />
       </div>
 
-      {/* Scrollable Content */}
       <div className="overflow-y-auto pt-14 px-2 min-h-screen pb-22">
         <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
           <button
