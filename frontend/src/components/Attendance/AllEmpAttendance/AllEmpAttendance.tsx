@@ -39,9 +39,9 @@ const AllEmpAttendance = () => {
         return "bg-yellow-100 text-yellow-600";
       case "work from home":
         return "bg-purple-100 text-purple-700";
-      case "holiday":
+      case "holidays":
         return "!bg-blue-100 !text-blue-700";
-      case "week-off":
+      case "weekly off":
         return "!bg-gray-100 !text-gray-700";
       default:
         return "bg-gray-50 text-gray-700";

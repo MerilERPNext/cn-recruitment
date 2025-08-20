@@ -91,10 +91,10 @@ const EmployeeAttendance = () => {
           case "leave":
             status = "on-leave";
             break;
-          case "holiday":
+          case "holidays":
             status = "holiday";
             break;
-          case "week off":
+          case "weekly off":
             status = "week-off";
             break;
           case "work from home":

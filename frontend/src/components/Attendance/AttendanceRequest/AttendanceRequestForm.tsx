@@ -308,7 +308,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             enableDate: false,
             enableTime: true,
             format: "HH:mm:ss",
-            placeholder: "HH:mm",
+            placeholder: "hh:mm",
             customClass: "mb-4",
             customConditional:
               "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(data.request_type || '');",
@@ -328,7 +328,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             enableDate: false,
             enableTime: true,
             format: "HH:mm:ss",
-            placeholder: "HH:mm",
+            placeholder: "hh:mm",
             customClass: "mb-4",
             customConditional:
               "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",

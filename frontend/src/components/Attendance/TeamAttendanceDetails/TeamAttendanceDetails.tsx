@@ -5,9 +5,22 @@ import { useAllAttendanceRequests } from "../../../hooks/useAttendance";
 import { AttendanceRequest } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
 import { useNavigate } from "react-router";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 
 const TeamAttendanceDetails = () => {
-  const { data = [], isLoading, error, refetch } = useAllAttendanceRequests(5);
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name as string
+  );
+  const {
+    data = [],
+    isLoading,
+    error,
+    refetch,
+  } = useAllAttendanceRequests(5, [
+    ["employee", "!=", currentEmployee?.employee],
+  ]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedRequest, setSelectedRequest] =
     useState<AttendanceRequest | null>(null);
