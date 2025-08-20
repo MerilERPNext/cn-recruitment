@@ -16,15 +16,19 @@ const TeamLeaveRequest: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewAllModal, setViewAllModal] = useState<{
     isOpen: boolean;
-    type: 'pending' | 'actioned' | null;
+    type: "pending" | "actioned" | null;
     requests: TeamLeaveRequest[];
   }>({
     isOpen: false,
     type: null,
-    requests: []
+    requests: [],
   });
 
-  const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
+  const {
+    data: userId,
+    isLoading: isUserLoading,
+    error: userError,
+  } = useLoggedInUser();
 
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) =>
@@ -83,8 +87,8 @@ const TeamLeaveRequest: React.FC = () => {
     ListQuery,
   }) => {
     const rows: TeamLeaveRequest[] = ListQuery.data?.pages
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
       : [];
 
     const pendingRequests = rows.filter((r) => r.status === "Open");
@@ -93,8 +97,8 @@ const TeamLeaveRequest: React.FC = () => {
     const handleViewAll = () => {
       setViewAllModal({
         isOpen: true,
-        type: 'pending',
-        requests: pendingRequests
+        type: "pending",
+        requests: pendingRequests,
       });
     };
 
@@ -144,8 +148,8 @@ const TeamLeaveRequest: React.FC = () => {
     ListQuery,
   }) => {
     const rows: TeamLeaveRequest[] = ListQuery.data?.pages
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
       : [];
 
     const actionedRequests = rows.filter(
@@ -156,8 +160,8 @@ const TeamLeaveRequest: React.FC = () => {
     const handleViewAll = () => {
       setViewAllModal({
         isOpen: true,
-        type: 'actioned',
-        requests: actionedRequests
+        type: "actioned",
+        requests: actionedRequests,
       });
     };
 
@@ -199,20 +203,40 @@ const TeamLeaveRequest: React.FC = () => {
 
   const SectionedView: React.FC<PreListComponentProps> = ({ ListQuery }) => (
     <div>
-      <PendingRequestsSection ListQuery={ListQuery} doctype={""} setCurrentPage={function (): void {
-        throw new Error("Function not implemented.");
-      }} currentPage={0} totalPages={0} startIndex={0} endIndex={0} pageSize={0} totalCount={0} />
-      <ActionedRequestsSection ListQuery={ListQuery} doctype={""} setCurrentPage={function (): void {
-        throw new Error("Function not implemented.");
-      }} currentPage={0} totalPages={0} startIndex={0} endIndex={0} pageSize={0} totalCount={0} />
+      <PendingRequestsSection
+        ListQuery={ListQuery}
+        doctype={""}
+        setCurrentPage={function (): void {
+          throw new Error("Function not implemented.");
+        }}
+        currentPage={0}
+        totalPages={0}
+        startIndex={0}
+        endIndex={0}
+        pageSize={0}
+        totalCount={0}
+      />
+      <ActionedRequestsSection
+        ListQuery={ListQuery}
+        doctype={""}
+        setCurrentPage={function (): void {
+          throw new Error("Function not implemented.");
+        }}
+        currentPage={0}
+        totalPages={0}
+        startIndex={0}
+        endIndex={0}
+        pageSize={0}
+        totalCount={0}
+      />
     </div>
   );
 
   const ViewAllModal: React.FC = () => {
     if (!viewAllModal.isOpen || !viewAllModal.type) return null;
 
-    const isPending = viewAllModal.type === 'pending';
-    const title = isPending ? 'All Pending Requests' : 'All Actioned Requests';
+    const isPending = viewAllModal.type === "pending";
+    const title = isPending ? "All Pending Requests" : "All Actioned Requests";
 
     const handleCloseViewAll = () => {
       setViewAllModal({ isOpen: false, type: null, requests: [] });
@@ -250,7 +274,7 @@ const TeamLeaveRequest: React.FC = () => {
 
             {viewAllModal.requests.length === 0 && (
               <div className="text-center text-gray-500 py-12">
-                No {isPending ? 'pending' : 'actioned'} requests found
+                No {isPending ? "pending" : "actioned"} requests found
               </div>
             )}
           </div>
@@ -285,7 +309,15 @@ const TeamLeaveRequest: React.FC = () => {
   const handleApprove = (id: string) => console.log(`Approving ${id}`);
   const handleReject = (id: string) => console.log(`Rejecting ${id}`);
 
-  if (isUserLoading || !userId) return null;
+  if (userError) {
+    return (
+      <div className="p-4 text-center text-red-600">
+        Failed to load Team Leave Requests. Please try again.
+      </div>
+    );
+  }
+
+  if (isUserLoading || !userId) return <TeamLeaveRequestSkeleton />;
 
   return (
     <div className="space-y-3">
@@ -323,5 +355,3 @@ const TeamLeaveRequest: React.FC = () => {
 };
 
 export default TeamLeaveRequest;
-
-

@@ -52,7 +52,7 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
             openModal({
               fromDate: holiday.date,
               toDate: holiday.date,
-              leaveType: "Optional Leave",
+              leaveType: holiday.leave_type,
               source: "holiday",
               hideHalfDayToggle: true,
             })
