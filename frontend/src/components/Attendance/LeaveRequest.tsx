@@ -286,7 +286,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   }, [leaveTypeOptions, defaults]);
 
   return (
-    <div className="absolute inset-0 w-full min-h-screen bg-white z-50 flex flex-col">
+    <div className="fixed inset-0 w-full min-h-screen bg-white z-50 flex flex-col">
       <div className="max-w-md mx-auto bg-white rounded-lg mt-10">
         <div className="z-[60]">
           <LayoutHeader tab=" Request Leave" onBack={onCancel} icon="x" />

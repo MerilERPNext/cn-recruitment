@@ -22,82 +22,6 @@ interface AttndanceRequestFormProps {
   selectedDate?: Date | string;
 }
 
-// A simple, reusable component for the toast message with a close button
-
-const ToastComponent: React.FC<{ message: string; t: any }> = ({
-  message,
-  t,
-}) => (
-  <div
-    className={`p-4 rounded-lg shadow-xl flex items-center justify-between transition-all duration-300 transform ${
-      t.visible ? "translate-y-0" : "translate-y-2"
-    } ${
-      t.type === "success"
-        ? "bg-white border-l-4 border-green-500"
-        : "bg-white border-l-4 border-red-500"
-    }`}
-    style={{ minWidth: "250px" }}
-  >
-    {/* Message and optional icon container */}
-    <div className="flex items-center">
-      {/* Dynamic icon for success or error */}
-      {t.type === "success" ? (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 text-green-500 mr-2"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ) : (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 text-red-500 mr-2"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      )}
-      <span className="text-gray-800 text-sm font-medium">{message}</span>
-    </div>
-
-    {/* Close button with better styling */}
-    <button
-      onClick={() => toast.dismiss(t.id)}
-      className="ml-4 p-1 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 focus:outline-none transition-colors duration-200"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M6 18L18 6M6 6l12 12"
-        />
-      </svg>
-    </button>
-  </div>
-);
-
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
@@ -626,29 +550,17 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     mutation.mutate(requestBody as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
-        // Use toast.custom with the new component for success
-        toast.custom((t) => (
-          <ToastComponent
-            message="Added Attendance Request successfully"
-            t={{ ...t, type: "success" }}
-          />
-        ));
+        toast.success("Added Attendance Request successfully!")
       },
       onError: (error) => {
-        // Use toast.custom with the new component for error
-        toast.custom((t) => (
-          <ToastComponent
-            message={error?.message}
-            t={{ ...t, type: "error" }}
-          />
-        ));
+        toast.error(error?.message)
         console.error(error);
       },
     });
   };
 
   return (
-    <div className="absolute inset-0 w-full h-screen bg-white z-50 flex flex-col">
+    <div className="fixed inset-0 w-full h-screen bg-white z-50 flex flex-col">
       <div className="max-w-md mx-auto bg-white rounded-lg">
         <LayoutHeader
           tab="Create Attendance Request"
