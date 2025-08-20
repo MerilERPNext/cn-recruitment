@@ -43,7 +43,7 @@ const EmployeeAttendanceDetails = () => {
   );
 
   return (
-    <div className="h-screen bg-white flex flex-col">
+    <div className="bg-white flex flex-col">
       <LayoutHeader tab="Attendance Details" />
 
       {isLoading ? (
@@ -68,17 +68,17 @@ const EmployeeAttendanceDetails = () => {
           )}
 
           {status === "absent" && (
-            <p className="text-sm mt-4 text-gray-700">
+            <p className="text-sm mt-4 text-gray-700 text-center">
               To correct your attendance for this day, submit a request below.{" "}
             </p>
           )}
         </div>
       )}
 
-      <div className="p-3 border-t bg-white">
+      <div className="p-3 border-t bg-white fixed bottom-0 right-0 w-full z-50 ">
         <button
           disabled={status !== "absent" && status !== "half-day"}
-          className={`w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${
+          className={` w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${
             status !== "absent" && status !== "half-day"
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-black hover:bg-gray-800"
@@ -95,6 +95,7 @@ const EmployeeAttendanceDetails = () => {
       {showReqAttendanceCorrection && (
         <AttendanceRequestForm
           onClose={() => setShowReqAttendanceCorrection(false)}
+          selectedDate={new Date(dateParam as string)}
         />
       )}
     </div>

@@ -32,30 +32,26 @@ export const useCurrentEmployee = (): UseQueryResult<
 };
 
 // Hook to get current logged-in user's All Details
-export const useCurrentEmployeeAllDetails = (
-  user_id: string
-) => {
+export const useCurrentEmployeeAllDetails = (user_id: string) => {
   return useQuery<Employee | null, Error>({
     queryKey: ["currentEmployeeAllDetails", user_id],
     queryFn: () => EmployeeService.getCurrentEmployeeAllDetails(user_id),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 1,
-    enabled: !!user_id
-  })
-}
-export const useCurrentEmployeeAddress = (
-  user_id: string
-) => {
+    enabled: !!user_id,
+  });
+};
+export const useCurrentEmployeeAddress = (user_id: string) => {
   return useQuery<AddressInfoData, Error>({
     queryKey: ["currentEmployeeAddress", user_id],
     queryFn: () => EmployeeService.getCurrentEmployeeAddress(user_id),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 1,
-    enabled: !!user_id
-  })
-}
+    enabled: !!user_id,
+  });
+};
 
 // Hook to search employees by name
 export const useEmployeeSearch = (
@@ -121,14 +117,19 @@ export const useGetAllEmployees = () => {
     // staleTime: 1000 * 60 * 5,
   });
 };
-export const useGetAllReasons = () => {
+export const useGetAllReasons = (requestType: string) => {
   return useQuery({
-    queryKey: ["all-reasons-list"],
-    queryFn: () => EmployeeService.getAllReasons(),
-    // staleTime: 1000 * 60 * 5,
+    queryKey: ["all-reasons-list", requestType],
+    queryFn: () => {
+      return EmployeeService.getAllReasons([["reason_type", "=", requestType]]);
+    },
+    enabled: !!requestType,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 };
-
 
 export const useGenderTypes = () => {
   return useQuery({

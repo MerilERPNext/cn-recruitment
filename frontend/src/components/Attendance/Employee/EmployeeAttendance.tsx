@@ -1,25 +1,23 @@
 import { useMemo, useState } from "react";
 import DatePicker from "react-datepicker";
 import { ArrowLeft, ArrowUpRight, Plus, XCircle } from "lucide-react";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import { useAttendance } from "../../../hooks/useAttendance";
+import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import FrappeListView from "../../ListView";
-import { Attendance, AttendanceRequest } from "../../../types/attendance";
+import { AttendanceRecord, AttendanceRequest } from "../../../types/attendance";
 import { useNavigate } from "react-router";
 import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard";
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import { endOfMonth, format, startOfMonth } from "date-fns";
-import { FilterCondition } from "../../../types/frappe";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import BottomDrawer from "../../shared/BottomDrawer";
 import LeaveRequest from "../LeaveRequest";
+import { gradientClassMap } from "../../../utils/helperUtils";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
-  const { data: userId } = useLoggedInUser();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
@@ -27,19 +25,11 @@ const EmployeeAttendance = () => {
   const start = format(startOfMonth(selectedDate as Date), "yyyy-MM-dd");
   const end = format(endOfMonth(selectedDate as Date), "yyyy-MM-dd");
 
-  const filters = userId
-    ? [
-        ["employee", "=", currentEmployee?.employee],
-        ["attendance_date", "between", [start, end]],
-      ]
-    : [];
   const {
     data: allAttendance,
     isError,
     error,
-  } = useAttendance(filters as FilterCondition[], {
-    enabled: !!userId,
-  });
+  } = useGetAllEventsAndAttendance({ start: start, end: end });
 
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState<boolean>(false);
@@ -66,65 +56,77 @@ const EmployeeAttendance = () => {
     };
   }, [currentEmployee, selectedDate, start, end]);
 
-  const createAttendanceStatusGetter = (attendances: Attendance[] = []) => {
-    const statusMap: Record<string, Status> = {};
+  type AttendanceStatusInfo = {
+    status: Status;
+    firstHalf?: string;
+    secondHalf?: string;
+  };
+
+  const createAttendanceStatusGetter = (
+    attendances: AttendanceRecord[] = []
+  ) => {
+    const statusMap: Record<string, AttendanceStatusInfo> = {};
 
     const formatDateKey = (date: Date): string =>
       date.toLocaleDateString("en-CA");
 
-    attendances.forEach((record) => {
-      const dateKey = formatDateKey(new Date(record.attendance_date));
-      const rawStatus = record.status?.toLowerCase().trim();
+    attendances
+      .filter(
+        (record) =>
+          record.doctype === "Attendance" || record.doctype === "Holiday"
+      )
+      .forEach((record) => {
+        const dateKey = formatDateKey(new Date(record.start));
+        const rawStatus = record.status?.toLowerCase().trim();
+        let status: Status = "default";
 
-      let status: Status = "default";
-      switch (rawStatus) {
-        case "present":
-          status = "present";
-          break;
-        case "absent":
-          status = "absent";
-          break;
-        case "on leave":
-        case "leave":
-          status = "on-leave";
-          break;
-        case "holiday":
-          status = "holiday";
-          break;
-        case "week off":
-          status = "week-off";
-          break;
-        case "half day":
-        case "half-day":
-          if (record?.custom_half_day_type === "First Half") {
-            status = "half-day-first-half";
-          } else if (record?.custom_half_day_type === "Second Half") {
-            status = "half-day-second-half";
-          } else {
+        switch (rawStatus) {
+          case "present":
+            status = "present";
+            break;
+          case "absent":
+            status = "absent";
+            break;
+          case "on leave":
+          case "leave":
+            status = "on-leave";
+            break;
+          case "holidays":
+            status = "holiday";
+            break;
+          case "weekly off":
+            status = "week-off";
+            break;
+          case "work from home":
+            status = "work-from-home";
+            break;
+          case "half day":
             status = "half-day";
-          }
-          break;
-        case "work from home":
-          status = "work-from-home";
-          break;
-        case "wfh":
-          status = "work-from-home";
-          break;
-        default:
-          status = "default";
-      }
+            break;
+          default:
+            status = "default";
+        }
 
-      statusMap[dateKey] = status;
-    });
+        const attendanceInfo: AttendanceStatusInfo = {
+          status,
+        };
 
-    return (date: Date): Status => {
-      const key = formatDateKey(date); // avoid UTC shift here too
-      return statusMap[key] || "default";
+        if (status === "half-day") {
+          attendanceInfo.firstHalf = record.half_day_status_first_half || "";
+          attendanceInfo.secondHalf = record.half_day_status_second_half || "";
+        }
+
+        statusMap[dateKey] = attendanceInfo;
+      });
+
+    return (date: Date): AttendanceStatusInfo => {
+      const key = formatDateKey(date);
+      return statusMap[key] || { status: "default" };
     };
   };
-
   const getAttendanceStatus = useMemo(() => {
     return createAttendanceStatusGetter(allAttendance ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAttendance]);
 
   if (isError) {
@@ -186,39 +188,39 @@ const EmployeeAttendance = () => {
               selected={selectedDate}
               onChange={(date) => {
                 setSelectedDate(date);
-                const status = getAttendanceStatus(date as Date);
-
-                if (status !== "default") {
+                const attendance = getAttendanceStatus(date as Date);
+                if (
+                  attendance?.status !== "default" &&
+                  attendance?.status !== "holiday"
+                ) {
                   navigate(
-                    `/webapp/attendance/emp-attendance/details?date=${date}&status=${status}`
+                    `/webapp/attendance/emp-attendance/details?date=${date}&status=${attendance?.status}`
                   );
                 }
               }}
-              onMonthChange={(date) => setSelectedDate(date)}
+              onMonthChange={(date) => {
+                setSelectedDate(date);
+              }}
               openToDate={selectedDate as Date}
               inline
               dayClassName={(date) => {
-                const status = getAttendanceStatus(date);
+                const attendance = getAttendanceStatus(date);
                 const isSelected =
                   selectedDate?.toDateString() === date.toDateString();
                 const baseClasses = "transition-colors duration-200";
 
                 const highlightClass = (() => {
-                  switch (status) {
+                  switch (attendance?.status) {
                     case "present":
-                      return "!bg-green-100 !text-green-800 rounded-md";
+                      return "!bg-green-100 !text-green-700 rounded-md";
                     case "absent":
-                      return "!bg-red-100 !text-red-800 rounded-md";
+                      return "!bg-red-100 !text-red-700 rounded-md";
                     case "on-leave":
-                      return "!bg-orange-100 !text-orange-800 rounded-md";
+                      return "!bg-yellow-100 !text-yellow-700 rounded-md";
                     case "holiday":
-                      return "!bg-blue-100 !text-blue-800 rounded-md";
+                      return "!bg-blue-100 !text-blue-700 rounded-md";
                     case "week-off":
-                      return "!bg-gray-100 !text-gray-800 rounded-md";
-                    case "half-day-first-half":
-                      return "hard-gradient-green-to-yellow !text-yellow-800 rounded-md";
-                    case "half-day-second-half":
-                      return "hard-gradient-yellow-to-green !text-yellow-800 rounded-md";
+                      return "!bg-gray-100 !text-gray-700 rounded-md";
                     case "work-from-home":
                       return "!bg-purple-100 !text-purple-800 border border-purple-200 rounded-md";
                     default:
@@ -228,33 +230,70 @@ const EmployeeAttendance = () => {
 
                 // Ignore default "selected" styles
                 return `${baseClasses} ${highlightClass} ${
-                  isSelected ? "!bg-inherit !text-inherit border-none" : ""
+                  isSelected && attendance?.status === "default"
+                    ? "!bg-transparent border-none"
+                    : ""
                 }`;
+              }}
+              renderDayContents={(day, date) => {
+                const attendance = getAttendanceStatus(date);
+
+                if (attendance?.status === "half-day") {
+                  const firstColor =
+                    gradientClassMap[
+                      attendance?.firstHalf?.toLowerCase() || ""
+                    ];
+                  const secondColor =
+                    gradientClassMap[
+                      attendance?.secondHalf?.toLowerCase() || ""
+                    ];
+                  const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
+
+                  return (
+                    <div
+                      style={{
+                        backgroundImage: gradient,
+                        borderRadius: "0.375rem",
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      {day}
+                    </div>
+                  );
+                }
+                // For other statuses, just return the day number
+                return <>{day}</>;
               }}
             />
           </div>
+
+          {/* Legends  */}
           <div className="flex flex-wrap gap-2 text-xs justify-between px-4">
-            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-green-100 text-green-800 border border-green-200">
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
               Present
             </span>
 
-            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-red-100 text-red-800 border border-red-200">
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-red-100 text-red-700 border border-red-200">
               Absent
             </span>
 
-            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-orange-100 text-orange-800 border border-orange-200">
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-yellow-100 text-orange-700 border border-yellow-200">
               On Leave
             </span>
 
-            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-purple-100 text-purple-800 border border-purple-200">
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-purple-100 text-purple-700 border border-purple-200">
               WFH
             </span>
 
-            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-blue-100 text-blue-800 border border-blue-200">
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-blue-100 text-blue-700 border border-blue-200">
               Holiday
             </span>
 
-            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-gray-200 text-gray-800 border border-gray-300">
+            <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-gray-200 text-gray-700 border border-gray-300">
               Week Off
             </span>
           </div>
