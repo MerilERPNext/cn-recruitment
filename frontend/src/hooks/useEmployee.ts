@@ -121,7 +121,7 @@ export const useGetAllReasons = (requestType: string) => {
   return useQuery({
     queryKey: ["all-reasons-list", requestType],
     queryFn: () => {
-      EmployeeService.getAllReasons([["reference_doctype", "=", requestType]]);
+      return EmployeeService.getAllReasons([["reason_type", "=", requestType]]);
     },
     enabled: !!requestType,
     staleTime: 1000 * 60 * 5,

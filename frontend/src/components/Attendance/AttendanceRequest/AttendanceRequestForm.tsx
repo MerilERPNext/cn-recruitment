@@ -19,9 +19,11 @@ import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 
 interface AttndanceRequestFormProps {
   onClose: () => void;
+  selectedDate?: Date | string;
 }
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
+  selectedDate = new Date(),
 }) => {
   const [isForOthers, setIsForOthers] = useState(false);
   const { data: currentUser } = useCurrentUser();
@@ -32,7 +34,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedRequestType, setSelectedRequestType] = useState<string>("");
-
   const { data: reasonList } = useGetAllReasons(selectedRequestType);
 
   const { data: employeeCheckInLogs } = useAllEmployeeCheckIns();
@@ -77,6 +78,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     // Update the selected employee state
     setSelectedEmployee(employeeId);
   };
+
   // Handle employee selection change
   const handleRequestTypeChange = useCallback(
     (event: { data: { request_type: string } }) => {
@@ -123,7 +125,12 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       } else if (currentEmployee?.company) {
         company = currentEmployee.company;
       }
-
+      // const formData = formAddressInstance.current.getValue();
+      // const toDate = formAddressInstance.current.getComponent("to_date");
+      // if (toDate) {
+      //   toDate.setValue(formData.data?.from_date, { noUpdateEvent: true });
+      //   toDate.redraw();
+      // }
       const companyComponent =
         formAddressInstance.current.getComponent("company");
       if (companyComponent) {
@@ -156,7 +163,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       refetchShift();
     }
   }, [employeeIdToQuery, refetchShift]);
-
   interface FormioFormInstance {
     submit: () => void;
     getValue: () => { data: AttendanceFormData };
@@ -167,9 +173,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       redraw: () => void;
     } | null;
   }
-
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const mutation = useCreateNewAttendanceRequest();
+
   const baseFormComponents = (isForOthers: boolean) => {
     const components = [
       {
@@ -276,7 +282,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "dd-mm-yyyy",
             customClass: "mb-4",
             enableTime: false,
-            validate: { required: true },
+            defaultValue: selectedDate,
           },
           {
             label: "To Date",
@@ -289,6 +295,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             enableTime: false,
             validate: { required: true },
+            calculateValue: "value = data.from_date;",
+            allowCalculateOverride: true,
             customConditional:
               "show = !['Clockin'].includes(data.request_type || '');",
           },
@@ -300,7 +308,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             enableDate: false,
             enableTime: true,
             format: "HH:mm:ss",
-            placeholder: "HH:mm:ss",
+            placeholder: "HH:mm",
             customClass: "mb-4",
             customConditional:
               "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(data.request_type || '');",
@@ -320,7 +328,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             enableDate: false,
             enableTime: true,
             format: "HH:mm:ss",
-            placeholder: "HH:mm:ss",
+            placeholder: "HH:mm",
             customClass: "mb-4",
             customConditional:
               "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
@@ -405,8 +413,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customConditional: "show = data.request_type !== 'Shift Change';",
             data: {
               values:
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
                 reasonList?.map((item: { reason: string }) => ({
                   label: item?.reason || "",
                   value: item?.reason,

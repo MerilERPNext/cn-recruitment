@@ -95,6 +95,7 @@ const EmployeeAttendanceDetails = () => {
       {showReqAttendanceCorrection && (
         <AttendanceRequestForm
           onClose={() => setShowReqAttendanceCorrection(false)}
+          selectedDate={new Date(dateParam as string)}
         />
       )}
     </div>
