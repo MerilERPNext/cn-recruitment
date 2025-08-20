@@ -79,6 +79,7 @@ export interface Holiday {
   owner: string;
   is_repeated: boolean;
   original_doc_name: string;
+  leave_type: string;
 }
 
 export interface HolidayGroup {
