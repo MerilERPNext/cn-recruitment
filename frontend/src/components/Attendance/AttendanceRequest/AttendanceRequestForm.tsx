@@ -17,6 +17,35 @@ import { Toaster, toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 
+interface AttendanceFormData {
+  request_type?: string;
+  company?: string;
+  employee?: string;
+  message?: string;
+  reason?: string;
+  from_date?: string | Date;
+  to_date?: string | Date;
+  clockin_time?: string | Date;
+  clockout_time?: string | Date;
+  custom_from_time?: string | Date;
+  custom_to_time?: string | Date;
+  select_shift?: string;
+  overnight_out_duty?: boolean;
+  attachments?: File[];
+  custom_attachments?: File;
+}
+
+interface FormioFormInstance {
+  submit: () => void;
+  getValue: () => { data: AttendanceFormData };
+  setValue: (value: { data: AttendanceFormData }) => void;
+  redraw: () => void;
+  getComponent: (key: string) => {
+    setValue: (value: string, options?: { noUpdateEvent?: boolean }) => void;
+    redraw: () => void;
+  } | null;
+}
+
 interface AttndanceRequestFormProps {
   onClose: () => void;
   selectedDate?: Date | string;
@@ -78,16 +107,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     []
   );
 
-  interface FormioFormInstance {
-    submit: () => void;
-    getValue: () => { data: AttendanceFormData };
-    setValue: (value: { data: AttendanceFormData }) => void;
-    redraw: () => void;
-    getComponent: (key: string) => {
-      setValue: (value: string, options?: { noUpdateEvent?: boolean }) => void;
-      redraw: () => void;
-    } | null;
-  }
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const mutation = useCreateNewAttendanceRequest();
 
@@ -444,24 +463,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     [isForOthers, employeeList, currentEmployee, reasonList]
   );
 
-  interface AttendanceFormData {
-    request_type?: string;
-    company?: string;
-    employee?: string;
-    message?: string;
-    reason?: string;
-    from_date?: string | Date;
-    to_date?: string | Date;
-    clockin_time?: string | Date;
-    clockout_time?: string | Date;
-    custom_from_time?: string | Date;
-    custom_to_time?: string | Date;
-    select_shift?: string;
-    overnight_out_duty?: boolean;
-    attachments?: File[];
-    custom_attachments?: File;
-  }
-
   const formatTime = (date: Date | string | undefined): string | undefined => {
     if (!date) return undefined;
     const d = new Date(date);
@@ -550,10 +551,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     mutation.mutate(requestBody as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
-        toast.success("Added Attendance Request successfully!")
+        toast.success("Added Attendance Request successfully!");
       },
       onError: (error) => {
-        toast.error(error?.message)
+        toast.error(error?.message);
         console.error(error);
       },
     });
