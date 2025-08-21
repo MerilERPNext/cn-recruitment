@@ -4,8 +4,11 @@ import NavigationTabs, { Tab } from "../NavigationTab";
 import HeaderBar from "../HeaderBar";
 import { LeaveRequestRefreshProvider } from "../Leaves/LeaveRequestRefreshContext";
 import { RequestLeaveModalProvider } from "../Leaves/RequestLeaveModalContext";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const AttendanceLayout: React.FC = () => {
+  const { isDesktop } = useScreenSize();
   const tabs: Tab[] = useMemo(
     () => [
       { label: "Attendance", key: "summary" },
@@ -38,7 +41,7 @@ const AttendanceLayout: React.FC = () => {
     navigate(`/webapp/attendance/${tab.key}`);
   };
 
-  return (
+  const mobileLayout = (
     <div className="min-h-screen bg-white">
       {/* Fixed Header */}
       <HeaderBar title={activeTab.label} onBack={() => navigate("/webapp")} />
@@ -61,6 +64,33 @@ const AttendanceLayout: React.FC = () => {
       </div>
     </div>
   );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="Attendance">
+      <div className="flex flex-col h-full">
+        {/* Tab Navigation */}
+        <div className="bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0">
+          <NavigationTabs
+            tabs={tabs}
+            activeTab={activeTab?.key}
+            onTabChange={(tab) => {
+              handleTabChange(tabs.find((item) => item.key === tab) as Tab);
+            }}
+          />
+        </div>
+        {/* Page Content */}
+        <div className="flex-1 overflow-y-auto">
+          <LeaveRequestRefreshProvider>
+            <RequestLeaveModalProvider>
+              <Outlet />
+            </RequestLeaveModalProvider>
+          </LeaveRequestRefreshProvider>
+        </div>
+      </div>
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 export default AttendanceLayout;

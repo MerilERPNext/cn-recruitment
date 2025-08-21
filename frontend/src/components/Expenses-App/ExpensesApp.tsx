@@ -1,6 +1,8 @@
 import React, { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 type TabName = "Expenses";
 
@@ -9,6 +11,7 @@ const tabRoutes: Record<TabName, string> = {
 };
 
 const ExpensesApp: React.FC = () => {
+  const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,7 +29,7 @@ const ExpensesApp: React.FC = () => {
     navigate("/webapp/expenses-app/expenses-list/new-expense-type");
   };
 
-  return (
+  const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <style>{`
         :root {
@@ -66,6 +69,28 @@ const ExpensesApp: React.FC = () => {
       </div>
     </div>
   );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="Expenses">
+      <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-y-auto p-8 relative">
+          <Outlet />
+
+          {/* Floating Add Button for Desktop */}
+          <div className="absolute bottom-8 right-8">
+            <button
+              onClick={handleAddNew}
+              className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
+            >
+              + Add Expense
+            </button>
+          </div>
+        </div>
+      </div>
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 export default ExpensesApp;

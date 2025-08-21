@@ -1,13 +1,12 @@
-import { Link, useNavigate } from "react-router-dom";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Link } from "react-router-dom";
 import {
   Calendar,
   ArrowUpDown,
   Receipt,
   Shield,
   Bell,
-  Search,
   CheckCircle,
-  AlertCircle,
   User,
   DollarSign,
   XCircle,
@@ -17,6 +16,8 @@ import {
   Home,
   LogOut,
   Clock,
+  ChevronDown,
+  Settings,
 } from "lucide-react";
 import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -39,6 +40,8 @@ import {
 import defaultProfile from "../assets/face-rec.png";
 import logo from "../assets/logo.png";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
+import EmployeeFallback from "./EmployeeFallback";
 import {
   compareAsc,
   compareDesc,
@@ -50,7 +53,7 @@ import {
   startOfDay,
   startOfMonth,
 } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 
 const statusStyles = {
@@ -94,7 +97,9 @@ const statusStyles = {
 
 const DesktopDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
-  const navigate = useNavigate();
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchLocation() {
@@ -109,6 +114,32 @@ const DesktopDashboard: React.FC = () => {
     fetchLocation();
   }, []);
 
+  // Update current time every minute for real-time progress calculation
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Handle click outside profile dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    if (showProfileDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileDropdown]);
+
   // Get unread notifications count
   const { data: unreadCount = 0 } = useUnreadNoticesCount();
   const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
@@ -117,6 +148,9 @@ const DesktopDashboard: React.FC = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+
+  // Enhanced employee state with fallback
+  const employeeState = useEmployeeWithFallback();
   const { data: canShowClockIn } = useCanShowClockIn(
     currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
   );
@@ -269,31 +303,94 @@ const DesktopDashboard: React.FC = () => {
   };
 
   const getTotalTime = () => {
-    if (firstCheckIn) {
-      const diffMins = differenceInMinutes(
-        new Date(),
-        parseISO(firstCheckIn.time.replace(" ", "T"))
-      );
-      const hours = Math.floor(diffMins / 60);
-      const minutes = diffMins % 60;
-      return `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}`;
-    } else {
+    if (!homeSummary || homeSummary.length === 0) {
       return "00:00";
     }
+
+    // Calculate total worked time by pairing check-ins and check-outs
+    let totalMinutes = 0;
+    const sortedLogs = [...homeSummary].sort((a, b) =>
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    );
+
+    let currentCheckIn: typeof sortedLogs[0] | null = null;
+
+    for (const log of sortedLogs) {
+      if (log.log_type === "IN") {
+        currentCheckIn = log;
+      } else if (log.log_type === "OUT" && currentCheckIn) {
+        // Calculate time between check-in and check-out
+        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+        const checkOutTime = parseISO(log.time.replace(" ", "T"));
+        totalMinutes += differenceInMinutes(checkOutTime, checkInTime);
+        currentCheckIn = null;
+      }
+    }
+
+    // If still checked in, add time from last check-in to now
+    if (currentCheckIn && isCurrentlyCheckedIn) {
+      const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+      totalMinutes += differenceInMinutes(currentTime, checkInTime);
+    }
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   const getWorkPercentage = () => {
-    if (firstCheckIn && firstCheckIn.shift_start && firstCheckIn.shift_end) {
-      const now = new Date();
-      const shiftStart = parseISO(firstCheckIn.shift_start.replace(" ", "T"));
-      const shiftEnd = parseISO(firstCheckIn.shift_end.replace(" ", "T"));
-      const totalShiftMins = differenceInMinutes(shiftEnd, shiftStart);
-      const workedMins = differenceInMinutes(now, parseISO(firstCheckIn.time.replace(" ", "T")));
-      return Math.min(Math.round((workedMins / totalShiftMins) * 100), 100);
+    if (!firstCheckIn || !firstCheckIn.shift_start || !firstCheckIn.shift_end) {
+      return 0;
     }
-    return 0;
+
+    // Calculate total worked time in minutes
+    let totalWorkedMinutes = 0;
+
+    if (homeSummary && homeSummary.length > 0) {
+      const sortedLogs = [...homeSummary].sort((a, b) =>
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      );
+
+      let currentCheckIn: typeof sortedLogs[0] | null = null;
+
+      for (const log of sortedLogs) {
+        if (log.log_type === "IN") {
+          currentCheckIn = log;
+        } else if (log.log_type === "OUT" && currentCheckIn) {
+          const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+          const checkOutTime = parseISO(log.time.replace(" ", "T"));
+          totalWorkedMinutes += differenceInMinutes(checkOutTime, checkInTime);
+          currentCheckIn = null;
+        }
+      }
+
+      // If still checked in, add time from last check-in to now
+      if (currentCheckIn && isCurrentlyCheckedIn) {
+        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+        totalWorkedMinutes += differenceInMinutes(currentTime, checkInTime);
+      }
+    }
+
+    // Calculate expected shift duration
+    const shiftStart = parseISO(firstCheckIn.shift_start.replace(" ", "T"));
+    const shiftEnd = parseISO(firstCheckIn.shift_end.replace(" ", "T"));
+    const totalShiftMinutes = differenceInMinutes(shiftEnd, shiftStart);
+
+    if (totalShiftMinutes <= 0) {
+      return 0;
+    }
+
+    // Calculate percentage, but cap at 100%
+    const percentage = Math.round((totalWorkedMinutes / totalShiftMinutes) * 100);
+    return Math.min(percentage, 100);
   };
 
   const navigationItems = [
@@ -307,9 +404,9 @@ const DesktopDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg border-r border-gray-200 fixed h-full z-10">
+      <div className="w-64 bg-white shadow-lg border-r border-gray-200 fixed h-full z-10 flex-shrink-0">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
             <img src={logo} alt="PayWise" className="w-8 h-8" />
@@ -346,9 +443,9 @@ const DesktopDashboard: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-64 flex flex-col h-screen">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between">
+        <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Welcome, Employee!</h1>
             <p className="text-gray-600">Here's your dashboard for today.</p>
@@ -364,24 +461,139 @@ const DesktopDashboard: React.FC = () => {
               )}
             </button>
             
-            <div className="flex items-center gap-3">
-              <div>
-                <p className="text-sm font-medium text-gray-900">{currentUser?.full_name || "Sangeetaa"}</p>
-                <p className="text-xs text-gray-500">Employee ID: {currentEmployee?.employee || "12345"}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
-                <img
-                  src={currentUser?.user_image || defaultProfile}
-                  alt="User avatar"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900 text-right">
+                    {currentUser?.full_name || "Sangeetaa"}
+                  </p>
+                  <p className="text-xs text-gray-500 text-right">
+                    Employee ID: {currentEmployee?.employee || "12345"}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                  <img
+                    src={currentUser?.user_image || defaultProfile}
+                    alt="User avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Profile Dropdown */}
+              {showProfileDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-300">
+                        <img
+                          src={currentUser?.user_image || defaultProfile}
+                          alt="User avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">
+                          {currentUser?.full_name || "Employee"}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {currentEmployee?.designation || "Designation"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Employee ID: {currentEmployee?.employee || "N/A"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {currentUser?.email || "email@company.com"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="py-2">
+                    <div className="px-4 py-2">
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Company Information
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Department:</span>
+                          <span className="text-gray-900">{currentEmployee?.department || "N/A"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Company:</span>
+                          <span className="text-gray-900">{currentEmployee?.company || "N/A"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Join Date:</span>
+                          <span className="text-gray-900">{currentEmployee?.date_of_joining || "N/A"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Status:</span>
+                          <span className="text-green-600 font-medium">{currentEmployee?.status || "Active"}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr className="my-2 border-gray-100" />
+
+                    <button
+                      onClick={() => {
+                        window.location.href = "/webapp/my-profile";
+                        setShowProfileDropdown(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      <User className="w-4 h-4" />
+                      View Full Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Add settings navigation if needed
+                        setShowProfileDropdown(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Account Settings
+                    </button>
+                    <hr className="my-2 border-gray-100" />
+                    <button
+                      onClick={() => {
+                        // Add logout functionality
+                        setShowProfileDropdown(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Dashboard Content */}
-        <div className="p-8">
+        <div className="p-8 flex-1 overflow-y-auto">
+          {/* Employee Data Error Handling */}
+          {!employeeState.isLoading && !employeeState.hasValidData && (
+            <EmployeeFallback
+              message={
+                employeeState.hasEmployeeRecord
+                  ? "Employee data is incomplete. Please contact HR."
+                  : "No employee record found. Please contact HR to set up your profile."
+              }
+              variant="banner"
+              showRetry={employeeState.canRetry}
+              onRetry={employeeState.retry}
+            />
+          )}
+
           {/* Time Cards */}
           <div className="grid grid-cols-4 gap-6 mb-8">
             <div className="bg-white p-6 rounded-lg border border-gray-200 text-center">
@@ -570,16 +782,27 @@ const DesktopDashboard: React.FC = () => {
               {/* Total Hours Worked */}
               <div className="bg-blue-600 text-white p-6 rounded-lg">
                 <div className="text-center">
-                  <p className="text-blue-100 text-sm mb-2">TOTAL HOURS WORKED</p>
-                  <p className="text-4xl font-bold mb-2">{getTotalTime()}</p>
-                  <p className="text-blue-100 text-sm mb-4">Today</p>
-                  <div className="bg-blue-500 rounded-full h-2 mb-2">
-                    <div
-                      className="bg-white rounded-full h-2 transition-all duration-500"
-                      style={{ width: `${getWorkPercentage()}%` }}
-                    ></div>
+                  <p className="text-blue-100 text-sm mb-2 font-medium tracking-wide">TOTAL HOURS WORKED</p>
+                  <p className="text-4xl font-bold mb-1">{getTotalTime()}</p>
+                  <p className="text-blue-100 text-sm mb-6">8h 55m target</p>
+
+                  {/* Enhanced Progress Bar */}
+                  <div className="relative mb-3">
+                    <div className="bg-blue-500/50 rounded-full h-3 shadow-inner">
+                      <div
+                        className="bg-white rounded-full h-3 transition-all duration-700 ease-out shadow-sm"
+                        style={{ width: `${Math.min(getWorkPercentage(), 100)}%` }}
+                      ></div>
+                    </div>
+                    {/* Progress indicator dots */}
+                    <div className="absolute top-1/2 left-0 w-full h-0.5 flex justify-between px-1 -translate-y-px">
+                      <div className="w-0.5 h-0.5 bg-blue-300 rounded-full opacity-60"></div>
+                      <div className="w-0.5 h-0.5 bg-blue-300 rounded-full opacity-60"></div>
+                      <div className="w-0.5 h-0.5 bg-blue-300 rounded-full opacity-60"></div>
+                      <div className="w-0.5 h-0.5 bg-blue-300 rounded-full opacity-60"></div>
+                    </div>
                   </div>
-                  <p className="text-blue-100 text-sm">{getWorkPercentage()}%</p>
+                  <p className="text-blue-100 text-sm font-medium">{getWorkPercentage()}% completed</p>
                 </div>
               </div>
 

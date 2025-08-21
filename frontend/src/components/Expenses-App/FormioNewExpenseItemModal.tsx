@@ -4,6 +4,8 @@ import { X } from "lucide-react";
 
 import { Formio } from "formiojs";
 import { useExpenseTypes } from "../../hooks/useExpense";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import Modal from "../shared/Modal";
 
 interface FormioModalProps {
   isOpen: boolean;
@@ -16,6 +18,7 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const { isDesktop } = useScreenSize();
   const expenseType = useExpenseTypes();
   const formioContainerRef = useRef<HTMLDivElement>(null);
   const formInstanceRef = useRef<any>(null);
@@ -173,6 +176,51 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
   };
 
   if (!isOpen) return null;
+
+  const renderContent = () => (
+    <>
+      <div className="flex-grow" ref={formioContainerRef}>
+        {/* Form.io will inject its HTML here */}
+      </div>
+
+      <div className="flex justify-between space-x-4 pt-6 border-t border-gray-200 mt-6">
+        <button
+          onClick={onClose}
+          className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+        >
+          Add Item
+        </button>
+      </div>
+    </>
+  );
+
+  if (isDesktop) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <div className="p-6">
+          <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
+            <h2 className="text-lg font-semibold text-gray-800">
+              New Expense Item
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+          {renderContent()}
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">

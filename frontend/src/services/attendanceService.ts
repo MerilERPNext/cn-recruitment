@@ -162,6 +162,37 @@ export const attendanceService = {
       return response as boolean;
     } catch (error) {
       console.error("📡 Error while setting device id:", error);
+
+      // Handle specific 417 error - Expectation Failed
+      // Check for various ways the error might be structured
+      let is417Error = false;
+
+      if (error && typeof error === 'object') {
+        // Check for Axios error structure
+        if ('response' in error && error.response && typeof error.response === 'object') {
+          const response = error.response as { status?: number };
+          if (response.status === 417) {
+            is417Error = true;
+          }
+        }
+
+        // Check for error status property directly
+        if ('status' in error && error.status === 417) {
+          is417Error = true;
+        }
+
+        // Check for error code property
+        if ('code' in error && error.code === 417) {
+          is417Error = true;
+        }
+      }
+
+      if (is417Error) {
+        console.warn("📡 Device ID setting not supported or endpoint not available (417 Expectation Failed) - skipping");
+        // Return false instead of throwing to prevent app crash
+        return false;
+      }
+
       throw error;
     }
   },
@@ -169,13 +200,63 @@ export const attendanceService = {
     filters: AllEventsAndAttendanceT
   ): Promise<AttendanceRecord[]> => {
     try {
+      console.log("📅 Calling get_events with filters:", filters);
       const response = await FrappeAPI.callMethod(
         `cn_leave_shift_managment.get_events`,
         filters
       );
+      console.log("📅 Successfully got events response:", response);
       return response as AttendanceRecord[];
     } catch (error) {
-      console.error("📡 Error while setting device id:", error);
+      console.error("📡 Error while getting events and attendance:", error);
+
+      // Enhanced error logging for debugging
+      if (error && typeof error === 'object') {
+        console.log("🔍 Error object structure:", {
+          hasResponse: 'response' in error,
+          hasStatus: 'status' in error,
+          hasCode: 'code' in error,
+          errorKeys: Object.keys(error),
+          response: 'response' in error ? (error as any).response : undefined
+        });
+      }
+
+      // Handle specific 417 error - likely from device ID setting within the API
+      // Check for various ways the error might be structured
+      let is417Error = false;
+      let errorStatus = null;
+
+      if (error && typeof error === 'object') {
+        // Check for Axios error structure
+        if ('response' in error && error.response && typeof error.response === 'object') {
+          const response = error.response as { status?: number };
+          errorStatus = response.status;
+          if (response.status === 417) {
+            is417Error = true;
+          }
+        }
+
+        // Check for error status property directly
+        if ('status' in error && (error as any).status === 417) {
+          is417Error = true;
+          errorStatus = (error as any).status;
+        }
+
+        // Check for error code property
+        if ('code' in error && (error as any).code === 417) {
+          is417Error = true;
+          errorStatus = (error as any).code;
+        }
+      }
+
+      console.log(`🔍 Error status detected: ${errorStatus}, is417Error: ${is417Error}`);
+
+      if (is417Error) {
+        console.warn("📡 Device ID setting failed within get_events API (417 Expectation Failed) - returning empty array");
+        // Return empty array instead of throwing to prevent app crash
+        return [];
+      }
+
       throw error;
     }
   },

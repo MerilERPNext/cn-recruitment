@@ -7,8 +7,9 @@ import { FaRegEye } from "react-icons/fa";
 
 type PolicyDoc = {
   name: string;
-  comments?: string;
-  add_policy_document?: string;
+  policy?: string;
+  policy_document?: string;
+  status?: string;
 };
 
 type PolicyState = {
@@ -24,7 +25,7 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
       {
         state: {
           // build an absolute URL the viewer can fetch
-          pdfUrl: `${window.location.origin}${item.add_policy_document}`,
+          pdfUrl: `${window.location.origin}${item.policy_document}`,
         },
       }
     );
@@ -33,18 +34,18 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
     <div className="flex justify-between items-center border rounded-xl mt-2 shadow-sm border-gray-200 py-4 px-4 active:bg-gray-50">
       <div className="flex-1 min-w-0">
         <h2 className="text-base font-semibold text-gray-900 truncate">
-          {item.name}
+          {item.policy || item.name}
         </h2>
-        <p className="text-sm text-gray-500 truncate">{item.comments ?? "—"}</p>
+        <p className="text-sm text-gray-500 truncate">{item.status ?? "—"}</p>
       </div>
 
       <div className="flex items-center gap-2 ml-3">
         <button
           onClick={() => {
-            if (item.add_policy_document) {
+            if (item.policy_document) {
               const link = document.createElement("a");
-              link.href = `${window.location.origin}${item.add_policy_document}`;
-              link.download = item.name;
+              link.href = `${window.location.origin}${item.policy_document}`;
+              link.download = item.policy || item.name;
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
@@ -52,7 +53,7 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
           }}
           className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
           title="Download Policy Document"
-          disabled={!item.add_policy_document}
+          disabled={!item.policy_document}
         >
           <Download className="w-4 h-4" />
         </button>
@@ -78,15 +79,14 @@ const PoliciesList: React.FC = () => {
   return (
     <div className="max-w-md bg-white rounded-xl">
       <FrappeListView<PolicyDoc>
-        doctype="HR Policies"
+        doctype="Policy Details" // Using correct doctype name
         defaultFilters={{
           policy_category: categoryName,
-          archive: "0",
         }}
         isSearch={true}
         showRefereshButton={true}
         searchFields={["name"]}
-        defaultFields={["name", "comments", "add_policy_document"]}
+        defaultFields={["name", "policy", "policy_document", "status"]}
         ItemComponent={PolicyItem}
         infiniteScroll={true}
         SkeletonComponent={PolicyCardSkeleton}

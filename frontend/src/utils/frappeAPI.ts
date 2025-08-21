@@ -87,6 +87,12 @@ apiClient.interceptors.response.use(
       );
     }
 
+    // Handle 417 Expectation Failed errors (typically from device ID setting issues)
+    if (error.response?.status === 417) {
+      console.warn("🚨 API returned 417 Expectation Failed - this is typically due to device ID setting issues");
+      // Don't block the application, but log the warning
+    }
+
     return Promise.reject(error);
   }
 );
@@ -149,8 +155,29 @@ export const FrappeAPI = {
     method: string,
     args: Record<string, unknown> = {}
   ): Promise<unknown> => {
-    const response = await apiClient.post(`/api/method/${method}`, args);
-    return response.data.message;
+    try {
+      const response = await apiClient.post(`/api/method/${method}`, args);
+      return response.data.message;
+    } catch (error) {
+      // Log detailed error information for debugging
+      console.error(`🚨 API method ${method} failed:`, error);
+
+      // Handle 417 errors specifically for attendance-related methods
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        if (axiosError.response?.status === 417) {
+          console.warn(`⚠️ Method ${method} returned 417 Expectation Failed - likely device ID or attendance API issue`);
+
+          // For specific attendance methods, return empty data instead of throwing
+          if (method.includes('get_events') || method.includes('attendance') || method.includes('device_id')) {
+            console.warn(`🔄 Returning empty result for ${method} due to 417 error`);
+            return []; // Return empty array for attendance data
+          }
+        }
+      }
+
+      throw error;
+    }
   },
 
   getDocMeta: async (doctype: string) => {

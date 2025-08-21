@@ -9,6 +9,9 @@ import {
   RequestLeaveModalProvider,
 } from "./RequestLeaveModalContext";
 import NavigationTabs, { Tab } from "../NavigationTab";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import FormDialog from "../shared/FormDialog";
 
 type TabName = "leave-balance" | "requests-status" | "holidays";
 type SubTabName = "My Requests" | "Team Requests";
@@ -25,6 +28,7 @@ const subTabRoutes: Record<SubTabName, string> = {
 };
 
 const LeaveAppInner: React.FC = () => {
+  const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
@@ -97,7 +101,7 @@ const LeaveAppInner: React.FC = () => {
     navigate(subTabRoutes[subTab]);
   };
 
-  return (
+  const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <style>{`
          .scrollbar-hidden {
@@ -157,17 +161,80 @@ const LeaveAppInner: React.FC = () => {
         </div>
       )}
 
-      {showModal && (
-        <div className="fixed inset-0 z-[60] bg-white overflow-y-auto">
-          <div className="max-w-md min-h-screen mx-auto">
-            <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
-          </div>
-        </div>
-      )}
+      <FormDialog
+        isOpen={showModal}
+        onClose={closeModal}
+        title="Request Leave"
+        size="lg"
+      >
+        <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
+      </FormDialog>
 
       <Toaster />
     </div>
   );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="Leaves & Holidays">
+      <div className="flex flex-col h-full">
+        {/* Tab Navigation */}
+        <div className="bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0">
+          <NavigationTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={(tab) => handleTabChange(tab as TabName)}
+          />
+
+          {isLeaveRequestsActive && (
+            <div className="mt-4">
+              <div className="flex bg-gray-50 rounded-lg p-1 border border-gray-200 max-w-md">
+                {(Object.keys(subTabRoutes) as SubTabName[]).map((subTab) => (
+                  <button
+                    key={subTab}
+                    onClick={() => handleSubTabChange(subTab)}
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeSubTab === subTab
+                        ? "bg-black text-white shadow-sm"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
+                  >
+                    {subTab}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-y-auto relative">
+          <Outlet />
+
+          {!showModal && activeTab === "requests-status" && (
+            <div className="absolute bottom-8 right-8">
+              <button
+                onClick={() => openModal()}
+                className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
+              >
+                + Request Leave
+              </button>
+            </div>
+          )}
+        </div>
+
+        <FormDialog
+          isOpen={showModal}
+          onClose={closeModal}
+          title="Request Leave"
+          size="lg"
+        >
+          <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
+        </FormDialog>
+      </div>
+      <Toaster />
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 const LeaveApp: React.FC = () => {

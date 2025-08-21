@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { X } from "lucide-react";
 import { Formio } from "formiojs";
 import { useExpenseTypes } from "../../../hooks/useExpense";
+import BottomDrawer from "../../shared/BottomDrawer";
 
 interface FormioModalProps {
   isOpen: boolean;
@@ -171,44 +172,40 @@ const FormioDailyAllowanceExpenseModal: React.FC<FormioModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
-      <div className="bg-white rounded-t-xl w-full max-w-md p-6 shadow-lg flex flex-col max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
-          <h2 className="text-lg m-auto font-semibold text-gray-800">
-            Add New Expense
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
-        </div>
-
-        <div className="flex-grow" ref={formioContainerRef}>
-          {/* Form.io will inject its HTML here */}
-        </div>
-
-        <div className="flex justify-between space-x-4 pt-6 border-t border-gray-200 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSaveClick}
-            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-          >
-            Save
-          </button>
-        </div>
+    <BottomDrawer isOpen={isOpen} onClose={onClose}>
+      <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">
+          Add New Expense
+        </h2>
+        <button
+          onClick={onClose}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+          aria-label="Close"
+        >
+          <X className="h-5 w-5 text-gray-600" />
+        </button>
       </div>
-    </div>
+
+      <div className="flex-grow" ref={formioContainerRef}>
+        {/* Form.io will inject its HTML here */}
+      </div>
+
+      <div className="flex justify-between space-x-4 pt-6 border-t border-gray-200 mt-6">
+        <button
+          onClick={onClose}
+          className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSaveClick}
+          className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+        >
+          Save
+        </button>
+      </div>
+    </BottomDrawer>
   );
 };
 

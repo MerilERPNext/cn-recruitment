@@ -3,6 +3,8 @@ import HeaderBar from "../HeaderBar";
 import PDFViewer from "../PDFViewer";
 import { useNavigate, useParams } from "react-router-dom";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
+import LayoutModal from "../shared/LayoutModal";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const ViewSalarySlipModal = () => {
   const navigate = useNavigate();

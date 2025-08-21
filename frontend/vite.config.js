@@ -7,27 +7,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 8080,
-    proxy: proxyOptions,
-    allowedHosts: true,
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src"),
+    plugins: [react()],
+    server: {
+        port: 8080,
+        proxy: proxyOptions,
+        allowedHosts: true,
     },
-  },
-  build: {
-    outDir: path.resolve(__dirname, "../recruitment/public/webapp"),
-    rollupOptions: {
-      output: {
-        entryFileNames: "[name].js",
-        chunkFileNames: "[name]-[hash].js",
-        assetFileNames: "[name].[ext]",
-      },
+    resolve: {
+        alias: {
+            "@": path.resolve(__dirname, "src"),
+        },
     },
-    emptyOutDir: true,
-    target: "es2015",
-  },
+    build: {
+        outDir: path.resolve(__dirname, "../recruitment/public/webapp"),
+        rollupOptions: {
+            output: {
+                entryFileNames: "[name].js",
+                chunkFileNames: "[name]-[hash].js",
+                assetFileNames: "[name].[ext]",
+            },
+        },
+        emptyOutDir: true,
+        target: "es2015",
+    },
 });

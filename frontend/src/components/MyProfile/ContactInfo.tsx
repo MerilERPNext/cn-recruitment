@@ -94,28 +94,45 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
   }, []);
 
   return (
-    <div className="h-full max-w-md mx-auto bg-gray-100 rounded-lg">
-      <div className="p-4">
-        <Form
-          form={contactInfoForm}
-          onFormReady={(instance: any) =>
-            (formContactInfoInstance.current = instance)
-          }
-          options={{
-            submitButton: false,
-          }}
-        />
-      </div>
-      <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full z-50">
-        <div className="max-w-4xl mx-auto flex">
+    <div className="h-full">
+      <div className="p-8">
+        {/* Header */}
+        <div className="border-b border-gray-200 pb-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Contact Information
+          </h2>
+          <p className="text-gray-600">
+            Manage your contact details and communication preferences
+          </p>
+        </div>
+
+        {/* Form Container */}
+        <div className="max-w-4xl">
+          <Form
+            form={contactInfoForm}
+            onFormReady={(instance: any) =>
+              (formContactInfoInstance.current = instance)
+            }
+            options={{
+              submitButton: false,
+            }}
+          />
+        </div>
+
+        {/* Submit Button */}
+        <div className="mt-8 flex justify-end">
           <button
             onClick={handleSubmit}
-            className="flex-1 py-3 max-h-12 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors items-center justify-center flex"
+            disabled={updateEmployeeMutation.isPending}
+            className="px-8 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {updateEmployeeMutation.isPending ? (
-              <div className="w-5 h-5 border-2 my-1 border-t-transparent border-white rounded-full animate-spin"></div>
+              <>
+                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                Saving...
+              </>
             ) : (
-              "Submit"
+              "Save Changes"
             )}
           </button>
         </div>

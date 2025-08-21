@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
+import { Shield } from "lucide-react";
 import { CategoryCardSkeleton } from "./PolicySkeletons";
 import { useFrappeDocuments } from "../../hooks/useFrappeQuery";
 import { usePolicyCountsByCategory } from "../../hooks/usePolicy";
@@ -33,27 +34,14 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
 };
 
 const PoliciesCategory: React.FC = () => {
-  const { data: categories, isLoading: isCategoriesLoading } =
-    useFrappeDocuments(
-      {
-        doctype: "HR Category",
-        pageParam: 0,
-        pageSize: 1000,
-        filters: {},
-        searchTerm: "",
-        fields: ["name"],
-        searchFields: ["name"],
-      },
-      {
-        staleTime: 5 * 60 * 1000,
-        refetchOnWindowFocus: false,
-      }
-    );
-
-  const { data: counts, isLoading: isCountsLoading } =
+  const { data: counts, isLoading: isCountsLoading, error: countsError } =
     usePolicyCountsByCategory();
-  const isLoading = isCategoriesLoading || isCountsLoading;
-  if (isLoading) {
+
+  console.log("🏷️ PoliciesCategory - counts:", counts);
+  console.log("🏷️ PoliciesCategory - loading:", isCountsLoading);
+  console.log("🏷️ PoliciesCategory - error:", countsError);
+
+  if (isCountsLoading) {
     return (
       <>
         {[...Array(5)].map((_, i) => (
@@ -63,15 +51,38 @@ const PoliciesCategory: React.FC = () => {
     );
   }
 
+  // Handle errors gracefully
+  if (countsError) {
+    console.warn("Failed to load policy counts:", countsError);
+  }
+
+  // Create categories from the counts data
+  const categories = counts ? Object.keys(counts).map(name => ({ name })) : [];
+  console.log("🏷️ Generated categories:", categories);
+
   return (
     <div className="h-full w-full">
-      {categories?.data?.map((item: CategoryDoc) => (
-        <CategoryCard
-          key={item.name}
-          name={item.name}
-          count={counts?.[item.name] ?? 0}
-        />
-      ))}
+      {categories && categories.length > 0 ? (
+        categories.map((item: CategoryDoc) => (
+          <CategoryCard
+            key={item.name}
+            name={item.name}
+            count={counts?.[item.name] ?? 0}
+          />
+        ))
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Shield className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No Policy Categories Found
+          </h3>
+          <p className="text-gray-500 text-sm">
+            Policy categories will appear here when they are available.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

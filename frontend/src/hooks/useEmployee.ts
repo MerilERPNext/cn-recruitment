@@ -35,11 +35,18 @@ export const useCurrentEmployee = (): UseQueryResult<
 export const useCurrentEmployeeAllDetails = (user_id: string) => {
   return useQuery<Employee | null, Error>({
     queryKey: ["currentEmployeeAllDetails", user_id],
-    queryFn: () => EmployeeService.getCurrentEmployeeAllDetails(user_id),
+    queryFn: async () => {
+      if (!user_id || typeof user_id !== 'string' || user_id.trim() === '') {
+        console.warn("useCurrentEmployeeAllDetails: Invalid user_id provided:", user_id);
+        return null;
+      }
+      return EmployeeService.getCurrentEmployeeAllDetails(user_id);
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
-    retry: 1,
-    enabled: !!user_id,
+    retry: 2, // Increased retry count
+    enabled: !!user_id && typeof user_id === 'string' && user_id.trim() !== '',
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 };
 export const useCurrentEmployeeAddress = (user_id: string) => {

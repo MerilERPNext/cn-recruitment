@@ -23,10 +23,48 @@ const AllEmpAttendance = () => {
   // Get start and end of the month
   const start = format(startOfMonth(parsedDate), "yyyy-MM-dd");
   const end = format(endOfMonth(parsedDate), "yyyy-MM-dd");
-  const { data: allEventsAndAttendance } = useGetAllEventsAndAttendance({
+  const {
+    data: allEventsAndAttendance,
+    isError,
+    error,
+    isLoading
+  } = useGetAllEventsAndAttendance({
     start: start,
     end: end,
   });
+
+  // Handle error state
+  if (isError) {
+    return (
+      <>
+        <HeaderBar
+          title="All Employee Attendance"
+          onBack={() => navigate(-1)}
+          rightElement={
+            <button onClick={() => setShowSelectByMonth(true)}>
+              <CalendarDays />
+            </button>
+          }
+        />
+        <div className="mx-auto bg-gray-50 h-screen mt-14 px-4 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-500 text-lg font-semibold mb-2">
+              Error Loading Attendance Data
+            </div>
+            <p className="text-gray-600 mb-4">
+              {error?.message || "Unable to load attendance information"}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

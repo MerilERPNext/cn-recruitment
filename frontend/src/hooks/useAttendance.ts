@@ -24,8 +24,24 @@ const isPermissionError = (error: unknown): boolean =>
     error.message.includes("403") ||
     error.message.includes("Access Restricted"));
 
-const defaultRetry = (failureCount: number, error: unknown) =>
-  isPermissionError(error) ? false : failureCount < 3;
+const defaultRetry = (failureCount: number, error: unknown) => {
+  // Don't retry permission errors
+  if (isPermissionError(error)) return false;
+
+  // Don't retry 417 errors (device ID/expectation failed errors)
+  if (error && typeof error === 'object') {
+    if ('response' in error && (error as any).response?.status === 417) {
+      console.warn("🚫 Not retrying 417 error - likely device ID issue");
+      return false;
+    }
+    if ('status' in error && (error as any).status === 417) {
+      console.warn("🚫 Not retrying 417 error - likely device ID issue");
+      return false;
+    }
+  }
+
+  return failureCount < 3;
+};
 
 const defaultQueryOptions = {
   staleTime: 1000 * 60 * 60 * 2, // 2 hours
@@ -126,7 +142,24 @@ export const useGetAllEventsAndAttendance = (
 ): UseQueryResult<AttendanceRecord[], Error> => {
   return useQuery<AttendanceRecord[], Error>({
     queryKey: ["get-All-Events-And-Attendance", filters],
-    queryFn: () => attendanceService.getAllEventsAndAttendance(filters),
+    queryFn: async () => {
+      try {
+        return await attendanceService.getAllEventsAndAttendance(filters);
+      } catch (error) {
+        console.warn("🎯 useGetAllEventsAndAttendance caught error:", error);
+
+        // Handle 417 errors by returning empty array
+        if (error && typeof error === 'object') {
+          if (('response' in error && (error as any).response?.status === 417) ||
+              ('status' in error && (error as any).status === 417)) {
+            console.warn("🔄 Returning empty array for 417 error in hook");
+            return [];
+          }
+        }
+
+        throw error;
+      }
+    },
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });

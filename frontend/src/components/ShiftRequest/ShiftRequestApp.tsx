@@ -3,6 +3,8 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import RequestShiftChangeButton from "./RequestShiftChangeButton";
 import NavigationTabs, { Tab } from "../NavigationTab";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 type TabName =
   | "My Shift Assignment"
@@ -18,6 +20,7 @@ const tabRoutes: Record<TabName, string> = {
 };
 
 const ShiftRequestApp: React.FC = () => {
+  const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("My Shift Assignment");
@@ -41,12 +44,12 @@ const ShiftRequestApp: React.FC = () => {
     if (location.pathname === "/webapp/shift-request") {
       const savedTab = localStorage.getItem("activeTab") as TabName | null;
       const fallback = "My Shift Assignment";
-  
+
       const redirectTab = savedTab && tabRoutes[savedTab] ? savedTab : fallback;
       navigate(tabRoutes[redirectTab], { replace: true });
     }
   }, [location.pathname, navigate]);
-  
+
 
   const handleTabChange = (tabKey: string) => {
     const tab = tabKey as TabName;
@@ -58,7 +61,7 @@ const ShiftRequestApp: React.FC = () => {
     navigate(`/webapp/shift-request/shift-change-form`);
   };
 
-  return (
+  const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <style>{`
         :root {
@@ -99,6 +102,39 @@ const ShiftRequestApp: React.FC = () => {
       )}
     </div>
   );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="Shifts">
+      <div className="flex flex-col h-full">
+        {/* Tab Navigation */}
+        <div className="bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0">
+          <NavigationTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        </div>
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-y-auto p-8 relative">
+          <Outlet />
+
+          {activeTab === "My Shift Assignment" && (
+            <div className="absolute bottom-8 right-8">
+              <button
+                onClick={handleShiftForm}
+                className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
+              >
+                Request Shift Change
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 export default ShiftRequestApp;

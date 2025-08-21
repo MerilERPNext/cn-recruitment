@@ -16,6 +16,8 @@ import { Employee } from "../../types/employee";
 import { Pencil } from "lucide-react";
 import defaultProfile from "../../assets/user.png";
 import NavigationTabs, { Tab } from "../NavigationTab";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -23,6 +25,7 @@ export interface PersonalInfoProps {
 }
 
 const MyProfile: React.FC = () => {
+  const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tabs: Tab[] = useMemo(
@@ -75,7 +78,7 @@ const MyProfile: React.FC = () => {
     }
   };
 
-  return (
+  const mobileLayout = (
     <div className="bg-white font-sans scroll-smooth">
       <div className="bg-white shadow">
         <HeaderBar title="My Profile" onBack={() => navigate(-1)} />
@@ -115,9 +118,85 @@ const MyProfile: React.FC = () => {
         />
         <div className="flex-grow">{tabContent[activeTab]}</div>
       </div>
-      
     </div>
   );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="My Profile">
+      <div className="flex h-full bg-gray-50">
+        {/* Profile Sidebar */}
+        <div className="w-96 bg-white border-r border-gray-200 flex-shrink-0 shadow-sm">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            id="upload-image"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <div className="p-8">
+            {/* Profile Header */}
+            <div className="flex flex-col items-center bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 mb-8 border border-blue-100">
+              <div className="relative">
+                <div className="w-32 h-32 rounded-2xl overflow-hidden ring-4 ring-white shadow-lg">
+                  <img
+                    src={uploadedImage || user?.image || defaultProfile}
+                    alt="User avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <button
+                  onClick={handleImageClick}
+                  className="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  aria-label="Upload new avatar"
+                >
+                  <Pencil size={16} />
+                </button>
+              </div>
+              <div className="text-center mt-6">
+                <h1 className="text-2xl font-bold text-gray-900">{user?.employee_name}</h1>
+                <p className="text-blue-600 font-medium mt-1">{user?.designation}</p>
+                <p className="text-gray-500 text-sm mt-1">ID: {user?.employee}</p>
+              </div>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
+                Profile Sections
+              </h3>
+              <nav className="space-y-2">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`w-full text-left px-5 py-4 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      activeTab === tab.key
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                        : "text-gray-700 hover:bg-gray-100 hover:shadow-sm"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-8 max-w-4xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 min-h-[600px]">
+              {tabContent[activeTab]}
+            </div>
+          </div>
+        </div>
+      </div>
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 export default MyProfile;
