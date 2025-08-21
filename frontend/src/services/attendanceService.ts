@@ -29,21 +29,14 @@ export const attendanceService = {
     filters?: string
   ): Promise<EmployeeCheckInLog[]> => {
     try {
-      const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.get_shift_checkins?user=${userId}&filters=${
-          filters || ""
-        }`,
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_shift_checkins",
         {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
+          user: userId,
+          filters: filters || "",
         }
       );
-
-      const result = await response.json();
-      return result?.message as EmployeeCheckInLog[];
+      return response as EmployeeCheckInLog[];
     } catch (error) {
       console.error("📡 Error marking notice as read:", error);
       throw error;
@@ -54,19 +47,14 @@ export const attendanceService = {
     filters?: object
   ): Promise<EmployeeShift> => {
     try {
-      const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.get_employee_shift?user=${userId}&filters=${filters}`,
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_employee_shift",
         {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
+          user: userId,
+          filters: filters,
         }
       );
-
-      const result = await response.json();
-      return result?.message as EmployeeShift;
+      return response as EmployeeShift;
     } catch (error) {
       console.error("📡 Error in fetching employee shift:", error);
       throw error;
@@ -75,21 +63,12 @@ export const attendanceService = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getEmployeeDeviceId: async (): Promise<any> => {
     try {
-      const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.get_employee_device_id`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_employee_device_id"
       );
-
-      const result = await response.json();
-      return result?.message;
+      return response;
     } catch (error) {
-      console.error("📡 Error in fetching employee shift:", error);
+      console.error("📡 Error in fetching employee device id:", error);
       throw error;
     }
   },
@@ -100,19 +79,15 @@ export const attendanceService = {
     toDate: string
   ): Promise<EmployeeShiftSummary> => {
     try {
-      const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.get_quick_summary?employee=${employeeId}&from_date=${fromDate}&to_date=${toDate}`,
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_quick_summary",
         {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
+          employee: employeeId,
+          from_date: fromDate,
+          to_date: toDate,
         }
       );
-
-      const result = await response.json();
-      return result?.message as EmployeeShiftSummary;
+      return response as EmployeeShiftSummary;
     } catch (error) {
       console.error("📡 Error fetching quick attendance summary:", error);
       throw error;

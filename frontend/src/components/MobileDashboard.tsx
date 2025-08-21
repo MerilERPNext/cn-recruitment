@@ -114,11 +114,11 @@ const MobileDashboard: React.FC = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
-  const { data: canShowClockIn } = useCanShowClockIn({
-    params: { user: currentEmployee?.user_id },
-  });
+  const { data: canShowClockIn } = useCanShowClockIn(
+    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
+  );
   const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(
-    currentEmployee?.employee as string,
+    currentEmployee?.employee || "",
     format(startOfMonth(new Date()), "yyyy-MM-dd"),
     format(endOfMonth(new Date()), "yyyy-MM-dd")
   );
@@ -146,9 +146,9 @@ const MobileDashboard: React.FC = () => {
     data: homeSummary,
     refetch: refetchHomeSummary,
     isRefetching,
-  } = useHomeSummaryDetails(currentEmployee?.user_id as string, encodedFilters);
+  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: employeeShift } = useGetEmployeeShift(
-    currentEmployee?.user_id as string
+    currentEmployee?.user_id || ""
   );
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];

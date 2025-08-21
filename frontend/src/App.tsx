@@ -10,7 +10,7 @@ import "./App.css";
 import "./utils/FormioConfig";
 
 import { AppRoute, routesConfig } from "./routesConfig";
-import MobileDashboard from "./components/MobileDashboard";
+import ResponsiveDashboard from "./components/ResponsiveDashboard";
 import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
 import { useCurrentEmployee } from "./hooks/useEmployee";
 import toast, { ToastBar, Toaster } from "react-hot-toast";
@@ -88,7 +88,7 @@ const App: React.FC = () => {
           >
             <Routes>
               <Route element={<ModalWrapper />}>
-                <Route path="/webapp/" element={<MobileDashboard />} />
+                <Route path="/webapp/" element={<ResponsiveDashboard />} />
                 {renderRoutes(routesConfig)}
                 <Route path="*" element={<Navigate to="/webapp/" replace />} />
               </Route>

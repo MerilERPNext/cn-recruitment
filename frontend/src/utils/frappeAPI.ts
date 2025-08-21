@@ -48,8 +48,8 @@ apiClient.interceptors.response.use(
   async (error) => {
     const config = error.config as CustomAxiosRequestConfig;
 
-    // Handle CSRF token refresh on 400 errors
-    if (error.response?.status === 400 && !config._retry) {
+    // Handle CSRF token refresh on 400 or 500 errors
+    if ((error.response?.status === 400 || error.response?.status === 500) && !config._retry) {
       try {
         config._retry = true;
         const csrfToken = await refreshCsrfToken();

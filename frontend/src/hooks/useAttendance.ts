@@ -51,7 +51,7 @@ export const useHomeSummaryDetails = (
   filters?: string
 ): UseQueryResult<EmployeeCheckInLog[], Error> => {
   return useQuery<EmployeeCheckInLog[], Error>({
-    queryKey: ["home-summary-details", filters],
+    queryKey: ["home-summary-details", userId, filters],
     queryFn: () => attendanceService.getHomeSummaryDetails(userId, filters),
     enabled: !!userId,
     refetchOnWindowFocus: true,
@@ -64,7 +64,7 @@ export const useGetEmployeeShift = (
   filters?: object
 ): UseQueryResult<EmployeeShift, Error> => {
   return useQuery<EmployeeShift, Error>({
-    queryKey: ["employee-shift", userId],
+    queryKey: ["employee-shift", userId, filters],
     queryFn: () => attendanceService.getEmployeeShift(userId, filters),
     enabled: !!userId,
     refetchOnWindowFocus: true,
@@ -91,10 +91,10 @@ export const useGetQuickAttendanceSummary = (
   toDate: string
 ): UseQueryResult<EmployeeShiftSummary, Error> => {
   return useQuery<EmployeeShiftSummary, Error>({
-    queryKey: ["employee-attendance-summary", fromDate],
+    queryKey: ["employee-attendance-summary", employeeId, fromDate, toDate],
     queryFn: () =>
       attendanceService.getQuickAttendanceSummary(employeeId, fromDate, toDate),
-    enabled: !!employeeId,
+    enabled: !!employeeId && !!fromDate && !!toDate,
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
@@ -179,6 +179,7 @@ export const useCanShowClockIn = (
     queryFn: () => attendanceService.canShowClockIn(params),
     staleTime: defaultStaleTime,
     gcTime: defaultGcTime,
+    enabled: !!params && Object.keys(params).length > 0,
   });
 };
 
