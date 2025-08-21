@@ -91,7 +91,7 @@ const EmployeeAttendance = () => {
           case "leave":
             status = "on-leave";
             break;
-          case "holidays":
+          case "holiday":
             status = "holiday";
             break;
           case "weekly off":
@@ -220,7 +220,7 @@ const EmployeeAttendance = () => {
                     case "holiday":
                       return "!bg-blue-100 !text-blue-700 rounded-md";
                     case "week-off":
-                      return "!bg-gray-100 !text-gray-700 rounded-md";
+                      return "!bg-gray-200 !text-gray-700 rounded-md";
                     case "work-from-home":
                       return "!bg-purple-100 !text-purple-800 border border-purple-200 rounded-md";
                     default:
