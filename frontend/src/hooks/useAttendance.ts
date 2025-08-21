@@ -14,6 +14,7 @@ import type {
   EmployeeCheckInLog,
   EmployeeShift,
   EmployeeShiftSummary,
+  PolicyQuestion,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
 
@@ -131,6 +132,17 @@ export const useGetAllEventsAndAttendance = (
     ...defaultQueryOptions,
   });
 };
+export const useGetPolicyForDate = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  filters: any
+): UseQueryResult<string, Error> => {
+  return useQuery<string, Error>({
+    queryKey: ["get-All-Events-And-Attendance", filters],
+    queryFn: () => attendanceService.getPolicyForDate(filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
 
 export const useAttendanceById = (
   id: string | null
@@ -139,6 +151,17 @@ export const useAttendanceById = (
     queryKey: ["attendance", id],
     queryFn: () => attendanceService.getAttendanceById(id!),
     enabled: !!id,
+    ...defaultQueryOptions,
+  });
+};
+export const useAttendancePolicies = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  filters?: any
+): UseQueryResult<PolicyQuestion, Error> => {
+  return useQuery<PolicyQuestion, Error>({
+    queryKey: ["attendance-policy", filters],
+    queryFn: () => attendanceService.getAttendancePolicies(filters),
+    enabled: !!filters,
     ...defaultQueryOptions,
   });
 };

@@ -18,14 +18,17 @@ import {
   AlertCircle,
   Timer,
   Clock8,
+  ExternalLink,
 } from "lucide-react";
 import { useState } from "react";
 import {
   useAllAttendance,
+  useGetPolicyForDate,
   useGetQuickAttendanceSummary,
 } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
+import { Link } from "react-router-dom";
 // import { useNavigate } from "react-router"
 
 const AttendanceSummary = () => {
@@ -41,7 +44,10 @@ const AttendanceSummary = () => {
     format(startOfMonth(currentDate), "yyyy-MM-dd"),
     format(endOfMonth(currentDate), "yyyy-MM-dd")
   );
-
+  const { data: attendancePolicy } = useGetPolicyForDate({
+    employee: currentEmployee?.employee,
+    as_of: format(new Date(), "yyyy-MM-dd"),
+  });
   const goToPreviousMonth = () => {
     setCurrentDate((prev) => subMonths(prev, 1));
   };
@@ -229,21 +235,29 @@ const AttendanceSummary = () => {
             </div>
 
             {/* Policy */}
-            <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <Link
+              to={`/webapp/attendance/attendance-policies?policy=${attendancePolicy}`}
+              className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
+            >
               <div className="p-2 bg-gray-200 rounded-lg">
                 <Shield className="h-4 w-4 text-gray-700" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">
-                  Attendance Policy
-                </h3>
+                <div className="w-full flex justify-between">
+                  <h3 className="font-semibold text-gray-900">
+                    Attendance Policy
+                  </h3>
+                  <ExternalLink className="h-4 w-4 text-gray-700" />
+                </div>
                 <div>
-                  <button className=" w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
-                    GENERAL SHIFT POLICY
-                  </button>
+                  {attendancePolicy && (
+                    <div className=" w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+                      {attendancePolicy}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Weekly Off */}
             <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">

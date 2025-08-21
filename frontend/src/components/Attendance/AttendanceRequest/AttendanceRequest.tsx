@@ -1,17 +1,21 @@
 import { Plus } from "lucide-react";
 import FrappeListView from "../../ListView";
-import AttendanceRequestCard from "./AttendanceRequestCard";
 import AttndanceRequestForm from "./AttendanceRequestForm";
 import { useMemo, useState } from "react";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { AttendanceRequest as AttendanceRequestType } from "../../../types/attendance";
+import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 
 const AttendanceRequest = () => {
-  const { data: userId } = useLoggedInUser();
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name as string
+  );
   const defaultFilters = useMemo(() => {
-    if (!userId) return undefined;
-    return { owner: userId };
-  }, [userId]);
+    if (!currentEmployee?.employee) return undefined;
+    return { employee: currentEmployee?.employee };
+  }, [currentEmployee?.employee]);
 
   const [showForm, setShowForm] = useState(false);
 
@@ -42,7 +46,14 @@ const AttendanceRequest = () => {
             doctype="Attendance Request"
             isSearch={false}
             ItemComponent={(props: { item: AttendanceRequestType }) => {
-              return <AttendanceRequestCard data={props?.item} />;
+              return (
+                <EmpAttendanceRequestCard
+                  data={props?.item}
+                  // onClick={() => {
+                  //   setShowForm(true);
+                  // }}
+                />
+              );
             }}
             SkeletonComponent={CardSkeleton}
             defaultFilters={defaultFilters}
@@ -50,7 +61,13 @@ const AttendanceRequest = () => {
             onItemClick={() => {}}
             infiniteScroll={true}
             isFilter={false}
-            defaultFields={["reason", "modified", "creation", "docstatus"]}
+            defaultFields={[
+              "custom_status",
+              "reason",
+              "modified",
+              "creation",
+              "docstatus",
+            ]}
           />
         </div>
       )}
