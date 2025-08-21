@@ -7,7 +7,6 @@ import SelectByMonth, { MonthOption } from "./SelectByMonth";
 import { endOfMonth, format, parse, startOfMonth } from "date-fns";
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import { getStatusGradient } from "../../../utils/helperUtils";
-import Badge from "../../shared/Badge";
 
 const AllEmpAttendance = () => {
   const navigate = useNavigate();
@@ -60,7 +59,7 @@ const AllEmpAttendance = () => {
         }
       />
 
-      <div className="mx-auto bg-white h-screen mt-14 px-4">
+      <div className="mx-auto bg-gray-50 h-screen mt-14 px-4">
         <h2 className="font-semibold text-lg text-center py-2">
           {selectedMonth?.label}
         </h2>
@@ -70,18 +69,18 @@ const AllEmpAttendance = () => {
             allEventsAndAttendance?.map((item) => {
               const dateObj = new Date(item?.start);
               const date = dateObj.getDate();
-              const month = dateObj.toLocaleString("default", {
-                month: "short",
-              });
+              // const month = dateObj.toLocaleString("default", {
+              //   month: "short",
+              // });
               const day = dateObj.toLocaleString("default", {
                 weekday: "short",
               });
 
               return (
-                <div className="flex items-center p-4 border border-gray-200 bg-white shadow-sm rounded-xl hover:shadow-md transition-shadow space-x-4">
+                <div className="flex items-center p-4 border border-gray-100 bg-white shadow-sm rounded-xl hover:shadow-md transition-shadow space-x-4">
                   {/* Date Box */}
                   <div
-                    className={`flex flex-col items-center justify-center h-full rounded-md py-2 px-2  ${getStatusColor(
+                    className={`flex flex-col items-center justify-center rounded-md p-4 w-14 ${getStatusColor(
                       item.status.toLocaleLowerCase()
                     )}`}
                     style={
@@ -93,21 +92,19 @@ const AllEmpAttendance = () => {
                         : {}
                     }
                   >
-                    <div className="text-sm font-bold leading-none font-semibold">
-                      {date}
-                    </div>
-                    <div className="text-sm uppercase tracking-wide leading-tight font-semibold">
+                    <div className="text-lg leading-none font-bold">{date}</div>
+                    {/* <div className="text-sm uppercase tracking-wide leading-tight font-semibold">
                       {month}
-                    </div>
-                    <div className="text-sm capitalize leading-tight text-gray-600 font-semibold">
+                    </div> */}
+                    <div className="text-sm capitalize leading-tight">
                       {day}
                     </div>
                   </div>
 
                   {/* Details */}
-                  <div className="flex flex-1 flex-col justify-center space-y-1">
-                    <div className="flex gap-2">
-                      <div className="text-base font-semibold text-lg text-gray-800">
+                  <div className="flex flex-1 flex-col gap-1">
+                    <div className="flex gap-2 items-center justify-between w-full">
+                      <div className="font-semibold text-sm text-gray-800">
                         {item?.doctype === "Attendance Request"
                           ? "Attendance Request - "
                           : ""}
@@ -115,17 +112,15 @@ const AllEmpAttendance = () => {
                       </div>
                       {/* Shift Info */}
                       {item?.shift && (
-                        <Badge
-                          label={`Shift ${item?.shift}`}
-                          backgroundColor="bg-gray-200"
-                          textColor="text-gray-600"
-                        />
+                        <div className="bg-gray-200 text-gray-600 rounded-xl px-2 py-[2px] h-full text-xs flex items-center justify-center ">
+                          Shift {item?.shift}
+                        </div>
                       )}
                     </div>
                     {item?.doctype === "Attendance" && (
-                      <div className="mt-2 w-full rounded-xl flex justify-between">
+                      <div className="w-full rounded-xl flex justify-between ">
                         <div>
-                          <p className="text-gray-400 text-sm text-start font-semibold">
+                          <p className="text-gray-500 text-xs text-start font-semibold">
                             Check In
                           </p>
                           <div className="flex justify-center items-center gap-2">
@@ -151,7 +146,7 @@ const AllEmpAttendance = () => {
                           </div>
                         </div>
                         <div>
-                          <p className="text-gray-400 text-sm text-start font-semibold">
+                          <p className="text-gray-500 text-xs text-start font-semibold">
                             Check Out
                           </p>
                           <div className="flex justify-center items-center gap-2">
@@ -163,7 +158,7 @@ const AllEmpAttendance = () => {
                               }`}
                             />
                             <h5 className="font-semibold text-start">
-                              {item?.in_time
+                              {item?.out_time
                                 ? format(
                                     parse(
                                       item?.out_time || "",
