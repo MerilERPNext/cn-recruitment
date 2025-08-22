@@ -20,7 +20,7 @@ const AttendanceRequest = () => {
   const [showForm, setShowForm] = useState(false);
 
   const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse">
+    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
       <div className="px-4 py-2">
         <div className="flex items-center justify-between gap-1">
           <div>
