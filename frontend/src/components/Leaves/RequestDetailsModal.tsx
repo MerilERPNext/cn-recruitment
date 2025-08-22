@@ -27,13 +27,6 @@ const RequestDetailsModal: React.FC<Props> = ({
   onRevoke,
 }) => {
   useEffect(() => {
-    console.log("RequestDetailsModal Props:", {
-      status: request.status,
-      isMyLeaveRequest,
-    });
-  }, [request.status, isMyLeaveRequest]);
-
-  useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "unset";
@@ -116,7 +109,6 @@ const RequestDetailsModal: React.FC<Props> = ({
 
           <div className="pt-4">
             {actions}
-            {isMyLeaveRequest}
             {request.status === "Open" && isMyLeaveRequest && (
               <button
                 onClick={onRevoke}

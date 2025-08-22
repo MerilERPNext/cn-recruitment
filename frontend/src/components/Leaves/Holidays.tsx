@@ -207,7 +207,7 @@ const Holidays: React.FC = () => {
           Upcoming Regular Holidays
         </h2>
 
-        {allRegular.length === 0 ? (
+        {upcomingRegular.length === 0 ? (
           <p className="text-gray-500 text-center py-4">
             No upcoming regular holidays
           </p>
@@ -220,19 +220,20 @@ const Holidays: React.FC = () => {
                 showApply={false}
               />
             ))}
-
-            <button
-              type="button"
-              onClick={() =>
-                navigate("/webapp/leave-app/leaves/holidays/all", {
-                  state: { type: "regular", holidays: allRegular },
-                })
-              }
-              className="flex-1 w-full py-3 my-2 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-            >
-              View All
-            </button>
           </>
+        )}
+        {allRegular.length !== 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/webapp/leave-app/leaves/holidays/all", {
+                state: { type: "regular", holidays: allRegular },
+              })
+            }
+            className="flex-1 w-full py-3 my-2 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
+            View All
+          </button>
         )}
       </section>
 
@@ -257,7 +258,7 @@ const Holidays: React.FC = () => {
           </div>
         </div>
 
-        {allOptional.length === 0 ? (
+        {upcomingOptional.length === 0 ? (
           <p className="text-gray-500 text-center py-4">
             No upcoming optional holidays
           </p>
@@ -271,19 +272,20 @@ const Holidays: React.FC = () => {
                 statusLabel={getHolidayStatus(h.date)}
               />
             ))}
-
-            <button
-              type="button"
-              onClick={() =>
-                navigate("/webapp/leave-app/leaves/holidays/all", {
-                  state: { type: "optional", holidays: allOptional },
-                })
-              }
-              className="flex-1 w-full my-2 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-            >
-              View All
-            </button>
           </>
+        )}
+        {allOptional.length !== 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/webapp/leave-app/leaves/holidays/all", {
+                state: { type: "optional", holidays: allOptional },
+              })
+            }
+            className="flex-1 w-full my-2 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
+            View All
+          </button>
         )}
       </section>
     </div>
