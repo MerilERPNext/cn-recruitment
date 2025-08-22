@@ -101,11 +101,11 @@ const SalarySlipApp: React.FC = () => {
 
         {/* Annual/Monthly Toggle - Only show on CTC Breakdown page */}
         {activeTab === "CTC Breakdown" && (
-          <div className="px-4 py-4">
+          <div className="px-4 py-2">
             <div className="flex bg-white border rounded-lg p-1 justify-center w-full">
               <button
                 onClick={() => setViewMode('annual')}
-                className={`px-6 py-2 w-[50%] rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 w-[50%] rounded-lg font-medium transition-colors ${
                   viewMode === 'annual'
                     ? 'bg-black text-white'
                     : 'bg-white  text-gray-700 hover:bg-gray-100'
@@ -115,7 +115,7 @@ const SalarySlipApp: React.FC = () => {
               </button>
               <button
                 onClick={() => setViewMode('monthly')}
-                className={`px-6 py-2 w-[50%] rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 w-[50%] rounded-lg font-medium transition-colors ${
                   viewMode === 'monthly'
                     ? 'bg-black text-white'
                     : 'bg-white  text-gray-700 hover:bg-gray-100'
@@ -139,38 +139,67 @@ const SalarySlipApp: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Compensation">
       <div className="flex flex-col h-full">
-        {/* Tab Navigation */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0">
-          <NavigationTabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-          />
+        {/* Modern Tab Navigation for Web */}
+        <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 px-8 py-6 flex-shrink-0">
+          {/* Main Navigation Cards */}
+          <div className="flex gap-6 mb-6">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key)}
+                className={`relative px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  activeTab === tab.key
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
+                }`}
+              >
+                <span className="relative z-10">{tab.label}</span>
+                {activeTab === tab.key && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl opacity-10"></div>
+                )}
+              </button>
+            ))}
+          </div>
 
-          {/* Annual/Monthly Toggle - Only show on CTC Breakdown page */}
+          {/* Enhanced Annual/Monthly Toggle */}
           {activeTab === "CTC Breakdown" && (
-            <div className="mt-4">
-              <div className="flex bg-gray-50 border rounded-lg p-1 max-w-md">
-                <button
-                  onClick={() => setViewMode('annual')}
-                  className={`px-6 py-2 flex-1 rounded-lg font-medium transition-colors ${
-                    viewMode === 'annual'
-                      ? 'bg-black text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  Annual CTC
-                </button>
-                <button
-                  onClick={() => setViewMode('monthly')}
-                  className={`px-6 py-2 flex-1 rounded-lg font-medium transition-colors ${
-                    viewMode === 'monthly'
-                      ? 'bg-black text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  Monthly Salary
-                </button>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600 font-medium">View Mode:</span>
+                <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+                  <button
+                    onClick={() => setViewMode('annual')}
+                    className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                      viewMode === 'annual'
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    💰 Annual CTC
+                  </button>
+                  <button
+                    onClick={() => setViewMode('monthly')}
+                    className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                      viewMode === 'monthly'
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    📅 Monthly Salary
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Info Panel */}
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Current Period</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Updated</span>
+                </div>
               </div>
             </div>
           )}

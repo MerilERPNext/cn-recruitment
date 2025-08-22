@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useSearchParams } from "react-router-dom";
 import { EmployeeStatus } from "../../../types/attendance";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const TeamAttendance = () => {
+  const { isDesktop } = useScreenSize();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
   const [searchParams] = useSearchParams();
@@ -53,8 +55,8 @@ const TeamAttendance = () => {
     <div className="bg-white">
       <div className="flex flex-col gap-2 pb-4">
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
-        <div className=" bg-white w-full border-b-1 border-gray-200">
-          <div className=" flex items-end flex-col p-1">
+        <div className="bg-white w-full border-b-1 border-gray-200">
+          <div className="flex items-end flex-col p-1">
             <DatePicker
               inline
               selected={selectedDate}
@@ -70,23 +72,77 @@ const TeamAttendance = () => {
                     encodeURIComponent(JSON.stringify(filters))
                 );
               }}
-              dayClassName={(date) =>
-                date.toDateString() === selectedDate?.toDateString()
-                  ? "bg-blue-100"
-                  : "transparent"
-              }
+              dayClassName={(date) => {
+                const isSelected = date.toDateString() === selectedDate?.toDateString();
+                const baseClasses = "transition-all duration-200";
+
+                if (isDesktop) {
+                  // Enhanced desktop styling with light colors
+                  if (isSelected) {
+                    return `${baseClasses} !bg-blue-50 !text-blue-800 border border-blue-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105`;
+                  }
+                  return `${baseClasses} hover:!bg-gray-50 !text-gray-700 border border-transparent rounded-lg hover:border-gray-200 hover:shadow-sm`;
+                } else {
+                  // Original mobile styling
+                  return isSelected ? "bg-blue-100" : "transparent";
+                }
+              }}
+              renderDayContents={(day, date) => {
+                if (isDesktop) {
+                  const isSelected = date.toDateString() === selectedDate?.toDateString();
+                  const isToday = date.toDateString() === new Date().toDateString();
+
+                  return (
+                    <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
+                      <span className={`text-sm font-semibold ${isSelected ? 'text-blue-800' : 'text-gray-700'}`}>
+                        {day}
+                      </span>
+                      {isToday && (
+                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
+                          <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                        </div>
+                      )}
+                      {isSelected && (
+                        <div className="absolute -bottom-1 text-xs text-blue-600">
+                          📅
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                return <>{day}</>;
+              }}
             />
             {/* Clear Button */}
             {hasFilters && (
               <button
                 onClick={clearFilters}
-                className="top-2 right-2 pb-2 pr-2 text-gray-500 hover:text-black transition"
+                className={`top-2 right-2 pb-2 pr-2 text-gray-500 hover:text-black transition ${
+                  isDesktop ? 'px-3 py-1 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200' : ''
+                }`}
                 title="Today"
               >
-                Today
+                {isDesktop ? '📅 Today' : 'Today'}
               </button>
             )}
           </div>
+
+          {/* Enhanced legend for desktop */}
+          {isDesktop && (
+            <div className="px-4 py-3 border-t border-gray-100">
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">👥 Team Attendance Overview</h4>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-50 border border-blue-200">
+                  <span className="text-blue-600">📅</span>
+                  <span className="text-blue-800 font-medium">Selected Date</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-50 border border-gray-200">
+                  <span className="text-gray-600">🔴</span>
+                  <span className="text-gray-700 font-medium">Today</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         {/* ------------------------------------------------- Calendar End ---------------------------------------------- */}
 

@@ -177,29 +177,60 @@ const LeaveAppInner: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Leaves & Holidays">
       <div className="flex flex-col h-full">
-        {/* Tab Navigation */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0">
-          <NavigationTabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={(tab) => handleTabChange(tab as TabName)}
-          />
+        {/* Modern Tab Navigation for Web */}
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-200 px-8 py-6 flex-shrink-0">
+          {/* Main Navigation Pills */}
+          <div className="flex gap-4 mb-6">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key as TabName)}
+                className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  activeTab === tab.key
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
+                }`}
+              >
+                <span className="relative z-10">{tab.label}</span>
+                {activeTab === tab.key && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full opacity-10"></div>
+                )}
+              </button>
+            ))}
+          </div>
 
+          {/* Enhanced Sub-navigation */}
           {isLeaveRequestsActive && (
-            <div className="mt-4">
-              <div className="flex bg-gray-50 rounded-lg p-1 border border-gray-200 max-w-md">
-                {(Object.keys(subTabRoutes) as SubTabName[]).map((subTab) => (
-                  <button
-                    key={subTab}
-                    onClick={() => handleSubTabChange(subTab)}
-                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeSubTab === subTab
-                        ? "bg-black text-white shadow-sm"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600 font-medium">Request Type:</span>
+                <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+                  {(Object.keys(subTabRoutes) as SubTabName[]).map((subTab) => (
+                    <button
+                      key={subTab}
+                      onClick={() => handleSubTabChange(subTab)}
+                      className={`px-5 py-2 rounded text-sm font-semibold transition-all duration-200 ${
+                        activeSubTab === subTab
+                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
-                  >
-                    {subTab}
-                  </button>
-                ))}
+                    >
+                      {subTab === "My Requests" ? "👤 My Requests" : "👥 Team Requests"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span>Pending</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Approved</span>
+                </div>
               </div>
             </div>
           )}

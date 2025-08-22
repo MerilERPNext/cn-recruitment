@@ -42,6 +42,7 @@ import logo from "../assets/logo.png";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
+import AttendanceChart from "./AttendanceChart";
 import {
   compareAsc,
   compareDesc,
@@ -406,7 +407,7 @@ const DesktopDashboard: React.FC = () => {
   return (
     <div className="h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg border-r border-gray-200 fixed h-full z-10 flex-shrink-0">
+      <div className="w-56 bg-white shadow-lg border-r border-gray-200 fixed h-full z-10 flex-shrink-0">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
             <img src={logo} alt="PayWise" className="w-8 h-8" />
@@ -421,13 +422,13 @@ const DesktopDashboard: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   item.active
                     ? "bg-gray-900 text-white"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className="w-4 h-4" />
                 {item.label}
               </Link>
             ))}
@@ -435,15 +436,15 @@ const DesktopDashboard: React.FC = () => {
         </div>
 
         <div className="absolute bottom-6 left-6 right-6">
-          <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg w-full">
-            <LogOut className="w-5 h-5" />
+          <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg w-full">
+            <LogOut className="w-4 h-4" />
             Logout
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-64 flex flex-col h-screen">
+      <div className="flex-1 ml-56 flex flex-col h-screen">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
@@ -656,71 +657,12 @@ const DesktopDashboard: React.FC = () => {
           <div className="grid grid-cols-3 gap-8">
             {/* Left Column */}
             <div className="col-span-2 space-y-6">
-              {/* Quick Links */}
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <Link
-                    to="/webapp/leave-app"
-                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
-                  >
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-200">
-                      <Calendar className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Leaves & Holidays</span>
-                  </Link>
-
-                  <Link
-                    to="/webapp/attendance"
-                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors group"
-                  >
-                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-green-200">
-                      <User className="w-6 h-6 text-green-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Attendance</span>
-                  </Link>
-
-                  <Link
-                    to="/webapp/salary-slip-app"
-                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-yellow-300 hover:bg-yellow-50 transition-colors group"
-                  >
-                    <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-yellow-200">
-                      <DollarSign className="w-6 h-6 text-yellow-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Compensation</span>
-                  </Link>
-
-                  <Link
-                    to="/webapp/shift-request"
-                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors group"
-                  >
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-200">
-                      <ArrowUpDown className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Shifts</span>
-                  </Link>
-
-                  <Link
-                    to="/webapp/expenses-app"
-                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-pink-300 hover:bg-pink-50 transition-colors group"
-                  >
-                    <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-pink-200">
-                      <Receipt className="w-6 h-6 text-pink-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Expenses</span>
-                  </Link>
-
-                  <Link
-                    to="/webapp/policies-app"
-                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors group"
-                  >
-                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-orange-200">
-                      <Shield className="w-6 h-6 text-orange-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Policies</span>
-                  </Link>
-                </div>
-              </div>
+              {/* Attendance Chart */}
+              <AttendanceChart
+                present={employeeAttendanceSummary?.present || 20}
+                absent={employeeAttendanceSummary?.absent || 1}
+                leaves={employeeAttendanceSummary?.leaves || 2}
+              />
 
               {/* Unpaid Expense Claims */}
               {expenseData && expenseData.length > 0 && (
@@ -780,29 +722,30 @@ const DesktopDashboard: React.FC = () => {
             {/* Right Column */}
             <div className="space-y-6">
               {/* Total Hours Worked */}
-              <div className="bg-blue-600 text-white p-6 rounded-lg">
+              <div className="bg-blue-100 text-blue-600 border  p-6 rounded-lg"> 
                 <div className="text-center">
-                  <p className="text-blue-100 text-sm mb-2 font-medium tracking-wide">TOTAL HOURS WORKED</p>
+                  <p className="text-blue-600 text-sm mb-2 font-medium tracking-wide">TOTAL HOURS WORKED</p>
                   <p className="text-4xl font-bold mb-1">{getTotalTime()}</p>
-                  <p className="text-blue-100 text-sm mb-6">8h 55m target</p>
+                  <p className="text-blue-600 text-sm mb-6">8h 55m target</p>
 
                   {/* Enhanced Progress Bar */}
                   <div className="relative mb-3">
-                    <div className="bg-blue-500/50 rounded-full h-3 shadow-inner">
+                    <div className="bg-blue-400 h-3 shadow-inner rounded-lg ">
                       <div
-                        className="bg-white rounded-full h-3 transition-all duration-700 ease-out shadow-sm"
+                        className="bg-blue-700 h-3 transition-all duration-700 ease-out shadow-sm 
+                         rounded-lg"
                         style={{ width: `${Math.min(getWorkPercentage(), 100)}%` }}
                       ></div>
                     </div>
                     {/* Progress indicator dots */}
                     <div className="absolute top-1/2 left-0 w-full h-0.5 flex justify-between px-1 -translate-y-px">
-                      <div className="w-0.5 h-0.5 bg-blue-300 rounded-full opacity-60"></div>
-                      <div className="w-0.5 h-0.5 bg-blue-300 rounded-full opacity-60"></div>
-                      <div className="w-0.5 h-0.5 bg-blue-300 rounded-full opacity-60"></div>
-                      <div className="w-0.5 h-0.5 bg-blue-300 rounded-full opacity-60"></div>
+                      <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
+                      <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
+                      <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
+                      <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
                     </div>
                   </div>
-                  <p className="text-blue-100 text-sm font-medium">{getWorkPercentage()}% completed</p>
+                  <p className="text-blue-600 text-sm font-medium">{getWorkPercentage()}% completed</p>
                 </div>
               </div>
 

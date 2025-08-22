@@ -68,15 +68,48 @@ const AttendanceLayout: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Attendance">
       <div className="flex flex-col h-full">
-        {/* Tab Navigation */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0">
-          <NavigationTabs
-            tabs={tabs}
-            activeTab={activeTab?.key}
-            onTabChange={(tab) => {
-              handleTabChange(tabs.find((item) => item.key === tab) as Tab);
-            }}
-          />
+        {/* Modern Tab Navigation for Web */}
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200 px-8 py-6 flex-shrink-0">
+          {/* Navigation Pills */}
+          <div className="flex flex-wrap gap-3">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab)}
+                className={`relative px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+                  activeTab?.key === tab.key
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
+                }`}
+              >
+                <span className="relative z-10">
+                  {tab.label === "Attendance" && "📊 "}
+                  {tab.label === "My Attendance Details" && "📋 "}
+                  {tab.label === "Team Attendance" && "👥 "}
+                  {tab.label === "My Attendance Requests" && "📝 "}
+                  {tab.label === "Team Attendance Requests" && "📂 "}
+                  {tab.label}
+                </span>
+                {activeTab?.key === tab.key && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl opacity-10"></div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Quick Status Indicator */}
+          <div className="flex items-center justify-end mt-4">
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span>Live Tracking</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Synced</span>
+              </div>
+            </div>
+          </div>
         </div>
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto">

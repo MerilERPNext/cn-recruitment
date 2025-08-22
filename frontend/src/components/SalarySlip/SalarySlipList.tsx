@@ -6,6 +6,8 @@ import FrappeListView from "../ListView";
 import { useDownloadSalarySlipPDF } from "../../hooks/useSalaryDetails";
 import { UseMutationResult } from "@tanstack/react-query";
 import { FaRegEye } from "react-icons/fa";
+import SalarySlipPDFModal from "./SalarySlipPDFModal";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface SalarySlip {
   name: string;
@@ -20,9 +22,12 @@ interface SalarySlip {
 
 const SalarySlipsList = () => {
   const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
   const [selectedYear, setSelectedYear] = useState("");
   const [filtersKey, setFiltersKey] = useState(0);
   const [maskSalary, setMaskSalary] = useState(true);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [selectedSalarySlip, setSelectedSalarySlip] = useState<{ name: string; date: string } | null>(null);
 
   const {
     mutate: downloadPDF,
@@ -33,9 +38,27 @@ const SalarySlipsList = () => {
     setFiltersKey((prev) => prev + 1);
   }, [selectedYear]);
 
-  const handleGoToSalarySlip = (salaryId: string) => {
-    const encodedId = encodeURIComponent(salaryId);
-    navigate(`/webapp/salary-slip-app/salary-slip-list/${encodedId}`);
+  const handleGoToSalarySlip = (salaryId: string, startDate?: string) => {
+    if (isDesktop) {
+      // Open modal on desktop
+      setSelectedSalarySlip({
+        name: salaryId,
+        date: startDate ? formatToIndianDateModal(startDate) : ''
+      });
+      setPdfModalOpen(true);
+    } else {
+      // Navigate on mobile
+      const encodedId = encodeURIComponent(salaryId);
+      navigate(`/webapp/salary-slip-app/salary-slip-list/${encodedId}`);
+    }
+  };
+
+  const formatToIndianDateModal = (dateString: string): string => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   const handleDownload = (e: React.MouseEvent, salarySlipName: string) => {
@@ -57,6 +80,18 @@ const SalarySlipsList = () => {
 
   return (
     <div>
+      {/* PDF Modal */}
+      {selectedSalarySlip && (
+        <SalarySlipPDFModal
+          isOpen={pdfModalOpen}
+          onClose={() => {
+            setPdfModalOpen(false);
+            setSelectedSalarySlip(null);
+          }}
+          salarySlipName={selectedSalarySlip.name}
+          salarySlipDate={selectedSalarySlip.date}
+        />
+      )}
       <FrappeListView
         key={filtersKey}
         doctype="Salary Slip"
@@ -133,7 +168,7 @@ const SalarySlipItem: React.FC<{
   doctype: string;
   maskSalary: boolean;
   onDownload: (e: React.MouseEvent, salarySlipName: string) => void;
-  onViewPDF: (salarySlipName: string) => void;
+  onViewPDF: (salarySlipName: string, startDate?: string) => void;
   isDownloading: boolean;
 }> = ({ item, maskSalary, onDownload, onViewPDF, isDownloading }) => {
   if (item.status.toLowerCase() !== "submitted") return null;
@@ -185,8 +220,9 @@ const SalarySlipItem: React.FC<{
           <Download className="w-4 h-4" />
         </button>
         <button
-          onClick={() => onViewPDF(item.name)}
+          onClick={() => onViewPDF(item.name, item.start_date)}
           className="flex items-center justify-center p-2  border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          title="View Salary Slip"
         >
          <FaRegEye className="w-4 h-4"/>
         </button>

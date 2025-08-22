@@ -106,13 +106,43 @@ const ShiftRequestApp: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Shifts">
       <div className="flex flex-col h-full">
-        {/* Tab Navigation */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0">
-          <NavigationTabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-          />
+        {/* Modern Tab Navigation for Web */}
+        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border-b border-gray-200 px-8 py-6 flex-shrink-0">
+          {/* Navigation Cards */}
+          <div className="flex flex-wrap gap-4">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key as TabName)}
+                className={`relative px-6 py-4 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+                  activeTab === tab.key
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
+                }`}
+              >
+                <span className="relative z-10">
+                  {tab.label === "My Shift Assignment" && "🕐 "}
+                  {tab.label === "Team Shift Assignment" && "👥 "}
+                  {tab.label === "My Shift Requests" && "📝 "}
+                  {tab.label === "Shift Change Request" && "🔄 "}
+                  {tab.label}
+                </span>
+                {activeTab === tab.key && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl opacity-10"></div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Quick Action Hint */}
+          {activeTab === "My Shift Assignment" && (
+            <div className="flex items-center justify-end mt-4">
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span>💡 Use "Request Shift Change" button below</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Page Content */}
