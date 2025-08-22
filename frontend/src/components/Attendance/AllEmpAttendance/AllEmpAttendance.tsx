@@ -4,9 +4,26 @@ import { CalendarDays, LogIn, LogOut } from "lucide-react";
 import { useState } from "react";
 import SelectByMonth, { MonthOption } from "./SelectByMonth";
 
-import { endOfMonth, format, parse, startOfMonth } from "date-fns";
+import {
+  endOfMonth,
+  format,
+  parse,
+  startOfMonth,
+  isValid as isValidDate,
+} from "date-fns";
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import { getStatusGradient } from "../../../utils/helperUtils";
+
+const formatTimeSafe = (timeStr: string | undefined) => {
+  if (!timeStr) return "--:--";
+  try {
+    const parsed = parse(timeStr, "HH:mm:ss", new Date());
+    if (!isValidDate(parsed)) return "--:--";
+    return format(parsed, "HH:mm");
+  } catch {
+    return "--:--";
+  }
+};
 
 const AllEmpAttendance = () => {
   const navigate = useNavigate();
@@ -20,7 +37,6 @@ const AllEmpAttendance = () => {
     selectedMonth?.value ?? format(new Date(), "yyyy-MM");
   const parsedDate = parse(selectedMonthStr, "yyyy-MM", new Date());
 
-  // Get start and end of the month
   const start = format(startOfMonth(parsedDate), "yyyy-MM-dd");
   const end = format(endOfMonth(parsedDate), "yyyy-MM-dd");
   const { data: allEventsAndAttendance } = useGetAllEventsAndAttendance({
@@ -46,7 +62,6 @@ const AllEmpAttendance = () => {
         return "bg-gray-50 text-gray-700";
     }
   };
-
   return (
     <>
       <LayoutHeader
@@ -66,18 +81,29 @@ const AllEmpAttendance = () => {
         <div className="flex flex-col gap-2 pb-4">
           {allEventsAndAttendance &&
             allEventsAndAttendance?.length > 0 &&
-            allEventsAndAttendance?.map((item) => {
+            allEventsAndAttendance?.map((item, index) => {
               const dateObj = new Date(item?.start);
               const date = dateObj.getDate();
-              // const month = dateObj.toLocaleString("default", {
-              //   month: "short",
-              // });
               const day = dateObj.toLocaleString("default", {
                 weekday: "short",
               });
 
               return (
-                <div className="flex items-center p-4 border border-gray-100 bg-white shadow-sm rounded-xl hover:shadow-md transition-shadow space-x-4">
+                <div
+                  onClick={() => {
+                    if (
+                      item?.doctype !== "Attendance Request" &&
+                      item?.status !== "Holiday" &&
+                      item?.status !== "Weekly Off"
+                    ) {
+                      navigate(
+                        `/webapp/attendance/emp-attendance/details?date=${dateObj}&status=${item?.status?.toLowerCase()}`
+                      );
+                    }
+                  }}
+                  key={index}
+                  className="flex items-center p-4 border border-gray-100 bg-white shadow-sm rounded-xl hover:shadow-md transition-shadow space-x-4"
+                >
                   {/* Date Box */}
                   <div
                     className={`flex flex-col items-center justify-center rounded-md p-4 w-14 ${getStatusColor(
@@ -93,9 +119,6 @@ const AllEmpAttendance = () => {
                     }
                   >
                     <div className="text-lg leading-none font-bold">{date}</div>
-                    {/* <div className="text-sm uppercase tracking-wide leading-tight font-semibold">
-                      {month}
-                    </div> */}
                     <div className="text-sm capitalize leading-tight">
                       {day}
                     </div>
@@ -110,15 +133,15 @@ const AllEmpAttendance = () => {
                           : ""}
                         {item?.status}
                       </div>
-                      {/* Shift Info */}
                       {item?.shift && (
-                        <div className="bg-gray-200 text-gray-600 rounded-xl px-2 py-[2px] h-full text-xs flex items-center justify-center ">
+                        <div className="bg-gray-200 text-gray-600 rounded-xl px-2 py-[2px] h-full text-xs flex items-center justify-center">
                           Shift {item?.shift}
                         </div>
                       )}
                     </div>
+
                     {item?.doctype === "Attendance" && (
-                      <div className="w-full rounded-xl flex justify-between ">
+                      <div className="w-full rounded-xl flex justify-between">
                         <div>
                           <p className="text-gray-500 text-xs text-start font-semibold">
                             Check In
@@ -132,16 +155,7 @@ const AllEmpAttendance = () => {
                               }`}
                             />
                             <h5 className="font-semibold text-start">
-                              {item?.in_time
-                                ? format(
-                                    parse(
-                                      item?.in_time,
-                                      "HH:mm:ss",
-                                      new Date()
-                                    ),
-                                    "HH:mm"
-                                  )
-                                : "--:--"}
+                              {formatTimeSafe(item?.in_time)}
                             </h5>
                           </div>
                         </div>
@@ -158,16 +172,7 @@ const AllEmpAttendance = () => {
                               }`}
                             />
                             <h5 className="font-semibold text-start">
-                              {item?.out_time
-                                ? format(
-                                    parse(
-                                      item?.out_time || "",
-                                      "HH:mm:ss",
-                                      new Date()
-                                    ),
-                                    "HH:mm"
-                                  )
-                                : "--:--"}
+                              {formatTimeSafe(item?.out_time)}
                             </h5>
                           </div>
                         </div>
