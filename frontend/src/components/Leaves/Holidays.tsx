@@ -1,10 +1,15 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
-import { useGetHolidays, useGetLeaveBalance } from "../../hooks/useLeaves";
+import {
+  useGetHolidays,
+  useGetLeaveBalance,
+  useMyLeaveRequests,
+} from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 import { HolidayCardSkeletonList } from "./LeaveSkeletons";
 import { Holiday } from "../../types/leaves";
 import { processHolidays } from "./holidayHelper";
@@ -13,13 +18,16 @@ interface HolidayCardProps {
   holiday: Holiday;
   showApply?: boolean;
   disabledApply?: boolean;
+  statusLabel?: string | null;
 }
 
 const DISPLAY_LIMIT = 3;
+
 export const HolidayCard: React.FC<HolidayCardProps> = ({
   holiday,
   showApply,
   disabledApply = false,
+  statusLabel,
 }) => {
   const dateObj = new Date(holiday.date);
   const month = format(dateObj, "MMM").toUpperCase();
@@ -44,7 +52,7 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
         </div>
       </div>
 
-      {showApply && (
+      {showApply && !statusLabel && (
         <button
           type="button"
           disabled={disabledApply}
@@ -67,6 +75,20 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
           Apply
         </button>
       )}
+      {statusLabel && (
+        <span
+          className={`text-sm border py-1 px-4 rounded-2xl
+            ${
+              statusLabel === "Taken"
+                ? "text-green-600 border-green-200 bg-green-100"
+                : statusLabel === "Rejected"
+                ? "text-red-600 border-red-200 bg-red-100"
+                : "text-yellow-600 border-yellow-200 bg-yellow-100"
+            }`}
+        >
+          {statusLabel}
+        </span>
+      )}
     </div>
   );
 };
@@ -76,11 +98,23 @@ const Holidays: React.FC = () => {
   const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
     useEmployeeByUserId(userId);
+  const { setRefetch } = useLeaveRequestRefresh();
   const {
     data: holidaysData,
     isLoading,
     isError,
   } = useGetHolidays(currentEmployee?.name);
+
+  const {
+    data: leaveRequests,
+    isLoading: isLeaveRequestsLoading,
+    refetch,
+  } = useMyLeaveRequests(currentEmployee?.name);
+
+  useEffect(() => {
+    setRefetch(refetch);
+    return () => setRefetch(() => {});
+  }, [refetch, setRefetch]);
 
   const today = React.useMemo(() => {
     const d = new Date();
@@ -96,7 +130,7 @@ const Holidays: React.FC = () => {
 
   const optionalBalance = leaveBalance?.leave_balance?.find((b) => {
     const normalized = b.type.toLowerCase().replace(/[\s\-_]/g, "");
-    return normalized === "optionalleave" || normalized === "optional";
+    return normalized.includes("optional");
   });
 
   const { upcomingRegular, upcomingOptional, allRegular, allOptional } =
@@ -108,11 +142,25 @@ const Holidays: React.FC = () => {
   const displayedRegular = upcomingRegular.slice(0, DISPLAY_LIMIT);
   const displayedOptional = upcomingOptional.slice(0, DISPLAY_LIMIT);
 
+  const getHolidayStatus = (holidayDate: string) => {
+    if (!leaveRequests) return null;
+    const request = leaveRequests.find(
+      (req) => req.from_date === holidayDate && req.to_date === holidayDate
+    );
+    if (!request) return null;
+    if (request.status === "Approved") return "Taken";
+    if (request.status === "Rejected") return "Rejected";
+    if (request.status === "Open") return "Applied";
+    return null;
+  };
+
   if (
     isLoading ||
     isUserLoading ||
     isEmployeeLoading ||
-    isLeaveBalanceLoading
+    isLeaveBalanceLoading ||
+    isLeaveRequestsLoading ||
+    !leaveRequests
   ) {
     return (
       <div className="p-4 min-h-full pb-24">
@@ -159,7 +207,7 @@ const Holidays: React.FC = () => {
           Upcoming Regular Holidays
         </h2>
 
-        {displayedRegular.length === 0 ? (
+        {allRegular.length === 0 ? (
           <p className="text-gray-500 text-center py-4">
             No upcoming regular holidays
           </p>
@@ -177,10 +225,7 @@ const Holidays: React.FC = () => {
               type="button"
               onClick={() =>
                 navigate("/webapp/leave-app/leaves/holidays/all", {
-                  state: {
-                    type: "regular",
-                    holidays: allRegular,
-                  },
+                  state: { type: "regular", holidays: allRegular },
                 })
               }
               className="flex-1 w-full py-3 my-2 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
@@ -212,7 +257,7 @@ const Holidays: React.FC = () => {
           </div>
         </div>
 
-        {displayedOptional.length === 0 ? (
+        {allOptional.length === 0 ? (
           <p className="text-gray-500 text-center py-4">
             No upcoming optional holidays
           </p>
@@ -222,7 +267,8 @@ const Holidays: React.FC = () => {
               <HolidayCard
                 key={`${h.date}-${h.holiday_name}`}
                 holiday={h}
-                showApply
+                showApply={true}
+                statusLabel={getHolidayStatus(h.date)}
               />
             ))}
 
@@ -230,10 +276,7 @@ const Holidays: React.FC = () => {
               type="button"
               onClick={() =>
                 navigate("/webapp/leave-app/leaves/holidays/all", {
-                  state: {
-                    type: "optional",
-                    holidays: allOptional,
-                  },
+                  state: { type: "optional", holidays: allOptional },
                 })
               }
               className="flex-1 w-full my-2 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"

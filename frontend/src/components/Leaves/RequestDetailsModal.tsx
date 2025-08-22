@@ -15,13 +15,24 @@ type Props = {
   request: RequestDetails;
   onClose: () => void;
   actions?: React.ReactNode;
+  isMyLeaveRequest?: boolean;
+  onRevoke?: () => void;
 };
 
 const RequestDetailsModal: React.FC<Props> = ({
   request,
   onClose,
   actions,
+  isMyLeaveRequest = false,
+  onRevoke,
 }) => {
+  useEffect(() => {
+    console.log("RequestDetailsModal Props:", {
+      status: request.status,
+      isMyLeaveRequest,
+    });
+  }, [request.status, isMyLeaveRequest]);
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -103,7 +114,19 @@ const RequestDetailsModal: React.FC<Props> = ({
             </div>
           )}
 
-          {actions && <div className="pt-4">{actions}</div>}
+          <div className="pt-4">
+            {actions}
+            {isMyLeaveRequest}
+            {request.status === "Open" && isMyLeaveRequest && (
+              <button
+                onClick={onRevoke}
+                className="mt-2 w-full bg-black text-white font-medium py-2 px-4 rounded-lg"
+                disabled={!onRevoke}
+              >
+                Revoke
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

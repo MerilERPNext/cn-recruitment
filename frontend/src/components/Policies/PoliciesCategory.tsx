@@ -65,13 +65,17 @@ const PoliciesCategory: React.FC = () => {
 
   return (
     <div className="h-full w-full">
-      {categories?.data?.map((item: CategoryDoc) => (
-        <CategoryCard
-          key={item.name}
-          name={item.name}
-          count={counts?.[item.name] ?? 0}
-        />
-      ))}
+      {categories?.data?.length === 0 ? (
+        <p className="text-gray-500 text-center mt-4">No categories found.</p>
+      ) : (
+        categories?.data?.map((item: CategoryDoc) => (
+          <CategoryCard
+            key={item.name}
+            name={item.name}
+            count={counts?.[item.name] ?? 0}
+          />
+        ))
+      )}
     </div>
   );
 };

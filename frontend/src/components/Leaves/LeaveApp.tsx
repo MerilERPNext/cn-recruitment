@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import RequestLeave from "./RequestLeave";
 import HeaderBar from "../HeaderBar";
-import { Toaster } from "react-hot-toast";
 import { LeaveRequestRefreshProvider } from "./LeaveRequestRefreshContext";
 import {
   useRequestLeaveModal,
@@ -127,10 +126,11 @@ const LeaveAppInner: React.FC = () => {
                 <button
                   key={subTab}
                   onClick={() => handleSubTabChange(subTab)}
-                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeSubTab === subTab
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                    activeSubTab === subTab
                       ? "bg-black text-white shadow-sm"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                  }`}
                 >
                   {subTab}
                 </button>
@@ -164,8 +164,6 @@ const LeaveAppInner: React.FC = () => {
           </div>
         </div>
       )}
-
-      <Toaster />
     </div>
   );
 };
