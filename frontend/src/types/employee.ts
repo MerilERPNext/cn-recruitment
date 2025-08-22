@@ -31,6 +31,7 @@ export interface Employee {
   // Address
   current_address?: string;
   permanent_address?: string;
+  custom_same_as_current?: string;
   
   // Emergency Contact
   person_to_be_contacted?: string;

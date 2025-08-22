@@ -2,15 +2,13 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { PersonalInfoProps } from "./MyProfile";
-import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
-import { useGenderTypes } from "../../hooks/useEmployee";
-import toast from "react-hot-toast";
+import {
+  useGenderTypes,
+  useUpdateCurrentEmployeeProfile,
+} from "../../hooks/useEmployee";
 
-export const PersonalInfo: React.FC<PersonalInfoProps> = ({
-  user,
-  refetch,
-}) => {
-  const updateEmployeeMutation = useUpdateFrappeDocument();
+export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
+  const { updateEmployeeMutation } = useUpdateCurrentEmployeeProfile();
   const formPersonalInfoInstance = useRef<any>(null);
 
   const { data: genderTypes } = useGenderTypes();
@@ -60,9 +58,10 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({
                           input: true,
                           defaultValue: user?.date_of_birth ?? "",
                           validate: { required: true },
+                          placeholder: "1990-08-15",
+                          dateFormate: "dd-MM-yyyy",
                           flatpickr: { appendTo: ".address-form-container" },
                           autofocus: false,
-                          format: "dd-MM-yyyy",
                         },
                       ],
                     },
@@ -190,18 +189,21 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({
   const handleSubmit = useCallback(async () => {
     try {
       const basicSubmission = await formPersonalInfoInstance.current.submit();
-      await updateEmployeeMutation.mutateAsync({
-        doctype: "Employee",
-        name: user?.name ?? "",
-        data: basicSubmission.data,
-      });
-      refetch?.();
-      toast.success("Employee details updated successfully!");
+      const formData = basicSubmission.data as Record<string, any>;
+      const jsonData = Object.entries(formData).map(([field, value]) => ({
+        field,
+        new: value,
+      }));
+
+      const payload = {
+        employee_code: user?.employee ?? "",
+        json_data: jsonData,
+      };
+      await updateEmployeeMutation.mutateAsync(payload);
     } catch (error) {
       console.error("Form submission error:", error);
-      toast.error("Failed to update employee details. Please try again.");
     }
-  }, []);
+  }, [user]);
 
   return (
     <div className="address-form-container h-full max-w-md mx-auto bg-gray-100 rounded-lg">
@@ -217,7 +219,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({
           }}
         />
       </div>
-      <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full z-50">
+      <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full z-100">
         <div className="max-w-4xl mx-auto flex">
           <button
             onClick={handleSubmit}

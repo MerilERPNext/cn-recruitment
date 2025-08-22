@@ -274,6 +274,16 @@ export class EmployeeService {
       return null;
     }
   }
+  
+  static async updateCurrentEmployeeProfile(employeeDetails: unknown): Promise<unknown> {
+    try {
+      const result = await FrappeAPI.callMethod("cn_hrms_core.cn_hrms_core.apis.profile_change_request.save_profile_change", {data : employeeDetails});
+      return result;
+    } catch (error) {
+      console.error("Error updating current employee profile:", error);
+      throw error;
+    }
+  }
 
   // Transform Employee data to EmployeeIdCard format
   static transformToIdCard(employee: Employee): EmployeeIdCard {
@@ -338,10 +348,10 @@ export class EmployeeService {
   }
 
   static async getAllEmployees(): Promise<Employee[]> {
-    const response = FrappeAPI.getDocumentList("Employee", {
-      fields: ["name", "employee_name", "company"],
-      limit: 20,
-      filters: [["status", "=", "Active"]],
+    const response = FrappeAPI.getDocumentList('Employee', {
+      fields: ["name","employee_name", "company"],
+      limit:20,
+      filters:[["status","=","Active"]]
     });
     const data = await response;
     if (!response || data?.data?.length === 0) {
