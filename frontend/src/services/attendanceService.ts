@@ -227,7 +227,7 @@ export const attendanceService = {
   ): Promise<PolicyQuestion> => {
     try {
       const response = await FrappeAPI.callMethod(
-        "cn_leave_shift_managment.cn_leave_shift_managment.doctype.policy_question.policy_question.get_policy_questions?attendance_policy",
+        "cn_leave_shift_managment.cn_leave_shift_managment.doctype.policy_question.policy_question.get_policy_questions",
         filters
       );
       return response as PolicyQuestion;

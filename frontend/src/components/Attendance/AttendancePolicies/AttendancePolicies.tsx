@@ -42,8 +42,8 @@ const AttendancePolicies = () => {
       );
     }
 
-    return data.questions.map((q, index) => (
-      <tr key={index} className="border-b border-gray-200">
+    return data.questions.map((q) => (
+      <tr key={q?.idx} className="border-b border-gray-200">
         <td className="px-4 py-3 border-r border-gray-200 text-center whitespace-nowrap">
           {q.idx}
         </td>
@@ -96,7 +96,7 @@ const AttendancePolicies = () => {
             </thead>
             <tbody>
               {isLoading ? (
-                renderSkeletonRows(20)
+                renderSkeletonRows(15)
               ) : isError ? (
                 <tr>
                   <td

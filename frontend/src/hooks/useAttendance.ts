@@ -137,7 +137,7 @@ export const useGetPolicyForDate = (
   filters: any
 ): UseQueryResult<string, Error> => {
   return useQuery<string, Error>({
-    queryKey: ["get-All-Events-And-Attendance", filters],
+    queryKey: ["policy-for-date", filters],
     queryFn: () => attendanceService.getPolicyForDate(filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
