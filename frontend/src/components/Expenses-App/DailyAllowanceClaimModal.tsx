@@ -138,58 +138,18 @@ const DailyAllowanceClaimModal: React.FC<DailyAllowanceClaimModalProps> = ({ onC
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
         <ExpensesUserInfo />
 
-        {/* Travel Dates Section */}
-        <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Travel Dates
-          </h2>
-
-          {/* Toggle Between Single and Multiple Days */}
-          <div className="flex space-x-4 mb-4">
-            <label className="flex items-center space-x-2">
-              <input
-                type="radio"
-                name="dateType"
-                checked={!isMultipleDays}
-                onChange={() => setIsMultipleDays(false)}
-                className="text-blue-600"
-              />
-              <span className="text-gray-700">Single Day</span>
-            </label>
-            <label className="flex items-center space-x-2">
-              <input
-                type="radio"
-                name="dateType"
-                checked={isMultipleDays}
-                onChange={() => setIsMultipleDays(true)}
-                className="text-blue-600"
-              />
-              <span className="text-gray-700">Multiple Days</span>
-            </label>
-          </div>
-
-          {/* Date Input Fields */}
-          {isMultipleDays ? (
-            <MultipleDaysSection
-              fromDate={fromDate}
-              toDate={toDate}
-              setFromDate={setFromDate}
-              setToDate={setToDate}
-            />
-          ) : (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Travel Date
-              </label>
-              <input
-                type="date"
-                value={singleDate}
-                onChange={(e) => setSingleDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          )}
-        </div>
+        <MultipleDaysSection
+          isMultipleDays={isMultipleDays}
+          onToggleMultipleDays={() => setIsMultipleDays(!isMultipleDays)}
+          fromDate={fromDate}
+          toDate={toDate}
+          singleDate={singleDate}
+          onDateRangeChange={({ fromDate: newFromDate, toDate: newToDate }) => {
+            setFromDate(newFromDate);
+            setToDate(newToDate);
+          }}
+          onSingleDateChange={setSingleDate}
+        />
 
         {/* Expense Items Section */}
         <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">

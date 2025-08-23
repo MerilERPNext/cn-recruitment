@@ -1,448 +1,430 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, {
+  useState,
   useCallback,
+  useRef,
   useEffect,
   useMemo,
-  useRef,
-  useState,
 } from "react";
-import { File as FileIcon, FileText, Trash2 } from "lucide-react";
-import defaultReceipt from "../../assets/Receipt.svg";
-
-import { Form } from "@tsed/react-formio";
-import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
-import { useExpenseTravelPolicies } from "../../hooks/useExpense";
+import { Formio } from "formiojs";
+import {
+  useDailyAllowancesVehicleCategories,
+  useExpenseTypes,
+} from "../../hooks/useExpense";
 import ExpensesUserInfo from "./ExpensesUserInfo";
 
-interface MileageItem {
-  id: string;
-  fromLocation: string;
-  toLocation: string;
-  distance: number;
-  rate: number;
-  amount: number;
-  date: string;
+interface MileageExpenseData {
+  expenseDate: string;
   purpose: string;
-  attachmentUrl?: string;
-  attachmentType?: string;
-  fileName?: string;
-  fileObject?: File;
+  travelTypeHidden: "distance" | "odometer";
+  distance?: number;
+  startOdometer?: number;
+  endOdometer?: number;
+  startOdometerAttachment?: any[]; // Or a more specific Form.io file type
+  endOdometerAttachment?: any[];
+  notes?: string;
 }
 
 interface MileageExpenseClaimModalProps {
   onClose?: () => void;
 }
 
+// Helper function to create the file attachment component configuration
+const createOdometerAttachmentField = (key: string, label: string) => ({
+  label,
+  key,
+  type: "file",
+  storage: "base64",
+  tableView: false,
+  input: true,
+  webcam: false,
+  validate: {
+    required: false,
+  },
+  fileTypes: [
+    { label: "Images", value: "image/*" },
+    { label: "Documents", value: "application/*" },
+  ],
+  image: true,
+  conditional: {
+    json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
+  },
+  fileViewTemplate: `<div class="flex items-center space-x-2"><a class="text-blue-600 underline" href="\${url}" target="_blank" rel="noreferrer">\${originalName}</a></div>`,
+});
+
+// Schema for travel fields with conditional file uploads
+const travelFieldsSchema = {
+  display: "form",
+  components: [
+    {
+      type: "hidden",
+      key: "travelTypeHidden",
+      defaultValue: "distance",
+      input: true,
+    },
+    {
+      label: "Distance (in KM)",
+      tableView: true,
+      validate: {
+        required: true,
+        min: 0,
+        pattern: "\\d+(\\.\\d{1,2})?",
+      },
+      key: "distance",
+      type: "number",
+      input: true,
+      decimalLimit: 2,
+      allowDecimals: true,
+      placeholder: "Enter Distance",
+      conditional: {
+        json: { "==": [{ var: "data.travelTypeHidden" }, "distance"] },
+      },
+    },
+    {
+      label: "Odometer Start Reading",
+      tableView: true,
+      validate: {
+        required: true,
+        min: 0,
+        pattern: "\\d+(\\.\\d{1,2})?",
+      },
+      key: "startOdometer",
+      type: "number",
+      input: true,
+      decimalLimit: 2,
+      allowDecimals: true,
+      placeholder: "Enter Start Reading",
+      conditional: {
+        json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
+      },
+    },
+    // Use the helper function to define the file attachment fields
+    createOdometerAttachmentField(
+      "startOdometerAttachment",
+      "Start Reading Attachment"
+    ),
+    {
+      label: "Odometer End Reading",
+      tableView: true,
+      validate: {
+        required: true,
+        min: 0,
+        pattern: "\\d+(\\.\\d{1,2})?",
+      },
+      key: "endOdometer",
+      type: "number",
+      input: true,
+      decimalLimit: 2,
+      allowDecimals: true,
+      placeholder: "Enter End Reading",
+      conditional: {
+        json: { "==": [{ var: "data.travelTypeHidden" }, "odometer"] },
+      },
+    },
+    // Use the helper function again for the end attachment
+    createOdometerAttachmentField(
+      "endOdometerAttachment",
+      "End Reading Attachment"
+    ),
+  ],
+};
+
+// Schema for Notes (Unchanged)
+const notesSchema = {
+  display: "form",
+  components: [
+    {
+      label: "Notes (Optional)",
+      tableView: true,
+      key: "notes",
+      type: "textarea",
+      input: true,
+      rows: 4,
+      placeholder: "Add any additional notes",
+    },
+  ],
+};
+
 const MileageExpenseClaimModal: React.FC<MileageExpenseClaimModalProps> = ({ onClose }) => {
   const CURRENCY_SYMBOL = "₹";
-  const [mileageItems, setMileageItems] = useState<MileageItem[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const objectUrls = useRef<Record<string, string>>({}); // Using a ref to hold object URLs for cleanup
+  const basicDetailsRef = useRef<HTMLDivElement>(null);
+  const basicDetailsFormInstanceRef = useRef<any>(null);
+  const travelFieldsRef = useRef<HTMLDivElement>(null);
+  const travelFieldsFormInstanceRef = useRef<any>(null);
+  const notesRef = useRef<HTMLDivElement>(null);
+  const notesFormInstanceRef = useRef<any>(null);
+  const vehicleCategory = useDailyAllowancesVehicleCategories();
+  const filters = [["custom_is_mileage", "=", "1"]];
+  const expenseType = useExpenseTypes(filters as any);
 
-  const ExpenseTravelPolicies = useExpenseTravelPolicies();
-
-  const ExpenseTravelPoliciesForm = useMemo(() => {
+  const basicDetailsSchema = useMemo(() => {
     return {
+      display: "form",
       components: [
         {
-          type: "select",
-          key: "travel_policy",
-          label: "Expense Travel Policy (Optional)",
-          input: true,
-          validate: { required: true },
-          placeholder: "Local Commute",
-          data: {
-            values: ExpenseTravelPolicies?.data?.map((policy: any) => ({
-              value: policy?.name,
-              label: policy?.name,
-            })),
+          label: "Expense Date",
+          tableView: true,
+          validate: {
+            required: true,
           },
-          customClass: "appearance-none",
-        },
-      ],
-    };
-  }, [ExpenseTravelPolicies]);
-
-  const MileageForm = useMemo(() => {
-    return {
-      components: [
-        {
-          type: "textfield",
-          key: "from_location",
-          label: "From Location",
-          input: true,
-          validate: { required: true },
-          placeholder: "Enter starting location",
-        },
-        {
-          type: "textfield",
-          key: "to_location",
-          label: "To Location",
-          input: true,
-          validate: { required: true },
-          placeholder: "Enter destination",
-        },
-        {
-          type: "number",
-          key: "distance",
-          label: "Distance (KM)",
-          input: true,
-          validate: { required: true, min: 0 },
-          placeholder: "0",
-        },
-        {
-          type: "number",
-          key: "rate",
-          label: "Rate per KM (₹)",
-          input: true,
-          validate: { required: true, min: 0 },
-          placeholder: "0.00",
-          defaultValue: 10,
-        },
-        {
+          key: "expenseDate",
           type: "datetime",
-          key: "date",
-          label: "Travel Date",
           input: true,
-          validate: { required: true },
           format: "dd-MM-yyyy",
           enableTime: false,
           placeholder: "Select Date",
         },
         {
-          type: "textarea",
-          key: "purpose",
-          label: "Purpose of Travel",
+          label: "Vehicle Category",
+          tableView: true,
+          dataSrc: "values",
+          data: {
+            values: vehicleCategory?.data?.map((policy: any) => ({
+              value: policy?.name,
+              label: policy?.name,
+            })),
+          },
+          key: "vehicleCategory",
+          type: "select",
           input: true,
-          validate: { required: true },
-          placeholder: "Enter purpose of travel",
-          rows: 3,
+          customClass: "appearance-none",
+          placeholder: "Select Category",
+          validate: {
+            required: true,
+          },
+        },
+        {
+          label: "Expense Category",
+          key: "expense-category",
+          tableView: true,
+          dataSrc: "values",
+          data: {
+            values: expenseType?.data?.map((policy: any) => ({
+              value: policy?.name,
+              label: policy?.name,
+            })),
+          },
+          type: "select",
+          input: true,
+          customClass: "appearance-none",
+          placeholder: "Select Category",
+          validate: {
+            required: true,
+          },
         },
       ],
     };
-  }, []);
+  }, [vehicleCategory, expenseType]);
 
-  const handleDeleteItem = useCallback((id: string) => {
-    setMileageItems((prevItems) => {
-      const itemToDelete = prevItems.find((item) => item.id === id);
-      if (
-        itemToDelete &&
-        itemToDelete.attachmentUrl &&
-        itemToDelete.attachmentUrl.startsWith("blob:")
-      ) {
-        const urlToRevoke = objectUrls.current[itemToDelete.id];
-        if (urlToRevoke) {
-          URL.revokeObjectURL(urlToRevoke);
-          delete objectUrls.current[itemToDelete.id];
-        }
-      }
-      return prevItems.filter((item) => item.id !== id);
-    });
-  }, []);
-
-  const handleAddMileageItem = useCallback(
-    (formData: any, fileObjectFromModal: File | null | undefined) => {
-      const newId = `mile${mileageItems.length + 1}-${Date.now()}`;
-      let attachmentUrl: string = defaultReceipt;
-      let attachmentType: string = "image/png";
-      let fileName: string | undefined;
-
-      if (fileObjectFromModal) {
-        attachmentUrl = URL.createObjectURL(fileObjectFromModal);
-        objectUrls.current[newId] = attachmentUrl;
-        attachmentType = fileObjectFromModal.type;
-        fileName = fileObjectFromModal.name;
-      } else if (formData.attachments && formData.attachments.length > 0) {
-        const attachedFile = formData.attachments[0];
-        attachmentUrl = attachedFile.url || attachmentUrl;
-        attachmentType = attachedFile.type || attachmentType;
-        fileName = attachedFile.name || undefined;
-      }
-
-      setMileageItems((prevItems) => [
-        ...prevItems,
-        {
-          id: newId,
-          fromLocation: formData.from_location,
-          toLocation: formData.to_location,
-          distance: parseFloat(formData.distance),
-          rate: parseFloat(formData.rate),
-          amount: parseFloat(formData.distance) * parseFloat(formData.rate),
-          date: formData.date,
-          purpose: formData.purpose,
-          attachmentUrl: attachmentUrl,
-          attachmentType: attachmentType,
-          fileName: fileName,
-          fileObject: fileObjectFromModal || undefined,
-        },
-      ]);
-      setIsModalOpen(false);
-    },
-    [mileageItems.length]
+  const [travelType, setTravelType] = useState<"distance" | "odometer">(
+    "distance"
   );
+  const [calculatedAmount, setCalculatedAmount] = useState<number>(0);
+  const [travelFieldsFormData, setTravelFieldsFormData] = useState<any>({});
 
-  const [formData, setFormData] = useState<any>({});
-
-  const handleMileageFormSubmission = useCallback((submission: any) => {
-    const data = submission.data;
-    const distance = parseFloat(data.distance) || 0;
-    const rate = parseFloat(data.rate) || 0;
-    const calculatedAmount = distance * rate;
-
-    setFormData({
-      ...data,
-      amount: calculatedAmount,
-    });
+  const calculateAmount = useCallback((dist: number) => {
+    const ratePerKm = 10.0;
+    return dist * ratePerKm;
   }, []);
 
-  const handleAddItem = useCallback(() => {
-    if (formData.from_location && formData.to_location && formData.distance && formData.rate && formData.date && formData.purpose) {
-      const newId = `mile${mileageItems.length + 1}-${Date.now()}`;
-      
-      setMileageItems((prevItems) => [
-        ...prevItems,
-        {
-          id: newId,
-          fromLocation: formData.from_location,
-          toLocation: formData.to_location,
-          distance: parseFloat(formData.distance),
-          rate: parseFloat(formData.rate),
-          amount: parseFloat(formData.distance) * parseFloat(formData.rate),
-          date: formData.date,
-          purpose: formData.purpose,
-          attachmentUrl: defaultReceipt,
-          attachmentType: "image/png",
-        },
-      ]);
-
-      // Reset form
-      setFormData({});
-    } else {
-      alert("Please fill in all required fields");
-    }
-  }, [formData, mileageItems.length]);
-
-  const totalAmount = mileageItems.reduce((sum, item) => sum + item.amount, 0);
-  const advances = 0;
-  const netPayable = totalAmount - advances;
-
+  // Effect to initialize Basic Details Form.io instance
   useEffect(() => {
-    return () => {
-      for (const id in objectUrls.current) {
-        if (objectUrls.current[id].startsWith("blob:")) {
-          URL.revokeObjectURL(objectUrls.current[id]);
+    if (basicDetailsRef.current) {
+      Formio.createForm(basicDetailsRef.current, basicDetailsSchema, {
+        render: { submit: false, cancel: false },
+      })
+        .then((form: any) => {
+          basicDetailsFormInstanceRef.current = form;
+          form.submission = { data: {} };
+          form.on("error", (errors: any) => {
+            console.error("Basic Details Form.io validation errors:", errors);
+          });
+        })
+        .catch((err: any) =>
+          console.error("Error creating Basic Details Form.io form:", err)
+        );
+      return () => {
+        if (basicDetailsFormInstanceRef.current) {
+          basicDetailsFormInstanceRef.current.destroy();
+          basicDetailsFormInstanceRef.current = null;
         }
-      }
-    };
+      };
+    }
+  }, [basicDetailsSchema]);
+
+  // Effect to initialize Travel Fields Form.io instance
+  useEffect(() => {
+    if (travelFieldsRef.current) {
+      Formio.createForm(travelFieldsRef.current, travelFieldsSchema, {
+        render: { submit: false, cancel: false },
+      })
+        .then((form: any) => {
+          travelFieldsFormInstanceRef.current = form;
+          form.submission = { data: { travelTypeHidden: travelType } };
+          form.on("change", (submission: any) => {
+            setTravelFieldsFormData(submission.data);
+            // Removed logic to manage file previews as Formio handles it now
+          });
+          form.on("error", (errors: any) => {
+            console.error("Travel Fields Form.io validation errors:", errors);
+          });
+        })
+        .catch((err: any) =>
+          console.error("Error creating Travel Fields Form.io form:", err)
+        );
+
+      return () => {
+        if (travelFieldsFormInstanceRef.current) {
+          travelFieldsFormInstanceRef.current.destroy();
+          travelFieldsFormInstanceRef.current = null;
+        }
+      };
+    }
+  }, [travelType]);
+
+  // Effect to initialize Notes Form.io instance
+  useEffect(() => {
+    if (notesRef.current) {
+      Formio.createForm(notesRef.current, notesSchema, {
+        render: { submit: false, cancel: false },
+      })
+        .then((form: any) => {
+          notesFormInstanceRef.current = form;
+          form.submission = { data: {} };
+          form.on("error", (errors: any) => {
+            console.error("Notes Form.io validation errors:", errors);
+          });
+        })
+        .catch((err: any) =>
+          console.error("Error creating Notes Form.io form:", err)
+        );
+      return () => {
+        if (notesFormInstanceRef.current) {
+          notesFormInstanceRef.current.destroy();
+          notesFormInstanceRef.current = null;
+        }
+      };
+    }
+  }, []);
+
+  // Effect to update travelTypeHidden in the Form.io instance when travelType changes
+  useEffect(() => {
+    if (travelFieldsFormInstanceRef.current) {
+      travelFieldsFormInstanceRef.current.setSubmission({
+        data: {
+          ...travelFieldsFormInstanceRef.current.submission.data,
+          travelTypeHidden: travelType,
+        },
+      });
+    }
+  }, [travelType]);
+
+  // Effect to update calculated amount when relevant form data changes
+  useEffect(() => {
+    let distanceValue = 0;
+    if (travelType === "distance") {
+      distanceValue = parseFloat(travelFieldsFormData.distance) || 0;
+    } else {
+      const startOdometer = parseFloat(travelFieldsFormData.startOdometer) || 0;
+      const endOdometer = parseFloat(travelFieldsFormData.endOdometer) || 0;
+      distanceValue = endOdometer - startOdometer;
+    }
+    setCalculatedAmount(calculateAmount(distanceValue));
+  }, [travelFieldsFormData, travelType, calculateAmount]);
+
+  // Handle overall form submission
+  const handleSubmit = useCallback(async () => {
+    const allFormData: Partial<MileageExpenseData> = {};
+    try {
+      // First, submit each form individually to trigger validation
+      const basicSubmission =
+        await basicDetailsFormInstanceRef.current.submit();
+      const travelSubmission =
+        await travelFieldsFormInstanceRef.current.submit();
+      const notesSubmission = await notesFormInstanceRef.current.submit();
+
+      // If all submissions are successful, merge the data
+      Object.assign(
+        allFormData,
+        basicSubmission.data,
+        travelSubmission.data,
+        notesSubmission.data
+      );
+
+      console.log("Mileage Expense Submitted Data:", allFormData);
+      // Here you would typically send allFormData to your backend,
+      // which now includes the file data encoded in base64.
+    } catch (error) {
+      console.error("Form submission error:", error);
+    }
   }, []);
 
   return (
     <div className="bg-gray-50 flex flex-col font-sans">
-      <FormioNewExpenseItemModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddMileageItem}
-      />
-
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
         <ExpensesUserInfo />
-        
+        {/* Basic Expense Details Section */}
         <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
-          <Form
-            form={ExpenseTravelPoliciesForm}
-            options={{
-              builder: { styles: false },
-              submitButton: false,
-              formClass: "space-y-6",
-              rowClass: "flex flex-col",
-              labelClass: "mb-1 font-medium text-gray-700",
-              inputClass:
-                "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
-              validateOnInit: false,
-              validateOnBlur: false,
-              validateOnChange: false,
-            }}
-            className="space-y-6"
-          />
+          <h2 className="text-lg font-semibold text-gray-900">
+            Basic Expense Details
+          </h2>
+          <div ref={basicDetailsRef}></div>
         </div>
 
-        {/* Mileage Entry Form */}
+        {/* Type of Travel Section - React controlled UI */}
         <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Add Mileage Entry
+          <h2 className="text-lg font-semibold text-gray-900">
+            Type of Travel
           </h2>
-          <Form
-            form={MileageForm}
-            onSubmit={handleMileageFormSubmission}
-            onChange={handleMileageFormSubmission}
-            options={{
-              builder: { styles: false },
-              submitButton: false,
-              formClass: "space-y-6",
-              rowClass: "flex flex-col",
-              labelClass: "mb-1 font-medium text-gray-700",
-              inputClass:
-                "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
-              validateOnInit: false,
-              validateOnBlur: false,
-              validateOnChange: false,
-            }}
-            className="space-y-6"
-          />
-          
-          {formData.distance && formData.rate && (
-            <div className="mt-4 p-3 bg-gray-100 rounded-lg">
-              <p className="text-sm text-gray-600">
-                Calculated Amount: {CURRENCY_SYMBOL}{(parseFloat(formData.distance) * parseFloat(formData.rate)).toFixed(2)}
-              </p>
-            </div>
-          )}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => {
+                setTravelType("distance");
+              }}
+              className={`flex-1 py-2 text-center rounded-md text-sm font-medium transition-colors ${
+                travelType === "distance"
+                  ? "bg-black text-white shadow"
+                  : "text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Distance Travelled
+            </button>
+            <button
+              onClick={() => setTravelType("odometer")}
+              className={`flex-1 py-2 text-center rounded-md text-sm font-medium transition-colors ${
+                travelType === "odometer"
+                  ? "bg-black text-white shadow"
+                  : "text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Odometer Reading
+            </button>
+          </div>
+          <div ref={travelFieldsRef}></div>
 
-          <button
-            onClick={handleAddItem}
-            className="w-full flex items-center justify-center py-2 mt-4 border border-gray-300 rounded-lg font-medium bg-black"
-          >
-            <span className="text-lg mr-2 text-white">+ Add Mileage Entry</span>
-          </button>
-        </div>
-
-        {/* Mileage Items */}
-        <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Mileage Entries
-          </h2>
-          <div className="space-y-4">
-            {mileageItems.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">
-                No mileage entries added yet.
-              </p>
-            ) : (
-              mileageItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-start justify-between p-3 border border-gray-200 rounded-lg"
-                >
-                  <div className="flex flex-col space-y-1">
-                    <p className="font-medium text-gray-900">
-                      {item.fromLocation} → {item.toLocation}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Date: {new Date(item.date)
-                        .toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })
-                        .replace(/\//g, "-")}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Distance: {item.distance} KM × Rate: {CURRENCY_SYMBOL}{item.rate.toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Amount: {CURRENCY_SYMBOL}{item.amount.toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-600">Purpose: {item.purpose}</p>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    {item.attachmentUrl && (
-                      <a
-                        href={item.attachmentUrl}
-                        download={item.fileName || "download"}
-                        className="w-22 h-22 flex-shrink-0 cursor-pointer"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {item.attachmentType?.startsWith("image/") ? (
-                          <img
-                            src={item.attachmentUrl}
-                            alt="Receipt"
-                            className="w-22 h-22 object-cover rounded-md"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src =
-                                "https://placehold.co/80x80/e0e0e0/000000?text=Error";
-                            }}
-                          />
-                        ) : item.attachmentType?.startsWith("application/") ||
-                          item.attachmentType?.startsWith("text/") ? (
-                          <div className="w-22 h-22 bg-gray-100 rounded-md flex flex-col items-center justify-center p-2 text-gray-600 text-center text-xs border border-gray-300">
-                            {item.attachmentType?.includes("pdf") ? (
-                              <FileText className="h-8 w-8 text-red-500 mb-1" />
-                            ) : item.attachmentType?.includes("word") ||
-                              item.attachmentType?.includes("document") ? (
-                              <FileText className="h-8 w-8 text-blue-500 mb-1" />
-                            ) : item.attachmentType?.includes("excel") ||
-                              item.attachmentType?.includes("sheet") ? (
-                              <FileText className="h-8 w-8 text-green-500 mb-1" />
-                            ) : (
-                              <FileIcon className="h-8 w-8 text-gray-500 mb-1" />
-                            )}
-                            <span className="truncate w-full font-medium">
-                              {item.fileName || "Document"}
-                            </span>
-                          </div>
-                        ) : (
-                          <img
-                            src="https://placehold.co/80x80/e0e0e0/000000?text=Receipt"
-                            alt="Receipt"
-                            className="w-22 h-22 object-cover rounded-md"
-                          />
-                        )}
-                      </a>
-                    )}
-                    {!item.attachmentUrl && (
-                      <img
-                        src="https://placehold.co/80x80/e0e0e0/000000?text=Receipt"
-                        alt="Receipt"
-                        className="w-22 h-22 object-cover rounded-md flex-shrink-0"
-                      />
-                    )}
-                    <button
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="p-1 mt-[-60px] rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors"
-                      aria-label={`Delete mileage entry`}
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+          <div className="flex justify-between items-center pt-2">
+            <span className="text-base font-medium text-gray-900">
+              Calculated Amount
+            </span>
+            <span className="text-lg font-bold text-gray-900">
+              {CURRENCY_SYMBOL}
+              {calculatedAmount.toFixed(2)}
+            </span>
           </div>
         </div>
 
+        {/* Notes Section */}
         <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Summary</h2>
-          <div className="bg-white rounded-lg shadow-sm border p-4 space-y-2">
-            <div className="flex justify-between text-gray-700">
-              <span>Total Amount</span>
-              <span className="font-medium">
-                {CURRENCY_SYMBOL}
-                {totalAmount.toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between text-gray-700">
-              <span>Advances</span>
-              <span className="font-medium">
-                {CURRENCY_SYMBOL}
-                {advances.toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between text-gray-900 font-bold text-lg border-t pt-2 mt-2">
-              <span>Net Payable</span>
-              <span>
-                {CURRENCY_SYMBOL}
-                {netPayable.toFixed(2)}
-              </span>
-            </div>
-          </div>
+          <h2 className="text-lg font-semibold text-gray-900">Notes</h2>
+          <div ref={notesRef}></div>
         </div>
       </div>
 
+      {/* Footer Actions - Submit button */}
       <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
-        <div className="max-w-4xl mx-auto flex space-x-4">
+        <div className="max-w-4xl mx-auto flex">
           <button
-            onClick={() => console.log("Submit clicked")}
+            onClick={handleSubmit}
             className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit
