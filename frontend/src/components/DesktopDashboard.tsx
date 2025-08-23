@@ -416,7 +416,7 @@ const DesktopDashboard: React.FC = () => {
   return (
     <div className="h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-56 bg-white shadow-lg border-r border-gray-200 fixed h-full z-10 flex-shrink-0">
+      <div className="w-64 bg-white shadow-lg border-r border-gray-200 fixed h-full z-10 flex-shrink-0">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
             <img src={logo} alt="PayWise" className="w-8 h-8" />
@@ -431,13 +431,13 @@ const DesktopDashboard: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   item.active
                     ? "bg-gray-900 text-white"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
-                <item.icon className="w-4 h-4" />
+                <item.icon className="w-5 h-5" />
                 {item.label}
               </Link>
             ))}
@@ -445,15 +445,15 @@ const DesktopDashboard: React.FC = () => {
         </div>
 
         <div className="absolute bottom-6 left-6 right-6">
-          <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg w-full">
-            <LogOut className="w-4 h-4" />
+          <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg w-full">
+            <LogOut className="w-5 h-5" />
             Logout
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-56 flex flex-col h-screen">
+      <div className="flex-1 ml-64 flex flex-col h-screen">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
