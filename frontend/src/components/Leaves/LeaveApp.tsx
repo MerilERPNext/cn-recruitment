@@ -178,7 +178,7 @@ const LeaveAppInner: React.FC = () => {
     <DesktopLayoutWrapper title="Leaves & Holidays">
       <div className="flex flex-col h-full">
         {/* Modern Tab Navigation for Web */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-200 px-8 py-6 flex-shrink-0">
+        <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
           {/* Main Navigation Pills */}
           <div className="flex gap-4 mb-6">
             {tabs.map((tab) => (
@@ -187,13 +187,13 @@ const LeaveAppInner: React.FC = () => {
                 onClick={() => handleTabChange(tab.key as TabName)}
                 className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
                   activeTab === tab.key
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200'
+                    ? 'bg-blue-500 text-white shadow-lg'
                     : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
                 }`}
               >
                 <span className="relative z-10">{tab.label}</span>
                 {activeTab === tab.key && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full opacity-10"></div>
+                  <div className="absolute inset-0  rounded-lg opacity-10"></div>
                 )}
               </button>
             ))}
@@ -211,7 +211,7 @@ const LeaveAppInner: React.FC = () => {
                       onClick={() => handleSubTabChange(subTab)}
                       className={`px-5 py-2 rounded text-sm font-semibold transition-all duration-200 ${
                         activeSubTab === subTab
-                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
+                          ? 'bg-orange-500 text-white shadow-md'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >

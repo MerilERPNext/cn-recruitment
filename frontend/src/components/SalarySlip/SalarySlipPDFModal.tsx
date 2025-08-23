@@ -114,7 +114,7 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Desktop Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-blue-50">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
               <Eye className="w-5 h-5 text-blue-600" />

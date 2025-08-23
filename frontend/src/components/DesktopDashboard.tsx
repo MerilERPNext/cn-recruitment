@@ -127,17 +127,20 @@ const DesktopDashboard: React.FC = () => {
   // Handle click outside profile dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowProfileDropdown(false);
       }
     };
 
     if (showProfileDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showProfileDropdown]);
 
@@ -317,7 +320,7 @@ const DesktopDashboard: React.FC = () => {
       )
     );
 
-    let currentCheckIn: typeof sortedLogs[0] | null = null;
+    let currentCheckIn: (typeof sortedLogs)[0] | null = null;
 
     for (const log of sortedLogs) {
       if (log.log_type === "IN") {
@@ -360,7 +363,7 @@ const DesktopDashboard: React.FC = () => {
         )
       );
 
-      let currentCheckIn: typeof sortedLogs[0] | null = null;
+      let currentCheckIn: (typeof sortedLogs)[0] | null = null;
 
       for (const log of sortedLogs) {
         if (log.log_type === "IN") {
@@ -390,7 +393,9 @@ const DesktopDashboard: React.FC = () => {
     }
 
     // Calculate percentage, but cap at 100%
-    const percentage = Math.round((totalWorkedMinutes / totalShiftMinutes) * 100);
+    const percentage = Math.round(
+      (totalWorkedMinutes / totalShiftMinutes) * 100
+    );
     return Math.min(percentage, 100);
   };
 
@@ -398,7 +403,11 @@ const DesktopDashboard: React.FC = () => {
     { icon: Home, label: "Dashboard", path: "/webapp/", active: true },
     { icon: Calendar, label: "Leaves & Holidays", path: "/webapp/leave-app" },
     { icon: User, label: "Attendance", path: "/webapp/attendance" },
-    { icon: DollarSign, label: "Compensation", path: "/webapp/salary-slip-app" },
+    {
+      icon: DollarSign,
+      label: "Compensation",
+      path: "/webapp/salary-slip-app",
+    },
     { icon: ArrowUpDown, label: "Shifts", path: "/webapp/shift-request" },
     { icon: Receipt, label: "Expenses", path: "/webapp/expenses-app" },
     { icon: Shield, label: "Policies", path: "/webapp/policies-app" },
@@ -448,10 +457,12 @@ const DesktopDashboard: React.FC = () => {
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Welcome, Employee!</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Welcome, Employee!
+            </h1>
             <p className="text-gray-600">Here's your dashboard for today.</p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <Bell className="w-5 h-5 text-gray-600" />
@@ -461,7 +472,7 @@ const DesktopDashboard: React.FC = () => {
                 </div>
               )}
             </button>
-            
+
             <div className="relative" ref={profileDropdownRef}>
               <button
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -482,7 +493,11 @@ const DesktopDashboard: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-400 transition-transform ${
+                    showProfileDropdown ? "rotate-180" : ""
+                  }`}
+                />
               </button>
 
               {/* Profile Dropdown */}
@@ -522,19 +537,27 @@ const DesktopDashboard: React.FC = () => {
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Department:</span>
-                          <span className="text-gray-900">{currentEmployee?.department || "N/A"}</span>
+                          <span className="text-gray-900">
+                            {currentEmployee?.department || "N/A"}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Company:</span>
-                          <span className="text-gray-900">{currentEmployee?.company || "N/A"}</span>
+                          <span className="text-gray-900">
+                            {currentEmployee?.company || "N/A"}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Join Date:</span>
-                          <span className="text-gray-900">{currentEmployee?.date_of_joining || "N/A"}</span>
+                          <span className="text-gray-900">
+                            {currentEmployee?.date_of_joining || "N/A"}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Status:</span>
-                          <span className="text-green-600 font-medium">{currentEmployee?.status || "Active"}</span>
+                          <span className="text-green-600 font-medium">
+                            {currentEmployee?.status || "Active"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -597,60 +620,84 @@ const DesktopDashboard: React.FC = () => {
 
           {/* Time Cards */}
           <div className="grid grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg border border-gray-200 text-center">
-              <div className="flex items-center justify-center mb-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-blue-600" />
+            <div className="bg-blue-50 p-6 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-3">
+                {/* Icon Box */}
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-blue-600" />
+                </div>
+
+                {/* Text Content */}
+                <div>
+                  <p className="text-xs font-medium text-gray-500 tracking-wide">
+                    SHIFT START
+                  </p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {firstCheckIn?.shift_start
+                      ? formatTo24HourTime(firstCheckIn.shift_start)
+                      : "09:00 AM"}
+                  </p>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mb-1">SHIFT START</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {firstCheckIn?.shift_start
-                  ? formatTo24HourTime(firstCheckIn.shift_start)
-                  : "09:00 AM"}
-              </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg border border-gray-200 text-center">
-              <div className="flex items-center justify-center mb-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <div className="bg-green-50 p-6 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-3">
+                {/* Icon Box */}
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                 </div>
-              </div>
-              <p className="text-sm text-gray-500 mb-1">IN TIME</p>
-              <p className="text-2xl font-bold text-green-600">
-                {firstCheckIn?.time
-                  ? formatTo24HourTime(firstCheckIn.time)
-                  : "09:05 AM"}
-              </p>
-            </div>
 
-            <div className="bg-white p-6 rounded-lg border border-gray-200 text-center">
-              <div className="flex items-center justify-center mb-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-blue-600" />
+                {/* Text Content */}
+                <div>
+                  <p className="text-xs font-medium text-gray-500 tracking-wide">
+                    IN TIME
+                  </p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {firstCheckIn?.time
+                      ? formatTo24HourTime(firstCheckIn.time)
+                      : "09:05 AM"}
+                  </p>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mb-1">SHIFT END</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {firstCheckIn?.shift_end
-                  ? formatTo24HourTime(firstCheckIn.shift_end)
-                  : "06:00 PM"}
-              </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg border border-gray-200 text-center">
-              <div className="flex items-center justify-center mb-3">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+            <div className="bg-blue-50 p-6 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-3">
+                {/* Icon Box */}
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-blue-600" />
+                </div>
+
+                {/* Text Content */}
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">SHIFT END</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {firstCheckIn?.shift_end
+                      ? formatTo24HourTime(firstCheckIn.shift_end)
+                      : "06:00 PM"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-red-50 p-6 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-3">
+                {/* Icon Box */}
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
                   <XCircle className="w-5 h-5 text-red-600" />
                 </div>
+
+                {/* Text Content */}
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">OUT TIME</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {lastCheckOut?.time
+                      ? formatTo24HourTime(lastCheckOut.time)
+                      : "--:--"}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-gray-500 mb-1">OUT TIME</p>
-              <p className="text-2xl font-bold text-red-600">
-                {lastCheckOut?.time
-                  ? formatTo24HourTime(lastCheckOut.time)
-                  : "--:--"}
-              </p>
             </div>
           </div>
 
@@ -668,7 +715,9 @@ const DesktopDashboard: React.FC = () => {
               {expenseData && expenseData.length > 0 && (
                 <div className="bg-white p-6 rounded-lg border border-gray-200">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Unpaid Expense Claims</h3>
+                    <h3 className="text-lg font-semibold">
+                      Unpaid Expense Claims
+                    </h3>
                     <Link
                       to="/webapp/expenses-app"
                       className="text-blue-600 text-sm font-medium hover:text-blue-700"
@@ -695,7 +744,9 @@ const DesktopDashboard: React.FC = () => {
                               {styles.icon}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900">Office Supplies</p>
+                              <p className="font-medium text-gray-900">
+                                Office Supplies
+                              </p>
                               <p className="text-sm text-gray-600">
                                 {formatDateString(item.creation)}
                               </p>
@@ -722,9 +773,11 @@ const DesktopDashboard: React.FC = () => {
             {/* Right Column */}
             <div className="space-y-6">
               {/* Total Hours Worked */}
-              <div className="bg-blue-100 text-blue-600 border  p-6 rounded-lg"> 
+              <div className="bg-blue-50 text-blue-600 border  p-6 rounded-lg">
                 <div className="text-center">
-                  <p className="text-blue-600 text-sm mb-2 font-medium tracking-wide">TOTAL HOURS WORKED</p>
+                  <p className="text-blue-600 text-sm mb-2 font-medium tracking-wide">
+                    TOTAL HOURS WORKED
+                  </p>
                   <p className="text-4xl font-bold mb-1">{getTotalTime()}</p>
                   <p className="text-blue-600 text-sm mb-6">8h 55m target</p>
 
@@ -734,7 +787,9 @@ const DesktopDashboard: React.FC = () => {
                       <div
                         className="bg-blue-700 h-3 transition-all duration-700 ease-out shadow-sm 
                          rounded-lg"
-                        style={{ width: `${Math.min(getWorkPercentage(), 100)}%` }}
+                        style={{
+                          width: `${Math.min(getWorkPercentage(), 100)}%`,
+                        }}
                       ></div>
                     </div>
                     {/* Progress indicator dots */}
@@ -745,7 +800,9 @@ const DesktopDashboard: React.FC = () => {
                       <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
                     </div>
                   </div>
-                  <p className="text-blue-600 text-sm font-medium">{getWorkPercentage()}% completed</p>
+                  <p className="text-blue-600 text-sm font-medium">
+                    {getWorkPercentage()}% completed
+                  </p>
                 </div>
               </div>
 
@@ -754,7 +811,9 @@ const DesktopDashboard: React.FC = () => {
                 {currentEmployee?.custom_allow_mobile_checkin && (
                   <button
                     onClick={() =>
-                      handleCheckInOut(isCurrentlyCheckedIn ? "checkOut" : "checkIn")
+                      handleCheckInOut(
+                        isCurrentlyCheckedIn ? "checkOut" : "checkIn"
+                      )
                     }
                     className="w-full py-3 px-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                     disabled={checkInCheckOutPending || !employeeShift?.shift}
@@ -775,7 +834,9 @@ const DesktopDashboard: React.FC = () => {
                 {canShowClockIn?.can_show && (
                   <button
                     onClick={() =>
-                      handleClockInOut(isCurrentlyCheckedIn ? "clockOut" : "clockIn")
+                      handleClockInOut(
+                        isCurrentlyCheckedIn ? "clockOut" : "clockIn"
+                      )
                     }
                     className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                     disabled={clockInCheckOutPending || !employeeShift?.shift}
@@ -809,7 +870,9 @@ const DesktopDashboard: React.FC = () => {
                   <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex items-center">
                       <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
-                      <span className="text-sm font-medium text-green-800">Present</span>
+                      <span className="text-sm font-medium text-green-800">
+                        Present
+                      </span>
                     </div>
                     <span className="text-lg font-bold text-green-800">
                       {employeeAttendanceSummary?.present || 20}
@@ -818,7 +881,9 @@ const DesktopDashboard: React.FC = () => {
                   <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
                     <div className="flex items-center">
                       <XCircle className="w-5 h-5 text-red-600 mr-3" />
-                      <span className="text-sm font-medium text-red-800">Absent</span>
+                      <span className="text-sm font-medium text-red-800">
+                        Absent
+                      </span>
                     </div>
                     <span className="text-lg font-bold text-red-800">
                       {employeeAttendanceSummary?.absent || 1}
@@ -827,7 +892,9 @@ const DesktopDashboard: React.FC = () => {
                   <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
                     <div className="flex items-center">
                       <Timer className="w-5 h-5 text-orange-600 mr-3" />
-                      <span className="text-sm font-medium text-orange-800">Leaves</span>
+                      <span className="text-sm font-medium text-orange-800">
+                        Leaves
+                      </span>
                     </div>
                     <span className="text-lg font-bold text-orange-800">
                       {employeeAttendanceSummary?.leaves || 2}

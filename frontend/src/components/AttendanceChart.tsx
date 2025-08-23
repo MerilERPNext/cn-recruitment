@@ -76,7 +76,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
         {/* Donut Chart */}
         <div className="flex items-center justify-center">
           <div className="relative">
-            <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90">
+            <svg width="300" height="300" viewBox="0 0 200 200" className="transform -rotate-90">
               {/* Present segment */}
               <path
                 d={createArcPath(0, presentAngle, 80, 50)}

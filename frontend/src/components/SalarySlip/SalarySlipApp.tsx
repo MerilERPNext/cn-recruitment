@@ -140,22 +140,22 @@ const SalarySlipApp: React.FC = () => {
     <DesktopLayoutWrapper title="Compensation">
       <div className="flex flex-col h-full">
         {/* Modern Tab Navigation for Web */}
-        <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 px-8 py-6 flex-shrink-0">
+        <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
           {/* Main Navigation Cards */}
-          <div className="flex gap-6 mb-6">
+          <div className="flex gap-6 mb-6 ">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
-                className={`relative px-4 py-2 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                className={`relative px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                   activeTab === tab.key
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-200'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
+                    ? 'bg-black text-white shadow-lg'
+                    : ' text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg '
                 }`}
               >
                 <span className="relative z-10">{tab.label}</span>
                 {activeTab === tab.key && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl opacity-10"></div>
+                  <div className="absolute inset-0 bg-blue-600 rounded-xl opacity-10"></div>
                 )}
               </button>
             ))}
@@ -169,23 +169,23 @@ const SalarySlipApp: React.FC = () => {
                 <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
                   <button
                     onClick={() => setViewMode('annual')}
-                    className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    className={`px-6 py-1 rounded-lg font-semibold text-sm transition-all duration-200 ${
                       viewMode === 'annual'
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                        ? 'bg-black text-white shadow-md'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    💰 Annual CTC
+                    Annual CTC
                   </button>
                   <button
                     onClick={() => setViewMode('monthly')}
-                    className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    className={`px-6 py-1 rounded-lg font-semibold transition-all duration-200 ${
                       viewMode === 'monthly'
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                        ? 'bg-black text-white shadow-md'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    📅 Monthly Salary
+                    Monthly Salary
                   </button>
                 </div>
               </div>
