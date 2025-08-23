@@ -334,34 +334,28 @@ const EmployeeAttendance = () => {
 
           {/* Legends  */}
           {isDesktop ? (
-            // Enhanced desktop legends with light colors
+            // Desktop legends styled as tags like mobile
             <div className="px-4 py-3">
               <h4 className="text-sm font-semibold text-gray-700 mb-3">📅 Attendance Legend</h4>
-              <div className="grid grid-cols-3 gap-3 text-xs">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200">
-                  <span className="text-green-600">✓</span>
-                  <span className="text-green-800 font-medium">Present</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200">
-                  <span className="text-red-600">✗</span>
-                  <span className="text-red-800 font-medium">Absent</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
-                  <span className="text-amber-600">🏖️</span>
-                  <span className="text-amber-800 font-medium">On Leave</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-50 border border-purple-200">
-                  <span className="text-purple-600">💻</span>
-                  <span className="text-purple-800 font-medium">Work From Home</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200">
-                  <span className="text-blue-600">🎉</span>
-                  <span className="text-blue-800 font-medium">Holiday</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200">
-                  <span className="text-slate-600">🏠</span>
-                  <span className="text-slate-700 font-medium">Week Off</span>
-                </div>
+              <div className="flex flex-wrap gap-2 text-xs justify-around">
+                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
+                  Present
+                </span>
+                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-100 text-red-700 border border-red-200">
+                  Absent
+                </span>
+                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-100 text-orange-700 border border-yellow-200">
+                  On Leave
+                </span>
+                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-100 text-purple-700 border border-purple-200">
+                  Work From Home
+                </span>
+                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-100 text-blue-700 border border-blue-200">
+                  Holiday
+                </span>
+                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+                  Week Off
+                </span>
               </div>
             </div>
           ) : (

@@ -675,7 +675,7 @@ const DesktopDashboard: React.FC = () => {
                   <p className="text-2xl font-bold text-blue-600">
                     {firstCheckIn?.shift_end
                       ? formatTo24HourTime(firstCheckIn.shift_end)
-                      : "06:00 PM"}
+                      : "7:00 PM"}
                   </p>
                 </div>
               </div>
@@ -694,7 +694,7 @@ const DesktopDashboard: React.FC = () => {
                   <p className="text-2xl font-bold text-red-600">
                     {lastCheckOut?.time
                       ? formatTo24HourTime(lastCheckOut.time)
-                      : "--:--"}
+                      : "10:00 PM"}
                   </p>
                 </div>
               </div>
