@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Plus, Trash2, FileText, File as FileIcon } from "lucide-react";
-import FormioDailyAllowanceExpenseModal from "./DailyAllowanceClaim/FormioDailyAllowanceExpenseModal";
+import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
 import MultipleDaysSection from "./DailyAllowanceClaim/MultipleDaysSection";
 import ExpensesUserInfo from "./ExpensesUserInfo";
 
@@ -129,7 +129,7 @@ const DailyAllowanceClaimModal: React.FC<DailyAllowanceClaimModalProps> = ({ onC
 
   return (
     <div className="bg-gray-50 flex flex-col font-sans">
-      <FormioDailyAllowanceExpenseModal
+      <FormioNewExpenseItemModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddExpenseItem}

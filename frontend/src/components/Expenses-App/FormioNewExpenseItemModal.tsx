@@ -193,7 +193,7 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
         </button>
         <button
           onClick={handleSaveClick}
-          className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+          className="flex-1 py-3 rounded-lg bg-black text-white font-medium transition-colors"
         >
           Add Item
         </button>
@@ -203,23 +203,27 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
 
   if (isDesktop) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <div className="p-6">
-          <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">
-              New Expense Item
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-              aria-label="Close"
-            >
-              <X className="h-5 w-5 text-gray-600" />
-            </button>
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-white rounded-lg shadow-xl w-[90%] max-w-2xl max-h-[80vh] overflow-hidden">
+          <div className="p-6">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">
+                New Expense Item
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto">
+              {renderContent()}
+            </div>
           </div>
-          {renderContent()}
         </div>
-      </Modal>
+      </div>
     );
   }
 
