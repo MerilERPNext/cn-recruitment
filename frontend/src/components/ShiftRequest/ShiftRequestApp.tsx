@@ -116,7 +116,7 @@ const ShiftRequestApp: React.FC = () => {
                 onClick={() => handleTabChange(tab.key as TabName)}
                 className={`relative px-6 py-4 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                   activeTab === tab.key
-                    ? 'bg-blue-500 text-white shadow-lg'
+                    ? 'bg-black text-white shadow-lg'
                     : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
                 }`}
               >

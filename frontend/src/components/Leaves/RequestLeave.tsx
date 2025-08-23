@@ -342,7 +342,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           </button>
           <button
             onClick={handleSubmit}
-            className="py-3 px-6 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+            className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-blue-700 transition-colors"
           >
             Submit Request
           </button>

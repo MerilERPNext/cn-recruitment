@@ -235,7 +235,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({
           <button
             onClick={handleSubmit}
             disabled={updateEmployeeMutation.isPending}
-            className="px-8 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {updateEmployeeMutation.isPending ? (
               <>

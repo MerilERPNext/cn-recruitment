@@ -187,7 +187,7 @@ const LeaveAppInner: React.FC = () => {
                 onClick={() => handleTabChange(tab.key as TabName)}
                 className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
                   activeTab === tab.key
-                    ? 'bg-blue-500 text-white shadow-lg'
+                    ? 'bg-black text-white shadow-lg'
                     : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
                 }`}
               >
@@ -211,7 +211,7 @@ const LeaveAppInner: React.FC = () => {
                       onClick={() => handleSubTabChange(subTab)}
                       className={`px-5 py-2 rounded text-sm font-semibold transition-all duration-200 ${
                         activeSubTab === subTab
-                          ? 'bg-orange-500 text-white shadow-md'
+                          ? 'bg-black text-white shadow-md'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >
