@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import NewExpenseType from "./NewExpenseType";
 
 type TabName = "Expenses";
 
@@ -14,6 +15,7 @@ const ExpensesApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
+  const [showExpenseTypeSelection, setShowExpenseTypeSelection] = useState(false);
 
   useEffect(() => {
     if (location.pathname === "/webapp/expenses-app") {
@@ -26,7 +28,27 @@ const ExpensesApp: React.FC = () => {
   }, [location.pathname, navigate]);
 
   const handleAddNew = () => {
-    navigate("/webapp/expenses-app/expenses-list/new-expense-type");
+    if (isDesktop) {
+      setShowExpenseTypeSelection(true);
+    } else {
+      navigate("/webapp/expenses-app/expenses-list/new-expense-type");
+    }
+  };
+
+  const handleClose = () => {
+    setShowExpenseTypeSelection(false);
+  };
+
+  const handleExpenseTypeSelect = (type: string) => {
+    setShowExpenseTypeSelection(false);
+    // Navigate to the appropriate expense claim form based on type
+    if (type === "General Expense") {
+      navigate("/webapp/expenses-app/general-expense-claim");
+    } else if (type === "Mileage Expense") {
+      navigate("/webapp/expenses-app/mileage-expense-claim");
+    } else if (type === "Daily Allowance") {
+      navigate("/webapp/expenses-app/daily-allowance-claim");
+    }
   };
 
   const mobileLayout = (
@@ -74,17 +96,26 @@ const ExpensesApp: React.FC = () => {
     <DesktopLayoutWrapper title="Expenses">
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-y-auto p-8 relative">
-          <Outlet />
-
-          {/* Floating Add Button for Desktop */}
-          <div className="absolute bottom-8 right-8">
-            <button
-              onClick={handleAddNew}
-              className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
-            >
-              + Add Expense
-            </button>
-          </div>
+          {showExpenseTypeSelection ? (
+            <NewExpenseType
+              onClose={handleClose}
+              onSelectExpenseType={handleExpenseTypeSelect}
+              isModal={true}
+            />
+          ) : (
+            <>
+              <Outlet />
+              {/* Floating Add Button for Desktop */}
+              <div className="absolute bottom-8 right-8">
+                <button
+                  onClick={handleAddNew}
+                  className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
+                >
+                  + Add Expense
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </DesktopLayoutWrapper>
