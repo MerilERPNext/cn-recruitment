@@ -38,7 +38,8 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
               value: e?.name,
             })),
           },
-          key: "expense-claim-type",
+          // key: "expense-claim-type",
+          key: "expenseType",
           type: "select",
           input: true,
           customClass: "appearance-none",
@@ -191,7 +192,7 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
           Cancel
         </button>
         <button
-          onClick={handleSubmit}
+          onClick={handleSaveClick}
           className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
         >
           Add Item

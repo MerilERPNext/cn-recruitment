@@ -4,6 +4,10 @@ import HeaderBar from "../HeaderBar";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import NewExpenseType from "./NewExpenseType";
+import ExpenseFormModal from "./ExpenseFormModal";
+import GeneralExpenseClaimModal from "./GeneralExpenseClaimModal";
+import MileageExpenseClaimModal from "./MileageExpenseClaimModal";
+import DailyAllowanceClaimModal from "./DailyAllowanceClaimModal";
 
 type TabName = "Expenses";
 
@@ -16,6 +20,7 @@ const ExpensesApp: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showExpenseTypeSelection, setShowExpenseTypeSelection] = useState(false);
+  const [currentExpenseForm, setCurrentExpenseForm] = useState<string | null>(null);
 
   useEffect(() => {
     if (location.pathname === "/webapp/expenses-app") {
@@ -41,14 +46,57 @@ const ExpensesApp: React.FC = () => {
 
   const handleExpenseTypeSelect = (type: string) => {
     setShowExpenseTypeSelection(false);
-    // Navigate to the appropriate expense claim form based on type
-    if (type === "General Expense") {
-      navigate("/webapp/expenses-app/general-expense-claim");
-    } else if (type === "Mileage Expense") {
-      navigate("/webapp/expenses-app/mileage-expense-claim");
-    } else if (type === "Daily Allowance") {
-      navigate("/webapp/expenses-app/daily-allowance-claim");
+    if (isDesktop) {
+      // Show form in modal for desktop
+      setCurrentExpenseForm(type);
+    } else {
+      // Navigate to the appropriate expense claim form for mobile
+      if (type === "General Expense") {
+        navigate("/webapp/expenses-app/general-expense-claim");
+      } else if (type === "Mileage Expense") {
+        navigate("/webapp/expenses-app/mileage-expense-claim");
+      } else if (type === "Daily Allowance") {
+        navigate("/webapp/expenses-app/daily-allowance-claim");
+      }
     }
+  };
+
+  const handleCloseExpenseForm = () => {
+    setCurrentExpenseForm(null);
+  };
+
+  const renderExpenseFormModal = () => {
+    if (!currentExpenseForm) return null;
+
+    let title = "";
+    let FormComponent = null;
+
+    switch (currentExpenseForm) {
+      case "General Expense":
+        title = "General Expense Claim";
+        FormComponent = GeneralExpenseClaimModal;
+        break;
+      case "Mileage Expense":
+        title = "Mileage Expense Claim";
+        FormComponent = MileageExpenseClaimModal;
+        break;
+      case "Daily Allowance":
+        title = "Daily Allowance Claim";
+        FormComponent = DailyAllowanceClaimModal;
+        break;
+      default:
+        return null;
+    }
+
+    return (
+      <ExpenseFormModal
+        isOpen={!!currentExpenseForm}
+        onClose={handleCloseExpenseForm}
+        title={title}
+      >
+        <FormComponent onClose={handleCloseExpenseForm} />
+      </ExpenseFormModal>
+    );
   };
 
   const mobileLayout = (
@@ -116,6 +164,9 @@ const ExpensesApp: React.FC = () => {
               </div>
             </>
           )}
+
+          {/* Render expense form modal for desktop */}
+          {renderExpenseFormModal()}
         </div>
       </div>
     </DesktopLayoutWrapper>
