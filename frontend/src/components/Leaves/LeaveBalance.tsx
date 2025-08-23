@@ -129,44 +129,49 @@ const LeaveBalance: React.FC = () => {
   return (
     <div className="pb-4 relative">
       <div className="pt-4">
-        {leaveBalance.map((leave) => (
-          <div key={leave.type} className={`rounded-xl p-4 mb-4 ${inactiveBg}`}>
+        {leaveBalance
+          .filter((leave) => !leave.type.toLowerCase().includes("optional"))
+          .map((leave) => (
             <div
-              className={`text-xl font-semibold mb-3 ${labelColor} flex justify-between items-center`}
+              key={leave.type}
+              className={`rounded-xl p-4 mb-4 ${inactiveBg}`}
             >
-              <span className="text-left text-black">{leave.type}</span>
-              <span className="text-sm text-green-800">
-                {leave.carry_over} Carry Forwarded
-              </span>
+              <div
+                className={`text-xl font-semibold mb-3 ${labelColor} flex justify-between items-center`}
+              >
+                <span className="text-left text-black">{leave.type}</span>
+                <span className="text-sm text-green-800">
+                  {leave.carry_over} Carry Forwarded
+                </span>
+              </div>
+              <div
+                className="flex justify-between mt-2 gap-2 cursor-pointer"
+                onClick={() => openTransactions(leave.type)}
+              >
+                <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-col items-center justify-center bg-blue-50">
+                  <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mb-1" />
+                  <p className="text-lg font-bold text-blue-800">
+                    {leave.entitled}
+                  </p>
+                  <p className="text-xs font-medium text-blue-700">Entitled</p>
+                </div>
+                <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-col items-center justify-center bg-green-50">
+                  <FaClockRotateLeft className="w-6 h-6 text-green-600 mb-1" />
+                  <p className="text-lg font-bold text-green-800">
+                    {leave.availed}
+                  </p>
+                  <p className="text-xs font-medium text-green-700">Availed</p>
+                </div>
+                <div className="flex-1 text-center border border-orange-100 rounded-lg py-2 flex flex-col items-center justify-center bg-orange-50">
+                  <FiPieChart className="w-6 h-6 text-orange-600 mb-1" />
+                  <p className="text-lg font-bold text-orange-800">
+                    {leave.balance}
+                  </p>
+                  <p className="text-xs font-medium text-orange-700">Balance</p>
+                </div>
+              </div>
             </div>
-            <div
-              className="flex justify-between mt-2 gap-2 cursor-pointer"
-              onClick={() => openTransactions(leave.type)}
-            >
-              <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-col items-center justify-center bg-blue-50">
-                <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mb-1" />
-                <p className="text-lg font-bold text-blue-800">
-                  {leave.entitled}
-                </p>
-                <p className="text-xs font-medium text-blue-700">Entitled</p>
-              </div>
-              <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-col items-center justify-center bg-green-50">
-                <FaClockRotateLeft className="w-6 h-6 text-green-600 mb-1" />
-                <p className="text-lg font-bold text-green-800">
-                  {leave.availed}
-                </p>
-                <p className="text-xs font-medium text-green-700">Availed</p>
-              </div>
-              <div className="flex-1 text-center border border-orange-100 rounded-lg py-2 flex flex-col items-center justify-center bg-orange-50">
-                <FiPieChart className="w-6 h-6 text-orange-600 mb-1" />
-                <p className="text-lg font-bold text-orange-800">
-                  {leave.balance}
-                </p>
-                <p className="text-xs font-medium text-orange-700">Balance</p>
-              </div>
-            </div>
-          </div>
-        ))}
+          ))}
       </div>
 
       <div className="w-full mt-6 px-4">
