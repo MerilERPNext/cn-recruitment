@@ -54,15 +54,16 @@ const AttendanceRequest = () => {
           />
         </div>
       )}
-      <div className=" fixed bottom-0 w-full px-4 border-t border-gray-300 py-2">
-        <button
-          className={`flex justify-center gap-2 flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors z-10`}
-          onClick={() => {
-            setShowForm(!showForm);
-          }}
-        >
-          <Plus /> <span>Add Attendance Request</span>{" "}
-        </button>
+      {/* Fixed Bottom Bar */}
+      <div className="fixed bottom-0 left-0 lg:left-20 w-full bg-white border-t border-gray-300 py-2">
+        <div className="max-w-7xl mx-auto px-4">
+          <button
+            className="flex justify-center gap-2 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            onClick={() => setShowForm(!showForm)}
+          >
+            <Plus /> <span>Add Attendance Request</span>
+          </button>
+        </div>
       </div>
     </>
   );
