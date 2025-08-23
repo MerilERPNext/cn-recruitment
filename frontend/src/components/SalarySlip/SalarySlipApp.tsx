@@ -142,12 +142,12 @@ const SalarySlipApp: React.FC = () => {
         {/* Modern Tab Navigation for Web */}
         <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
           {/* Main Navigation Cards */}
-          <div className="flex gap-6 mb-6 ">
+          <div className="flex gap-4 mb-6 ">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
-                className={`relative px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+                className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
                   activeTab === tab.key
                     ? 'bg-black text-white shadow-lg'
                     : ' text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg '
