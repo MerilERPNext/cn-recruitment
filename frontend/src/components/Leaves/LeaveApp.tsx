@@ -209,13 +209,13 @@ const LeaveAppInner: React.FC = () => {
                     <button
                       key={subTab}
                       onClick={() => handleSubTabChange(subTab)}
-                      className={`px-5 py-2 rounded text-sm font-semibold transition-all duration-200 ${
+                      className={`px-6 py-1 rounded-lg font-semibold transition-all duration-200 ${
                         activeSubTab === subTab
                           ? 'bg-black text-white shadow-md'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >
-                      {subTab === "My Requests" ? "👤 My Requests" : "👥 Team Requests"}
+                      {subTab === "My Requests" ? "My Requests" : "Team Requests"}
                     </button>
                   ))}
                 </div>

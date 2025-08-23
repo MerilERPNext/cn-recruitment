@@ -169,7 +169,7 @@ const SalarySlipApp: React.FC = () => {
                 <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
                   <button
                     onClick={() => setViewMode('annual')}
-                    className={`px-6 py-1 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                    className={`px-6 py-1 rounded-lg font-semibold transition-all duration-200 ${
                       viewMode === 'annual'
                         ? 'bg-black text-white shadow-md'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
