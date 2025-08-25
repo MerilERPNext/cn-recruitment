@@ -213,9 +213,7 @@ const AttendanceLayout: React.FC = () => {
                       : " text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg border "
                   }`}
                 >
-                  <span className="relative z-10">
-                    {tab.label}
-                  </span>
+                  <span className="relative z-10">{tab.label}</span>
                   {activeTab?.key === tab.key && (
                     <div className="absolute inset-0  rounded-xl opacity-10"></div>
                   )}
@@ -228,6 +226,7 @@ const AttendanceLayout: React.FC = () => {
           </div>
         </div>
         {/* Sub-navigation for Calendar Views */}
+        {/* <div className="px-8 py-4 border-b border-gray-200">
           {activeTab?.key === "calendar-views" && (
             <div className="border border-gray-100 pt-4 bg-white px-4 rounded-lg shadow-sm">
               <div className="flex gap-1 mb-4">
@@ -247,6 +246,29 @@ const AttendanceLayout: React.FC = () => {
               </div>
             </div>
           )}
+        </div> */}
+        {/* Sub-navigation for Calendar Views */}
+        <div className="px-8 py-4 border border-gray-200">
+          {activeTab?.key === "calendar-views" && (
+            <div className="flex bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+              <div className="border border-gray-200 py-1 rounded-xl">
+                {calendarSubTabs.map((subTab) => (
+                <button
+                  key={subTab.key}
+                  onClick={() => handleSubTabChange(subTab)}
+                  className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    activeSubTab === subTab.key
+                      ? "bg-black text-white shadow-md"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {subTab.label}
+                </button>
+              ))}
+              </div>
+            </div>
+          )}
+        </div>
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto">
           <LeaveRequestRefreshProvider>
