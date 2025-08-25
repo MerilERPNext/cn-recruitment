@@ -14,12 +14,10 @@ import {
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { toast } from "react-hot-toast";
-import FormDialog from "../shared/FormDialog";
-import ResponsiveFormWrapper, { FormActions } from "../shared/ResponsiveFormWrapper";
 import { useLeaveRequestRefresh } from "../Leaves/LeaveRequestRefreshContext";
 import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
-import LayoutHeader from "../shared/LayoutHeader";
 import { Formio } from "formiojs";
+import { X } from "lucide-react";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -288,50 +286,79 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   }, [leaveTypeOptions, defaults]);
 
   return (
-    <div className="fixed  inset-0 w-full min-h-screen bg-white z-50 flex flex-col">
-      <div className="max-w-md  mx-auto bg-white rounded-lg mt-10 overflow-auto pb-20">
-        <div className="z-[60]">
-          <LayoutHeader tab=" Request Leave" onBack={onCancel} icon="x" />
-          {/* <HeaderBar title="Request Leave" onBack={onCancel} /> */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      onMouseDown={() => {
+        if (onCancel) {
+          onCancel();
+        }
+      }}
+    >
+      {/* Modal container */}
+      <div
+        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Header (fixed) */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onCancel) {
+                onCancel();
+              }
+            }}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
         </div>
 
-        <div
-          className="ml-6 mt-4 text-sm text-gray-700"
-          style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}
-        >
-          <strong>Applying for:</strong> {leaveDays}{" "}
-          {leaveDays === 1 ? "Day" : "Days"}
+        {/* Scrollable Content */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {/* Leave days message */}
+          <div
+            className="ml-2 mb-4 text-sm text-gray-700"
+            style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}
+          >
+            <strong>Applying for:</strong> {leaveDays}{" "}
+            {leaveDays === 1 ? "Day" : "Days"}
+          </div>
+
+          {/* Form */}
+          <Form
+            form={leaveForm}
+            onFormReady={(instance: Formio) => {
+              formInstance.current = instance;
+            }}
+            options={{
+              builder: { styles: false },
+              submitButton: false,
+              alerts: false,
+              disableOnSubmit: true,
+              formClass: "space-y-6",
+              rowClass: "flex flex-col",
+              labelClass: "mb-1 font-medium text-gray-700",
+              inputClass:
+                "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
+              validateOnInit: false,
+              validateOnBlur: false,
+              validateOnChange: false,
+            }}
+            onChange={({ data }: { data: FormSubmissionData }) => {
+              setFormData(data);
+              calculateLeaveDays(data);
+            }}
+          />
         </div>
 
-        <Form
-          form={leaveForm}
-          onFormReady={(instance: Formio) => {
-            formInstance.current = instance;
-          }}
-          options={{
-            builder: { styles: false },
-            submitButton: false,
-            alerts: false,
-            disableOnSubmit: true,
-            formClass: "space-y-6",
-            rowClass: "flex flex-col",
-            labelClass: "mb-1 font-medium text-gray-700",
-            inputClass:
-              "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
-            validateOnInit: false,
-            validateOnBlur: false,
-            validateOnChange: false,
-          }}
-          onChange={({ data }: { data: FormSubmissionData }) => {
-            setFormData(data);
-            calculateLeaveDays(data);
-          }}
-        />
-
-        <div className="fixed right-0 w-full bottom-0 bg-white py-4 px-4 z-50">
+        {/* Submit Button (fixed) */}
+        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
           <button
             onClick={handleSubmit}
-            className="w-full  py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit Request
           </button>
