@@ -34,9 +34,9 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
       />
       
       {/* Modal content */}
-      <div className="relative bg-white rounded-lg shadow-xl w-[70%] max-w-6xl max-h-[90vh] overflow-hidden z-10">
+      <div className="relative bg-white rounded-lg shadow-xl w-[70%] max-w-6xl max-h-[90vh] flex flex-col z-10">
         {/* Modal header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
           <h2 className="text-lg font-semibold text-gray-800">
             {title}
           </h2>
@@ -50,7 +50,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
         </div>
         
         {/* Modal body - scrollable */}
-        <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+        <div className="flex-grow overflow-y-auto">
           {children}
         </div>
       </div>
