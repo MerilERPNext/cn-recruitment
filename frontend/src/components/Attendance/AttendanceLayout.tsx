@@ -202,7 +202,7 @@ const AttendanceLayout: React.FC = () => {
         <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
           {/* Navigation Pills */}
           <div className="flex items-center justify-between align-center">
-            <div className="flex gap-4 mb-6">
+            <div className="flex gap-4">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
@@ -222,12 +222,12 @@ const AttendanceLayout: React.FC = () => {
                 </button>
               ))}
             </div>
-            <div className="flex-shrink-0 mb-6">
+            <div className="flex-shrink-0">
               <ActionsButton />
             </div>
           </div>
-
-          {/* Sub-navigation for Calendar Views */}
+        </div>
+        {/* Sub-navigation for Calendar Views */}
           {activeTab?.key === "calendar-views" && (
             <div className="border border-gray-100 pt-4 bg-white px-4 rounded-lg shadow-sm">
               <div className="flex gap-1 mb-4">
@@ -247,7 +247,6 @@ const AttendanceLayout: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto">
           <LeaveRequestRefreshProvider>

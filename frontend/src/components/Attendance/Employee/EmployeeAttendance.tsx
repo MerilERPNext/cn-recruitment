@@ -177,8 +177,8 @@ const EmployeeAttendance = () => {
           <div className="w-full flex justify-between items-center border-b-1 border-gray-200 pb-2">
             {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
             {isDesktop && (
-              <div className="flex items-center gap-2 mt-4">
-                <h4 className="text-sm font-semibold text-gray-700">📅 Attendance Legend:</h4>
+              <div className="flex items-center gap-2 mt-4 mx-5">
+                <h4 className="text-sm font-semibold text-gray-700">Attendance Legend:</h4>
                 <div className="flex flex-wrap gap-2 text-xs">
                   <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
                     Present
