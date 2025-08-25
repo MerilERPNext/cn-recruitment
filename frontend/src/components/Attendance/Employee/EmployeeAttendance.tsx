@@ -177,11 +177,9 @@ const EmployeeAttendance = () => {
           <div className="w-full flex justify-between items-center border-b-1 border-gray-200 pb-2">
             {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
             {isDesktop && (
-              <div className="flex items-center gap-10 mt-4 w-7/12 p-2">
-                <h4 className="text-sm font-semibold text-gray-700">
-                  📅 Attendance Legend:
-                </h4>
-                <div className="flex flex-wrap gap-2 justify-between text-xs w-9/12  p-2">
+              <div className="flex items-center gap-2 mt-4">
+                <h4 className="text-sm font-semibold text-gray-700">📅 Attendance Legend:</h4>
+                <div className="flex flex-wrap gap-2 text-xs">
                   <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
                     Present
                   </span>
@@ -210,7 +208,7 @@ const EmployeeAttendance = () => {
               }}
             >
               List View
-              <ArrowUpRight className="h-5 w-5 mr-15" />
+              <ArrowUpRight className="h-5 w-5" />
             </button>
           </div>
           <div className="p-1">
@@ -261,11 +259,7 @@ const EmployeeAttendance = () => {
                         return "hover:!bg-gray-50 !text-gray-700 border border-transparent rounded-lg hover:border-gray-200 hover:shadow-sm";
                     }
                   })();
-                  return `${baseClasses} ${highlightClass} ${
-                    isSelected && attendance?.status === "default"
-                      ? "!bg-gray-100 border-gray-300"
-                      : ""
-                  }`;
+                  return `${baseClasses} ${highlightClass} ${isSelected && attendance?.status === "default" ? "!bg-gray-100 border-gray-300" : ""}`;
                 } else {
                   // Original mobile styling
                   const highlightClass = (() => {
@@ -286,11 +280,7 @@ const EmployeeAttendance = () => {
                         return "hover:!bg-gray-100 !text-gray-700 rounded-md";
                     }
                   })();
-                  return `${baseClasses} ${highlightClass} ${
-                    isSelected && attendance?.status === "default"
-                      ? "!bg-transparent border-none"
-                      : ""
-                  }`;
+                  return `${baseClasses} ${highlightClass} ${isSelected && attendance?.status === "default" ? "!bg-transparent border-none" : ""}`;
                 }
               }}
               renderDayContents={(day, date) => {
@@ -299,14 +289,8 @@ const EmployeeAttendance = () => {
                 if (isDesktop) {
                   // Enhanced desktop rendering with event indicators
                   if (attendance?.status === "half-day") {
-                    const firstColor =
-                      gradientClassMap[
-                        attendance?.firstHalf?.toLowerCase() || ""
-                      ] || "#f3f4f6";
-                    const secondColor =
-                      gradientClassMap[
-                        attendance?.secondHalf?.toLowerCase() || ""
-                      ] || "#f3f4f6";
+                    const firstColor = gradientClassMap[attendance?.firstHalf?.toLowerCase() || ""] || "#f3f4f6";
+                    const secondColor = gradientClassMap[attendance?.secondHalf?.toLowerCase() || ""] || "#f3f4f6";
                     const gradient = `linear-gradient(135deg, ${firstColor} 45%, ${secondColor} 55%)`;
 
                     return (
@@ -326,21 +310,19 @@ const EmployeeAttendance = () => {
 
                   if (attendance?.status !== "default") {
                     const statusIcons = {
-                      present: "✓",
-                      absent: "✗",
+                      "present": "✓",
+                      "absent": "✗",
                       "on-leave": "🏖️",
-                      holiday: "🎉",
+                      "holiday": "🎉",
                       "week-off": "🏠",
-                      "work-from-home": "💻",
+                      "work-from-home": "💻"
                     };
 
                     return (
                       <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
                         <span className="text-sm font-semibold">{day}</span>
                         <div className="absolute -bottom-1 text-xs">
-                          {statusIcons[
-                            attendance.status as keyof typeof statusIcons
-                          ] || ""}
+                          {statusIcons[attendance.status as keyof typeof statusIcons] || ""}
                         </div>
                       </div>
                     );
@@ -350,14 +332,8 @@ const EmployeeAttendance = () => {
                 } else {
                   // Original mobile rendering
                   if (attendance?.status === "half-day") {
-                    const firstColor =
-                      gradientClassMap[
-                        attendance?.firstHalf?.toLowerCase() || ""
-                      ];
-                    const secondColor =
-                      gradientClassMap[
-                        attendance?.secondHalf?.toLowerCase() || ""
-                      ];
+                    const firstColor = gradientClassMap[attendance?.firstHalf?.toLowerCase() || ""];
+                    const secondColor = gradientClassMap[attendance?.secondHalf?.toLowerCase() || ""];
                     const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
 
                     return (
@@ -411,22 +387,23 @@ const EmployeeAttendance = () => {
 
         {/* ------------------------------------------------- Calendar End---------------------------------------------- */}
 
-        {/* Request Attendance Correction */}
-
-        <div className="bg-white p-4 border-b-1 border-gray-200">
-          <div className="flex gap-2">
-            <button
-              className="w-full bg-gray-900 text-white flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-              onClick={() => {
-                setOpenDrawer(!openDrawer);
-                // setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2 font-bold" />
-              Raise Request
-            </button>
+        {/* Request Attendance Correction - Only show for mobile */}
+        {!isDesktop && (
+          <div className="bg-white p-4 border-b-1 border-gray-200">
+            <div className="flex gap-2">
+              <button
+                className="w-full bg-gray-900 text-white flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+                onClick={() => {
+                  setOpenDrawer(!openDrawer);
+                  // setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2 font-bold" />
+                Raise Request
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Request Attendance Correction */}
 

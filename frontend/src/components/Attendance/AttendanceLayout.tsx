@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import HeaderBar from "../HeaderBar";
@@ -6,9 +6,34 @@ import { LeaveRequestRefreshProvider } from "../Leaves/LeaveRequestRefreshContex
 import { RequestLeaveModalProvider } from "../Leaves/RequestLeaveModalContext";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { ChevronDown } from "lucide-react";
+import LeaveRequest from "../Attendance/LeaveRequest";
+import AttndanceRequestForm from "../Attendance/AttendanceRequest/AttendanceRequestForm";
 
 const AttendanceLayout: React.FC = () => {
   const { isDesktop } = useScreenSize();
+  const [showActionsDropdown, setShowActionsDropdown] = useState(false);
+  const [showLeaveRequest, setShowLeaveRequest] = useState(false);
+  const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
+  const actionsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside actions dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (actionsDropdownRef.current && !actionsDropdownRef.current.contains(event.target as Node)) {
+        setShowActionsDropdown(false);
+      }
+    };
+
+    if (showActionsDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showActionsDropdown]);
+
   const tabs: Tab[] = useMemo(
     () => [
       { label: "Attendance", key: "summary" },
@@ -65,6 +90,63 @@ const AttendanceLayout: React.FC = () => {
     </div>
   );
 
+  // Actions Button Component for Second Top Bar
+  const ActionsButton = () => {
+    return (
+      <div className="relative" ref={actionsDropdownRef}>
+        <button
+          onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+          className="flex items-center gap-2 px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+        >
+          Actions
+          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showActionsDropdown ? 'rotate-180' : ''}`} />
+        </button>
+
+        {/* Actions Dropdown - Matching Desktop Theme */}
+        {showActionsDropdown && (
+          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">
+            <div className="px-4 py-2 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-900">Quick Actions</h3>
+              <p className="text-xs text-gray-500 mt-1">Submit requests and manage attendance</p>
+            </div>
+            <div className="py-2">
+              <button
+                onClick={() => {
+                  setShowLeaveRequest(true);
+                  setShowActionsDropdown(false);
+                }}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors group"
+              >
+                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Leave Request</p>
+                  <p className="text-xs text-gray-500">Apply for time off</p>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setShowAttendanceRequest(true);
+                  setShowActionsDropdown(false);
+                }}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors group"
+              >
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Attendance Request</p>
+                  <p className="text-xs text-gray-500">Request attendance corrections</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const desktopLayout = (
     <DesktopLayoutWrapper title="Attendance">
       <div className="flex flex-col h-full">
@@ -97,6 +179,11 @@ const AttendanceLayout: React.FC = () => {
             ))}
           </div>
 
+          {/* Second Top Bar with Actions Button */}
+          <div className="flex justify-end items-center">
+            <ActionsButton />
+          </div>
+
           {/* Quick Status Indicator */}
           {/* <div className="flex items-center justify-end mt-4">
             <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -120,6 +207,19 @@ const AttendanceLayout: React.FC = () => {
           </LeaveRequestRefreshProvider>
         </div>
       </div>
+
+      {/* Desktop Modals */}
+      {showLeaveRequest && (
+        <LeaveRequest
+          onCancel={() => setShowLeaveRequest(false)}
+          onSuccess={() => setShowLeaveRequest(false)}
+        />
+      )}
+      {showAttendanceRequest && (
+        <AttndanceRequestForm
+          onClose={() => setShowAttendanceRequest(false)}
+        />
+      )}
     </DesktopLayoutWrapper>
   );
 
