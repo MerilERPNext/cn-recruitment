@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavigationTabs, { Tab } from "../NavigationTab";
@@ -125,10 +124,7 @@ const AttendanceLayout: React.FC = () => {
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     // Only show actions button for calendar view tabs
-    const showActions =
-      activeTab?.key === "calendar-views" ||
-      activeTab?.key === "emp-attendance" ||
-      activeTab?.key === "team-attendance";
+    const showActions = activeTab?.key === "calendar-views";
 
     if (!showActions) return null;
 
