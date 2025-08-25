@@ -8,6 +8,7 @@ import { FaClockRotateLeft } from "react-icons/fa6";
 import { FiPieChart } from "react-icons/fi";
 import HeaderBar from "../HeaderBar";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 type LeaveTransactionEntry = {
   type: string;
@@ -90,6 +91,7 @@ const LeaveBalance: React.FC = () => {
   const [showTransactions, setShowTransactions] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const { openModal } = useRequestLeaveModal();
+  const { isDesktop } = useScreenSize();
   const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
     useEmployeeByUserId(userId);
@@ -169,15 +171,18 @@ const LeaveBalance: React.FC = () => {
         ))}
       </div>
 
-      <div className="w-full mt-6 px-4">
-        <button
-          type="button"
-          className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-          onClick={() => openModal()}
-        >
-          + Request Leave
-        </button>
-      </div>
+      {/* Request Leave button - only show on mobile view */}
+      {!isDesktop && (
+        <div className="w-full mt-6 px-4">
+          <button
+            type="button"
+            className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            onClick={() => openModal()}
+          >
+            + Request Leave
+          </button>
+        </div>
+      )}
 
       {showTransactions && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col">
