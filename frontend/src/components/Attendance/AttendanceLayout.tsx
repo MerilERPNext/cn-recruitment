@@ -15,6 +15,7 @@ const AttendanceLayout: React.FC = () => {
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [showLeaveRequest, setShowLeaveRequest] = useState(false);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<string>("emp-attendance");
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside actions dropdown
@@ -40,10 +41,17 @@ const AttendanceLayout: React.FC = () => {
   const tabs: Tab[] = useMemo(
     () => [
       { label: "Attendance", key: "summary" },
-      { label: "My Attendance Details", key: "emp-attendance" },
-      { label: "Team Attendance", key: "team-attendance" },
+      { label: "Calendar Views", key: "calendar-views" },
       { label: "My Attendance Requests", key: "attendance-request" },
       { label: "Team Attendance Requests", key: "team-attendance-requests" },
+    ],
+    []
+  );
+
+  const calendarSubTabs = useMemo(
+    () => [
+      { label: "My Attendance Details", key: "emp-attendance" },
+      { label: "Team Attendance", key: "team-attendance" },
     ],
     []
   );
@@ -53,6 +61,14 @@ const AttendanceLayout: React.FC = () => {
   const getCurrentTab = () => {
     const pathSegments = location.pathname.split("/");
     const lastSegment = pathSegments[pathSegments.length - 1];
+
+    // Check if current path is a calendar sub-tab
+    const isCalendarSubTab = calendarSubTabs.some(subTab => subTab.key === lastSegment);
+    if (isCalendarSubTab) {
+      setActiveSubTab(lastSegment);
+      return tabs.find((tab) => tab.key === "calendar-views") || tabs[0];
+    }
+
     return tabs.find((tab) => tab.key === lastSegment) || tabs[0];
   };
 
@@ -66,7 +82,17 @@ const AttendanceLayout: React.FC = () => {
 
   const handleTabChange = (tab: (typeof tabs)[number]) => {
     setActiveTab(tab);
-    navigate(`/webapp/attendance/${tab.key}`);
+    if (tab.key === "calendar-views") {
+      // Navigate to the active sub-tab when Calendar Views is selected
+      navigate(`/webapp/attendance/${activeSubTab}`);
+    } else {
+      navigate(`/webapp/attendance/${tab.key}`);
+    }
+  };
+
+  const handleSubTabChange = (subTab: (typeof calendarSubTabs)[number]) => {
+    setActiveSubTab(subTab.key);
+    navigate(`/webapp/attendance/${subTab.key}`);
   };
 
   const mobileLayout = (
@@ -95,13 +121,20 @@ const AttendanceLayout: React.FC = () => {
 
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
+    // Only show actions button for calendar view tabs
+    const showActions = activeTab?.key === 'calendar-views' ||
+                       activeTab?.key === 'emp-attendance' ||
+                       activeTab?.key === 'team-attendance';
+
+    if (!showActions) return null;
+
     return (
       <div className="relative" ref={actionsDropdownRef}>
         <button
           onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-          className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium text-lg"
         >
-          Reqeust Forms
+          + Request Forms
           <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
               showActionsDropdown ? "rotate-180" : ""
@@ -194,8 +227,31 @@ const AttendanceLayout: React.FC = () => {
                 </button>
               ))}
             </div>
-            <ActionsButton />
+            <div>
+              <ActionsButton />
+            </div>
           </div>
+
+          {/* Sub-navigation for Calendar Views */}
+          {activeTab?.key === "calendar-views" && (
+            <div className="border border-gray-100 pt-4 bg-white px-4 rounded-lg shadow-sm">
+              <div className="flex gap-1 mb-4">
+                {calendarSubTabs.map((subTab) => (
+                  <button
+                    key={subTab.key}
+                    onClick={() => handleSubTabChange(subTab)}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                      activeSubTab === subTab.key
+                        ? "bg-black text-white"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {subTab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto">

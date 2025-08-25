@@ -5,8 +5,10 @@ import AttndanceRequestForm from "./AttendanceRequestForm";
 import { useMemo, useState } from "react";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { AttendanceRequest as AttendanceRequestType } from "../../../types/attendance";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const AttendanceRequest = () => {
+  const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
   const defaultFilters = useMemo(() => {
     if (!userId) return undefined;
@@ -54,17 +56,19 @@ const AttendanceRequest = () => {
           />
         </div>
       )}
-      {/* Fixed Bottom Bar */}
-      <div className="fixed bottom-0 left-0 w-full lg:left-64 lg:w-[calc(100%-16rem)] bg-white border-t border-gray-300 py-2">
-        <div className="max-w-7xl mx-auto px-4">
-          <button
-            className="flex justify-center gap-2 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-            onClick={() => setShowForm(!showForm)}
-          >
-            <Plus /> <span>Add Attendance Request</span>
-          </button>
+      {/* Add Attendance Request button - Only show for mobile since desktop has Actions button */}
+      {!isDesktop && (
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
+          <div className="max-w-7xl mx-auto px-4">
+            <button
+              className="flex justify-center gap-2 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              onClick={() => setShowForm(!showForm)}
+            >
+              <Plus /> <span>Add Attendance Request</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 };
