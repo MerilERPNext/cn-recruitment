@@ -128,7 +128,7 @@ const AttendanceLayout: React.FC = () => {
       <div className="relative" ref={actionsDropdownRef}>
         <button
           onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium text-lg"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium text-sm"
         >
           + Request Forms
           <ChevronDown
@@ -195,7 +195,7 @@ const AttendanceLayout: React.FC = () => {
     <DesktopLayoutWrapper title="Attendance">
       <div className="flex flex-col h-full">
         {/* Modern Tab Navigation for Web */}
-        <div className="bg-gray-100 border border-gray-200 px-8 py-6 flex-shrink-0">
+        <div className="bg-gray-100 border border-gray-200 px-8 py-4 flex-shrink-0">
           {/* Navigation Pills */}
           <div className="flex items-center justify-between align-center ">
             <div className="flex gap-4">
@@ -203,7 +203,7 @@ const AttendanceLayout: React.FC = () => {
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab)}
-                  className={`relative text-sm px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  className={`relative text-sm px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
                     activeTab?.key === tab.key
                       ? "bg-black text-white shadow-lg"
                       : " text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg border "

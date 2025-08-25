@@ -190,7 +190,7 @@ const LeaveAppInner: React.FC = () => {
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key as TabName)}
-                  className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  className={`relative px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
                     activeTab === tab.key
                       ? "bg-black text-white shadow-lg"
                       : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200"
@@ -207,7 +207,7 @@ const LeaveAppInner: React.FC = () => {
             {/* Request Leave Button - Desktop Only (Blue) */}
             <button
               onClick={() => openModal()}
-              className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               + Request Leave
             </button>
@@ -216,16 +216,16 @@ const LeaveAppInner: React.FC = () => {
 
         {/* Request Type Card - Outside gray area */}
         {isLeaveRequestsActive && (
-          <div className="px-6 py-3 bg-white border-b border-gray-200">
-            <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="px-6 py-2 bg-white border-b border-gray-200">
+            <div className="flex justify-between items-center bg-white px-4 py-2 rounded-lg  ">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600 font-medium">Request Type:</span>
-                <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+                <div className="flex bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
                   {(Object.keys(subTabRoutes) as SubTabName[]).map((subTab) => (
                     <button
                       key={subTab}
                       onClick={() => handleSubTabChange(subTab)}
-                      className={`px-6 py-1 rounded-lg font-semibold transition-all duration-200 ${
+                      className={`px-6 py-1 rounded-lg text-sm font-semibold transition-all duration-200 ${
                         activeSubTab === subTab
                           ? "bg-black text-white shadow-md"
                           : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"

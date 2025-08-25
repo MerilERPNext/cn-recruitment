@@ -183,7 +183,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
           This Week's Activity
         </h4>
         <div className="flex items-end justify-between space-x-2 h-24">
-          {weeklyData.map((day, index) => {
+          {weeklyData.map((day) => {
             const dayTotal = day.present + day.absent + day.leave;
             const maxHeight = 60;
             const barHeight = dayTotal > 0 ? maxHeight : 8;

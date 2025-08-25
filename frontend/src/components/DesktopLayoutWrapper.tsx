@@ -130,38 +130,34 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           </div>
 
           <nav className="space-y-1">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  item.active
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
+  {navigationItems.map((item) => (
+    <Link
+      key={item.path}
+      to={item.path}
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium no-underline  ${
+        item.active
+          ? "bg-gray-900 text-white hover:text-white"
+          : "hover:bg-gray-200 hover:text-black"
+      }`}
+    >
+      <item.icon className="w-5 h-5" />
+      {item.label}
+    </Link>
+  ))}
+</nav>
 
-        <div className="absolute bottom-6 left-6 right-6">
-          <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg w-full">
-            <LogOut className="w-5 h-5" />
-            Logout
-          </button>
+
+
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 ml-64 flex flex-col h-screen">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
+        <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
-            <p className="text-gray-600">Manage your {getPageTitle().toLowerCase()}</p>
+            <h1 className="text-xl font-bold text-gray-900">{getPageTitle()}</h1>
+            <p className="text-xs text-gray-600">Manage your {getPageTitle().toLowerCase()}</p>
           </div>
           
           <div className="flex items-center gap-4">

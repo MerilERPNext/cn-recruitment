@@ -38,7 +38,7 @@ const SalarySlipApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabName>("Salary Slip");
+  const [activeTab, setActiveTab] = useState<TabName>("CTC Breakdown");
   const [viewMode, setViewMode] = useState<ViewMode>("annual");
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
@@ -141,13 +141,13 @@ const SalarySlipApp: React.FC = () => {
         <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex-shrink-0">
           <div className="flex gap-4">
             {tabs.map((tab) => (
-              <button
+                <button
                 key={tab.key}
-                onClick={() => handleTabChange(tab.key)}
-                className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
+                onClick={() => handleTabChange(tab.key as TabName)}
+                className={`relative px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
                   activeTab === tab.key
-                    ? 'bg-black text-white shadow-lg'
-                    : ' text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg '
+                    ? "bg-black text-white shadow-lg"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200"
                 }`}
               >
                 <span className="relative z-10">{tab.label}</span>
@@ -160,14 +160,14 @@ const SalarySlipApp: React.FC = () => {
         </div>
 
         {activeTab === "CTC Breakdown" && (
-          <div className="px-6 py-3 bg-white border-b border-gray-200">
-            <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="px-6 py-2 bg-white border-b border-gray-200">
+            <div className="flex justify-between items-center bg-white px-4 py-2 rounded-lg ">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600 font-medium">View Mode:</span>
                 <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
                   <button
                     onClick={() => setViewMode('annual')}
-                    className={`px-6 py-1 rounded-lg font-semibold transition-all duration-200 ${
+                    className={`px-6 py-1 text-sm rounded-lg font-semibold transition-all duration-200 ${
                       viewMode === 'annual'
                         ? 'bg-black text-white shadow-md'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -177,7 +177,7 @@ const SalarySlipApp: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setViewMode('monthly')}
-                    className={`px-6 py-1 rounded-lg font-semibold transition-all duration-200 ${
+                    className={`px-6 py-1 text-sm rounded-lg font-semibold transition-all duration-200 ${
                       viewMode === 'monthly'
                         ? 'bg-black text-white shadow-md'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
