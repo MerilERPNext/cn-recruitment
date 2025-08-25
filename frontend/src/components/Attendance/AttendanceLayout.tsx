@@ -96,9 +96,9 @@ const AttendanceLayout: React.FC = () => {
       <div className="relative" ref={actionsDropdownRef}>
         <button
           onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-          className="flex items-center gap-2 px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+          className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md"
         >
-          Actions
+          Reqeust Forms
           <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showActionsDropdown ? 'rotate-180' : ''}`} />
         </button>
 
