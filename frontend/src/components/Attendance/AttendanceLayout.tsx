@@ -20,17 +20,20 @@ const AttendanceLayout: React.FC = () => {
   // Handle click outside actions dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (actionsDropdownRef.current && !actionsDropdownRef.current.contains(event.target as Node)) {
+      if (
+        actionsDropdownRef.current &&
+        !actionsDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowActionsDropdown(false);
       }
     };
 
     if (showActionsDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showActionsDropdown]);
 
@@ -99,15 +102,23 @@ const AttendanceLayout: React.FC = () => {
           className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md"
         >
           Reqeust Forms
-          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showActionsDropdown ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`w-4 h-4 transition-transform duration-200 ${
+              showActionsDropdown ? "rotate-180" : ""
+            }`}
+          />
         </button>
 
         {/* Actions Dropdown - Matching Desktop Theme */}
         {showActionsDropdown && (
           <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">
             <div className="px-4 py-2 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900">Quick Actions</h3>
-              <p className="text-xs text-gray-500 mt-1">Submit requests and manage attendance</p>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Quick Actions
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Submit requests and manage attendance
+              </p>
             </div>
             <div className="py-2">
               <button
@@ -136,8 +147,12 @@ const AttendanceLayout: React.FC = () => {
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Attendance Request</p>
-                  <p className="text-xs text-gray-500">Request attendance corrections</p>
+                  <p className="font-medium text-gray-900">
+                    Attendance Request
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Request attendance corrections
+                  </p>
                 </div>
               </button>
             </div>
@@ -153,50 +168,34 @@ const AttendanceLayout: React.FC = () => {
         {/* Modern Tab Navigation for Web */}
         <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
           {/* Navigation Pills */}
-          <div className="flex gap-4 mb-6">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab)}
-                className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  activeTab?.key === tab.key
-                    ? 'bg-black text-white shadow-lg'
-                    : ' text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg border '
-                }`}
-              >
-                <span className="relative z-10">
-                  {tab.label === "Attendance" }
-                  {tab.label === "My Attendance Details" }
-                  {tab.label === "Team Attendance" }
-                  {tab.label === "My Attendance Requests" }
-                  {tab.label === "Team Attendance Requests"}
-                  {tab.label}
-                </span>
-                {activeTab?.key === tab.key && (
-                  <div className="absolute inset-0  rounded-xl opacity-10"></div>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Second Top Bar with Actions Button */}
-          <div className="flex justify-end items-center">
+          <div className="flex items-center justify-between align-center">
+            <div className="flex gap-4 mb-6">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => handleTabChange(tab)}
+                  className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
+                    activeTab?.key === tab.key
+                      ? "bg-black text-white shadow-lg"
+                      : " text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg border "
+                  }`}
+                >
+                  <span className="relative z-10">
+                    {tab.label === "Attendance"}
+                    {tab.label === "My Attendance Details"}
+                    {tab.label === "Team Attendance"}
+                    {tab.label === "My Attendance Requests"}
+                    {tab.label === "Team Attendance Requests"}
+                    {tab.label}
+                  </span>
+                  {activeTab?.key === tab.key && (
+                    <div className="absolute inset-0  rounded-xl opacity-10"></div>
+                  )}
+                </button>
+              ))}
+            </div>
             <ActionsButton />
           </div>
-
-          {/* Quick Status Indicator */}
-          {/* <div className="flex items-center justify-end mt-4">
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span>Live Tracking</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Synced</span>
-              </div>
-            </div>
-          </div> */}
         </div>
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto">
