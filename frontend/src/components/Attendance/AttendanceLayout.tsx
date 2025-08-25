@@ -124,10 +124,6 @@ const AttendanceLayout: React.FC = () => {
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     // This line is removed to show the button on all tabs
-    // const showActions = activeTab?.key === "calendar-views";
-
-    // if (!showActions) return null;
-
     return (
       <div className="relative" ref={actionsDropdownRef}>
         <button
