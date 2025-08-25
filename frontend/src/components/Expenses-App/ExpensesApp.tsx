@@ -153,11 +153,11 @@ const ExpensesApp: React.FC = () => {
           ) : (
             <>
               <Outlet />
-              {/* Sticky Add Button for Desktop */}
-              <div className="fixed bottom-8 right-8 z-50">
+              {/* Floating Add Button for Desktop */}
+              <div className="absolute bottom-8 right-8">
                 <button
                   onClick={handleAddNew}
-                  className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
+                  className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
                 >
                   + Add Expense
                 </button>

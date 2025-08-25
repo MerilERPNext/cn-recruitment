@@ -123,11 +123,7 @@ const AttendanceLayout: React.FC = () => {
 
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
-    // Only show actions button for calendar view tabs
-    const showActions = activeTab?.key === "calendar-views";
-
-    if (!showActions) return null;
-
+    // This line is removed to show the button on all tabs
     return (
       <div className="relative" ref={actionsDropdownRef}>
         <button
@@ -202,7 +198,7 @@ const AttendanceLayout: React.FC = () => {
         <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
           {/* Navigation Pills */}
           <div className="flex items-center justify-between align-center">
-            <div className="flex gap-4 mb-6">
+            <div className="flex gap-4">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
@@ -213,21 +209,20 @@ const AttendanceLayout: React.FC = () => {
                       : " text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg border "
                   }`}
                 >
-                  <span className="relative z-10">
-                    {tab.label}
-                  </span>
+                  <span className="relative z-10">{tab.label}</span>
                   {activeTab?.key === tab.key && (
                     <div className="absolute inset-0  rounded-xl opacity-10"></div>
                   )}
                 </button>
               ))}
             </div>
-            <div>
+            <div className="flex-shrink-0">
               <ActionsButton />
             </div>
           </div>
-
-          {/* Sub-navigation for Calendar Views */}
+        </div>
+        {/* Sub-navigation for Calendar Views */}
+        {/* <div className="px-8 py-4 border-b border-gray-200">
           {activeTab?.key === "calendar-views" && (
             <div className="border border-gray-100 pt-4 bg-white px-4 rounded-lg shadow-sm">
               <div className="flex gap-1 mb-4">
@@ -244,6 +239,28 @@ const AttendanceLayout: React.FC = () => {
                     {subTab.label}
                   </button>
                 ))}
+              </div>
+            </div>
+          )}
+        </div> */}
+        {/* Sub-navigation for Calendar Views */}
+        <div className="px-8 py-4 border border-gray-200">
+          {activeTab?.key === "calendar-views" && (
+            <div className="flex bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+              <div className="border border-gray-200 py-1 rounded-xl">
+                {calendarSubTabs.map((subTab) => (
+                <button
+                  key={subTab.key}
+                  onClick={() => handleSubTabChange(subTab)}
+                  className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    activeSubTab === subTab.key
+                      ? "bg-black text-white shadow-md"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {subTab.label}
+                </button>
+              ))}
               </div>
             </div>
           )}
