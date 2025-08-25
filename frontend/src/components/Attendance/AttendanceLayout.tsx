@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavigationTabs, { Tab } from "../NavigationTab";
@@ -15,7 +16,7 @@ const AttendanceLayout: React.FC = () => {
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [showLeaveRequest, setShowLeaveRequest] = useState(false);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<string>("emp-attendance");
+
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside actions dropdown
@@ -55,30 +56,32 @@ const AttendanceLayout: React.FC = () => {
     ],
     []
   );
+
   const location = useLocation();
   const navigate = useNavigate();
 
-  const getCurrentTab = () => {
+  // Initialize state with default values
+  const [activeTab, setActiveTab] = useState<Tab>(tabs[0]);
+  const [activeSubTab, setActiveSubTab] = useState<string>("emp-attendance");
+
+  // Use a single useEffect to handle all state updates based on the URL
+  useEffect(() => {
     const pathSegments = location.pathname.split("/");
     const lastSegment = pathSegments[pathSegments.length - 1];
 
-    // Check if current path is a calendar sub-tab
-    const isCalendarSubTab = calendarSubTabs.some(subTab => subTab.key === lastSegment);
+    const isCalendarSubTab = calendarSubTabs.some(
+      (subTab) => subTab.key === lastSegment
+    );
+
     if (isCalendarSubTab) {
+      setActiveTab(tabs.find((tab) => tab.key === "calendar-views") || tabs[0]);
       setActiveSubTab(lastSegment);
-      return tabs.find((tab) => tab.key === "calendar-views") || tabs[0];
+    } else {
+      setActiveTab(tabs.find((tab) => tab.key === lastSegment) || tabs[0]);
+      // Reset sub-tab state when not on a calendar view
+      setActiveSubTab("emp-attendance");
     }
-
-    return tabs.find((tab) => tab.key === lastSegment) || tabs[0];
-  };
-
-  const [activeTab, setActiveTab] = useState(getCurrentTab);
-
-  useEffect(() => {
-    const currentTab = getCurrentTab();
-    setActiveTab(currentTab);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  }, [location.pathname, tabs, calendarSubTabs]);
 
   const handleTabChange = (tab: (typeof tabs)[number]) => {
     setActiveTab(tab);
@@ -122,9 +125,10 @@ const AttendanceLayout: React.FC = () => {
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     // Only show actions button for calendar view tabs
-    const showActions = activeTab?.key === 'calendar-views' ||
-                       activeTab?.key === 'emp-attendance' ||
-                       activeTab?.key === 'team-attendance';
+    const showActions =
+      activeTab?.key === "calendar-views" ||
+      activeTab?.key === "emp-attendance" ||
+      activeTab?.key === "team-attendance";
 
     if (!showActions) return null;
 
