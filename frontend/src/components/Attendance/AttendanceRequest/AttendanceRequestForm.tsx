@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
-import LayoutHeader from "../../shared/LayoutHeader";
 import {
   useCreateNewAttendanceRequest,
   useGetEmployeeShift,
@@ -13,12 +12,10 @@ import {
   useGetAllReasons,
 } from "../../../hooks/useEmployee";
 import { useShiftTypes } from "../../../hooks/useShift";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
-import FormDialog from "../../shared/FormDialog";
+import { X } from "lucide-react";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -564,65 +561,89 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 w-full h-screen bg-white z-50 flex flex-col">
-      <div className="max-w-md mx-auto bg-white rounded-lg">
-        <LayoutHeader
-          tab="Create Attendance Request"
-          onBack={onClose}
-          icon="x"
-        />
-      </div>
-
-      <div className="overflow-y-auto pt-14 px-2 min-h-screen pb-22">
-        <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      onMouseDown={() => {
+        if (onClose) {
+          onClose();
+        }
+      }}
+    >
+      {/* Modal Container */}
+      <div
+        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Create Attendance Request
+          </h2>
           <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-              !isForOthers ? "bg-black text-white" : ""
-            }`}
-            onClick={() => setIsForOthers(false)}
+            onClick={() => {
+              if (onClose) {
+                onClose();
+              }
+            }}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close"
           >
-            Self
-          </button>
-          <button
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-              isForOthers ? "bg-black text-white" : ""
-            }`}
-            onClick={() => setIsForOthers(true)}
-          >
-            For Others
-          </button>
-        </div>
-
-        <Form
-          form={formSchema}
-          onSubmit={handleSubmit}
-          options={{
-            builder: { styles: false },
-            submitButton: false,
-            noAlerts: true,
-          }}
-          onFormReady={(instance: FormioFormInstance) => {
-            formAddressInstance.current = instance;
-          }}
-          className="formio-no-border address-form-container"
-        />
-      </div>
-
-      <div className="fixed w-full bottom-0 bg-white border-t shadow-md p-4 z-20">
-        <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => formAddressInstance.current?.submit()}
-            className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors flex items-center justify-center"
-          >
-            {mutation.isPending ? (
-              <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-            ) : (
-              "Submit"
-            )}
+            <X className="h-5 w-5 text-gray-600" />
           </button>
         </div>
+
+        {/* Content Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
+          <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
+            <button
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+                !isForOthers ? "bg-black text-white" : ""
+              }`}
+              onClick={() => setIsForOthers(false)}
+            >
+              Self
+            </button>
+            <button
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+                isForOthers ? "bg-black text-white" : ""
+              }`}
+              onClick={() => setIsForOthers(true)}
+            >
+              For Others
+            </button>
+          </div>
+
+          <Form
+            form={formSchema}
+            onSubmit={handleSubmit}
+            options={{
+              builder: { styles: false },
+              submitButton: false,
+              noAlerts: true,
+            }}
+            onFormReady={(instance: FormioFormInstance) => {
+              formAddressInstance.current = instance;
+            }}
+            className="formio-no-border address-form-container mt-4"
+          />
+        </div>
+
+        {/* Submit Bar */}
+        <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+          <div className="max-w-4xl mx-auto">
+            <button
+              onClick={() => formAddressInstance.current?.submit()}
+              className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors flex items-center justify-center"
+            >
+              {mutation.isPending ? (
+                <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+              ) : (
+                "Submit"
+              )}
+            </button>
+          </div>
+        </div>
       </div>
-      <Toaster position="top-center" containerClassName="z-50" />
     </div>
   );
 };
