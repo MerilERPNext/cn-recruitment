@@ -576,11 +576,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             Create Attendance Request
           </h2>
           <button
-            onClick={() => {
-              if (onClose) {
-                onClose();
-              }
-            }}
+            onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
             aria-label="Close"
           >
