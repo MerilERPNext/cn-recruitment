@@ -30,7 +30,9 @@ interface GeneralExpenseClaimModalProps {
   onClose?: () => void;
 }
 
-const GeneralExpenseClaimModal: React.FC<GeneralExpenseClaimModalProps> = ({ onClose }) => {
+const GeneralExpenseClaimModal: React.FC<GeneralExpenseClaimModalProps> = ({
+  onClose,
+}) => {
   const CURRENCY_SYMBOL = "₹";
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);

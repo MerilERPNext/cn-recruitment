@@ -125,7 +125,7 @@ const MyProfile: React.FC = () => {
     <DesktopLayoutWrapper title="My Profile">
       <div className="flex h-full bg-gray-50">
         {/* Profile Sidebar */}
-        <div className="w-96 bg-white border-r border-gray-200 flex-shrink-0 shadow-sm">
+        <div className="w-96 bg-white border-r border-gray-200 flex-shrink-0 shadow-sm overflow-y-auto scrollbar-hide">
           <input
             ref={fileInputRef}
             type="file"

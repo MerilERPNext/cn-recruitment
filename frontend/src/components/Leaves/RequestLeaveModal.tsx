@@ -231,7 +231,8 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
         label: "Half-Day Leave",
         input: true,
         labelPosition: "bottom",
-        customClass: "custom-halfday-toggle my-3 border rounded-lg shadow-sm bg-white p-3",
+        customClass:
+          "custom-halfday-toggle my-3 border rounded-lg shadow-sm bg-white p-3",
       },
       {
         type: "radio",
@@ -351,9 +352,7 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
       <div className="formio-modal relative bg-white rounded-lg shadow-xl w-[70%] max-w-4xl max-h-[90vh] overflow-hidden z-10">
         {/* Modal header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Request Leave
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -362,7 +361,7 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
             <X className="h-5 w-5 text-gray-600" />
           </button>
         </div>
-        
+
         {/* Leave Days Display */}
         {leaveDays !== null && (
           <div className="px-6 py-3 text-sm bg-blue-50 border-b border-blue-100">
@@ -374,7 +373,7 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
             </div>
           </div>
         )}
-        
+
         {/* Modal body - scrollable */}
         <div className="overflow-y-auto max-h-[calc(90vh-160px)]">
           <div className="p-6">
@@ -420,7 +419,9 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
               disabled={createLeaveMutation.isLoading}
               className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
             >
-              {createLeaveMutation.isLoading ? "Submitting..." : "Submit Request"}
+              {createLeaveMutation.isLoading
+                ? "Submitting..."
+                : "Submit Request"}
             </button>
           </div>
         </div>
