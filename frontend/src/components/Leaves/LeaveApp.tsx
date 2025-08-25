@@ -183,8 +183,8 @@ const LeaveAppInner: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Leaves & Holidays">
       <div className="flex flex-col h-full">
-        <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
-          <div className="flex justify-between items-center mb-6">
+        <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex-shrink-0">
+          <div className="flex justify-between items-center">
             <div className="flex gap-4">
               {tabs.map((tab) => (
                 <button
@@ -212,9 +212,12 @@ const LeaveAppInner: React.FC = () => {
               + Request Leave
             </button>
           </div>
+        </div>
 
-          {isLeaveRequestsActive && (
-            <div className="flex justify-between items-center bg-white p-4 rounded-lg">
+        {/* Request Type Card - Outside gray area */}
+        {isLeaveRequestsActive && (
+          <div className="px-6 py-3 bg-white border-b border-gray-200">
+            <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600 font-medium">Request Type:</span>
                 <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
@@ -245,8 +248,8 @@ const LeaveAppInner: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto relative">
@@ -277,3 +280,7 @@ const LeaveApp: React.FC = () => {
 };
 
 export default LeaveApp;
+
+
+
+
