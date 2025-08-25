@@ -193,12 +193,12 @@ const AttendanceLayout: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Attendance">
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full border-red-500">
         {/* Modern Tab Navigation for Web */}
-        <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
+        <div className="bg-gray-100 border border-gray-200 px-8 py-6 flex-shrink-0 ">
           {/* Navigation Pills */}
-          <div className="flex items-center justify-between align-center">
-            <div className="flex gap-4">
+          <div className="flex items-center justify-between align-center ">
+            <div className="flex gap-4 ">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
@@ -222,29 +222,7 @@ const AttendanceLayout: React.FC = () => {
           </div>
         </div>
         {/* Sub-navigation for Calendar Views */}
-        {/* <div className="px-8 py-4 border-b border-gray-200">
-          {activeTab?.key === "calendar-views" && (
-            <div className="border border-gray-100 pt-4 bg-white px-4 rounded-lg shadow-sm">
-              <div className="flex gap-1 mb-4">
-                {calendarSubTabs.map((subTab) => (
-                  <button
-                    key={subTab.key}
-                    onClick={() => handleSubTabChange(subTab)}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                      activeSubTab === subTab.key
-                        ? "bg-black text-white"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    {subTab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div> */}
-        {/* Sub-navigation for Calendar Views */}
-        <div className="px-8 py-4 border border-gray-200">
+        <div className=" border border-gray-200">
           {activeTab?.key === "calendar-views" && (
             <div className="flex bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
               <div className="border border-gray-200 py-1 rounded-xl">

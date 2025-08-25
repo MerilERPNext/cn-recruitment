@@ -155,7 +155,7 @@ const AttendanceSummary = () => {
       <div className="min-h-screen bg-white">
         {isDesktop ? (
           // Desktop Layout
-          <div className="flex p-4">
+          <div className="flex p-4 0">
             {/* Left/Main Column */}
             <div className="flex-1 space-y-6">
               {/* Date Navigation */}
