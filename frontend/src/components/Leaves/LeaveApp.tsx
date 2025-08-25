@@ -280,7 +280,3 @@ const LeaveApp: React.FC = () => {
 };
 
 export default LeaveApp;
-
-
-
-
