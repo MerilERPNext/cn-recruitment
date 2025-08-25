@@ -26,7 +26,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
         className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
           isOpen ? "opacity-100 visible" : "opacity-0 invisible"
         }`}
-        onMouseDown={() => onClose()}
+        onMouseDown={onClose}
       >
         {/* Backdrop */}
         <div className="absolute inset-0 bg-black bg-opacity-50 z-40" />

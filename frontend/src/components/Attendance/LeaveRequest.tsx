@@ -288,8 +288,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onMouseDown={(e) => {
-        e.stopPropagation();
+      onMouseDown={() => {
         if (onCancel) {
           onCancel();
         }

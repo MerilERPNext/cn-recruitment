@@ -563,11 +563,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onMouseDown={() => {
-        if (onClose) {
-          onClose();
-        }
-      }}
+      onMouseDown={onClose}
     >
       {/* Modal Container */}
       <div
