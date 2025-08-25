@@ -214,11 +214,6 @@ const AttendanceLayout: React.FC = () => {
                   }`}
                 >
                   <span className="relative z-10">
-                    {tab.label === "Attendance"}
-                    {tab.label === "My Attendance Details"}
-                    {tab.label === "Team Attendance"}
-                    {tab.label === "My Attendance Requests"}
-                    {tab.label === "Team Attendance Requests"}
                     {tab.label}
                   </span>
                   {activeTab?.key === tab.key && (
