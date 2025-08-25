@@ -55,7 +55,7 @@ const AttendanceRequest = () => {
         </div>
       )}
       {/* Fixed Bottom Bar */}
-      <div className="fixed bottom-0 left-0 lg:left-20 w-full bg-white border-t border-gray-300 py-2">
+      <div className="fixed bottom-0 left-0 w-full lg:left-64 lg:w-[calc(100%-16rem)] bg-white border-t border-gray-300 py-2">
         <div className="max-w-7xl mx-auto px-4">
           <button
             className="flex justify-center gap-2 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
