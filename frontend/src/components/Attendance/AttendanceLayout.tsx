@@ -203,23 +203,23 @@ const AttendanceLayout: React.FC = () => {
           <LeaveRequestRefreshProvider>
             <RequestLeaveModalProvider>
               <Outlet />
+
+              {/* Desktop Modals - Moved inside providers */}
+              {showLeaveRequest && (
+                <LeaveRequest
+                  onCancel={() => setShowLeaveRequest(false)}
+                  onSuccess={() => setShowLeaveRequest(false)}
+                />
+              )}
+              {showAttendanceRequest && (
+                <AttndanceRequestForm
+                  onClose={() => setShowAttendanceRequest(false)}
+                />
+              )}
             </RequestLeaveModalProvider>
           </LeaveRequestRefreshProvider>
         </div>
       </div>
-
-      {/* Desktop Modals */}
-      {showLeaveRequest && (
-        <LeaveRequest
-          onCancel={() => setShowLeaveRequest(false)}
-          onSuccess={() => setShowLeaveRequest(false)}
-        />
-      )}
-      {showAttendanceRequest && (
-        <AttndanceRequestForm
-          onClose={() => setShowAttendanceRequest(false)}
-        />
-      )}
     </DesktopLayoutWrapper>
   );
 
