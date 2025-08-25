@@ -174,7 +174,7 @@ const GeneralExpenseClaimModal: React.FC<GeneralExpenseClaimModalProps> = ({
               expenseItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start justify-between p-3 border border-gray-200 rounded-lg"
+                  className="relative flex items-start justify-between p-3 border border-gray-200 rounded-lg"
                 >
                   <div className="flex flex-col space-y-1">
                     <p className="font-medium text-gray-900">{item.type}</p>
@@ -255,7 +255,7 @@ const GeneralExpenseClaimModal: React.FC<GeneralExpenseClaimModalProps> = ({
                     )}
                     <button
                       onClick={() => handleDeleteItem(item.id)}
-                      className="p-1 mt-[-60px] rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+                      className="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors"
                       aria-label={`Delete ${item.type} expense`}
                     >
                       <Trash2 className="h-5 w-5" />
