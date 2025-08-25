@@ -8,6 +8,7 @@ import React, {
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
+import "./RequestLeaveModal.css";
 import {
   useCreateFrappeDocument,
   useFrappeDocuments,
@@ -284,64 +285,14 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
 
   if (!isOpen) return null;
 
-  // For mobile, return original form (this shouldn't be called for mobile, but just in case)
+  // For mobile, return children without modal wrapper (unchanged)
   if (!isDesktop) {
     return null;
   }
 
-  // For desktop, render modal with blur background
+  // For desktop, render modal with blur background (similar to ExpenseFormModal structure)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <style>{`
-        .formio-modal .formio-component-select .form-control {
-          background: white !important;
-          border: 1px solid #d1d5db !important;
-          border-radius: 0.5rem !important;
-          padding: 0.75rem 1rem !important;
-        }
-        .formio-modal .formio-component-select .form-control:focus {
-          outline: none !important;
-          border-color: #3b82f6 !important;
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
-        }
-        .formio-modal .formio-component-datetime .form-control {
-          background: white !important;
-          border: 1px solid #d1d5db !important;
-          border-radius: 0.5rem !important;
-          padding: 0.75rem 1rem !important;
-        }
-        .formio-modal .formio-component-datetime .form-control:focus {
-          outline: none !important;
-          border-color: #3b82f6 !important;
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
-        }
-        .formio-modal .formio-component-textarea .form-control {
-          background: white !important;
-          border: 1px solid #d1d5db !important;
-          border-radius: 0.5rem !important;
-          padding: 0.75rem 1rem !important;
-        }
-        .formio-modal .formio-component-textarea .form-control:focus {
-          outline: none !important;
-          border-color: #3b82f6 !important;
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
-        }
-        .formio-modal .formio-component-checkbox .form-check-input {
-          margin-right: 0.5rem !important;
-        }
-        .formio-modal .formio-component-radio .form-check {
-          margin-bottom: 0.5rem !important;
-        }
-        .formio-modal .formio-component-radio .form-check-input {
-          margin-right: 0.5rem !important;
-        }
-        .formio-modal .formio-component-file .file-upload {
-          border: 2px dashed #d1d5db !important;
-          border-radius: 0.5rem !important;
-          padding: 1rem !important;
-          background: #f9fafb !important;
-        }
-      `}</style>
       {/* Dark blur background */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
@@ -349,9 +300,9 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
       />
 
       {/* Modal content */}
-      <div className="formio-modal relative bg-white rounded-lg shadow-xl w-[70%] max-w-4xl max-h-[90vh] overflow-hidden z-10">
+      <div className="formio-modal relative bg-white rounded-lg shadow-xl w-[70%] max-w-6xl max-h-[90vh] flex flex-col z-10">
         {/* Modal header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
           <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
           <button
             onClick={onClose}
@@ -364,7 +315,7 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
 
         {/* Leave Days Display */}
         {leaveDays !== null && (
-          <div className="px-6 py-3 text-sm bg-blue-50 border-b border-blue-100">
+          <div className="flex-shrink-0 px-6 py-3 text-sm bg-blue-50 border-b border-blue-100">
             <div className="flex items-center gap-2">
               <span className="font-medium text-gray-700">Applying for:</span>
               <span className="font-semibold text-blue-600">
@@ -375,7 +326,7 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
         )}
 
         {/* Modal body - scrollable */}
-        <div className="overflow-y-auto max-h-[calc(90vh-160px)]">
+        <div className="flex-grow overflow-y-auto">
           <div className="p-6">
             <Form
               form={leaveForm}
@@ -406,8 +357,8 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
         </div>
 
         {/* Form Actions */}
-        <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
-          <div className="max-w-4xl mx-auto flex space-x-4">
+        <div className="flex-shrink-0 bg-white border-t shadow-lg py-4 px-6">
+          <div className="flex space-x-4">
             <button
               onClick={onClose}
               className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
