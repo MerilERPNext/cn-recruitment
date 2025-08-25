@@ -35,6 +35,10 @@ const LeaveAppInner: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
   const [activeSubTab, setActiveSubTab] = useState<SubTabName>("My Requests");
 
+  // ✅ Added states for Pending and Approved counts
+  const [pendingCount, setPendingCount] = useState(0);
+  const [approvedCount, setApprovedCount] = useState(0);
+
   const tabs: Tab[] = useMemo(
     () => [
       { key: "leave-balance", label: "Leave Balance" },
@@ -88,6 +92,12 @@ const LeaveAppInner: React.FC = () => {
     };
   }, [showModal]);
 
+  // ✅ Example dummy values for counts (replace with API call later)
+  useEffect(() => {
+    setPendingCount(3); 
+    setApprovedCount(5); 
+  }, []);
+
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
     if (tab === "requests-status") {
@@ -132,10 +142,11 @@ const LeaveAppInner: React.FC = () => {
                 <button
                   key={subTab}
                   onClick={() => handleSubTabChange(subTab)}
-                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeSubTab === subTab
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                    activeSubTab === subTab
                       ? "bg-black text-white shadow-sm"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                  }`}
                 >
                   {subTab}
                 </button>
@@ -178,31 +189,38 @@ const LeaveAppInner: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Leaves & Holidays">
       <div className="flex flex-col h-full">
-        {/* Modern Tab Navigation for Web */}
         <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
-          {/* Main Navigation Pills */}
-          <div className="flex gap-4 mb-6">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab.key as TabName)}
-                className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  activeTab === tab.key
-                    ? 'bg-black text-white shadow-lg'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
-                }`}
-              >
-                <span className="relative z-10">{tab.label}</span>
-                {activeTab === tab.key && (
-                  <div className="absolute inset-0  rounded-lg opacity-10"></div>
-                )}
-              </button>
-            ))}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex gap-4">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => handleTabChange(tab.key as TabName)}
+                  className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
+                    activeTab === tab.key
+                      ? "bg-black text-white shadow-lg"
+                      : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200"
+                  }`}
+                >
+                  <span className="relative z-10">{tab.label}</span>
+                  {activeTab === tab.key && (
+                    <div className="absolute inset-0  rounded-lg opacity-10"></div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Request Leave Button - Desktop Only (Blue) */}
+            <button
+              onClick={() => openModal()}
+              className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+            >
+              + Request Leave
+            </button>
           </div>
 
-          {/* Enhanced Sub-navigation */}
           {isLeaveRequestsActive && (
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center bg-white p-4 rounded-lg">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600 font-medium">Request Type:</span>
                 <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
@@ -212,8 +230,8 @@ const LeaveAppInner: React.FC = () => {
                       onClick={() => handleSubTabChange(subTab)}
                       className={`px-6 py-1 rounded-lg font-semibold transition-all duration-200 ${
                         activeSubTab === subTab
-                          ? 'bg-black text-white shadow-md'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? "bg-black text-white shadow-md"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                       }`}
                     >
                       {subTab === "My Requests" ? "My Requests" : "Team Requests"}
@@ -222,15 +240,16 @@ const LeaveAppInner: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick Stats */}
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
                   <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                   <span>Pending</span>
+                  <span className="ml-2 font-semibold text-gray-800">{pendingCount}</span>
                 </div>
                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span>Approved</span>
+                  <span className="ml-2 font-semibold text-gray-800">{approvedCount}</span>
                 </div>
               </div>
             </div>
@@ -240,17 +259,6 @@ const LeaveAppInner: React.FC = () => {
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto relative">
           <Outlet />
-
-          {!showModal && activeTab === "requests-status" && (
-            <div className="fixed bottom-8 right-8 z-50">
-              <button
-                onClick={() => openModal()}
-                className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
-              >
-                + Request Leave
-              </button>
-            </div>
-          )}
         </div>
 
         <RequestLeaveModal

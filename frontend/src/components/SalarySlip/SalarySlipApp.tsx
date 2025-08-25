@@ -163,7 +163,7 @@ const SalarySlipApp: React.FC = () => {
 
           {/* Enhanced Annual/Monthly Toggle */}
           {activeTab === "CTC Breakdown" && (
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center bg-white p-4 rounded-lg">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600 font-medium">View Mode:</span>
                 <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
