@@ -242,7 +242,7 @@ const LeaveAppInner: React.FC = () => {
           <Outlet />
 
           {!showModal && activeTab === "requests-status" && (
-            <div className="absolute bottom-8 right-8">
+            <div className="fixed bottom-8 right-8 z-50">
               <button
                 onClick={() => openModal()}
                 className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
