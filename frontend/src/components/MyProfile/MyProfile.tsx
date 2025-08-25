@@ -125,7 +125,7 @@ const MyProfile: React.FC = () => {
     <DesktopLayoutWrapper title="My Profile">
       <div className="flex h-full bg-gray-50">
         {/* Profile Sidebar */}
-        <div className="w-96 bg-white border-r border-gray-200 flex-shrink-0 shadow-sm">
+        <div className="w-96 bg-white border-r border-gray-200 flex-shrink-0 shadow-sm overflow-y-auto scrollbar-hide">
           <input
             ref={fileInputRef}
             type="file"
@@ -172,7 +172,7 @@ const MyProfile: React.FC = () => {
                     onClick={() => setActiveTab(tab.key)}
                     className={`w-full text-left px-5 py-4 rounded-xl text-sm font-medium transition-all duration-200 ${
                       activeTab === tab.key
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                        ? "bg-black text-white shadow-lg shadow-black/20"
                         : "text-gray-700 hover:bg-gray-100 hover:shadow-sm"
                     }`}
                   >

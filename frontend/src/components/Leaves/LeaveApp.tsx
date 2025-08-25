@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import RequestLeave from "./RequestLeave";
+import RequestLeaveModal from "./RequestLeaveModal";
 import HeaderBar from "../HeaderBar";
 import { Toaster } from "react-hot-toast";
 import { LeaveRequestRefreshProvider } from "./LeaveRequestRefreshContext";
@@ -187,7 +188,7 @@ const LeaveAppInner: React.FC = () => {
                 onClick={() => handleTabChange(tab.key as TabName)}
                 className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
                   activeTab === tab.key
-                    ? 'bg-blue-500 text-white shadow-lg'
+                    ? 'bg-black text-white shadow-lg'
                     : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
                 }`}
               >
@@ -209,13 +210,13 @@ const LeaveAppInner: React.FC = () => {
                     <button
                       key={subTab}
                       onClick={() => handleSubTabChange(subTab)}
-                      className={`px-5 py-2 rounded text-sm font-semibold transition-all duration-200 ${
+                      className={`px-6 py-1 rounded-lg font-semibold transition-all duration-200 ${
                         activeSubTab === subTab
-                          ? 'bg-orange-500 text-white shadow-md'
+                          ? 'bg-black text-white shadow-md'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
                     >
-                      {subTab === "My Requests" ? "👤 My Requests" : "👥 Team Requests"}
+                      {subTab === "My Requests" ? "My Requests" : "Team Requests"}
                     </button>
                   ))}
                 </div>
@@ -241,7 +242,7 @@ const LeaveAppInner: React.FC = () => {
           <Outlet />
 
           {!showModal && activeTab === "requests-status" && (
-            <div className="absolute bottom-8 right-8">
+            <div className="fixed bottom-8 right-8 z-50">
               <button
                 onClick={() => openModal()}
                 className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
@@ -252,14 +253,11 @@ const LeaveAppInner: React.FC = () => {
           )}
         </div>
 
-        <FormDialog
+        <RequestLeaveModal
           isOpen={showModal}
           onClose={closeModal}
-          title="Request Leave"
-          size="lg"
-        >
-          <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
-        </FormDialog>
+          onSuccess={closeModal}
+        />
       </div>
       <Toaster />
     </DesktopLayoutWrapper>

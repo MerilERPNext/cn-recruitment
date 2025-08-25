@@ -1,68 +1,57 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { useNavigate } from "react-router-dom";
-import { File as FileIcon, FileText, Trash2 } from "lucide-react";
-import defaultReceipt from "../../assets/Receipt.svg";
-
-import { Form } from "@tsed/react-formio";
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { Plus, Trash2, FileText, File as FileIcon } from "lucide-react";
 import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
-import HeaderBar from "../HeaderBar";
-import { useExpenseTravelPolicies } from "../../hooks/useExpense";
+import MultipleDaysSection from "./DailyAllowanceClaim/MultipleDaysSection";
 import ExpensesUserInfo from "./ExpensesUserInfo";
 
+// Define interfaces for data structures
 interface ExpenseItem {
   id: string;
   type: string;
-  date: string; // Required
   amount: number;
-  description: string;
   attachmentUrl?: string;
   attachmentType?: string;
   fileName?: string;
   fileObject?: File;
+  eligibleAmount: number; // New field for eligible amount
 }
 
-const GeneralExpenseClaim: React.FC = () => {
+// Helper function to get current date in YYYY-MM-DD format
+const getTodayDate = (): string => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+interface DailyAllowanceClaimModalProps {
+  onClose?: () => void;
+}
+
+// Main Component
+const DailyAllowanceClaimModal: React.FC<DailyAllowanceClaimModalProps> = ({ onClose }) => {
+  const [isMultipleDays, setIsMultipleDays] = useState<boolean>(true);
+  const [fromDate, setFromDate] = useState<string>(getTodayDate());
+  const [toDate, setToDate] = useState<string>(getTodayDate());
+  const [singleDate, setSingleDate] = useState<string>(getTodayDate());
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const objectUrls = useRef<Record<string, string>>({});
+
+  const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([
+    {
+      id: "exp-travel-1",
+      type: "Travel",
+      amount: 1500,
+      eligibleAmount: 1500,
+      attachmentUrl: "https://placehold.co/80x80/e0e0e0/000000?text=Travel",
+      attachmentType: "image/png",
+    },
+  ]);
+
   const CURRENCY_SYMBOL = "₹";
-  const navigate = useNavigate();
-  const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const objectUrls = useRef<Record<string, string>>({}); // Using a ref to hold object URLs for cleanup
 
-  const ExpenseTravelPolicies = useExpenseTravelPolicies();
-
-  const ExpenseTravelPoliciesForm = useMemo(() => {
-    return {
-      components: [
-        {
-          type: "select",
-          key: "travel_policy",
-          label: "Expense Travel Policy (Optional)",
-          input: true,
-          validate: { required: true },
-          placeholder: "Local Commute",
-          data: {
-            values: ExpenseTravelPolicies?.data?.map((policy: any) => ({
-              value: policy?.name,
-              label: policy?.name,
-            })),
-          },
-          customClass: "appearance-none",
-        },
-      ],
-    };
-  }, [ExpenseTravelPolicies]);
-
-  const handleBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
-
+  // Expense item manipulation functions
   const handleDeleteItem = useCallback((id: string) => {
     setExpenseItems((prevItems) => {
       const itemToDelete = prevItems.find((item) => item.id === id);
@@ -84,7 +73,7 @@ const GeneralExpenseClaim: React.FC = () => {
   const handleAddExpenseItem = useCallback(
     (formData: any, fileObjectFromModal: File | null | undefined) => {
       const newId = `exp${expenseItems.length + 1}-${Date.now()}`;
-      let attachmentUrl: string = defaultReceipt;
+      let attachmentUrl: string = "";
       let attachmentType: string = "image/png";
       let fileName: string | undefined;
 
@@ -104,10 +93,9 @@ const GeneralExpenseClaim: React.FC = () => {
         ...prevItems,
         {
           id: newId,
-          type: formData.expenseType,
+          type: formData.expenseType || "Daily Allowance",
           amount: parseFloat(formData.amount),
-          description: formData.description,
-          date: formData.date,
+          eligibleAmount: parseFloat(formData.amount),
           attachmentUrl: attachmentUrl,
           attachmentType: attachmentType,
           fileName: fileName,
@@ -119,10 +107,16 @@ const GeneralExpenseClaim: React.FC = () => {
     [expenseItems.length]
   );
 
+  // Calculations
   const totalAmount = expenseItems.reduce((sum, item) => sum + item.amount, 0);
+  const totalEligibleAmount = expenseItems.reduce(
+    (sum, item) => sum + item.eligibleAmount,
+    0
+  );
   const advances = 0;
-  const netPayable = totalAmount - advances;
+  const netPayable = totalEligibleAmount - advances;
 
+  // Cleanup effect
   useEffect(() => {
     return () => {
       for (const id in objectUrls.current) {
@@ -134,36 +128,30 @@ const GeneralExpenseClaim: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="bg-gray-50 flex flex-col font-sans">
       <FormioNewExpenseItemModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddExpenseItem}
       />
 
-      <HeaderBar title="General Expense Claim" onBack={handleBack} />
-
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
         <ExpensesUserInfo />
-        <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
-          <Form
-            form={ExpenseTravelPoliciesForm}
-            options={{
-              builder: { styles: false },
-              submitButton: false,
-              formClass: "space-y-6",
-              rowClass: "flex flex-col",
-              labelClass: "mb-1 font-medium text-gray-700",
-              inputClass:
-                "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
-              validateOnInit: false,
-              validateOnBlur: false,
-              validateOnChange: false,
-            }}
-            className="space-y-6"
-          />
-        </div>
-        {/* Expense Item */}
+
+        <MultipleDaysSection
+          isMultipleDays={isMultipleDays}
+          onToggleMultipleDays={() => setIsMultipleDays(!isMultipleDays)}
+          fromDate={fromDate}
+          toDate={toDate}
+          singleDate={singleDate}
+          onDateRangeChange={({ fromDate: newFromDate, toDate: newToDate }) => {
+            setFromDate(newFromDate);
+            setToDate(newToDate);
+          }}
+          onSingleDateChange={setSingleDate}
+        />
+
+        {/* Expense Items Section */}
         <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Expense Items
@@ -177,36 +165,27 @@ const GeneralExpenseClaim: React.FC = () => {
               expenseItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start justify-between p-3 border border-gray-200 rounded-lg"
+                  className="relative flex items-start justify-between p-3 border border-gray-200 rounded-lg"
                 >
                   <div className="flex flex-col space-y-1">
                     <p className="font-medium text-gray-900">{item.type}</p>
                     <p className="text-sm text-gray-600">
-                      Date:{" "}
-                      {new Date(item.date)
-                        .toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })
-                        .replace(/\//g, "-")}
-                    </p>
-                    <p className="text-sm text-gray-600">
                       Amount: {CURRENCY_SYMBOL}
                       {item.amount.toFixed(2)}
                     </p>
-                    <p className="text-sm text-gray-600">{item.description}</p>
+                    <p className="text-sm text-gray-600">
+                      Eligible: {CURRENCY_SYMBOL}
+                      {item.eligibleAmount.toFixed(2)}
+                    </p>
                   </div>
                   <div className="flex items-center space-x-3">
-                    {/* Wrap the display content in an <a> tag for download */}
                     {item.attachmentUrl && (
                       <a
                         href={item.attachmentUrl}
-                        download={item.fileName || "download"} // Use the download attribute
-                        className="w-22 h-22 flex-shrink-0 cursor-pointer" // Add cursor-pointer for visual feedback
-                        target="_blank" // Keep target_blank to avoid current page navigation
+                        download={item.fileName || "download"}
+                        className="w-22 h-22 flex-shrink-0 cursor-pointer"
+                        target="_blank"
                         rel="noopener noreferrer"
-                        // Add some hover/focus styles if desired
                       >
                         {item.attachmentType?.startsWith("image/") ? (
                           <img
@@ -236,10 +215,8 @@ const GeneralExpenseClaim: React.FC = () => {
                             <span className="truncate w-full font-medium">
                               {item.fileName || "Document"}
                             </span>
-                            {/* Removed the 'View' button/link text here */}
                           </div>
                         ) : (
-                          // Fallback for no attachment or unrecognized type, but still clickable for download
                           <img
                             src="https://placehold.co/80x80/e0e0e0/000000?text=Receipt"
                             alt="Receipt"
@@ -248,7 +225,6 @@ const GeneralExpenseClaim: React.FC = () => {
                         )}
                       </a>
                     )}
-                    {/* Placeholder if no attachmentUrl */}
                     {!item.attachmentUrl && (
                       <img
                         src="https://placehold.co/80x80/e0e0e0/000000?text=Receipt"
@@ -258,7 +234,7 @@ const GeneralExpenseClaim: React.FC = () => {
                     )}
                     <button
                       onClick={() => handleDeleteItem(item.id)}
-                      className="p-1 mt-[-60px] rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+                      className="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors"
                       aria-label={`Delete ${item.type} expense`}
                     >
                       <Trash2 className="h-5 w-5" />
@@ -275,6 +251,8 @@ const GeneralExpenseClaim: React.FC = () => {
             <span className="text-lg mr-2 text-white">+ Add Expense Item</span>
           </button>
         </div>
+
+        {/* Summary Section */}
         <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Summary</h2>
           <div className="bg-white rounded-lg shadow-sm border p-4 space-y-2">
@@ -283,6 +261,13 @@ const GeneralExpenseClaim: React.FC = () => {
               <span className="font-medium">
                 {CURRENCY_SYMBOL}
                 {totalAmount.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between text-gray-700">
+              <span>Total Eligible Amount</span>
+              <span className="font-medium">
+                {CURRENCY_SYMBOL}
+                {totalEligibleAmount.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between text-gray-700">
@@ -317,4 +302,4 @@ const GeneralExpenseClaim: React.FC = () => {
   );
 };
 
-export default GeneralExpenseClaim;
+export default DailyAllowanceClaimModal;

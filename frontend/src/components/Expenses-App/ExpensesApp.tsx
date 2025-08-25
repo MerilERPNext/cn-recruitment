@@ -1,8 +1,13 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import NewExpenseType from "./NewExpenseType";
+import ExpenseFormModal from "./ExpenseFormModal";
+import GeneralExpenseClaimModal from "./GeneralExpenseClaimModal";
+import MileageExpenseClaimModal from "./MileageExpenseClaimModal";
+import DailyAllowanceClaimModal from "./DailyAllowanceClaimModal";
 
 type TabName = "Expenses";
 
@@ -14,6 +19,8 @@ const ExpensesApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
+  const [showExpenseTypeSelection, setShowExpenseTypeSelection] = useState(false);
+  const [currentExpenseForm, setCurrentExpenseForm] = useState<string | null>(null);
 
   useEffect(() => {
     if (location.pathname === "/webapp/expenses-app") {
@@ -26,7 +33,70 @@ const ExpensesApp: React.FC = () => {
   }, [location.pathname, navigate]);
 
   const handleAddNew = () => {
-    navigate("/webapp/expenses-app/expenses-list/new-expense-type");
+    if (isDesktop) {
+      setShowExpenseTypeSelection(true);
+    } else {
+      navigate("/webapp/expenses-app/expenses-list/new-expense-type");
+    }
+  };
+
+  const handleClose = () => {
+    setShowExpenseTypeSelection(false);
+  };
+
+  const handleExpenseTypeSelect = (type: string) => {
+    setShowExpenseTypeSelection(false);
+    if (isDesktop) {
+      // Show form in modal for desktop
+      setCurrentExpenseForm(type);
+    } else {
+      // Navigate to the appropriate expense claim form for mobile
+      if (type === "General Expense") {
+        navigate("/webapp/expenses-app/general-expense-claim");
+      } else if (type === "Mileage Expense") {
+        navigate("/webapp/expenses-app/mileage-expense-claim");
+      } else if (type === "Daily Allowance") {
+        navigate("/webapp/expenses-app/daily-allowance-claim");
+      }
+    }
+  };
+
+  const handleCloseExpenseForm = () => {
+    setCurrentExpenseForm(null);
+  };
+
+  const renderExpenseFormModal = () => {
+    if (!currentExpenseForm) return null;
+
+    let title = "";
+    let FormComponent = null;
+
+    switch (currentExpenseForm) {
+      case "General Expense":
+        title = "General Expense Claim";
+        FormComponent = GeneralExpenseClaimModal;
+        break;
+      case "Mileage Expense":
+        title = "Mileage Expense Claim";
+        FormComponent = MileageExpenseClaimModal;
+        break;
+      case "Daily Allowance":
+        title = "Daily Allowance Claim";
+        FormComponent = DailyAllowanceClaimModal;
+        break;
+      default:
+        return null;
+    }
+
+    return (
+      <ExpenseFormModal
+        isOpen={!!currentExpenseForm}
+        onClose={handleCloseExpenseForm}
+        title={title}
+      >
+        <FormComponent onClose={handleCloseExpenseForm} />
+      </ExpenseFormModal>
+    );
   };
 
   const mobileLayout = (
@@ -74,17 +144,29 @@ const ExpensesApp: React.FC = () => {
     <DesktopLayoutWrapper title="Expenses">
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-y-auto p-8 relative">
-          <Outlet />
+          {showExpenseTypeSelection ? (
+            <NewExpenseType
+              onClose={handleClose}
+              onSelectExpenseType={handleExpenseTypeSelect}
+              isModal={true}
+            />
+          ) : (
+            <>
+              <Outlet />
+              {/* Sticky Add Button for Desktop */}
+              <div className="fixed bottom-8 right-8 z-50">
+                <button
+                  onClick={handleAddNew}
+                  className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
+                >
+                  + Add Expense
+                </button>
+              </div>
+            </>
+          )}
 
-          {/* Floating Add Button for Desktop */}
-          <div className="absolute bottom-8 right-8">
-            <button
-              onClick={handleAddNew}
-              className="py-3 px-6 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
-            >
-              + Add Expense
-            </button>
-          </div>
+          {/* Render expense form modal for desktop */}
+          {renderExpenseFormModal()}
         </div>
       </div>
     </DesktopLayoutWrapper>

@@ -163,34 +163,38 @@ const MultipleDaysSection: React.FC<MultipleDaysSectionProps> = ({
       </div>
 
       {isMultipleDays ? (
-        <div className="flex flex-col sm:flex-row gap-4">
-          <FormioDateInput
-            initialDate={fromDate}
-            onDateChange={(newDate) =>
-              onDateRangeChange({ fromDate: newDate, toDate: toDate })
-            }
-            schema={{
-              display: "form",
-              components: [
-                { ...dateRangeFormSchema.components[0], key: "fromDate" },
-              ],
-            }}
-          />
-          <FormioDateInput
-            initialDate={toDate}
-            onDateChange={(newDate) =>
-              onDateRangeChange({ fromDate: fromDate, toDate: newDate })
-            }
-            schema={{
-              display: "form",
-              components: [
-                { ...dateRangeFormSchema.components[1], key: "toDate" },
-              ],
-            }}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="w-full">
+            <FormioDateInput
+              initialDate={fromDate}
+              onDateChange={(newDate) =>
+                onDateRangeChange({ fromDate: newDate, toDate: toDate })
+              }
+              schema={{
+                display: "form",
+                components: [
+                  { ...dateRangeFormSchema.components[0], key: "fromDate" },
+                ],
+              }}
+            />
+          </div>
+          <div className="w-full">
+            <FormioDateInput
+              initialDate={toDate}
+              onDateChange={(newDate) =>
+                onDateRangeChange({ fromDate: fromDate, toDate: newDate })
+              }
+              schema={{
+                display: "form",
+                components: [
+                  { ...dateRangeFormSchema.components[1], key: "toDate" },
+                ],
+              }}
+            />
+          </div>
         </div>
       ) : (
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="w-full">
           <FormioDateInput
             initialDate={singleDate}
             onDateChange={onSingleDateChange}

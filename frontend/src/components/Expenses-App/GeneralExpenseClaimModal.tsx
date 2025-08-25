@@ -6,13 +6,11 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
 import { File as FileIcon, FileText, Trash2 } from "lucide-react";
 import defaultReceipt from "../../assets/Receipt.svg";
 
 import { Form } from "@tsed/react-formio";
 import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
-import HeaderBar from "../HeaderBar";
 import { useExpenseTravelPolicies } from "../../hooks/useExpense";
 import ExpensesUserInfo from "./ExpensesUserInfo";
 
@@ -28,9 +26,14 @@ interface ExpenseItem {
   fileObject?: File;
 }
 
-const GeneralExpenseClaim: React.FC = () => {
+interface GeneralExpenseClaimModalProps {
+  onClose?: () => void;
+}
+
+const GeneralExpenseClaimModal: React.FC<GeneralExpenseClaimModalProps> = ({
+  onClose,
+}) => {
   const CURRENCY_SYMBOL = "₹";
-  const navigate = useNavigate();
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const objectUrls = useRef<Record<string, string>>({}); // Using a ref to hold object URLs for cleanup
@@ -58,10 +61,6 @@ const GeneralExpenseClaim: React.FC = () => {
       ],
     };
   }, [ExpenseTravelPolicies]);
-
-  const handleBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
 
   const handleDeleteItem = useCallback((id: string) => {
     setExpenseItems((prevItems) => {
@@ -134,14 +133,12 @@ const GeneralExpenseClaim: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="bg-gray-50 flex flex-col font-sans">
       <FormioNewExpenseItemModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddExpenseItem}
       />
-
-      <HeaderBar title="General Expense Claim" onBack={handleBack} />
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
         <ExpensesUserInfo />
@@ -177,7 +174,7 @@ const GeneralExpenseClaim: React.FC = () => {
               expenseItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start justify-between p-3 border border-gray-200 rounded-lg"
+                  className="relative flex items-start justify-between p-3 border border-gray-200 rounded-lg"
                 >
                   <div className="flex flex-col space-y-1">
                     <p className="font-medium text-gray-900">{item.type}</p>
@@ -258,7 +255,7 @@ const GeneralExpenseClaim: React.FC = () => {
                     )}
                     <button
                       onClick={() => handleDeleteItem(item.id)}
-                      className="p-1 mt-[-60px] rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+                      className="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors"
                       aria-label={`Delete ${item.type} expense`}
                     >
                       <Trash2 className="h-5 w-5" />
@@ -317,4 +314,4 @@ const GeneralExpenseClaim: React.FC = () => {
   );
 };
 
-export default GeneralExpenseClaim;
+export default GeneralExpenseClaimModal;
