@@ -143,30 +143,29 @@ const MyLeaveRequest: React.FC = () => {
   return (
     <div className="space-y-3">
 
-     <FrappeListView<LeaveApplicationItem>
-  doctype="Leave Application"
-  ItemComponent={({ item }) => {
-    console.log("📌 Leave Request:", item.name, item.status); // 👈 status console me
-    return (
-      <LeaveRequestItem item={item} onClick={() => handleCardClick(item)} />
-    );
-  }}
-  defaultFields={[
-    "name",
-    "leave_type",
-    "from_date",
-    "to_date",
-    "status",
-    "description",
-  ]}
-  defaultFilters={{ employee: currentEmployee.name }}
-  isSearch={true}
-  searchFields={["name", "leave_type", "status"]}
-  infiniteScroll={true}
-  showRefereshButton={true}
-  onRefetchAvailable={setRefetch}
-  SkeletonComponent={MyLeaveRequestSkeleton}
-/>
+      <FrappeListView<LeaveApplicationItem>
+        doctype="Leave Application"
+        ItemComponent={({ item }) => {
+          return (
+            <LeaveRequestItem item={item} onClick={() => handleCardClick(item)} />
+          );
+        }}
+        defaultFields={[
+          "name",
+          "leave_type",
+          "from_date",
+          "to_date",
+          "status",
+          "description",
+        ]}
+        defaultFilters={{ employee: currentEmployee.name }}
+        isSearch={true}
+        searchFields={["name", "leave_type", "status"]}
+        infiniteScroll={true}
+        showRefereshButton={true}
+        onRefetchAvailable={setRefetch}
+        SkeletonComponent={MyLeaveRequestSkeleton}
+      />
 
       {isModalOpen && selectedRequest && (
         <RequestDetailsModal
