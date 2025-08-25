@@ -195,15 +195,15 @@ const AttendanceLayout: React.FC = () => {
     <DesktopLayoutWrapper title="Attendance">
       <div className="flex flex-col h-full">
         {/* Modern Tab Navigation for Web */}
-        <div className="bg-gray-100 border-b border-gray-200 px-8 py-6 flex-shrink-0">
+        <div className="bg-gray-100 border border-gray-200 px-8 py-6 flex-shrink-0">
           {/* Navigation Pills */}
-          <div className="flex items-center justify-between align-center">
+          <div className="flex items-center justify-between align-center ">
             <div className="flex gap-4">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab)}
-                  className={`relative px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  className={`relative text-sm px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
                     activeTab?.key === tab.key
                       ? "bg-black text-white shadow-lg"
                       : " text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg border "
@@ -222,18 +222,21 @@ const AttendanceLayout: React.FC = () => {
           </div>
         </div>
         {/* Sub-navigation for Calendar Views */}
-        {/* <div className="px-8 py-4 border-b border-gray-200">
-          {activeTab?.key === "calendar-views" && (
-            <div className="border border-gray-100 pt-4 bg-white px-4 rounded-lg shadow-sm">
-              <div className="flex gap-1 mb-4">
+        {activeTab?.key === "calendar-views" && (
+          <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div className="px-8 py-2 flex items-center gap-3 bg-white w-full">
+              <span className="text-sm text-gray-600 font-medium">
+                View Mode:
+              </span>
+              <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
                 {calendarSubTabs.map((subTab) => (
                   <button
                     key={subTab.key}
                     onClick={() => handleSubTabChange(subTab)}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                    className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
                       activeSubTab === subTab.key
-                        ? "bg-black text-white"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        ? "bg-black text-white shadow-md"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                   >
                     {subTab.label}
@@ -241,30 +244,8 @@ const AttendanceLayout: React.FC = () => {
                 ))}
               </div>
             </div>
-          )}
-        </div> */}
-        {/* Sub-navigation for Calendar Views */}
-        <div className="px-8 py-4 border border-gray-200">
-          {activeTab?.key === "calendar-views" && (
-            <div className="flex bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-              <div className="border border-gray-200 py-1 rounded-xl">
-                {calendarSubTabs.map((subTab) => (
-                <button
-                  key={subTab.key}
-                  onClick={() => handleSubTabChange(subTab)}
-                  className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
-                    activeSubTab === subTab.key
-                      ? "bg-black text-white shadow-md"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  {subTab.label}
-                </button>
-              ))}
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto">
           <LeaveRequestRefreshProvider>
