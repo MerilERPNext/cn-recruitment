@@ -180,11 +180,11 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
 
   const renderContent = () => (
     <>
-      <div className="flex-grow" ref={formioContainerRef}>
+      <div className="flex-grow overflow-y-auto" ref={formioContainerRef}>
         {/* Form.io will inject its HTML here */}
       </div>
 
-      <div className="flex justify-between space-x-4 pt-6 border-t border-gray-200 mt-6">
+      <div className="flex-shrink-0 flex justify-between space-x-4 pt-6 border-t border-gray-200 mt-6">
         <button
           onClick={onClose}
           className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
@@ -204,23 +204,23 @@ const FormioNewExpenseItemModal: React.FC<FormioModalProps> = ({
   if (isDesktop) {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white rounded-lg shadow-xl w-[90%] max-w-2xl max-h-[80vh] overflow-hidden">
+        <div className="bg-white rounded-lg shadow-xl w-[90%] max-w-2xl max-h-[80vh] flex flex-col">
+          {/* Modal header */}
+          <div className="flex-shrink-0 flex items-center justify-between p-6 pb-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-800">
+              New Expense Item
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+          {/* Modal body and footer */}
           <div className="p-6">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">
-                New Expense Item
-              </h2>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5 text-gray-600" />
-              </button>
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto">
-              {renderContent()}
-            </div>
+            {renderContent()}
           </div>
         </div>
       </div>
