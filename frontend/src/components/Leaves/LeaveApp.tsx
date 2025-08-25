@@ -35,9 +35,7 @@ const LeaveAppInner: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
   const [activeSubTab, setActiveSubTab] = useState<SubTabName>("My Requests");
 
-  // ✅ Added states for Pending and Approved counts
-  const [pendingCount, setPendingCount] = useState(0);
-  const [approvedCount, setApprovedCount] = useState(0);
+
 
   const tabs: Tab[] = useMemo(
     () => [
@@ -92,11 +90,7 @@ const LeaveAppInner: React.FC = () => {
     };
   }, [showModal]);
 
-  // ✅ Example dummy values for counts (replace with API call later)
-  useEffect(() => {
-    setPendingCount(3); 
-    setApprovedCount(5); 
-  }, []);
+ 
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
@@ -244,12 +238,10 @@ const LeaveAppInner: React.FC = () => {
                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
                   <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                   <span>Pending</span>
-                  <span className="ml-2 font-semibold text-gray-800">{pendingCount}</span>
                 </div>
                 <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span>Approved</span>
-                  <span className="ml-2 font-semibold text-gray-800">{approvedCount}</span>
                 </div>
               </div>
             </div>
