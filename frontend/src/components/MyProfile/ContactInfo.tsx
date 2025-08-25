@@ -124,7 +124,7 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
           <button
             onClick={handleSubmit}
             disabled={updateEmployeeMutation.isPending}
-            className="px-8 py-3 rounded-xl bg-black text-white font-mediumtransition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="px-8 py-3 rounded-xl bg-black text-white font-mediumtransition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {updateEmployeeMutation.isPending ? (
               <>
