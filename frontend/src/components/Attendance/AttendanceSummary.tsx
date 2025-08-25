@@ -178,56 +178,95 @@ const AttendanceSummary = () => {
             </button>
           </div>
 
-          {/* Statistics Grid (Quick Summary) */}
-          <div className="space-y-3 border-b-1 bg-white border-gray-200 p-4 pt-0">
-            <h2 className="text-xl font-semibold">Quick Summary</h2>
-            <div
-              className={
-                isDesktop
-                  ? "grid grid-cols-2 lg:grid-cols-3 gap-3"
-                  : "grid grid-cols-3 gap-3"
-              }
-            >
-              {quickSummaryData.map((data, index) => (
-                <SummaryCard
-                  key={index}
-                  icon={data.icon}
-                  iconColor={`text-${data.color}-600`}
-                  bgColor={`bg-${data.color}-50`}
-                  borderColor={`border-${data.color}-100`}
-                  value={data.value}
-                  label={data.label}
-                  isDesktop={isDesktop}
-                  isMetric={true}
-                />
-              ))}
+          {/* Desktop: Side by Side Layout, Mobile: Stacked Layout */}
+          {isDesktop ? (
+            <div className="grid grid-cols-2 gap-6 border-b-1 bg-white border-gray-200 p-4 pt-0">
+              {/* Quick Summary */}
+              <div className="space-y-3">
+                <h2 className="text-xl font-semibold">Quick Summary</h2>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {quickSummaryData.map((data, index) => (
+                    <SummaryCard
+                      key={index}
+                      icon={data.icon}
+                      iconColor={`text-${data.color}-600`}
+                      bgColor={`bg-${data.color}-50`}
+                      borderColor={`border-${data.color}-100`}
+                      value={data.value}
+                      label={data.label}
+                      isDesktop={isDesktop}
+                      isMetric={true}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Today's Team Summary */}
+              <div className="space-y-3">
+                <h2 className="text-xl font-semibold">Today's Team Summary</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {teamSummaryData.map((data, index) => (
+                    <SummaryCard
+                      key={index}
+                      icon={data.icon}
+                      iconColor={`text-${data.color}-600`}
+                      bgColor={`bg-${data.color}-50`}
+                      borderColor={`border-${data.color}-100`}
+                      value={data.value}
+                      label={data.label}
+                      isDesktop={isDesktop}
+                      isMetric={true}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Today's Team Summary */}
-        <div className="space-y-3 border-b-1 bg-white border-gray-200 p-4 pt-0">
-          <h2 className="text-xl font-semibold">Today's Team Summary</h2>
-          <div className="grid grid-cols-3 gap-3">
-            {teamSummaryData.map((data, index) => (
-              <SummaryCard
-                key={index}
-                icon={data.icon}
-                iconColor={`text-${data.color}-600`}
-                bgColor={`bg-${data.color}-50`}
-                borderColor={`border-${data.color}-100`}
-                value={data.value}
-                label={data.label}
-                isDesktop={isDesktop}
-                isMetric={true}
-              />
-            ))}
-          </div>
+          ) : (
+            <>
+              {/* Statistics Grid (Quick Summary) */}
+              <div className="space-y-3 border-b-1 bg-white border-gray-200 p-4 pt-0">
+                <h2 className="text-xl font-semibold">Quick Summary</h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {quickSummaryData.map((data, index) => (
+                    <SummaryCard
+                      key={index}
+                      icon={data.icon}
+                      iconColor={`text-${data.color}-600`}
+                      bgColor={`bg-${data.color}-50`}
+                      borderColor={`border-${data.color}-100`}
+                      value={data.value}
+                      label={data.label}
+                      isDesktop={isDesktop}
+                      isMetric={true}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Today's Team Summary */}
+              <div className="space-y-3 border-b-1 bg-white border-gray-200 p-4 pt-0">
+                <h2 className="text-xl font-semibold">Today's Team Summary</h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {teamSummaryData.map((data, index) => (
+                    <SummaryCard
+                      key={index}
+                      icon={data.icon}
+                      iconColor={`text-${data.color}-600`}
+                      bgColor={`bg-${data.color}-50`}
+                      borderColor={`border-${data.color}-100`}
+                      value={data.value}
+                      label={data.label}
+                      isDesktop={isDesktop}
+                      isMetric={true}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Settings Card */}
         <div className="bg-white border-gray-200 p-4">
-          <div className="space-y-4">
+          <div className={isDesktop ? "grid grid-cols-2 gap-4" : "space-y-4"}>
             {settingsData.map((setting, index) => (
               <div
                 key={index}

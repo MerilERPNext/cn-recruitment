@@ -22,11 +22,13 @@ import logo from '../assets/logo.png';
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
   title?: string;
+  actionButton?: React.ReactNode;
 }
 
 const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   children,
-  title
+  title,
+  actionButton
 }) => {
   const { isDesktop } = useScreenSize();
   const location = useLocation();
@@ -163,7 +165,14 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           </div>
           
           <div className="flex items-center gap-4">
-            <button 
+            {/* Action Button (e.g., for attendance requests) */}
+            {actionButton && (
+              <div className="mr-2">
+                {actionButton}
+              </div>
+            )}
+
+            <button
               onClick={handleNotificationClick}
               className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >

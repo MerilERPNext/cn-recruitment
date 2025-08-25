@@ -174,7 +174,33 @@ const EmployeeAttendance = () => {
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
         <div className=" w-full pb-2 bg-white">
-          <div className="w-full flex justify-end border-b-1 border-gray-200 pb-2">
+          <div className="w-full flex justify-between items-center border-b-1 border-gray-200 pb-2">
+            {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
+            {isDesktop && (
+              <div className="flex items-center gap-2 mt-4">
+                <h4 className="text-sm font-semibold text-gray-700">📅 Attendance Legend:</h4>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
+                    Present
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-100 text-red-700 border border-red-200">
+                    Absent
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-100 text-orange-700 border border-yellow-200">
+                    On Leave
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-100 text-purple-700 border border-purple-200">
+                    WFH
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-100 text-blue-700 border border-blue-200">
+                    Holiday
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+                    Week Off
+                  </span>
+                </div>
+              </div>
+            )}
             <button
               className="text-gray-500 px-2 mt-4 flex gap-1 justify-center items-center"
               onClick={() => {
@@ -332,33 +358,8 @@ const EmployeeAttendance = () => {
             />
           </div>
 
-          {/* Legends  */}
-          {isDesktop ? (
-            // Desktop legends styled as tags like mobile
-            <div className="px-4 py-3">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">📅 Attendance Legend</h4>
-              <div className="flex flex-wrap gap-2 text-xs justify-around">
-                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
-                  Present
-                </span>
-                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-100 text-red-700 border border-red-200">
-                  Absent
-                </span>
-                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-100 text-orange-700 border border-yellow-200">
-                  On Leave
-                </span>
-                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-100 text-purple-700 border border-purple-200">
-                  Work From Home
-                </span>
-                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-100 text-blue-700 border border-blue-200">
-                  Holiday
-                </span>
-                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-                  Week Off
-                </span>
-              </div>
-            </div>
-          ) : (
+          {/* Legends - Only show for mobile since desktop shows at top */}
+          {!isDesktop && (
             // Original mobile legends
             <div className="flex flex-wrap gap-2 text-xs justify-between px-4">
               <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
@@ -386,22 +387,23 @@ const EmployeeAttendance = () => {
 
         {/* ------------------------------------------------- Calendar End---------------------------------------------- */}
 
-        {/* Request Attendance Correction */}
-
-        <div className="bg-white p-4 border-b-1 border-gray-200">
-          <div className="flex gap-2">
-            <button
-              className="w-full bg-gray-900 text-white flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-              onClick={() => {
-                setOpenDrawer(!openDrawer);
-                // setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2 font-bold" />
-              Raise Request
-            </button>
+        {/* Request Attendance Correction - Only show for mobile */}
+        {!isDesktop && (
+          <div className="bg-white p-4 border-b-1 border-gray-200">
+            <div className="flex gap-2">
+              <button
+                className="w-full bg-gray-900 text-white flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+                onClick={() => {
+                  setOpenDrawer(!openDrawer);
+                  // setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2 font-bold" />
+                Raise Request
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Request Attendance Correction */}
 
