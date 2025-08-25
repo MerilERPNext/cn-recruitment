@@ -73,7 +73,9 @@ const EmployeeAttendance = () => {
     attendances
       .filter(
         (record) =>
-          record.doctype === "Attendance" || record.doctype === "Holiday"
+          record.doctype === "Attendance" ||
+          record.doctype === "Holiday" ||
+          record.doctype === "Holidays"
       )
       .forEach((record) => {
         const dateKey = formatDateKey(new Date(record.start));
@@ -191,6 +193,7 @@ const EmployeeAttendance = () => {
                 const attendance = getAttendanceStatus(date as Date);
                 if (
                   attendance?.status !== "default" &&
+                  attendance?.status !== "week-off" &&
                   attendance?.status !== "holiday"
                 ) {
                   navigate(
