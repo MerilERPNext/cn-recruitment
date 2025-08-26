@@ -220,6 +220,7 @@ export const attendanceService = {
           hasCode: 'code' in error,
           errorKeys: Object.keys(error),
           response: 'response' in error ? (error as any).response : undefined
+
         });
       }
 
@@ -227,7 +228,6 @@ export const attendanceService = {
       // Check for various ways the error might be structured
       let is417Error = false;
       let errorStatus = null;
-
       if (error && typeof error === 'object') {
         // Check for Axios error structure
         if ('response' in error && error.response && typeof error.response === 'object') {
@@ -238,7 +238,6 @@ export const attendanceService = {
           }
         }
 
-        // Check for error status property directly
         if ('status' in error && (error as any).status === 417) {
           is417Error = true;
           errorStatus = (error as any).status;
