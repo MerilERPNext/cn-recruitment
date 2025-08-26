@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   Calendar,
@@ -16,9 +16,8 @@ import {
   Clock,
   Users,
   CheckCircle,
-} from 'lucide-react';
-import logo from '../../assets/logo.png'; 
-
+} from "lucide-react";
+import logo from "../../assets/logo.png";
 
 interface SubMenuItem {
   name: string;
@@ -45,7 +44,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const location = useLocation();
   // State to manage which dropdown (parent item with sub-items) is currently open due to a click
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  
+
   // The state 'shouldMainSidebarStayExpanded' is removed as per the new user experience.
   // The sidebar will now always collapse on mouse leave, regardless of active sub-items,
   // but active items will still be highlighted in the collapsed state.
@@ -62,10 +61,26 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Leaves & Holidays",
       path: "/webapp/leave-app",
       subItems: [
-        { name: "Leave Balance", icon: Calculator, href: "/webapp/leave-app/leaves/leave-balance" },
-        { name: "My Requests", icon: User, href: "/webapp/leave-app/leaves/leave-requests/my" },
-        { name: "Team Requests", icon: Users, href: "/webapp/leave-app/leaves/leave-requests/team" },
-        { name: "Holidays", icon: Calendar, href: "/webapp/leave-app/leaves/holidays" },
+        {
+          name: "Leave Balance",
+          icon: Calculator,
+          href: "/webapp/leave-app/leaves/leave-balance",
+        },
+        {
+          name: "My Requests",
+          icon: User,
+          href: "/webapp/leave-app/leaves/leave-requests/my",
+        },
+        {
+          name: "Team Requests",
+          icon: Users,
+          href: "/webapp/leave-app/leaves/leave-requests/team",
+        },
+        {
+          name: "Holidays",
+          icon: Calendar,
+          href: "/webapp/leave-app/leaves/holidays",
+        },
       ],
     },
     {
@@ -73,11 +88,31 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Attendance",
       path: "/webapp/attendance",
       subItems: [
-        { name: "Attendance Summary", icon: CheckCircle, href: "/webapp/attendance/summary" },
-        { name: "My Attendance", icon: Calendar, href: "/webapp/attendance/emp-attendance" },
-        { name: "Team Attendance", icon: Users, href: "/webapp/attendance/team-attendance" },
-        { name: "My Requests", icon: Clock, href: "/webapp/attendance/attendance-request" },
-        { name: "Team Requests", icon: Users, href: "/webapp/attendance/team-attendance-requests" },
+        {
+          name: "Attendance Summary",
+          icon: CheckCircle,
+          href: "/webapp/attendance/summary",
+        },
+        {
+          name: "My Attendance",
+          icon: Calendar,
+          href: "/webapp/attendance/emp-attendance",
+        },
+        {
+          name: "Team Attendance",
+          icon: Users,
+          href: "/webapp/attendance/team-attendance",
+        },
+        {
+          name: "My Requests",
+          icon: Clock,
+          href: "/webapp/attendance/attendance-request",
+        },
+        {
+          name: "Team Requests",
+          icon: Users,
+          href: "/webapp/attendance/team-attendance-requests",
+        },
       ],
     },
     {
@@ -85,10 +120,26 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Compensation",
       path: "/webapp/salary-slip-app",
       subItems: [
-        { name: "Annual CTC", icon: Calculator, href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual" },
-        { name: "Monthly Salary", icon: Calculator, href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=monthly" },
-        { name: "Salary Slip", icon: CreditCard, href: "/webapp/salary-slip-app/salary-slip-list" },
-        { name: "Payroll Documents", icon: FileText, href: "/webapp/salary-slip-app/hr-payroll" },
+        {
+          name: "Annual CTC",
+          icon: Calculator,
+          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
+        },
+        {
+          name: "Monthly Salary",
+          icon: Calculator,
+          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=monthly",
+        },
+        {
+          name: "Salary Slip",
+          icon: CreditCard,
+          href: "/webapp/salary-slip-app/salary-slip-list",
+        },
+        {
+          name: "Payroll Documents",
+          icon: FileText,
+          href: "/webapp/salary-slip-app/hr-payroll",
+        },
       ],
     },
     {
@@ -96,10 +147,26 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Shifts",
       path: "/webapp/shift-request",
       subItems: [
-        { name: "My Shifts", icon: Clock, href: "/webapp/shift-request/my-shift-assignment" },
-        { name: "Team Shift", icon: Users, href: "/webapp/shift-request/team-shift" },
-        { name: "Shift Requests", icon: PlusCircle, href: "/webapp/shift-request/shift-list" },
-        { name: "Shift Change Request", icon: ArrowUpDown, href: "/webapp/shift-request/shift-change-request" },
+        {
+          name: "My Shifts",
+          icon: Clock,
+          href: "/webapp/shift-request/my-shift-assignment",
+        },
+        {
+          name: "Team Shift",
+          icon: Users,
+          href: "/webapp/shift-request/team-shift",
+        },
+        {
+          name: "Shift Requests",
+          icon: PlusCircle,
+          href: "/webapp/shift-request/shift-list",
+        },
+        {
+          name: "Shift Change Request",
+          icon: ArrowUpDown,
+          href: "/webapp/shift-request/shift-change-request",
+        },
       ],
     },
     {
@@ -124,14 +191,26 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     if (item.path === "/webapp/") {
       return location.pathname === "/webapp/";
     }
-    // If the item has sub-items, and any of them are active, the parent is considered active.
-    if (item.subItems && item.subItems.some(subItem => isSubItemActive(subItem))) {
-        return true;
-    }
-    // For direct links (or parents without active sub-items), check if the current path starts with the item's path
-    return location.pathname.startsWith(item.path);
-  };
 
+    // If the item has sub-items, and any of them are active, the parent is considered active.
+    if (
+      item.subItems &&
+      item.subItems.some((subItem) => isSubItemActive(subItem))
+    ) {
+      return true;
+    }
+
+    // Stricter check for direct links or parent links
+    // Check if the current path starts with the item's path
+    if (location.pathname.startsWith(item.path)) {
+      const remainingPath = location.pathname.substring(item.path.length);
+      // Ensure the path is a direct match or followed by a slash,
+      // which prevents partial matches (e.g., '/attendance' matching '/attendance-requests').
+      return remainingPath === "" || remainingPath.startsWith("/");
+    }
+
+    return false;
+  };
   /**
    * Helper function to check if a specific sub-item is currently active.
    * Includes special logic for handling query parameters for compensation links.
@@ -139,9 +218,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const isSubItemActive = (subItem: SubMenuItem) => {
     // Enhanced logic for specific query parameters (e.g., Annual CTC, Monthly Salary)
     if (subItem.href.includes("ctc-salary-breakdown")) {
-        // Ensure both the base path and query parameters match exactly
-        const [subItemPath, subItemQuery] = subItem.href.split('?');
-        return location.pathname === subItemPath && location.search === `?${subItemQuery}`;
+      // Ensure both the base path and query parameters match exactly
+      const [subItemPath, subItemQuery] = subItem.href.split("?");
+      return (
+        location.pathname === subItemPath &&
+        location.search === `?${subItemQuery}`
+      );
     }
 
     // General logic for other sub-items: exact path match
@@ -154,7 +236,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     // It also ensures it doesn't match partially (e.g., `/webapp/leave-app` should not match `/webapp/leave-application`).
     if (location.pathname.startsWith(subItem.href)) {
       const remainingPath = location.pathname.substring(subItem.href.length);
-      return remainingPath === '' || remainingPath.startsWith('/');
+      return remainingPath === "" || remainingPath.startsWith("/");
     }
 
     return false;
@@ -173,7 +255,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       }
       // Ensure the main sidebar expands when a dropdown is clicked,
       // but this click does not prevent auto-collapse on mouseleave.
-      setIsExpanded(true); 
+      setIsExpanded(true);
     }
   };
 
@@ -193,13 +275,24 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     >
       <div className="flex flex-col h-full">
         {/* Logo Section */}
-        <div className="px-4 py-3 border-b border-gray-200" style={{ height: '73px' }}>
+        <div
+          className="px-4 py-3 border-b border-gray-200"
+          style={{ height: "73px" }}
+        >
           <div className="flex items-center gap-3 h-full">
             {/* Using the placeholder logo */}
             <img src={logo} alt="PayWise" className="w-8 h-8 flex-shrink-0" />
-            <div className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}>
-              <h2 className="font-semibold text-gray-900 whitespace-nowrap">PayWise</h2>
-              <p className="text-sm text-gray-500 whitespace-nowrap">Employee Portal</p>
+            <div
+              className={`transition-all duration-300 ${
+                isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+              }`}
+            >
+              <h2 className="font-semibold text-gray-900 whitespace-nowrap">
+                PayWise
+              </h2>
+              <p className="text-sm text-gray-500 whitespace-nowrap">
+                Employee Portal
+              </p>
             </div>
           </div>
         </div>
@@ -210,12 +303,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             const Icon = item.icon;
             const hasSubItems = item.subItems && item.subItems.length > 0;
             // Check if any sub-item within this parent is currently active
-            const isAnySubItemActive = item.subItems?.some(subItem => isSubItemActive(subItem));
+            const isAnySubItemActive = item.subItems?.some((subItem) =>
+              isSubItemActive(subItem)
+            );
             // Check if this specific navigation item's path is active, but only if it's a standalone link
             // or if it's the parent of active sub-items (handled by isAnySubItemActive).
-            const isItemDirectlyActive = isItemActive(item) && !isAnySubItemActive; 
+            const isItemDirectlyActive =
+              isItemActive(item) && !isAnySubItemActive;
             // Check if this specific dropdown is currently open due to a user click
-            const isDropdownOpen = openDropdown === item.label; 
+            const isDropdownOpen = openDropdown === item.label;
 
             // Determine the CSS classes for the parent navigation item's background and text color.
             let parentItemClasses = "";
@@ -228,24 +324,27 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               } else if (isDropdownOpen) {
                 parentItemClasses = "bg-gray-100 text-gray-900"; // Gray effect for open dropdown
               } else {
-                parentItemClasses = "text-gray-700 hover:bg-gray-100 hover:text-gray-900"; // Default styling
+                parentItemClasses =
+                  "text-gray-700 hover:bg-gray-100 hover:text-gray-900"; // Default styling
               }
             } else {
               // In collapsed mode:
               // Parent should be black if any sub-item is active, or its dropdown is open, or it's directly active.
               // This ensures the icon is highlighted.
-              if (isAnySubItemActive || isDropdownOpen || (isItemDirectlyActive && !hasSubItems)) {
+              if (
+                isAnySubItemActive ||
+                isDropdownOpen ||
+                (isItemDirectlyActive && !hasSubItems)
+              ) {
                 parentItemClasses = "bg-gray-900 text-white";
               } else {
-                parentItemClasses = "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
+                parentItemClasses =
+                  "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
               }
             }
 
             return (
-              <div
-                key={item.label}
-                className="relative"
-              >
+              <div key={item.label} className="relative">
                 {hasSubItems ? (
                   // Render a div that acts as a clickable parent for sub-items
                   <div
@@ -258,7 +357,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       </div>
                       <span
                         className={`font-medium whitespace-nowrap transition-all duration-300 ${
-                          isExpanded ? "opacity-100" : "opacity-0 -translate-x-2" // Text visibility
+                          isExpanded
+                            ? "opacity-100"
+                            : "opacity-0 -translate-x-2" // Text visibility
                         }`}
                       >
                         {item.label}
@@ -267,7 +368,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     {isExpanded && ( // Only show chevron if sidebar is expanded
                       <ChevronRight
                         className={`h-4 w-4 transition-transform duration-200 ${
-                          (isDropdownOpen || isAnySubItemActive) ? "rotate-90" : "" // Rotate if dropdown is open or sub-item is active
+                          isDropdownOpen || isAnySubItemActive
+                            ? "rotate-90"
+                            : "" // Rotate if dropdown is open or sub-item is active
                         }`}
                       />
                     )}
@@ -288,7 +391,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       </div>
                       <span
                         className={`font-medium whitespace-nowrap transition-all duration-300 ${
-                          isExpanded ? "opacity-100" : "opacity-0 -translate-x-2" // Text visibility
+                          isExpanded
+                            ? "opacity-100"
+                            : "opacity-0 -translate-x-2" // Text visibility
                         }`}
                       >
                         {item.label}
@@ -299,39 +404,43 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
                 {/* Sub-navigation items */}
                 {/* Render sub-items if the parent has them AND either its dropdown is open OR a sub-item is active AND the sidebar is expanded */}
-                {hasSubItems && (isDropdownOpen || isAnySubItemActive) && isExpanded && (
-                  <div className="overflow-hidden transition-all duration-300 ease-in-out">
-                    <div className="py-1 space-y-1">
-                      {item.subItems?.map((subItem) => {
-                        const SubIcon = subItem.icon;
-                        const isSubActive = isSubItemActive(subItem);
+                {hasSubItems &&
+                  (isDropdownOpen || isAnySubItemActive) &&
+                  isExpanded && (
+                    <div className="overflow-hidden transition-all duration-300 ease-in-out">
+                      <div className="py-1 space-y-1">
+                        {item.subItems?.map((subItem) => {
+                          const SubIcon = subItem.icon;
+                          const isSubActive = isSubItemActive(subItem);
 
-                        return (
-                          <Link
-                            key={subItem.name}
-                            to={subItem.href}
-                            className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline ${
-                              isSubActive
-                                ? "bg-gray-900 text-white hover:text-white" // Active sub-item should always be black
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900" // Default sub-item styling
-                            }`}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <SubIcon className="h-3.5 w-3.5 opacity-70" />
-                              <span
-                                className={`font-medium transition-all duration-300 ${
-                                  isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2" // Text visibility
-                                }`}
-                              >
-                                {subItem.name}
-                              </span>
-                            </div>
-                          </Link>
-                        );
-                      })}
+                          return (
+                            <Link
+                              key={subItem.name}
+                              to={subItem.href}
+                              className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline ${
+                                isSubActive
+                                  ? "bg-gray-900 text-white hover:text-white" // Active sub-item should always be black
+                                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900" // Default sub-item styling
+                              }`}
+                            >
+                              <div className="flex items-center space-x-2">
+                                <SubIcon className="h-3.5 w-3.5 opacity-70" />
+                                <span
+                                  className={`font-medium transition-all duration-300 ${
+                                    isExpanded
+                                      ? "opacity-100 translate-x-0"
+                                      : "opacity-0 -translate-x-2" // Text visibility
+                                  }`}
+                                >
+                                  {subItem.name}
+                                </span>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             );
           })}
