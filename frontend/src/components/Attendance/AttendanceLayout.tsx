@@ -223,8 +223,8 @@ const AttendanceLayout: React.FC = () => {
         </div>
         {/* Sub-navigation for Calendar Views */}
         {activeTab?.key === "calendar-views" && (
-          <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <div className="px-8 py-2 flex items-center gap-3 bg-white w-full">
+          <div className="flex justify-between items-center bg-white p-2  shadow-sm border border-gray-200 border-t-0">
+            <div className="px-6 py-2 flex items-center gap-3 bg-white w-full">
               <span className="text-sm text-gray-600 font-medium">
                 View Mode:
               </span>
@@ -233,7 +233,7 @@ const AttendanceLayout: React.FC = () => {
                   <button
                     key={subTab.key}
                     onClick={() => handleSubTabChange(subTab)}
-                    className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                    className={`px-6 py-1 text-sm rounded-lg font-semibold transition-all duration-200 ${
                       activeSubTab === subTab.key
                         ? "bg-black text-white shadow-md"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"

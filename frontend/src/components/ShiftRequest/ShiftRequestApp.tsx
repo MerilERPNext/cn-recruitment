@@ -118,9 +118,9 @@ const ShiftRequestApp: React.FC = () => {
     <DesktopLayoutWrapper title="Shifts">
       <div className="flex flex-col h-full">
         {/* Modern Tab Navigation for Web */}
-        <div className="bg-gray-100 border-b border-gray-200 px-8 py-4 flex-shrink-0">
+        <div className="bg-gray-100 flex justify-between border-b border-gray-200 px-8 py-4 flex-shrink-0">
           {/* Navigation Cards */}
-          <div className="flex gap-4">
+          <div className="flex  gap-4">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -143,8 +143,15 @@ const ShiftRequestApp: React.FC = () => {
                 )}
               </button>
             ))}
+       
           </div>
 
+          <button
+              onClick={handleShiftForm}
+              className="py-2 px-4 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-gray-800 transition-colors shadow-lg"
+            >
+              + Request Shift Change
+            </button>
           {/* Quick Action Hint */}
  
         </div>
@@ -153,20 +160,7 @@ const ShiftRequestApp: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-8">
           <Outlet />
         </div>
-
-        {/* Sticky Request Shift Change Button for Desktop */}
-        {activeTab === "My Shift Assignment" && (
-          <div className="fixed bottom-8 right-8 z-50">
-            <button
-              onClick={handleShiftForm}
-              className="py-3 px-4 rounded-lg bg-blue-600 text-white font-medium hover:bg-gray-800 transition-colors shadow-lg"
-            >
-              + Request Shift Change
-            </button>
-          </div>
-        )}
-
-        {/* Shift Request Modal for Desktop */}
+         {/* Shift Request Modal for Desktop */}
         <ExpenseFormModal
           isOpen={showShiftRequestModal}
           onClose={handleCloseShiftModal}

@@ -56,9 +56,11 @@ const CTCSalaryUI = () => {
     }).format(amount);
 
     if (isMoneyMasked) {
+      // Generate masked string with proper length
+      const maskedText = '₹ ' + 'X'.repeat(Math.max(4, formattedAmount.length - 2));
       return (
         <span className="relative inline-block">
-          <span className="blur-sm select-none">{formattedAmount}</span>
+          <span className="blur-sm select-none text-gray-400">{maskedText}</span>
         </span>
       );
     }
