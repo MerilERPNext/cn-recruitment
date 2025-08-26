@@ -144,14 +144,6 @@ const AttendanceLayout: React.FC = () => {
         {/* Actions Dropdown - Positioned to the top of the button */}
         {showActionsDropdown && (
           <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">
-            <div className="px-4 py-2 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900">
-                Quick Actions
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                Submit requests and manage attendance
-              </p>
-            </div>
             <div className="py-2">
               {/* Corrected order: Leave Request first, then Attendance Request */}
               <button
