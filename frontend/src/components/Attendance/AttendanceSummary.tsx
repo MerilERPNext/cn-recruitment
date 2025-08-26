@@ -144,7 +144,7 @@ const AttendanceSummary = () => {
     {
       icon: Shield,
       title: "Attendance Policy",
-      details: ["GENERAL SHIFT POLICY"],
+      details: attendancePolicy ? [attendancePolicy] : [],
     },
     {
       icon: Calendar,
@@ -235,41 +235,61 @@ const AttendanceSummary = () => {
             <div className="w-1/3 ml-6 bg-white border border-gray-200 rounded-xl p-4">
               <h2 className="text-xl font-semibold mb-4">Settings</h2>
               <div className="space-y-4">
-                {settingsData.map((setting, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
-                  >
-                    <div className="p-2 bg-gray-200 rounded-lg">
-                      <setting.icon className="h-4 w-4 text-gray-700" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1">
-                        {setting.title}
-                      </h3>
-                      {setting.details.map((detail, detailIndex) => (
-                        <p key={detailIndex} className="text-gray-600 text-sm">
-                          {detail}
-                        </p>
-                      ))}
-                      {setting.title === "Attendance Policy" &&
-                        attendancePolicy && (
-                          <div>
-                            <button
-                              onClick={() =>
-                                navigate(
-                                  `/webapp/attendance/attendance-policies?policy=${attendancePolicy}`
-                                )
-                              }
-                              className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                              {attendancePolicy}
-                            </button>
-                          </div>
+                {settingsData.map((setting, index) => {
+                  const Icon = setting.icon;
+
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
+                    >
+                      <div className="p-2 bg-gray-200 rounded-lg">
+                        <Icon className="h-4 w-4 text-gray-700" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1">
+                          {setting.title}
+                        </h3>
+
+                        {setting.details.length > 0 ? (
+                          setting.details.map((detail, detailIndex) => {
+                            if (
+                              setting.title === "Attendance Policy" &&
+                              attendancePolicy
+                            ) {
+                              return (
+                                <button
+                                  key={detailIndex}
+                                  onClick={() =>
+                                    navigate(
+                                      `/webapp/attendance/attendance-policies?policy=${attendancePolicy}`
+                                    )
+                                  }
+                                  className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                  {detail}
+                                </button>
+                              );
+                            }
+
+                            return (
+                              <p
+                                key={detailIndex}
+                                className="text-sm text-gray-700"
+                              >
+                                {detail}
+                              </p>
+                            );
+                          })
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No policy defined
+                          </p>
                         )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -348,44 +368,60 @@ const AttendanceSummary = () => {
                   className={isDesktop ? "grid grid-cols-2 gap-4" : "space-y-4"}
                 >
                   {settingsData.map((setting, index) => {
-                      if(setting.title ==="Attendance Policy" && attendancePolicy){
-                        return<div>
-                        <button
-                          onClick={() =>
-                            navigate(
-                              `/webapp/attendance/attendance-policies?policy=${attendancePolicy}`
-                            )
-                          }
-                          className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                          {attendancePolicy}
-                        </button>
-                      </div>
-                      }
+                    const Icon = setting.icon;
 
-                  return<div
-                      key={index}
-                      className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
-                    >
-                      <div className="p-2 bg-gray-200 rounded-lg">
-                        <setting.icon className="h-4 w-4 text-gray-700" />
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
+                      >
+                        <div className="p-2 bg-gray-200 rounded-lg">
+                          <Icon className="h-4 w-4 text-gray-700" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">
+                            {setting.title}
+                          </h3>
+
+                          {setting.details.length > 0 ? (
+                            setting.details.map((detail, detailIndex) => {
+                              if (
+                                setting.title === "Attendance Policy" &&
+                                attendancePolicy
+                              ) {
+                                return (
+                                  <button
+                                    key={detailIndex}
+                                    onClick={() =>
+                                      navigate(
+                                        `/webapp/attendance/attendance-policies?policy=${attendancePolicy}`
+                                      )
+                                    }
+                                    className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+                                  >
+                                    {detail}
+                                  </button>
+                                );
+                              }
+
+                              return (
+                                <p
+                                  key={detailIndex}
+                                  className="text-sm text-gray-700"
+                                >
+                                  {detail}
+                                </p>
+                              );
+                            })
+                          ) : (
+                            <p className="text-sm text-gray-500">
+                              No policy defined
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">
-                          {setting.title}
-                        </h3>
-                        {setting.details.map((detail, detailIndex) => (
-                          <p
-                            key={detailIndex}
-                            className="text-gray-600 text-sm"
-                          >
-                            {detail}
-                          </p>
-                        ))}
-  
-                      </div>
-                    </div>
-})}
+                    );
+                  })}
                 </div>
               </div>
             </div>
