@@ -15,9 +15,7 @@ import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
-import HeaderBar from "../HeaderBar";
 import { toast } from "react-hot-toast";
-import FormDialog from "../shared/FormDialog";
 import ResponsiveFormWrapper, { FormActions } from "../shared/ResponsiveFormWrapper";
 
 interface FormSubmissionData {
@@ -32,10 +30,9 @@ interface FormSubmissionData {
 
 interface RequestLeaveProps {
   onSuccess?: () => void;
-  onCancel?: () => void;
 }
 
-const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
+const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useEmployeeByUserId(userId);
 
