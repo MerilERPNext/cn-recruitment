@@ -127,7 +127,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                             values: [
                               { value: "A+", label: "A+" },
                               { value: "A-", label: "A-" },
-                              { value: "B+", label: "B-" },
+                              { value: "B+", label: "B+" },
                               { value: "B-", label: "B-" },
                               { value: "O+", label: "O+" },
                               { value: "O-", label: "O-" },
@@ -202,7 +202,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   }, [user]);
 
   return (
-    <div className="address-form-container h-full b">
+    <div className="address-form-container h-full">
       <div className="p-4 md:p-8">
         {/* Header - Hidden on mobile, visible on desktop */}
         <div className="hidden md:block border-b border-gray-200 pb-6 mb-8">
