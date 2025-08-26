@@ -125,13 +125,6 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           </div>
           
           <div className="flex items-center gap-4">
-            {/* Action Button (e.g., for attendance requests) */}
-            {actionButton && (
-              <div className="mr-2">
-                {actionButton}
-              </div>
-            )}
-
             <button
               onClick={handleNotificationClick}
               className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"

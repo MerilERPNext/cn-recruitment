@@ -50,37 +50,38 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const navigationItems: NavigationItem[] = [
-    { 
-      icon: Home, 
-      label: "Dashboard", 
+    {
+      icon: Home,
+      label: "Dashboard",
       path: "/webapp/",
     },
-    { 
-      icon: Calendar, 
-      label: "Leaves & Holidays", 
+    {
+      icon: Calendar,
+      label: "Leaves & Holidays",
       path: "/webapp/leave-app",
       subItems: [
-        { name: "Apply Leave", icon: PlusCircle, href: "/webapp/leave-app/leaves/leave-requests/my" },
-        { name: "Leave History", icon: ClockIcon, href: "/webapp/leave-app/leaves/leave-requests/my" },
-        { name: "Holiday Calendar", icon: Calendar, href: "/webapp/leave-app/leaves/holidays" },
         { name: "Leave Balance", icon: Calculator, href: "/webapp/leave-app/leaves/leave-balance" },
+        { name: "My Requests", icon: User, href: "/webapp/leave-app/leaves/leave-requests/my" },
+        { name: "Team Requests", icon: Users, href: "/webapp/leave-app/leaves/leave-requests/team" },
+        { name: "Holiday Calendar", icon: Calendar, href: "/webapp/leave-app/leaves/holidays" },
       ],
     },
-    { 
-      icon: User, 
-      label: "Attendance", 
+    {
+      icon: User,
+      label: "Attendance",
       path: "/webapp/attendance",
       subItems: [
-        { name: "Attendance", icon: CheckCircle, href: "/webapp/attendance/summary" },
-        { name: "Calendar Views", icon: Calendar, href: "/webapp/attendance/emp-attendance" },
+        { name: "Attendance Summary", icon: CheckCircle, href: "/webapp/attendance/summary" },
+        { name: "My Attendance", icon: Calendar, href: "/webapp/attendance/emp-attendance" },
+        { name: "Team Attendance", icon: Users, href: "/webapp/attendance/team-attendance" },
         { name: "My Attendance Requests", icon: Clock, href: "/webapp/attendance/attendance-request" },
         { name: "Team Attendance Requests", icon: Users, href: "/webapp/attendance/team-attendance-requests" },
         { name: "Request Overtime", icon: RotateCcw, href: "/webapp/attendance/overtime" },
       ],
     },
-    { 
-      icon: DollarSign, 
-      label: "Compensation", 
+    {
+      icon: DollarSign,
+      label: "Compensation",
       path: "/webapp/salary-slip-app",
       subItems: [
         { name: "CTC Breakdown", icon: Calculator, href: "/webapp/salary-slip-app/ctc-salary-breakdown" },
@@ -88,9 +89,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         { name: "Payroll Documents", icon: FileText, href: "/webapp/salary-slip-app/hr-payroll" },
       ],
     },
-    { 
-      icon: ArrowUpDown, 
-      label: "Shifts", 
+    {
+      icon: ArrowUpDown,
+      label: "Shifts",
       path: "/webapp/shift-request",
       subItems: [
         { name: "My Shifts", icon: Clock, href: "/webapp/shift-request/my-shift-assignment" },
@@ -99,9 +100,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         { name: "Shift Change Request", icon: ArrowUpDown, href: "/webapp/shift-request/shift-change-request" },
       ],
     },
-    { 
-      icon: Receipt, 
-      label: "Expenses", 
+    {
+      icon: Receipt,
+      label: "Expenses",
       path: "/webapp/expenses-app",
       subItems: [
         { name: "Expenses List", icon: Receipt, href: "/webapp/expenses-app/expenses-list" },
@@ -110,9 +111,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         { name: "Mileage Expense Claim", icon: Folder, href: "/webapp/expenses-app/mileage-expense-claim" },
       ],
     },
-    { 
-      icon: Shield, 
-      label: "Policies", 
+    {
+      icon: Shield,
+      label: "Policies",
       path: "/webapp/policies-app",
       subItems: [
         { name: "Policy Categories", icon: Folder, href: "/webapp/policies-app" },
@@ -131,7 +132,27 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const isSubItemActive = (subItem: SubMenuItem) => {
-    return location.pathname === subItem.href || location.pathname.startsWith(subItem.href);
+    // Check for exact match first
+    if (location.pathname === subItem.href) {
+      return true;
+    }
+
+    // For routes that need path-based matching, be more specific
+    if (subItem.href.endsWith('/my') && location.pathname.includes('/leave-requests/my')) {
+      return true;
+    }
+    if (subItem.href.endsWith('/team') && location.pathname.includes('/leave-requests/team')) {
+      return true;
+    }
+
+    // Check if current path starts with the subItem href, but ensure we don't match overlapping paths
+    if (location.pathname.startsWith(subItem.href)) {
+      // Make sure we're not matching a longer path that just happens to start the same way
+      const remainingPath = location.pathname.substring(subItem.href.length);
+      return remainingPath === '' || remainingPath.startsWith('/');
+    }
+
+    return false;
   };
 
   return (
@@ -172,34 +193,57 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                 onMouseEnter={() => setHoveredItem(item.label)}
                 onMouseLeave={() => setHoveredItem(null)}
               >
-                <Link
-                  to={item.path}
-                  className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
-                    isActive
-                      ? "bg-gray-900 text-white hover:text-white"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
-                      <Icon className="h-5 w-5" />
+                {hasSubItems ? (
+                  <div
+                    className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <span
+                        className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                          isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
                     </div>
-                    <span
-                      className={`font-medium whitespace-nowrap transition-all duration-300 ${
-                        isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
-                      }`}
-                    >
-                      {item.label}
-                    </span>
+                    {isExpanded && (
+                      <ChevronRight
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          isHovered ? "rotate-90" : ""
+                        }`}
+                      />
+                    )}
                   </div>
-                  {hasSubItems && isExpanded && (
-                    <ChevronRight
-                      className={`h-4 w-4 transition-transform duration-200 ${
-                        isHovered ? "rotate-90" : ""
-                      }`}
-                    />
-                  )}
-                </Link>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
+                      isActive
+                        ? "bg-gray-900 text-white hover:text-white"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <span
+                        className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                          isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                    </div>
+                  </Link>
+                )}
 
                 {/* Sub-navigation items */}
                 {hasSubItems && isHovered && isExpanded && (

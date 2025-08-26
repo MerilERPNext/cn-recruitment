@@ -197,53 +197,6 @@ const AttendanceLayout: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Attendance" actionButton={actionButton}>
       <div className="flex flex-col h-full">
-        {/* Modern Tab Navigation for Web */}
-        <div className="bg-gray-100 border border-gray-200 px-8 py-4 flex-shrink-0">
-          {/* Navigation Pills */}
-          <div className="flex gap-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab)}
-                className={`relative text-sm px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  activeTab?.key === tab.key
-                    ? "bg-black text-white shadow-lg"
-                    : " text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg border "
-                }`}
-              >
-                <span className="relative z-10">{tab.label}</span>
-                {activeTab?.key === tab.key && (
-                  <div className="absolute inset-0  rounded-xl opacity-10"></div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* Sub-navigation for Calendar Views */}
-        {activeTab?.key === "calendar-views" && (
-          <div className="flex justify-between items-center bg-white p-2  shadow-sm border border-gray-200 border-t-0">
-            <div className="px-6 py-2 flex items-center gap-3 bg-white w-full">
-              <span className="text-sm text-gray-600 font-medium">
-                View Mode:
-              </span>
-              <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
-                {calendarSubTabs.map((subTab) => (
-                  <button
-                    key={subTab.key}
-                    onClick={() => handleSubTabChange(subTab)}
-                    className={`px-6 py-1 text-sm rounded-lg font-semibold transition-all duration-200 ${
-                      activeSubTab === subTab.key
-                        ? "bg-black text-white shadow-md"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                  >
-                    {subTab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto">
           <LeaveRequestRefreshProvider>

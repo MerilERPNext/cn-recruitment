@@ -190,64 +190,6 @@ const LeaveAppInner: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Leaves & Holidays" actionButton={actionButton}>
       <div className="flex flex-col h-full">
-        <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex-shrink-0">
-          <div className="flex gap-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab.key as TabName)}
-                className={`relative px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  activeTab === tab.key
-                    ? "bg-black text-white shadow-lg"
-                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200"
-                }`}
-              >
-                <span className="relative z-10">{tab.label}</span>
-                {activeTab === tab.key && (
-                  <div className="absolute inset-0  rounded-lg opacity-10"></div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Request Type Card - Outside gray area */}
-        {isLeaveRequestsActive && (
-          <div className="px-6 py-2 bg-white border-b border-gray-200">
-            <div className="flex justify-between items-center bg-white px-4 py-2 rounded-lg  ">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600 font-medium">Request Type:</span>
-                <div className="flex bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
-                  {(Object.keys(subTabRoutes) as SubTabName[]).map((subTab) => (
-                    <button
-                      key={subTab}
-                      onClick={() => handleSubTabChange(subTab)}
-                      className={`px-6 py-1 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                        activeSubTab === subTab
-                          ? "bg-black text-white shadow-md"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                    >
-                      {subTab === "My Requests" ? "My Requests" : "Team Requests"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span>Pending</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Approved</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto relative">
           <Outlet />
