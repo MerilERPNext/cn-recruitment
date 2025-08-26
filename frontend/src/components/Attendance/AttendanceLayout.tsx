@@ -112,6 +112,10 @@ const AttendanceLayout: React.FC = () => {
       </div>
       {/* Page Content (with top padding to avoid overlap) */}
       <div className="">
+        {/*
+          The main outlet needs both providers to function correctly,
+          so they wrap the entire content.
+        */}
         <LeaveRequestRefreshProvider>
           <RequestLeaveModalProvider>
             <Outlet />
@@ -123,7 +127,6 @@ const AttendanceLayout: React.FC = () => {
 
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
-    // This line is removed to show the button on all tabs
     return (
       <div className="relative" ref={actionsDropdownRef}>
         <button
@@ -138,9 +141,9 @@ const AttendanceLayout: React.FC = () => {
           />
         </button>
 
-        {/* Actions Dropdown - Matching Desktop Theme */}
+        {/* Actions Dropdown - Positioned to the top of the button */}
         {showActionsDropdown && (
-          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">
+          <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">
             <div className="px-4 py-2 border-b border-gray-100">
               <h3 className="text-sm font-semibold text-gray-900">
                 Quick Actions
@@ -150,6 +153,7 @@ const AttendanceLayout: React.FC = () => {
               </p>
             </div>
             <div className="py-2">
+              {/* Corrected order: Leave Request first, then Attendance Request */}
               <button
                 onClick={() => {
                   setShowLeaveRequest(true);
@@ -190,7 +194,6 @@ const AttendanceLayout: React.FC = () => {
       </div>
     );
   };
-
   // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
   const actionButton = <ActionsButton />;
 
@@ -199,6 +202,7 @@ const AttendanceLayout: React.FC = () => {
       <div className="flex flex-col h-full">
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto">
+          {/* Outlet content and its components need to be within the providers */}
           <LeaveRequestRefreshProvider>
             <RequestLeaveModalProvider>
               <Outlet />
@@ -207,13 +211,19 @@ const AttendanceLayout: React.FC = () => {
         </div>
 
         {/* Desktop Modals - Fixed positioning outside main content */}
+        {/* The LeaveRequest component is now wrapped by its provider */}
         {showLeaveRequest && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <LeaveRequest
-                onCancel={() => setShowLeaveRequest(false)}
-                onSuccess={() => setShowLeaveRequest(false)}
-              />
+              {/* Ensure LeaveRequest is inside its providers */}
+              <LeaveRequestRefreshProvider>
+                <RequestLeaveModalProvider>
+                  <LeaveRequest
+                    onCancel={() => setShowLeaveRequest(false)}
+                    onSuccess={() => setShowLeaveRequest(false)}
+                  />
+                </RequestLeaveModalProvider>
+              </LeaveRequestRefreshProvider>
             </div>
           </div>
         )}
