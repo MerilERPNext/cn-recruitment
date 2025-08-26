@@ -64,7 +64,6 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                   type: "columns",
                   columns: [
                     {
-                      width: 6,
                       components: [
                         {
                           type: "textfield",
@@ -81,7 +80,6 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       ],
                     },
                     {
-                      width: 6,
                       components: [
                         {
                           type: "textfield",
@@ -256,9 +254,9 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
 
   return (
     <div className="h-full address-form-container">
-      <div className="p-8">
-        {/* Header */}
-        <div className="border-b border-gray-200 pb-6 mb-8">
+      <div className="p-4 md:p-8">
+        {/* Header - Hidden on mobile, visible on desktop */}
+        <div className="hidden md:block border-b border-gray-200 pb-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Address Information
           </h2>
@@ -267,8 +265,8 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
           </p>
         </div>
 
-        {/* Form Container */}
-        <div className="max-w-4xl">
+        {/* Form Container with centered alignment for desktop */}
+        <div className="max-w-full md:max-w-4xl md:mx-auto">
           <Form
             form={addressForm}
             options={{
@@ -281,12 +279,12 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
           />
         </div>
 
-        {/* Submit Button */}
-        <div className="mt-8 flex justify-end">
+        {/* Submit Button - Adjusting for full-width on mobile */}
+        <div className="mt-8 flex justify-center md:flex md:justify-end">
           <button
             onClick={handleSubmit}
             disabled={updateEmployeeMutation.isPending}
-            className="px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="w-full md:w-auto px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {updateEmployeeMutation.isPending ? (
               <>
