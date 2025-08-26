@@ -63,7 +63,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         { name: "Leave Balance", icon: Calculator, href: "/webapp/leave-app/leaves/leave-balance" },
         { name: "My Requests", icon: User, href: "/webapp/leave-app/leaves/leave-requests/my" },
         { name: "Team Requests", icon: Users, href: "/webapp/leave-app/leaves/leave-requests/team" },
-        { name: "Holiday Calendar", icon: Calendar, href: "/webapp/leave-app/leaves/holidays" },
+        { name: "Holidays", icon: Calendar, href: "/webapp/leave-app/leaves/holidays" },
       ],
     },
     {
