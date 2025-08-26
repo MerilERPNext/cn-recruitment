@@ -75,7 +75,9 @@ const EmployeeAttendance = () => {
     attendances
       .filter(
         (record) =>
-          record.doctype === "Attendance" || record.doctype === "Holiday"
+          record.doctype === "Attendance" ||
+          record.doctype === "Holiday" ||
+          record.doctype === "Holidays"
       )
       .forEach((record) => {
         const dateKey = formatDateKey(new Date(record.start));
@@ -219,6 +221,7 @@ const EmployeeAttendance = () => {
                 const attendance = getAttendanceStatus(date as Date);
                 if (
                   attendance?.status !== "default" &&
+                  attendance?.status !== "week-off" &&
                   attendance?.status !== "holiday"
                 ) {
                   navigate(
@@ -425,7 +428,14 @@ const EmployeeAttendance = () => {
               doctype="Attendance Request"
               isSearch={false}
               ItemComponent={(props: { item: AttendanceRequest }) => {
-                return <EmpAttendanceRequestCard data={props?.item} />;
+                return (
+                  <EmpAttendanceRequestCard
+                    data={props?.item}
+                    // onClick={() => {
+                    //   setShowReqAttendanceCorrection(true);
+                    // }}
+                  />
+                );
               }}
               SkeletonComponent={CardSkeleton}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -435,7 +445,13 @@ const EmployeeAttendance = () => {
               infiniteScroll={true}
               isFilter={false}
               pageSize={5}
-              defaultFields={["reason", "modified", "creation", "docstatus"]}
+              defaultFields={[
+                "custom_status",
+                "reason",
+                "modified",
+                "creation",
+                "docstatus",
+              ]}
             />
           </div>
         </div>

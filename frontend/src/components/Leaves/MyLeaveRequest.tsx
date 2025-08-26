@@ -171,6 +171,8 @@ const MyLeaveRequest: React.FC = () => {
         <RequestDetailsModal
           request={selectedRequest}
           onClose={handleCloseModal}
+          isMyLeaveRequest={true}
+          onRevoke={() => console.log("Revoke request triggered")}
         />
       )}
     </div>

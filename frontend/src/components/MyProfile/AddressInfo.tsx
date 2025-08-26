@@ -2,9 +2,8 @@
 import React, { useCallback, useMemo, useRef } from "react";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import { Form } from "@tsed/react-formio";
-import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
-import toast from "react-hot-toast";
 import { Employee } from "../../types/employee";
+import { useUpdateCurrentEmployeeProfile } from "../../hooks/useEmployee";
 
 export interface Address {
   name: string;
@@ -35,9 +34,8 @@ export interface AddressInfoProps {
 export const AddressInfo: React.FC<AddressInfoProps> = ({
   userAddress,
   user,
-  refetch,
 }) => {
-  const updateEmployeeMutation = useUpdateFrappeDocument();
+  const { updateEmployeeMutation } = useUpdateCurrentEmployeeProfile();
   const formAddressInstance = useRef<any>(null);
 
   const addressForm = useMemo(() => {
@@ -50,7 +48,7 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
           components: [
             {
               type: "fieldset",
-              key: "currentAddress",
+              key: "current_address",
               legend: "Current Address",
               customClass: "py-2",
               components: [
@@ -61,6 +59,7 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                   defaultValue: userAddress?.current_address?.address_line1,
                   placeholder: "Enter your full address",
                   input: true,
+                  validate: { required: true },
                 },
                 {
                   type: "columns",
@@ -70,11 +69,15 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       components: [
                         {
                           type: "textfield",
-                          key: "currentPinCode",
+                          key: "current_pin_code",
                           label: "Pin Code",
                           placeholder: "e.g. 110001",
                           defaultValue: userAddress?.current_address?.pincode,
                           input: true,
+                          validate: {
+                            required: true,
+                            pattern: "^\\+?[0-9\\- ]+$",
+                          },
                         },
                       ],
                     },
@@ -83,11 +86,12 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       components: [
                         {
                           type: "textfield",
-                          key: "currentCity",
+                          key: "current_city",
                           label: "City",
                           placeholder: "e.g. New Delhi",
                           defaultValue: userAddress?.current_address?.city,
                           input: true,
+                          validate: { required: true },
                         },
                       ],
                     },
@@ -100,11 +104,12 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       components: [
                         {
                           type: "textfield",
-                          key: "currentState",
+                          key: "current_state",
                           label: "State",
                           placeholder: "e.g. Delhi",
                           defaultValue: userAddress?.current_address?.state,
                           input: true,
+                          validate: { required: true },
                         },
                       ],
                     },
@@ -112,11 +117,12 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       components: [
                         {
                           type: "textfield",
-                          key: "currentCountry",
+                          key: "current_country",
                           label: "Country",
                           placeholder: "e.g. India",
                           defaultValue: userAddress?.current_address?.country,
                           input: true,
+                          validate: { required: true },
                         },
                       ],
                     },
@@ -126,8 +132,9 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
             },
             {
               type: "checkbox",
-              key: "sameAsCurrent",
+              key: "custom_same_as_current",
               label: "Same as current",
+              defaultValue: user?.custom_same_as_current,
               input: true,
             },
             {
@@ -144,7 +151,8 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                   input: true,
                   defaultValue: userAddress?.permanent_address?.address_line1,
                   calculateValue:
-                    "value = data.sameAsCurrent ? data.current_address : value",
+                    "value = data.custom_same_as_current ? data.current_address : value",
+                  validate: { required: true },
                 },
                 {
                   type: "columns",
@@ -153,13 +161,17 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       components: [
                         {
                           type: "textfield",
-                          key: "permanentPinCode",
+                          key: "permanent_pin_code",
                           label: "Pin Code",
                           placeholder: "e.g. 110001",
                           input: true,
                           defaultValue: userAddress?.permanent_address?.pincode,
+                          validate: {
+                            required: true,
+                            pattern: "^\\+?[0-9\\- ]+$",
+                          },
                           calculateValue:
-                            "value = data.sameAsCurrent ? data.currentPinCode : value",
+                            "value = data.custom_same_as_current ? data.current_pin_code : value",
                         },
                       ],
                     },
@@ -167,13 +179,14 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       components: [
                         {
                           type: "textfield",
-                          key: "permanentCity",
+                          key: "permanent_city",
                           label: "City",
                           placeholder: "e.g. New Delhi",
                           input: true,
                           defaultValue: userAddress?.permanent_address?.city,
+                          validate: { required: true },
                           calculateValue:
-                            "value = data.sameAsCurrent ? data.currentCity : value",
+                            "value = data.custom_same_as_current ? data.current_city : value",
                         },
                       ],
                     },
@@ -186,13 +199,14 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       components: [
                         {
                           type: "textfield",
-                          key: "permanentState",
+                          key: "permanent_state",
                           label: "State",
                           placeholder: "e.g. Delhi",
                           input: true,
+                          validate: { required: true },
                           defaultValue: userAddress?.permanent_address?.state,
                           calculateValue:
-                            "value = data.sameAsCurrent ? data.currentState : value",
+                            "value = data.custom_same_as_current ? data.current_state : value",
                         },
                       ],
                     },
@@ -200,14 +214,15 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       components: [
                         {
                           type: "textfield",
-                          key: "permanentCountry",
+                          key: "permanent_country",
                           label: "Country",
                           placeholder: "e.g. India",
                           input: true,
+                          validate: { required: true },
                           defaultValue: userAddress?.permanent_address?.country,
                           customClass: "pb-2",
                           calculateValue:
-                            "value = data.sameAsCurrent ? data.currentCountry : value",
+                            "value = data.custom_same_as_current ? data.current_country : value",
                         },
                       ],
                     },
@@ -219,23 +234,26 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
         },
       ],
     };
-  }, [userAddress]);
+  }, [user]);
 
   const handleSubmit = useCallback(async () => {
     try {
       const basicSubmission = await formAddressInstance.current.submit();
-      await updateEmployeeMutation.mutateAsync({
-        doctype: "Employee",
-        name: user?.name ?? "",
-        data: basicSubmission.data,
-      });
-      refetch?.();
-      toast.success("Employee details updated successfully!");
+      const formData = basicSubmission.data as Record<string, any>;
+      const jsonData = Object.entries(formData).map(([field, value]) => ({
+        field,
+        new: value,
+      }));
+
+      const payload = {
+        employee_code: user?.employee ?? "",
+        json_data: jsonData,
+      };
+      await updateEmployeeMutation.mutateAsync(payload);
     } catch (error) {
       console.error("Form submission error:", error);
-      toast.error("Failed to update employee details. Please try again.");
     }
-  }, []);
+  }, [user]);
 
   return (
     <div className="h-full address-form-container">

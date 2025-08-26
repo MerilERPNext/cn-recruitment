@@ -77,9 +77,15 @@ const EmployeeAttendanceDetails = () => {
 
       <div className="p-3 border-t bg-white fixed bottom-0 right-0 w-full z-50 ">
         <button
-          disabled={status !== "absent" && status !== "half-day"}
+          disabled={
+            status !== "absent" &&
+            status !== "half-day" &&
+            status !== "half day"
+          }
           className={` w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${
-            status !== "absent" && status !== "half-day"
+            status !== "absent" &&
+            status !== "half-day" &&
+            status !== "half day"
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-black hover:bg-gray-800"
           } text-white`}

@@ -1,9 +1,13 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { isBefore, startOfToday } from "date-fns";
 import { FaSortAmountDownAlt, FaSortAmountUp } from "react-icons/fa";
 import { HolidayCard } from "./Holidays";
 import { Holiday } from "../../types/leaves";
+import { useMyLeaveRequests } from "../../hooks/useLeaves";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 
 type HolidayType = "regular" | "optional";
 
@@ -17,6 +21,18 @@ const HolidaysFull: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { setRefetch } = useLeaveRequestRefresh();
+
+  const { data: userId } = useLoggedInUser();
+  const { data: currentEmployee } = useEmployeeByUserId(userId);
+  const { data: leaveRequests, refetch } = useMyLeaveRequests(
+    currentEmployee?.name
+  );
+
+  useEffect(() => {
+    setRefetch(refetch);
+    return () => setRefetch(() => {});
+  }, [refetch, setRefetch]);
 
   const locationState = location.state as LocationState;
   const holidayType: HolidayType = locationState?.type || "regular";
@@ -36,6 +52,18 @@ const HolidaysFull: React.FC = () => {
   const toggleSortOrder = useCallback(() => {
     setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
   }, []);
+
+  const getHolidayStatus = (holidayDate: string) => {
+    if (!leaveRequests) return null;
+    const request = leaveRequests.find(
+      (req) => req.from_date === holidayDate && req.to_date === holidayDate
+    );
+    if (!request) return null;
+    if (request.status === "Approved") return "Taken";
+    if (request.status === "Rejected") return "Rejected";
+    if (request.status === "Open") return "Applied";
+    return null;
+  };
 
   return (
     <div className="flex flex-col bg-white">
@@ -72,7 +100,9 @@ const HolidaysFull: React.FC = () => {
 
           <button
             type="button"
-            aria-label={`Sort by ${sortOrder === "asc" ? "descending" : "ascending"} date`}
+            aria-label={`Sort by ${
+              sortOrder === "asc" ? "descending" : "ascending"
+            } date`}
             onClick={toggleSortOrder}
             className="p-2 text-gray-600 hover:text-gray-800 transition-colors flex items-center"
           >
@@ -105,6 +135,11 @@ const HolidaysFull: React.FC = () => {
                     holidayType === "optional" &&
                     isBefore(dateObj, startOfToday())
                   }
+                  statusLabel={
+                    holidayType === "optional"
+                      ? getHolidayStatus(h.date)
+                      : undefined
+                  }
                 />
               );
             })}
@@ -116,6 +151,3 @@ const HolidaysFull: React.FC = () => {
 };
 
 export default HolidaysFull;
-
-
-

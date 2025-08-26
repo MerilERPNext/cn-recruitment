@@ -3,11 +3,10 @@ import React, { useCallback, useMemo, useRef } from "react";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import { Form } from "@tsed/react-formio";
 import { PersonalInfoProps } from "./MyProfile";
-import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
-import { toast } from "react-hot-toast";
+import { useUpdateCurrentEmployeeProfile } from "../../hooks/useEmployee";
 
-export const ContactInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
-  const updateEmployeeMutation = useUpdateFrappeDocument();
+export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
+  const { updateEmployeeMutation } = useUpdateCurrentEmployeeProfile();
   const formContactInfoInstance = useRef<any>(null);
   const contactInfoForm = useMemo(() => {
     return {
@@ -80,18 +79,21 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user, refetch }) => {
   const handleSubmit = useCallback(async () => {
     try {
       const basicSubmission = await formContactInfoInstance.current.submit();
-      await updateEmployeeMutation.mutateAsync({
-        doctype: "Employee",
-        name: user?.name ?? "",
-        data: basicSubmission.data,
-      });
-      refetch?.();
-      toast.success("Employee details updated successfully!");
+      const formData = basicSubmission.data as Record<string, any>;
+      const jsonData = Object.entries(formData).map(([field, value]) => ({
+        field,
+        new: value,
+      }));
+
+      const payload = {
+        employee_code: user?.employee ?? "",
+        json_data: jsonData,
+      };
+      await updateEmployeeMutation.mutateAsync(payload);
     } catch (error) {
       console.error("Form submission error:", error);
-      toast.error("Failed to update employee details. Please try again.");
     }
-  }, []);
+  }, [user]);
 
   return (
     <div className="h-full">

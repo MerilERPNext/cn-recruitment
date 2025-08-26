@@ -18,12 +18,16 @@ type Props = {
   request: RequestDetails;
   onClose: () => void;
   actions?: React.ReactNode;
+  isMyLeaveRequest?: boolean;
+  onRevoke?: () => void;
 };
 
 const RequestDetailsModal: React.FC<Props> = ({
   request,
   onClose,
   actions,
+  isMyLeaveRequest = false,
+  onRevoke,
 }) => {
   const { isDesktop } = useScreenSize();
 
@@ -105,7 +109,18 @@ const RequestDetailsModal: React.FC<Props> = ({
         </div>
       )}
 
-      {actions && <div className="pt-4">{actions}</div>}
+      <div className="pt-4">
+            {actions}
+            {request.status === "Open" && isMyLeaveRequest && (
+              <button
+                onClick={onRevoke}
+                className="mt-2 w-full bg-black text-white font-medium py-2 px-4 rounded-lg"
+                disabled={!onRevoke}
+              >
+                Revoke
+              </button>
+            )}
+          </div>
     </div>
   );
 

@@ -66,6 +66,7 @@ import ViewPolicy from "./components/Policies/ViewPolicy";
 import ViewSalarySlipModal from "./components/SalarySlip/SalarySlipPDF";
 import EmployeeAttendanceDetails from "./components/Attendance/Employee/EmployeeAttendanceDetails";
 import HRPayroll from "./components/SalarySlip/HR-Payroll";
+import AttendancePolicies from "./components/Attendance/AttendancePolicies/AttendancePolicies";
 
 export interface AppRoute {
   index?: boolean;
@@ -212,6 +213,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/attendance/emp-attendance/all",
     element: <AllEmpAttendance />,
+  },
+  {
+    path: "/webapp/attendance/attendance-policies",
+    element: <AttendancePolicies />,
   },
   //Leaves routes
   {

@@ -88,12 +88,19 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const leaveTypeOptions = useMemo(() => {
     if (!leaveAllocations?.data) return [];
-    const uniqueTypes = Array.from(
-      new Set(leaveAllocations.data.map((entry) => entry.leave_type))
-    );
-    return uniqueTypes.map((type) => ({ label: type, value: type }));
-  }, [leaveAllocations]);
 
+    const allTypes = Array.from(
+      new Set(leaveAllocations.data.map((entry) => entry.leave_type as string))
+    );
+
+    return allTypes
+      .filter((type) => {
+        const isOptional = /optional/i.test(type);
+        const isDefault = type === defaults?.leaveType;
+        return !isOptional || isDefault;
+      })
+      .map((type) => ({ label: type, value: type }));
+  }, [leaveAllocations, defaults?.leaveType]);
   const calculateLeaveDays = useCallback((data: FormSubmissionData) => {
     const { fromDate, toDate, halfDay } = data;
     if (!fromDate || !toDate) return setLeaveDays(null);
@@ -141,7 +148,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           half_day_date: submission.data.halfDay
             ? submission.data.fromDate?.split("T")[0]
             : undefined,
-          half_day_session: submission.data.halfDay
+          custom_half_day_type: submission.data.halfDay
             ? submission.data.halfDayOption
             : undefined,
           description: submission.data.description,
@@ -150,7 +157,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       });
     } catch (error) {
       console.error("Form submit error:", error);
-      toast.error("Failed to submit leave request. Please try again.");
     }
   }, [currentEmployee, createLeaveMutation]);
 

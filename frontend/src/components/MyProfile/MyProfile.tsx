@@ -43,9 +43,8 @@ const MyProfile: React.FC = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   const { data: userId } = useLoggedInUser();
-  const { data: user, refetch } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: userAddress, refetch: refetchAddress } =
-    useCurrentEmployeeAddress(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: userAddress } = useCurrentEmployeeAddress(userId || "");
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -53,15 +52,9 @@ const MyProfile: React.FC = () => {
 
   const tabContent: Record<string, React.ReactNode> = useMemo(
     () => ({
-      "personal-info": <PersonalInfo user={user} refetch={refetch} />,
-      "contact-info": <ContactInfo user={user} refetch={refetch} />,
-      address: (
-        <AddressInfo
-          userAddress={userAddress?.data}
-          user={user}
-          refetch={refetchAddress}
-        />
-      ),
+      "personal-info": <PersonalInfo user={user} />,
+      "contact-info": <ContactInfo user={user} />,
+      address: <AddressInfo userAddress={userAddress?.data} user={user} />,
       "company-info": <CompanyInfo user={user} />,
       "salary-info": <SalaryInfo user={user} />,
       // "hr-letters": <HRLetters />,

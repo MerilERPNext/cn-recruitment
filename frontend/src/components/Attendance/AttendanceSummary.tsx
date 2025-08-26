@@ -23,14 +23,17 @@ import { useState } from "react";
 
 import {
   useAllAttendance,
+  useGetPolicyForDate,
   useGetQuickAttendanceSummary,
 } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
+import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import SummaryCard from "./SummaryCard";
 
 const AttendanceSummary = () => {
+  const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -44,8 +47,13 @@ const AttendanceSummary = () => {
     format(startOfMonth(currentDate), "yyyy-MM-dd"),
     format(endOfMonth(currentDate), "yyyy-MM-dd")
   );
-
-  const goToPreviousMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
+  const { data: attendancePolicy } = useGetPolicyForDate({
+    employee: currentEmployee?.employee,
+    as_of: format(new Date(), "yyyy-MM-dd"),
+  });
+  const goToPreviousMonth = () => {
+    setCurrentDate((prev) => subMonths(prev, 1));
+  };
   const goToNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
 
   const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
@@ -170,7 +178,9 @@ const AttendanceSummary = () => {
                   <h1 className="text-xl font-bold text-gray-900">
                     {format(currentDate, "MMMM yyyy")}
                   </h1>
-                  <p className="text-sm text-gray-500 mt-1">Attendance Overview</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Attendance Overview
+                  </p>
                 </div>
                 <button
                   className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
@@ -242,13 +252,21 @@ const AttendanceSummary = () => {
                           {detail}
                         </p>
                       ))}
-                      {setting.title === "Attendance Policy" && (
-                        <div>
-                          <button className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
-                            GENERAL SHIFT POLICY
-                          </button>
-                        </div>
-                      )}
+                      {setting.title === "Attendance Policy" &&
+                        attendancePolicy && (
+                          <div>
+                            <button
+                              onClick={() =>
+                                navigate(
+                                  `/webapp/attendance/attendance-policies?policy=${attendancePolicy}`
+                                )
+                              }
+                              className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                              {attendancePolicy}
+                            </button>
+                          </div>
+                        )}
                     </div>
                   </div>
                 ))}
@@ -272,7 +290,9 @@ const AttendanceSummary = () => {
                   <h1 className="text-xl font-bold text-gray-900">
                     {format(currentDate, "MMMM yyyy")}
                   </h1>
-                  <p className="text-sm text-gray-500 mt-1">Attendance Overview</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Attendance Overview
+                  </p>
                 </div>
                 <button
                   className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200"
@@ -324,9 +344,26 @@ const AttendanceSummary = () => {
 
               {/* Settings */}
               <div className="bg-white border-gray-200 p-4">
-                <div className={isDesktop ? "grid grid-cols-2 gap-4" : "space-y-4"}>
-                  {settingsData.map((setting, index) => (
-                    <div
+                <div
+                  className={isDesktop ? "grid grid-cols-2 gap-4" : "space-y-4"}
+                >
+                  {settingsData.map((setting, index) => {
+                      if(setting.title ==="Attendance Policy" && attendancePolicy){
+                        return<div>
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/webapp/attendance/attendance-policies?policy=${attendancePolicy}`
+                            )
+                          }
+                          className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          {attendancePolicy}
+                        </button>
+                      </div>
+                      }
+
+                  return<div
                       key={index}
                       className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
                     >
@@ -338,20 +375,17 @@ const AttendanceSummary = () => {
                           {setting.title}
                         </h3>
                         {setting.details.map((detail, detailIndex) => (
-                          <p key={detailIndex} className="text-gray-600 text-sm">
+                          <p
+                            key={detailIndex}
+                            className="text-gray-600 text-sm"
+                          >
                             {detail}
                           </p>
                         ))}
-                        {setting.title === "Attendance Policy" && (
-                          <div>
-                            <button className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
-                              GENERAL SHIFT POLICY
-                            </button>
-                          </div>
-                        )}
+  
                       </div>
                     </div>
-                  ))}
+})}
                 </div>
               </div>
             </div>

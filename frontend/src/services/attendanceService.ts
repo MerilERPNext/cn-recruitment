@@ -9,6 +9,7 @@ import type {
   EmployeeCheckInLog,
   EmployeeShift,
   EmployeeShiftSummary,
+  PolicyQuestion,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
 
@@ -197,7 +198,8 @@ export const attendanceService = {
     }
   },
   getAllEventsAndAttendance: async (
-    filters: AllEventsAndAttendanceT
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    filters: any
   ): Promise<AttendanceRecord[]> => {
     try {
       console.log("📅 Calling get_events with filters:", filters);
@@ -257,6 +259,36 @@ export const attendanceService = {
         return [];
       }
 
+      throw error;
+    }
+  },
+
+  getPolicyForDate: async (
+    filters: AllEventsAndAttendanceT
+  ): Promise<string> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        `cn_leave_shift_managment.api._get_policy_for_date`,
+        filters
+      );
+      return response as string;
+    } catch (error) {
+      console.error("📡 Error while setting device id:", error);
+      throw error;
+    }
+  },
+  getAttendancePolicies: async (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    filters: any
+  ): Promise<PolicyQuestion> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.cn_leave_shift_managment.doctype.policy_question.policy_question.get_policy_questions",
+        filters
+      );
+      return response as PolicyQuestion;
+    } catch (error) {
+      console.error("📡 Error while setting device id:", error);
       throw error;
     }
   },

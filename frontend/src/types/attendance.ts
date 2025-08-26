@@ -129,3 +129,34 @@ export type AttendanceRecord = {
   out_time?: string;
   shift?: string;
 };
+
+export type PolicyQuestion = {
+  name: string;
+  owner: string;
+  creation: string; // ISO date string
+  modified: string; // ISO date string
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  policy_question: string;
+  attendance_policy: string;
+  doctype: "Policy Question";
+  questions: Question[];
+};
+
+export type Question = {
+  name: string;
+  owner: string;
+  creation: string; // ISO date string
+  modified: string; // ISO date string
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  question_name: string;
+  status: string;
+  description: string;
+  parent: string;
+  parentfield: "questions";
+  parenttype: "Policy Question";
+  doctype: "Question";
+};

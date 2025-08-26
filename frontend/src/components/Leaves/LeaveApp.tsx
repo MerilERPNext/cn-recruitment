@@ -3,7 +3,6 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import RequestLeave from "./RequestLeave";
 import RequestLeaveModal from "./RequestLeaveModal";
 import HeaderBar from "../HeaderBar";
-import { Toaster } from "react-hot-toast";
 import { LeaveRequestRefreshProvider } from "./LeaveRequestRefreshContext";
 import {
   useRequestLeaveModal,
@@ -175,8 +174,6 @@ const LeaveAppInner: React.FC = () => {
       >
         <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
       </FormDialog>
-
-      <Toaster />
     </div>
   );
 
@@ -262,7 +259,6 @@ const LeaveAppInner: React.FC = () => {
           onSuccess={closeModal}
         />
       </div>
-      <Toaster />
     </DesktopLayoutWrapper>
   );
 
