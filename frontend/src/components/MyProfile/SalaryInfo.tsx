@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { PersonalInfoProps } from "./MyProfile";
 import { DollarSign, CreditCard, Building } from "lucide-react";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const InfoCard: React.FC<{
   icon: React.ReactNode;
@@ -30,9 +31,7 @@ const InfoCard: React.FC<{
 const MobileInfoRow: React.FC<{ label: string; value: string | number | undefined }> = ({ label, value }) => (
   <div className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
     <span className="text-sm font-medium text-gray-600">{label}</span>
-    <span className="text-sm text-gray-800 font-semi">
-      {value || "N/A"}
-    </span>
+    <span className="text-sm text-gray-800">{value || "N/A"}</span>
   </div>
 );
 
@@ -43,30 +42,21 @@ const MobileSectionHeader: React.FC<{ title: string }> = ({ title }) => (
 );
 
 export const SalaryInfo: React.FC<PersonalInfoProps> = ({ user }) => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
+  const { isDesktop } = useScreenSize(); // ✅ useScreenSize hook
+  const isMobile = !isDesktop;
 
   if (isMobile) {
     return (
       <div className="p-4 space-y-4">
         <MobileSectionHeader title="Salary Information" />
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <MobileInfoRow 
-            label="Total CTC" 
-            value={user?.ctc 
-              ? `${user?.salary_currency || ''} ${user.ctc.toLocaleString()}`
-              : undefined
-            } 
+          <MobileInfoRow
+            label="Total CTC"
+            value={
+              user?.ctc
+                ? `${user?.salary_currency || ""} ${user.ctc.toLocaleString()}`
+                : undefined
+            }
           />
           <MobileInfoRow label="PF Account Number" value={user?.provident_fund_account} />
           <MobileInfoRow label="ESIC Number" value="1234567890" />
@@ -103,21 +93,12 @@ export const SalaryInfo: React.FC<PersonalInfoProps> = ({ user }) => {
             {
               label: "Total CTC",
               value: user?.ctc
-                ? `${user?.salary_currency || ''} ${user.ctc.toLocaleString()}`
-                : undefined
+                ? `${user?.salary_currency || ""} ${user.ctc.toLocaleString()}`
+                : undefined,
             },
-            {
-              label: "PF Account Number",
-              value: user?.provident_fund_account
-            },
-            {
-              label: "ESIC Number",
-              value: "1234567890"
-            },
-            {
-              label: "PAN Number",
-              value: user?.pan_number
-            }
+            { label: "PF Account Number", value: user?.provident_fund_account },
+            { label: "ESIC Number", value: "1234567890" }, // ✅ keep hardcoded
+            { label: "PAN Number", value: user?.pan_number },
           ]}
         />
 
@@ -126,22 +107,10 @@ export const SalaryInfo: React.FC<PersonalInfoProps> = ({ user }) => {
           icon={<Building className="w-5 h-5 text-blue-600" />}
           title="Bank Details"
           items={[
-            {
-              label: "Bank Name",
-              value: user?.bank_name
-            },
-            {
-              label: "Account Number",
-              value: user?.bank_ac_no
-            },
-            {
-              label: "IFSC Code",
-              value: user?.ifsc_code
-            },
-            {
-              label: "Account Type",
-              value: "Savings" 
-            }
+            { label: "Bank Name", value: user?.bank_name },
+            { label: "Account Number", value: user?.bank_ac_no },
+            { label: "IFSC Code", value: user?.ifsc_code },
+            { label: "Account Type", value: "Savings" },
           ]}
         />
       </div>
