@@ -103,24 +103,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     {
       icon: Receipt,
       label: "Expenses",
-      path: "/webapp/expenses-app",
-      subItems: [
-        { name: "Expenses List", icon: Receipt, href: "/webapp/expenses-app/expenses-list" },
-        { name: "General Expense Claim", icon: PlusCircle, href: "/webapp/expenses-app/general-expense-claim" },
-        { name: "Daily Allowance Claim", icon: Calendar, href: "/webapp/expenses-app/daily-allowance-claim" },
-        { name: "Mileage Expense Claim", icon: Folder, href: "/webapp/expenses-app/mileage-expense-claim" },
-      ],
+      path: "/webapp/expenses-app/expenses-list",
     },
     {
       icon: Shield,
       label: "Policies",
       path: "/webapp/policies-app",
-      subItems: [
-        { name: "Policy Categories", icon: Folder, href: "/webapp/policies-app" },
-        { name: "Policies List", icon: BookOpen, href: "/webapp/policies-app/policies-list" },
-        { name: "Safety Guidelines", icon: Shield, href: "/webapp/policies-app" },
-        { name: "Code of Conduct", icon: AlertCircle, href: "/webapp/policies-app" },
-      ],
     },
   ];
 
