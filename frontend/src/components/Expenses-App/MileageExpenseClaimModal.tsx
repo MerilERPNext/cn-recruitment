@@ -145,7 +145,9 @@ const notesSchema = {
   ],
 };
 
-const MileageExpenseClaimModal: React.FC<MileageExpenseClaimModalProps> = ({ onClose }) => {
+const MileageExpenseClaimModal: React.FC<
+  MileageExpenseClaimModalProps
+> = () => {
   const CURRENCY_SYMBOL = "₹";
   const basicDetailsRef = useRef<HTMLDivElement>(null);
   const basicDetailsFormInstanceRef = useRef<any>(null);
