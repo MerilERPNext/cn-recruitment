@@ -21,7 +21,6 @@ import { useCreateJobOpeningFromRequisition } from "../hooks/useJobOpening";
 import type { StatusDisplay } from "../types/requisition";
 import DOMPurify from "dompurify";
 import { toast } from "react-hot-toast";
-import Modal from "./shared/Modal";
 
 const RequisitionDetails: React.FC = () => {
   const navigate = useNavigate();
