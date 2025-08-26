@@ -13,6 +13,7 @@ import {
 } from "date-fns";
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import { getStatusGradient } from "../../../utils/helperUtils";
+import HeaderBar from "../../HeaderBar";
 
 const formatTimeSafe = (timeStr: string | undefined) => {
   if (!timeStr) return "--:--";
@@ -43,7 +44,6 @@ const AllEmpAttendance = () => {
     data: allEventsAndAttendance,
     isError,
     error,
-    isLoading
   } = useGetAllEventsAndAttendance({
     start: start,
     end: end,
@@ -56,12 +56,15 @@ const AllEmpAttendance = () => {
         <HeaderBar
           title="All Employee Attendance"
           onBack={() => navigate(-1)}
-          rightElement={
-            <button onClick={() => setShowSelectByMonth(true)}>
-              <CalendarDays />
-            </button>
+          rightSlot={
+            (
+              <button onClick={() => setShowSelectByMonth(true)}>
+                <CalendarDays />
+              </button>
+            ) as React.ReactNode
           }
         />
+
         <div className="mx-auto bg-gray-50 h-screen mt-14 px-4 flex items-center justify-center">
           <div className="text-center">
             <div className="text-red-500 text-lg font-semibold mb-2">
