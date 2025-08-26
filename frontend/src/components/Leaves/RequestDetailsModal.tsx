@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import HeaderBar from "../HeaderBar";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Modal from "../shared/Modal";
-import FormDialog from "../shared/FormDialog";
 
 interface RequestDetails {
   leave_type: string;
