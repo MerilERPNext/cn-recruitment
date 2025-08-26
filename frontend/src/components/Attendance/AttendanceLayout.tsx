@@ -92,11 +92,6 @@ const AttendanceLayout: React.FC = () => {
     }
   };
 
-  const handleSubTabChange = (subTab: (typeof calendarSubTabs)[number]) => {
-    setActiveSubTab(subTab.key);
-    navigate(`/webapp/attendance/${subTab.key}`);
-  };
-
   const mobileLayout = (
     <div className="min-h-screen bg-white">
       {/* Fixed Header */}
