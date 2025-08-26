@@ -19,15 +19,10 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
   const absentPercent = total > 0 ? (absent / total) * 100 : 0;
   const leavesPercent = total > 0 ? (leaves / total) * 100 : 0;
 
-  // Calculate cumulative percentages for the donut chart
-  const presentEnd = presentPercent;
-  const absentEnd = presentEnd + absentPercent;
-  const leavesEnd = absentEnd + leavesPercent;
 
   // Convert percentages to angles (360 degrees = 100%)
   const presentAngle = (presentPercent / 100) * 360;
   const absentAngle = (absentPercent / 100) * 360;
-  const leavesAngle = (leavesPercent / 100) * 360;
 
   // SVG path for donut segments
   const createArcPath = (startAngle: number, endAngle: number, outerRadius: number, innerRadius: number) => {
@@ -63,7 +58,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
     <div className={`bg-white p-6 rounded-lg border border-gray-200 ${className}`}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Attendance Overview</h3>
+          <h3 className="text-lg font-semibold text-gray-900">📊 Attendance Overview</h3>
           <p className="text-sm text-gray-600">Monthly attendance summary</p>
         </div>
         <div className="text-right">
@@ -186,7 +181,6 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
           {weeklyData.map((day) => {
             const dayTotal = day.present + day.absent + day.leave;
             const maxHeight = 60;
-            const barHeight = dayTotal > 0 ? maxHeight : 8;
             
             return (
               <div key={day.day} className="flex-1 flex flex-col items-center">

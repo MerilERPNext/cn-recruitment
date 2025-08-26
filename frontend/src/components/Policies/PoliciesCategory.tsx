@@ -1,8 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { Shield } from "lucide-react";
 import { CategoryCardSkeleton } from "./PolicySkeletons";
-import { useFrappeDocuments } from "../../hooks/useFrappeQuery";
 import { usePolicyCountsByCategory } from "../../hooks/usePolicy";
 
 type CategoryCardProps = {
@@ -62,10 +60,10 @@ const PoliciesCategory: React.FC = () => {
 
   return (
     <div className="h-full w-full">
-      {categories?.data?.length === 0 ? (
+      {categories.length === 0 ? (
         <p className="text-gray-500 text-center mt-4">No categories found.</p>
       ) : (
-        categories?.data?.map((item: CategoryDoc) => (
+        categories.map((item: CategoryDoc) => (
           <CategoryCard
             key={item.name}
             name={item.name}

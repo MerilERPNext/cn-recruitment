@@ -367,10 +367,10 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
             </button>
             <button
               onClick={handleSubmit}
-              disabled={createLeaveMutation.isLoading}
+              disabled={createLeaveMutation.isPending}
               className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
             >
-              {createLeaveMutation.isLoading
+              {createLeaveMutation.isPending
                 ? "Submitting..."
                 : "Submit Request"}
             </button>

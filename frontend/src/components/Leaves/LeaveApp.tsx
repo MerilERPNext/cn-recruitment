@@ -172,7 +172,7 @@ const LeaveAppInner: React.FC = () => {
         title="Request Leave"
         size="lg"
       >
-        <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
+        <RequestLeave onSuccess={closeModal} />
       </FormDialog>
     </div>
   );

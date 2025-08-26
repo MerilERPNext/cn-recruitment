@@ -8,7 +8,6 @@ import RequestDetailsModal from "./RequestDetailsModal";
 import type { PreListComponentProps } from "../ListView";
 import { LeaveBulkActionBar } from "./LeaveBulkActionBar";
 import HeaderBar from "../HeaderBar";
-import LayoutModal from "../shared/LayoutModal";
 
 const TeamLeaveRequest: React.FC = () => {
   const [selectedRequest, setSelectedRequest] =

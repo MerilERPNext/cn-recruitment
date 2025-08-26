@@ -26,13 +26,9 @@ interface ExpenseItem {
   fileObject?: File;
 }
 
-interface GeneralExpenseClaimModalProps {
-  onClose?: () => void;
-}
+interface GeneralExpenseClaimModalProps {}
 
-const GeneralExpenseClaimModal: React.FC<GeneralExpenseClaimModalProps> = ({
-  onClose,
-}) => {
+const GeneralExpenseClaimModal: React.FC<GeneralExpenseClaimModalProps> = () => {
   const CURRENCY_SYMBOL = "₹";
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);

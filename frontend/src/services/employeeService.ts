@@ -280,7 +280,7 @@ export class EmployeeService {
           resultExists: !!result,
           resultType: typeof result,
           hasDataProperty: result && 'data' in result,
-          dataIsArray: result && 'data' in result && Array.isArray(result.data)
+          dataIsArray: result && typeof result === 'object' && 'data' in result && Array.isArray((result as { data?: unknown }).data)
         });
         return null;
       }
