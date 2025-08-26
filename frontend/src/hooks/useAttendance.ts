@@ -176,6 +176,17 @@ export const useGetPolicyForDate = (
     ...defaultQueryOptions,
   });
 };
+export const useGetPolicyForDate = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  filters: any
+): UseQueryResult<string, Error> => {
+  return useQuery<string, Error>({
+    queryKey: ["policy-for-date", filters],
+    queryFn: () => attendanceService.getPolicyForDate(filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
 
 export const useAttendanceById = (
   id: string | null

@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Timer,
   Clock8,
+  ExternalLink,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -361,67 +362,68 @@ const AttendanceSummary = () => {
                   ))}
                 </div>
               </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  Attendance Method
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Biometric verification required
+                </p>
+                <p className="text-gray-600 text-sm">GEOFENCING FOR CHECK-IN</p>
+              </div>
+            </div>
 
-              {/* Settings */}
-              <div className="bg-white border-gray-200 p-4">
-                <div
-                  className={isDesktop ? "grid grid-cols-2 gap-4" : "space-y-4"}
-                >
-                  {settingsData.map((setting, index) => {
-                    const Icon = setting.icon;
+            {/* Shift */}
+            <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="p-2 bg-gray-200 rounded-lg">
+                <Users className="h-4 w-4 text-gray-700" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  Current Shift
+                </h3>
+                <p className="text-gray-600 text-sm">General shift schedule</p>
+              </div>
+            </div>
 
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
-                      >
-                        <div className="p-2 bg-gray-200 rounded-lg">
-                          <Icon className="h-4 w-4 text-gray-700" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">
-                            {setting.title}
-                          </h3>
+            {/* Policy */}
+            <Link
+              to={`/webapp/attendance/attendance-policies?policy=${attendancePolicy}`}
+              className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
+            >
+              <div className="p-2 bg-gray-200 rounded-lg">
+                <Shield className="h-4 w-4 text-gray-700" />
+              </div>
+              <div className="flex-1">
+                <div className="w-full flex justify-between">
+                  <h3 className="font-semibold text-gray-900">
+                    Attendance Policy
+                  </h3>
+                  <ExternalLink className="h-4 w-4 text-gray-700" />
+                </div>
+                <div>
+                  {attendancePolicy && (
+                    <div className=" w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors">
+                      {attendancePolicy}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Link>
 
-                          {setting.details.length > 0 ? (
-                            setting.details.map((detail, detailIndex) => {
-                              if (
-                                setting.title === "Attendance Policy" &&
-                                attendancePolicy
-                              ) {
-                                return (
-                                  <button
-                                    key={detailIndex}
-                                    onClick={() =>
-                                      navigate(
-                                        `/webapp/attendance/attendance-policies?policy=${attendancePolicy}`
-                                      )
-                                    }
-                                    className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                                  >
-                                    {detail}
-                                  </button>
-                                );
-                              }
-
-                              return (
-                                <p
-                                  key={detailIndex}
-                                  className="text-sm text-gray-700"
-                                >
-                                  {detail}
-                                </p>
-                              );
-                            })
-                          ) : (
-                            <p className="text-sm text-gray-500">
-                              No policy defined
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+            {/* Weekly Off */}
+            <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="p-2 bg-gray-200 rounded-lg">
+                <Calendar className="h-4 w-4 text-gray-700" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900">Week Off</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2">
+                    <span className="text-sm font-medium text-gray-900">
+                      1st, 2nd, 4th Sunday
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
