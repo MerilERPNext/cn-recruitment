@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { Plus, Trash2, FileText, File as FileIcon } from "lucide-react";
+import { Trash2, FileText, File as FileIcon } from "lucide-react";
 import FormioNewExpenseItemModal from "./FormioNewExpenseItemModal";
 import MultipleDaysSection from "./DailyAllowanceClaim/MultipleDaysSection";
 import ExpensesUserInfo from "./ExpensesUserInfo";
@@ -25,12 +25,10 @@ const getTodayDate = (): string => {
   return `${year}-${month}-${day}`;
 };
 
-interface DailyAllowanceClaimModalProps {
-  onClose?: () => void;
-}
+interface DailyAllowanceClaimModalProps {}
 
 // Main Component
-const DailyAllowanceClaimModal: React.FC<DailyAllowanceClaimModalProps> = ({ onClose }) => {
+const DailyAllowanceClaimModal: React.FC<DailyAllowanceClaimModalProps> = () => {
   const [isMultipleDays, setIsMultipleDays] = useState<boolean>(true);
   const [fromDate, setFromDate] = useState<string>(getTodayDate());
   const [toDate, setToDate] = useState<string>(getTodayDate());
