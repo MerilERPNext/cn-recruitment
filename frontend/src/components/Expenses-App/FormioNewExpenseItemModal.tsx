@@ -5,7 +5,6 @@ import { X } from "lucide-react";
 import { Formio } from "formiojs";
 import { useExpenseTypes } from "../../hooks/useExpense";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import Modal from "../shared/Modal";
 
 interface FormioModalProps {
   isOpen: boolean;
