@@ -74,9 +74,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         { name: "Attendance Summary", icon: CheckCircle, href: "/webapp/attendance/summary" },
         { name: "My Attendance", icon: Calendar, href: "/webapp/attendance/emp-attendance" },
         { name: "Team Attendance", icon: Users, href: "/webapp/attendance/team-attendance" },
-        { name: "My Attendance Requests", icon: Clock, href: "/webapp/attendance/attendance-request" },
-        { name: "Team Attendance Requests", icon: Users, href: "/webapp/attendance/team-attendance-requests" },
-        { name: "Request Overtime", icon: RotateCcw, href: "/webapp/attendance/overtime" },
+        { name: "My Requests", icon: Clock, href: "/webapp/attendance/attendance-request" },
+        { name: "Team Requests", icon: Users, href: "/webapp/attendance/team-attendance-requests" },
       ],
     },
     {

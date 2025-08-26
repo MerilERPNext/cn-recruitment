@@ -54,7 +54,7 @@ import PoliciesEnforced from "./components/PoliciesEnforced";
 import PolicySignOff from "./components/PolicySignOff";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
 // import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
-import RequestOvertime from "./components/Attendance/RequestOvertime/RequestOvertime";
+
 import { Navigate } from "react-router";
 
 import CTCSalaryUI from "./components/SalarySlip/CTCSalaryBreakdown";
@@ -206,7 +206,6 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/attendance/emp-attendance/details",
     element: <EmployeeAttendanceDetails />,
   },
-  { path: "/webapp/attendance/overtime", element: <RequestOvertime /> },
   {
     path: "/webapp/attendance/team-attendance-details/pendings",
     element: <AllPendingRequests />,
