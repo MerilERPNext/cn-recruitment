@@ -47,7 +47,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                   customClass: "px-2",
                   columns: [
                     {
-                      width: 6,
                       components: [
                         {
                           type: "datetime",
@@ -66,7 +65,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                       ],
                     },
                     {
-                      width: 6,
                       components: [
                         {
                           type: "select",
@@ -94,7 +92,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                   customClass: "px-2",
                   columns: [
                     {
-                      width: 6,
                       components: [
                         {
                           type: "select",
@@ -118,7 +115,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                       ],
                     },
                     {
-                      width: 6,
                       components: [
                         {
                           type: "select",
@@ -131,7 +127,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                             values: [
                               { value: "A+", label: "A+" },
                               { value: "A-", label: "A-" },
-                              { value: "B+", label: "B+" },
+                              { value: "B+", label: "B-" },
                               { value: "B-", label: "B-" },
                               { value: "O+", label: "O+" },
                               { value: "O-", label: "O-" },
@@ -206,10 +202,10 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   }, [user]);
 
   return (
-    <div className="address-form-container h-full">
-      <div className="p-8">
-        {/* Header */}
-        <div className="border-b border-gray-200 pb-6 mb-8">
+    <div className="address-form-container h-full b">
+      <div className="p-4 md:p-8">
+        {/* Header - Hidden on mobile, visible on desktop */}
+        <div className="hidden md:block border-b border-gray-200 pb-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Personal Information
           </h2>
@@ -218,8 +214,8 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
           </p>
         </div>
 
-        {/* Form Container */}
-        <div className="max-w-4xl">
+        {/* Form Container with centered alignment for desktop */}
+        <div className="max-w-full md:max-w-4xl md:mx-auto">
           <Form
             key={user?.employee || "loading"}
             form={personalInfoForm}
@@ -232,12 +228,12 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
           />
         </div>
 
-        {/* Submit Button */}
-        <div className="mt-8 flex justify-end">
+        {/* Submit Button - Adjusting for full-width on mobile */}
+        <div className="mt-8 flex justify-center md:flex md:justify-end w-full md:w-auto">
           <button
             onClick={handleSubmit}
             disabled={updateEmployeeMutation.isPending}
-            className="px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg  disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="w-full md:w-auto px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {updateEmployeeMutation.isPending ? (
               <>
