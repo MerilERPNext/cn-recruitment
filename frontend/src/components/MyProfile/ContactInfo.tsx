@@ -122,7 +122,7 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
         </div>
 
         {/* Submit Button */}
-        <div className="mt-8 flex justify-center md:flex md:justify-end">
+        <div className="p-1 sticky bottom-0 left-0 right-0 bg-white border-t md:mt-8 flex justify-center md:justify-end md:w-full md:p-0 z-10">
           <button
             onClick={handleSubmit}
             disabled={updateEmployeeMutation.isPending}
