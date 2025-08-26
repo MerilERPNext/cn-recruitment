@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useScreenSize } from '../hooks/useScreenSize';
+import { useScreenSize } from '../../hooks/useScreenSize';
 import {
   LogOut,
   Bell,
@@ -8,18 +8,18 @@ import {
   Settings,
   User
 } from 'lucide-react';
-import { useCurrentUser } from '../hooks/useCurrentUser';
-import { useUnreadNoticesCount } from '../hooks/useNotices';
-import defaultProfile from '../assets/face-rec.png';
-import CollapsibleSidebar from './shared/CollapsibleSidebar';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { useUnreadNoticesCount } from '../../hooks/useNotices';
+import defaultProfile from '../../assets/face-rec.png';
+import CollapsibleSidebar from './CollapsibleSidebar';
 
-interface DesktopLayoutWrapperProps {
+interface NewDesktopLayoutWrapperProps {
   children: React.ReactNode;
   title?: string;
   actionButton?: React.ReactNode;
 }
 
-const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
+const NewDesktopLayoutWrapper: React.FC<NewDesktopLayoutWrapperProps> = ({
   children,
   title,
   actionButton
@@ -56,38 +56,38 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   }
 
   const navigationItems = [
-    {
-      label: "Dashboard",
-      path: "/webapp/",
-      active: location.pathname === "/webapp/"
+    { 
+      label: "Dashboard", 
+      path: "/webapp/", 
+      active: location.pathname === "/webapp/" 
     },
-    {
-      label: "Leaves & Holidays",
+    { 
+      label: "Leaves & Holidays", 
       path: "/webapp/leave-app",
       active: location.pathname.startsWith("/webapp/leave-app")
     },
-    {
-      label: "Attendance",
+    { 
+      label: "Attendance", 
       path: "/webapp/attendance",
       active: location.pathname.startsWith("/webapp/attendance")
     },
-    {
-      label: "Compensation",
+    { 
+      label: "Compensation", 
       path: "/webapp/salary-slip-app",
       active: location.pathname.startsWith("/webapp/salary-slip-app")
     },
-    {
-      label: "Shifts",
+    { 
+      label: "Shifts", 
       path: "/webapp/shift-request",
       active: location.pathname.startsWith("/webapp/shift-request")
     },
-    {
-      label: "Expenses",
+    { 
+      label: "Expenses", 
       path: "/webapp/expenses-app",
       active: location.pathname.startsWith("/webapp/expenses-app")
     },
-    {
-      label: "Policies",
+    { 
+      label: "Policies", 
       path: "/webapp/policies-app",
       active: location.pathname.startsWith("/webapp/policies-app")
     },
@@ -95,7 +95,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
   const getPageTitle = () => {
     if (title) return title;
-
+    
     const activeItem = navigationItems.find(item => item.active);
     return activeItem?.label || "Dashboard";
   };
@@ -110,7 +110,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   return (
     <div className="h-screen bg-gray-50 flex">
       {/* Collapsible Sidebar */}
-      <CollapsibleSidebar
+      <CollapsibleSidebar 
         isExpanded={isSidebarExpanded}
         setIsExpanded={setIsSidebarExpanded}
       />
@@ -232,7 +232,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
         {/* Page Content */}
         <div className="flex-1 overflow-hidden relative">
           {children}
-
+          
           {/* Action Button positioned in bottom right */}
           {actionButton && (
             <div className="fixed bottom-6 right-6 z-30">
@@ -241,9 +241,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           )}
         </div>
       </div>
-
     </div>
   );
 };
 
-export default DesktopLayoutWrapper;
+export default NewDesktopLayoutWrapper;

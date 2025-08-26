@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import NewDesktopLayoutWrapper from "../shared/NewDesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import NewExpenseType from "./NewExpenseType";
 import ExpenseFormModal from "./ExpenseFormModal";
@@ -15,7 +15,7 @@ const tabRoutes: Record<TabName, string> = {
   Expenses: "/webapp/expenses-app/expenses-list",
 };
 
-const ExpensesApp: React.FC = () => {
+const NewExpensesApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
@@ -140,7 +140,7 @@ const ExpensesApp: React.FC = () => {
     </div>
   );
 
-  // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
+  // Create the action button for desktop - positioned bottom-right by NewDesktopLayoutWrapper
   const actionButton = !showExpenseTypeSelection ? (
     <button
       onClick={handleAddNew}
@@ -151,7 +151,7 @@ const ExpensesApp: React.FC = () => {
   ) : null;
 
   const desktopLayout = (
-    <DesktopLayoutWrapper title="Expenses" actionButton={actionButton}>
+    <NewDesktopLayoutWrapper title="Expenses" actionButton={actionButton}>
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-y-auto p-8">
           {showExpenseTypeSelection ? (
@@ -168,10 +168,10 @@ const ExpensesApp: React.FC = () => {
           {renderExpenseFormModal()}
         </div>
       </div>
-    </DesktopLayoutWrapper>
+    </NewDesktopLayoutWrapper>
   );
 
   return isDesktop ? desktopLayout : mobileLayout;
 };
 
-export default ExpensesApp;
+export default NewExpensesApp;

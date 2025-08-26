@@ -68,6 +68,7 @@ import EmployeeAttendanceDetails from "./components/Attendance/Employee/Employee
 import HRPayroll from "./components/SalarySlip/HR-Payroll";
 import AttendancePolicies from "./components/Attendance/AttendancePolicies/AttendancePolicies";
 
+
 export interface AppRoute {
   index?: boolean;
   path: string;

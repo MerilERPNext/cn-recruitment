@@ -177,37 +177,37 @@ const LeaveAppInner: React.FC = () => {
     </div>
   );
 
+  // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
+  const actionButton = (
+    <button
+      onClick={() => openModal()}
+      className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
+    >
+      + Request Leave
+    </button>
+  );
+
   const desktopLayout = (
-    <DesktopLayoutWrapper title="Leaves & Holidays">
+    <DesktopLayoutWrapper title="Leaves & Holidays" actionButton={actionButton}>
       <div className="flex flex-col h-full">
         <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex-shrink-0">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-4">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => handleTabChange(tab.key as TabName)}
-                  className={`relative px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
-                    activeTab === tab.key
-                      ? "bg-black text-white shadow-lg"
-                      : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200"
-                  }`}
-                >
-                  <span className="relative z-10">{tab.label}</span>
-                  {activeTab === tab.key && (
-                    <div className="absolute inset-0  rounded-lg opacity-10"></div>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Request Leave Button - Desktop Only (Blue) */}
-            <button
-              onClick={() => openModal()}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
-            >
-              + Request Leave
-            </button>
+          <div className="flex gap-4">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key as TabName)}
+                className={`relative px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  activeTab === tab.key
+                    ? "bg-black text-white shadow-lg"
+                    : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200"
+                }`}
+              >
+                <span className="relative z-10">{tab.label}</span>
+                {activeTab === tab.key && (
+                  <div className="absolute inset-0  rounded-lg opacity-10"></div>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
