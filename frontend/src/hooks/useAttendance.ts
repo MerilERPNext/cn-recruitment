@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   useMutation,
   useQuery,
@@ -93,7 +94,6 @@ export const useGetEmployeeDeviceId = (): UseQueryResult<
   EmployeeShift,
   Error
 > => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return useQuery<any, Error>({
     queryKey: ["employee-device-id"],
     queryFn: () => attendanceService.getEmployeeDeviceId(),
@@ -165,19 +165,8 @@ export const useGetAllEventsAndAttendance = (
     ...defaultQueryOptions,
   });
 };
+
 export const useGetPolicyForDate = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  filters: any
-): UseQueryResult<string, Error> => {
-  return useQuery<string, Error>({
-    queryKey: ["policy-for-date", filters],
-    queryFn: () => attendanceService.getPolicyForDate(filters),
-    refetchOnWindowFocus: true,
-    ...defaultQueryOptions,
-  });
-};
-export const useGetPolicyForDate = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filters: any
 ): UseQueryResult<string, Error> => {
   return useQuery<string, Error>({
@@ -199,7 +188,6 @@ export const useAttendanceById = (
   });
 };
 export const useAttendancePolicies = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filters?: any
 ): UseQueryResult<PolicyQuestion, Error> => {
   return useQuery<PolicyQuestion, Error>({
