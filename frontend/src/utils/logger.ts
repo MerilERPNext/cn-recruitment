@@ -43,7 +43,7 @@ export const logger = {
       userId,
       context,
       timestamp: new Date().toISOString(),
-      ...additionalData
+      ...(typeof additionalData === 'object' && additionalData !== null ? additionalData : {})
     });
     
     // Track employee-specific errors separately
