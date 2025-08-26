@@ -167,27 +167,15 @@ export const attendanceService = {
       // Handle specific 417 error - Expectation Failed
       // Check for various ways the error might be structured
       let is417Error = false;
-
       if (error && typeof error === "object") {
-        // Check for Axios error structure
-        if (
-          "response" in error &&
-          error.response &&
-          typeof error.response === "object"
-        ) {
-          const response = error.response as { status?: number };
-          if (response.status === 417) {
-            is417Error = true;
-          }
-        }
-
-        // Check for error status property directly
-        if ("status" in error && error.status === 417) {
-          is417Error = true;
-        }
-
-        // Check for error code property
-        if ("code" in error && error.code === 417) {
+        const status =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (error as any).response?.status ??
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (error as any).status ??
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (error as any).code;
+        if (status === 417) {
           is417Error = true;
         }
       }
@@ -208,15 +196,15 @@ export const attendanceService = {
     filters: any
   ): Promise<AttendanceRecord[]> => {
     try {
-      console.log("📅 Calling get_events with filters:", filters);
+      // console.log("📅 Calling get_events with filters:", filters);
       const response = await FrappeAPI.callMethod(
         `cn_leave_shift_managment.get_events`,
         filters
       );
-      console.log("📅 Successfully got events response:", response);
+      // console.log("📅 Successfully got events response:", response);
       return response as AttendanceRecord[];
     } catch (error) {
-      console.error("📡 Error while getting events and attendance:", error);
+      // console.error("📡 Error while getting events and attendance:", error);
 
       // Enhanced error logging for debugging
       if (error && typeof error === "object") {

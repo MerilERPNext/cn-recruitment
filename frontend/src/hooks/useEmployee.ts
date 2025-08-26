@@ -147,7 +147,7 @@ export const useGetAllEmployees = () => {
 };
 export const useGetAllReasons = (requestType: string) => {
   return useQuery({
-    queryKey: ["all-reasons-list", requestType],
+    queryKey: ["all-reasons-list", "Attendance Request"],
     queryFn: () => {
       return EmployeeService.getAllReasons([
         // We might need to change it to a dynamic value but currently we are hard coding it.
