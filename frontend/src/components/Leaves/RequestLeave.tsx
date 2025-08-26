@@ -308,7 +308,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
       {/* Form Content */}
       <div className="flex-1 overflow-y-auto">
-        <ResponsiveFormWrapper className="p-6">
+        <ResponsiveFormWrapper className="p-0">
           <Form
             form={leaveForm}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -340,12 +340,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       {/* Form Actions */}
       <div className="flex-shrink-0 px-6 py-4 bg-gray-50 border-t border-gray-200">
         <FormActions>
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
           <button
             onClick={handleSubmit}
             className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"

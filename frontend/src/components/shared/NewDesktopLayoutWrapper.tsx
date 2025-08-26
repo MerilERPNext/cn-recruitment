@@ -1,28 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useScreenSize } from '../hooks/useScreenSize';
-import {
-  LogOut,
-  Bell,
-  ChevronDown,
-  Settings,
-  User
-} from 'lucide-react';
-import { useCurrentUser } from '../hooks/useCurrentUser';
-import { useUnreadNoticesCount } from '../hooks/useNotices';
-import defaultProfile from '../assets/face-rec.png';
-import CollapsibleSidebar from './shared/CollapsibleSidebar';
+import React, { useState, useRef, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { LogOut, Bell, ChevronDown, Settings, User } from "lucide-react";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useUnreadNoticesCount } from "../../hooks/useNotices";
+import defaultProfile from "../../assets/face-rec.png";
+import CollapsibleSidebar from "./CollapsibleSidebar";
 
-interface DesktopLayoutWrapperProps {
+interface NewDesktopLayoutWrapperProps {
   children: React.ReactNode;
   title?: string;
   actionButton?: React.ReactNode;
 }
 
-const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
+const NewDesktopLayoutWrapper: React.FC<NewDesktopLayoutWrapperProps> = ({
   children,
   title,
-  actionButton
+  actionButton,
 }) => {
   const { isDesktop } = useScreenSize();
   const location = useLocation();
@@ -36,17 +30,20 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   // Handle click outside profile dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowProfileDropdown(false);
       }
     };
 
     if (showProfileDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showProfileDropdown]);
 
@@ -59,44 +56,44 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
     {
       label: "Dashboard",
       path: "/webapp/",
-      active: location.pathname === "/webapp/"
+      active: location.pathname === "/webapp/",
     },
     {
       label: "Leaves & Holidays",
       path: "/webapp/leave-app",
-      active: location.pathname.startsWith("/webapp/leave-app")
+      active: location.pathname.startsWith("/webapp/leave-app"),
     },
     {
       label: "Attendance",
       path: "/webapp/attendance",
-      active: location.pathname.startsWith("/webapp/attendance")
+      active: location.pathname.startsWith("/webapp/attendance"),
     },
     {
       label: "Compensation",
       path: "/webapp/salary-slip-app",
-      active: location.pathname.startsWith("/webapp/salary-slip-app")
+      active: location.pathname.startsWith("/webapp/salary-slip-app"),
     },
     {
       label: "Shifts",
       path: "/webapp/shift-request",
-      active: location.pathname.startsWith("/webapp/shift-request")
+      active: location.pathname.startsWith("/webapp/shift-request"),
     },
     {
       label: "Expenses",
       path: "/webapp/expenses-app",
-      active: location.pathname.startsWith("/webapp/expenses-app")
+      active: location.pathname.startsWith("/webapp/expenses-app"),
     },
     {
       label: "Policies",
       path: "/webapp/policies-app",
-      active: location.pathname.startsWith("/webapp/policies-app")
+      active: location.pathname.startsWith("/webapp/policies-app"),
     },
   ];
 
   const getPageTitle = () => {
     if (title) return title;
 
-    const activeItem = navigationItems.find(item => item.active);
+    const activeItem = navigationItems.find((item) => item.active);
     return activeItem?.label || "Dashboard";
   };
 
@@ -105,7 +102,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   };
 
   // Calculate dynamic margin based on sidebar width
-  const contentMarginLeft = isSidebarExpanded ? 'ml-64' : 'ml-20';
+  const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -116,14 +113,20 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       />
 
       {/* Main Content */}
-      <div className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}>
+      <div
+        className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}
+      >
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center justify-between sticky top-0 z-10 flex-shrink-0" style={{ height: '73px' }}>
+        <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{getPageTitle()}</h1>
-            <p className="text-xs text-gray-600">Manage your {getPageTitle().toLowerCase()}</p>
+            <h1 className="text-xl font-bold text-gray-900">
+              {getPageTitle()}
+            </h1>
+            <p className="text-xs text-gray-600">
+              Manage your {getPageTitle().toLowerCase()}
+            </p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <button
               onClick={handleNotificationClick}
@@ -136,7 +139,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                 </div>
               )}
             </button>
-            
+
             <div className="relative" ref={profileDropdownRef}>
               <button
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -144,7 +147,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
               >
                 <div>
                   <p className="text-sm font-medium text-gray-900 text-right">
-                    {currentUser?.full_name || currentUser?.first_name || "Employee"}
+                    {currentUser?.full_name ||
+                      currentUser?.first_name ||
+                      "Employee"}
                   </p>
                   <p className="text-xs text-gray-500 text-right">
                     {currentUser?.email || "employee@company.com"}
@@ -157,7 +162,11 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-400 transition-transform ${
+                    showProfileDropdown ? "rotate-180" : ""
+                  }`}
+                />
               </button>
 
               {/* Profile Dropdown */}
@@ -174,7 +183,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">
-                          {currentUser?.full_name || currentUser?.first_name || "Employee"}
+                          {currentUser?.full_name ||
+                            currentUser?.first_name ||
+                            "Employee"}
                         </p>
                         <p className="text-sm text-gray-500">
                           {currentUser?.email || "employee@company.com"}
@@ -228,15 +239,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
           {/* Action Button positioned in bottom right */}
           {actionButton && (
-            <div className="fixed bottom-6 right-6 z-30">
-              {actionButton}
-            </div>
+            <div className="fixed bottom-6 right-6 z-30">{actionButton}</div>
           )}
         </div>
       </div>
-
     </div>
   );
 };
 
-export default DesktopLayoutWrapper;
+export default NewDesktopLayoutWrapper;

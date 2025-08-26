@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link } from "react-router-dom";
 import {
-  Bell,
+  Calendar,
+  Receipt,
   CheckCircle,
   User,
   XCircle,
   FileEdit,
   Timer,
   BanknoteX,
-  LogOut,
   Clock,
   ChevronDown,
+  Bell,
   Settings,
+  LogOut,
 } from "lucide-react";
 import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -36,6 +38,7 @@ import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
 import AttendanceChart from "./AttendanceChart";
+import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import {
   compareAsc,
   compareDesc,
@@ -49,7 +52,6 @@ import {
 } from "date-fns";
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
-import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 
 const statusStyles = {
   unpaid: {
@@ -90,7 +92,7 @@ const statusStyles = {
   },
 };
 
-const DesktopDashboard: React.FC = () => {
+const NewDesktopDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -400,7 +402,7 @@ const DesktopDashboard: React.FC = () => {
   return (
     <div className="h-screen bg-gray-50 flex">
       {/* Collapsible Sidebar */}
-      <CollapsibleSidebar
+      <CollapsibleSidebar 
         isExpanded={isSidebarExpanded}
         setIsExpanded={setIsSidebarExpanded}
       />
@@ -863,4 +865,4 @@ const DesktopDashboard: React.FC = () => {
   );
 };
 
-export default DesktopDashboard;
+export default NewDesktopDashboard;

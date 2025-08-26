@@ -112,6 +112,10 @@ const AttendanceLayout: React.FC = () => {
       </div>
       {/* Page Content (with top padding to avoid overlap) */}
       <div className="">
+        {/*
+          The main outlet needs both providers to function correctly,
+          so they wrap the entire content.
+        */}
         <LeaveRequestRefreshProvider>
           <RequestLeaveModalProvider>
             <Outlet />
@@ -123,12 +127,11 @@ const AttendanceLayout: React.FC = () => {
 
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
-    // This line is removed to show the button on all tabs
     return (
       <div className="relative" ref={actionsDropdownRef}>
         <button
           onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium text-sm"
+          className="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
         >
           + Request Forms
           <ChevronDown
@@ -138,18 +141,11 @@ const AttendanceLayout: React.FC = () => {
           />
         </button>
 
-        {/* Actions Dropdown - Matching Desktop Theme */}
+        {/* Actions Dropdown - Positioned to the top of the button */}
         {showActionsDropdown && (
-          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">
-            <div className="px-4 py-2 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900">
-                Quick Actions
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                Submit requests and manage attendance
-              </p>
-            </div>
+          <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">
             <div className="py-2">
+              {/* Corrected order: Leave Request first, then Attendance Request */}
               <button
                 onClick={() => {
                   setShowLeaveRequest(true);
@@ -190,83 +186,48 @@ const AttendanceLayout: React.FC = () => {
       </div>
     );
   };
+  // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
+  const actionButton = <ActionsButton />;
 
   const desktopLayout = (
-    <DesktopLayoutWrapper title="Attendance">
+    <DesktopLayoutWrapper title="Attendance" actionButton={actionButton}>
       <div className="flex flex-col h-full">
-        {/* Modern Tab Navigation for Web */}
-        <div className="bg-gray-100 border border-gray-200 px-8 py-4 flex-shrink-0">
-          {/* Navigation Pills */}
-          <div className="flex items-center justify-between align-center ">
-            <div className="flex gap-4">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => handleTabChange(tab)}
-                  className={`relative text-sm px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
-                    activeTab?.key === tab.key
-                      ? "bg-black text-white shadow-lg"
-                      : " text-gray-700  hover:text-gray-900 shadow-md hover:shadow-lg border "
-                  }`}
-                >
-                  <span className="relative z-10">{tab.label}</span>
-                  {activeTab?.key === tab.key && (
-                    <div className="absolute inset-0  rounded-xl opacity-10"></div>
-                  )}
-                </button>
-              ))}
-            </div>
-            <div className="flex-shrink-0">
-              <ActionsButton />
-            </div>
-          </div>
-        </div>
-        {/* Sub-navigation for Calendar Views */}
-        {activeTab?.key === "calendar-views" && (
-          <div className="flex justify-between items-center bg-white p-2  shadow-sm border border-gray-200 border-t-0">
-            <div className="px-6 py-2 flex items-center gap-3 bg-white w-full">
-              <span className="text-sm text-gray-600 font-medium">
-                View Mode:
-              </span>
-              <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
-                {calendarSubTabs.map((subTab) => (
-                  <button
-                    key={subTab.key}
-                    onClick={() => handleSubTabChange(subTab)}
-                    className={`px-6 py-1 text-sm rounded-lg font-semibold transition-all duration-200 ${
-                      activeSubTab === subTab.key
-                        ? "bg-black text-white shadow-md"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                  >
-                    {subTab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto">
+          {/* Outlet content and its components need to be within the providers */}
           <LeaveRequestRefreshProvider>
             <RequestLeaveModalProvider>
               <Outlet />
-
-              {/* Desktop Modals - Moved inside providers */}
-              {showLeaveRequest && (
-                <LeaveRequest
-                  onCancel={() => setShowLeaveRequest(false)}
-                  onSuccess={() => setShowLeaveRequest(false)}
-                />
-              )}
-              {showAttendanceRequest && (
-                <AttndanceRequestForm
-                  onClose={() => setShowAttendanceRequest(false)}
-                />
-              )}
             </RequestLeaveModalProvider>
           </LeaveRequestRefreshProvider>
         </div>
+
+        {/* Desktop Modals - Fixed positioning outside main content */}
+        {/* The LeaveRequest component is now wrapped by its provider */}
+        {showLeaveRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              {/* Ensure LeaveRequest is inside its providers */}
+              <LeaveRequestRefreshProvider>
+                <RequestLeaveModalProvider>
+                  <LeaveRequest
+                    onCancel={() => setShowLeaveRequest(false)}
+                    onSuccess={() => setShowLeaveRequest(false)}
+                  />
+                </RequestLeaveModalProvider>
+              </LeaveRequestRefreshProvider>
+            </div>
+          </div>
+        )}
+        {showAttendanceRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <AttndanceRequestForm
+                onClose={() => setShowAttendanceRequest(false)}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </DesktopLayoutWrapper>
   );
