@@ -114,48 +114,19 @@ const ShiftRequestApp: React.FC = () => {
     </div>
   );
 
+  // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
+  const actionButton = (
+    <button
+      onClick={handleShiftForm}
+      className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
+    >
+      + Request Shift Change
+    </button>
+  );
+
   const desktopLayout = (
-    <DesktopLayoutWrapper title="Shifts">
+    <DesktopLayoutWrapper title="Shifts" actionButton={actionButton}>
       <div className="flex flex-col h-full">
-        {/* Modern Tab Navigation for Web */}
-        <div className="bg-gray-100 flex justify-between border-b border-gray-200 px-8 py-4 flex-shrink-0">
-          {/* Navigation Cards */}
-          <div className="flex  gap-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab.key as TabName)}
-                className={`relative px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
-                  activeTab === tab.key
-                    ? 'bg-black text-white shadow-lg'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
-                }`}
-              >
-                <span className="relative z-10">
-                  {tab.label === "My Shift Assignment" }
-                  {tab.label === "Team Shift Assignment"}
-                  {tab.label === "My Shift Requests"}
-                  {tab.label === "Shift Change Request"}
-                  {tab.label}
-                </span>
-                {activeTab === tab.key && (
-                  <div className="absolute inset-0 rounded-xl opacity-10"></div>
-                )}
-              </button>
-            ))}
-       
-          </div>
-
-          <button
-              onClick={handleShiftForm}
-              className="py-2 px-4 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-gray-800 transition-colors shadow-lg"
-            >
-              + Request Shift Change
-            </button>
-          {/* Quick Action Hint */}
- 
-        </div>
-
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-8">
           <Outlet />

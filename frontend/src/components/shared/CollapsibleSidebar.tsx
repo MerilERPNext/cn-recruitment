@@ -83,7 +83,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Compensation",
       path: "/webapp/salary-slip-app",
       subItems: [
-        { name: "CTC Breakdown", icon: Calculator, href: "/webapp/salary-slip-app/ctc-salary-breakdown" },
+        { name: "Annual CTC", icon: Calculator, href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual" },
+        { name: "Monthly Salary", icon: Calculator, href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=monthly" },
         { name: "Salary Slip", icon: CreditCard, href: "/webapp/salary-slip-app/salary-slip-list" },
         { name: "Payroll Documents", icon: FileText, href: "/webapp/salary-slip-app/hr-payroll" },
       ],
@@ -155,8 +156,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     >
       <div className="flex flex-col h-full">
         {/* Logo Section */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
+        <div className="px-4 py-3 border-b border-gray-200" style={{ height: '73px' }}>
+          <div className="flex items-center gap-3 h-full">
             <img src={logo} alt="PayWise" className="w-8 h-8 flex-shrink-0" />
             <div className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}>
               <h2 className="font-semibold text-gray-900 whitespace-nowrap">PayWise</h2>

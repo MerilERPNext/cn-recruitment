@@ -118,7 +118,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       {/* Main Content */}
       <div className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}>
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
+        <div className="bg-white border-b border-gray-200 px-8 py-3 flex items-center justify-between sticky top-0 z-10 flex-shrink-0" style={{ height: '73px' }}>
           <div>
             <h1 className="text-xl font-bold text-gray-900">{getPageTitle()}</h1>
             <p className="text-xs text-gray-600">Manage your {getPageTitle().toLowerCase()}</p>

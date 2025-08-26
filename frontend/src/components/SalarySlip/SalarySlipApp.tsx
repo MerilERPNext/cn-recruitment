@@ -55,7 +55,14 @@ const SalarySlipApp: React.FC = () => {
       setActiveTab(matchedTab);
       sessionStorage.setItem("activeTab", matchedTab);
     }
-  }, [location.pathname]);
+
+    // Handle view mode from URL query parameters (for sidebar navigation)
+    const urlParams = new URLSearchParams(location.search);
+    const viewParam = urlParams.get('view') as ViewMode;
+    if (viewParam === 'annual' || viewParam === 'monthly') {
+      setViewMode(viewParam);
+    }
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     if (location.pathname === "/webapp/salary-slip-app") {
