@@ -63,7 +63,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
     <div className={`bg-white p-6 rounded-lg border border-gray-200 ${className}`}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">📊 Attendance Overview</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Attendance Overview</h3>
           <p className="text-sm text-gray-600">Monthly attendance summary</p>
         </div>
         <div className="text-right">
