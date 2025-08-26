@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
@@ -14,7 +14,6 @@ import {
   FileText,
   PlusCircle,
   Clock,
-  ClockIcon,
   BookOpen,
   AlertCircle,
   Users,
@@ -22,7 +21,7 @@ import {
   CheckCircle,
   RotateCcw,
 } from 'lucide-react';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/logo.png'; 
 
 interface SubMenuItem {
   name: string;
@@ -48,6 +47,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 }) => {
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [activeParent, setActiveParent] = useState<string | null>(null); 
+
+  // Update activeParent when location changes
+  useEffect(() => {
+    const currentActiveParent = navigationItems.find(item =>
+      item.subItems?.some(subItem => isSubItemActive(subItem))
+    )?.label || null;
+    setActiveParent(currentActiveParent);
+  }, [location.pathname]);
 
   const navigationItems: NavigationItem[] = [
     {
@@ -116,31 +124,38 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     if (item.path === "/webapp/") {
       return location.pathname === "/webapp/";
     }
+    // Check if any of its sub-items are active
+    if (item.subItems && item.subItems.some(subItem => isSubItemActive(subItem))) {
+      return true;
+    }
     return location.pathname.startsWith(item.path);
   };
 
   const isSubItemActive = (subItem: SubMenuItem) => {
-    // Check for exact match first
-    if (location.pathname === subItem.href) {
-      return true;
+    // Enhanced logic for specific query parameters for Annual CTC and Monthly Salary
+    if (subItem.href.includes("ctc-salary-breakdown")) {
+        // Ensure both path and query parameters match
+        const [subItemPath, subItemQuery] = subItem.href.split('?');
+        return location.pathname === subItemPath && location.search === `?${subItemQuery}`;
     }
 
-    // For routes that need path-based matching, be more specific
-    if (subItem.href.endsWith('/my') && location.pathname.includes('/leave-requests/my')) {
-      return true;
-    }
-    if (subItem.href.endsWith('/team') && location.pathname.includes('/leave-requests/team')) {
+    // General logic for other sub-items
+    if (location.pathname === subItem.href) {
       return true;
     }
 
     // Check if current path starts with the subItem href, but ensure we don't match overlapping paths
     if (location.pathname.startsWith(subItem.href)) {
-      // Make sure we're not matching a longer path that just happens to start the same way
       const remainingPath = location.pathname.substring(subItem.href.length);
       return remainingPath === '' || remainingPath.startsWith('/');
     }
 
     return false;
+  };
+
+  // Helper function to check if any navigation item (main or sub) is currently active
+  const checkAnyNavigationItemCurrentlyActive = () => {
+    return navigationItems.some(item => isItemActive(item));
   };
 
   return (
@@ -150,14 +165,22 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       }`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => {
-        setIsExpanded(false);
-        setHoveredItem(null);
+        // Use a timeout to allow React to process location and active state updates
+        // before potentially collapsing the sidebar.
+        setTimeout(() => {
+          // Re-evaluate the active state inside the timeout to get the latest value
+          if (!checkAnyNavigationItemCurrentlyActive()) {
+            setIsExpanded(false);
+            setHoveredItem(null);
+          }
+        }, 50); // Small delay, e.g., 50ms
       }}
     >
       <div className="flex flex-col h-full">
         {/* Logo Section */}
         <div className="px-4 py-3 border-b border-gray-200" style={{ height: '73px' }}>
           <div className="flex items-center gap-3 h-full">
+            {/* Replace `logo` with `PlaceholderLogo` or ensure your `logo` path is correct */}
             <img src={logo} alt="PayWise" className="w-8 h-8 flex-shrink-0" />
             <div className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}>
               <h2 className="font-semibold text-gray-900 whitespace-nowrap">PayWise</h2>
@@ -173,6 +196,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             const isActive = isItemActive(item);
             const isHovered = hoveredItem === item.label;
             const hasSubItems = item.subItems && item.subItems.length > 0;
+            const isAnySubItemActive = item.subItems?.some(subItem => isSubItemActive(subItem));
+
 
             return (
               <div
@@ -184,8 +209,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                 {hasSubItems ? (
                   <div
                     className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                      isActive
-                        ? "bg-gray-900 text-white"
+                      // Apply different styling for parent if any sub-item is active but not actively hovered
+                      isAnySubItemActive && !isHovered
+                        ? "bg-gray-100 text-gray-900" // Light background for active parent
+                        : isActive && !isAnySubItemActive // Only highlight parent black if it's directly active and has no active sub-items
+                        ? "bg-gray-900 text-white" 
                         : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                     }`}
                   >
@@ -204,7 +232,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     {isExpanded && (
                       <ChevronRight
                         className={`h-4 w-4 transition-transform duration-200 ${
-                          isHovered ? "rotate-90" : ""
+                          (isHovered || isAnySubItemActive) ? "rotate-90" : "" // Keep rotated if sub-item is active
                         }`}
                       />
                     )}
@@ -234,7 +262,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                 )}
 
                 {/* Sub-navigation items */}
-                {hasSubItems && isHovered && isExpanded && (
+                {hasSubItems && (isHovered || isAnySubItemActive) && isExpanded && ( // Sub-items always show if active, even if not hovered
                   <div className="overflow-hidden transition-all duration-300 ease-in-out">
                     <div className="py-1 space-y-1">
                       {item.subItems?.map((subItem) => {
@@ -247,7 +275,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             to={subItem.href}
                             className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline ${
                               isSubActive
-                                ? "bg-gray-800 text-white hover:text-white"
+                                ? "bg-gray-900 text-white hover:text-white" // Sub-item should be black
                                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                             }`}
                           >
@@ -277,3 +305,4 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 };
 
 export default CollapsibleSidebar;
+
