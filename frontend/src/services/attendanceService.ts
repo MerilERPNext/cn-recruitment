@@ -30,21 +30,14 @@ export const attendanceService = {
     filters?: string
   ): Promise<EmployeeCheckInLog[]> => {
     try {
-      const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.get_shift_checkins?user=${userId}&filters=${
-          filters || ""
-        }`,
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_shift_checkins",
         {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
+          user: userId,
+          filters: filters || "",
         }
       );
-
-      const result = await response.json();
-      return result?.message as EmployeeCheckInLog[];
+      return response as EmployeeCheckInLog[];
     } catch (error) {
       console.error("📡 Error marking notice as read:", error);
       throw error;
@@ -55,19 +48,14 @@ export const attendanceService = {
     filters?: object
   ): Promise<EmployeeShift> => {
     try {
-      const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.get_employee_shift?user=${userId}&filters=${filters}`,
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_employee_shift",
         {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
+          user: userId,
+          filters: filters,
         }
       );
-
-      const result = await response.json();
-      return result?.message as EmployeeShift;
+      return response as EmployeeShift;
     } catch (error) {
       console.error("📡 Error in fetching employee shift:", error);
       throw error;
@@ -76,21 +64,12 @@ export const attendanceService = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getEmployeeDeviceId: async (): Promise<any> => {
     try {
-      const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.get_employee_device_id`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_employee_device_id"
       );
-
-      const result = await response.json();
-      return result?.message;
+      return response;
     } catch (error) {
-      console.error("📡 Error in fetching employee shift:", error);
+      console.error("📡 Error in fetching employee device id:", error);
       throw error;
     }
   },
@@ -101,19 +80,15 @@ export const attendanceService = {
     toDate: string
   ): Promise<EmployeeShiftSummary> => {
     try {
-      const response = await fetch(
-        `/api/method/cn_leave_shift_managment.api.get_quick_summary?employee=${employeeId}&from_date=${fromDate}&to_date=${toDate}`,
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_quick_summary",
         {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
+          employee: employeeId,
+          from_date: fromDate,
+          to_date: toDate,
         }
       );
-
-      const result = await response.json();
-      return result?.message as EmployeeShiftSummary;
+      return response as EmployeeShiftSummary;
     } catch (error) {
       console.error("📡 Error fetching quick attendance summary:", error);
       throw error;
@@ -188,6 +163,31 @@ export const attendanceService = {
       return response as boolean;
     } catch (error) {
       console.error("📡 Error while setting device id:", error);
+
+      // Handle specific 417 error - Expectation Failed
+      // Check for various ways the error might be structured
+      let is417Error = false;
+      if (error && typeof error === "object") {
+        const status =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (error as any).response?.status ??
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (error as any).status ??
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (error as any).code;
+        if (status === 417) {
+          is417Error = true;
+        }
+      }
+
+      if (is417Error) {
+        console.warn(
+          "📡 Device ID setting not supported or endpoint not available (417 Expectation Failed) - skipping"
+        );
+        // Return false instead of throwing to prevent app crash
+        return false;
+      }
+
       throw error;
     }
   },
@@ -196,13 +196,72 @@ export const attendanceService = {
     filters: any
   ): Promise<AttendanceRecord[]> => {
     try {
+      // console.log("📅 Calling get_events with filters:", filters);
       const response = await FrappeAPI.callMethod(
         `cn_leave_shift_managment.get_events`,
         filters
       );
+      // console.log("📅 Successfully got events response:", response);
       return response as AttendanceRecord[];
     } catch (error) {
-      console.error("📡 Error while setting device id:", error);
+      // console.error("📡 Error while getting events and attendance:", error);
+
+      // Enhanced error logging for debugging
+      if (error && typeof error === "object") {
+        console.log("🔍 Error object structure:", {
+          hasResponse: "response" in error,
+          hasStatus: "status" in error,
+          hasCode: "code" in error,
+          errorKeys: Object.keys(error),
+          response: "response" in error ? error.response : undefined,
+        });
+      }
+
+      // Handle specific 417 error - likely from device ID setting within the API
+      // Check for various ways the error might be structured
+      let is417Error = false;
+      let errorStatus = null;
+
+      if (error && typeof error === "object") {
+        // Check for Axios error structure
+        if (
+          "response" in error &&
+          error.response &&
+          typeof error.response === "object"
+        ) {
+          const response = error.response as { status?: number };
+          errorStatus = response.status;
+          if (response.status === 417) {
+            is417Error = true;
+          }
+        }
+
+        // Check for error status property directly
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ("status" in error && (error as any).status === 417) {
+          is417Error = true;
+          errorStatus = error.status;
+        }
+
+        // Check for error code property
+        if ("code" in error && error.code === 417) {
+          is417Error = true;
+          errorStatus = error.code;
+        }
+      }
+
+      console.log(
+        `🔍 Error status detected: ${errorStatus}, is417Error: ${is417Error}`
+      );
+
+      if (is417Error) {
+        console.warn(
+          "📡 Device ID setting failed within get_events API (417 Expectation Failed) - returning empty array"
+        );
+        // Return empty array instead of throwing to prevent app crash
+        return [];
+      }
+
       throw error;
     }
   },

@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query";
 import { EmployeeService } from "../services/employeeService";
 import { Employee, EmployeeIdCard, EmployeeListItem } from "../types/employee";
 import { profileService } from "../services/profileService";
@@ -33,40 +38,38 @@ export const useCurrentEmployee = (): UseQueryResult<
 };
 
 // Hook to get current logged-in user's All Details
-export const useCurrentEmployeeAllDetails = (
-  user_id: string
-) => {
+export const useCurrentEmployeeAllDetails = (user_id: string) => {
   return useQuery<Employee | null, Error>({
     queryKey: ["currentEmployeeAllDetails", user_id],
     queryFn: () => EmployeeService.getCurrentEmployeeAllDetails(user_id),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 1,
-    enabled: !!user_id
-  })
-}
-export const useCurrentEmployeeAddress = (
-  user_id: string
-) => {
+    enabled: !!user_id,
+  });
+};
+export const useCurrentEmployeeAddress = (user_id: string) => {
   return useQuery<AddressInfoData, Error>({
     queryKey: ["currentEmployeeAddress", user_id],
     queryFn: () => EmployeeService.getCurrentEmployeeAddress(user_id),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 1,
-    enabled: !!user_id
-  })
-}
+    enabled: !!user_id,
+  });
+};
 
 export const useUpdateCurrentEmployeeProfile = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return {
     updateEmployeeMutation: useMutation({
       mutationKey: ["updateCurrentEmployeeProfile"],
       mutationFn: (employeeDetails: unknown) =>
         EmployeeService.updateCurrentEmployeeProfile(employeeDetails),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["currentEmployeeAllDetails"] });
+        queryClient.invalidateQueries({
+          queryKey: ["currentEmployeeAllDetails"],
+        });
         toast.success("Update submitted! Awaiting your manager’s approval.");
       },
       onError: (e) => {
@@ -144,9 +147,12 @@ export const useGetAllEmployees = () => {
 };
 export const useGetAllReasons = (requestType: string) => {
   return useQuery({
-    queryKey: ["all-reasons-list", requestType],
+    queryKey: ["all-reasons-list", "Attendance Request"],
     queryFn: () => {
-      return EmployeeService.getAllReasons([["reason_type", "=", requestType]]);
+      return EmployeeService.getAllReasons([
+        // We might need to change it to a dynamic value but currently we are hard coding it.
+        ["reference_doctype", "=", "Attendance Request"],
+      ]);
     },
     enabled: !!requestType,
     staleTime: 1000 * 60 * 5,

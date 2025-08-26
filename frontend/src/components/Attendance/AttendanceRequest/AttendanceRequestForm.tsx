@@ -22,7 +22,7 @@ interface AttendanceFormData {
   company?: string;
   employee?: string;
   message?: string;
-  reason?: string;
+  custom__request_reason?: string;
   from_date?: string | Date;
   to_date?: string | Date;
   clockin_time?: string | Date;
@@ -407,7 +407,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           },
           {
             label: "Reason",
-            key: "reason",
+            key: "custom__request_reason",
             type: "select",
             input: true,
             placeholder: "Select a reason",
@@ -471,12 +471,12 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     const baseBody = {
-      request_type: submission.data.request_type,
+      custom__request_type: submission.data.request_type,
       company: isForOthers ? submission.data.company : currentEmployee?.company,
       employee: isForOthers
         ? submission.data.employee
         : currentEmployee?.employee,
-      message: submission.data.message,
+      explanation: submission.data.message,
       ...(submission.data.from_date && {
         from_date: formatDateToYYYYMMDD(new Date(submission.data.from_date)),
       }),
@@ -493,7 +493,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           ...baseBody,
           to_date: baseBody.from_date,
           custom_from_time: formatTime(submission.data.custom_from_time),
-          reason: submission.data.reason,
+          custom__request_reason: submission.data.custom__request_reason,
         };
         break;
       case "Out Duty":
@@ -501,7 +501,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           ...baseBody,
           custom_from_time: formatTime(submission.data.custom_from_time),
           custom_to_time: formatTime(submission.data.custom_to_time),
-          reason: submission.data.reason,
+          custom__request_reason: submission.data.custom__request_reason,
           overnight_out_duty: submission.data.overnight_out_duty || false,
         };
         break;
@@ -517,7 +517,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           ),
           custom_from_time: formatTime(submission.data.custom_from_time),
           custom_to_time: formatTime(submission.data.custom_to_time),
-          reason: submission.data.reason,
+          custom__request_reason: submission.data.custom__request_reason,
         };
         break;
 
@@ -532,7 +532,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           ),
           custom_from_time: formatTime(submission.data.custom_from_time),
           custom_to_time: formatTime(submission.data.custom_to_time),
-          reason: submission.data.reason,
+          custom__request_reason: submission.data.custom__request_reason,
         };
         break;
 
