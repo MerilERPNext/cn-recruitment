@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo, useRef } from "react";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import { Form } from "@tsed/react-formio";
 import { Employee } from "../../types/employee";
 import { useUpdateCurrentEmployeeProfile } from "../../hooks/useEmployee";

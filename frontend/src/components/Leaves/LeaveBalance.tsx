@@ -128,10 +128,13 @@ const LeaveBalance: React.FC = () => {
           />
           <main className="flex-1 overflow-y-auto p-4">
             <LeaveTransactionCard
-              data={transactions}
+              data={transactions.filter(
+                (t) => t.type && t.type.trim().toLowerCase() !== "optional leave"
+              )}
               defaultOpenType={selectedType}
             />
           </main>
+
         </div>
       ) : (
         <>
@@ -185,5 +188,4 @@ const LeaveBalance: React.FC = () => {
     </div>
   );
 };
-
 export default LeaveBalance;

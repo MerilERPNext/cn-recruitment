@@ -317,7 +317,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto pb-20">
           {/* Leave days message */}
           <div
             className="ml-2 mb-4 text-sm text-gray-700"
