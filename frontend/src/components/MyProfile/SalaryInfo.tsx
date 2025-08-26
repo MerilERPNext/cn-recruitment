@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { PersonalInfoProps } from "./MyProfile";
 import { DollarSign, CreditCard, Building } from "lucide-react";
 
@@ -27,10 +27,65 @@ const InfoCard: React.FC<{
   </div>
 );
 
+const MobileInfoRow: React.FC<{ label: string; value: string | number | undefined }> = ({ label, value }) => (
+  <div className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
+    <span className="text-sm font-medium text-gray-600">{label}</span>
+    <span className="text-sm text-gray-800 font-semi">
+      {value || "N/A"}
+    </span>
+  </div>
+);
+
+const MobileSectionHeader: React.FC<{ title: string }> = ({ title }) => (
+  <h3 className="text-base font-semibold text-gray-900 mb-3 mt-6 first:mt-0">
+    {title}
+  </h3>
+);
+
 export const SalaryInfo: React.FC<PersonalInfoProps> = ({ user }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div className="p-4 space-y-4">
+        <MobileSectionHeader title="Salary Information" />
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <MobileInfoRow 
+            label="Total CTC" 
+            value={user?.ctc 
+              ? `${user?.salary_currency || ''} ${user.ctc.toLocaleString()}`
+              : undefined
+            } 
+          />
+          <MobileInfoRow label="PF Account Number" value={user?.provident_fund_account} />
+          <MobileInfoRow label="ESIC Number" value="1234567890" />
+          <MobileInfoRow label="PAN Number" value={user?.pan_number} />
+        </div>
+
+        <MobileSectionHeader title="Bank Details" />
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <MobileInfoRow label="Bank Name" value={user?.bank_name} />
+          <MobileInfoRow label="Account Number" value={user?.bank_ac_no} />
+          <MobileInfoRow label="IFSC Code" value={user?.ifsc_code} />
+          <MobileInfoRow label="Account Type" value="Savings" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-8">
-      {/* Header */}
       <div className="border-b border-gray-200 pb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Compensation & Banking
@@ -40,9 +95,7 @@ export const SalaryInfo: React.FC<PersonalInfoProps> = ({ user }) => {
         </p>
       </div>
 
-      {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Salary Information */}
         <InfoCard
           icon={<DollarSign className="w-5 h-5 text-blue-600" />}
           title="Salary Information"
@@ -87,13 +140,12 @@ export const SalaryInfo: React.FC<PersonalInfoProps> = ({ user }) => {
             },
             {
               label: "Account Type",
-              value: "Savings" // This could be dynamic if available
+              value: "Savings" 
             }
           ]}
         />
       </div>
 
-      {/* Additional Info Card */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
         <div className="flex items-start space-x-3">
           <CreditCard className="w-6 h-6 text-blue-600 mt-1" />
