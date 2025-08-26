@@ -138,51 +138,71 @@ const LeaveBalance: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="pt-4">
-            {leaveBalance.map((leave) => (
-              <div key={leave.type} className="rounded-xl p-4 mb-4 bg-white">
-                <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
-                  <span className="text-left text-black">{leave.type}</span>
-                  <span className="text-sm text-green-800">
-                    {leave.carry_over} Carry Forwarded
-                  </span>
-                </div>
-                <div
-                  className="flex justify-between mt-2 gap-2 cursor-pointer"
-                  onClick={() => toggleTransactions(leave.type)}
-                >
-                  <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-col items-center justify-center bg-blue-50">
-                    <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mb-1" />
-                    <p className="text-lg font-bold text-blue-800">
-                      {leave.entitled}
-                    </p>
-                    <p className="text-xs font-medium text-blue-700">
-                      Entitled
-                    </p>
+          <div className="md:pt-4 md:p-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 max-w-4xl mx-auto">
+              {leaveBalance
+                .filter(
+                  (leave) =>
+                    leave.type &&
+                    leave.type.trim().toLowerCase() !== "optional leave"
+                )
+                .map((leave) => (
+                  <div
+                    key={leave.type}
+                    className="rounded-xl p-4 mb-4 md:mb-0 bg-white"
+                  >
+                    <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
+                      <span className="text-left text-black">{leave.type}</span>
+                      <span className="text-sm text-green-800">
+                        {leave.carry_over} Carry Forwarded
+                      </span>
+                    </div>
+                    <div
+                      className="flex justify-between mt-2 gap-2 cursor-pointer"
+                      onClick={() => toggleTransactions(leave.type)}
+                    >
+                      <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-col items-center justify-center bg-blue-50">
+                        <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mb-1" />
+                        <p className="text-lg font-bold text-blue-800">
+                          {leave.entitled}
+                        </p>
+                        <p className="text-xs font-medium text-blue-700">
+                          Entitled
+                        </p>
+                      </div>
+                      <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-col items-center justify-center bg-green-50">
+                        <FaClockRotateLeft className="w-6 h-6 text-green-600 mb-1" />
+                        <p className="text-lg font-bold text-green-800">
+                          {leave.availed}
+                        </p>
+                        <p className="text-xs font-medium text-green-700">
+                          Availed
+                        </p>
+                      </div>
+                      <div className="flex-1 text-center border border-orange-100 rounded-lg py-2 flex flex-col items-center justify-center bg-orange-50">
+                        <FiPieChart className="w-6 h-6 text-orange-600 mb-1" />
+                        <p className="text-lg font-bold text-orange-800">
+                          {leave.balance}
+                        </p>
+                        <p className="text-xs font-medium text-orange-700">
+                          Balance
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-col items-center justify-center bg-green-50">
-                    <FaClockRotateLeft className="w-6 h-6 text-green-600 mb-1" />
-                    <p className="text-lg font-bold text-green-800">
-                      {leave.availed}
-                    </p>
-                    <p className="text-xs font-medium text-green-700">
-                      Availed
-                    </p>
-                  </div>
-                  <div className="flex-1 text-center border border-orange-100 rounded-lg py-2 flex flex-col items-center justify-center bg-orange-50">
-                    <FiPieChart className="w-6 h-6 text-orange-600 mb-1" />
-                    <p className="text-lg font-bold text-orange-800">
-                      {leave.balance}
-                    </p>
-                    <p className="text-xs font-medium text-orange-700">
-                      Balance
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+                ))}
+            </div>
           </div>
 
+          <div className="w-full mt-6 px-4 md:hidden">
+            <button
+              type="button"
+              className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              onClick={() => openModal()}
+            >
+              + Request Leave
+            </button>
+          </div>
         </>
       )}
     </div>
