@@ -15,14 +15,11 @@ const AttendancePolicies = () => {
   const renderSkeletonRows = (count = 5) => {
     return [...Array(count)].map((_, index) => (
       <tr key={index} className="border-b border-gray-200 animate-pulse">
-        <td className="px-4 py-3 border-r border-gray-200 text-center whitespace-nowrap">
-          <div className="h-4 w-4 bg-gray-300 rounded mx-auto"></div>
-        </td>
-        <td className="px-4 py-3 border-r border-gray-200">
+        <td className="px-4 py-3 border-r border-gray-200 whitespace-nowrap">
           <div className="h-4 w-3/4 bg-gray-300 rounded"></div>
         </td>
-        <td className="px-4 py-3 border-r border-gray-200">
-          <div className="h-4 w-1/2 bg-gray-300 rounded"></div>
+        <td className="px-2 py-3 border-r border-gray-200 text-center">
+          <div className="h-4 w-10 bg-gray-300 rounded mx-auto"></div>
         </td>
         <td className="px-4 py-3">
           <div className="h-4 w-full bg-gray-300 rounded"></div>
@@ -35,7 +32,7 @@ const AttendancePolicies = () => {
     if (!data?.questions || data.questions.length === 0) {
       return (
         <tr>
-          <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
+          <td colSpan={3} className="px-4 py-6 text-center text-gray-500">
             No attendance policy questions found.
           </td>
         </tr>
@@ -44,15 +41,12 @@ const AttendancePolicies = () => {
 
     return data.questions.map((q) => (
       <tr key={q?.idx} className="border-b border-gray-200">
-        <td className="px-4 py-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {q.idx}
-        </td>
         <td className="px-4 py-3 border-r border-gray-200 whitespace-wrap">
           {q.question_name}
         </td>
-        <td className="px-4 py-3 border-r border-gray-200 whitespace-nowrap">
-          <span
-            className={`inline-block px-2 py-1 text-xs font-semibold rounded 
+        <td className="px-2 py-3 border-r border-gray-300 text-center">
+          <div
+            className={`px-2 py-1 text-xs font-semibold rounded w-fit inline-block
               ${
                 q.status === "----"
                   ? "bg-yellow-100 text-yellow-700"
@@ -62,9 +56,9 @@ const AttendancePolicies = () => {
               }`}
           >
             {q.status}
-          </span>
+          </div>
         </td>
-        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+        <td className="px-4 py-3 text-gray-600  whitespace-wrap">
           {q.description}
         </td>
       </tr>
@@ -76,22 +70,18 @@ const AttendancePolicies = () => {
       <LayoutHeader tab="Attendance Policies" />
 
       <div className="mt-14 bg-white">
-        <div className="overflow-x-auto border border-gray-300">
-          <table className="min-w-full text-sm text-left text-gray-800 border-collapse">
+        {/* Responsive scroll wrapper */}
+        <div className="w-full overflow-x-auto">
+          <table className="table-auto w-full text-sm text-left text-gray-800 border-collapse">
             <thead className="bg-gray-100 text-gray-700 text-xs uppercase border-b border-gray-300">
               <tr>
-                <th className="px-4 py-3 border-r border-gray-300 text-center whitespace-nowrap min-w-[40px]">
-                  No.
-                </th>
-                <th className="px-4 py-3 border-r border-gray-300 whitespace-wrap min-w-[260px]">
+                <th className="px-4 py-3 border-r border-gray-300 whitespace-nowrap ">
                   Question Name
                 </th>
-                <th className="px-4 py-3 border-r border-gray-300 whitespace-nowrap min-w-[120px]">
+                <th className="px-2 py-3 border-r border-gray-300 text-center whitespace-wrap">
                   Status
                 </th>
-                <th className="px-4 py-3 whitespace-nowrap min-w-[240px]">
-                  Description
-                </th>
+                <th className="px-4 py-3 whitespace-nowrap">Description</th>
               </tr>
             </thead>
             <tbody>
@@ -100,7 +90,7 @@ const AttendancePolicies = () => {
               ) : isError ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={3}
                     className="px-4 py-6 text-center text-red-600"
                   >
                     {error?.message || "An error occurred while fetching data."}
