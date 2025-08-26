@@ -48,7 +48,6 @@ import ShiftRequestList from "./components/ShiftRequest/MyShiftList";
 import ShiftChangeRequest from "./components/ShiftRequest/ShiftChangeRequest";
 import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
 import TeamShift from "./components/ShiftRequest/TeamShift";
-import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
 import Policies from "./components/Policies";
 import PoliciesEnforced from "./components/PoliciesEnforced";
 import PolicySignOff from "./components/PolicySignOff";

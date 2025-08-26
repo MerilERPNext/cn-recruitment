@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Home,
@@ -42,14 +42,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   setIsExpanded,
 }) => {
   const location = useLocation();
-  // State to manage which dropdown (parent item with sub-items) is currently open due to a click
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  // The state 'shouldMainSidebarStayExpanded' is removed as per the new user experience.
-  // The sidebar will now always collapse on mouse leave, regardless of active sub-items,
-  // but active items will still be highlighted in the collapsed state.
-
-  // Define your navigation items, their icons, paths, and sub-items
   const navigationItems: NavigationItem[] = [
     {
       icon: Home,
@@ -181,18 +174,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     },
   ];
 
-  /**
-   * Helper function to check if a navigation item's path directly matches the current location,
-   * or if any of its sub-items are active.
-   * This is used for general active state determination.
-   */
   const isItemActive = (item: NavigationItem) => {
-    // Special handling for the root dashboard path
     if (item.path === "/webapp/") {
       return location.pathname === "/webapp/";
     }
-
-    // If the item has sub-items, and any of them are active, the parent is considered active.
     if (
       item.subItems &&
       item.subItems.some((subItem) => isSubItemActive(subItem))
@@ -200,25 +185,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       return true;
     }
 
-    // Stricter check for direct links or parent links
-    // Check if the current path starts with the item's path
     if (location.pathname.startsWith(item.path)) {
       const remainingPath = location.pathname.substring(item.path.length);
-      // Ensure the path is a direct match or followed by a slash,
-      // which prevents partial matches (e.g., '/attendance' matching '/attendance-requests').
       return remainingPath === "" || remainingPath.startsWith("/");
     }
 
     return false;
   };
-  /**
-   * Helper function to check if a specific sub-item is currently active.
-   * Includes special logic for handling query parameters for compensation links.
-   */
+ 
   const isSubItemActive = (subItem: SubMenuItem) => {
-    // Enhanced logic for specific query parameters (e.g., Annual CTC, Monthly Salary)
     if (subItem.href.includes("ctc-salary-breakdown")) {
-      // Ensure both the base path and query parameters match exactly
       const [subItemPath, subItemQuery] = subItem.href.split("?");
       return (
         location.pathname === subItemPath &&
@@ -415,27 +391,28 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
                           return (
                             <Link
-                              key={subItem.name}
-                              to={subItem.href}
-                              className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline ${
-                                isSubActive
-                                  ? "bg-gray-900 text-white hover:text-white" // Active sub-item should always be black
-                                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900" // Default sub-item styling
-                              }`}
-                            >
-                              <div className="flex items-center space-x-2">
-                                <SubIcon className="h-3.5 w-3.5 opacity-70" />
-                                <span
-                                  className={`font-medium transition-all duration-300 ${
-                                    isExpanded
-                                      ? "opacity-100 translate-x-0"
-                                      : "opacity-0 -translate-x-2" // Text visibility
-                                  }`}
-                                >
-                                  {subItem.name}
-                                </span>
-                              </div>
-                            </Link>
+  key={subItem.name}
+  to={subItem.href}
+  className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
+    isSubActive
+      ? "bg-gray-900 text-white hover:text-white" // Active sub-item
+      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900" // Default
+  }`}
+>
+  <div className="flex items-center space-x-2">
+    <SubIcon className="h-3.5 w-3.5 opacity-70" />
+    <span
+      className={`font-medium transition-all duration-300 whitespace-nowrap ${
+        isExpanded
+          ? "opacity-100 translate-x-0"
+          : "opacity-0 -translate-x-2"
+      }`}
+    >
+      {subItem.name}
+    </span>
+  </div>
+</Link>
+
                           );
                         })}
                       </div>

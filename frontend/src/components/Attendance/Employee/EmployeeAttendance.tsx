@@ -176,7 +176,7 @@ const EmployeeAttendance = () => {
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
         <div className=" w-full pb-2 bg-white">
-          <div className="w-full flex justify-between items-center border-b-1 border-gray-200 pb-2">
+          <div className="w-full flex justify-end md:justify-between  items-center border-b-1 border-gray-200 pb-2">
             {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
             {isDesktop && (
               <div className="flex items-center gap-2 mt-4 mx-5">
