@@ -1,7 +1,9 @@
 import React, { useEffect, useState, createContext, useContext } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
-import NavigationTabs, { Tab } from "../NavigationTab"; 
+import NavigationTabs, { Tab } from "../NavigationTab";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { useScreenSize } from "../../hooks/useScreenSize"; 
 
 type TabName = 
  'Salary Slip' 
@@ -33,9 +35,10 @@ export const useViewMode = () => {
 };
 
 const SalarySlipApp: React.FC = () => {
+  const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabName>("Salary Slip");
+  const [activeTab, setActiveTab] = useState<TabName>("CTC Breakdown");
   const [viewMode, setViewMode] = useState<ViewMode>("annual");
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
@@ -52,7 +55,14 @@ const SalarySlipApp: React.FC = () => {
       setActiveTab(matchedTab);
       sessionStorage.setItem("activeTab", matchedTab);
     }
-  }, [location.pathname]);
+
+    // Handle view mode from URL query parameters (for sidebar navigation)
+    const urlParams = new URLSearchParams(location.search);
+    const viewParam = urlParams.get('view') as ViewMode;
+    if (viewParam === 'annual' || viewParam === 'monthly') {
+      setViewMode(viewParam);
+    }
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     if (location.pathname === "/webapp/salary-slip-app") {
@@ -67,7 +77,7 @@ const SalarySlipApp: React.FC = () => {
     navigate(tabRoutes[tab]);
   };
 
-  return (
+  const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <style>{`
         :root {
@@ -95,14 +105,13 @@ const SalarySlipApp: React.FC = () => {
           activeTab={activeTab}
           onTabChange={handleTabChange}
         />
-        
-        {/* Annual/Monthly Toggle - Only show on CTC Breakdown page */}
+
         {activeTab === "CTC Breakdown" && (
-          <div className="px-4 py-4">
+          <div className="px-4 py-2">
             <div className="flex bg-white border rounded-lg p-1 justify-center w-full">
               <button
                 onClick={() => setViewMode('annual')}
-                className={`px-6 py-2 w-[50%] rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 w-[50%] rounded-lg font-medium transition-colors ${
                   viewMode === 'annual'
                     ? 'bg-black text-white'
                     : 'bg-white  text-gray-700 hover:bg-gray-100'
@@ -112,7 +121,7 @@ const SalarySlipApp: React.FC = () => {
               </button>
               <button
                 onClick={() => setViewMode('monthly')}
-                className={`px-6 py-2 w-[50%] rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 w-[50%] rounded-lg font-medium transition-colors ${
                   viewMode === 'monthly'
                     ? 'bg-black text-white'
                     : 'bg-white  text-gray-700 hover:bg-gray-100'
@@ -132,6 +141,20 @@ const SalarySlipApp: React.FC = () => {
       </main>
     </div>
   );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="Compensation">
+      <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-y-auto p-8">
+          <ViewModeContext.Provider value={{ viewMode, setViewMode }}>
+            <Outlet />
+          </ViewModeContext.Provider>
+        </div>
+      </div>
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 export default SalarySlipApp;

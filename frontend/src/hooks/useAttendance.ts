@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   useMutation,
   useQuery,
@@ -25,8 +26,24 @@ const isPermissionError = (error: unknown): boolean =>
     error.message.includes("403") ||
     error.message.includes("Access Restricted"));
 
-const defaultRetry = (failureCount: number, error: unknown) =>
-  isPermissionError(error) ? false : failureCount < 3;
+const defaultRetry = (failureCount: number, error: unknown) => {
+  // Don't retry permission errors
+  if (isPermissionError(error)) return false;
+
+  // Don't retry 417 errors (device ID/expectation failed errors)
+  if (error && typeof error === 'object') {
+    if ('response' in error && (error as any).response?.status === 417) {
+      console.warn("🚫 Not retrying 417 error - likely device ID issue");
+      return false;
+    }
+    if ('status' in error && (error as any).status === 417) {
+      console.warn("🚫 Not retrying 417 error - likely device ID issue");
+      return false;
+    }
+  }
+
+  return failureCount < 3;
+};
 
 const defaultQueryOptions = {
   staleTime: 1000 * 60 * 60 * 2, // 2 hours
@@ -52,7 +69,7 @@ export const useHomeSummaryDetails = (
   filters?: string
 ): UseQueryResult<EmployeeCheckInLog[], Error> => {
   return useQuery<EmployeeCheckInLog[], Error>({
-    queryKey: ["home-summary-details", filters],
+    queryKey: ["home-summary-details", userId, filters],
     queryFn: () => attendanceService.getHomeSummaryDetails(userId, filters),
     enabled: !!userId,
     refetchOnWindowFocus: true,
@@ -65,7 +82,7 @@ export const useGetEmployeeShift = (
   filters?: object
 ): UseQueryResult<EmployeeShift, Error> => {
   return useQuery<EmployeeShift, Error>({
-    queryKey: ["employee-shift", userId],
+    queryKey: ["employee-shift", userId, filters],
     queryFn: () => attendanceService.getEmployeeShift(userId, filters),
     enabled: !!userId,
     refetchOnWindowFocus: true,
@@ -77,7 +94,6 @@ export const useGetEmployeeDeviceId = (): UseQueryResult<
   EmployeeShift,
   Error
 > => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return useQuery<any, Error>({
     queryKey: ["employee-device-id"],
     queryFn: () => attendanceService.getEmployeeDeviceId(),
@@ -92,10 +108,10 @@ export const useGetQuickAttendanceSummary = (
   toDate: string
 ): UseQueryResult<EmployeeShiftSummary, Error> => {
   return useQuery<EmployeeShiftSummary, Error>({
-    queryKey: ["employee-attendance-summary", fromDate],
+    queryKey: ["employee-attendance-summary", employeeId, fromDate, toDate],
     queryFn: () =>
       attendanceService.getQuickAttendanceSummary(employeeId, fromDate, toDate),
-    enabled: !!employeeId,
+    enabled: !!employeeId && !!fromDate && !!toDate,
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
@@ -127,13 +143,30 @@ export const useGetAllEventsAndAttendance = (
 ): UseQueryResult<AttendanceRecord[], Error> => {
   return useQuery<AttendanceRecord[], Error>({
     queryKey: ["get-All-Events-And-Attendance", filters],
-    queryFn: () => attendanceService.getAllEventsAndAttendance(filters),
+    queryFn: async () => {
+      try {
+        return await attendanceService.getAllEventsAndAttendance(filters);
+      } catch (error) {
+        console.warn("🎯 useGetAllEventsAndAttendance caught error:", error);
+
+        // Handle 417 errors by returning empty array
+        if (error && typeof error === 'object') {
+          if (('response' in error && (error as any).response?.status === 417) ||
+              ('status' in error && (error as any).status === 417)) {
+            console.warn("🔄 Returning empty array for 417 error in hook");
+            return [];
+          }
+        }
+
+        throw error;
+      }
+    },
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
 };
+
 export const useGetPolicyForDate = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filters: any
 ): UseQueryResult<string, Error> => {
   return useQuery<string, Error>({
@@ -155,7 +188,6 @@ export const useAttendanceById = (
   });
 };
 export const useAttendancePolicies = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filters?: any
 ): UseQueryResult<PolicyQuestion, Error> => {
   return useQuery<PolicyQuestion, Error>({
@@ -202,6 +234,7 @@ export const useCanShowClockIn = (
     queryFn: () => attendanceService.canShowClockIn(params),
     staleTime: defaultStaleTime,
     gcTime: defaultGcTime,
+    enabled: !!params && Object.keys(params).length > 0,
   });
 };
 

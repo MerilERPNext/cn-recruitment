@@ -167,23 +167,29 @@ export const attendanceService = {
       // Handle specific 417 error - Expectation Failed
       // Check for various ways the error might be structured
       let is417Error = false;
-      if (error && typeof error === "object") {
-        const status =
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (error as any).response?.status ??
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (error as any).status ??
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (error as any).code;
-        if (status === 417) {
+
+      if (error && typeof error === 'object') {
+        // Check for Axios error structure
+        if ('response' in error && error.response && typeof error.response === 'object') {
+          const response = error.response as { status?: number };
+          if (response.status === 417) {
+            is417Error = true;
+          }
+        }
+
+        // Check for error status property directly
+        if ('status' in error && error.status === 417) {
+          is417Error = true;
+        }
+
+        // Check for error code property
+        if ('code' in error && error.code === 417) {
           is417Error = true;
         }
       }
 
       if (is417Error) {
-        console.warn(
-          "📡 Device ID setting not supported or endpoint not available (417 Expectation Failed) - skipping"
-        );
+        console.warn("📡 Device ID setting not supported or endpoint not available (417 Expectation Failed) - skipping");
         // Return false instead of throwing to prevent app crash
         return false;
       }
@@ -196,24 +202,25 @@ export const attendanceService = {
     filters: any
   ): Promise<AttendanceRecord[]> => {
     try {
-      // console.log("📅 Calling get_events with filters:", filters);
+      console.log("📅 Calling get_events with filters:", filters);
       const response = await FrappeAPI.callMethod(
         `cn_leave_shift_managment.get_events`,
         filters
       );
-      // console.log("📅 Successfully got events response:", response);
+      console.log("📅 Successfully got events response:", response);
       return response as AttendanceRecord[];
     } catch (error) {
-      // console.error("📡 Error while getting events and attendance:", error);
+      console.error("📡 Error while getting events and attendance:", error);
 
       // Enhanced error logging for debugging
-      if (error && typeof error === "object") {
+      if (error && typeof error === 'object') {
         console.log("🔍 Error object structure:", {
-          hasResponse: "response" in error,
-          hasStatus: "status" in error,
-          hasCode: "code" in error,
+          hasResponse: 'response' in error,
+          hasStatus: 'status' in error,
+          hasCode: 'code' in error,
           errorKeys: Object.keys(error),
-          response: "response" in error ? error.response : undefined,
+          response: 'response' in error ? (error as any).response : undefined
+
         });
       }
 
@@ -221,14 +228,9 @@ export const attendanceService = {
       // Check for various ways the error might be structured
       let is417Error = false;
       let errorStatus = null;
-
-      if (error && typeof error === "object") {
+      if (error && typeof error === 'object') {
         // Check for Axios error structure
-        if (
-          "response" in error &&
-          error.response &&
-          typeof error.response === "object"
-        ) {
+        if ('response' in error && error.response && typeof error.response === 'object') {
           const response = error.response as { status?: number };
           errorStatus = response.status;
           if (response.status === 417) {
@@ -236,28 +238,22 @@ export const attendanceService = {
           }
         }
 
-        // Check for error status property directly
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ("status" in error && (error as any).status === 417) {
+        if ('status' in error && (error as any).status === 417) {
           is417Error = true;
-          errorStatus = error.status;
+          errorStatus = (error as any).status;
         }
 
         // Check for error code property
-        if ("code" in error && error.code === 417) {
+        if ('code' in error && (error as any).code === 417) {
           is417Error = true;
-          errorStatus = error.code;
+          errorStatus = (error as any).code;
         }
       }
 
-      console.log(
-        `🔍 Error status detected: ${errorStatus}, is417Error: ${is417Error}`
-      );
+      console.log(`🔍 Error status detected: ${errorStatus}, is417Error: ${is417Error}`);
 
       if (is417Error) {
-        console.warn(
-          "📡 Device ID setting failed within get_events API (417 Expectation Failed) - returning empty array"
-        );
+        console.warn("📡 Device ID setting failed within get_events API (417 Expectation Failed) - returning empty array");
         // Return empty array instead of throwing to prevent app crash
         return [];
       }
@@ -265,6 +261,7 @@ export const attendanceService = {
       throw error;
     }
   },
+
 
   getPolicyForDate: async (
     filters: AllEventsAndAttendanceT

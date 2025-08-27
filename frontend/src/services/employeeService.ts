@@ -6,6 +6,8 @@ import {
   IReason,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
+import { debugEmployeeData, validateEmployeeFields } from "../utils/employeeDebug";
+import logger from "../utils/logger";
 
 function hasRequiredProperties<T extends Record<string, unknown>>(
   obj: unknown,
@@ -23,6 +25,7 @@ function hasRequiredProperties<T extends Record<string, unknown>>(
 // Type guards for runtime validation
 function isEmployee(obj: unknown): obj is Employee {
   if (!obj || typeof obj !== "object") {
+    console.warn("isEmployee validation failed: object is null, undefined, or not an object");
     return false;
   }
 
@@ -30,11 +33,16 @@ function isEmployee(obj: unknown): obj is Employee {
 
   const requiredFields = ["name", "employee_name"];
   for (const field of requiredFields) {
-    if (
-      !(field in employee) ||
-      typeof employee[field] !== "string" ||
-      !employee[field]
-    ) {
+    if (!(field in employee)) {
+      console.warn(`isEmployee validation failed: missing field '${field}'`);
+      return false;
+    }
+    if (typeof employee[field] !== "string") {
+      console.warn(`isEmployee validation failed: field '${field}' is not a string, got ${typeof employee[field]}`);
+      return false;
+    }
+    if (!employee[field]) {
+      console.warn(`isEmployee validation failed: field '${field}' is empty`);
       return false;
     }
   }
@@ -45,6 +53,7 @@ function isEmployee(obj: unknown): obj is Employee {
       employee.status as string
     )
   ) {
+    console.warn(`isEmployee validation failed: invalid status '${employee.status}'`);
     return false;
   }
 
@@ -243,18 +252,77 @@ export class EmployeeService {
     user_id: string
   ): Promise<Employee | null> {
     try {
+      logger.info("Fetching employee details for user_id", { user_id });
+
       const result = await FrappeAPI.getDocumentList("Employee", {
         fields: ["*"],
         filters: [["user_id", "=", user_id]],
       });
-      if (!isEmployee(result.data[0])) {
-        console.error("Invalid employee data received from API");
+
+      // Debug the API response
+      debugEmployeeData(result, `getCurrentEmployeeAllDetails API response for user_id: ${user_id}`);
+
+      // Handle different response structures
+      let employeeDataArray: unknown[] = [];
+
+      if (result && 'data' in result && Array.isArray(result.data)) {
+        // Standard Frappe API response structure
+        employeeDataArray = result.data;
+      } else if (Array.isArray(result)) {
+        // Direct array response
+        employeeDataArray = result;
+      } else if (result && typeof result === 'object') {
+        // Single object response
+        employeeDataArray = [result];
+      } else {
+        logger.warn("Unexpected API response structure", {
+          user_id,
+          resultExists: !!result,
+          resultType: typeof result,
+          hasDataProperty: result && 'data' in result,
+          dataIsArray: result && typeof result === 'object' && 'data' in result && Array.isArray((result as { data?: unknown }).data)
+        });
         return null;
       }
 
-      return result?.data[0];
+      // Check if any employee records were found
+      if (employeeDataArray.length === 0) {
+        logger.warn("No employee found for user_id", { user_id });
+        return null;
+      }
+
+      const employeeData = employeeDataArray[0];
+
+      // Debug employee data validation
+      const validation = validateEmployeeFields(employeeData);
+      logger.debug("Employee validation result", validation);
+
+      // Validate the employee data
+      if (!isEmployee(employeeData)) {
+        logger.employeeError("getCurrentEmployeeAllDetails validation failed", user_id, new Error("Invalid employee data structure"), {
+          missingFields: validation.missingFields,
+          invalidFields: validation.invalidFields,
+          receivedData: employeeData
+        });
+
+        // Try to provide helpful suggestions
+        if (validation.missingFields.includes('name') && employeeData && typeof employeeData === 'object') {
+          const emp = employeeData as Record<string, unknown>;
+          logger.debug("Potential name fields found", {
+            user_id,
+            potentialFields: Object.keys(emp).filter(key =>
+              key.toLowerCase().includes('name') || key.toLowerCase().includes('id')
+            ).map(key => ({ key, value: emp[key] }))
+          });
+        }
+
+        return null;
+      }
+
+      logger.info("Employee data validated successfully", { user_id });
+      return employeeData;
     } catch (error) {
-      console.error("Error fetching current employee:", error);
+      logger.employeeError("getCurrentEmployeeAllDetails", user_id, error);
       return null;
     }
   }

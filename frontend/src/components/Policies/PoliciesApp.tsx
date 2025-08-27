@@ -1,8 +1,11 @@
 import React, { useMemo } from "react";
 import HeaderBar from "../HeaderBar";
 import { useNavigate, Outlet, useLocation } from "react-router";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const PoliciesApp: React.FC = () => {
+  const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -17,7 +20,7 @@ const PoliciesApp: React.FC = () => {
     return routeTitles[path] || "Policies";
   }, [location.pathname]);
 
-  return (
+  const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <HeaderBar title={title} onBack={() => navigate(-1)} />
       <main className="p-4 z-100 flex-grow overflow-y-auto">
@@ -25,6 +28,16 @@ const PoliciesApp: React.FC = () => {
       </main>
     </div>
   );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="Policies">
+      <div className="p-8 overflow-y-auto h-full">
+        <Outlet />
+      </div>
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 export default PoliciesApp;

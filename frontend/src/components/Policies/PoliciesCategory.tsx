@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
 import { CategoryCardSkeleton } from "./PolicySkeletons";
-import { useFrappeDocuments } from "../../hooks/useFrappeQuery";
 import { usePolicyCountsByCategory } from "../../hooks/usePolicy";
 
 type CategoryCardProps = {
@@ -33,27 +32,14 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
 };
 
 const PoliciesCategory: React.FC = () => {
-  const { data: categories, isLoading: isCategoriesLoading } =
-    useFrappeDocuments(
-      {
-        doctype: "HR Category",
-        pageParam: 0,
-        pageSize: 1000,
-        filters: {},
-        searchTerm: "",
-        fields: ["name"],
-        searchFields: ["name"],
-      },
-      {
-        staleTime: 5 * 60 * 1000,
-        refetchOnWindowFocus: false,
-      }
-    );
-
-  const { data: counts, isLoading: isCountsLoading } =
+  const { data: counts, isLoading: isCountsLoading, error: countsError } =
     usePolicyCountsByCategory();
-  const isLoading = isCategoriesLoading || isCountsLoading;
-  if (isLoading) {
+
+  console.log("🏷️ PoliciesCategory - counts:", counts);
+  console.log("🏷️ PoliciesCategory - loading:", isCountsLoading);
+  console.log("🏷️ PoliciesCategory - error:", countsError);
+
+  if (isCountsLoading) {
     return (
       <>
         {[...Array(5)].map((_, i) => (
@@ -63,12 +49,21 @@ const PoliciesCategory: React.FC = () => {
     );
   }
 
+  // Handle errors gracefully
+  if (countsError) {
+    console.warn("Failed to load policy counts:", countsError);
+  }
+
+  // Create categories from the counts data
+  const categories = counts ? Object.keys(counts).map(name => ({ name })) : [];
+  console.log("🏷️ Generated categories:", categories);
+
   return (
     <div className="h-full w-full">
-      {categories?.data?.length === 0 ? (
+      {categories.length === 0 ? (
         <p className="text-gray-500 text-center mt-4">No categories found.</p>
       ) : (
-        categories?.data?.map((item: CategoryDoc) => (
+        categories.map((item: CategoryDoc) => (
           <CategoryCard
             key={item.name}
             name={item.name}

@@ -270,7 +270,7 @@ const GeneralExpenseClaim: React.FC = () => {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full flex items-center justify-center py-2 mt-4 border border-gray-300 rounded-lg font-medium bg-blue-600"
+            className="w-full flex items-center justify-center py-2 mt-4 border border-gray-300 rounded-lg font-medium bg-black"
           >
             <span className="text-lg mr-2 text-white">+ Add Expense Item</span>
           </button>

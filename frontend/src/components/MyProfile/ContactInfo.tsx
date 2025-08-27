@@ -96,28 +96,45 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   }, [user]);
 
   return (
-    <div className="h-full max-w-md mx-auto bg-gray-100 rounded-lg">
-      <div className="p-4">
-        <Form
-          form={contactInfoForm}
-          onFormReady={(instance: any) =>
-            (formContactInfoInstance.current = instance)
-          }
-          options={{
-            submitButton: false,
-          }}
-        />
-      </div>
-      <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full z-50">
-        <div className="max-w-4xl mx-auto flex">
+    <div className="h-full">
+      <div className="p-4 md:p-8">
+        {/* Header - Hidden on mobile, visible on desktop */}
+        <div className="hidden md:block border-b border-gray-200 pb-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Contact Information
+          </h2>
+          <p className="text-gray-600">
+            Manage your contact details and communication preferences
+          </p>
+        </div>
+
+        {/* Form Container */}
+        <div className="max-w-full md:max-w-4xl md:mx-auto">
+          <Form
+            form={contactInfoForm}
+            onFormReady={(instance: any) =>
+              (formContactInfoInstance.current = instance)
+            }
+            options={{
+              submitButton: false,
+            }}
+          />
+        </div>
+
+        {/* Submit Button */}
+        <div className="p-1 sticky bottom-0 left-0 right-0 bg-white border-t md:mt-8 flex justify-center md:justify-end md:w-full md:p-0 z-10">
           <button
             onClick={handleSubmit}
-            className="flex-1 py-3 max-h-12 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors items-center justify-center flex"
+            disabled={updateEmployeeMutation.isPending}
+            className="w-full md:w-auto px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {updateEmployeeMutation.isPending ? (
-              <div className="w-5 h-5 border-2 my-1 border-t-transparent border-white rounded-full animate-spin"></div>
+              <>
+                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                Saving...
+              </>
             ) : (
-              "Submit"
+              "Save Changes"
             )}
           </button>
         </div>

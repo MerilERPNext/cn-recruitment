@@ -48,13 +48,12 @@ import ShiftRequestList from "./components/ShiftRequest/MyShiftList";
 import ShiftChangeRequest from "./components/ShiftRequest/ShiftChangeRequest";
 import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
 import TeamShift from "./components/ShiftRequest/TeamShift";
-import SalarySlipDetails from "./components/SalarySlip/SalaryDetails";
 import Policies from "./components/Policies";
 import PoliciesEnforced from "./components/PoliciesEnforced";
 import PolicySignOff from "./components/PolicySignOff";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
 // import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
-import RequestOvertime from "./components/Attendance/RequestOvertime/RequestOvertime";
+
 import { Navigate } from "react-router";
 
 import CTCSalaryUI from "./components/SalarySlip/CTCSalaryBreakdown";
@@ -67,6 +66,7 @@ import ViewSalarySlipModal from "./components/SalarySlip/SalarySlipPDF";
 import EmployeeAttendanceDetails from "./components/Attendance/Employee/EmployeeAttendanceDetails";
 import HRPayroll from "./components/SalarySlip/HR-Payroll";
 import AttendancePolicies from "./components/Attendance/AttendancePolicies/AttendancePolicies";
+
 
 export interface AppRoute {
   index?: boolean;
@@ -114,10 +114,6 @@ export const routesConfig: AppRoute[] = [
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "hr-payroll", element: <HRPayroll /> },
     ],
-  },
-  {
-    path: "",
-    element: <SalarySlipDetails />,
   },
   {
     path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
@@ -209,7 +205,6 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/attendance/emp-attendance/details",
     element: <EmployeeAttendanceDetails />,
   },
-  { path: "/webapp/attendance/overtime", element: <RequestOvertime /> },
   {
     path: "/webapp/attendance/team-attendance-details/pendings",
     element: <AllPendingRequests />,

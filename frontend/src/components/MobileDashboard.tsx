@@ -36,6 +36,8 @@ import {
 import defaultProfile from "../assets/face-rec.png";
 import logo from "../assets/logo.png";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
+import EmployeeFallback from "./EmployeeFallback";
 import {
   compareAsc,
   compareDesc,
@@ -91,6 +93,7 @@ const statusStyles = {
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const navigate = useNavigate();
 
@@ -106,6 +109,15 @@ const MobileDashboard: React.FC = () => {
 
     fetchLocation();
   }, []);
+
+  // Update current time every minute for real-time progress calculation
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
   // Get unread notifications count
   const { data: unreadCount = 0 } = useUnreadNoticesCount();
   const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
@@ -114,11 +126,14 @@ const MobileDashboard: React.FC = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
-  const { data: canShowClockIn } = useCanShowClockIn({
-    params: { user: currentEmployee?.user_id },
-  });
+
+  // Enhanced employee state with fallback
+  const employeeState = useEmployeeWithFallback();
+  const { data: canShowClockIn } = useCanShowClockIn(
+    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
+  );
   const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(
-    currentEmployee?.employee as string,
+    currentEmployee?.employee || "",
     format(startOfMonth(new Date()), "yyyy-MM-dd"),
     format(endOfMonth(new Date()), "yyyy-MM-dd")
   );
@@ -146,9 +161,9 @@ const MobileDashboard: React.FC = () => {
     data: homeSummary,
     refetch: refetchHomeSummary,
     isRefetching,
-  } = useHomeSummaryDetails(currentEmployee?.user_id as string, encodedFilters);
+  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: employeeShift } = useGetEmployeeShift(
-    currentEmployee?.user_id as string
+    currentEmployee?.user_id || ""
   );
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
@@ -276,26 +291,51 @@ const MobileDashboard: React.FC = () => {
   };
 
   const getTotalTime = () => {
-    if (firstCheckIn) {
-      const diffMins = differenceInMinutes(
-        new Date(),
-        parseISO(firstCheckIn.time.replace(" ", "T"))
-      );
-      const hours = Math.floor(diffMins / 60);
-      const minutes = diffMins % 60;
-      // Format as HH:mm with leading zeros
-      return `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}`;
-    } else {
+    if (!homeSummary || homeSummary.length === 0) {
       return "--:--";
     }
+
+    // Calculate total worked time by pairing check-ins and check-outs
+    let totalMinutes = 0;
+    const sortedLogs = [...homeSummary].sort((a, b) =>
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    );
+
+    let currentCheckIn: typeof sortedLogs[0] | null = null;
+
+    for (const log of sortedLogs) {
+      if (log.log_type === "IN") {
+        currentCheckIn = log;
+      } else if (log.log_type === "OUT" && currentCheckIn) {
+        // Calculate time between check-in and check-out
+        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+        const checkOutTime = parseISO(log.time.replace(" ", "T"));
+        totalMinutes += differenceInMinutes(checkOutTime, checkInTime);
+        currentCheckIn = null;
+      }
+    }
+
+    // If still checked in, add time from last check-in to now
+    if (currentCheckIn && isCurrentlyCheckedIn) {
+      const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+      totalMinutes += differenceInMinutes(currentTime, checkInTime);
+    }
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    // Format as HH:mm with leading zeros
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans max-w-md mx-auto">
+    <div className="h-screen bg-white font-sans max-w-md mx-auto flex flex-col">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-4 py-3 shadow-sm sticky top-0 z-10">
+      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-4 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
           {/* Left: Logo/Profile button */}
           <button className="flex items-center hover:bg-black/5 rounded-lg  transition-colors w-10 h-10 rounded-xl overflow-hidden ">
@@ -333,7 +373,7 @@ const MobileDashboard: React.FC = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="px-4 py-2 mt-2 bg-white border-b border-gray-100">
+      <div className="px-4 py-2 mt-2 bg-white border-b border-gray-100 flex-shrink-0">
         <div className="relative">
           <input
             type="text"
@@ -346,7 +386,21 @@ const MobileDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="px-4 py-3">
+      <div className="px-4 py-3 flex-1 overflow-y-auto">
+        {/* Employee Data Error Handling */}
+        {!employeeState.isLoading && !employeeState.hasValidData && (
+          <EmployeeFallback
+            message={
+              employeeState.hasEmployeeRecord
+                ? "Employee data is incomplete. Please contact HR."
+                : "No employee record found. Please contact HR to set up your profile."
+            }
+            variant="banner"
+            showRetry={employeeState.canRetry}
+            onRetry={employeeState.retry}
+          />
+        )}
+
         <div className="grid grid-cols-2 gap-2 mb-2">
           <div className="text-center bg-gray-200 border-1 border-gray-300 px-2 py-2 rounded-lg">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">

@@ -7,14 +7,14 @@ const ViewPolicy: React.FC = () => {
   const { policyName } = useParams<{ policyName: string }>();
 
   const { data, isLoading, error } = useFrappeDocument(
-    "HR Policies",
+    "Policy Details", // Using correct doctype name
     policyName!,
-    ["  add_policy_document"]
+    ["policy_document"] // Using correct field name
   );
 
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfUrl = (data as any)?.add_policy_document;
+  const pdfUrl = (data as any)?.policy_document;
 
   if (isLoading) return <div className="p-4 text-center text-sm">Loading…</div>;
 

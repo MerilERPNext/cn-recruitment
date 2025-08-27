@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import RequestLeave from "./RequestLeave";
+import RequestLeaveModal from "./RequestLeaveModal";
 import HeaderBar from "../HeaderBar";
 import { LeaveRequestRefreshProvider } from "./LeaveRequestRefreshContext";
 import {
@@ -8,6 +9,9 @@ import {
   RequestLeaveModalProvider,
 } from "./RequestLeaveModalContext";
 import NavigationTabs, { Tab } from "../NavigationTab";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import FormDialog from "../shared/FormDialog";
 
 type TabName = "leave-balance" | "requests-status" | "holidays";
 type SubTabName = "My Requests" | "Team Requests";
@@ -24,10 +28,13 @@ const subTabRoutes: Record<SubTabName, string> = {
 };
 
 const LeaveAppInner: React.FC = () => {
+  const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
   const [activeSubTab, setActiveSubTab] = useState<SubTabName>("My Requests");
+
+
 
   const tabs: Tab[] = useMemo(
     () => [
@@ -82,6 +89,8 @@ const LeaveAppInner: React.FC = () => {
     };
   }, [showModal]);
 
+ 
+
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
     if (tab === "requests-status") {
@@ -96,7 +105,7 @@ const LeaveAppInner: React.FC = () => {
     navigate(subTabRoutes[subTab]);
   };
 
-  return (
+  const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <style>{`
          .scrollbar-hidden {
@@ -157,15 +166,45 @@ const LeaveAppInner: React.FC = () => {
         </div>
       )}
 
-      {showModal && (
-        <div className="fixed inset-0 z-[60] bg-white overflow-y-auto">
-          <div className="max-w-md min-h-screen mx-auto">
-            <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
-          </div>
-        </div>
-      )}
+      <FormDialog
+        isOpen={showModal}
+        onClose={closeModal}
+        title="Request Leave"
+        size="lg"
+      >
+        <RequestLeave onSuccess={closeModal} />
+      </FormDialog>
     </div>
   );
+
+  // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
+  const actionButton = (
+    <button
+      onClick={() => openModal()}
+      className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
+    >
+      + Request Leave
+    </button>
+  );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="Leaves & Holidays" actionButton={actionButton}>
+      <div className="flex flex-col h-full">
+        {/* Page Content */}
+        <div className="flex-1 overflow-y-auto relative">
+          <Outlet />
+        </div>
+
+        <RequestLeaveModal
+          isOpen={showModal}
+          onClose={closeModal}
+          onSuccess={closeModal}
+        />
+      </div>
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 const LeaveApp: React.FC = () => {

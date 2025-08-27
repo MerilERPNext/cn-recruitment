@@ -15,8 +15,8 @@ import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
-import HeaderBar from "../HeaderBar";
 import { toast } from "react-hot-toast";
+import ResponsiveFormWrapper, { FormActions } from "../shared/ResponsiveFormWrapper";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -30,10 +30,9 @@ interface FormSubmissionData {
 
 interface RequestLeaveProps {
   onSuccess?: () => void;
-  onCancel?: () => void;
 }
 
-const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
+const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useEmployeeByUserId(userId);
 
@@ -291,52 +290,60 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   }, [leaveTypeOptions, defaults]);
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-lg">
-      <div className="z-[60]">
-        <HeaderBar title="Request Leave" onBack={onCancel} />
+    <div className="h-full flex flex-col">
+      {/* Leave Days Display */}
+      {leaveDays !== null && (
+        <div className="px-6 py-4 text-sm bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-700">Applying for:</span>
+            <span className="font-semibold text-blue-600">
+              {leaveDays} {leaveDays === 1 ? "Day" : "Days"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Form Content */}
+      <div className="flex-1 overflow-y-auto">
+        <ResponsiveFormWrapper className="p-0">
+          <Form
+            form={leaveForm}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onFormReady={(instance: any) => {
+              formInstance.current = instance;
+            }}
+            options={{
+              builder: { styles: false },
+              submitButton: false,
+              alerts: false,
+              disableOnSubmit: true,
+              formClass: "space-y-6",
+              rowClass: "flex flex-col",
+              labelClass: "mb-2 font-medium text-gray-700",
+              inputClass:
+                "border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors",
+              validateOnInit: false,
+              validateOnBlur: false,
+              validateOnChange: false,
+            }}
+            onChange={({ data }: { data: FormSubmissionData }) => {
+              setFormData(data);
+              calculateLeaveDays(data);
+            }}
+          />
+        </ResponsiveFormWrapper>
       </div>
 
-      <div
-        className="ml-6 mt-4 text-sm text-gray-700"
-        style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}
-      >
-        <strong>Applying for:</strong> {leaveDays}{" "}
-        {leaveDays === 1 ? "Day" : "Days"}
-      </div>
-
-      <Form
-        form={leaveForm}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onFormReady={(instance: any) => {
-          formInstance.current = instance;
-        }}
-        options={{
-          builder: { styles: false },
-          submitButton: false,
-          alerts: false,
-          disableOnSubmit: true,
-          formClass: "space-y-6",
-          rowClass: "flex flex-col",
-          labelClass: "mb-1 font-medium text-gray-700",
-          inputClass:
-            "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
-          validateOnInit: false,
-          validateOnBlur: false,
-          validateOnChange: false,
-        }}
-        onChange={({ data }: { data: FormSubmissionData }) => {
-          setFormData(data);
-          calculateLeaveDays(data);
-        }}
-      />
-
-      <div className="sticky bottom-0 bg-white py-4 px-4 z-50">
-        <button
-          onClick={handleSubmit}
-          className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-        >
-          Submit Request
-        </button>
+      {/* Form Actions */}
+      <div className="flex-shrink-0 px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <FormActions>
+          <button
+            onClick={handleSubmit}
+            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
+            Submit Request
+          </button>
+        </FormActions>
       </div>
     </div>
   );

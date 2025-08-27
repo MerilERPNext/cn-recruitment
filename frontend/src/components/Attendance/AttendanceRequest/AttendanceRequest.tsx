@@ -6,8 +6,10 @@ import { AttendanceRequest as AttendanceRequestType } from "../../../types/atten
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const AttendanceRequest = () => {
+  const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
@@ -71,16 +73,19 @@ const AttendanceRequest = () => {
           />
         </div>
       )}
-      <div className=" fixed bottom-0 w-full px-4 border-t border-gray-300 py-2">
-        <button
-          className={`flex justify-center gap-2 flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors z-10`}
-          onClick={() => {
-            setShowForm(!showForm);
-          }}
-        >
-          <Plus /> <span>Add Attendance Request</span>{" "}
-        </button>
-      </div>
+      {/* Add Attendance Request button - Only show for mobile since desktop has Actions button */}
+      {!isDesktop && (
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
+          <div className="max-w-7xl mx-auto px-4">
+            <button
+              className="flex justify-center gap-2 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              onClick={() => setShowForm(!showForm)}
+            >
+              <Plus /> <span>Add Attendance Request</span>
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

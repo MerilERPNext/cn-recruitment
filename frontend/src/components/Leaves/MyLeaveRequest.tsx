@@ -142,11 +142,14 @@ const MyLeaveRequest: React.FC = () => {
 
   return (
     <div className="space-y-3">
+
       <FrappeListView<LeaveApplicationItem>
         doctype="Leave Application"
-        ItemComponent={({ item }) => (
-          <LeaveRequestItem item={item} onClick={() => handleCardClick(item)} />
-        )}
+        ItemComponent={({ item }) => {
+          return (
+            <LeaveRequestItem item={item} onClick={() => handleCardClick(item)} />
+          );
+        }}
         defaultFields={[
           "name",
           "leave_type",
@@ -163,6 +166,7 @@ const MyLeaveRequest: React.FC = () => {
         onRefetchAvailable={setRefetch}
         SkeletonComponent={MyLeaveRequestSkeleton}
       />
+
       {isModalOpen && selectedRequest && (
         <RequestDetailsModal
           request={selectedRequest}

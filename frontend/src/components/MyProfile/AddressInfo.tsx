@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo, useRef } from "react";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import { Form } from "@tsed/react-formio";
 import { Employee } from "../../types/employee";
 import { useUpdateCurrentEmployeeProfile } from "../../hooks/useEmployee";
@@ -65,7 +64,6 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                   type: "columns",
                   columns: [
                     {
-                      width: 6,
                       components: [
                         {
                           type: "textfield",
@@ -82,7 +80,6 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
                       ],
                     },
                     {
-                      width: 6,
                       components: [
                         {
                           type: "textfield",
@@ -256,29 +253,46 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
   }, [user]);
 
   return (
-    <div className="h-full address-form-container max-w-md mx-auto bg-gray-100 rounded-lg">
-      <div className="p-4">
-        <Form
-          form={addressForm}
-          options={{
-            submitButton: false,
-            rowClass: "flex 1234567 flex-nowrap bg-red-200",
-          }}
-          onFormReady={(instance: any) =>
-            (formAddressInstance.current = instance)
-          }
-        />
-      </div>
-      <div className="sticky bottom-0 bg-white rounded-md border-t shadow-lg py-4 px-4 w-full mt-6 z-50">
-        <div className="max-w-4xl mx-auto flex">
+    <div className="h-full address-form-container">
+      <div className="p-4 md:p-8">
+        {/* Header - Hidden on mobile, visible on desktop */}
+        <div className="hidden md:block border-b border-gray-200 pb-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Address Information
+          </h2>
+          <p className="text-gray-600">
+            Manage your current and permanent address details
+          </p>
+        </div>
+
+        {/* Form Container with centered alignment for desktop */}
+        <div className="max-w-full md:max-w-4xl md:mx-auto">
+          <Form
+            form={addressForm}
+            options={{
+              submitButton: false,
+              rowClass: "flex flex-nowrap",
+            }}
+            onFormReady={(instance: any) =>
+              (formAddressInstance.current = instance)
+            }
+          />
+        </div>
+
+        {/* Submit Button - Adjusting for full-width on mobile */}
+        <div className="p-1 sticky bottom-0 left-0 right-0 bg-white border-t md:mt-8 flex justify-center md:justify-end md:w-full md:p-0 z-10">
           <button
             onClick={handleSubmit}
-            className="flex-1 py-3 max-h-12 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors items-center justify-center flex"
+            disabled={updateEmployeeMutation.isPending}
+            className="w-full md:w-auto px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {updateEmployeeMutation.isPending ? (
-              <div className="w-5 h-5 border-2 my-1 border-t-transparent border-white rounded-full animate-spin"></div>
+              <>
+                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                Saving...
+              </>
             ) : (
-              "Submit"
+              "Save Changes"
             )}
           </button>
         </div>

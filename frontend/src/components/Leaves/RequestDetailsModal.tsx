@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import { FaPencilRuler } from "react-icons/fa";
 import { format } from "date-fns";
 import HeaderBar from "../HeaderBar";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import Modal from "../shared/Modal";
 
 interface RequestDetails {
   leave_type: string;
@@ -26,12 +28,16 @@ const RequestDetailsModal: React.FC<Props> = ({
   isMyLeaveRequest = false,
   onRevoke,
 }) => {
+  const { isDesktop } = useScreenSize();
+
   useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, []);
+    if (!isDesktop) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "unset";
+      };
+    }
+  }, [isDesktop]);
 
   const getStatusBadge = (status: string) => {
     let colorClasses = "";
@@ -60,54 +66,49 @@ const RequestDetailsModal: React.FC<Props> = ({
     );
   };
 
-  return (
-    <div className="fixed inset-0 z-[60] bg-white flex flex-col min-h-screen overflow-hidden">
-      <div className="shadow-sm">
-        <HeaderBar title="Leave Request Details" onBack={onClose} />
+  const renderContent = () => (
+    <div className="space-y-4">
+      <div className="flex items-center space-x-4">
+        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+          <FaPencilRuler className="text-blue-600 text-xl" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {request.leave_type}
+          </h3>
+          {getStatusBadge(request.status)}
+        </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="bg-white border rounded-2xl shadow-md w-full max-w-md p-6 space-y-4 mx-auto">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <FaPencilRuler className="text-blue-600 text-xl" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {request.leave_type}
-              </h3>
-              {getStatusBadge(request.status)}
-            </div>
+
+      <hr className="border-gray-200" />
+
+      <div className="flex justify-between text-sm text-gray-600">
+        <div>
+          <div className="font-semibold">From</div>
+          <div className="text-gray-900">
+            {format(new Date(request.from_date), "d MMM, yyyy")}
           </div>
-
-          <hr className="border-gray-200" />
-
-          <div className="flex justify-between text-sm text-gray-600">
-            <div>
-              <div className="font-semibold">From</div>
-              <div className="text-gray-900">
-                {format(new Date(request.from_date), "d MMM, yyyy")}
-              </div>
-            </div>
-            <div>
-              <div className="font-semibold">To</div>
-              <div className="text-gray-900">
-                {format(new Date(request.to_date), "d MMM, yyyy")}
-              </div>
-            </div>
+        </div>
+        <div>
+          <div className="font-semibold">To</div>
+          <div className="text-gray-900">
+            {format(new Date(request.to_date), "d MMM, yyyy")}
           </div>
+        </div>
+      </div>
 
-          {request.description && (
-            <div className="text-sm">
-              <div className="font-semibold text-gray-600 mb-1">
-                Reason for leave
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg text-gray-900 whitespace-pre-wrap">
-                {request.description}
-              </div>
-            </div>
-          )}
+      {request.description && (
+        <div className="text-sm">
+          <div className="font-semibold text-gray-600 mb-1">
+            Reason for leave
+          </div>
+          <div className="bg-gray-100 p-4 rounded-lg text-gray-900 whitespace-pre-wrap">
+            {request.description}
+          </div>
+        </div>
+      )}
 
-          <div className="pt-4">
+      <div className="pt-4">
             {actions}
             {request.status === "Open" && isMyLeaveRequest && (
               <button
@@ -119,6 +120,38 @@ const RequestDetailsModal: React.FC<Props> = ({
               </button>
             )}
           </div>
+    </div>
+  );
+
+  if (isDesktop) {
+    return (
+      <Modal isOpen={true} onClose={onClose} size="md">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Leave Request Details</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {renderContent()}
+        </div>
+      </Modal>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-white flex flex-col min-h-screen overflow-hidden">
+      <div className="shadow-sm">
+        <HeaderBar title="Leave Request Details" onBack={onClose} />
+      </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="bg-white border rounded-2xl shadow-md w-full max-w-md p-6 mx-auto">
+          {renderContent()}
         </div>
       </div>
     </div>
