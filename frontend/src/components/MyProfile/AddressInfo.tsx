@@ -3,6 +3,8 @@ import React, { useCallback, useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { Employee } from "../../types/employee";
 import { useUpdateCurrentEmployeeProfile } from "../../hooks/useEmployee";
+// CHANGED: Added the import for the custom screen size hook
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 export interface Address {
   name: string;
@@ -36,6 +38,8 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
 }) => {
   const { updateEmployeeMutation } = useUpdateCurrentEmployeeProfile();
   const formAddressInstance = useRef<any>(null);
+  // CHANGED: Use the custom hook to determine if the screen is a desktop
+  const { isDesktop } = useScreenSize();
 
   const addressForm = useMemo(() => {
     return {
@@ -255,7 +259,20 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
   return (
     <div className="h-full address-form-container">
       <div className="p-4 md:p-8">
-        {/* Header - Hidden on mobile, visible on desktop */}
+        {/* CHANGED: Conditionally render the header based on the 'isDesktop' state */}
+        {isDesktop && (
+          <div className="border-b border-gray-200 pb-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Address Information
+            </h2>
+            <p className="text-gray-600">
+              Manage your current and permanent address details
+            </p>
+          </div>
+        )}
+        {/*
+          OLD CODE: This was commented out. It is better to use a conditional render
+          rather than Tailwind's responsive classes for consistency with your other components.
         <div className="hidden md:block border-b border-gray-200 pb-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Address Information
@@ -264,6 +281,7 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
             Manage your current and permanent address details
           </p>
         </div>
+        */}
 
         {/* Form Container with centered alignment for desktop */}
         <div className="max-w-full md:max-w-4xl md:mx-auto">
