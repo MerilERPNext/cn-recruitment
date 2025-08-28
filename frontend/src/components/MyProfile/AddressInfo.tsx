@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { Employee } from "../../types/employee";
 import { useUpdateCurrentEmployeeProfile } from "../../hooks/useEmployee";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 export interface Address {
   name: string;
@@ -36,6 +37,7 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
 }) => {
   const { updateEmployeeMutation } = useUpdateCurrentEmployeeProfile();
   const formAddressInstance = useRef<any>(null);
+  const { isDesktop } = useScreenSize();
 
   const addressForm = useMemo(() => {
     return {
@@ -254,18 +256,22 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
 
   return (
     <div className="h-full address-form-container">
-      <div className="p-4 md:p-8">
-        {/* Header - Hidden on mobile, visible on desktop */}
-        <div className="hidden md:block border-b border-gray-200 pb-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Address Information
-          </h2>
-          <p className="text-gray-600">
-            Manage your current and permanent address details
-          </p>
-        </div>
+      {/*
+        This container adds padding to the bottom on mobile to prevent the fixed button from
+        overlapping the last form fields. This padding is not needed on desktop.
+      */}
+      <div className="p-4 md:p-8 pb-20 md:pb-8">
+        {isDesktop && (
+          <div className="border-b border-gray-200 pb-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Address Information
+            </h2>
+            <p className="text-gray-600">
+              Manage your current and permanent address details
+            </p>
+          </div>
+        )}
 
-        {/* Form Container with centered alignment for desktop */}
         <div className="max-w-full md:max-w-4xl md:mx-auto">
           <Form
             form={addressForm}
@@ -278,23 +284,35 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
             }
           />
         </div>
+      </div>
 
-        {/* Submit Button - Adjusting for full-width on mobile */}
-        <div className="p-1 sticky bottom-0 left-0 right-0 bg-white border-t md:mt-8 flex justify-center md:justify-end md:w-full md:p-0 z-10">
-          <button
-            onClick={handleSubmit}
-            disabled={updateEmployeeMutation.isPending}
-            className="w-full md:w-auto px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            {updateEmployeeMutation.isPending ? (
-              <>
-                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                Saving...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </button>
+      {/* Button for Mobile View - fixed at the bottom, hidden on desktop */}
+      <div className="md:mr-8 md:mb-5 md:mt-[-30px] md:flex md:justify-end">
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2 md:relative md:w-auto md:mt-8 md:flex md:justify-end md:p-0">
+          <div className="max-w-7xl mx-auto px-3 md:p-0">
+            <button
+              onClick={handleSubmit}
+              disabled={updateEmployeeMutation.isPending}
+              className={`
+                  flex justify-center w-full py-3 rounded-lg font-medium transition-colors
+                  
+                  /* Mobile-first styling */
+                  bg-black text-white hover:bg-gray-800
+                  
+                  /* Desktop overrides */
+                  md:w-auto md:px-8 md:bg-blue-600 md:text-white md:hover:bg-blue-700
+                `}
+            >
+              {updateEmployeeMutation.isPending ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -302,3 +320,4 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
 };
 
 export default AddressInfo;
+
