@@ -103,7 +103,6 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   return (
     <div className="h-full">
       <div className="p-4 md:p-8">
-        {/* CHANGED: Conditionally render the header based on the 'isDesktop' state */}
         {isDesktop && (
           <div className="border-b border-gray-200 pb-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -115,7 +114,6 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
           </div>
         )}
         
-        {/* Form Container */}
         <div className="max-w-full md:max-w-4xl md:mx-auto">
           <Form
             form={contactInfoForm}
@@ -128,22 +126,34 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
           />
         </div>
 
-        {/* Submit Button */}
-        <div className="p-1 sticky bottom-0 left-0 right-0 bg-white border-t md:mt-8 flex justify-center md:justify-end md:w-full md:p-0 z-10">
-          <button
-            onClick={handleSubmit}
-            disabled={updateEmployeeMutation.isPending}
-            className="w-full md:w-auto px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            {updateEmployeeMutation.isPending ? (
-              <>
-                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                Saving...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </button>
+        {/* CHANGED: This entire div and the button inside it were updated to handle your requests. */}
+        <div className="md:mt-8 md:flex md:justify-end">
+          <div className="fixed bottom-0 left-0 w-full bg-white border border-gray-300 py-2 md:relative md:w-auto md:p-0 md:border-t-0">
+            <div className="max-w-7xl mx-auto px-3 md:p-0">
+              <button
+                onClick={handleSubmit}
+                disabled={updateEmployeeMutation.isPending}
+                className={`
+                  flex justify-center w-full py-3 rounded-lg font-medium transition-colors
+                  
+                  /* Mobile-first styling */
+                  bg-black text-white hover:bg-gray-800
+                  
+                  /* Desktop overrides */
+                  md:w-auto md:px-8 md:bg-blue-600 md:text-white md:hover:bg-blue-700
+                `}
+              >
+                {updateEmployeeMutation.isPending ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
