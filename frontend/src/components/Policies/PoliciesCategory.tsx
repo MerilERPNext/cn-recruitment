@@ -21,7 +21,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
           state: { name },
         })
       }
-      className="flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 my-2 cursor-pointer"
+      className="flex border  border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 my-2 cursor-pointer"
     >
       <span className="font-medium text-gray-900">{name}</span>
       <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-semibold">
@@ -59,7 +59,7 @@ const PoliciesCategory: React.FC = () => {
   console.log("🏷️ Generated categories:", categories);
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full p-4">
       {categories.length === 0 ? (
         <p className="text-gray-500 text-center mt-4">No categories found.</p>
       ) : (
