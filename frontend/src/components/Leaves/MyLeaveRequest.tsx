@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import FrappeListView from "../ListView";
@@ -16,6 +16,18 @@ const LeaveRequestItem = ({
   item: LeaveApplicationItem;
   onClick?: () => void;
 }) => {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Approved":
@@ -44,10 +56,23 @@ const LeaveRequestItem = ({
     }
   };
 
+  const handleRevokeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log("Revoke request triggered for:", item.name);
+  };
+
+  const handleCardClick = () => {
+    if (!isDesktop && onClick) {
+      onClick();
+    }
+  };
+
   return (
     <div
-      onClick={onClick}
-      className="bg-white rounded-lg border border-gray-200 p-3 mb-3 shadow-sm cursor-pointer"
+      onClick={handleCardClick}
+      className={`bg-white rounded-lg border border-gray-200 p-3 mb-3 shadow-sm ${
+        !isDesktop ? "cursor-pointer" : "cursor-default"
+      }`}
     >
       <div className="flex flex-wrap md:flex-nowrap items-start justify-between gap-3">
         <div className="flex items-start space-x-3 flex-1 min-w-0">
@@ -74,16 +99,19 @@ const LeaveRequestItem = ({
             </p>
           </div>
         </div>
-        {item.status === "Open" && (
+
+        {item.status === "Open" && !isDesktop && (
           <button
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               console.log("Nudge button clicked!");
             }}
           >
             <PiHandTap className="w-6 h-6 text-gray-500" />
           </button>
         )}
+
         <span
           className={`px-2 py-1 flex items-center rounded-[20px] text-xs font-medium ${getStatusColor(
             item.status
@@ -97,6 +125,30 @@ const LeaveRequestItem = ({
           {item.status === "Open" ? "Pending" : item.status}
         </span>
       </div>
+
+      {isDesktop && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">
+            Reason for leave
+          </h4>
+          <div className="bg-gray-50 rounded-md p-3">
+            <p className="text-sm text-gray-600">
+              {item.description || "kuch"}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {item.status === "Open" && isDesktop && (
+        <div className="mt-3">
+          <button
+            onClick={handleRevokeClick}
+            className="w-full bg-black text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-800 transition-colors duration-200"
+          >
+            Revoke
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -107,6 +159,7 @@ const MyLeaveRequest: React.FC = () => {
     isLoading: isUserLoading,
     error: userError,
   } = useLoggedInUser();
+
   const {
     data: currentEmployee,
     isLoading: isEmployeeLoading,
@@ -141,15 +194,15 @@ const MyLeaveRequest: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3">
-
+    <div className="space-y-3 pb-20"> {/* 👈 padding bottom added here */}
       <FrappeListView<LeaveApplicationItem>
         doctype="Leave Application"
-        ItemComponent={({ item }) => {
-          return (
-            <LeaveRequestItem item={item} onClick={() => handleCardClick(item)} />
-          );
-        }}
+        ItemComponent={({ item }) => (
+          <LeaveRequestItem
+            item={item}
+            onClick={() => handleCardClick(item)}
+          />
+        )}
         defaultFields={[
           "name",
           "leave_type",
