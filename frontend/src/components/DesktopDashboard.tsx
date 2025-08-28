@@ -11,7 +11,6 @@ import {
   LogOut,
   Clock,
   ChevronDown,
-  Settings,
 } from "lucide-react";
 import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -411,7 +410,7 @@ const DesktopDashboard: React.FC = () => {
         <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              Welcome, Employee!
+              Welcome, {currentUser?.full_name || "Employee"}
             </h1>
             <p className="text-xs text-gray-600">Here's your dashboard for today.</p>
           </div>
@@ -526,16 +525,6 @@ const DesktopDashboard: React.FC = () => {
                     >
                       <User className="w-4 h-4" />
                       View Full Profile
-                    </button>
-                    <button
-                      onClick={() => {
-                        // Add settings navigation if needed
-                        setShowProfileDropdown(false);
-                      }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Account Settings
                     </button>
                     <hr className="my-2 border-gray-100" />
                     <button

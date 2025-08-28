@@ -390,7 +390,7 @@ const CTCSalaryUI = () => {
                       <Wallet className="w-6 h-6 text-green-700" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold mb-1 text-green-800">Monthly Take Home</h2>
+                      <h2 className="text-2xl font-bold mb-1 text-green-800">Monthly Take Home ??</h2>
                       <p className="text-green-600">In-hand Salary (Per Month)</p>
                     </div>
                   </div>
