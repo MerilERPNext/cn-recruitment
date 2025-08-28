@@ -6,7 +6,6 @@ import {
   useGenderTypes,
   useUpdateCurrentEmployeeProfile,
 } from "../../hooks/useEmployee";
-// CHANGED: Added the import for the custom screen size hook
 import { useScreenSize } from "../../hooks/useScreenSize";
 
 export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
@@ -14,7 +13,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   const formPersonalInfoInstance = useRef<any>(null);
 
   const { data: genderTypes } = useGenderTypes();
-  // CHANGED: Use the custom hook to determine if the screen is a desktop
   const { isDesktop } = useScreenSize();
 
   const personalInfoForm = useMemo(() => {
@@ -208,7 +206,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   return (
     <div className="address-form-container h-full">
       <div className="p-4 md:p-8">
-        {/* CHANGED: Conditionally render the header based on the 'isDesktop' state */}
         {isDesktop && (
           <div className="border-b border-gray-200 pb-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -219,18 +216,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
             </p>
           </div>
         )}
-        {/* OLD CODE: This was commented out. It is better to use a conditional render
-          rather than Tailwind's responsive classes for consistency with your other components.
-        <div className="hidden md:block border-b border-gray-200 pb-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Personal Information
-          </h2>
-          <p className="text-gray-600">
-            Update your personal details and emergency contact information
-          </p>
-        </div>
-        */}
-        {/* Form Container with centered alignment for desktop */}
         <div className="max-w-full md:max-w-4xl md:mx-auto">
           <Form
             key={user?.employee || "loading"}
@@ -244,22 +229,35 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
           />
         </div>
 
-        {/* Submit Button - Adjusting for full-width on mobile */}
-        <div className="p-1 sticky bottom-0 left-0 right-0 bg-white border-t md:mt-8 flex justify-center md:justify-end md:w-full md:p-0 z-10">
-          <button
-            onClick={handleSubmit}
-            disabled={updateEmployeeMutation.isPending}
-            className="w-full md:w-auto px-8 py-3 rounded-xl bg-black text-white font-medium transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            {updateEmployeeMutation.isPending ? (
-              <>
-                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                Saving...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </button>
+        {/* CHANGED: Mobile button container now matches the sticky style of the AttendanceRequest component. */}
+        {/* CHANGED: Desktop button positioning is now correct. */}
+        <div className="md:mt-8 md:flex md:justify-end">
+          <div className="fixed bottom-0 left-0 w-full bg-white border border-gray-300 py-2 md:relative md:w-auto md:p-0 md:border-t-0">
+            <div className="max-w-7xl mx-auto px-3 md:p-0">
+              <button
+                onClick={handleSubmit}
+                disabled={updateEmployeeMutation.isPending}
+                className={`
+                  flex justify-center w-full py-3 rounded-lg font-medium transition-colors
+                  
+                  /* Mobile-first styling */
+                  bg-black text-white hover:bg-gray-800
+                  
+                  /* Desktop overrides */
+                  md:w-auto md:px-8 md:bg-blue-600 md:text-white md:hover:bg-blue-700
+                `}
+              >
+                {updateEmployeeMutation.isPending ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
