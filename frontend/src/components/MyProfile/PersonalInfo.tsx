@@ -6,12 +6,16 @@ import {
   useGenderTypes,
   useUpdateCurrentEmployeeProfile,
 } from "../../hooks/useEmployee";
+// CHANGED: Added the import for the custom screen size hook
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   const { updateEmployeeMutation } = useUpdateCurrentEmployeeProfile();
   const formPersonalInfoInstance = useRef<any>(null);
 
   const { data: genderTypes } = useGenderTypes();
+  // CHANGED: Use the custom hook to determine if the screen is a desktop
+  const { isDesktop } = useScreenSize();
 
   const personalInfoForm = useMemo(() => {
     return {
@@ -132,7 +136,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                               { value: "O+", label: "O+" },
                               { value: "O-", label: "O-" },
                               { value: "AB+", label: "AB+" },
-                              { value: "AB-", label: "AB-" },
+                              { value: "AB-" },
                             ],
                           },
                           customClass: "appearance-none",
@@ -204,7 +208,19 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   return (
     <div className="address-form-container h-full">
       <div className="p-4 md:p-8">
-        {/* Header - Hidden on mobile, visible on desktop */}
+        {/* CHANGED: Conditionally render the header based on the 'isDesktop' state */}
+        {isDesktop && (
+          <div className="border-b border-gray-200 pb-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Personal Information
+            </h2>
+            <p className="text-gray-600">
+              Update your personal details and emergency contact information
+            </p>
+          </div>
+        )}
+        {/* OLD CODE: This was commented out. It is better to use a conditional render
+          rather than Tailwind's responsive classes for consistency with your other components.
         <div className="hidden md:block border-b border-gray-200 pb-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Personal Information
@@ -213,7 +229,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
             Update your personal details and emergency contact information
           </p>
         </div>
-
+        */}
         {/* Form Container with centered alignment for desktop */}
         <div className="max-w-full md:max-w-4xl md:mx-auto">
           <Form
