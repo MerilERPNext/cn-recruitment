@@ -67,7 +67,6 @@ import EmployeeAttendanceDetails from "./components/Attendance/Employee/Employee
 import HRPayroll from "./components/SalarySlip/HR-Payroll";
 import AttendancePolicies from "./components/Attendance/AttendancePolicies/AttendancePolicies";
 
-
 export interface AppRoute {
   index?: boolean;
   path: string;
@@ -184,39 +183,39 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/recruitment-app/requisitions/add-requisition/*",
     element: <AddRequisition />,
   },
-
   {
     path: "/webapp/attendance",
     element: <AttendanceLayout />,
     children: [
       {
+        path: "",
         index: true,
         element: <Navigate to="summary" replace />,
-        path: "",
       },
       { path: "summary", element: <AttendanceSummary /> },
       { path: "emp-attendance", element: <EmployeeAttendance /> },
+      {
+        path: "emp-attendance/all",
+        element: <AllEmpAttendance />,
+      },
+      {
+        path: "emp-attendance/details",
+        element: <EmployeeAttendanceDetails />,
+      },
       { path: "team-attendance", element: <TeamAttendance /> },
       { path: "attendance-request", element: <AttendanceRequest /> },
       { path: "team-attendance-requests", element: <TeamAttendanceDetails /> },
+      {
+        path: "team-attendance-requests/pendings",
+        element: <AllPendingRequests />,
+      },
+      {
+        path: "attendance-policies",
+        element: <AttendancePolicies />,
+      },
     ],
   },
-  {
-    path: "/webapp/attendance/emp-attendance/details",
-    element: <EmployeeAttendanceDetails />,
-  },
-  {
-    path: "/webapp/attendance/team-attendance-details/pendings",
-    element: <AllPendingRequests />,
-  },
-  {
-    path: "/webapp/attendance/emp-attendance/all",
-    element: <AllEmpAttendance />,
-  },
-  {
-    path: "/webapp/attendance/attendance-policies",
-    element: <AttendancePolicies />,
-  },
+
   //Leaves routes
   {
     path: "/webapp/leave-app",

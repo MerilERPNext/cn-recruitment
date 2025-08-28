@@ -52,7 +52,8 @@ const App: React.FC = () => {
                   minWidth: "250px",
                   padding: "1rem",
                   borderRadius: "0.5rem",
-                  transition: "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                  transition:
+                    "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
                 }}
               >
                 {({ message }) => (
@@ -92,7 +93,10 @@ const App: React.FC = () => {
                 <Route element={<ModalWrapper />}>
                   <Route path="/webapp/" element={<ResponsiveDashboard />} />
                   {renderRoutes(routesConfig)}
-                  <Route path="*" element={<Navigate to="/webapp/" replace />} />
+                  <Route
+                    path="*"
+                    element={<Navigate to="/webapp/" replace />}
+                  />
                 </Route>
               </Routes>
             </div>

@@ -51,7 +51,7 @@ const EmployeeAttendanceDetails = () => {
           <div className="animate-spin border-2 border-black border-t-transparent rounded-full w-5 h-5"></div>
         </div>
       ) : (
-        <div className="flex-grow overflow-y-auto mt-14 p-4">
+        <div className="flex-grow overflow-y-auto p-4">
           {empCheckIns && empCheckIns.length > 0 ? (
             <div className="flex flex-col gap-3">
               {empCheckIns.map((record) => (
@@ -75,7 +75,7 @@ const EmployeeAttendanceDetails = () => {
         </div>
       )}
 
-      <div className="p-3 border-t bg-white fixed bottom-0 right-0 w-full z-50 ">
+      <div className="p-3 border-t bg-white absolute bottom-0 right-0 w-full z-50 ">
         <button
           disabled={
             status !== "absent" &&

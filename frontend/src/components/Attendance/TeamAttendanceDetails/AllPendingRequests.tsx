@@ -43,7 +43,7 @@ const AllPendingRequests = () => {
           navigate(-1);
         }}
       />
-      <div className="bg-white px-4 my-16 h-screen">
+      <div className="bg-white px-4 mb-16 h-screen">
         <div>
           <div className="my-4">
             <BulkActionBar

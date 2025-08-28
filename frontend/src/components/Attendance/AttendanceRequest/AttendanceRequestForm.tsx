@@ -55,6 +55,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
 }) => {
+  const formAddressInstance = useRef<FormioFormInstance | null>(null);
+  const [formData, setFormData] = useState<AttendanceFormData>();
   const [isForOthers, setIsForOthers] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -65,12 +67,13 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedRequestType, setSelectedRequestType] = useState<string>("");
   const { data: reasonList } = useGetAllReasons(selectedRequestType);
-
-  const { data: employeeCheckInLogs } = useAllEmployeeCheckIns();
-
   const employeeIdToShow = isForOthers
     ? selectedEmployee
     : currentEmployee?.employee;
+  const { data: employeeCheckInLogs } = useAllEmployeeCheckIns([
+    ["time", "between", [formData?.from_date, formData?.to_date]],
+    ["employee", "=", employeeIdToShow],
+  ]);
 
   const filteredLogs = employeeCheckInLogs?.filter(
     (log) => log.employee === employeeIdToShow
@@ -107,7 +110,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     []
   );
 
-  const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const mutation = useCreateNewAttendanceRequest();
 
   const handleFromDateChange = (event: { data: AttendanceFormData }) => {
@@ -415,9 +417,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customConditional: "show = data.request_type !== 'Shift Change';",
             data: {
               values:
-                reasonList?.map((item: { reason: string }) => ({
+                reasonList?.map((item: { reason: string; name: string }) => ({
                   label: item?.reason || "",
-                  value: item?.reason,
+                  value: item?.name,
                 })) || [],
             },
           },
@@ -471,7 +473,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     const baseBody = {
-      custom__request_type: submission.data.request_type,
+      custom_request_type: submission.data.request_type,
       company: isForOthers ? submission.data.company : currentEmployee?.company,
       employee: isForOthers
         ? submission.data.employee
@@ -559,7 +561,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       },
     });
   };
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -612,6 +613,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               builder: { styles: false },
               submitButton: false,
               noAlerts: true,
+            }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onChange={(submission: any) => {
+              setFormData(submission?.data);
             }}
             onFormReady={(instance: FormioFormInstance) => {
               formAddressInstance.current = instance;
