@@ -394,7 +394,7 @@ const DesktopDashboard: React.FC = () => {
   };
 
   // Calculate dynamic margin based on sidebar width
-  const contentMarginLeft = isSidebarExpanded ? 'ml-64' : 'ml-20';
+  const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -405,14 +405,18 @@ const DesktopDashboard: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}>
+      <div
+        className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}
+      >
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
               Welcome, {currentUser?.full_name || "Employee"}
             </h1>
-            <p className="text-xs text-gray-600">Here's your dashboard for today.</p>
+            <p className="text-xs text-gray-600">
+              Here's your dashboard for today.
+            </p>
           </div>
 
           <div className="flex items-center gap-4">

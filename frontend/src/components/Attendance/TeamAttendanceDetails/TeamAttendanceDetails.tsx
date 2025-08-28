@@ -125,7 +125,7 @@ const TeamAttendanceDetails = () => {
               <button
                 onClick={() => {
                   navigate(
-                    "/webapp/attendance/team-attendance-details/pendings"
+                    "/webapp/attendance/team-attendance-requests/pendings"
                   );
                 }}
                 className="text-blue-600 hover:text-blue-800 font-medium"
@@ -158,6 +158,9 @@ const TeamAttendanceDetails = () => {
                   isSelected={isSelected(request.name)}
                   onToggleSelect={toggleSelect}
                   onClick={(request) => setSelectedRequest(request)}
+                  onAction={() => {
+                    refetch();
+                  }}
                 />
               ))
             ) : (
@@ -199,6 +202,9 @@ const TeamAttendanceDetails = () => {
         <AttendanceDetailView
           data={selectedRequest}
           onClose={() => setSelectedRequest(null)}
+          onAction={() => {
+            refetch();
+          }}
         />
       )}
     </>

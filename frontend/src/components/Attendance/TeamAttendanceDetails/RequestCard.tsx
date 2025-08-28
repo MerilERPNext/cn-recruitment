@@ -1,6 +1,9 @@
 import { format } from "date-fns";
 import { RequestCardProps } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
+import { useActionOnAttendanceRequest } from "../../../hooks/useAttendance";
+import { useState } from "react";
+import toast from "react-hot-toast";
 
 export function RequestCard({
   request,
@@ -8,11 +11,13 @@ export function RequestCard({
   isSelected = false,
   onToggleSelect,
   onClick,
+  onAction,
 }: RequestCardProps & {
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
   onClick?: (request: RequestCardProps["request"]) => void;
 }) {
+  const mutation = useActionOnAttendanceRequest();
   const getStatus = (status: string) => {
     if (status === "Pending") {
       return {
@@ -33,6 +38,41 @@ export function RequestCard({
   };
 
   const status = getStatus(request?.custom_status);
+
+  const [currentAction, setCurrentAction] = useState<
+    "Approve" | "Reject" | null
+  >(null);
+
+  const handleAction = (
+    action: "Approve" | "Reject",
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentAction(action);
+    mutation.mutate(
+      {
+        action,
+        attendance_request_id: request.name,
+      },
+      {
+        onSettled: () => {
+          setCurrentAction(null);
+        },
+
+        onSuccess: () => {
+          if (onAction) {
+            onAction();
+          }
+          toast.success("Added Attendance Request successfully!");
+        },
+        onError: (error) => {
+          toast.error(error?.message);
+          console.error(error);
+        },
+      }
+    );
+  };
 
   return (
     <div
@@ -75,16 +115,22 @@ export function RequestCard({
             {!isActionedCard && (
               <div className="flex space-x-2 mt-3">
                 <button
-                  className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200"
-                  // onClick={(e) => handleAction("rejected", e)}
+                  className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={(e) => handleAction("Reject", e)}
+                  disabled={mutation.isPending}
                 >
-                  Reject
+                  {mutation.isPending && currentAction === "Reject"
+                    ? "Rejecting..."
+                    : "Reject"}
                 </button>
                 <button
-                  className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200"
-                  // onClick={(e) => handleAction("approved", e)}
+                  className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={(e) => handleAction("Approve", e)}
+                  disabled={mutation.isPending}
                 >
-                  Approve
+                  {mutation.isPending && currentAction === "Approve"
+                    ? "Approving..."
+                    : "Approve"}
                 </button>
               </div>
             )}
