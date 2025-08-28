@@ -34,7 +34,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
       />
       
       {/* Modal content */}
-      <div className="relative bg-white rounded-lg shadow-xl w-[70%] max-w-6xl max-h-[90vh] flex flex-col z-10">
+      <div className="relative bg-white rounded-lg shadow-xl w-[70%] max-w-6xl max-h-[90vh] flex flex-col z-10 border-white border-5 rounded-xl">
         {/* Modal header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
           <h2 className="text-lg font-semibold text-gray-800">
