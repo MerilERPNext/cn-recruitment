@@ -31,7 +31,7 @@ const PoliciesApp: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Policies">
-      <div className="p-8 overflow-y-auto h-full">
+      <div className="p-8 md:p-0 overflow-y-auto h-full">
         <Outlet />
       </div>
     </DesktopLayoutWrapper>

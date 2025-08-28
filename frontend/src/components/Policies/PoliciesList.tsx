@@ -77,7 +77,7 @@ const PoliciesList: React.FC = () => {
   }
 
   return (
-    <div className="max-w-md bg-white rounded-xl">
+    <div className="w-full bg-white rounded-xl p-4">
       <FrappeListView<PolicyDoc>
         doctype="Policy Details" // Using correct doctype name
         defaultFilters={{
