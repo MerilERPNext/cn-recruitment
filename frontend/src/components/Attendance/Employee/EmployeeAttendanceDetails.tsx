@@ -1,7 +1,6 @@
-import { Plus } from "lucide-react";
 import LayoutHeader from "../../shared/LayoutHeader";
-import { useState, useMemo } from "react";
-import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
+import { useMemo } from "react";
+// import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import { useLocation } from "react-router";
 import { endOfDay, format, startOfDay, isValid } from "date-fns";
 import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
@@ -14,8 +13,8 @@ const EmployeeAttendanceDetails = () => {
   const query = new URLSearchParams(search);
   const dateParam = query.get("date");
   const status = query.get("status");
-  const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
-    useState(false);
+  // const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
+  //   useState(false);
 
   const validDate = useMemo(() => {
     const d = new Date(dateParam || "");
@@ -75,7 +74,7 @@ const EmployeeAttendanceDetails = () => {
         </div>
       )}
 
-      <div className="p-3 border-t bg-white absolute bottom-0 right-0 w-full z-50 ">
+      {/* <div className="p-3 border-t bg-white absolute bottom-0 right-0 w-full z-50 ">
         <button
           disabled={
             status !== "absent" &&
@@ -96,14 +95,14 @@ const EmployeeAttendanceDetails = () => {
           <Plus className="w-4 h-4 mr-2" />
           Attendance Request
         </button>
-      </div>
+      </div> */}
 
-      {showReqAttendanceCorrection && (
+      {/* {showReqAttendanceCorrection && (
         <AttendanceRequestForm
           onClose={() => setShowReqAttendanceCorrection(false)}
           selectedDate={new Date(dateParam as string)}
         />
-      )}
+      )} */}
     </div>
   );
 };
