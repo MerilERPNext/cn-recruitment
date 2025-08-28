@@ -15,6 +15,15 @@ app_include_js = [
     "/assets/recruitment/js/teams_utils.js"
 ]
 
+add_to_apps_screen = [
+	{
+		"name": "recruitment",
+		"logo": "/assets/recruitment/image/logo.png",
+		"title": "Employee Self Service",
+		"route": "/webapp",
+		"has_permission": "recruitment.recruitment.utils.check_app_permission",
+	}
+]
 # include js, css files in header of web template
 # web_include_css = "/assets/recruitment/css/recruitment.css"
 # web_include_js = "/assets/recruitment/js/recruitment.js"
