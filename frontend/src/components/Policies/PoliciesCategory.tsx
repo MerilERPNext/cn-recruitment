@@ -59,7 +59,7 @@ const PoliciesCategory: React.FC = () => {
   console.log("🏷️ Generated categories:", categories);
 
   return (
-    <div className="h-full w-full p-4">
+    <div className="bg-white h-full w-full p-2 md:p-4">
       {categories.length === 0 ? (
         <p className="text-gray-500 text-center mt-4">No categories found.</p>
       ) : (

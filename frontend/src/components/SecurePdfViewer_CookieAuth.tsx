@@ -1,7 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as pdfjs from 'pdfjs-dist';
-import { useNavigate } from 'react-router';
 
 // Configure PDF.js worker with multiple fallback options
 const configurePdfWorker = () => {
@@ -34,12 +33,6 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
   const [error, setError] = useState<string>('');
   const [retryCount, setRetryCount] = useState<number>(0);
   const [renderedPages, setRenderedPages] = useState<HTMLCanvasElement[]>([]);
-  const navigate = useNavigate();
-
-
-  const handleBackFromPDF = () => {
-    navigate(-1)
-  }
 
   useEffect(() => {
     const fetchPdf = async (currentRetryCount = 0) => {
@@ -301,20 +294,9 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
       {/* Compact Controls */}
       <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
         {/* Document Info */}
-        <div className="text-sm text-gray-600 font-medium flex items-center gap-2">
-  <button
-    onClick={handleBackFromPDF}
-    className="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
-  >
-    ← 
-  </button>
-  {numPages > 0 && (
-    <span className="text-gray-500">
-      {numPages} page{numPages !== 1 ? "s" : ""}
-    </span>
-  )}
-</div>
-
+        <div className="text-sm text-gray-600 font-medium">
+          {numPages > 0 && `${numPages} page${numPages !== 1 ? 's' : ''}`}
+        </div>
 
         {/* Zoom Controls */}
         <div className="flex items-center space-x-2">

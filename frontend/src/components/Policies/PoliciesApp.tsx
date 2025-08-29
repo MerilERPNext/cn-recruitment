@@ -23,7 +23,7 @@ const PoliciesApp: React.FC = () => {
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <HeaderBar title={title} onBack={() => navigate(-1)} />
-      <main className="p-4 z-100 flex-grow overflow-y-auto">
+      <main className="md:p-4 z-100 flex-grow overflow-y-auto">
         <Outlet />
       </main>
     </div>
@@ -32,6 +32,7 @@ const PoliciesApp: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Policies">
       <div className="p-8 md:p-0 overflow-y-auto h-full">
+      <HeaderBar title={title} onBack={() => navigate(-1)} />
         <Outlet />
       </div>
     </DesktopLayoutWrapper>

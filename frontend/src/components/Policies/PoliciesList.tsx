@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, useNavigate, Navigate } from "react-router";
+import { useLocation, useNavigate, Navigate } from "react-router-dom"; // ✅ use react-router-dom
 import FrappeListView from "../ListView";
 import { PolicyCardSkeleton } from "./PolicySkeletons";
 import { Download } from "lucide-react";
@@ -70,6 +70,7 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
 
 const PoliciesList: React.FC = () => {
   const location = useLocation();
+
   const categoryName = (location.state as PolicyState | undefined)?.name;
 
   if (!categoryName) {
@@ -77,9 +78,9 @@ const PoliciesList: React.FC = () => {
   }
 
   return (
-    <div className="w-full bg-white rounded-xl p-4">
+    <div className="w-full  bg-white rounded-xl md:p-4 p-2">
       <FrappeListView<PolicyDoc>
-        doctype="Policy Details" // Using correct doctype name
+        doctype="Policy Details"
         defaultFilters={{
           policy_category: categoryName,
         }}
