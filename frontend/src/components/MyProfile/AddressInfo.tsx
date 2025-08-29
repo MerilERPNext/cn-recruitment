@@ -285,7 +285,6 @@ export const AddressInfo: React.FC<AddressInfoProps> = ({
           />
         </div>
       </div>
-
       {/* Button for Mobile View - fixed at the bottom, hidden on desktop */}
       <div className="md:mr-8 md:mb-5 md:mt-[-30px] md:flex md:justify-end">
         <div className="fixed bottom-0 left-0 w-full bg-white  py-2 md:relative md:w-auto md:mt-8 md:flex md:justify-end md:p-0">

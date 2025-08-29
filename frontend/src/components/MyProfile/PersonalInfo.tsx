@@ -228,7 +228,6 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
             }}
           />
         </div>
-
         {/* CHANGED: Mobile button container now matches the sticky style of the AttendanceRequest component. */}
         {/* CHANGED: Desktop button positioning is now correct. */}
         <div className="md:mt-8 md:flex md:justify-end">
