@@ -91,7 +91,7 @@ const NoticesLayout: React.FC = () => {
                                 onClick={() => handleTabChange(tab.key)}
                                 className={`relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
                                     activeTab === tab.key
-                                        ? 'bg-blue-500 text-white shadow-lg '
+                                        ? 'bg-black text-white shadow-lg'
                                         : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-md hover:shadow-lg border border-gray-200'
                                 }`}
                             >
