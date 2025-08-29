@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Bell,
   CheckCircle,
@@ -90,6 +90,7 @@ const statusStyles = {
 };
 
 const DesktopDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -420,7 +421,7 @@ const DesktopDashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={() => navigate('/webapp/notices')} className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <Bell className="w-5 h-5 text-gray-600" />
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
