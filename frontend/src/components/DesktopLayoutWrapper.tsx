@@ -9,7 +9,6 @@ import {
   User
 } from 'lucide-react';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { useUnreadNoticesCount } from '../hooks/useNotices';
 import defaultProfile from '../assets/face-rec.png';
 import CollapsibleSidebar from './shared/CollapsibleSidebar';
 
@@ -28,7 +27,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
-  const { data: unreadCount = 0 } = useUnreadNoticesCount();
+  // Force static badge count for UI demo
+  const unreadCount = 21;
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
