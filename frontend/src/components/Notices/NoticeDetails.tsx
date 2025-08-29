@@ -244,33 +244,63 @@ const NoticeDetails = () => {
                 </div>
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                <button
-                    className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium flex items-center justify-center gap-2"
-                    onClick={() => handleActionClick("markAsRead")}
-                    disabled={actionLoading?.markAsRead}
-                >
-                    {actionLoading.markAsRead ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                        "Mark as Read"
-                    )}
-                </button>
-
-                {notice?.status?.toLowerCase() !== 'archived' && (
+            {isDesktop ? (
+                <div className="mt-8 grid grid-cols-2 gap-4">
                     <button
-                        className="px-6 py-3 border border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
-                        onClick={() => handleActionClick("archive")}
-                        disabled={actionLoading?.archive}
+                        className="w-full px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium flex items-center justify-center gap-2"
+                        onClick={() => handleActionClick("markAsRead")}
+                        disabled={actionLoading?.markAsRead}
                     >
-                        {actionLoading?.archive ? (
-                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        {actionLoading.markAsRead ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
-                            "Archive Notice"
+                            "Mark as Read"
                         )}
                     </button>
-                )}
-            </div>
+
+                    {notice?.status?.toLowerCase() !== 'archived' && (
+                        <button
+                            className="w-full px-6 py-3 border border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
+                            onClick={() => handleActionClick("archive")}
+                            disabled={actionLoading?.archive}
+                        >
+                            {actionLoading?.archive ? (
+                                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                "Archive Notice"
+                            )}
+                        </button>
+                    )}
+                </div>
+            ) : (
+                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                    <button
+                        className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium flex items-center justify-center gap-2"
+                        onClick={() => handleActionClick("markAsRead")}
+                        disabled={actionLoading?.markAsRead}
+                    >
+                        {actionLoading.markAsRead ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            "Mark as Read"
+                        )}
+                    </button>
+
+                    {notice?.status?.toLowerCase() !== 'archived' && (
+                        <button
+                            className="px-6 py-3 border border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
+                            onClick={() => handleActionClick("archive")}
+                            disabled={actionLoading?.archive}
+                        >
+                            {actionLoading?.archive ? (
+                                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                "Archive Notice"
+                            )}
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
     );
 
