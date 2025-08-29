@@ -6,6 +6,7 @@ import { useState } from "react"
 import DOMPurify from 'dompurify';
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import HeaderBar from "../HeaderBar";
 
 
 
@@ -154,23 +155,18 @@ const NoticeDetails = () => {
     const pageHeader = (
         <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
             <div className="mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    <button
-                        onClick={() => {
-                            navigate(-1)
-                        }}
-                        className="inline-flex items-center gap-2 text-gray-600 hover:text-black transition-colors"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        <span className="text-sm font-medium">Back to Notices</span>
-                    </button>
-                    {notice?.isUnread && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <div className="w-2 h-2 bg-black rounded-full"></div>
-                            <span>Unread</span>
-                        </div>
-                    )}
-                </div>
+                <HeaderBar
+                        title="Notices"
+                        onBack={() => navigate(-1)}
+                        rightSlot={
+                            notice?.isUnread && (
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <div className="w-2 h-2 bg-black rounded-full"></div>
+                                    <span>Unread</span>
+                                </div>
+                            )
+                        }
+                    />
             </div>
         </div>
     );
