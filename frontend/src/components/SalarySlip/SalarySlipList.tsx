@@ -27,7 +27,10 @@ const SalarySlipsList = () => {
   const [filtersKey, setFiltersKey] = useState(0);
   const [maskSalary, setMaskSalary] = useState(true);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
-  const [selectedSalarySlip, setSelectedSalarySlip] = useState<{ name: string; date: string } | null>(null);
+  const [selectedSalarySlip, setSelectedSalarySlip] = useState<{
+    name: string;
+    date: string;
+  } | null>(null);
 
   const {
     mutate: downloadPDF,
@@ -40,14 +43,12 @@ const SalarySlipsList = () => {
 
   const handleGoToSalarySlip = (salaryId: string, startDate?: string) => {
     if (isDesktop) {
-      // Open modal on desktop
       setSelectedSalarySlip({
         name: salaryId,
-        date: startDate ? formatToIndianDateModal(startDate) : ''
+        date: startDate ? formatToIndianDateModal(startDate) : "",
       });
       setPdfModalOpen(true);
     } else {
-      // Navigate on mobile
       const encodedId = encodeURIComponent(salaryId);
       navigate(`/webapp/salary-slip-app/salary-slip-list/${encodedId}`);
     }
@@ -97,7 +98,11 @@ const SalarySlipsList = () => {
         doctype="Salary Slip"
         ItemComponent={(props) => (
           <SalarySlipItem
-            {...(props as { item: SalarySlip; index?: number; doctype: string })}
+            {...(props as {
+              item: SalarySlip;
+              index?: number;
+              doctype: string;
+            })}
             maskSalary={maskSalary}
             onDownload={handleDownload}
             onViewPDF={handleGoToSalarySlip}
@@ -203,9 +208,11 @@ const SalarySlipItem: React.FC<{
         <div className="text-sm text-[var(--secondary-color)] space-y-1">
           <p className="font-medium">
             Gross Pay:{" "}
-            <span className={maskSalary ? "blur-sm select-none" : ""}>
-              {formatCurrency(item.gross_pay)}
-            </span>
+            {maskSalary ? (
+              <span className="blur-sm select-none">XXXXXXXXX</span>
+            ) : (
+              <span>{formatCurrency(item.gross_pay)}</span>
+            )}
           </p>
         </div>
       </div>
@@ -221,10 +228,10 @@ const SalarySlipItem: React.FC<{
         </button>
         <button
           onClick={() => onViewPDF(item.name, item.start_date)}
-          className="flex items-center justify-center p-2  border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
           title="View Salary Slip"
         >
-         <FaRegEye className="w-4 h-4"/>
+          <FaRegEye className="w-4 h-4" />
         </button>
       </div>
     </div>
