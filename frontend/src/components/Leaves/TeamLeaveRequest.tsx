@@ -278,19 +278,20 @@ const TeamLeaveRequest: React.FC = () => {
     const title = isPending ? "All Pending Requests" : "All Actioned Requests";
 
     return (
-
       <div className="pb-4 relative">
-        <div className="fixed inset-0 z-50 flex flex-col md:static md:max-w-full">
-          <HeaderBar title={title} onBack={handleCloseViewAll} />
-          <main className="flex-1 overflow-y-auto p-4">
-            <div className="max-w-4xl mx-auto">
+        <div className="fixed inset-0 z-50 flex flex-col md:static md:max-w-full bg-gray-50 md:bg-transparent">
+          <div className="md:-mx-4 md:-mt-4 md:mb-4">
+            <HeaderBar title={title} onBack={handleCloseViewAll} />
+          </div>
+          <main className="flex-1 overflow-y-auto bg-gray-50 md:bg-transparent">
+            <div className="px-4 py-6 md:p-4 max-w-4xl mx-auto">
               {isPending && viewAllModal.requests.length > 0 && (
                 <div className="mb-6">
                   <BulkActionSection pendingRequests={viewAllModal.requests} />
                 </div>
               )}
 
-              <div className="space-y-3">
+              <div className="space-y-4 md:space-y-3">
                 {viewAllModal.requests.map((request) => (
                   <TeamLeaveRequestItem
                     key={request.name}
@@ -359,5 +360,4 @@ const TeamLeaveRequest: React.FC = () => {
     </div>
   );
 };
-
 export default TeamLeaveRequest;
