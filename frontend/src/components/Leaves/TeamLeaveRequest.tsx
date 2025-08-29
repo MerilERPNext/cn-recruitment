@@ -8,6 +8,7 @@ import RequestDetailsModal from "./RequestDetailsModal";
 import type { PreListComponentProps } from "../ListView";
 import { LeaveBulkActionBar } from "./LeaveBulkActionBar";
 import HeaderBar from "../HeaderBar";
+
 const TeamLeaveRequest: React.FC = () => {
   const [selectedRequest, setSelectedRequest] =
     useState<TeamLeaveRequest | null>(null);
@@ -118,7 +119,6 @@ const TeamLeaveRequest: React.FC = () => {
 
     return (
       <div className="mb-8">
-
         <SectionHeader
           title="Pending Requests"
           count={pendingRequests.length}
@@ -279,11 +279,11 @@ const TeamLeaveRequest: React.FC = () => {
     return (
       <div className="pb-4 relative">
         <div className="fixed inset-0 z-50 flex flex-col md:static md:max-w-full bg-gray-50 md:bg-transparent">
-          <div className="md:-mx-4 md:-mt-4 md:mb-4">
+          <div className="md:-mx-4 md:-mt-4 md:mb-1">
             <HeaderBar title={title} onBack={handleCloseViewAll} />
           </div>
           <main className="flex-1 overflow-y-auto bg-gray-50 md:bg-transparent">
-            <div className="px-4 py-6 md:p-4 max-w-4xl mx-auto">
+            <div className="px-4 py-6 md:p-4 max-w-4xl mx-auto md:pb-20">
               {isPending && viewAllModal.requests.length > 0 && (
                 <div className="mb-6">
                   <BulkActionSection pendingRequests={viewAllModal.requests} />
@@ -316,7 +316,6 @@ const TeamLeaveRequest: React.FC = () => {
           </main>
         </div>
 
-        {/* Modal for request details */}
         {isModalOpen && selectedRequest && (
           <RequestDetailsModal
             request={selectedRequest}
@@ -328,7 +327,7 @@ const TeamLeaveRequest: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 md:pb-15">
       <FrappeListView
         doctype="Leave Application"
         PreListComponent={SectionedView}
@@ -359,4 +358,5 @@ const TeamLeaveRequest: React.FC = () => {
     </div>
   );
 };
+
 export default TeamLeaveRequest;
