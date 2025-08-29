@@ -128,7 +128,7 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
 
         {/* CHANGED: This entire div and the button inside it were updated to handle your requests. */}
         <div className="md:mt-8 md:flex md:justify-end">
-          <div className="fixed bottom-0 left-0 w-full bg-white border border-gray-300 py-2 md:relative md:w-auto md:p-0 md:border-t-0">
+          <div className="fixed bottom-0 left-0 w-full bg-white py-2 md:relative md:w-auto md:p-0 md:border-t-0">
             <div className="max-w-7xl mx-auto px-3 md:p-0">
               <button
                 onClick={handleSubmit}

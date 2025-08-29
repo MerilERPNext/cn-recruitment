@@ -228,11 +228,10 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
             }}
           />
         </div>
-
         {/* CHANGED: Mobile button container now matches the sticky style of the AttendanceRequest component. */}
         {/* CHANGED: Desktop button positioning is now correct. */}
         <div className="md:mt-8 md:flex md:justify-end">
-          <div className="fixed bottom-0 left-0 w-full bg-white border border-gray-300 py-2 md:relative md:w-auto md:p-0 md:border-t-0">
+          <div className="fixed bottom-0 left-0 w-full bg-white py-2 md:relative md:w-auto md:p-0 md:border-t-0">
             <div className="max-w-7xl mx-auto px-3 md:p-0">
               <button
                 onClick={handleSubmit}
