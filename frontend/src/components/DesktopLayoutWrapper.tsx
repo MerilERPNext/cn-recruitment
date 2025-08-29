@@ -5,7 +5,6 @@ import {
   LogOut,
   Bell,
   ChevronDown,
-  Settings,
   User
 } from 'lucide-react';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -194,16 +193,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       <User className="w-4 h-4" />
                       My Profile
                     </button>
-                    <button
-                      onClick={() => {
-                        // Add settings navigation if needed
-                        setShowProfileDropdown(false);
-                      }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Settings
-                    </button>
+                   
                     <hr className="my-2 border-gray-100" />
                     <button
                       onClick={() => {
