@@ -67,8 +67,7 @@ const formSchema = {
 };
 
 const InitiateForm: React.FC = () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleSubmit = (submission: any) => {
+  const handleSubmit = (submission: { data: Record<string, unknown> }) => {
     console.log("Form submission:", submission.data);
   };
 

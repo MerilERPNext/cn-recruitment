@@ -33,7 +33,7 @@ const mockData: FlowRequest[] = [
     lastUpdatedOn: "02-08-2024",
   },
   {
-    id: "CF_REQ_75",
+    id: "CF_REQ_87",
     title: "Marriage flow",
     triggerEvent: "Business Flow",
     initiatedDate: "02-08-2024",
@@ -43,7 +43,7 @@ const mockData: FlowRequest[] = [
     lastUpdatedOn: "02-08-2024",
   },
   {
-    id: "CF_REQ_75",
+    id: "CF_REQ_88",
     title: "Marriage flow",
     triggerEvent: "Business Flow",
     initiatedDate: "02-08-2024",

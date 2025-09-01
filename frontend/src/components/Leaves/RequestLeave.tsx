@@ -18,7 +18,6 @@ import { useLeaveRequestRefresh } from "../Leaves/LeaveRequestRefreshContext";
 import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
 import { X } from "lucide-react";
 
-/** Local submission/data event shape used by form onChange/onFormReady handlers */
 interface FormSubmissionData {
   leaveType?: string;
   fromDate?: string;
@@ -52,7 +51,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   });
 
   const { triggerRefetch } = useLeaveRequestRefresh();
-  const { defaults } = useRequestLeaveModal();
+  const { defaults, closeModal } = useRequestLeaveModal();
 
   const createLeaveMutation = useCreateFrappeDocument({
     onSuccess: () => {
@@ -334,9 +333,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              if (onSuccess) {
-                onSuccess();
-              }
+              closeModal();
             }}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
             aria-label="Close"

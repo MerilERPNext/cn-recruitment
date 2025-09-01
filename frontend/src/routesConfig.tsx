@@ -278,7 +278,7 @@ export const routesConfig: AppRoute[] = [
       { path: "initiate", element: <InitiateFlow /> },
       { path: "initiate-form", element: <InitiateForm /> },
       {
-        path: "/webapp/tracker-app/details/:id",
+        path: "details/:id",
         element: <FlowRequestDetails />,
       },
     ],
