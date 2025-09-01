@@ -180,7 +180,9 @@ const EmployeeAttendance = () => {
             {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
             {isDesktop && (
               <div className="flex items-center gap-2 mt-4 mx-5">
-                <h4 className="text-sm font-semibold text-gray-700">Attendance Legend:</h4>
+                <h4 className="text-sm font-semibold text-gray-700">
+                  Attendance Legend:
+                </h4>
                 <div className="flex flex-wrap gap-7 text-xs ml-5">
                   <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
                     Present
@@ -239,124 +241,62 @@ const EmployeeAttendance = () => {
                 const isSelected =
                   selectedDate?.toDateString() === date.toDateString();
                 const baseClasses = "transition-all duration-200";
-
-                if (isDesktop) {
-                  // Enhanced desktop styling with light-colored event cards
-                  const highlightClass = (() => {
-                    switch (attendance?.status) {
-                      case "present":
-                        return "!bg-green-50 !text-green-800 border border-green-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105";
-                      case "absent":
-                        return "!bg-red-50 !text-red-800 border border-red-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105";
-                      case "on-leave":
-                        return "!bg-amber-50 !text-amber-800 border border-amber-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105";
-                      case "holiday":
-                        return "!bg-blue-50 !text-blue-800 border border-blue-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105";
-                      case "week-off":
-                        return "!bg-slate-50 !text-slate-700 border border-slate-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105";
-                      case "work-from-home":
-                        return "!bg-purple-50 !text-purple-800 border border-purple-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105";
-                      case "half-day":
-                        return "!bg-gradient-to-br from-orange-50 to-yellow-50 !text-orange-800 border border-orange-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105";
-                      default:
-                        return "hover:!bg-gray-50 !text-gray-700 border border-transparent rounded-lg hover:border-gray-200 hover:shadow-sm";
-                    }
-                  })();
-                  return `${baseClasses} ${highlightClass} ${isSelected && attendance?.status === "default" ? "!bg-gray-100 border-gray-300" : ""}`;
-                } else {
-                  // Original mobile styling
-                  const highlightClass = (() => {
-                    switch (attendance?.status) {
-                      case "present":
-                        return "!bg-green-100 !text-green-700 rounded-md";
-                      case "absent":
-                        return "!bg-red-100 !text-red-700 rounded-md";
-                      case "on-leave":
-                        return "!bg-yellow-100 !text-yellow-700 rounded-md";
-                      case "holiday":
-                        return "!bg-blue-100 !text-blue-700 rounded-md";
-                      case "week-off":
-                        return "!bg-gray-200 !text-gray-700 rounded-md";
-                      case "work-from-home":
-                        return "!bg-purple-100 !text-purple-800 border border-purple-200 rounded-md";
-                      default:
-                        return "hover:!bg-gray-100 !text-gray-700 rounded-md";
-                    }
-                  })();
-                  return `${baseClasses} ${highlightClass} ${isSelected && attendance?.status === "default" ? "!bg-transparent border-none" : ""}`;
-                }
+                const highlightClass = (() => {
+                  switch (attendance?.status) {
+                    case "present":
+                      return "!bg-green-100 !text-green-700 rounded-md";
+                    case "absent":
+                      return "!bg-red-100 !text-red-700 rounded-md";
+                    case "on-leave":
+                      return "!bg-yellow-100 !text-yellow-700 rounded-md";
+                    case "holiday":
+                      return "!bg-blue-100 !text-blue-700 rounded-md";
+                    case "week-off":
+                      return "!bg-gray-200 !text-gray-700 rounded-md";
+                    case "work-from-home":
+                      return "!bg-purple-100 !text-purple-800 rounded-md";
+                    default:
+                      return "hover:!bg-gray-100 !text-gray-700 rounded-md";
+                  }
+                })();
+                return `${baseClasses} ${highlightClass} ${
+                  isSelected && attendance?.status === "default"
+                    ? "!bg-transparent border-none"
+                    : ""
+                }`;
               }}
               renderDayContents={(day, date) => {
                 const attendance = getAttendanceStatus(date);
 
-                if (isDesktop) {
-                  // Enhanced desktop rendering with event indicators
-                  if (attendance?.status === "half-day") {
-                    const firstColor = gradientClassMap[attendance?.firstHalf?.toLowerCase() || ""] || "#f3f4f6";
-                    const secondColor = gradientClassMap[attendance?.secondHalf?.toLowerCase() || ""] || "#f3f4f6";
-                    const gradient = `linear-gradient(135deg, ${firstColor} 45%, ${secondColor} 55%)`;
+                // Original mobile rendering
+                if (attendance?.status === "half-day") {
+                  const firstColor =
+                    gradientClassMap[
+                      attendance?.firstHalf?.toLowerCase() || ""
+                    ];
+                  const secondColor =
+                    gradientClassMap[
+                      attendance?.secondHalf?.toLowerCase() || ""
+                    ];
+                  const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
 
-                    return (
-                      <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
-                        <div
-                          className="w-full h-full rounded-md flex items-center justify-center text-sm font-semibold"
-                          style={{ backgroundImage: gradient }}
-                        >
-                          {day}
-                        </div>
-                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
-                          <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  if (attendance?.status !== "default") {
-                    const statusIcons = {
-                      "present": "✓",
-                      "absent": "✗",
-                      "on-leave": "🏖️",
-                      "holiday": "🎉",
-                      "week-off": "🏠",
-                      "work-from-home": "💻"
-                    };
-
-                    return (
-                      <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
-                        <span className="text-sm font-semibold">{day}</span>
-                        <div className="absolute -bottom-1 text-xs">
-                          {statusIcons[attendance.status as keyof typeof statusIcons] || ""}
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return <span className="text-sm font-medium">{day}</span>;
-                } else {
-                  // Original mobile rendering
-                  if (attendance?.status === "half-day") {
-                    const firstColor = gradientClassMap[attendance?.firstHalf?.toLowerCase() || ""];
-                    const secondColor = gradientClassMap[attendance?.secondHalf?.toLowerCase() || ""];
-                    const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
-
-                    return (
-                      <div
-                        style={{
-                          backgroundImage: gradient,
-                          borderRadius: "0.375rem",
-                          width: "100%",
-                          height: "100%",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}
-                      >
-                        {day}
-                      </div>
-                    );
-                  }
-                  return <>{day}</>;
+                  return (
+                    <div
+                      style={{
+                        backgroundImage: gradient,
+                        borderRadius: "0.375rem",
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      {day}
+                    </div>
+                  );
                 }
+                return <>{day}</>;
               }}
             />
           </div>
@@ -395,7 +335,7 @@ const EmployeeAttendance = () => {
           <div className="bg-white p-4 border-b-1 border-gray-200">
             <div className="flex gap-2">
               <button
-                className="w-full bg-gray-900 text-white flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+                className="w-full flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
                 onClick={() => {
                   setOpenDrawer(!openDrawer);
                   // setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
@@ -411,7 +351,7 @@ const EmployeeAttendance = () => {
         {/* Request Attendance Correction */}
 
         {/* My Attendance Requests */}
-        <div>
+        <div className="pb-20">
           <div className="flex justify-between items-center w-full p-4 border-b-1 border-b-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-1 ">
               My Attendance Requests

@@ -41,7 +41,7 @@ const AttendanceLayout: React.FC = () => {
   const tabs: Tab[] = useMemo(
     () => [
       { label: "Attendance", key: "summary" },
-      { label: "Calendar Views", key: "calendar-views" },
+      { label: "My Attendance Details", key: "calendar-views" },
       { label: "My Attendance Requests", key: "attendance-request" },
       { label: "Team Attendance Requests", key: "team-attendance-requests" },
     ],
@@ -63,22 +63,30 @@ const AttendanceLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(tabs[0]);
   const [activeSubTab, setActiveSubTab] = useState<string>("emp-attendance");
 
-  // Use a single useEffect to handle all state updates based on the URL
   useEffect(() => {
     const pathSegments = location.pathname.split("/");
     const lastSegment = pathSegments[pathSegments.length - 1];
 
+    const isValidMainTab = tabs.some((tab) => tab.key === lastSegment);
     const isCalendarSubTab = calendarSubTabs.some(
       (subTab) => subTab.key === lastSegment
     );
 
     if (isCalendarSubTab) {
-      setActiveTab(tabs.find((tab) => tab.key === "calendar-views") || tabs[0]);
-      setActiveSubTab(lastSegment);
+      const calendarTab = tabs.find((tab) => tab.key === "calendar-views");
+      if (calendarTab) {
+        setActiveTab(calendarTab);
+        setActiveSubTab(lastSegment);
+      }
+    } else if (isValidMainTab) {
+      const matchedTab = tabs.find((tab) => tab.key === lastSegment);
+      if (matchedTab) {
+        setActiveTab(matchedTab);
+        setActiveSubTab("emp-attendance"); // or leave as-is if you don't want to reset
+      }
     } else {
-      setActiveTab(tabs.find((tab) => tab.key === lastSegment) || tabs[0]);
-      // Reset sub-tab state when not on a calendar view
-      setActiveSubTab("emp-attendance");
+      // Do NOT update state — keeps activeTab undefined or unchanged
+      setActiveTab({ key: "", label: "" }); // Typescript fix: ensure `activeTab` can be undefined
     }
   }, [location.pathname, tabs, calendarSubTabs]);
 
@@ -96,17 +104,20 @@ const AttendanceLayout: React.FC = () => {
     <div className="min-h-screen bg-white">
       {/* Fixed Header */}
       <HeaderBar title={activeTab.label} onBack={() => navigate("/webapp")} />
-      <div className="sticky top-[58px] z-50 border-t border-gray-200">
-        <NavigationTabs
-          tabs={tabs}
-          activeTab={activeTab?.key}
-          onTabChange={(tab) => {
-            handleTabChange(tabs.find((item) => item.key === tab) as Tab);
-          }}
-        />
-      </div>
+      {tabs.some((tab) => tab.key === activeTab?.key) && (
+        <div className="sticky top-[58px] z-50 border-t border-gray-200">
+          <NavigationTabs
+            tabs={tabs}
+            activeTab={activeTab?.key}
+            onTabChange={(tab) => {
+              const foundTab = tabs.find((item) => item.key === tab);
+              if (foundTab) handleTabChange(foundTab);
+            }}
+          />
+        </div>
+      )}
       {/* Page Content (with top padding to avoid overlap) */}
-      <div className="">
+      <div className="bg-white">
         {/*
           The main outlet needs both providers to function correctly,
           so they wrap the entire content.

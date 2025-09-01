@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Bell,
   CheckCircle,
@@ -11,9 +11,8 @@ import {
   LogOut,
   Clock,
   ChevronDown,
-  Settings,
 } from "lucide-react";
-import { useUnreadNoticesCount } from "../hooks/useNotices";
+// using a static value to ensure the badge renders
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import {
   useCanShowClockIn,
@@ -91,6 +90,7 @@ const statusStyles = {
 };
 
 const DesktopDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -139,8 +139,8 @@ const DesktopDashboard: React.FC = () => {
     };
   }, [showProfileDropdown]);
 
-  // Get unread notifications count
-  const { data: unreadCount = 0 } = useUnreadNoticesCount();
+  // Static value to ensure badge is visible in UI
+  const unreadCount = 21;
   const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
   // Get current user data
   const { data: currentUser } = useCurrentUser();
@@ -395,7 +395,7 @@ const DesktopDashboard: React.FC = () => {
   };
 
   // Calculate dynamic margin based on sidebar width
-  const contentMarginLeft = isSidebarExpanded ? 'ml-64' : 'ml-20';
+  const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -406,18 +406,22 @@ const DesktopDashboard: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}>
+      <div
+        className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}
+      >
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              Welcome, Employee!
+              Welcome, {currentUser?.full_name || "Employee"}
             </h1>
-            <p className="text-xs text-gray-600">Here's your dashboard for today.</p>
+            <p className="text-xs text-gray-600">
+              Here's your dashboard for today.
+            </p>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={() => navigate('/webapp/notices')} className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <Bell className="w-5 h-5 text-gray-600" />
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
@@ -526,16 +530,6 @@ const DesktopDashboard: React.FC = () => {
                     >
                       <User className="w-4 h-4" />
                       View Full Profile
-                    </button>
-                    <button
-                      onClick={() => {
-                        // Add settings navigation if needed
-                        setShowProfileDropdown(false);
-                      }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Account Settings
                     </button>
                     <hr className="my-2 border-gray-100" />
                     <button

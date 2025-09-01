@@ -1,5 +1,4 @@
 "use client"
-
 import type React from "react"
 import { useState, useCallback } from "react"
 import { useGetLeaveBalance } from "../../hooks/useLeaves"
@@ -111,7 +110,7 @@ const LeaveBalance: React.FC = () => {
           <HeaderBar title="Transactions History" onBack={() => toggleTransactions(null)} />
           <main className="flex-1 overflow-y-auto p-4">
             <LeaveTransactionCard
-              data={transactions.filter((t) => t.type && t.type.trim().toLowerCase() !== "optional leave")}
+              data={transactions.filter((t) => t.type && t.type.trim().toLowerCase() !== "optional holiday")}
               defaultOpenType={selectedType}
             />
           </main>
@@ -121,7 +120,7 @@ const LeaveBalance: React.FC = () => {
           <div className="md:pt-4 md:p-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 max-w-4xl mx-auto">
               {leaveBalance
-                .filter((leave) => leave.type && leave.type.trim().toLowerCase() !== "optional leave")
+                .filter((leave) => leave.type && leave.type.trim().toLowerCase() !== "optional holiday")
                 .map((leave) => (
                   <div key={leave.type} className="rounded-xl p-4 mb-4 md:mb-0 bg-white">
                     <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
