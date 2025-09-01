@@ -67,7 +67,7 @@ const TeamLeaveRequest: React.FC = () => {
       {count > 0 && (
         <button
           onClick={onViewAll}
-          className="text-yellow-600 text-sm font-medium hover:text-yellow-700"
+          className="text-blue-600 text-sm font-medium hover:text-blue-700"
         >
           View All
         </button>
@@ -337,6 +337,8 @@ const TeamLeaveRequest: React.FC = () => {
           onClose={handleCloseModal}
         />
       )}
+
+      <ViewAllModal />
     </div>
   );
 };
