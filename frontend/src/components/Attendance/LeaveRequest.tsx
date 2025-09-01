@@ -87,11 +87,19 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const leaveTypeOptions = useMemo(() => {
     if (!leaveAllocations?.data) return [];
-    const uniqueTypes = Array.from(
-      new Set(leaveAllocations.data.map((entry) => entry.leave_type))
+
+    const allTypes = Array.from(
+      new Set(leaveAllocations.data.map((entry) => entry.leave_type as string))
     );
-    return uniqueTypes.map((type) => ({ label: type, value: type }));
-  }, [leaveAllocations]);
+
+    return allTypes
+      .filter((type) => {
+        const isOptional = /optional/i.test(type);
+        const isDefault = type === defaults?.leaveType;
+        return !isOptional || isDefault;
+      })
+      .map((type) => ({ label: type, value: type }));
+  }, [leaveAllocations, defaults?.leaveType]);
 
   const calculateLeaveDays = useCallback((data: FormSubmissionData) => {
     const { fromDate, toDate, halfDay } = data;

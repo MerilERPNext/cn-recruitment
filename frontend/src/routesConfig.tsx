@@ -66,7 +66,11 @@ import ViewSalarySlipModal from "./components/SalarySlip/SalarySlipPDF";
 import EmployeeAttendanceDetails from "./components/Attendance/Employee/EmployeeAttendanceDetails";
 import HRPayroll from "./components/SalarySlip/HR-Payroll";
 import AttendancePolicies from "./components/Attendance/AttendancePolicies/AttendancePolicies";
-
+import TrackerApp from "./components/ApprovalTracker/TrackerApp";
+import FlowRequests from "./components/ApprovalTracker/FlowRequests";
+import InitiateFlow from "./components/ApprovalTracker/InitiateFlow";
+import InitiateForm from "./components/ApprovalTracker/InitiateForm";
+import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
 
 export interface AppRoute {
   index?: boolean;
@@ -263,6 +267,20 @@ export const routesConfig: AppRoute[] = [
       { path: "", element: <PoliciesCategory /> },
       { path: "policies-list", element: <PoliciesList /> },
       { path: "view-policy/:policyName", element: <ViewPolicy /> },
+    ],
+  },
+  //Approval tracker routes
+  {
+    path: "/webapp/tracker-app",
+    element: <TrackerApp />,
+    children: [
+      { path: "", element: <FlowRequests /> },
+      { path: "initiate", element: <InitiateFlow /> },
+      { path: "initiate-form", element: <InitiateForm /> },
+      {
+        path: "/webapp/tracker-app/details/:id",
+        element: <FlowRequestDetails />,
+      },
     ],
   },
 ];
