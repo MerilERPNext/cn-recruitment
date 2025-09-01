@@ -63,7 +63,7 @@ const TeamLeaveRequestItem = ({
             type="checkbox"
             className=""
             checked={isSelected}
-            onChange={() => onToggleSelect(item.name)}
+            onChange={() => onToggleSelect(item.todo_id)}
             onClick={(e) => e.stopPropagation()}
           />
         )}

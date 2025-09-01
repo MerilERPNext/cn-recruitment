@@ -13,11 +13,12 @@ import {
 } from "../../hooks/useFrappeQuery";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
-import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import { toast } from "react-hot-toast";
-import ResponsiveFormWrapper, { FormActions } from "../shared/ResponsiveFormWrapper";
+import { useLeaveRequestRefresh } from "../Leaves/LeaveRequestRefreshContext";
+import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
+import { X } from "lucide-react";
 
+/** Local submission/data event shape used by form onChange/onFormReady handlers */
 interface FormSubmissionData {
   leaveType?: string;
   fromDate?: string;
@@ -30,9 +31,10 @@ interface FormSubmissionData {
 
 interface RequestLeaveProps {
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
+const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useEmployeeByUserId(userId);
 
@@ -51,11 +53,13 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
 
   const { triggerRefetch } = useLeaveRequestRefresh();
   const { defaults } = useRequestLeaveModal();
+
   const createLeaveMutation = useCreateFrappeDocument({
     onSuccess: () => {
       toast.success("Leave request submitted successfully!");
       triggerRefetch();
       onSuccess?.();
+      onCancel?.();
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
@@ -98,6 +102,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
       })
       .map((type) => ({ label: type, value: type }));
   }, [leaveAllocations, defaults?.leaveType]);
+
   const calculateLeaveDays = useCallback((data: FormSubmissionData) => {
     const { fromDate, toDate, halfDay } = data;
     if (!fromDate || !toDate) return setLeaveDays(null);
@@ -105,8 +110,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
     const from = new Date(fromDate);
     const to = new Date(toDate);
 
-    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from)
+    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from) {
       return setLeaveDays(null);
+    }
 
     const diffMs = to.getTime() - from.getTime();
     const days = diffMs / (1000 * 60 * 60 * 24) + 1;
@@ -123,11 +129,31 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
       setFormData(initial);
       calculateLeaveDays(initial);
     }
-  }, [defaults, calculateLeaveDays, formData.halfDay]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaults]);
+
+  const handleFromDateChange = useCallback(
+    (event: { data: FormSubmissionData }) => {
+      const fromDateValue = event?.data?.fromDate;
+      const form = formInstance.current;
+      if (form && fromDateValue) {
+        const toDateComponent = form.getComponent("toDate");
+        if (toDateComponent) {
+          toDateComponent.setValue(fromDateValue, { noUpdateEvent: true });
+          toDateComponent.redraw();
+        }
+      }
+    },
+    []
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!currentEmployee?.name) {
       toast.error("Employee data not loaded.");
+      return;
+    }
+
+    if (!formInstance?.current) {
       return;
     }
 
@@ -193,7 +219,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
-                disabled: Boolean(defaults?.fromDate),
+                onChange: handleFromDateChange,
               },
             ],
           },
@@ -214,7 +240,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
-                disabled: Boolean(defaults?.toDate),
               },
             ],
           },
@@ -287,25 +312,46 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
         },
       ],
     };
-  }, [leaveTypeOptions, defaults]);
+  }, [leaveTypeOptions, defaults, handleFromDateChange]);
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Leave Days Display */}
-      {leaveDays !== null && (
-        <div className="px-6 py-4 text-sm bg-blue-50 border-b border-blue-100">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-700">Applying for:</span>
-            <span className="font-semibold text-blue-600">
-              {leaveDays} {leaveDays === 1 ? "Day" : "Days"}
-            </span>
-          </div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      onMouseDown={() => {
+        if (onCancel) {
+          onCancel();
+        }
+      }}
+    >
+      <div
+        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onSuccess) {
+                onSuccess();
+              }
+            }}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
         </div>
-      )}
 
-      {/* Form Content */}
-      <div className="flex-1 overflow-y-auto">
-        <ResponsiveFormWrapper className="p-0">
+        <div className="flex-1 min-h-0 overflow-y-auto pb-20">
+          <div
+            className="ml-6 my-2 text-sm text-gray-700"
+            style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}
+          >
+            <strong>Applying for:</strong> {leaveDays}{" "}
+            {leaveDays === 1 ? "Day" : "Days"}
+          </div>
+
           <Form
             form={leaveForm}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -319,9 +365,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
               disableOnSubmit: true,
               formClass: "space-y-6",
               rowClass: "flex flex-col",
-              labelClass: "mb-2 font-medium text-gray-700",
+              labelClass: "mb-1 font-medium text-gray-700",
               inputClass:
-                "border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors",
+                "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
               validateOnInit: false,
               validateOnBlur: false,
               validateOnChange: false,
@@ -331,19 +377,15 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess }) => {
               calculateLeaveDays(data);
             }}
           />
-        </ResponsiveFormWrapper>
-      </div>
-
-      {/* Form Actions */}
-      <div className="flex-shrink-0 px-6 py-4 bg-gray-50 border-t border-gray-200">
-        <FormActions>
+        </div>
+        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
           <button
             onClick={handleSubmit}
-            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit Request
           </button>
-        </FormActions>
+        </div>
       </div>
     </div>
   );

@@ -163,7 +163,7 @@ const TeamLeaveRequest: React.FC = () => {
             <TeamLeaveRequestItem
               key={request.id ?? request.name}
               item={request}
-              isSelected={isSelected(request.name)}
+              isSelected={isSelected(request.todo_id)}
               onToggleSelect={toggleSelect}
               onClick={() => handleCardClick(request)}
               onApprove={handleApprove}
@@ -253,7 +253,9 @@ const TeamLeaveRequest: React.FC = () => {
                 <TeamLeaveRequestItem
                   key={request.id ?? request.name}
                   item={request}
-                  isSelected={isPending ? isSelected(request.name) : undefined}
+                  isSelected={
+                    isPending ? isSelected(request.todo_id) : undefined
+                  }
                   onToggleSelect={isPending ? toggleSelect : undefined}
                   onClick={() => {
                     handleClose();
