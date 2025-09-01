@@ -135,7 +135,7 @@ export const useAllEmployeeCheckIns = (
     queryKey: ["emp-check-ins", "all", filters],
     queryFn: () => attendanceService.employeeCheckInDetails(filters),
     refetchOnWindowFocus: true,
-    // ...defaultQueryOptions,
+    ...defaultQueryOptions,
   });
 };
 export const useGetAllEventsAndAttendance = (
@@ -269,7 +269,7 @@ export function useActionOnAttendanceRequest() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["attendance-request-action", "all"],
+        queryKey: ["attendance", "all"],
       });
     },
 
