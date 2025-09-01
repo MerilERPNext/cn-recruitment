@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router";
+import { formatTimeSafe } from "../../utils/helperUtils";
 
 export function AttendanceDetailView({
   data,
@@ -16,7 +16,6 @@ export function AttendanceDetailView({
   onClose: () => void;
   onAction?: () => void;
 }) {
-  const navigate = useNavigate();
   const mutation = useActionOnAttendanceRequest();
 
   const [currentAction, setCurrentAction] = useState<
@@ -32,8 +31,8 @@ export function AttendanceDetailView({
     setCurrentAction(action);
     mutation.mutate(
       {
-        action,
-        attendance_request_id: data.name,
+        todo_ids: data.todo_id,
+        selected_action: action,
       },
       {
         onSettled: () => {
@@ -44,11 +43,11 @@ export function AttendanceDetailView({
           if (onAction) {
             onAction();
           }
-          toast.success(`Attendance request ${action.toLowerCase()}d successfully!`);
-          navigate(-1);
+          toast.success(
+            `Attendance request ${action.toLowerCase()}d successfully!`
+          );
         },
-        
-        
+
         onError: (error) => {
           toast.error(error?.message);
           console.error(error);
@@ -99,10 +98,34 @@ export function AttendanceDetailView({
 
           {/* Date */}
           <div className="py-4 border-b">
-            <p className="text-sm text-gray-500 mb-1">Date</p>
-            <p className="font-medium">
-              {format(new Date(data?.creation), "dd/MM/yyyy")}
-            </p>
+            <div className="flex justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">From Date</p>
+                <p className="font-medium">
+                  {format(new Date(data?.from_date), "dd/MM/yyyy")}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">To Date</p>
+                <p className="font-medium">
+                  {format(new Date(data?.to_date), "dd/MM/yyyy")}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-between mt-2 pr-3">
+              <div>
+                <p className="text-sm text-gray-500">From Time</p>
+                <p className="font-medium ">
+                  {formatTimeSafe(data?.custom_from_time)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">To Time</p>
+                <p className="font-medium">
+                  {formatTimeSafe(data?.custom_to_time)}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Log Details */}
@@ -123,9 +146,7 @@ export function AttendanceDetailView({
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 mb-2">
-                  {data?.custom_in_time
-                    ? format(new Date(data?.custom_in_time), "dd/MM/yyyy")
-                    : "--"}
+                  {formatTimeSafe(data?.custom_in_time)}
                 </p>
               </div>
 
@@ -142,25 +163,33 @@ export function AttendanceDetailView({
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 mb-2">
-                  {data?.custom_out_time
-                    ? format(new Date(data?.custom_out_time), "dd/MM/yyyy")
-                    : "--"}
+                  {formatTimeSafe(data?.custom_out_time)}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Reason */}
+          <div className="py-4 border-b">
+            <p className="text-sm text-gray-500 mb-2">Reason</p>
+            <div className="">
+              <p className="text-sm text-gray-700 font-medium">
+                {data?.reason}
+              </p>
+            </div>
+          </div>
+
+          {/* explanation */}
           <div className="py-4">
-            <p className="text-sm text-gray-500 mb-2">Reason for Request</p>
+            <p className="text-sm text-gray-500 mb-2">Explanation</p>
             <div className="bg-gray-100 p-3 rounded-lg">
-              <p className="text-sm text-gray-700">{data?.reason}</p>
+              <p className="text-sm text-gray-700">{data?.explanation}</p>
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        {data?.custom_status === "Pending" && (
+        {data?.status === "Pending" && (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
             <div className="flex space-x-2 w-full">
               <button

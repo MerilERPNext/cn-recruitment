@@ -29,7 +29,7 @@ const EmpAttendanceRequestCard = ({
       };
     }
   };
-  const status = getStatus(data?.custom_status);
+  const status = getStatus(data?.status);
 
   return (
     <div

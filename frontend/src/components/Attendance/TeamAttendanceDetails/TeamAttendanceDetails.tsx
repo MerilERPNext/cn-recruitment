@@ -1,12 +1,16 @@
 import { useState, useMemo } from "react";
 import { BulkActionBar } from "./BulkActionBar";
 import { RequestCard } from "./RequestCard";
-import { useAllAttendanceRequests } from "../../../hooks/useAttendance";
+import {
+  useActionOnAttendanceRequest,
+  useAllAttendanceRequests,
+} from "../../../hooks/useAttendance";
 import { AttendanceRequest } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
 import { useNavigate } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import toast from "react-hot-toast";
 
 const TeamAttendanceDetails = () => {
   const { data: currentUser } = useCurrentUser();
@@ -25,10 +29,9 @@ const TeamAttendanceDetails = () => {
   const [selectedRequest, setSelectedRequest] =
     useState<AttendanceRequest | null>(null);
   const { pendingRequests, actionedRequests } = useMemo(() => {
-    const pending = data.filter((req) => req.custom_status === "Pending");
+    const pending = data.filter((req) => req.status === "Pending");
     const actioned = data.filter(
-      (req) =>
-        req.custom_status === "Approved" || req.custom_status === "Rejected"
+      (req) => req.status === "Approved" || req.status === "Rejected"
     );
     return {
       pendingRequests: pending,
@@ -48,8 +51,32 @@ const TeamAttendanceDetails = () => {
     if (selectedIds.length === pendingRequests.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(pendingRequests.map((r) => r.name));
+      setSelectedIds(pendingRequests.map((r) => r.todo_id));
     }
+  };
+
+  const mutation = useActionOnAttendanceRequest();
+  const handleAction = (action: "Approve" | "Reject") => {
+    mutation.mutate(
+      {
+        todo_ids: selectedIds,
+        selected_action: action,
+      },
+      {
+        onSuccess: () => {
+          refetch();
+          toast.success(
+            `Attendance request ${
+              action === "Reject" ? "rejecte" : action.toLowerCase()
+            }d successfully!`
+          );
+        },
+        onError: (error) => {
+          toast.error(error?.message);
+          console.error(error);
+        },
+      }
+    );
   };
   const navigate = useNavigate();
   if (isLoading) {
@@ -140,8 +167,8 @@ const TeamAttendanceDetails = () => {
                 selectedIds={selectedIds}
                 pendingRequests={pendingRequests}
                 onSelectAll={selectAll}
-                onBulkAction={() => {
-                  console.log("Selected Pending IDs:", selectedIds);
+                onBulkAction={(action: "Approve" | "Reject") => {
+                  handleAction(action);
                   setSelectedIds([]);
                 }}
               />
@@ -155,7 +182,7 @@ const TeamAttendanceDetails = () => {
                   key={request.name}
                   request={request}
                   isActionedCard={false}
-                  isSelected={isSelected(request.name)}
+                  isSelected={isSelected(request.todo_id)}
                   onToggleSelect={toggleSelect}
                   onClick={(request) => setSelectedRequest(request)}
                   onAction={() => {

@@ -1,4 +1,11 @@
-import { differenceInMinutes, format, isAfter, parseISO } from "date-fns";
+import {
+  differenceInMinutes,
+  format,
+  isAfter,
+  isValid,
+  parse,
+  parseISO,
+} from "date-fns";
 
 export const gradientClassMap: Record<string, string> = {
   present: "#dcfce7", // green-100
@@ -166,3 +173,14 @@ export async function getDeviceLocationWeb(): Promise<Coordinates> {
     );
   });
 }
+
+export const formatTimeSafe = (timeStr: string | undefined) => {
+  if (!timeStr) return "--:--";
+  try {
+    const parsed = parse(timeStr, "HH:mm:ss", new Date());
+    if (!isValid(parsed)) return "--:--";
+    return format(parsed, "HH:mm");
+  } catch {
+    return "--:--";
+  }
+};

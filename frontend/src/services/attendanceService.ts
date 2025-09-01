@@ -305,34 +305,34 @@ export const attendanceService = {
     }
   },
 
+  getAllAttendanceRequests: async (
+    pageSize: number | string,
+    filters?: FilterCondition[]
+  ): Promise<AttendanceRequest[]> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_attendance_requests",
+      {
+        fields: ["*"],
+        limit: pageSize,
+        filters: filters,
+        orderBy: "creation desc",
+      }
+    );
+    return response as AttendanceRequest[];
+  },
+
   // getAllAttendanceRequests: async (
   //   pageSize: number,
   //   filters?: FilterCondition[]
   // ): Promise<AttendanceRequest[]> => {
-  //   const response = await FrappeAPI.callMethod(
-  //     "cn_leave_shift_managment.api.get_attendance_requests",
-  //     {
-  //       fields: ["*"],
-  //       limit: pageSize,
-  //       filters: filters,
-  //       orderBy: "creation desc",
-  //     }
-  //   );
-  //   return response as AttendanceRequest[];
+  //   const response = await FrappeAPI.getDocumentList("Attendance Request", {
+  //     fields: ["*"],
+  //     limit: pageSize,
+  //     filters: filters,
+  //     orderBy: "creation desc",
+  //   });
+  //   return response.data as AttendanceRequest[];
   // },
-
-  getAllAttendanceRequests: async (
-    pageSize: number,
-    filters?: FilterCondition[]
-  ): Promise<AttendanceRequest[]> => {
-    const response = await FrappeAPI.getDocumentList("Attendance Request", {
-      fields: ["*"],
-      limit: pageSize,
-      filters: filters,
-      orderBy: "creation desc",
-    });
-    return response.data as AttendanceRequest[];
-  },
 
   getAttendanceById: async (id: string): Promise<Attendance> => {
     if (!id) throw new Error("Attendance ID is required");
@@ -372,31 +372,16 @@ export const attendanceService = {
   },
 
   actionOnAttendanceRequest: async (
-    body: Record<string, unknown>
-  ): Promise<boolean> => {
-    try {
-      const response = (await FrappeAPI.callMethod(
-        `cn_leave_shift_managment.api.approve_reject_attendance_request`,
-        body
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      )) as any;
-
-      if (response?.status === "error") {
-        throw {
-          message:
-            response?.message ||
-            "There was some error while submitting attendance request.",
-        };
+    todo_ids: string | string[],
+    selected_action: "Approve" | "Reject"
+  ) => {
+    return FrappeAPI.callMethod(
+      "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.action_api_handler",
+      {
+        todo_ids: Array.isArray(todo_ids) ? todo_ids : [todo_ids],
+        selected_action,
       }
-
-      return response?.status === "success";
-    } catch (error) {
-      console.error(
-        "📡There was some error while submitting attendance request.",
-        error
-      );
-      throw error;
-    }
+    );
   },
 
   //   searchAttendance: async (searchTerm: string): Promise<Attendance[]> => {
