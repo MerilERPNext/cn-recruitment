@@ -31,31 +31,37 @@ const LayoutHeader = ({
   const BackIcon = icon === "x" ? X : ChevronLeft;
 
   return (
-    <div className="block lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-14">
-      <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8 h-full">
-        <div className="flex items-center justify-between h-full">
-          {/* Left: Icon */}
-          <div className="flex items-center">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors"
-            >
-              <BackIcon className="w-5 h-5" />
-            </button>
-          </div>
+    <>
+      {/* Fixed Header (Mobile only) */}
+      <div className="block lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-14">
+        <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8 h-full">
+          <div className="flex items-center justify-between h-full">
+            {/* Left: Icon */}
+            <div className="flex items-center">
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors"
+              >
+                <BackIcon className="w-5 h-5" />
+              </button>
+            </div>
 
-          {/* Center: Tab Title */}
-          <div className="text-lg font-semibold text-gray-800 truncate">
-            {tab}
-          </div>
+            {/* Center: Tab Title */}
+            <div className="text-lg font-semibold text-gray-800 truncate">
+              {tab}
+            </div>
 
-          {/* Right: Children */}
-          <div className="flex items-center justify-end overflow-hidden max-w-20">
-            {children}
+            {/* Right: Children */}
+            <div className="flex items-center justify-end overflow-hidden max-w-20">
+              {children}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Spacer for mobile to prevent content overlap */}
+      <div className="h-14 block lg:hidden" />
+    </>
   );
 };
 

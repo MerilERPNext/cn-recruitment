@@ -327,7 +327,7 @@ const TeamLeaveRequest: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3 md:pb-15">
+    <div className="space-y-3 md:pb-16">
       <FrappeListView
         doctype="Leave Application"
         PreListComponent={SectionedView}

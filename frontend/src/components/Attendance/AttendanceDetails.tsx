@@ -44,9 +44,11 @@ export function AttendanceDetailView({
           if (onAction) {
             onAction();
           }
-          toast.success("Added Attendance Request successfully!");
+          toast.success(`Attendance request ${action.toLowerCase()}d successfully!`);
           navigate(-1);
         },
+        
+        
         onError: (error) => {
           toast.error(error?.message);
           console.error(error);

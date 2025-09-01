@@ -134,7 +134,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                               { value: "O+", label: "O+" },
                               { value: "O-", label: "O-" },
                               { value: "AB+", label: "AB+" },
-                              { value: "AB-" },
+                              { value: "AB-", label: "AB-" },
                             ],
                           },
                           customClass: "appearance-none",
