@@ -11,9 +11,7 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/recruitment/css/job_applicant.css"
-app_include_js = [
-    "/assets/recruitment/js/teams_utils.js"
-]
+app_include_js = ["/assets/recruitment/js/teams_utils.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/recruitment/css/recruitment.css"
@@ -25,29 +23,29 @@ app_include_js = [
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
-fixtures =   [
-#         "doctype": "Custom HTML Block"
-#     },
-# {
-#         "doctype": "Role",
-#         "filters": [["Role", "name", "IN", ["Job Recruiter","Recruitment User","Recruiter Admin","Hiring Manager"]]],
-#     },
-#     {
-#         "doctype": "Funnel Node"
-#     }
-#     ,{
-#         "doctype": "Email Template"
-#     },
-#     {
-#         "doctype": "Recruitment Settings"
-#     },{
-#         "doctype": "Property Setter"
-#     },
-#     {
-#         "doctype": "Workspace",
-#         "filters": [["Workspace", "name", "=", "Recruitment"]],
-#     },
-    ]
+fixtures = [
+    #         "doctype": "Custom HTML Block"
+    #     },
+    # {
+    #         "doctype": "Role",
+    #         "filters": [["Role", "name", "IN", ["Job Recruiter","Recruitment User","Recruiter Admin","Hiring Manager"]]],
+    #     },
+    #     {
+    #         "doctype": "Funnel Node"
+    #     }
+    #     ,{
+    #         "doctype": "Email Template"
+    #     },
+    #     {
+    #         "doctype": "Recruitment Settings"
+    #     },{
+    #         "doctype": "Property Setter"
+    #     },
+    #     {
+    #         "doctype": "Workspace",
+    #         "filters": [["Workspace", "name", "=", "Recruitment"]],
+    #     },
+]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
@@ -59,12 +57,15 @@ doctype_js = {
     "Job Applicant": ["public/js/job_applicant.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
-    "Employee Onboarding":["public/js/employee_onboarding.js","public/js/emp_OB_verification_table.js"],
-   "Employee Separation":["public/js/employee_separation.js"],
-   "Employee Promotion":["public/js/employee_promotion.js"],
-   "Employee":["public/js/employee.js"],
-   "Exit Interview":["public/js/exit_interview.js"],
-   "Training Event":["public/js/training_event.js"],
+    "Employee Onboarding": [
+        "public/js/employee_onboarding.js",
+        "public/js/emp_OB_verification_table.js",
+    ],
+    "Employee Separation": ["public/js/employee_separation.js"],
+    "Employee Promotion": ["public/js/employee_promotion.js"],
+    "Employee": ["public/js/employee.js"],
+    "Exit Interview": ["public/js/exit_interview.js"],
+    "Training Event": ["public/js/training_event.js"],
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -95,11 +96,11 @@ website_generators = ["Web Page"]
 website_context = {"job_offer": "recruitment.www.get_context"}
 
 permission_query_conditions = {
-    "Job Requisition":"recruitment.permissions.doc_type_permissions.jr_query",
-    "Job Opening":"recruitment.permissions.doc_type_permissions.jo_query",
-    "Interview":"recruitment.permissions.doc_type_permissions.interview_query",
-    "Job Applicant":"recruitment.permissions.doc_type_permissions.ja_query"
-	}
+    "Job Requisition": "recruitment.permissions.doc_type_permissions.jr_query",
+    "Job Opening": "recruitment.permissions.doc_type_permissions.jo_query",
+    "Interview": "recruitment.permissions.doc_type_permissions.interview_query",
+    "Job Applicant": "recruitment.permissions.doc_type_permissions.ja_query",
+}
 # Jinja
 # ----------
 
@@ -156,55 +157,47 @@ permission_query_conditions = {
 # DocType Class
 # ---------------
 # Override standard doctype classes
+
 # Document Events
 # ---------------
 # Hook on document methods and events
 
 doc_events = {
-	# "Salary Structure Assignment": {
-	# 	"on_submit": "recruitment.customizations.salary_structure_assignment.salary_structure_assignment.on_submit",
-		
-	# },
-
+    # "Salary Structure Assignment": {
+    # 	"on_submit": "recruitment.customizations.salary_structure_assignment.salary_structure_assignment.on_submit",
+    # },
     "Employee Promotion": {
-		"on_submit": "recruitment.customizations.employee_promotion.employee_promotion.on_submit",
-		
-	},
-     "Interview": {
+        "on_submit": "recruitment.customizations.employee_promotion.employee_promotion.on_submit",
+    },
+    "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
-        "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+        "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
     },
     "Interview Feedback": {
         "on_submit": "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback"
     },
-    "Job Offer":{
-         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure"
-        
+    "Job Offer": {
+        "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+        "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
     },
-    "Employee":{
-        "before_insert":"recruitment.customizations.job_applicant.validate_blacklist_employee",
-        "after_insert":"recruitment.auto_fetch_fields.link_employee_to_onboarding"
-    
+    "Employee": {
+        "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
+        "after_insert": "recruitment.auto_fetch_fields.link_employee_to_onboarding",
     },
-     "Job Applicant": {
+    "Job Applicant": {
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
-
     },
-    "Appointment Letter":{ 
-         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
-
+    "Appointment Letter": {
+        "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
     },
-    "Employee Onboarding":{
-
-         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-         "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
-        "on_update": "recruitment.auto_fetch_fields.update_employee_fields"
+    "Employee Onboarding": {
+        "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+        "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
+        "on_update": "recruitment.auto_fetch_fields.update_employee_fields",
     },
-     "Employee Separation": {
+    "Employee Separation": {
         "on_submit": "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date"
-    }
-      
+    },
 }
 
 # apps/recruitment/recruitment/recruitment/hooks.py
@@ -215,7 +208,7 @@ scheduler_events = {
     "cron": {
         "59 23 * * *": [
             "recruitment.customizations.employee_separation.task_reassignment.reassign_employee_separation_tasks",
-            "recruitment.customizations.employee_onboarding.overide_class.reassign_tasks" 
+            "recruitment.customizations.employee_onboarding.overide_class.reassign_tasks",
         ]
     }
 }
@@ -231,11 +224,12 @@ scheduler_events = {
 #
 override_whitelisted_methods = {
     "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee",
-	    "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening": "recruitment.customizations.job_requisition.job_requisition.make_job_opening"
+    "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening": "recruitment.customizations.job_requisition.job_requisition.make_job_opening",
 }
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",
-    "Job Opening": "recruitment.customizations.job_opening.class_override.CustomJobOpening"
+    "Job Opening": "recruitment.customizations.job_opening.class_override.CustomJobOpening",
+    "Job Offer": "recruitment.customizations.job_offer.CustomJobOffer",
 }
 #
 # each overriding function accepts a `data` argument;
@@ -303,5 +297,5 @@ override_doctype_class = {
 # }
 
 website_route_rules = [
-	{"from_route": "/webapp/<path:app_path>", "to_route": "/webapp"},
+    {"from_route": "/webapp/<path:app_path>", "to_route": "/webapp"},
 ]
