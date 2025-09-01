@@ -30,11 +30,6 @@ const TeamLeaveRequest: React.FC = () => {
 
   const isSelected = (id: string) => selectedIds.includes(id);
 
-  // const handleBulkAction = (action: "approved" | "rejected") => {
-  //   console.log(`Bulk ${action} for`, selectedIds);
-  //   setSelectedIds([]);
-  // };
-
   const handleBulkAction = (action: "Approve" | "Reject") => {
     if (!selectedIds.length) return;
 
@@ -74,29 +69,6 @@ const TeamLeaveRequest: React.FC = () => {
       )}
     </div>
   );
-
-  // const BulkActionSection: React.FC<{
-  //   pendingRequests: TeamRequest[];
-  // }> = ({ pendingRequests }) => {
-  //   if (!pendingRequests.length) return null;
-
-  //   const allSelected =
-  //     selectedIds.length > 0 && selectedIds.length === pendingRequests.length;
-
-  //   const onSelectAll = () =>
-  //     setSelectedIds(allSelected ? [] : pendingRequests.map((r) => r.name));
-
-  //   return (
-  //     <div className="mb-4">
-  //       <LeaveBulkActionBar
-  //         pendingRequests={pendingRequests}
-  //         selectedIds={selectedIds}
-  //         onSelectAll={onSelectAll}
-  //         onBulkAction={handleBulkAction}
-  //       />
-  //     </div>
-  //   );
-  // };
 
   const BulkActionSection: React.FC<{
     pendingRequests: TeamRequest[];
