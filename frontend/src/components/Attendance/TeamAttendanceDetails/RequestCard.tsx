@@ -37,7 +37,7 @@ export function RequestCard({
     }
   };
 
-  const status = getStatus(request?.custom_status);
+  const status = getStatus(request?.status);
 
   const [currentAction, setCurrentAction] = useState<
     "Approve" | "Reject" | null
@@ -52,8 +52,8 @@ export function RequestCard({
     setCurrentAction(action);
     mutation.mutate(
       {
-        action,
-        attendance_request_id: request.name,
+        todo_ids: request.todo_id,
+        selected_action: action,
       },
       {
         onSettled: () => {
@@ -64,7 +64,11 @@ export function RequestCard({
           if (onAction) {
             onAction();
           }
-          toast.success("Added Attendance Request successfully!");
+          toast.success(
+            `Attendance request  ${
+              action === "Reject" ? "rejecte" : action.toLowerCase()
+            }d successfully!`
+          );
         },
         onError: (error) => {
           toast.error(error?.message);
@@ -73,7 +77,6 @@ export function RequestCard({
       }
     );
   };
-
   return (
     <div
       className="cursor-pointer border border-gray-200 gap-3 bg-white shadow-sm transition-shadow rounded-xl"
@@ -89,7 +92,7 @@ export function RequestCard({
               onClick={(e) => {
                 e.stopPropagation();
               }}
-              onChange={() => onToggleSelect?.(request?.name)}
+              onChange={() => onToggleSelect?.(request?.todo_id)}
             />
           )}
           <div className="w-full">
@@ -99,7 +102,8 @@ export function RequestCard({
                   {request?.employee_name}
                 </h3>
                 <p className="text-sm text-gray-500">
-                  {format(new Date(request?.creation), "dd/MM/yyyy") || "--:--"}
+                  {format(new Date(request?.from_date), "dd/MM/yyyy") ||
+                    "--:--"}
                 </p>
               </div>
               <Badge
@@ -113,9 +117,10 @@ export function RequestCard({
             </p>
 
             {!isActionedCard && (
-              <div className="flex space-x-2 mt-3">
+              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+                {" "}
                 <button
-                  className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={(e) => handleAction("Reject", e)}
                   disabled={mutation.isPending}
                 >
@@ -124,7 +129,7 @@ export function RequestCard({
                     : "Reject"}
                 </button>
                 <button
-                  className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={(e) => handleAction("Approve", e)}
                   disabled={mutation.isPending}
                 >

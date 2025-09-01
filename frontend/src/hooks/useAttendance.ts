@@ -117,7 +117,7 @@ export const useGetQuickAttendanceSummary = (
   });
 };
 export const useAllAttendanceRequests = (
-  pageSize: number,
+  pageSize: number | string,
   filters?: FilterCondition[]
 ): UseQueryResult<AttendanceRequest[], Error> => {
   return useQuery<AttendanceRequest[], Error>({
@@ -135,7 +135,7 @@ export const useAllEmployeeCheckIns = (
     queryKey: ["emp-check-ins", "all", filters],
     queryFn: () => attendanceService.employeeCheckInDetails(filters),
     refetchOnWindowFocus: true,
-    ...defaultQueryOptions,
+    // ...defaultQueryOptions,
   });
 };
 export const useGetAllEventsAndAttendance = (
@@ -255,23 +255,30 @@ export function useCreateNewAttendanceRequest() {
     },
   });
 }
+type ActionOnAttendanceRequestVariables = {
+  todo_ids: string | string[];
+  selected_action: "Approve" | "Reject";
+};
+
 export function useActionOnAttendanceRequest() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (body: Record<string, unknown>) =>
-      attendanceService.actionOnAttendanceRequest(body),
+  return useMutation<unknown, Error, ActionOnAttendanceRequestVariables>({
+    mutationFn: ({ todo_ids, selected_action }) =>
+      attendanceService.actionOnAttendanceRequest(todo_ids, selected_action),
+
     onSuccess: () => {
-      // Invalidate relevant queries
       queryClient.invalidateQueries({
         queryKey: ["attendance-request-action", "all"],
       });
     },
+
     onError: (e) => {
       console.log(e);
     },
   });
 }
+
 export function useCheckInOutService() {
   const queryClient = useQueryClient();
 

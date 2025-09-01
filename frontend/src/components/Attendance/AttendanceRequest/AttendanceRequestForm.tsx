@@ -74,7 +74,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     ["time", "between", [formData?.from_date, formData?.to_date]],
     ["employee", "=", employeeIdToShow],
   ]);
-
   const filteredLogs = employeeCheckInLogs?.filter(
     (log) => log.employee === employeeIdToShow
   );
@@ -291,6 +290,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             enableTime: false,
             defaultValue: selectedDate,
             onChange: handleFromDateChange,
+            disabled: selectedRequestType === "Clockin",
+            redrawOn: "request_type",
           },
           {
             label: "To Date",
@@ -462,7 +463,13 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       display: "form",
       components: baseFormComponents(isForOthers),
     }),
-    [isForOthers, employeeList, currentEmployee, reasonList]
+    [
+      isForOthers,
+      employeeList,
+      currentEmployee,
+      reasonList,
+      selectedRequestType,
+    ]
   );
 
   const formatTime = (date: Date | string | undefined): string | undefined => {

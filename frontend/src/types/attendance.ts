@@ -50,11 +50,14 @@ export interface AttendanceRequest {
   reason: string;
   explanation: string | null;
   amended_from: string | null;
-  custom_status: string;
+  status: string;
   custom_in_time: string;
   custom_out_time: string;
   custom_checkin_type: string;
   custom_checkout_time: string;
+  custom_to_time?: string;
+  custom_from_time?: string;
+  todo_id: string;
 }
 
 export interface RequestCardProps {
@@ -67,7 +70,7 @@ export interface BulkActionProps {
   selectedIds: string[];
   pendingRequests: AttendanceRequest[];
   onSelectAll: () => void;
-  onBulkAction: (action: "approved" | "rejected") => void;
+  onBulkAction: (action: "Approve" | "Reject") => void;
 }
 
 export type EmployeeCheckInLog = {
