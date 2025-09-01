@@ -1,11 +1,9 @@
 import frappe
 import json
-from hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
 
 from hrms.hr.doctype.job_offer.job_offer import JobOffer
-import frappe
 
 
 @frappe.whitelist()
