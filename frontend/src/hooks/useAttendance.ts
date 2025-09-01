@@ -31,12 +31,12 @@ const defaultRetry = (failureCount: number, error: unknown) => {
   if (isPermissionError(error)) return false;
 
   // Don't retry 417 errors (device ID/expectation failed errors)
-  if (error && typeof error === 'object') {
-    if ('response' in error && (error as any).response?.status === 417) {
+  if (error && typeof error === "object") {
+    if ("response" in error && (error as any).response?.status === 417) {
       console.warn("🚫 Not retrying 417 error - likely device ID issue");
       return false;
     }
-    if ('status' in error && (error as any).status === 417) {
+    if ("status" in error && (error as any).status === 417) {
       console.warn("🚫 Not retrying 417 error - likely device ID issue");
       return false;
     }
@@ -150,9 +150,11 @@ export const useGetAllEventsAndAttendance = (
         console.warn("🎯 useGetAllEventsAndAttendance caught error:", error);
 
         // Handle 417 errors by returning empty array
-        if (error && typeof error === 'object') {
-          if (('response' in error && (error as any).response?.status === 417) ||
-              ('status' in error && (error as any).status === 417)) {
+        if (error && typeof error === "object") {
+          if (
+            ("response" in error && (error as any).response?.status === 417) ||
+            ("status" in error && (error as any).status === 417)
+          ) {
             console.warn("🔄 Returning empty array for 417 error in hook");
             return [];
           }
@@ -247,6 +249,23 @@ export function useCreateNewAttendanceRequest() {
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
+export function useActionOnAttendanceRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.actionOnAttendanceRequest(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({
+        queryKey: ["attendance-request-action", "all"],
+      });
     },
     onError: (e) => {
       console.log(e);

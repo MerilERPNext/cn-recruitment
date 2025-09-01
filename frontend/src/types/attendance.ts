@@ -61,6 +61,7 @@ export interface RequestCardProps {
   request: AttendanceRequest;
   isActionedCard?: boolean;
   isSelected?: boolean;
+  onAction?: () => void;
 }
 export interface BulkActionProps {
   selectedIds: string[];

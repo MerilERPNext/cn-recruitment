@@ -95,10 +95,21 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
 
   const leaveTypeOptions = useMemo(() => {
     if (!leaveAllocations?.data) return [];
-    const uniqueTypes = Array.from(
-      new Set(leaveAllocations.data.map((entry) => entry.leave_type))
+
+    const leaveTypes = leaveAllocations.data
+      .map((entry) => entry.leave_type)
+      .filter((type): type is string => Boolean(type));
+
+    const uniqueTypes = Array.from(new Set(leaveTypes));
+
+    const filteredTypes = uniqueTypes.filter((type) =>
+      type.toLowerCase() !== "optional holiday"
     );
-    return uniqueTypes.map((type) => ({ label: type, value: type }));
+
+    return filteredTypes.map((type) => ({
+      label: type,
+      value: type
+    }));
   }, [leaveAllocations]);
 
   const calculateLeaveDays = useCallback((data: FormSubmissionData) => {
@@ -285,22 +296,20 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
 
   if (!isOpen) return null;
 
-  // For mobile, return children without modal wrapper (unchanged)
   if (!isDesktop) {
     return null;
   }
 
-  // For desktop, render modal with blur background (similar to ExpenseFormModal structure)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Dark blur background */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal content */}
-      <div className="formio-modal relative bg-white rounded-lg shadow-xl w-[70%] max-w-6xl max-h-[90vh] flex flex-col z-10">
+
+      <div className="formio-modal relative bg-white shadow-xl w-[70%] max-w-6xl max-h-[90vh] flex flex-col z-10 border-white border-5 rounded-xl">
         {/* Modal header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
           <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
@@ -325,8 +334,7 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
           </div>
         )}
 
-        {/* Modal body - scrollable */}
-        <div className="flex-grow overflow-y-auto">
+        <div className="flex-grow overflow-y-auto ">
           <div className="p-6">
             <Form
               form={leaveForm}
@@ -380,5 +388,4 @@ const RequestLeaveModal: React.FC<RequestLeaveModalProps> = ({
     </div>
   );
 };
-
 export default RequestLeaveModal;

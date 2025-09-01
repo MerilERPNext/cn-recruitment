@@ -69,7 +69,7 @@ const AttendancePolicies = () => {
     <div>
       <LayoutHeader tab="Attendance Policies" />
 
-      <div className="mt-14 bg-white">
+      <div className="bg-white">
         {/* Responsive scroll wrapper */}
         <div className="w-full overflow-x-auto">
           <table className="table-auto w-full text-sm text-left text-gray-800 border-collapse">

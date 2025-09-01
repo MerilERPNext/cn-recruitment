@@ -115,7 +115,7 @@ const AllEmpAttendance = () => {
         }
       />
 
-      <div className="mx-auto bg-gray-50 h-screen mt-14 px-4">
+      <div className="mx-auto bg-white h-screen px-4">
         <h2 className="font-semibold text-lg text-center py-2">
           {selectedMonth?.label}
         </h2>

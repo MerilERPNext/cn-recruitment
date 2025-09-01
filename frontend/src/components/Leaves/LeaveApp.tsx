@@ -34,8 +34,6 @@ const LeaveAppInner: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
   const [activeSubTab, setActiveSubTab] = useState<SubTabName>("My Requests");
 
-
-
   const tabs: Tab[] = useMemo(
     () => [
       { key: "leave-balance", label: "Leave Balance" },
@@ -48,6 +46,7 @@ const LeaveAppInner: React.FC = () => {
   const { showModal, openModal, closeModal } = useRequestLeaveModal();
 
   const isLeaveRequestsActive = activeTab === "requests-status";
+  const isHolidaysActive = activeTab === "holidays";
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
@@ -88,8 +87,6 @@ const LeaveAppInner: React.FC = () => {
       document.body.style.overflow = "";
     };
   }, [showModal]);
-
- 
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
@@ -177,20 +174,18 @@ const LeaveAppInner: React.FC = () => {
     </div>
   );
 
-  // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
-  const actionButton = (
+  const actionButton = !isHolidaysActive ? (
     <button
       onClick={() => openModal()}
       className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
     >
       + Request Leave
     </button>
-  );
+  ) : null;
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Leaves & Holidays" actionButton={actionButton}>
       <div className="flex flex-col h-full">
-        {/* Page Content */}
         <div className="flex-1 overflow-y-auto relative">
           <Outlet />
         </div>

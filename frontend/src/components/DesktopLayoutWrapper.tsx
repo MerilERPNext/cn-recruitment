@@ -5,11 +5,9 @@ import {
   LogOut,
   Bell,
   ChevronDown,
-  Settings,
   User
 } from 'lucide-react';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { useUnreadNoticesCount } from '../hooks/useNotices';
 import defaultProfile from '../assets/face-rec.png';
 import CollapsibleSidebar from './shared/CollapsibleSidebar';
 
@@ -28,7 +26,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
-  const { data: unreadCount = 0 } = useUnreadNoticesCount();
+  // Force static badge count for UI demo
+  const unreadCount = 21;
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -194,16 +193,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       <User className="w-4 h-4" />
                       My Profile
                     </button>
-                    <button
-                      onClick={() => {
-                        // Add settings navigation if needed
-                        setShowProfileDropdown(false);
-                      }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Settings
-                    </button>
+                   
                     <hr className="my-2 border-gray-100" />
                     <button
                       onClick={() => {

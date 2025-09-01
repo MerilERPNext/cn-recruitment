@@ -90,23 +90,6 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
     data?.status?.toLowerCase() as EmployeeStatusType
   );
 
-  const getStatusEmoji = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "present":
-        return "✓";
-      case "absent":
-        return "✗";
-      case "on leave":
-        return "🏖️";
-      case "half day":
-        return "🕰️";
-      case "work from home":
-        return "💻";
-      default:
-        return "🔴";
-    }
-  };
-
   const getStatusBgColor = (status: string) => {
     if (!isDesktop) return "bg-white";
 
@@ -149,8 +132,10 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
     <div
       className={`w-full p-3 border shadow-sm rounded-xl transition-all duration-200 ${
         isDesktop
-          ? `${getStatusBgColor(data?.status)} ${getStatusBorderColor(data?.status)} hover:shadow-md hover:scale-[1.02]`
-          : 'bg-white border-gray-100'
+          ? `${getStatusBgColor(data?.status)} ${getStatusBorderColor(
+              data?.status
+            )} hover:shadow-md hover:scale-[1.02]`
+          : "bg-white border-gray-100"
       }`}
     >
       <div className="flex gap-4 mb-2">
@@ -161,14 +146,15 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
           {...statusColors}
         />
         <div className="flex-1">
-          <h5 className="font-semibold line-clamp-2 text-gray-800">{data?.employee_name}</h5>
+          <h5 className="font-semibold line-clamp-2 text-gray-800">
+            {data?.employee_name}
+          </h5>
           <div className="flex items-center gap-2 mt-1">
-            {isDesktop && (
-              <span className="text-sm">{getStatusEmoji(data?.status)}</span>
-            )}
-            <p className={`font-medium text-sm capitalize ${
-              isDesktop ? 'text-gray-700' : 'text-gray-600'
-            }`}>
+            <p
+              className={`font-medium text-sm capitalize ${
+                isDesktop ? "text-gray-700" : "text-gray-600"
+              }`}
+            >
               {data?.status}
             </p>
           </div>
@@ -176,13 +162,17 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
       </div>
 
       {(data?.in_time || data?.out_time) && (
-        <div className={`mb-2 w-full px-4 py-3 rounded-xl flex justify-between ${
-          isDesktop
-            ? 'bg-white bg-opacity-60 border border-white border-opacity-50'
-            : 'bg-gray-100'
-        }`}>
+        <div
+          className={`mb-2 w-full px-4 py-3 rounded-xl flex justify-between ${
+            isDesktop
+              ? "bg-white bg-opacity-60 border border-white border-opacity-50"
+              : "bg-gray-100"
+          }`}
+        >
           <div>
-            <p className="text-gray-500 text-xs text-center font-medium">Check-in</p>
+            <p className="text-gray-500 text-xs text-center font-medium">
+              Check-in
+            </p>
             <h5 className="font-semibold text-center text-gray-800">
               {data?.in_time
                 ? format(new Date(data?.in_time), "HH:mm")
@@ -191,7 +181,9 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
           </div>
           <div className="w-px bg-gray-200 mx-2"></div>
           <div>
-            <p className="text-gray-500 text-xs text-center font-medium">Check-out</p>
+            <p className="text-gray-500 text-xs text-center font-medium">
+              Check-out
+            </p>
             <h5 className="font-semibold text-center text-gray-800">
               {data?.out_time
                 ? format(new Date(data?.out_time), "HH:mm")

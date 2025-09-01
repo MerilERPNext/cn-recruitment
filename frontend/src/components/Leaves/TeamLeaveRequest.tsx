@@ -52,7 +52,7 @@ const TeamLeaveRequest: React.FC = () => {
       {count > 0 && (
         <button
           onClick={onViewAll}
-          className="text-blue-600 text-sm font-medium hover:text-blue-700"
+          className="text-yellow-600 text-sm font-medium hover:text-yellow-700"
         >
           View All
         </button>
@@ -88,7 +88,7 @@ const TeamLeaveRequest: React.FC = () => {
   }) => {
     const rows: TeamLeaveRequest[] = ListQuery.data?.pages
       ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
+      ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
       : [];
 
     const pendingRequests = rows.filter((r) => r.status === "Open");
@@ -149,7 +149,7 @@ const TeamLeaveRequest: React.FC = () => {
   }) => {
     const rows: TeamLeaveRequest[] = ListQuery.data?.pages
       ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
+      ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
       : [];
 
     const actionedRequests = rows.filter(
@@ -232,57 +232,6 @@ const TeamLeaveRequest: React.FC = () => {
     </div>
   );
 
-  const ViewAllModal: React.FC = () => {
-    if (!viewAllModal.isOpen || !viewAllModal.type) return null;
-
-    const isPending = viewAllModal.type === "pending";
-    const title = isPending ? "All Pending Requests" : "All Actioned Requests";
-
-    const handleCloseViewAll = () => {
-      setViewAllModal({ isOpen: false, type: null, requests: [] });
-    };
-
-    return (
-      <div className="fixed inset-0 bg-white z-[60] flex flex-col">
-        <HeaderBar title={title} onBack={handleCloseViewAll} />
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-          <div className="max-w-4xl mx-auto">
-            {isPending && (
-              <div className="mb-6">
-                <BulkActionSection pendingRequests={viewAllModal.requests} />
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {viewAllModal.requests.map((request) => (
-                <TeamLeaveRequestItem
-                  key={request.name}
-                  item={request}
-                  isSelected={isPending ? isSelected(request.name) : undefined}
-                  onToggleSelect={isPending ? toggleSelect : undefined}
-                  onClick={() => {
-                    handleCloseViewAll();
-                    handleCardClick(request);
-                  }}
-                  onApprove={isPending ? handleApprove : undefined}
-                  onReject={isPending ? handleReject : undefined}
-                />
-              ))}
-            </div>
-
-            {viewAllModal.requests.length === 0 && (
-              <div className="text-center text-gray-500 py-12">
-                No {isPending ? "pending" : "actioned"} requests found
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const EmptyItemComponent = () => null;
 
   const handleCardClick = (request: TeamLeaveRequest) => {
@@ -309,6 +258,10 @@ const TeamLeaveRequest: React.FC = () => {
   const handleApprove = (id: string) => console.log(`Approving ${id}`);
   const handleReject = (id: string) => console.log(`Rejecting ${id}`);
 
+  const handleCloseViewAll = () => {
+    setViewAllModal({ isOpen: false, type: null, requests: [] });
+  };
+
   if (userError) {
     return (
       <div className="p-4 text-center text-red-600">
@@ -319,8 +272,62 @@ const TeamLeaveRequest: React.FC = () => {
 
   if (isUserLoading || !userId) return <TeamLeaveRequestSkeleton />;
 
+  if (viewAllModal.isOpen && viewAllModal.type) {
+    const isPending = viewAllModal.type === "pending";
+    const title = isPending ? "All Pending Requests" : "All Actioned Requests";
+
+    return (
+      <div className="pb-4 relative">
+        <div className="fixed inset-0 z-50 flex flex-col md:static md:max-w-full bg-gray-50 md:bg-transparent">
+          <div className="md:-mx-4 md:-mt-4 md:mb-1">
+            <HeaderBar title={title} onBack={handleCloseViewAll} />
+          </div>
+          <main className="flex-1 overflow-y-auto bg-gray-50 md:bg-transparent">
+            <div className="px-4 py-6 md:p-4 max-w-4xl mx-auto md:pb-20">
+              {isPending && viewAllModal.requests.length > 0 && (
+                <div className="mb-6">
+                  <BulkActionSection pendingRequests={viewAllModal.requests} />
+                </div>
+              )}
+
+              <div className="space-y-4 md:space-y-3">
+                {viewAllModal.requests.map((request) => (
+                  <TeamLeaveRequestItem
+                    key={request.name}
+                    item={request}
+                    isSelected={isPending ? isSelected(request.name) : undefined}
+                    onToggleSelect={isPending ? toggleSelect : undefined}
+                    onClick={() => {
+                      handleCloseViewAll();
+                      handleCardClick(request);
+                    }}
+                    onApprove={isPending ? handleApprove : undefined}
+                    onReject={isPending ? handleReject : undefined}
+                  />
+                ))}
+              </div>
+
+              {viewAllModal.requests.length === 0 && (
+                <div className="text-center text-yellow-600 py-12">
+                  No {isPending ? "pending" : "actioned"} requests found
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
+
+        {isModalOpen && selectedRequest && (
+          <RequestDetailsModal
+            request={selectedRequest}
+            onClose={handleCloseModal}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 md:pb-16">
       <FrappeListView
         doctype="Leave Application"
         PreListComponent={SectionedView}
@@ -348,8 +355,6 @@ const TeamLeaveRequest: React.FC = () => {
           onClose={handleCloseModal}
         />
       )}
-
-      <ViewAllModal />
     </div>
   );
 };
