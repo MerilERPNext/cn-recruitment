@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo, useRef } from "react";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import { Form } from "@tsed/react-formio";
 import { PersonalInfoProps } from "./MyProfile";
 import { useUpdateCurrentEmployeeProfile } from "../../hooks/useEmployee";
@@ -114,7 +113,7 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
           </div>
         )}
         
-        <div className="max-w-full md:max-w-4xl md:mx-auto">
+        <div className="max-w-full pb-16 md:pb-0 md:max-w-4xl md:mx-auto">
           <Form
             form={contactInfoForm}
             onFormReady={(instance: any) =>

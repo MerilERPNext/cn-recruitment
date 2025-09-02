@@ -248,7 +248,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                 }`}
             >
               <h2 className="font-semibold text-gray-900 whitespace-nowrap">
-                PayWise
+              physics wallah
               </h2>
               <p className="text-sm text-gray-500 whitespace-nowrap">
                 Employee Portal
