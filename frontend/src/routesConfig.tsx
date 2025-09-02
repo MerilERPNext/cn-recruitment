@@ -67,7 +67,7 @@ import InitiateFlow from "./components/ApprovalTracker/InitiateFlow";
 import InitiateForm from "./components/ApprovalTracker/InitiateForm";
 import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
 import NotificationList from "./components/Notification/Notification";
-
+import OrganizationalChart from "./components/OrganizationalChart/OrganizationalChart";
 
 export interface AppRoute {
   index?: boolean;
@@ -77,8 +77,8 @@ export interface AppRoute {
 }
 
 export const routesConfig: AppRoute[] = [
-  // notification page route 
-  {path: "/webapp/notification-log", element: <NotificationList />},
+  // notification page route
+  { path: "/webapp/notification-log", element: <NotificationList /> },
   // Standalone Routes
   { path: "/webapp/search-members", element: <SearchMembers /> },
 
@@ -281,5 +281,9 @@ export const routesConfig: AppRoute[] = [
         element: <FlowRequestDetails />,
       },
     ],
+  },
+  {
+    path: "/webapp/organizational-chart",
+    element: <OrganizationalChart />,
   },
 ];
