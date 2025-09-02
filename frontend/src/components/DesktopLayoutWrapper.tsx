@@ -39,11 +39,15 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const logoutHandler = async () => {
     try {
       await logout();
-      navigate("/login");
+      // Full reload karne ke liye
+      window.location.href = "/login";
+      // ya
+      // window.location.replace("/login#login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
+  
 
   // Handle click outside profile dropdown
   useEffect(() => {

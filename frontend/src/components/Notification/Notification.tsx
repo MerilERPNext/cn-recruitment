@@ -27,7 +27,7 @@ const NotificationList = () => {
   const { isDesktop } = useScreenSize();
 
   const layout = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full ">
        <HeaderBar title="Notification Log" />
       <div className="flex-1 p-4 overflow-y-auto">
         <FrappeListView

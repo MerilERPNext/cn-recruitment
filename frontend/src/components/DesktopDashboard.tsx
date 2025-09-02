@@ -112,14 +112,18 @@ const DesktopDashboard: React.FC = () => {
     fetchLocation();
   }, []);
 // logout logic
-  const logoutHandler = async () => {
-    try {
-      await logout();
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+const logoutHandler = async () => {
+  try {
+    await logout();
+    // Full reload karne ke liye
+    window.location.href = "/login";
+    // ya
+    // window.location.replace("/login#login");
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+};
+
   // Update current time every minute for real-time progress calculation
   useEffect(() => {
     const timer = setInterval(() => {
