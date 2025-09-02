@@ -212,7 +212,7 @@ const MyLeaveRequest: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3 pb-20 md:pb-8">
+    <div className="space-y-3 pb-10 md:pb-20">
       <FrappeListView<LeaveApplicationItem>
         doctype="Leave Application"
         ItemComponent={({ item }) => (

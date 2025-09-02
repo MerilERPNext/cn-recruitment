@@ -216,7 +216,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
             </p>
           </div>
         )}
-        <div className="max-w-full md:max-w-4xl md:mx-auto">
+        <div className="max-w-full pb-16 md:pb-0 md:max-w-4xl md:mx-auto">
           <Form
             key={user?.employee || "loading"}
             form={personalInfoForm}

@@ -17,7 +17,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   leftIcon,
 }) => {
   return (
-    <div className="flex w-full min-h-[60px]  items-center sticky top-0 justify-between px-4 py-3 bg-white shadow-sm z-50">
+    <div className="flex w-full min-h-[60px]   -center sticky top-0 z-50 justify-between px-4 py-3 bg-white shadow-sm md:z-1">
       <div className="flex items-center w-full">
         {showBackButton && (
           <button
