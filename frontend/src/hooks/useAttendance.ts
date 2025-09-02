@@ -255,6 +255,23 @@ export function useCreateNewAttendanceRequest() {
     },
   });
 }
+export function useReqValidationsForAttendanceRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (empId: string) =>
+      attendanceService.reqValidationsForAttendanceRequest(empId),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({
+        queryKey: ["attendance-request-validations", "all"],
+      });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
 type ActionOnAttendanceRequestVariables = {
   todo_ids: string | string[];
   selected_action: "Approve" | "Reject";

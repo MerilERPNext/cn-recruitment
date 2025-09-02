@@ -371,6 +371,14 @@ export const attendanceService = {
     }
   },
 
+  reqValidationsForAttendanceRequest: async (empId: string) => {
+    return FrappeAPI.callMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.overrides.attendace_request.get_active_attendance_policy",
+      {
+        employee: empId,
+      }
+    );
+  },
   actionOnAttendanceRequest: async (
     todo_ids: string | string[],
     selected_action: "Approve" | "Reject"
