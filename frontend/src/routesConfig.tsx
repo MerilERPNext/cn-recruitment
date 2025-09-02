@@ -71,6 +71,9 @@ import FlowRequests from "./components/ApprovalTracker/FlowRequests";
 import InitiateFlow from "./components/ApprovalTracker/InitiateFlow";
 import InitiateForm from "./components/ApprovalTracker/InitiateForm";
 import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
+import ApprovalList from "./components/shared/ApprovalList";
+import { format } from "date-fns";
+import Badge from "./components/shared/Badge";
 
 export interface AppRoute {
   index?: boolean;
@@ -187,6 +190,30 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recruitment-app/requisitions/add-requisition/*",
     element: <AddRequisition />,
+  },
+  {
+    path: "/webapp/approval-list",
+    element: (
+      <ApprovalList
+        doctype={"Attendance Request"}
+        renderCardContent={(item) => (
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold text-sm text-gray-800">
+                {item?.allocated_to}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {format(new Date(item.creation), "dd/MM/yyyy")}
+              </p>
+            </div>
+            <Badge
+              label={item?.status}
+              backgroundColor="bg-gray-200 text-gray-500"
+            />
+          </div>
+        )}
+      />
+    ),
   },
   {
     path: "/webapp/attendance",
