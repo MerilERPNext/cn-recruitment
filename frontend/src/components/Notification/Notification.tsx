@@ -8,6 +8,7 @@ import {
 import FrappeListView from "../ListView";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useMarkAsRead } from "../../hooks/useNotificationLog";
+import HeaderBar from "../HeaderBar";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -26,12 +27,8 @@ const NotificationList = () => {
 
   const layout = (
     <div className="flex flex-col h-full">
-      <div className={`${isDesktop ? "p-8" : "px-4 py-3 border-b"}`}>
-        <h2 className="text-xl font-semibold text-gray-900">
-          Notifications
-        </h2>
-      </div>
-      <div className="flex-1 overflow-y-auto">
+       <HeaderBar title="Notification Log" />
+      <div className="flex-1 p-4 overflow-y-auto">
         <FrappeListView
           doctype="Notification Log"
           ItemComponent={NotificationItem}
@@ -84,11 +81,6 @@ const NotificationItem: React.FC<{
     }
   };
 
-  const formatTimeAgo = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString(); // more email-like
-  };
-
   const handleClick = async () => {
     setOpenDialog(true);
     if (!isRead) {
@@ -101,45 +93,70 @@ const NotificationItem: React.FC<{
     }
   };
 
+  const formatTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+
+    if (diffHr < 1) return `${diffMin} minutes ago`;
+    if (diffHr < 24) return `${diffHr} hours ago`;
+    return `${diffDay} days ago`;
+  };
+
   return (
     <>
-      {/* List item */}
-      <div
-        key={item.name}
-        onClick={handleClick}
-        className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-          isRead ? "opacity-70" : "bg-white"
-        }`}
-      >
-        <div className="flex items-start gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100">
-            {getIcon(item.type)}
-          </div>
-          <div>
-            <p className="text-sm">
-              <span
-                className={`${
-                  isRead
-                    ? "font-normal text-gray-600"
-                    : "font-semibold text-gray-900"
-                }`}
-              >
-                {item.type === "Alert" ? "New Alert" : item.type}
-              </span>
-              :{" "}
-              <span
-                className={`${isRead ? "text-gray-400" : "text-gray-600"}`}
-              >
-                {item.subject}
-              </span>
-            </p>
-            <p className="text-xs text-gray-400">
-              {formatTimeAgo(item.creation)}
-            </p>
-          </div>
+    {/* List item */}
+   
+    <div
+      key={item.name}
+      onClick={handleClick}
+      className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+        isRead ? "opacity-70" : "bg-white"
+      }`}
+    >
+      <div className="flex items-start gap-4 w-0 flex-1">
+        {/* Fixed Icon */}
+        <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-gray-100">
+          {getIcon(item.type)}
         </div>
-        {!isRead && <span className="w-2 h-2 rounded-full bg-blue-500"></span>}
+  
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm truncate">
+            <span
+              className={`${
+                isRead
+                  ? "font-normal text-gray-600"
+                  : "font-semibold text-gray-900"
+              }`}
+            >
+              {item.type === "Alert" ? "New Alert" : item.type}
+            </span>
+            :{" "}
+            <span
+              className={`${isRead ? "text-gray-400" : "text-gray-600"} break-words`}
+            >
+              {item.subject}
+            </span>
+          </p>
+  
+          <p className="text-xs text-gray-400 truncate">
+            {formatTimeAgo(item.creation)}
+          </p>
+        </div>
       </div>
+  
+      {/* Read dot */}
+      {!isRead && (
+        <span className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500"></span>
+      )}
+    </div>
+  
+  
 
       {/* Email-like full drawer */}
       {openDialog && (
@@ -173,7 +190,8 @@ const NotificationItem: React.FC<{
                   <strong>To:</strong> {item.for_user}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <strong>Date:</strong> {new Date(item.creation).toLocaleString()}
+                  <strong>Date:</strong>{" "}
+                  {new Date(item.creation).toLocaleString()}
                 </p>
               </div>
 
