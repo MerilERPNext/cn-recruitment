@@ -90,3 +90,15 @@ export interface HolidayGroup {
 export interface HolidayApiResponse {
   message: { status: string; data: HolidayGroup[] };
 }
+
+export interface TeamRequest {
+  id: string;
+  name: string;
+  employee_name: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  status: "Open" | "Approved" | "Rejected" | "Cancelled";
+  description?: string;
+  todo_id: string;
+}
