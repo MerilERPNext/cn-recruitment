@@ -70,7 +70,7 @@ export const useCurrentEmployeeAddress = (user_id: string) => {
 export const useGetEmployeeHierarchy = (
   company: string,
 ) => {
-  return useQuery<EmployeeNode>({
+  return useQuery<EmployeeNode[]>({
     queryKey: ["Employee-hierarchy", company],
     queryFn: () => {
       return EmployeeService.getEmployeeHierarchy(company);

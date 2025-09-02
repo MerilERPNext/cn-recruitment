@@ -122,6 +122,7 @@ const OrganizationalChart: React.FC = () => {
       scaledTotalHPrev > 0 ? viewportCenterY / scaledTotalHPrev : 0.5;
 
     // apply new scale
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setScale((_) => newScale);
 
     // After React updates DOM (scaled wrapper size), adjust scroll to keep the same content point centered.
@@ -204,8 +205,6 @@ const OrganizationalChart: React.FC = () => {
         <div
           ref={scaledWrapperRef}
           style={{
-            width: contentSize.width * scale || undefined,
-            height: contentSize.height * scale || undefined,
             transition: "width 0.15s ease, height 0.15s ease",
           }}
         >
@@ -216,12 +215,17 @@ const OrganizationalChart: React.FC = () => {
               transformOrigin: "top left",
               transition: "transform 0.15s ease",
             }}
-            className="justify-center m-auto"
+            className="flex gap-4 justify-center"
           >
             <DndProvider backend={HTML5Backend}>
-              {employeeHierarchy && (
-                <Node org={employeeHierarchy} parent={undefined} />
-              )}
+              
+              {employeeHierarchy &&
+                (Array.isArray(employeeHierarchy)
+                  ? employeeHierarchy
+                  : [employeeHierarchy]
+                ).map((org) => (
+                  <Node key={org.id} org={org} parent={undefined} />
+                ))}
             </DndProvider>
           </div>
         </div>

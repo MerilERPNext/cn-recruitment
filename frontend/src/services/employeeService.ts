@@ -172,14 +172,14 @@ export class EmployeeService {
   
   static async getEmployeeHierarchy(
     company: string
-  ): Promise<EmployeeNode> {
+  ): Promise<EmployeeNode[]> {
     const result = await FrappeAPI.callMethod(
       "cn_hrms_core.cn_hrms_core.apis.employee_hierarchy.get_employee_hierarchy",
       {
         company: company,
       }
     );
-    return result as EmployeeNode;
+    return result as EmployeeNode[];
   }
 
   // Get current user's employee record
