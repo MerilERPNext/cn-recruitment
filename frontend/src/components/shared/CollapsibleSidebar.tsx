@@ -199,23 +199,17 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       return true;
     }
     if (subItem.href) {
-      if (subItem.href.includes("ctc-salary-breakdown")) {
-        const [subItemPath, subItemQuery] = subItem.href.split("?");
-        return (
-          location.pathname === subItemPath &&
-          location.search === `?${subItemQuery}`
-        );
+      const [path, query] = subItem.href.split("?", 2);
+
+      if (query) {
+        return location.pathname === path && location.search === `?${query}`;
       }
 
-      if (location.pathname === subItem.href) {
-        return true;
-      }
-      if (location.pathname.startsWith(subItem.href)) {
-        const remainingPath = location.pathname.substring(subItem.href.length);
+      if (location.pathname.startsWith(path)) {
+        const remainingPath = location.pathname.substring(path.length);
         return remainingPath === "" || remainingPath.startsWith("/");
       }
     }
-
     return false;
   };
 
@@ -432,8 +426,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                   </div>
                                 ) : (
                                   <Link
-                                    to={subItem.href!}
-                                    className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
+                                    to={subItem.href || '#'} className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
                                       ? "bg-gray-900 text-white hover:text-white"
                                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                       }`}
