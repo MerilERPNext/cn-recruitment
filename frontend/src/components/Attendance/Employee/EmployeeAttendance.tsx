@@ -370,7 +370,10 @@ const EmployeeAttendance = () => {
               ItemComponent={(props: { item: AttendanceRequest }) => {
                 return (
                   <EmpAttendanceRequestCard
-                    data={props?.item}
+                    data={{
+                      ...props?.item,
+                      status: props?.item?.custom_status,
+                    }}
                     // onClick={() => {
                     //   setShowReqAttendanceCorrection(true);
                     // }}
@@ -386,6 +389,10 @@ const EmployeeAttendance = () => {
               isFilter={false}
               pageSize={5}
               defaultFields={[
+                "to_date",
+                "from_date",
+                "custom__request_reason",
+                "custom_request_type",
                 "custom_status",
                 "reason",
                 "modified",

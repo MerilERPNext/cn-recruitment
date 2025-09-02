@@ -58,6 +58,8 @@ export interface AttendanceRequest {
   custom_to_time?: string;
   custom_from_time?: string;
   todo_id: string;
+  custom_status: string;
+  custom_request_type: string;
 }
 
 export interface RequestCardProps {

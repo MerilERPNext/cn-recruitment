@@ -50,20 +50,26 @@ const AttendanceRequest = () => {
             ItemComponent={(props: { item: AttendanceRequestType }) => {
               return (
                 <EmpAttendanceRequestCard
-                  data={props?.item}
+                  data={{ ...props?.item, status: props?.item?.custom_status }}
                   // onClick={() => {
-                  //   setShowForm(true);
+                  //   setShowReqAttendanceCorrection(true);
                   // }}
                 />
               );
             }}
             SkeletonComponent={CardSkeleton}
-            defaultFilters={defaultFilters}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            defaultFilters={defaultFilters as any}
             showRefereshButton={false}
             onItemClick={() => {}}
             infiniteScroll={true}
             isFilter={false}
+            pageSize={5}
             defaultFields={[
+              "to_date",
+              "from_date",
+              "custom__request_reason",
+              "custom_request_type",
               "custom_status",
               "reason",
               "modified",

@@ -454,7 +454,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     ];
     return components;
   };
-
+  type CustomError = Error & {
+    response?: { data?: { exception?: string } };
+  };
   const formSchema = useMemo(
     () => ({
       title: "Attendance Request",
@@ -562,8 +564,13 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         onClose();
         toast.success("Added Attendance Request successfully!");
       },
-      onError: (error) => {
-        toast.error(error?.message);
+      onError: (error: CustomError) => {
+        const errorMessage = error?.response?.data?.exception
+          ?.split(":")
+          .slice(1)
+          .join(":")
+          .trim();
+        toast.error(errorMessage as string);
         console.error(error);
       },
     });

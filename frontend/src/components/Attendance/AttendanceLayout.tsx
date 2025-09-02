@@ -128,6 +128,15 @@ const AttendanceLayout: React.FC = () => {
           </RequestLeaveModalProvider>
         </LeaveRequestRefreshProvider>
       </div>
+      {showAttendanceRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AttndanceRequestForm
+              onClose={() => setShowAttendanceRequest(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 

@@ -4,7 +4,6 @@ import Badge from "../../shared/Badge";
 
 const EmpAttendanceRequestCard = ({
   data,
-  onClick,
 }: {
   data: AttendanceRequest;
   onClick?: () => void;
@@ -34,21 +33,25 @@ const EmpAttendanceRequestCard = ({
   return (
     <div
       className="w-full flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl"
-      onClick={() => {
-        if (data?.docstatus === 0 && onClick) {
-          onClick();
-        }
-      }}
+      // onClick={() => {
+      //   if (data?.docstatus === 0 && onClick) {
+      //     onClick();
+      //   }
+      // }}
     >
       <div className="px-4 py-2 w-full">
-        <div className=" flex items-center justify-between gap-1">
+        <div className=" flex items-start justify-between gap-1">
           <div>
+            <div>{data?.custom_request_type}</div>
             <div className="font-medium text-gray-900">
-              {data?.creation
-                ? format(new Date(data.creation), "dd/MM/yyyy")
+              {data?.from_date
+                ? format(new Date(data?.from_date), "dd/MM/yyyy")
+                : "N/A"}
+              {data?.to_date
+                ? ` - ${format(new Date(data?.to_date), "dd/MM/yyyy")}`
                 : "N/A"}
             </div>
-            <div className="text-sm text-gray-600">{data?.reason}</div>
+            {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
           </div>
           <Badge
             backgroundColor={status?.statusColor}
