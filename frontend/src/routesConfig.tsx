@@ -34,7 +34,6 @@ import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
 import AllPendingRequests from "./components/Attendance/TeamAttendanceDetails/AllPendingRequests";
 import AttendanceSummary from "./components/Attendance/AttendanceSummary";
 import AllEmpAttendance from "./components/Attendance/AllEmpAttendance/AllEmpAttendance";
-// import { Navigate } from "react-router";
 import AttendanceLayout from "./components/Attendance/AttendanceLayout";
 import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
 import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
@@ -52,12 +51,8 @@ import Policies from "./components/Policies";
 import PoliciesEnforced from "./components/PoliciesEnforced";
 import PolicySignOff from "./components/PolicySignOff";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
-// import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
-
 import { Navigate } from "react-router";
-
 import CTCSalaryUI from "./components/SalarySlip/CTCSalaryBreakdown";
-
 import PoliciesApp from "./components/Policies/PoliciesApp";
 import PoliciesCategory from "./components/Policies/PoliciesCategory";
 import PoliciesList from "./components/Policies/PoliciesList";
@@ -66,6 +61,13 @@ import ViewSalarySlipModal from "./components/SalarySlip/SalarySlipPDF";
 import EmployeeAttendanceDetails from "./components/Attendance/Employee/EmployeeAttendanceDetails";
 import HRPayroll from "./components/SalarySlip/HR-Payroll";
 import AttendancePolicies from "./components/Attendance/AttendancePolicies/AttendancePolicies";
+import TrackerApp from "./components/ApprovalTracker/TrackerApp";
+import FlowRequests from "./components/ApprovalTracker/FlowRequests";
+import InitiateFlow from "./components/ApprovalTracker/InitiateFlow";
+import InitiateForm from "./components/ApprovalTracker/InitiateForm";
+import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
+import NotificationList from "./components/Notification/Notification";
+
 
 export interface AppRoute {
   index?: boolean;
@@ -75,6 +77,8 @@ export interface AppRoute {
 }
 
 export const routesConfig: AppRoute[] = [
+  // notification page route 
+  {path: "/webapp/notification-log", element: <NotificationList />},
   // Standalone Routes
   { path: "/webapp/search-members", element: <SearchMembers /> },
 
@@ -262,6 +266,20 @@ export const routesConfig: AppRoute[] = [
       { path: "", element: <PoliciesCategory /> },
       { path: "policies-list", element: <PoliciesList /> },
       { path: "view-policy/:policyName", element: <ViewPolicy /> },
+    ],
+  },
+  //Approval tracker routes
+  {
+    path: "/webapp/tracker-app",
+    element: <TrackerApp />,
+    children: [
+      { path: "", element: <FlowRequests /> },
+      { path: "initiate", element: <InitiateFlow /> },
+      { path: "initiate-form", element: <InitiateForm /> },
+      {
+        path: "details/:id",
+        element: <FlowRequestDetails />,
+      },
     ],
   },
 ];

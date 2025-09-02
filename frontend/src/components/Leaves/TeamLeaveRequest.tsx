@@ -1,34 +1,27 @@
 import React, { useState } from "react";
 import TeamLeaveRequestItem from "./TeamLeaveRequestItem";
-import FrappeListView from "../ListView";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import type { TeamLeaveRequest } from "../../types/leaves";
+import type { TeamRequest } from "../../types/leaves";
 import { TeamLeaveRequestSkeleton } from "./LeaveSkeletons";
 import RequestDetailsModal from "./RequestDetailsModal";
-import type { PreListComponentProps } from "../ListView";
 import { LeaveBulkActionBar } from "./LeaveBulkActionBar";
 import HeaderBar from "../HeaderBar";
+import { usePostTaskAction, useTeamRequests } from "../../hooks/useLeaves";
+import toast from "react-hot-toast";
 
 const TeamLeaveRequest: React.FC = () => {
-  const [selectedRequest, setSelectedRequest] =
-    useState<TeamLeaveRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<TeamRequest | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   const [viewAllModal, setViewAllModal] = useState<{
     isOpen: boolean;
     type: "pending" | "actioned" | null;
-    requests: TeamLeaveRequest[];
-  }>({
-    isOpen: false,
-    type: null,
-    requests: [],
-  });
+  }>({ isOpen: false, type: null });
 
-  const {
-    data: userId,
-    isLoading: isUserLoading,
-    error: userError,
-  } = useLoggedInUser();
+  const { data: teamRequests, isLoading, error } = useTeamRequests();
+  const { mutate: postAction } = usePostTaskAction();
 
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) =>
@@ -37,9 +30,26 @@ const TeamLeaveRequest: React.FC = () => {
 
   const isSelected = (id: string) => selectedIds.includes(id);
 
-  const handleBulkAction = (action: "approved" | "rejected") => {
-    console.log(`Bulk ${action} for`, selectedIds);
-    setSelectedIds([]);
+  const handleBulkAction = (action: "Approve" | "Reject") => {
+    if (!selectedIds.length) return;
+
+    postAction(
+      { todo_ids: selectedIds, selected_action: action },
+      {
+        onSuccess: () => {
+          toast.success(
+            `${selectedIds.length} request${
+              selectedIds.length > 1 ? "s" : ""
+            } ${action.toLowerCase()}d`
+          );
+          setSelectedIds([]);
+        },
+        onError: () => {
+          toast.error(`Bulk ${action.toLowerCase()} failed`);
+          setSelectedIds([]);
+        },
+      }
+    );
   };
 
   const SectionHeader: React.FC<{
@@ -52,7 +62,7 @@ const TeamLeaveRequest: React.FC = () => {
       {count > 0 && (
         <button
           onClick={onViewAll}
-          className="text-yellow-600 text-sm font-medium hover:text-yellow-700"
+          className="text-blue-600 text-sm font-medium hover:text-blue-700"
         >
           View All
         </button>
@@ -61,46 +71,39 @@ const TeamLeaveRequest: React.FC = () => {
   );
 
   const BulkActionSection: React.FC<{
-    pendingRequests: TeamLeaveRequest[];
+    pendingRequests: TeamRequest[];
   }> = ({ pendingRequests }) => {
-    if (!pendingRequests.length) return null;
+    const actualPending = pendingRequests.filter((r) => r.status === "Open");
+    if (!actualPending.length) return null;
 
     const allSelected =
-      selectedIds.length > 0 && selectedIds.length === pendingRequests.length;
+      selectedIds.length > 0 && selectedIds.length === actualPending.length;
 
     const onSelectAll = () =>
-      setSelectedIds(allSelected ? [] : pendingRequests.map((r) => r.name));
+      setSelectedIds(
+        allSelected ? [] : actualPending.map((r) => r.todo_id) // names to match toggleSelect
+      );
 
     return (
       <div className="mb-4">
         <LeaveBulkActionBar
-          pendingRequests={pendingRequests}
+          pendingRequests={actualPending}
           selectedIds={selectedIds}
           onSelectAll={onSelectAll}
-          onBulkAction={handleBulkAction}
+          onBulkAction={handleBulkAction} // ← now wired
         />
       </div>
     );
   };
 
-  const PendingRequestsSection: React.FC<PreListComponentProps> = ({
-    ListQuery,
-  }) => {
-    const rows: TeamLeaveRequest[] = ListQuery.data?.pages
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
-      : [];
-
-    const pendingRequests = rows.filter((r) => r.status === "Open");
+  const PendingRequestsSection: React.FC<{
+    requests: TeamRequest[];
+  }> = ({ requests }) => {
+    const pendingRequests = requests.filter((r) => r.status === "Open");
     const displayedRequests = pendingRequests.slice(0, 3);
 
-    const handleViewAll = () => {
-      setViewAllModal({
-        isOpen: true,
-        type: "pending",
-        requests: pendingRequests,
-      });
-    };
+    const handleViewAll = () =>
+      setViewAllModal({ isOpen: true, type: "pending" });
 
     if (!pendingRequests.length) {
       return (
@@ -130,9 +133,9 @@ const TeamLeaveRequest: React.FC = () => {
         <div className="space-y-3">
           {displayedRequests.map((request) => (
             <TeamLeaveRequestItem
-              key={request.name}
+              key={request.id ?? request.name}
               item={request}
-              isSelected={isSelected(request.name)}
+              isSelected={isSelected(request.todo_id)}
               onToggleSelect={toggleSelect}
               onClick={() => handleCardClick(request)}
               onApprove={handleApprove}
@@ -144,26 +147,16 @@ const TeamLeaveRequest: React.FC = () => {
     );
   };
 
-  const ActionedRequestsSection: React.FC<PreListComponentProps> = ({
-    ListQuery,
-  }) => {
-    const rows: TeamLeaveRequest[] = ListQuery.data?.pages
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ListQuery.data.pages.flatMap((p: any) => p.data ?? [])
-      : [];
-
-    const actionedRequests = rows.filter(
+  const ActionedRequestsSection: React.FC<{
+    requests: TeamRequest[];
+  }> = ({ requests }) => {
+    const actionedRequests = requests.filter(
       (r) => r.status === "Approved" || r.status === "Rejected"
     );
     const displayedRequests = actionedRequests.slice(0, 3);
 
-    const handleViewAll = () => {
-      setViewAllModal({
-        isOpen: true,
-        type: "actioned",
-        requests: actionedRequests,
-      });
-    };
+    const handleViewAll = () =>
+      setViewAllModal({ isOpen: true, type: "actioned" });
 
     if (!actionedRequests.length) {
       return (
@@ -191,7 +184,7 @@ const TeamLeaveRequest: React.FC = () => {
         <div className="space-y-3">
           {displayedRequests.map((request) => (
             <TeamLeaveRequestItem
-              key={request.name}
+              key={request.id ?? request.name}
               item={request}
               onClick={() => handleCardClick(request)}
             />
@@ -201,52 +194,64 @@ const TeamLeaveRequest: React.FC = () => {
     );
   };
 
-  const SectionedView: React.FC<PreListComponentProps> = ({ ListQuery }) => (
-    <div>
-      <PendingRequestsSection
-        ListQuery={ListQuery}
-        doctype={""}
-        setCurrentPage={function (): void {
-          throw new Error("Function not implemented.");
-        }}
-        currentPage={0}
-        totalPages={0}
-        startIndex={0}
-        endIndex={0}
-        pageSize={0}
-        totalCount={0}
-      />
-      <ActionedRequestsSection
-        ListQuery={ListQuery}
-        doctype={""}
-        setCurrentPage={function (): void {
-          throw new Error("Function not implemented.");
-        }}
-        currentPage={0}
-        totalPages={0}
-        startIndex={0}
-        endIndex={0}
-        pageSize={0}
-        totalCount={0}
-      />
-    </div>
-  );
+  const ViewAllModal: React.FC = () => {
+    if (!viewAllModal.isOpen || !viewAllModal.type) return null;
 
-  const EmptyItemComponent = () => null;
+    const isPending = viewAllModal.type === "pending";
+    const title = isPending ? "All Pending Requests" : "All Actioned Requests";
 
-  const handleCardClick = (request: TeamLeaveRequest) => {
-    const teamRequest: TeamLeaveRequest = {
-      id: request.name || "",
-      name: request.name,
-      employee_name: request.employee_name,
-      leave_type: request.leave_type,
-      from_date: request.from_date,
-      to_date: request.to_date,
-      status: request.status,
-      description: request.description,
-      department: request.department,
-    };
-    setSelectedRequest(teamRequest);
+    const requests = isPending
+      ? teamRequests?.filter((r) => r.status === "Open") ?? []
+      : teamRequests?.filter(
+          (r) => r.status === "Approved" || r.status === "Rejected"
+        ) ?? [];
+
+    const handleClose = () => setViewAllModal({ isOpen: false, type: null });
+
+    return (
+      <div className="fixed inset-0 bg-white z-[60] flex flex-col">
+        <HeaderBar title={title} onBack={handleClose} />
+
+        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+          <div className="max-w-4xl mx-auto">
+            {isPending && (
+              <div className="mb-6">
+                <BulkActionSection pendingRequests={requests} />
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {requests.map((request) => (
+                <TeamLeaveRequestItem
+                  key={request.id ?? request.name}
+                  item={request}
+                  isSelected={
+                    isPending ? isSelected(request.todo_id) : undefined
+                  }
+                  onToggleSelect={isPending ? toggleSelect : undefined}
+                  onClick={() => {
+                    handleClose();
+                    handleCardClick(request);
+                  }}
+                  onApprove={isPending ? handleApprove : undefined}
+                  onReject={isPending ? handleReject : undefined}
+                />
+              ))}
+            </div>
+
+            {requests.length === 0 && (
+              <div className="text-center text-gray-500 py-12">
+                No {isPending ? "pending" : "actioned"} requests found
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const handleCardClick = (request: TeamRequest) => {
+    setSelectedRequest(request);
     setIsModalOpen(true);
   };
 
@@ -255,14 +260,35 @@ const TeamLeaveRequest: React.FC = () => {
     setSelectedRequest(null);
   };
 
-  const handleApprove = (id: string) => console.log(`Approving ${id}`);
-  const handleReject = (id: string) => console.log(`Rejecting ${id}`);
-
-  const handleCloseViewAll = () => {
-    setViewAllModal({ isOpen: false, type: null, requests: [] });
+  const handleApprove = (todo_id: string) => {
+    postAction(
+      { todo_ids: [todo_id], selected_action: "Approve" },
+      {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onSuccess: (response: any) => {
+          if (response?.status === "success")
+            toast.success("Leave request approved");
+        },
+        onError: () => toast.error("Failed to approve leave request"),
+      }
+    );
   };
 
-  if (userError) {
+  const handleReject = (todo_id: string) => {
+    postAction(
+      { todo_ids: [todo_id], selected_action: "Reject" },
+      {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onSuccess: (response: any) => {
+          if (response?.status === "success")
+            toast.success("Leave request Rejected");
+        },
+        onError: () => toast.error("Failed to reject leave request"),
+      }
+    );
+  };
+
+  if (error) {
     return (
       <div className="p-4 text-center text-red-600">
         Failed to load Team Leave Requests. Please try again.
@@ -270,84 +296,12 @@ const TeamLeaveRequest: React.FC = () => {
     );
   }
 
-  if (isUserLoading || !userId) return <TeamLeaveRequestSkeleton />;
-
-  if (viewAllModal.isOpen && viewAllModal.type) {
-    const isPending = viewAllModal.type === "pending";
-    const title = isPending ? "All Pending Requests" : "All Actioned Requests";
-
-    return (
-      <div className="pb-4 relative">
-        <div className="fixed inset-0 z-50 flex flex-col md:static md:max-w-full bg-gray-50 md:bg-transparent">
-          <div className="md:-mx-4 md:-mt-4 md:mb-1">
-            <HeaderBar title={title} onBack={handleCloseViewAll} />
-          </div>
-          <main className="flex-1 overflow-y-auto bg-gray-50 md:bg-transparent">
-            <div className="px-4 py-6 md:p-4 max-w-4xl mx-auto md:pb-20">
-              {isPending && viewAllModal.requests.length > 0 && (
-                <div className="mb-6">
-                  <BulkActionSection pendingRequests={viewAllModal.requests} />
-                </div>
-              )}
-
-              <div className="space-y-4 md:space-y-3">
-                {viewAllModal.requests.map((request) => (
-                  <TeamLeaveRequestItem
-                    key={request.name}
-                    item={request}
-                    isSelected={isPending ? isSelected(request.name) : undefined}
-                    onToggleSelect={isPending ? toggleSelect : undefined}
-                    onClick={() => {
-                      handleCloseViewAll();
-                      handleCardClick(request);
-                    }}
-                    onApprove={isPending ? handleApprove : undefined}
-                    onReject={isPending ? handleReject : undefined}
-                  />
-                ))}
-              </div>
-
-              {viewAllModal.requests.length === 0 && (
-                <div className="text-center text-yellow-600 py-12">
-                  No {isPending ? "pending" : "actioned"} requests found
-                </div>
-              )}
-            </div>
-          </main>
-        </div>
-
-        {isModalOpen && selectedRequest && (
-          <RequestDetailsModal
-            request={selectedRequest}
-            onClose={handleCloseModal}
-          />
-        )}
-      </div>
-    );
-  }
+  if (isLoading || !teamRequests) return <TeamLeaveRequestSkeleton />;
 
   return (
-    <div className="space-y-3 md:pb-16">
-      <FrappeListView
-        doctype="Leave Application"
-        PreListComponent={SectionedView}
-        ItemComponent={EmptyItemComponent}
-        defaultFields={[
-          "name",
-          "employee_name",
-          "leave_type",
-          "from_date",
-          "to_date",
-          "status",
-          "description",
-        ]}
-        defaultFilters={{ leave_approver: userId }}
-        isSearch={true}
-        searchFields={["employee_name", "leave_type", "status"]}
-        infiniteScroll={true}
-        showRefereshButton={true}
-        SkeletonComponent={TeamLeaveRequestSkeleton}
-      />
+    <div className="space-y-3">
+      <PendingRequestsSection requests={teamRequests} />
+      <ActionedRequestsSection requests={teamRequests} />
 
       {isModalOpen && selectedRequest && (
         <RequestDetailsModal
@@ -355,6 +309,8 @@ const TeamLeaveRequest: React.FC = () => {
           onClose={handleCloseModal}
         />
       )}
+
+      <ViewAllModal />
     </div>
   );
 };

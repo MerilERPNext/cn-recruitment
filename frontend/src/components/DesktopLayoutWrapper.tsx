@@ -10,6 +10,7 @@ import {
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import defaultProfile from '../assets/face-rec.png';
 import CollapsibleSidebar from './shared/CollapsibleSidebar';
+import { useFrappeAuth } from 'frappe-react-sdk';
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -25,12 +26,24 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const { isDesktop } = useScreenSize();
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useFrappeAuth();
   const { data: currentUser } = useCurrentUser();
   // Force static badge count for UI demo
-  const unreadCount = 21;
+  const unreadCount = 0;
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+
+  // logout logic
+  const logoutHandler = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   // Handle click outside profile dropdown
   useEffect(() => {
@@ -100,7 +113,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   };
 
   const handleNotificationClick = () => {
-    navigate("/webapp/notices");
+    navigate("/webapp/notification-log");
   };
 
   // Calculate dynamic margin based on sidebar width
@@ -196,8 +209,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                    
                     <hr className="my-2 border-gray-100" />
                     <button
-                      onClick={() => {
-                        // Add logout functionality
+                      onClick={async () => {
+                        await logoutHandler();
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"

@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { useAllAttendanceRequests } from "../../../hooks/useAttendance";
+import {
+  useActionOnAttendanceRequest,
+  useAllAttendanceRequests,
+} from "../../../hooks/useAttendance";
 import { AttendanceRequest } from "../../../types/attendance";
 import { RequestCard } from "./RequestCard";
 import { BulkActionBar } from "./BulkActionBar";
@@ -8,14 +11,15 @@ import LayoutHeader from "../../shared/LayoutHeader";
 import { useNavigate } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import toast from "react-hot-toast";
 
 const AllPendingRequests = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
-  const { data = [] } = useAllAttendanceRequests(20, [
-    ["custom_status", "=", "Pending"],
+  const { data = [], refetch } = useAllAttendanceRequests("*", [
+    ["status", "=", "Pending"],
     ["employee", "!=", currentEmployee?.employee],
   ]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -32,8 +36,33 @@ const AllPendingRequests = () => {
     if (selectedIds.length === data.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(data.map((r) => r.name));
+      setSelectedIds(data.map((r) => r.todo_id));
     }
+  };
+
+  const mutation = useActionOnAttendanceRequest();
+
+  const handleAction = (action: "Approve" | "Reject") => {
+    mutation.mutate(
+      {
+        todo_ids: selectedIds,
+        selected_action: action,
+      },
+      {
+        onSuccess: () => {
+          refetch();
+          toast.success(
+            `Attendance request ${
+              action === "Reject" ? "rejecte" : action.toLowerCase()
+            }d successfully!`
+          );
+        },
+        onError: (error) => {
+          toast.error(error?.message);
+          console.error(error);
+        },
+      }
+    );
   };
   return (
     <div>
@@ -50,23 +79,25 @@ const AllPendingRequests = () => {
               selectedIds={selectedIds}
               pendingRequests={data}
               onSelectAll={selectAll}
-              onBulkAction={() => {
+              onBulkAction={(action: "Approve" | "Reject") => {
                 console.log("Selected Pending IDs:", selectedIds);
+                handleAction(action);
                 setSelectedIds([]);
               }}
             />
           </div>
           <div className="space-y-3">
-            {data.map((request) => (
-              <RequestCard
-                key={request.name}
-                isActionedCard={false}
-                request={request}
-                isSelected={isSelected(request.name)}
-                onToggleSelect={toggleSelect}
-                onClick={(request) => setSelectedRequest(request)}
-              />
-            ))}
+            {data?.length > 0 &&
+              data.map((request) => (
+                <RequestCard
+                  key={request.name}
+                  isActionedCard={false}
+                  request={request}
+                  isSelected={isSelected(request.todo_id)}
+                  onToggleSelect={toggleSelect}
+                  onClick={(request) => setSelectedRequest(request)}
+                />
+              ))}
           </div>
         </div>
       </div>
