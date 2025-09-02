@@ -501,4 +501,5 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     </>
   );
 };
+
 export default CollapsibleSidebar;
