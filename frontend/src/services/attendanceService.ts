@@ -5,6 +5,7 @@ import type {
   Attendance,
   AttendanceRecord,
   AttendanceRequest,
+  AttendanceRequestValidations,
   CanShowClockIn,
   EmployeeCheckInLog,
   EmployeeShift,
@@ -371,14 +372,23 @@ export const attendanceService = {
     }
   },
 
-  reqValidationsForAttendanceRequest: async (empId: string) => {
-    return FrappeAPI.callMethod(
-      "cn_leave_shift_managment.cn_leave_shift_managment.overrides.attendace_request.get_active_attendance_policy",
-      {
-        employee: empId,
-      }
-    );
+  reqValidationsForAttendanceRequest: async (
+    empId: string
+  ): Promise<AttendanceRequestValidations> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.cn_leave_shift_managment.overrides.attendace_request.get_active_attendance_policy",
+        {
+          employee: empId,
+        }
+      );
+      return response as AttendanceRequestValidations;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
   },
+
   actionOnAttendanceRequest: async (
     todo_ids: string | string[],
     selected_action: "Approve" | "Reject"

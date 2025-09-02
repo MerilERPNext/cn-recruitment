@@ -52,13 +52,6 @@ interface AttndanceRequestFormProps {
   selectedDate?: Date | string;
 }
 
-interface AttendanceRequestValidations {
-  attendance_adjustment_requests: number;
-  clockin_requests: number;
-  shift_change_requests: number;
-  out_duty_requests: number;
-  short_leave_requests: number;
-}
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
@@ -74,14 +67,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedRequestType, setSelectedRequestType] = useState<string>("");
-  const [requestTypeValidations, setRequestTypeValidations] =
-    useState<AttendanceRequestValidations>({
-      attendance_adjustment_requests: 0,
-      clockin_requests: 0,
-      shift_change_requests: 0,
-      out_duty_requests: 0,
-      short_leave_requests: 0,
-    });
+
   const { data: reasonList } = useGetAllReasons(selectedRequestType);
   const employeeIdToShow = isForOthers
     ? selectedEmployee
@@ -126,16 +112,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   );
 
   const mutation = useCreateNewAttendanceRequest();
-  const reqValidationmutation = useReqValidationsForAttendanceRequest();
-  React.useEffect(() => {
-    if (!currentEmployee?.employee || reqValidationmutation?.isPending) return;
-
-    reqValidationmutation.mutate(currentEmployee.employee, {
-      onSuccess: (data) => {
-        setRequestTypeValidations(data as AttendanceRequestValidations);
-      },
-    });
-  }, [currentEmployee?.employee]);
+  const reqValidationmutation = useReqValidationsForAttendanceRequest(
+    currentEmployee?.employee as string
+  );
 
   const handleFromDateChange = (event: { data: AttendanceFormData }) => {
     const formInstance = formAddressInstance.current;
@@ -275,31 +254,31 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             data: {
               values: [
-                requestTypeValidations?.clockin_requests
+                reqValidationmutation?.data?.clockin_requests
                   ? {
                       label: "Clockin Request",
                       value: "Clockin",
                     }
                   : "",
-                requestTypeValidations?.out_duty_requests
+                reqValidationmutation?.data?.out_duty_requests
                   ? {
                       label: "Out Duty Request",
                       value: "Out Duty",
                     }
                   : "",
-                requestTypeValidations?.short_leave_requests
+                reqValidationmutation?.data?.short_leave_requests
                   ? {
                       label: "Short Attendance Request",
                       value: "Short Attendance Request",
                     }
                   : "",
-                requestTypeValidations?.attendance_adjustment_requests
+                reqValidationmutation?.data?.attendance_adjustment_requests
                   ? {
                       label: "Attendance Adjustment",
                       value: "Attendance Adjustment",
                     }
                   : "",
-                requestTypeValidations?.shift_change_requests
+                reqValidationmutation?.data?.shift_change_requests
                   ? {
                       label: "Shift Change Request",
                       value: "Shift Change",
@@ -518,7 +497,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       currentEmployee,
       reasonList,
       selectedRequestType,
-      requestTypeValidations,
+      reqValidationmutation,
     ]
   );
 
@@ -614,8 +593,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       },
       onError: (error: CustomError) => {
         const errorMessage =
-          error?.response?.data?.exception ||
-          "Something went wrong!!"?.split(":").slice(1).join(":").trim();
+          error?.response?.data?.exception
+            ?.split(":")
+            .slice(1)
+            .join(":")
+            .trim() || "Something went wrong!!";
         toast.error(errorMessage as string);
         console.error(error);
       },
