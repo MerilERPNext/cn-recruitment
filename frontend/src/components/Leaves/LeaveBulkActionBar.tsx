@@ -4,7 +4,7 @@ export interface LeaveBulkActionBarProps {
   pendingRequests: { name: string }[];
   selectedIds: string[];
   onSelectAll: () => void;
-  onBulkAction: (action: "approved" | "rejected") => void;
+  onBulkAction: (action: "Approve" | "Reject") => void;
 }
 export const LeaveBulkActionBar: React.FC<LeaveBulkActionBarProps> = ({
   pendingRequests,
@@ -31,13 +31,13 @@ export const LeaveBulkActionBar: React.FC<LeaveBulkActionBarProps> = ({
         <div className="flex space-x-2 mt-2">
           <button
             className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 shadow-sm text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200"
-            onClick={() => onBulkAction("rejected")}
+            onClick={() => onBulkAction("Reject")}
           >
             Bulk Reject ({selectedIds.length})
           </button>
           <button
             className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 shadow-sm text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200"
-            onClick={() => onBulkAction("approved")}
+            onClick={() => onBulkAction("Approve")}
           >
             Bulk Approve ({selectedIds.length})
           </button>

@@ -1,5 +1,5 @@
 import FrappeAPI from "../utils/frappeAPI";
-import type { LeaveRequest } from "../types/leaves";
+import type { LeaveRequest, TeamRequest } from "../types/leaves";
 import { HolidayApiResponse } from "../types/leaves";
 import type { LeaveDetailsResponse, HolidayGroup } from "../types/leaves";
 
@@ -65,5 +65,28 @@ export const leaveService = {
     );
     const typed = response as HolidayApiResponse;
     return typed.message.data;
+  },
+
+  getTeamRequests: async (): Promise<TeamRequest[]> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_leave_applications"
+    );
+    return (response as TeamRequest[]).map((req) => ({
+      ...req,
+      id: req.name,
+    }));
+  },
+
+  postTaskAction: async (
+    todo_ids: string | string[],
+    selected_action: "Approve" | "Reject"
+  ) => {
+    return FrappeAPI.callMethod(
+      "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.action_api_handler",
+      {
+        todo_ids: Array.isArray(todo_ids) ? todo_ids : [todo_ids],
+        selected_action,
+      }
+    );
   },
 };

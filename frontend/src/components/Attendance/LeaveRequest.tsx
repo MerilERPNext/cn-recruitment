@@ -16,9 +16,9 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { toast } from "react-hot-toast";
 import { useLeaveRequestRefresh } from "../Leaves/LeaveRequestRefreshContext";
 import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
-import { Formio } from "formiojs";
 import { X } from "lucide-react";
 
+/** Local submission/data event shape used by form onChange/onFormReady handlers */
 interface FormSubmissionData {
   leaveType?: string;
   fromDate?: string;
@@ -53,11 +53,13 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const { triggerRefetch } = useLeaveRequestRefresh();
   const { defaults } = useRequestLeaveModal();
+
   const createLeaveMutation = useCreateFrappeDocument({
     onSuccess: () => {
       toast.success("Leave request submitted successfully!");
       triggerRefetch();
       onSuccess?.();
+      onCancel?.();
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
@@ -87,11 +89,19 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const leaveTypeOptions = useMemo(() => {
     if (!leaveAllocations?.data) return [];
-    const uniqueTypes = Array.from(
-      new Set(leaveAllocations.data.map((entry) => entry.leave_type))
+
+    const allTypes = Array.from(
+      new Set(leaveAllocations.data.map((entry) => entry.leave_type as string))
     );
-    return uniqueTypes.map((type) => ({ label: type, value: type }));
-  }, [leaveAllocations]);
+
+    return allTypes
+      .filter((type) => {
+        const isOptional = /optional/i.test(type);
+        const isDefault = type === defaults?.leaveType;
+        return !isOptional || isDefault;
+      })
+      .map((type) => ({ label: type, value: type }));
+  }, [leaveAllocations, defaults?.leaveType]);
 
   const calculateLeaveDays = useCallback((data: FormSubmissionData) => {
     const { fromDate, toDate, halfDay } = data;
@@ -100,8 +110,9 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     const from = new Date(fromDate);
     const to = new Date(toDate);
 
-    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from)
+    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from) {
       return setLeaveDays(null);
+    }
 
     const diffMs = to.getTime() - from.getTime();
     const days = diffMs / (1000 * 60 * 60 * 24) + 1;
@@ -118,7 +129,23 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       setFormData(initial);
       calculateLeaveDays(initial);
     }
-  }, [defaults, calculateLeaveDays, formData.halfDay]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaults]);
+
+  const handleFromDateChange = useCallback(
+    (event: { data: FormSubmissionData }) => {
+      const fromDateValue = event?.data?.fromDate;
+      const form = formInstance.current;
+      if (form && fromDateValue) {
+        const toDateComponent = form.getComponent("toDate");
+        if (toDateComponent) {
+          toDateComponent.setValue(fromDateValue, { noUpdateEvent: true });
+          toDateComponent.redraw();
+        }
+      }
+    },
+    []
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!currentEmployee?.name) {
@@ -129,6 +156,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     if (!formInstance?.current) {
       return;
     }
+
     try {
       const submission = await formInstance.current.submit();
 
@@ -143,7 +171,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           half_day_date: submission.data.halfDay
             ? submission.data.fromDate?.split("T")[0]
             : undefined,
-          half_day_session: submission.data.halfDay
+          custom_half_day_type: submission.data.halfDay
             ? submission.data.halfDayOption
             : undefined,
           description: submission.data.description,
@@ -152,7 +180,6 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       });
     } catch (error) {
       console.error("Form submit error:", error);
-      toast.error("Failed to submit leave request. Please try again.");
     }
   }, [currentEmployee, createLeaveMutation]);
 
@@ -168,6 +195,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         validate: { required: true },
         data: { values: leaveTypeOptions },
         customClass: "px-2 mb-4",
+        disabled: Boolean(defaults?.leaveType),
       },
       {
         type: "columns",
@@ -181,7 +209,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 type: "datetime",
                 key: "fromDate",
                 label: "From Date",
-                placeholder: "YYYY-MM-DD",
+                placeholder: "DD-MM-YYYY",
                 enableDate: true,
                 enableTime: false,
                 defaultValue: defaults?.fromDate
@@ -190,7 +218,8 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 validate: { required: true },
                 input: true,
                 customClass: "mb-4",
-                format: "yyyy-MM-dd",
+                format: "dd-MM-yyyy",
+                onChange: handleFromDateChange,
               },
             ],
           },
@@ -201,7 +230,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 type: "datetime",
                 key: "toDate",
                 label: "To Date",
-                placeholder: "YYYY-MM-DD",
+                placeholder: "DD-MM-YYYY",
                 enableDate: true,
                 enableTime: false,
                 defaultValue: defaults?.toDate
@@ -210,7 +239,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 validate: { required: true },
                 input: true,
                 customClass: "mb-4",
-                format: "yyyy-MM-dd",
+                format: "dd-MM-yyyy",
               },
             ],
           },
@@ -283,7 +312,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         },
       ],
     };
-  }, [leaveTypeOptions, defaults]);
+  }, [leaveTypeOptions, defaults, handleFromDateChange]);
 
   return (
     <div
@@ -294,12 +323,10 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         }
       }}
     >
-      {/* Modal container */}
       <div
         className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Header (fixed) */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
           <button
@@ -316,21 +343,19 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           </button>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 min-h-0 overflow-y-auto pb-20">
-          {/* Leave days message */}
           <div
-            className="ml-2 mb-4 text-sm text-gray-700"
+            className="ml-6 my-2 text-sm text-gray-700"
             style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}
           >
             <strong>Applying for:</strong> {leaveDays}{" "}
             {leaveDays === 1 ? "Day" : "Days"}
           </div>
 
-          {/* Form */}
           <Form
             form={leaveForm}
-            onFormReady={(instance: Formio) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onFormReady={(instance: any) => {
               formInstance.current = instance;
             }}
             options={{
@@ -353,8 +378,6 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             }}
           />
         </div>
-
-        {/* Submit Button (fixed) */}
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
           <button
             onClick={handleSubmit}

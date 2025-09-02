@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import type { TeamLeaveRequest } from "../../types/leaves";
+import type { TeamRequest } from "../../types/leaves";
 
 const TeamLeaveRequestItem = ({
   item,
@@ -9,7 +9,7 @@ const TeamLeaveRequestItem = ({
   onApprove,
   onReject,
 }: {
-  item: TeamLeaveRequest;
+  item: TeamRequest;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
   onClick?: () => void;
@@ -63,7 +63,7 @@ const TeamLeaveRequestItem = ({
             type="checkbox"
             className=""
             checked={isSelected}
-            onChange={() => onToggleSelect(item.name)}
+            onChange={() => onToggleSelect(item.todo_id)}
             onClick={(e) => e.stopPropagation()}
           />
         )}
@@ -95,7 +95,7 @@ const TeamLeaveRequestItem = ({
                 className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onReject?.(item.name);
+                  onReject?.(item.todo_id);
                 }}
               >
                 Reject
@@ -104,7 +104,7 @@ const TeamLeaveRequestItem = ({
                 className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onApprove?.(item.name);
+                  onApprove?.(item.todo_id);
                 }}
               >
                 Approve
