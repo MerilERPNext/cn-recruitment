@@ -115,7 +115,7 @@ const DesktopDashboard: React.FC = () => {
   const logoutHandler = async () => {
     try {
       await logout();
-      window.location.href = "/login";
+      navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }

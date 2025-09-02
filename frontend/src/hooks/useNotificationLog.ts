@@ -8,7 +8,7 @@ export const useMarkAsRead = () => {
   return useMutation({
     mutationFn: (id: string) => NotificationService.markAsRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["documents-infinite", "Notification Log"] });
       toast.success("Marked as read");
     },
     onError: () => {

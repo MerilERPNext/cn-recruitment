@@ -9,6 +9,7 @@ import FrappeListView from "../ListView";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useMarkAsRead } from "../../hooks/useNotificationLog";
 import HeaderBar from "../HeaderBar";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -23,7 +24,7 @@ interface NotificationLog {
 
 // -------------------- MAIN LIST --------------------
 const NotificationList = () => {
-  const isDesktop = window.innerWidth >= 1024;
+  const { isDesktop } = useScreenSize();
 
   const layout = (
     <div className="flex flex-col h-full">

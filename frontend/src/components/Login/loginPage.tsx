@@ -14,14 +14,14 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { currentUser, login, error, isValidating } = useFrappeAuth();
-  const navigatore = useNavigate();
+  const navigate = useNavigate();
 
   // ✅ Redirect if already logged in
   useEffect(() => {
     if (currentUser) {
-      navigatore("/webapp");
+      navigate("/webapp");
     }
-  }, [currentUser, navigatore]);
+  }, [currentUser, navigate]);
 
   // ✅ Handle authentication errors from the SDK
   useEffect(() => {
@@ -76,7 +76,7 @@ const Login = () => {
 
       if (result) {
         toast.success("Login successful");
-        navigatore("/webapp");
+        navigate("/webapp");
       }
     } catch (err: any) {
       console.error("Login failed:", err);

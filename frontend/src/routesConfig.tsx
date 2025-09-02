@@ -78,7 +78,7 @@ export interface AppRoute {
 
 export const routesConfig: AppRoute[] = [
   // notification page route 
-  {path: "webapp/notification-log", element: <NotificationList />},
+  {path: "/webapp/notification-log", element: <NotificationList />},
   // Standalone Routes
   { path: "/webapp/search-members", element: <SearchMembers /> },
 
