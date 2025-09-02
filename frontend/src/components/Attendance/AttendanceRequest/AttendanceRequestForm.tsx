@@ -613,11 +613,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         toast.success("Added Attendance Request successfully!");
       },
       onError: (error: CustomError) => {
-        const errorMessage = error?.response?.data?.exception
-          ?.split(":")
-          .slice(1)
-          .join(":")
-          .trim();
+        const errorMessage =
+          error?.response?.data?.exception ||
+          "Something went wrong!!"?.split(":").slice(1).join(":").trim();
         toast.error(errorMessage as string);
         console.error(error);
       },
