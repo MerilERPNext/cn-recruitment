@@ -1,62 +1,68 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useState, ReactNode } from "react";
 import FrappeListView from "../ListView";
 import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
 
 type ApprovalListProps = {
   doctype: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   renderCardContent: (item: any) => ReactNode;
 };
 
 const ApprovalList = ({ doctype, renderCardContent }: ApprovalListProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]); // will hold all items from list
+  const [allRequests, setAllRequests] = useState<any[]>([]);
 
   const defaultFilters = useMemo(
     () => ({ reference_type: doctype }),
     [doctype]
   );
 
-  // Toggle selection for a given todoId
+  // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
-  // Select all pending requests
+  // Toggle all
   const handleSelectAll = () => {
-    if (selectedIds.length === pendingRequests.length) {
-      setSelectedIds([]); // unselect all
+    if (selectedIds.length === allRequests.length) {
+      setSelectedIds([]);
     } else {
-      setSelectedIds(pendingRequests.map((req) => req.custom_funnel_task));
+      setSelectedIds(allRequests.map((req) => req.custom_funnel_task));
     }
   };
 
-  // Bulk action handler
+  // Bulk approve/reject
   const handleBulkAction = (action: "Approve" | "Reject") => {
-    console.log("Bulk Action:", action, "on", selectedIds);
-    // TODO: call frappe API or mutation here
-    // After success: clear selection or refresh list
-    setSelectedIds([]);
+    console.log("Bulk Action:", action, selectedIds);
+    // TODO: frappe API call here
+    setSelectedIds([]); // reset selection after action
   };
 
   return (
-    <div>
-      <BulkActionBar
-        selectedIds={selectedIds}
-        pendingRequests={pendingRequests}
-        onSelectAll={handleSelectAll}
-        onBulkAction={handleBulkAction}
-      />
-
+    <div className="px-4 py-2 bg-white">
       <FrappeListView
         doctype="ToDo"
         isSearch={false}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        defaultFilters={defaultFilters as any}
+        showRefereshButton={false}
+        infiniteScroll
+        isFilter={false}
+        defaultFields={["*"]}
+        onDataLoad={(data) => setAllRequests(data)}
+        PreListComponent={() => (
+          <div className="mb-2">
+            <BulkActionBar
+              selectedIds={selectedIds}
+              pendingRequests={allRequests}
+              onSelectAll={handleSelectAll}
+              onBulkAction={handleBulkAction}
+            />
+          </div>
+        )}
         ItemComponent={(props: { item: any }) => {
-          const todoId = props?.item?.custom_funnel_task;
+          const todoId = props.item?.custom_funnel_task;
           return (
             <ActionCard
               todoId={todoId}
@@ -68,14 +74,6 @@ const ApprovalList = ({ doctype, renderCardContent }: ApprovalListProps) => {
             </ActionCard>
           );
         }}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        defaultFilters={defaultFilters as any}
-        showRefereshButton={false}
-        // onItemClick={() => {}}
-        infiniteScroll={true}
-        isFilter={false}
-        defaultFields={["*"]}
-        onItemClick={(data) => setPendingRequests(data)}
       />
     </div>
   );

@@ -77,6 +77,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   permissionErrorMessage?: string;
   showRefereshButton?: boolean;
   onRefetchAvailable?: (refetch: () => void) => void;
+  onDataLoad?: (data: T[]) => void;
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -97,6 +98,7 @@ const FrappeListView = <T extends BaseItem>({
   showRefereshButton = true,
   permissionErrorMessage,
   onRefetchAvailable,
+  onDataLoad,
 }: FrappeListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
@@ -292,6 +294,12 @@ const FrappeListView = <T extends BaseItem>({
     paginationQueryResult.data,
     doctype,
   ]);
+
+  useEffect(() => {
+    if (onDataLoad) {
+      onDataLoad(processedData);
+    }
+  }, [processedData, onDataLoad]);
 
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll
