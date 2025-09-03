@@ -19,6 +19,7 @@ import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModal
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
 import { X, CheckCircle2, CircleX } from "lucide-react";
 import { useFrappeAuth } from "frappe-react-sdk";
+import "./utils/FormioOverrides";
 
 const App: React.FC = () => {
   const { currentUser, isLoading, isValidating } = useFrappeAuth();
