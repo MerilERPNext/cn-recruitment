@@ -85,7 +85,7 @@ const PoliciesList: React.FC = () => {
           policy_category: categoryName,
         }}
         isSearch={true}
-        // showRefereshButton={true}
+        showRefereshButton={true}
         searchFields={["name"]}
         defaultFields={["name", "policy", "policy_document", "status"]}
         ItemComponent={PolicyItem}

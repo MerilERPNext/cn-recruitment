@@ -47,6 +47,7 @@ const MemberAvatar = ({
 };
 
 // Member Card Component
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MemberCard = ({ item, onClick }: any) => {
   const member = item;
   // Prefer full name, fallback to first+last or name
@@ -120,6 +121,7 @@ const SearchMembersApp = () => {
   const navigate = useNavigate();
   // const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleMemberClick = (member: any) => {
     navigate(`/webapp/id-card/${member.name}`);
     // Handle member selection/navigation
@@ -134,7 +136,6 @@ const SearchMembersApp = () => {
           ItemComponent={MemberCard}
           onItemClick={handleMemberClick}
           infiniteScroll={true}
-          // showRefereshButton={false}
           // isFilter={true}
           defaultFields={[
             "name",

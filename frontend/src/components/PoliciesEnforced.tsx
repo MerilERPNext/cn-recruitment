@@ -186,7 +186,6 @@ const PoliciesEnforced: React.FC = () => {
               isSearch={true}
               isFilter={false}
               pageSize={10}
-              // showRefereshButton={false}
             />
           </div>
         )}
@@ -234,7 +233,6 @@ const PoliciesEnforced: React.FC = () => {
               isSearch={true}
               isFilter={false}
               pageSize={10}
-              // showRefereshButton={false}
             />
           </div>
         )}

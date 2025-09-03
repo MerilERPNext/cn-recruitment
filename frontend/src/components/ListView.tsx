@@ -75,7 +75,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   onItemClick?: (item: T) => void;
   infiniteScroll?: boolean;
   permissionErrorMessage?: string;
-  // showRefereshButton?: boolean;
+  showRefereshButton?: boolean;
   onRefetchAvailable?: (refetch: () => void) => void;
 }
 
@@ -94,7 +94,7 @@ const FrappeListView = <T extends BaseItem>({
   searchFields = [],
   onItemClick,
   infiniteScroll = false,
-  // showRefereshButton = true,
+  showRefereshButton = false,
   permissionErrorMessage,
   onRefetchAvailable,
 }: FrappeListViewProps<T>) => {
@@ -591,7 +591,7 @@ const FrappeListView = <T extends BaseItem>({
                 <Filter className="h-4 w-4" />
               </button>
             )}
-            {/* {showRefereshButton && (
+            {showRefereshButton && (
               <button
                 onClick={refreshData}
                 disabled={isListLoading}
@@ -601,7 +601,7 @@ const FrappeListView = <T extends BaseItem>({
                   className={`h-4 w-4 ${isListLoading ? "animate-spin" : ""}`}
                 />
               </button>
-            )} */}
+            )}
           </div>
         </div>
       </div>

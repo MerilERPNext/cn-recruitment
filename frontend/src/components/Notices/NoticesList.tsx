@@ -117,7 +117,6 @@ const NoticesList: React.FC<NoticesListProps> = ({ activeTab }) => {
         ]}
         searchFields={["title", "message", "priority", "status"]}
         infiniteScroll
-        // showRefereshButton={false}
         onRefetchAvailable={setRefetchListView}
       />
     </main>
