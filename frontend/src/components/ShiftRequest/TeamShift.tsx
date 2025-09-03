@@ -80,7 +80,7 @@ export default function TeamShift() {
         SkeletonComponent={TeamShiftSkeleton}
         isSearch={true}
         isFilter={false}
-        // showRefereshButton={true}
+        showRefereshButton={true}
         infiniteScroll={true}
         defaultFilters={{}}
         defaultFields={[

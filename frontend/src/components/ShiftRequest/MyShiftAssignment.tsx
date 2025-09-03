@@ -125,7 +125,7 @@ export default function MyShiftAssignment() {
         isSearch={true}
         searchFields={["employee_name", "shift_type"]}
         isFilter={false}
-        // showRefereshButton={true}
+        showRefereshButton={true}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         defaultFilters={filters as any}
         infiniteScroll={true}

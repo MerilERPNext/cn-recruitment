@@ -125,7 +125,7 @@ const AllEmpAttendance = () => {
           </h2>
           {isDesktop && (
             <button onClick={() => setShowSelectByMonth(true)}>
-              <CalendarDays />
+              <CalendarDays key={"desktop-calendar-filter-icon"} />
             </button>
           )}
         </div>

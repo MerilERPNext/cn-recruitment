@@ -230,7 +230,7 @@ const MyLeaveRequest: React.FC = () => {
         isSearch={true}
         searchFields={["name", "leave_type", "status"]}
         infiniteScroll={true}
-        // showRefereshButton={true}
+        showRefereshButton={true}
         onRefetchAvailable={setRefetch}
         SkeletonComponent={MyLeaveRequestSkeleton}
       />
