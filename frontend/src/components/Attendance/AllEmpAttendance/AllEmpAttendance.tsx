@@ -14,6 +14,7 @@ import {
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import { getStatusGradient } from "../../../utils/helperUtils";
 import HeaderBar from "../../HeaderBar";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const formatTimeSafe = (timeStr: string | undefined) => {
   if (!timeStr) return "--:--";
@@ -28,6 +29,8 @@ const formatTimeSafe = (timeStr: string | undefined) => {
 
 const AllEmpAttendance = () => {
   const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
+
   const [showSelectByMonth, setShowSelectByMonth] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<MonthOption>({
     label: format(new Date(), "MMM-yyyy"),
@@ -116,9 +119,17 @@ const AllEmpAttendance = () => {
       />
 
       <div className="mx-auto bg-white h-screen px-4">
-        <h2 className="font-semibold text-lg text-center py-2">
-          {selectedMonth?.label}
-        </h2>
+        <div className="flex justify-center gap-2">
+          <h2 className="font-semibold text-lg text-center py-2">
+            {selectedMonth?.label}
+          </h2>
+          {isDesktop && (
+            <button onClick={() => setShowSelectByMonth(true)}>
+              <CalendarDays />
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-col gap-2 pb-4">
           {allEventsAndAttendance &&
             allEventsAndAttendance?.length > 0 &&

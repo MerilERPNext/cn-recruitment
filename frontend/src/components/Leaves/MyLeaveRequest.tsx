@@ -78,7 +78,9 @@ const LeaveRequestItem = ({
               <Calendar className="w-5 h-5 text-blue-600" />
             </div>
             <div className="flex flex-col space-y-1">
-              <div className="text-sm text-gray-900 font-medium">{item.leave_type}</div>
+              <div className="text-sm text-gray-900 font-medium">
+                {item.leave_type}
+              </div>
               <div className="text-sm text-gray-500">
                 {format(new Date(item.from_date), "d MMM")} -{" "}
                 {format(new Date(item.to_date), "d MMM, yyyy")}
@@ -114,8 +116,6 @@ const LeaveRequestItem = ({
             )}
           </div>
         </div>
-
-
       </div>
     );
   }
@@ -216,10 +216,7 @@ const MyLeaveRequest: React.FC = () => {
       <FrappeListView<LeaveApplicationItem>
         doctype="Leave Application"
         ItemComponent={({ item }) => (
-          <LeaveRequestItem
-            item={item}
-            onClick={() => handleCardClick(item)}
-          />
+          <LeaveRequestItem item={item} onClick={() => handleCardClick(item)} />
         )}
         defaultFields={[
           "name",
@@ -233,7 +230,7 @@ const MyLeaveRequest: React.FC = () => {
         isSearch={true}
         searchFields={["name", "leave_type", "status"]}
         infiniteScroll={true}
-        showRefereshButton={true}
+        // showRefereshButton={true}
         onRefetchAvailable={setRefetch}
         SkeletonComponent={MyLeaveRequestSkeleton}
       />

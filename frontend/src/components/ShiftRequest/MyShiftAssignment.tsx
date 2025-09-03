@@ -3,7 +3,6 @@ import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import FrappeListView from "../ListView";
 
-
 interface ShiftAssignmentItem {
   name: string;
   employee: string;
@@ -21,8 +20,6 @@ const formatToIndianDate = (dateString: string): string => {
   const year = date.getFullYear();
   return `${day}-${month}-${year}`;
 };
-
-
 
 const getShiftStatusLabel = (startDate: string, endDate: string): string => {
   const today = new Date();
@@ -64,7 +61,6 @@ const ShiftAssignmentItem = ({ item }: { item: ShiftAssignmentItem }) => {
           <h2 className="text-base font-semibold text-black">
             {item.shift_type}
           </h2>
-       
         </div>
       </div>
 
@@ -127,9 +123,9 @@ export default function MyShiftAssignment() {
         doctype="Shift Assignment"
         ItemComponent={ShiftAssignmentItem}
         isSearch={true}
-        searchFields={["employee_name","shift_type"]}
+        searchFields={["employee_name", "shift_type"]}
         isFilter={false}
-        showRefereshButton={true}
+        // showRefereshButton={true}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         defaultFilters={filters as any}
         infiniteScroll={true}

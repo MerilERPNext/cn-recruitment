@@ -383,7 +383,7 @@ const EmployeeAttendance = () => {
               SkeletonComponent={CardSkeleton}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               defaultFilters={defaultFilters as any}
-              showRefereshButton={false}
+              // showRefereshButton={false}
               onItemClick={() => {}}
               infiniteScroll={true}
               isFilter={false}
