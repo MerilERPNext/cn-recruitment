@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -103,6 +104,8 @@ const App: React.FC = () => {
           </Router>
         </RequestLeaveModalProvider>
       </EmployeeErrorBoundary>
+      {/* @ts-ignore */}
+      <chatnext-app />
     </QueryProvider>
   );
 };

@@ -78,6 +78,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   showRefereshButton?: boolean;
   onRefetchAvailable?: (refetch: () => void) => void;
   onDataLoad?: (data: T[]) => void;
+  refetchTrigger?: boolean;
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -99,6 +100,7 @@ const FrappeListView = <T extends BaseItem>({
   permissionErrorMessage,
   onRefetchAvailable,
   onDataLoad,
+  refetchTrigger = false,
 }: FrappeListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
@@ -226,6 +228,12 @@ const FrappeListView = <T extends BaseItem>({
       });
     }
   }, [onRefetchAvailable]);
+
+  useEffect(() => {
+    if (refetchTrigger) {
+      refreshData();
+    }
+  }, [refetchTrigger]);
 
   // Log query results
   useEffect(() => {

@@ -1,19 +1,40 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState, ReactNode } from "react";
+import { useMemo, useState, ReactNode, useCallback } from "react";
 import FrappeListView from "../ListView";
 import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
+import { useApprovalListActions } from "../../hooks/userApprovalList";
 
 type ApprovalListProps = {
   doctype: string;
-  renderCardContent: (item: any) => ReactNode;
+  renderCardContent: ({
+    todoId,
+    isSelected,
+    onToggleSelect,
+    data,
+    refetch,
+    onAction,
+  }: {
+    todoId: string;
+    isSelected: boolean;
+    onToggleSelect: (id: string) => void;
+    data: any;
+    refetch: () => void;
+    onAction: (action: string, data: any) => void;
+  }) => ReactNode;
+  pageSize?: number;
 };
 
-const ApprovalList = ({ doctype, renderCardContent }: ApprovalListProps) => {
+const ApprovalList = ({
+  doctype,
+  renderCardContent,
+  pageSize,
+}: ApprovalListProps) => {
+  const [refetchListView, setRefetchListView] = useState(false);
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
-
   const defaultFilters = useMemo(
-    () => ({ reference_type: doctype }),
+    () => ({ reference_type: doctype, status: "open" }),
     [doctype]
   );
 
@@ -40,6 +61,58 @@ const ApprovalList = ({ doctype, renderCardContent }: ApprovalListProps) => {
     setSelectedIds([]); // reset selection after action
   };
 
+  const mutation = useApprovalListActions();
+
+  const handleAction = useCallback(
+    async (action: string, data: any) => {
+      try {
+        if (mutation?.isPending) return;
+        const response = await mutation?.mutateAsync(
+          {
+            action,
+            name: data?.name || "",
+          },
+          {
+            onSuccess: () => {
+              setRefetchListView((prev) => !prev);
+            },
+          }
+        );
+
+        console.log("Action response:", response);
+        const responseWithSession = response as unknown as { session?: any };
+        console.log("Session data:", responseWithSession?.session);
+        console.log(
+          "Assistant trigger enabled:",
+          data?.custom_open_chatnext_assistant_on_action
+        );
+
+        if (
+          (data?.custom_approval_type === "Approval Matrix" &&
+            responseWithSession?.session) ||
+          (data?.custom_approval_type === "Multi Actions" &&
+            data?.custom_open_chatnext_assistant_on_action)
+        ) {
+          console.log(
+            "Opening assistant with session:",
+            responseWithSession?.session
+          );
+          if (window.trigger_chatnext_assistant) {
+            window.trigger_chatnext_assistant(
+              true,
+              responseWithSession?.session
+            );
+          }
+        }
+        // Query invalidation now handled by Frappe realtime events
+      } catch (error) {
+        console.error("Action failed", error);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   return (
     <div className="px-4 py-2 bg-white">
       <FrappeListView
@@ -50,6 +123,7 @@ const ApprovalList = ({ doctype, renderCardContent }: ApprovalListProps) => {
         infiniteScroll
         isFilter={false}
         defaultFields={["*"]}
+        pageSize={pageSize}
         onDataLoad={(data) => setAllRequests(data)}
         PreListComponent={() => (
           <div className="mb-2">
@@ -63,74 +137,19 @@ const ApprovalList = ({ doctype, renderCardContent }: ApprovalListProps) => {
         )}
         ItemComponent={(props: { item: any }) => {
           const todoId = props.item?.custom_funnel_task;
-          return (
-            <ActionCard
-              todoId={todoId}
-              isSelected={selectedIds.includes(todoId)}
-              onToggleSelect={handleToggleSelect}
-              data={props.item}
-            >
-              {renderCardContent(props.item)}
-            </ActionCard>
-          );
+          return renderCardContent({
+            todoId: todoId,
+            isSelected: selectedIds.includes(todoId),
+            onToggleSelect: handleToggleSelect,
+            data: props.item,
+            refetch: () => {},
+            onAction: handleAction,
+          });
         }}
+        refetchTrigger={refetchListView}
       />
     </div>
   );
 };
 
 export default ApprovalList;
-
-type ActionCardProps = {
-  todoId: string;
-  isSelected?: boolean;
-  isDisabled?: boolean;
-  isActionedCard?: boolean;
-  onToggleSelect?: (id: string) => void;
-  children: ReactNode;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
-};
-
-function ActionCard({
-  isSelected = false,
-  isActionedCard = true,
-  isDisabled = false,
-  onToggleSelect,
-  children,
-  data,
-}: ActionCardProps) {
-  return (
-    <div className="cursor-pointer border border-gray-200 bg-white shadow-sm rounded-xl transition-shadow">
-      <div className="p-4 flex items-start gap-3 w-full">
-        {isActionedCard && (
-          <input
-            type="checkbox"
-            className="mt-1 accent-blue-500"
-            checked={isSelected}
-            onClick={(e) => e.stopPropagation()}
-            onChange={() => onToggleSelect?.(data?.custom_funnel_task)}
-            disabled={isDisabled}
-          />
-        )}
-
-        <div className="w-full">
-          <div>{children}</div>
-          <div className="flex gap-2 mt-2">
-            {data?.custom_doctype_actions &&
-              JSON.parse(data?.custom_doctype_actions)?.map(
-                (action: string) => (
-                  <button
-                    key={action}
-                    className="bg-blue-100 text-blue-600 rounded-md text-sm px-2 py-1"
-                  >
-                    {action}
-                  </button>
-                )
-              )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
