@@ -81,6 +81,20 @@ export interface Employee {
   custom_enable_web_clockin ?:boolean;
 }
 
+export interface EmployeeNode  {
+  name: string;
+  id: string;
+  lft: number;
+  rgt: number;
+  reports_to: string | null;
+  image: string | null;
+  title: string | null;
+  connections: number;
+  expandable: boolean;
+  children: EmployeeNode[];
+  collapsed?: boolean;
+};
+
 // Simplified Employee interface for ID Card display
 export interface EmployeeIdCard {
   id: string;

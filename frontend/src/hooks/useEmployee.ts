@@ -5,7 +5,7 @@ import {
   UseQueryResult,
 } from "@tanstack/react-query";
 import { EmployeeService } from "../services/employeeService";
-import { Employee, EmployeeIdCard, EmployeeListItem } from "../types/employee";
+import { Employee, EmployeeIdCard, EmployeeListItem, EmployeeNode } from "../types/employee";
 import { profileService } from "../services/profileService";
 import { AddressInfoData } from "../types/profile";
 import toast from "react-hot-toast";
@@ -64,6 +64,18 @@ export const useCurrentEmployeeAddress = (user_id: string) => {
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 1,
     enabled: !!user_id,
+  });
+};
+
+export const useGetEmployeeHierarchy = (
+  company: string,
+) => {
+  return useQuery<EmployeeNode[]>({
+    queryKey: ["Employee-hierarchy", company],
+    queryFn: () => {
+      return EmployeeService.getEmployeeHierarchy(company);
+    },
+    staleTime: 5 * 60 * 1000,
   });
 };
 

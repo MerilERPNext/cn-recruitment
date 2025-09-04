@@ -49,6 +49,7 @@ import {
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
+import { useFrappeAuth } from "frappe-react-sdk";
 
 const statusStyles = {
   unpaid: {
@@ -91,6 +92,7 @@ const statusStyles = {
 
 const DesktopDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { logout } = useFrappeAuth();
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -109,6 +111,18 @@ const DesktopDashboard: React.FC = () => {
 
     fetchLocation();
   }, []);
+// logout logic
+const logoutHandler = async () => {
+  try {
+    await logout();
+    // Full reload karne ke liye
+    window.location.href = "/login";
+    // ya
+    // window.location.replace("/login#login");
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+};
 
   // Update current time every minute for real-time progress calculation
   useEffect(() => {
@@ -421,7 +435,7 @@ const DesktopDashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/webapp/notices')} className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={() => navigate('/webapp/notification-log')} className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <Bell className="w-5 h-5 text-gray-600" />
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
@@ -523,7 +537,7 @@ const DesktopDashboard: React.FC = () => {
 
                     <button
                       onClick={() => {
-                        window.location.href = "/webapp/my-profile";
+                        navigate("/webapp/my-profile");
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
@@ -533,8 +547,8 @@ const DesktopDashboard: React.FC = () => {
                     </button>
                     <hr className="my-2 border-gray-100" />
                     <button
-                      onClick={() => {
-                        // Add logout functionality
+                      onClick={async () => {
+                        await logoutHandler();
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"

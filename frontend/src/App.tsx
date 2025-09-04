@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import React, { useEffect } from "react";
 import {
-  BrowserRouter as Router,
   Navigate,
   Route,
   Routes,
-} from "react-router-dom";
+  useNavigate,
+} from "react-router-dom"; 
 import { QueryProvider } from "./providers/QueryProvider";
 import "./App.css";
 import "./utils/FormioConfig";
@@ -18,10 +18,13 @@ import toast, { ToastBar, Toaster } from "react-hot-toast";
 import ModalWrapper from "./components/ModalWrapper";
 import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModalContext";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
-// import { X } from "lucide-react";
 import { X, CheckCircle2, CircleX } from "lucide-react";
+import { useFrappeAuth } from "frappe-react-sdk";
+import "./utils/FormioOverrides";
 
 const App: React.FC = () => {
+  const { currentUser, isLoading, isValidating } = useFrappeAuth();
+
   const renderRoutes = (routes: AppRoute[]) =>
     routes.map(({ path, element, children, index }, idx) =>
       index ? (
@@ -32,6 +35,16 @@ const App: React.FC = () => {
         </Route>
       )
     );
+
+ 
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      if (isLoading || isValidating) return;
+      if (!currentUser) {
+        navigate("/#login", { replace: true }); // prevents back button loop
+      }
+    }, [currentUser, isLoading, isValidating, navigate]);
 
   return (
     <QueryProvider>
@@ -84,24 +97,21 @@ const App: React.FC = () => {
               </ToastBar>
             )}
           </Toaster>
+
           <MandatoryPoliciesHandler />
-          <Router>
-            <div
-              className="min-h-screen"
-              style={{ backgroundColor: "var(--background-medium)" }}
-            >
-              <Routes>
-                <Route element={<ModalWrapper />}>
-                  <Route path="/webapp/" element={<ResponsiveDashboard />} />
-                  {renderRoutes(routesConfig)}
-                  <Route
-                    path="*"
-                    element={<Navigate to="/webapp/" replace />}
-                  />
-                </Route>
-              </Routes>
-            </div>
-          </Router>
+
+          <div
+            className="min-h-screen"
+            style={{ backgroundColor: "var(--background-medium)" }}
+          >
+            <Routes>
+              <Route element={<ModalWrapper />}>
+                <Route path="/webapp/" element={<ResponsiveDashboard />} />
+                {renderRoutes(routesConfig)}
+                <Route path="*" element={<Navigate to="/webapp/" replace />} />
+              </Route>
+            </Routes>
+          </div>
         </RequestLeaveModalProvider>
       </EmployeeErrorBoundary>
       {/* @ts-ignore */}

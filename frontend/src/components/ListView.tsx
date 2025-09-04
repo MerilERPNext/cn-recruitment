@@ -97,7 +97,7 @@ const FrappeListView = <T extends BaseItem>({
   searchFields = [],
   onItemClick,
   infiniteScroll = false,
-  showRefereshButton = true,
+  showRefereshButton = false,
   permissionErrorMessage,
   onRefetchAvailable,
   onDataLoad,

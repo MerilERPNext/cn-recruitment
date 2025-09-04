@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Circle } from "lucide-react";
-import LayoutHeader from "../../shared/LayoutHeader";
+import { Check, Circle, X } from "lucide-react";
 import { format, subMonths } from "date-fns";
 
 export interface MonthOption {
@@ -40,16 +39,19 @@ const SelectByMonth = ({
 
   return (
     <div className="fixed overflow-scroll top-0 z-50 w-full mx-auto left-0 h-screen bg-white">
-      <LayoutHeader
-        tab="Select By Month"
-        onBack={() => {
-          onClose();
-        }}
-        icon="x"
-      />
+      <div className="flex items-center justify-between px-4 py-4  border-b border-gray-200 bg-white sticky top-0 z-20">
+        <h2 className="text-lg font-semibold text-gray-800">Select By Month</h2>
+        <button
+          onClick={onClose}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+          aria-label="Close"
+        >
+          <X className="h-5 w-5 text-gray-600" />
+        </button>
+      </div>
 
       {/* Month Selection List */}
-      <div className="px-4 pb-20 pt-16">
+      <div className="px-4 pb-20 pt-2">
         <div className="space-y-1">
           {monthOptions.map((month) => (
             <button

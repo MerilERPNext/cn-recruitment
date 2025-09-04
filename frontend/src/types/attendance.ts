@@ -61,6 +61,13 @@ export interface AttendanceRequest {
   custom_status: string;
   custom_request_type: string;
 }
+export interface AttendanceRequestValidations {
+  attendance_adjustment_requests: number;
+  clockin_requests: number;
+  shift_change_requests: number;
+  out_duty_requests: number;
+  short_leave_requests: number;
+}
 
 export interface RequestCardProps {
   request: AttendanceRequest;

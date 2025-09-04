@@ -1,6 +1,5 @@
 import { User } from "lucide-react";
-import FrappeListView from "../ListView"; 
-
+import FrappeListView from "../ListView";
 
 interface TeamShiftItem {
   name: string;
@@ -14,11 +13,10 @@ interface TeamShiftItem {
 }
 
 const TeamShiftItemComponent = ({ item }: { item: TeamShiftItem }) => {
-
   const formatToIndianDate = (dateString: string): string => {
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   };
@@ -34,20 +32,24 @@ const TeamShiftItemComponent = ({ item }: { item: TeamShiftItem }) => {
             {item.employee_name || "N/A"}
           </h3>
           <div className="flex justify-between items-center gap-2 mb-2">
-          <h2 className="text-[15px] font-bold text-gray-900">
-            {item.shift_type}
-          </h2>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-        <div className="flex gap-1">
-          <span className="text-gray-500">From:</span>
-          <span className="font-medium text-black">{formatToIndianDate(item.start_date)}</span>
-        </div>
-        <div className="flex gap-1">
-          <span className="text-gray-500">To:</span>
-          <span className="font-medium text-black">{formatToIndianDate(item.end_date)}</span>
-        </div>
-      </div>
+            <h2 className="text-[15px] font-bold text-gray-900">
+              {item.shift_type}
+            </h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            <div className="flex gap-1">
+              <span className="text-gray-500">From:</span>
+              <span className="font-medium text-black">
+                {formatToIndianDate(item.start_date)}
+              </span>
+            </div>
+            <div className="flex gap-1">
+              <span className="text-gray-500">To:</span>
+              <span className="font-medium text-black">
+                {formatToIndianDate(item.end_date)}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -73,29 +75,25 @@ export default function TeamShift() {
   return (
     <div className="pb-24">
       <FrappeListView<TeamShiftItem>
-        doctype="Shift Assignment" 
+        doctype="Shift Assignment"
         ItemComponent={TeamShiftItemComponent}
         SkeletonComponent={TeamShiftSkeleton}
-        isSearch={true} 
-        isFilter={false} 
+        isSearch={true}
+        isFilter={false}
         showRefereshButton={true}
         infiniteScroll={true}
-        defaultFilters={{
-        }}
+        defaultFilters={{}}
         defaultFields={[
           "name",
           "employee",
           "employee_name",
-          "shift_type", 
+          "shift_type",
           "start_date",
           "end_date",
           "status",
-          "modified"
+          "modified",
         ]}
-        searchFields={[
-          "employee_name",
-          "shift_type"
-        ]}
+        searchFields={["employee_name", "shift_type"]}
         permissionErrorMessage="You don't have permission to view team shift assignments"
       />
     </div>

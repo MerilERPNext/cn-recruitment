@@ -255,6 +255,14 @@ export function useCreateNewAttendanceRequest() {
     },
   });
 }
+export function useReqValidationsForAttendanceRequest(empId: string) {
+  return useQuery({
+    queryKey: ["attendance-request-validations", empId],
+    queryFn: () => attendanceService.reqValidationsForAttendanceRequest(empId!),
+    enabled: !!empId,
+  });
+}
+
 type ActionOnAttendanceRequestVariables = {
   todo_ids: string | string[];
   selected_action: "Approve" | "Reject";

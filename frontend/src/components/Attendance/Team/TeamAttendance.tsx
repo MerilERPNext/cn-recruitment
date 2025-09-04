@@ -143,7 +143,6 @@ const TeamAttendance = () => {
             defaultFilters={{
               attendance_date: new Date().toISOString(),
             }}
-            showRefereshButton={false}
             defaultFields={["employee_name", "status", "in_time", "out_time"]}
           />
         </div>
