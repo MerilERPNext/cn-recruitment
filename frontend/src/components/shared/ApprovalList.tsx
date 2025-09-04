@@ -5,6 +5,7 @@ import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import toast from "react-hot-toast";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 
 type ApprovalListProps = {
   doctype: string;
@@ -33,6 +34,7 @@ const ApprovalList = ({
   refetch,
   onApprovalRefetchComplete,
 }: ApprovalListProps) => {
+  const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
   const [refetchListView, setRefetchListView] = useState(false);
 
@@ -185,6 +187,7 @@ const ApprovalList = ({
         refetchTrigger={refetchListView}
         onRefetchComplete={() => {
           setRefetchListView(false);
+          setRefetchAttendance(false);
           if (onApprovalRefetchComplete) {
             onApprovalRefetchComplete();
           }

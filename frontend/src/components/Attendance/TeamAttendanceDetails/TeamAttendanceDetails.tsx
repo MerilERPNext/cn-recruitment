@@ -7,12 +7,15 @@ import { useNavigate } from "react-router";
 import ApprovalList from "../../shared/ApprovalList";
 import FrappeListView from "../../ListView";
 import ApprovalCard from "./ApprovalCard";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 const TeamAttendanceDetails = () => {
   const defaultFilters = useMemo(
     () => ({ status: ["in", ["Closed", "Cancelled"]] }),
     []
   );
+  const { refetchAttendance } = useGlobalStore();
+  console.log("---------------------------------------", refetchAttendance);
   const [refetch, setRefetch] = useState(false);
   const navigate = useNavigate();
   const [selectedRequest, setSelectedRequest] =
@@ -43,7 +46,7 @@ const TeamAttendanceDetails = () => {
           <ApprovalList
             doctype={"Attendance Request"}
             pageSize={5}
-            refetch={refetch}
+            refetch={refetch || refetchAttendance}
             onApprovalRefetchComplete={() => {
               setRefetch(false);
             }}
@@ -77,7 +80,7 @@ const TeamAttendanceDetails = () => {
                 isFilter={false}
                 defaultFields={["*"]}
                 pageSize={3}
-                refetchTrigger={refetch}
+                refetchTrigger={refetch || refetchAttendance}
                 onRefetchComplete={() => setRefetch(false)}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ItemComponent={(props: { item: any }) => {
