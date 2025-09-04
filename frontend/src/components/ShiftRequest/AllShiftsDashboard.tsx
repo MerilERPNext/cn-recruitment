@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Check, X, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // --- TYPE DEFINITIONS ---
@@ -28,15 +28,15 @@ interface MyShift {
 
 // --- MOCK DATA ---
 export const approvalQueueData: ApprovalRequest[] = [
-    { id: 7, employee: 'Mason Rodriguez', type: 'Time Off', date: '2025-09-05', time: '9a-1p' },
-    { id: 6, employee: 'Olivia Hayes', type: 'Shift Swap', date: '2025-09-03', time: '12p-8p' },
-    { id: 5, employee: 'Liam Carter', type: 'New Shift', date: '2025-09-02', time: '8a-4p' },
-    { id: 4, employee: 'Sophia Clark', type: 'Time Off', date: '2025-09-01', time: '1p-5p' },
-    { id: 3, employee: 'Ambreen F Bohari', type: 'Shift Change', date: '2025-08-30', time: '9a-5p' },
-    { id: 1, employee: 'Ava Morgan', type: 'Time Off', date: '2025-07-24', time: '9a-5p' },
-    { id: 2, employee: 'Ethan Bennett', type: 'New Shift', date: '2025-07-21', time: '10a-6p' },
-    { id: 8, employee: 'Avad Morgan', type: 'Time Off', date: '2025-07-24', time: '9a-5p' },
-    { id: 9, employee: 'Ether Bennett', type: 'New Shift', date: '2025-07-21', time: '10a-6p' },
+    { id: 7, employee: 'Mason Rodriguez', type: 'Time Off', date: '2025-09-05', time: '9am-1pm' },
+    { id: 6, employee: 'Olivia Hayes', type: 'Shift Swap', date: '2025-09-03', time: '12pm-8pm' },
+    { id: 5, employee: 'Liam Carter', type: 'New Shift', date: '2025-09-02', time: '8am-4pm' },
+    { id: 4, employee: 'Sophia Clark', type: 'Time Off', date: '2025-09-01', time: '1pm-5pm' },
+    { id: 3, employee: 'Ambreen F Bohari', type: 'Shift Change', date: '2025-08-30', time: '9am-5pm' },
+    { id: 1, employee: 'Ava Morgan', type: 'Time Off', date: '2025-07-24', time: '9am-5pm' },
+    { id: 2, employee: 'Ethan Bennett', type: 'New Shift', date: '2025-07-21', time: '10am-6pm' },
+    { id: 8, employee: 'Avad Morgan', type: 'Time Off', date: '2025-07-24', time: '9am-5pm' },
+    { id: 9, employee: 'Ether Bennett', type: 'New Shift', date: '2025-07-21', time: '10am-6pm' },
 ];
 
 export const teamShiftsData: TeamShift[] = [
@@ -88,7 +88,7 @@ const ApprovalRejectionQueue = ({ maxItems = 6 }: { maxItems?: number }) => {
     const navigate = useNavigate();
     const sortedData = useMemo(() =>
         [...approvalQueueData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    []);
+        []);
     return (
         <Card>
             <CardHeader
@@ -112,11 +112,11 @@ const ApprovalRejectionQueue = ({ maxItems = 6 }: { maxItems?: number }) => {
                                 {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {item.time}
                             </div>
                             <div className="flex justify-end items-center space-x-2">
-                                <button className="p-2 rounded-full text-red-500 bg-red-100 hover:bg-red-200 transition-colors">
-                                    <X size={20} />
+                                <button className="p-2 w-24 rounded-lg text-red-500 bg-red-100 hover:bg-red-200 transition-colors text-center">
+                                    <span>Reject</span>
                                 </button>
-                                <button className="p-2 rounded-full text-green-500 bg-green-100 hover:bg-green-200 transition-colors">
-                                    <Check size={20} />
+                                <button className="p-2 w-24 rounded-lg text-green-500 bg-green-100 hover:bg-green-200 transition-colors text-center">
+                                    <span>Approve</span>
                                 </button>
                             </div>
                         </li>
@@ -131,7 +131,7 @@ const TeamShiftList = ({ maxItems = 4 }: { maxItems?: number }) => {
     const navigate = useNavigate();
     const sortedData = useMemo(() =>
         [...teamShiftsData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    []);
+        []);
     return (
         <Card>
             <CardHeader
@@ -219,3 +219,4 @@ export default function AllShiftsDashboard() {
         </div>
     );
 }
+

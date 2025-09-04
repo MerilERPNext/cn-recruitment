@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { Check, X } from "lucide-react";
 import { approvalQueueData } from "./AllShiftsDashboard";
 import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router-dom";
@@ -33,13 +32,13 @@ const AllShiftChangeRequestsList: React.FC = () => {
                             {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {item.time}
                         </div>
                         <div className="flex justify-end items-center space-x-2">
-                            <button className="p-2 rounded-full text-red-500 bg-red-100 hover:bg-red-200 transition-colors">
-                                <X size={20} />
-                            </button>
-                            <button className="p-2 rounded-full text-green-500 bg-green-100 hover:bg-green-200 transition-colors">
-                                <Check size={20} />
-                            </button>
-                        </div>
+                                <button className="p-2 w-24 rounded-lg text-red-500 bg-red-100 hover:bg-red-200 transition-colors text-center">
+                                    <span>Reject</span>
+                                </button>
+                                <button className="p-2 w-24 rounded-lg text-green-500 bg-green-100 hover:bg-green-200 transition-colors text-center">
+                                    <span>Approve</span>
+                                </button>
+                            </div>
                     </li>
                 ))}
             </ul>
