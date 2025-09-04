@@ -33,14 +33,15 @@ const AllTeamShiftsList: React.FC = () => {
                     <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
                         SHIFT TYPE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
-                        STATUS
-                    </span>
+                    
                     <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
                         START DATE
                     </span>
                     <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
                         END DATE
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                        STATUS
                     </span>
                 </div>
 
@@ -57,14 +58,15 @@ const AllTeamShiftsList: React.FC = () => {
                             <div className="text-gray-700 truncate">
                                 {item.shift_type}
                             </div>
-                            <div>
-                                <StatusBadge status={item.status} />
-                            </div>
+                            
                             <div className="text-gray-600">
                                 {item.start_date}
                             </div>
                             <div className="text-gray-600 ">
                                 {item.end_date}
+                            </div>
+                            <div>
+                                <StatusBadge status={item.status} />
                             </div>
                         </div>
                     ))}

@@ -26,10 +26,14 @@ interface TeamShift {
 }
 
 interface MyShift {
-    id: number;
-    date: string;
-    time: string;
+    name: string;
+    employee: string;
+    employee_name: string;
+    shift_type: string;
+    start_date: string;
+    end_date: string;
     status: string;
+    modified: string;
 }
 
 export const approvalQueueData: ApprovalRequest[] = [
@@ -219,12 +223,66 @@ export const teamShiftsData: TeamShift[] = [
 ];
 
 export const myShiftsData: MyShift[] = [
-    { id: 5, date: '2025-09-10', time: '11:00 AM - 07:00 PM', status: 'Approved' },
-    { id: 6, date: '2025-09-12', time: '08:00 AM - 04:00 PM', status: 'Approved' },
-    { id: 1, date: '2025-08-29', time: '10:00 AM - 06:00 PM', status: 'Pending' },
-    { id: 2, date: '2025-08-28', time: '09:00 AM - 05:00 PM', status: 'Approved' },
-    { id: 3, date: '2025-07-21', time: '08:00 AM - 04:00 PM', status: 'Completed' },
-    { id: 4, date: '2025-07-15', time: '09:00 AM - 05:00 PM', status: 'Completed' },
+        {
+        name: "HR-SHA-25-09-00137",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-23",
+        end_date: "2025-11-26",
+        status: "Rejected",
+        modified: "2025-09-03 15:00:43.739532",
+    },
+    {
+        name: "HR-SHA-25-09-00138",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-30",
+        end_date: "2025-12-03",
+        status: "Approved",
+        modified: "2025-09-03 15:00:43.920997",
+    },
+    {
+        name: "HR-SHA-25-09-00136",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-16",
+        end_date: "2025-11-19",
+        status: "Completed",
+        modified: "2025-09-03 15:00:43.559538",
+    },
+    {
+        name: "HR-SHA-25-09-00138",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-30",
+        end_date: "2025-12-03",
+        status: "Approved",
+        modified: "2025-09-03 15:00:43.920997",
+    },
+    {
+        name: "HR-SHA-25-09-00137",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-23",
+        end_date: "2025-11-26",
+        status: "Rejected",
+        modified: "2025-09-03 15:00:43.739532",
+    },
+    {
+        name: "HR-SHA-25-09-00136",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-16",
+        end_date: "2025-11-19",
+        status: "Completed",
+        modified: "2025-09-03 15:00:43.559538",
+    },
 ];
 
 // --- HELPER COMPONENTS ---
@@ -382,49 +440,49 @@ const TeamShiftList = ({ maxItems = 4 }: { maxItems?: number }) => {
 
 const MyShifts = ({ maxItems = 4 }: { maxItems?: number }) => {
     const navigate = useNavigate();
-    const today = new Date('2025-08-25'); // Fixed date for demo
-    const { upcoming, past } = useMemo(() => {
-        const upcomingShifts = myShiftsData
-            .filter(shift => new Date(shift.date) >= today)
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        const pastShifts = myShiftsData
-            .filter(shift => new Date(shift.date) < today)
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return { upcoming: upcomingShifts, past: pastShifts };
-    }, []);
-    const ShiftListItem = ({ shift }: { shift: MyShift }) => (
-        <li className="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
-            <p className="text-sm text-gray-700">
-                {new Date(shift.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: {shift.time}
-            </p>
-            <StatusBadge status={shift.status} />
-        </li>
+
+    const sortedData = useMemo(
+        () =>
+            [...myShiftsData].sort(
+                (a, b) =>
+                    new Date(b.start_date).getTime() -
+                    new Date(a.start_date).getTime()
+            ),
+        []
     );
+
     return (
         <Card>
             <CardHeader
                 title="My Shifts"
-                onSeeAll={() => navigate('/webapp/shift-request/all-my-shifts')}
+                onSeeAll={() => navigate("/webapp/shift-request/all-my-shifts")}
             />
-            <div className="space-y-5">
-                <div>
-                    <h3 className="font-semibold text-gray-600 mb-3">Upcoming</h3>
-                    <ul className="space-y-2">
-                        {upcoming.slice(0, maxItems).map(shift => <ShiftListItem key={shift.id} shift={shift} />)}
-                    </ul>
-                </div>
-                <div>
-                    <h3 className="font-semibold text-gray-600 mb-3">Past</h3>
-                    <ul className="space-y-2">
-                        {past.slice(0, maxItems).map(shift => <ShiftListItem key={shift.id} shift={shift} />)}
-                    </ul>
-                </div>
-            </div>
+
+            <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200">
+                {sortedData.slice(0, maxItems).map((item) => (
+                    <li
+                        key={item.name}
+                        className="flex justify-between items-center px-4 py-3 hover:bg-gray-50 transition"
+                    >
+                        {/* Left section */}
+                        <div>
+                            <p className="font-medium text-gray-900">
+                                {item.shift_type}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                                {item.start_date} → {item.end_date}
+                            </p>
+                        </div>
+
+                        {/* Right section */}
+                        <StatusBadge status={item.status} />
+                    </li>
+                ))}
+            </ul>
         </Card>
     );
 };
 
-// --- MAIN DASHBOARD COMPONENT ---
 export default function AllShiftsDashboard() {
     return (
         <div className="bg-gray-100 min-h-screen font-sans">
@@ -436,8 +494,8 @@ export default function AllShiftsDashboard() {
                     </div>
                     {/* Right Column: Team Shift & My Shifts */}
                     <div className="space-y-6">
-                        <TeamShiftList maxItems={3} />
-                        <MyShifts maxItems={2} />
+                        <TeamShiftList maxItems={4} />
+                        <MyShifts maxItems={4} />
                     </div>
                 </div>
             </main>
