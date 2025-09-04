@@ -69,6 +69,9 @@ import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails"
 import NotificationList from "./components/Notification/Notification";
 import OrganizationalChart from "./components/OrganizationalChart/OrganizationalChart";
 import AllShiftsDashboard from "./components/ShiftRequest/AllShiftsDashboard";
+import AllTeamShiftsList from "./components/ShiftRequest/AllTeamShiftsList";
+import AllMyShiftsList from "./components/ShiftRequest/AllMyShiftsList";
+import AllShiftChangeRequestsList from "./components/ShiftRequest/AllShiftChangeRequestsList";
 
 export interface AppRoute {
   index?: boolean;
@@ -129,6 +132,9 @@ export const routesConfig: AppRoute[] = [
     element: <ShiftRequestApp />,
     children: [
       { path: "all-shifts-dashboard",element: <AllShiftsDashboard /> }, // <-- Add this line
+      { path: "all-team-shifts", element: <AllTeamShiftsList /> }, // <-- Add this line
+      { path: "all-my-shifts", element: <AllMyShiftsList /> }, // <-- Add this line
+      { path: "all-shift-change-request", element: <AllShiftChangeRequestsList /> }, // <-- Add this line
       { path: "my-shift-assignment", element: <MyShiftAssignment /> },
       { path: "team-shift", element: <TeamShift /> },
       { path: "shift-list", element: <ShiftRequestList /> },

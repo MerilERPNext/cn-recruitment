@@ -27,7 +27,7 @@ interface MyShift {
 }
 
 // --- MOCK DATA ---
-const approvalQueueData: ApprovalRequest[] = [
+export const approvalQueueData: ApprovalRequest[] = [
     { id: 7, employee: 'Mason Rodriguez', type: 'Time Off', date: '2025-09-05', time: '9a-1p' },
     { id: 6, employee: 'Olivia Hayes', type: 'Shift Swap', date: '2025-09-03', time: '12p-8p' },
     { id: 5, employee: 'Liam Carter', type: 'New Shift', date: '2025-09-02', time: '8a-4p' },
@@ -37,7 +37,7 @@ const approvalQueueData: ApprovalRequest[] = [
     { id: 2, employee: 'Ethan Bennett', type: 'New Shift', date: '2025-07-21', time: '10a-6p' },
 ];
 
-const teamShiftsData: TeamShift[] = [
+export const teamShiftsData: TeamShift[] = [
     { id: 7, name: 'Nikita Vaidya', date: '2025-08-26', time: '09:00 AM - 05:00 PM', status: 'Pending' },
     { id: 6, name: 'Rajshree Mahajan', date: '2025-08-13', time: '10:00 AM - 06:00 PM', status: 'Approved' },
     { id: 1, name: 'Ava Morgan', date: '2025-07-24', time: '09:00 AM - 05:00 PM', status: 'Pending' },
@@ -47,7 +47,7 @@ const teamShiftsData: TeamShift[] = [
     { id: 5, name: 'Sophia Clark', date: '2025-07-20', time: '09:00 AM - 05:00 PM', status: 'Approved' },
 ];
 
-const myShiftsData: MyShift[] = [
+export const myShiftsData: MyShift[] = [
     { id: 5, date: '2025-09-10', time: '11:00 AM - 07:00 PM', status: 'Approved' },
     { id: 6, date: '2025-09-12', time: '08:00 AM - 04:00 PM', status: 'Approved' },
     { id: 1, date: '2025-08-29', time: '10:00 AM - 06:00 PM', status: 'Pending' },
@@ -57,7 +57,7 @@ const myShiftsData: MyShift[] = [
 ];
 
 // --- HELPER COMPONENTS ---
-const StatusBadge = ({ status }: { status: string }) => {
+export const StatusBadge = ({ status }: { status: string }) => {
     const baseStyle = 'text-xs font-medium px-2.5 py-1 rounded-full';
     const statusStyles: { [key: string]: string } = {
         'Approved': 'bg-green-100 text-green-800',
@@ -91,7 +91,7 @@ const ApprovalRejectionQueue = ({ maxItems = 6 }: { maxItems?: number }) => {
         <Card>
             <CardHeader
                 title="Shift Change Request"
-                onSeeAll={() => navigate('/shift-change-requests')}
+                onSeeAll={() => navigate('/webapp/shift-request/all-shift-change-request')}
             />
             <div className="space-y-2">
                 <div className="grid grid-cols-3 gap-4 px-4 py-2 text-sm font-medium text-gray-500">
@@ -134,7 +134,7 @@ const TeamShiftList = ({ maxItems = 4 }: { maxItems?: number }) => {
         <Card>
             <CardHeader
                 title="Team Shift List"
-                onSeeAll={() => navigate('/team-shifts')}
+                onSeeAll={() => navigate('/webapp/shift-request/all-team-shifts')}
             />
             <ul className="space-y-3">
                 {sortedData.slice(0, maxItems).map(item => (
@@ -177,7 +177,7 @@ const MyShifts = ({ maxItems = 4 }: { maxItems?: number }) => {
         <Card>
             <CardHeader
                 title="My Shifts"
-                onSeeAll={() => navigate('/my-shifts')}
+                onSeeAll={() => navigate('/webapp/shift-request/all-my-shifts')}
             />
             <div className="space-y-5">
                 <div>
