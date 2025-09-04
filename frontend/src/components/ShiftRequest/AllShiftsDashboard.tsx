@@ -26,17 +26,127 @@ interface MyShift {
     status: string;
 }
 
-// --- MOCK DATA ---
-export const approvalQueueData: ApprovalRequest[] = [
-    { id: 7, employee: 'Mason Rodriguez', type: 'Time Off', date: '2025-09-05', time: '9am-1pm' },
-    { id: 6, employee: 'Olivia Hayes', type: 'Shift Swap', date: '2025-09-03', time: '12pm-8pm' },
-    { id: 5, employee: 'Liam Carter', type: 'New Shift', date: '2025-09-02', time: '8am-4pm' },
-    { id: 4, employee: 'Sophia Clark', type: 'Time Off', date: '2025-09-01', time: '1pm-5pm' },
-    { id: 3, employee: 'Ambreen F Bohari', type: 'Shift Change', date: '2025-08-30', time: '9am-5pm' },
-    { id: 1, employee: 'Ava Morgan', type: 'Time Off', date: '2025-07-24', time: '9am-5pm' },
-    { id: 2, employee: 'Ethan Bennett', type: 'New Shift', date: '2025-07-21', time: '10am-6pm' },
-    { id: 8, employee: 'Avad Morgan', type: 'Time Off', date: '2025-07-24', time: '9am-5pm' },
-    { id: 9, employee: 'Ether Bennett', type: 'New Shift', date: '2025-07-21', time: '10am-6pm' },
+export const approvalQueueData = [
+    {
+        name: "HR-SHR-25-08-00003",
+        shift_type: "SH_94",
+        employee: "37008",
+        employee_name: "Ambreen F",
+        status: "Approved",
+        from_date: "2025-08-30",
+        to_date: "2025-08-30",
+        approver: "ambreen@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00004",
+        shift_type: "SH_95",
+        employee: "37009",
+        employee_name: "John Doe",
+        status: "Pending",
+        from_date: "2025-09-01",
+        to_date: "2025-09-02",
+        approver: "john@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00003",
+        shift_type: "SH_94",
+        employee: "37008",
+        employee_name: "Ambreen F",
+        status: "Rejected",
+        from_date: "2025-08-30",
+        to_date: "2025-08-30",
+        approver: "ambreen@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00004",
+        shift_type: "SH_95",
+        employee: "37009",
+        employee_name: "John Doe",
+        status: "Completed",
+        from_date: "2025-09-01",
+        to_date: "2025-09-02",
+        approver: "john@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00003",
+        shift_type: "SH_94",
+        employee: "37008",
+        employee_name: "Ambreen F",
+        status: "Approved",
+        from_date: "2025-08-30",
+        to_date: "2025-08-30",
+        approver: "ambreen@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00004",
+        shift_type: "SH_95",
+        employee: "37009",
+        employee_name: "John Doe",
+        status: "Pending",
+        from_date: "2025-09-01",
+        to_date: "2025-09-02",
+        approver: "john@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00003",
+        shift_type: "SH_94",
+        employee: "37008",
+        employee_name: "Ambreen F",
+        status: "Rejected",
+        from_date: "2025-08-30",
+        to_date: "2025-08-30",
+        approver: "ambreen@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00004",
+        shift_type: "SH_95",
+        employee: "37009",
+        employee_name: "John Doe",
+        status: "Completed",
+        from_date: "2025-09-01",
+        to_date: "2025-09-02",
+        approver: "john@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00003",
+        shift_type: "SH_94",
+        employee: "37008",
+        employee_name: "Ambreen F",
+        status: "Approved",
+        from_date: "2025-08-30",
+        to_date: "2025-08-30",
+        approver: "ambreen@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00004",
+        shift_type: "SH_95",
+        employee: "37009",
+        employee_name: "John Doe",
+        status: "Pending",
+        from_date: "2025-09-01",
+        to_date: "2025-09-02",
+        approver: "john@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00003",
+        shift_type: "SH_94",
+        employee: "37008",
+        employee_name: "Ambreen F",
+        status: "Rejected",
+        from_date: "2025-08-30",
+        to_date: "2025-08-30",
+        approver: "ambreen@test.com",
+    },
+    {
+        name: "HR-SHR-25-08-00004",
+        shift_type: "SH_95",
+        employee: "37009",
+        employee_name: "John Doe",
+        status: "Completed",
+        from_date: "2025-09-01",
+        to_date: "2025-09-02",
+        approver: "john@test.com",
+    },
 ];
 
 export const teamShiftsData: TeamShift[] = [
@@ -83,49 +193,87 @@ const CardHeader = ({ title, onSeeAll }: { title: string; onSeeAll: () => void }
     </div>
 );
 
-// --- UI SECTIONS ---
-const ApprovalRejectionQueue = ({ maxItems = 6 }: { maxItems?: number }) => {
+// // // --- UI SECTIONS ---
+
+const ApprovalRejectionQueue = ({ maxItems = 9 }: { maxItems?: number }) => {
     const navigate = useNavigate();
-    const sortedData = useMemo(() =>
-        [...approvalQueueData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-        []);
+
+    const sortedData = useMemo(
+        () =>
+            [...approvalQueueData].sort(
+                (a, b) =>
+                    new Date(b.from_date).getTime() -
+                    new Date(a.from_date).getTime()
+            ),
+        []
+    );
+
     return (
         <Card>
             <CardHeader
                 title="Shift Change Request"
-                onSeeAll={() => navigate('/webapp/shift-request/all-shift-change-request')}
+                onSeeAll={() =>
+                    navigate("/webapp/shift-request/all-shift-change-request")
+                }
             />
-            <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-4 px-4 py-2 text-sm font-medium text-gray-500">
-                    <span>EMPLOYEE</span>
-                    <span>REQUEST</span>
-                    <span className="text-right">ACTIONS</span>
+
+            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+                {/* Header */}
+                <div className="grid grid-cols-6 gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                        EMPLOYEE
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                        SHIFT TYPE
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                        STATUS
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                        START DATE
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                        END DATE
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                        ACTIONS
+                    </span>
                 </div>
-                <ul className="divide-y divide-gray-200">
-                    {sortedData.slice(0, maxItems).map(item => (
-                        <li key={item.id} className="grid grid-cols-3 gap-4 items-center py-3 px-4 hover:bg-gray-50 rounded-md">
+
+                {/* Rows */}
+                <div className="divide-y divide-gray-200">
+                    {sortedData.slice(0, maxItems).map((item) => (
+                        <div
+                            key={item.name}
+                            className="grid grid-cols-6 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="font-medium text-gray-900 truncate">
+                                {item.employee_name}
+                            </div>
+                            <div className="text-gray-700 truncate">
+                                {item.shift_type}
+                            </div>
                             <div>
-                                <p className="font-medium text-gray-900">{item.employee}</p>
-                                <p className="text-sm text-gray-500">{item.type}</p>
+                                    <StatusBadge status={item.status} />
                             </div>
-                            <div className="text-sm text-gray-600">
-                                {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {item.time}
-                            </div>
+                            <div className="text-gray-600">{item.from_date}</div>
+                            <div className="text-gray-600">{item.to_date}</div>
                             <div className="flex justify-end items-center space-x-2">
-                                <button className="p-2 w-24 rounded-lg text-red-500 bg-red-100 hover:bg-red-200 transition-colors text-center">
-                                    <span>Reject</span>
+                                <button className="px-3 py-1.5 text-xs font-medium rounded-lg text-green-600 bg-green-100 hover:bg-green-200 transition">
+                                    Approve
                                 </button>
-                                <button className="p-2 w-24 rounded-lg text-green-500 bg-green-100 hover:bg-green-200 transition-colors text-center">
-                                    <span>Approve</span>
+                                <button className="px-3 py-1.5 text-xs font-medium rounded-lg text-red-600 bg-red-100 hover:bg-red-200 transition">
+                                    Reject
                                 </button>
                             </div>
-                        </li>
+                        </div>
                     ))}
-                </ul>
+                </div>
             </div>
         </Card>
     );
 };
+
 
 const TeamShiftList = ({ maxItems = 4 }: { maxItems?: number }) => {
     const navigate = useNavigate();
@@ -207,7 +355,7 @@ export default function AllShiftsDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column: Approval Queue */}
                     <div className="lg:col-span-2">
-                        <ApprovalRejectionQueue maxItems={9} />
+                        <ApprovalRejectionQueue maxItems={11} />
                     </div>
                     {/* Right Column: Team Shift & My Shifts */}
                     <div className="space-y-6">
