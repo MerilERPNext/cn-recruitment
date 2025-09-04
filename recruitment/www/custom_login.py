@@ -13,7 +13,7 @@ from frappe.website.utils import get_home_page
 from frappe.www.login import sanitize_redirect
 
 
-def custom_get_context(context):
+def get_context(context):
 	from frappe.integrations.frappe_providers.frappecloud_billing import get_site_login_url
 	from frappe.utils.frappecloud import on_frappecloud
 

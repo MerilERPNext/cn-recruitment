@@ -58,7 +58,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   Array.isArray(companyLogo) && companyLogo.length > 0
     ? companyLogo[0].company_logo ||  "logo not found" :"Logo not found";
 
-console.log("Company Logo:", logoToShow);
+const companyName = Array.isArray(companyLogo) && companyLogo.length > 0 ? companyLogo[0].company_name : "Company name not found";
+console.log("Company Logo:", logoToShow, companyName);
   const navigationItems: NavigationItem[] = [
     {
       icon: Home,
@@ -295,7 +296,7 @@ console.log("Company Logo:", logoToShow);
                 className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}
               >
                 <h2 className="font-semibold text-gray-900 whitespace-nowrap">
-                Physics Wallah
+                {companyName}
                 </h2>
                 <p className="text-sm text-gray-500 whitespace-nowrap">
                   Employee Portal

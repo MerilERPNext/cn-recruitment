@@ -4,7 +4,7 @@ import CompanyLogo from "../types/companyLogo";
 
 export const useCompanyLogo = () => {
   return useQuery<CompanyLogo[]>({
-    queryKey: ["company-logo", "draft"],
+    queryKey: ["company-logo"],
     queryFn: CompanyLogoService.getCompanyLogo, // ✅ fixed typo
   });
 };

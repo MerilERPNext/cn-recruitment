@@ -22,12 +22,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!isLoading && (!currentUser || currentUser === "Guest")) {
-      navigate("/login");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);  
-        }
-  }, [currentUser, isLoading]);
+      navigate("/login", { replace: true }); // just redirect
+    }
+  }, [currentUser, isLoading, navigate]);
 
 
   const renderRoutes = (routes: AppRoute[]) =>
