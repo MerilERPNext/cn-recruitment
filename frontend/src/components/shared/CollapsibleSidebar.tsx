@@ -17,7 +17,7 @@ import {
   CheckCircle,
   PlusCircle
 } from "lucide-react";
-import logo from "../../assets/logo.png";
+import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 
 interface SubSubMenuItem {
   name: string;
@@ -52,6 +52,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
 
+  const {data: companyLogo} = useCompanyLogo(); 
+  
+  const logoToShow =
+  Array.isArray(companyLogo) && companyLogo.length > 0
+    ? companyLogo[0].company_logo ||  "logo not found" :"Logo not found";
+
+console.log("Company Logo:", logoToShow);
   const navigationItems: NavigationItem[] = [
     {
       icon: Home,
@@ -282,13 +289,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             className="px-4 py-3 border-b border-gray-200"
             style={{ height: "73px" }}
           >
-            <div className="flex items-center gap-3 h-full">
-              <img src={logo} alt="PayWise" className="w-8 h-8 flex-shrink-0" />
+            <div className="flex items-center  gap-3 h-full">
+            <img src={typeof logoToShow === "string" ? logoToShow : ""} alt="PayWise" className="w-12 h-12 rounded-full  flex-shrink-0" />
               <div
                 className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}
               >
                 <h2 className="font-semibold text-gray-900 whitespace-nowrap">
-                  PayWise
+                Physics Wallah
                 </h2>
                 <p className="text-sm text-gray-500 whitespace-nowrap">
                   Employee Portal
