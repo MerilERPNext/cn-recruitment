@@ -1,3 +1,6 @@
+
+// 222
+
 import React, { useMemo } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -36,6 +39,7 @@ interface MyShift {
     modified: string;
 }
 
+// --- SAMPLE DATA (unchanged) ---
 export const approvalQueueData: ApprovalRequest[] = [
     {
         name: "HR-SHR-25-08-00003",
@@ -287,7 +291,7 @@ export const myShiftsData: MyShift[] = [
 
 // --- HELPER COMPONENTS ---
 export const StatusBadge = ({ status }: { status: string }) => {
-    const baseStyle = 'text-xs font-medium px-2.5 py-1 rounded-full';
+    const baseStyle = 'px-3 py-1 rounded-2xl font-medium';
     const statusStyles: { [key: string]: string } = {
         'Approved': 'bg-green-100 text-green-800',
         'Pending': 'bg-yellow-100 text-yellow-800',
@@ -302,15 +306,21 @@ const Card = ({ children, className }: { children: React.ReactNode; className?: 
 );
 
 const CardHeader = ({ title, onSeeAll }: { title: string; onSeeAll: () => void }) => (
-    <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
-        <button onClick={onSeeAll} className="text-gray-500 hover:text-gray-800 transition-colors" title="See All">
-            <ExternalLink size={18} />
-        </button>
-    </div>
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="font-semibold text-gray-800">{title}</h2>
+    <button
+      onClick={onSeeAll}
+      className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors"
+      title="See All"
+    >
+      <span>See All</span>
+      <ExternalLink size={18} />
+    </button>
+  </div>
 );
 
-// // // --- UI SECTIONS ---
+
+// --- UI SECTIONS ---
 
 const ApprovalRejectionQueue = ({ maxItems = 9 }: { maxItems?: number }) => {
     const navigate = useNavigate();
@@ -337,22 +347,22 @@ const ApprovalRejectionQueue = ({ maxItems = 9 }: { maxItems?: number }) => {
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
                 {/* Header */}
                 <div className="grid grid-cols-6 gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200 rounded-t-lg">
-                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <span className="font-semibold text-gray-500 flex items-center">
                         EMPLOYEE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <span className="font-semibold text-gray-500 flex items-center">
                         SHIFT TYPE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <span className="font-semibold text-gray-500 flex items-center">
                         STATUS
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <span className="font-semibold text-gray-500 flex items-center">
                         START DATE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <span className="font-semibold text-gray-500 flex items-center">
                         END DATE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="font-semibold text-gray-500 flex items-center justify-center">
                         ACTIONS
                     </span>
                 </div>
@@ -371,15 +381,15 @@ const ApprovalRejectionQueue = ({ maxItems = 9 }: { maxItems?: number }) => {
                                 {item.shift_type}
                             </div>
                             <div>
-                                    <StatusBadge status={item.status} />
+                                <StatusBadge status={item.status} />
                             </div>
                             <div className="text-gray-600">{item.from_date}</div>
                             <div className="text-gray-600">{item.to_date}</div>
                             <div className="flex justify-end items-center space-x-2">
-                                <button className="px-3 py-1.5 text-xs font-medium rounded-lg text-green-600 bg-green-100 hover:bg-green-200 transition">
+                                <button className="px-3 py-1.5 font-medium rounded-lg text-green-600 bg-green-100 hover:bg-green-200 transition">
                                     Approve
                                 </button>
-                                <button className="px-3 py-1.5 text-xs font-medium rounded-lg text-red-600 bg-red-100 hover:bg-red-200 transition">
+                                <button className="px-3 py-1.5 font-medium rounded-lg text-red-600 bg-red-100 hover:bg-red-200 transition">
                                     Reject
                                 </button>
                             </div>
@@ -422,10 +432,8 @@ const TeamShiftList = ({ maxItems = 4 }: { maxItems?: number }) => {
                             <p className="font-medium text-gray-900">
                                 {item.employee_name}
                             </p>
-                            <p className="text-sm text-gray-600">
-                                {item.start_date}{" "}
-                                →{" "}
-                                {item.end_date}
+                            <p className="text-gray-600">
+                                {item.start_date} → {item.end_date}
                             </p>
                         </div>
 
@@ -469,7 +477,7 @@ const MyShifts = ({ maxItems = 4 }: { maxItems?: number }) => {
                             <p className="font-medium text-gray-900">
                                 {item.shift_type}
                             </p>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-gray-600">
                                 {item.start_date} → {item.end_date}
                             </p>
                         </div>
@@ -485,7 +493,7 @@ const MyShifts = ({ maxItems = 4 }: { maxItems?: number }) => {
 
 export default function AllShiftsDashboard() {
     return (
-        <div className="bg-gray-100 min-h-screen font-sans">
+        <div className="bg-gray-100 min-h-screen font-sans text-sm">
             <main className="p-4 sm:p-6 lg:p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column: Approval Queue */}

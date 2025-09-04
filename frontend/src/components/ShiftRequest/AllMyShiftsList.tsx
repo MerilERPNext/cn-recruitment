@@ -19,7 +19,7 @@ const AllMyShiftsList: React.FC = () => {
         return (
             <div className="w-full mx-auto px-6">
                 <HeaderBar
-                    title="All Team Shifts"
+                    title="All My Shifts"
                     onBack={() => navigate(-1)}
                 />
     
