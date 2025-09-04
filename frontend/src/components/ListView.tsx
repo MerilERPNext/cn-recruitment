@@ -79,6 +79,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   onRefetchAvailable?: (refetch: () => void) => void;
   onDataLoad?: (data: T[]) => void;
   refetchTrigger?: boolean;
+  onRefetchComplete?: () => void;
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -101,6 +102,7 @@ const FrappeListView = <T extends BaseItem>({
   onRefetchAvailable,
   onDataLoad,
   refetchTrigger = false,
+  onRefetchComplete,
 }: FrappeListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
@@ -358,6 +360,9 @@ const FrappeListView = <T extends BaseItem>({
       queryKey: ["documents-infinite", doctype],
     });
     queryClient.invalidateQueries({ queryKey: ["document-count", doctype] });
+    if (onRefetchComplete) {
+      onRefetchComplete();
+    }
   };
 
   const goToPage = (page: number) => {

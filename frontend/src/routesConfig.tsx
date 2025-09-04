@@ -71,8 +71,6 @@ import FlowRequests from "./components/ApprovalTracker/FlowRequests";
 import InitiateFlow from "./components/ApprovalTracker/InitiateFlow";
 import InitiateForm from "./components/ApprovalTracker/InitiateForm";
 import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
-import ApprovalList from "./components/shared/ApprovalList";
-import TestApprovalListCard from "./components/shared/TestApprovalListCard";
 
 export interface AppRoute {
   index?: boolean;
@@ -189,24 +187,6 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recruitment-app/requisitions/add-requisition/*",
     element: <AddRequisition />,
-  },
-  {
-    path: "/webapp/approval-list",
-    element: (
-      <ApprovalList
-        doctype={"Attendance Request"}
-        renderCardContent={(item) => (
-          <TestApprovalListCard
-            todoId={item.todoId}
-            isSelected={item?.isSelected}
-            onToggleSelect={item?.onToggleSelect}
-            data={item?.data}
-            refetch={item?.refetch}
-            onAction={item?.onAction}
-          />
-        )}
-      />
-    ),
   },
   {
     path: "/webapp/attendance",

@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState, ReactNode, useCallback } from "react";
+import { useMemo, useState, ReactNode, useCallback, useEffect } from "react";
 import FrappeListView from "../ListView";
 import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
+import toast from "react-hot-toast";
 
 type ApprovalListProps = {
   doctype: string;
@@ -11,24 +13,27 @@ type ApprovalListProps = {
     isSelected,
     onToggleSelect,
     data,
-    refetch,
     onAction,
   }: {
     todoId: string;
     isSelected: boolean;
     onToggleSelect: (id: string) => void;
     data: any;
-    refetch: () => void;
     onAction: (action: string, data: any) => void;
   }) => ReactNode;
+  refetch?: boolean;
   pageSize?: number;
+  onApprovalRefetchComplete?: () => void;
 };
 
 const ApprovalList = ({
   doctype,
   renderCardContent,
   pageSize,
+  refetch,
+  onApprovalRefetchComplete,
 }: ApprovalListProps) => {
+  const mutation = useApprovalListActions();
   const [refetchListView, setRefetchListView] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -38,6 +43,11 @@ const ApprovalList = ({
     [doctype]
   );
 
+  useEffect(() => {
+    if (refetch) {
+      setRefetchListView(true);
+    }
+  }, [refetch]);
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -50,34 +60,18 @@ const ApprovalList = ({
     if (selectedIds.length === allRequests.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(allRequests.map((req) => req.custom_funnel_task));
+      setSelectedIds(allRequests.map((req) => req.name));
     }
   };
-
-  // Bulk approve/reject
-  const handleBulkAction = (action: "Approve" | "Reject") => {
-    console.log("Bulk Action:", action, selectedIds);
-    // TODO: frappe API call here
-    setSelectedIds([]); // reset selection after action
-  };
-
-  const mutation = useApprovalListActions();
 
   const handleAction = useCallback(
     async (action: string, data: any) => {
       try {
         if (mutation?.isPending) return;
-        const response = await mutation?.mutateAsync(
-          {
-            action,
-            name: data?.name || "",
-          },
-          {
-            onSuccess: () => {
-              setRefetchListView((prev) => !prev);
-            },
-          }
-        );
+        const response = await mutation?.mutateAsync({
+          action,
+          name: data?.name || "",
+        });
 
         console.log("Action response:", response);
         const responseWithSession = response as unknown as { session?: any };
@@ -104,14 +98,57 @@ const ApprovalList = ({
             );
           }
         }
+        setRefetchListView((prev) => !prev);
+        toast.success(
+          `Attendance request ${
+            action === "Reject" ? "rejecte" : action.toLowerCase()
+          }d successfully!`
+        );
         // Query invalidation now handled by Frappe realtime events
-      } catch (error) {
+      } catch (error: any) {
+        const exceptions = error?.response?.data?.exception?.split(":");
+        const errMessage =
+          exceptions?.length > 1
+            ? exceptions[1] + " " + exceptions[2]
+            : exceptions[1];
         console.error("Action failed", error);
+        toast.error(errMessage);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
+
+  const batchActionMutation = useActionOnAttendanceRequest();
+  const handleBulkAction = (action: "Approve" | "Reject") => {
+    try {
+      batchActionMutation.mutate(
+        {
+          todo_ids: selectedIds,
+          selected_action: action,
+        },
+        {
+          onSuccess: () => {
+            // refetch();
+            toast.success(
+              `Attendance requests ${
+                action === "Reject" ? "rejecte" : action.toLowerCase()
+              }d successfully!`
+            );
+            setRefetchListView((prev) => !prev);
+          },
+          onError: (error) => {
+            toast.error(error?.message);
+            console.error(error);
+          },
+        }
+      );
+      setSelectedIds([]);
+    } catch (error: any) {
+      toast.error(error.message);
+      console.error(error);
+    }
+  };
 
   return (
     <div className="px-4 py-2 bg-white">
@@ -136,17 +173,22 @@ const ApprovalList = ({
           </div>
         )}
         ItemComponent={(props: { item: any }) => {
-          const todoId = props.item?.custom_funnel_task;
+          const todoId = props.item?.name;
           return renderCardContent({
             todoId: todoId,
             isSelected: selectedIds.includes(todoId),
             onToggleSelect: handleToggleSelect,
             data: props.item,
-            refetch: () => {},
             onAction: handleAction,
           });
         }}
         refetchTrigger={refetchListView}
+        onRefetchComplete={() => {
+          setRefetchListView(false);
+          if (onApprovalRefetchComplete) {
+            onApprovalRefetchComplete();
+          }
+        }}
       />
     </div>
   );

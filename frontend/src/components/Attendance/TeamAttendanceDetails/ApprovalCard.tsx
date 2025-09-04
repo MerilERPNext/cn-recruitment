@@ -1,0 +1,111 @@
+import { format } from "date-fns";
+import Badge from "../../shared/Badge";
+
+type ApprovalCardProps = {
+  isSelected?: boolean;
+  isDisabled?: boolean;
+  onToggleSelect?: (id: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onAction: (action: string, data: any) => void;
+  refetch?: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onClick?: (data: any) => void;
+};
+const ApprovalCard = ({
+  isSelected = false,
+  isDisabled = false,
+  onToggleSelect,
+  data,
+  onAction,
+  onClick,
+}: ApprovalCardProps) => {
+  const actions = data?.custom_doctype_actions
+    ? JSON.parse(data?.custom_doctype_actions)
+    : [];
+
+  const getActionStyles = (action: string) => {
+    const parsedAction = action.toLowerCase().trim();
+    let styles = "";
+    switch (parsedAction) {
+      case "approve":
+        styles =
+          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        break;
+      case "reject":
+        styles =
+          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed";
+
+        break;
+      default:
+        styles =
+          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-gray-100 text-gray-600 text-sm hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        break;
+    }
+    return styles;
+  };
+
+  return (
+    <div
+      className="cursor-pointer border border-gray-200 bg-white shadow-sm rounded-xl transition-shadow"
+      onClick={() => {
+        if (onClick) {
+          onClick(data);
+        }
+      }}
+    >
+      <div className="p-4 flex items-start gap-3 w-full">
+        <input
+          type="checkbox"
+          className="mt-1 accent-blue-500"
+          checked={isSelected}
+          onClick={(e) => e.stopPropagation()}
+          onChange={() => onToggleSelect?.(data?.name)}
+          disabled={isDisabled}
+        />
+
+        <div className="w-full">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold text-sm text-gray-800">
+                {data?.allocated_to}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {format(new Date(data?.date), "dd/MM/yyyy")}
+              </p>
+            </div>
+            <Badge
+              label={data?.status}
+              backgroundColor={"bg-yellow-100 text-yellow-600"}
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+            <span className="font-semibold">Description:</span>{" "}
+            {data?.description}
+          </p>
+
+          <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+            {actions?.length &&
+              actions?.map((action: string) => (
+                <button
+                  key={action}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onAction(action, data);
+                  }}
+                  className={getActionStyles(action)}
+                >
+                  {action}
+                </button>
+              ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ApprovalCard;
