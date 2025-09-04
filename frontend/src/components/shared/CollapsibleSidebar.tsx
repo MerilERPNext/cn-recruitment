@@ -15,7 +15,6 @@ import {
   Clock,
   Users,
   CheckCircle,
-  PlusCircle
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 
@@ -118,29 +117,30 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         {
           name: "Shifts",
           icon: ArrowUpDown,
-          subItems: [
-            {
-              name: "My Shifts",
-              icon: Clock,
-              href: "/webapp/shift-request/my-shift-assignment",
-            },
-            {
-              name: "Team Shift",
-              icon: Users,
-              href: "/webapp/shift-request/team-shift",
-            },
-            {
-              name: "Shift Requests",
-              icon: PlusCircle,
-              href: "/webapp/shift-request/shift-list",
-            },
-            {
-              name: "Shift Change Request",
-              icon: ArrowUpDown,
-              href: "/webapp/shift-request/shift-change-request",
-            },
+          href: "/webapp/shift-request/all-shifts-dashboard", // <-- Add this line
+          // subItems: [
+          //   {
+          //     name: "My Shifts",
+          //     icon: Clock,
+          //     href: "/webapp/shift-request/my-shift-assignment",
+          //   },
+          //   {
+          //     name: "Team Shift",
+          //     icon: Users,
+          //     href: "/webapp/shift-request/team-shift",
+          //   },
+          //   {
+          //     name: "Shift Requests",
+          //     icon: PlusCircle,
+          //     href: "/webapp/shift-request/shift-list",
+          //   },
+          //   {
+          //     name: "Shift Change Request",
+          //     icon: ArrowUpDown,
+          //     href: "/webapp/shift-request/shift-change-request",
+          //   },
 
-          ],
+          // ],
         },
       ],
     },

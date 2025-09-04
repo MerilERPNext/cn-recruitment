@@ -68,6 +68,7 @@ import InitiateForm from "./components/ApprovalTracker/InitiateForm";
 import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
 import NotificationList from "./components/Notification/Notification";
 import OrganizationalChart from "./components/OrganizationalChart/OrganizationalChart";
+import AllShiftsDashboard from "./components/ShiftRequest/AllShiftsDashboard";
 
 export interface AppRoute {
   index?: boolean;
@@ -127,6 +128,7 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/shift-request",
     element: <ShiftRequestApp />,
     children: [
+      { path: "all-shifts-dashboard",element: <AllShiftsDashboard /> }, // <-- Add this line
       { path: "my-shift-assignment", element: <MyShiftAssignment /> },
       { path: "team-shift", element: <TeamShift /> },
       { path: "shift-list", element: <ShiftRequestList /> },
