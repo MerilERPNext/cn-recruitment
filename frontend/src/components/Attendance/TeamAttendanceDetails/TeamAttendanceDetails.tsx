@@ -15,7 +15,6 @@ const TeamAttendanceDetails = () => {
     []
   );
   const { refetchAttendance } = useGlobalStore();
-  console.log("---------------------------------------", refetchAttendance);
   const [refetch, setRefetch] = useState(false);
   const navigate = useNavigate();
   const [selectedRequest, setSelectedRequest] =

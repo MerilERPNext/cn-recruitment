@@ -43,8 +43,8 @@ const App: React.FC = () => {
 
   return (
     <QueryProvider>
-      <GlobalStoreProvider>
-        <EmployeeErrorBoundary>
+      <EmployeeErrorBoundary>
+        <GlobalStoreProvider>
           <RequestLeaveModalProvider>
             <Toaster position="top-center" containerClassName="z-50">
               {(t) => (
@@ -112,10 +112,10 @@ const App: React.FC = () => {
               </Routes>
             </div>
           </RequestLeaveModalProvider>
-        </EmployeeErrorBoundary>
-        {/* @ts-ignore */}
-        <chatnext-app />
-      </GlobalStoreProvider>
+        </GlobalStoreProvider>
+      </EmployeeErrorBoundary>
+      {/* @ts-ignore */}
+      <chatnext-app />
     </QueryProvider>
   );
 };
