@@ -35,6 +35,8 @@ export const approvalQueueData: ApprovalRequest[] = [
     { id: 3, employee: 'Ambreen F Bohari', type: 'Shift Change', date: '2025-08-30', time: '9a-5p' },
     { id: 1, employee: 'Ava Morgan', type: 'Time Off', date: '2025-07-24', time: '9a-5p' },
     { id: 2, employee: 'Ethan Bennett', type: 'New Shift', date: '2025-07-21', time: '10a-6p' },
+    { id: 8, employee: 'Avad Morgan', type: 'Time Off', date: '2025-07-24', time: '9a-5p' },
+    { id: 9, employee: 'Ether Bennett', type: 'New Shift', date: '2025-07-21', time: '10a-6p' },
 ];
 
 export const teamShiftsData: TeamShift[] = [
@@ -205,12 +207,12 @@ export default function AllShiftsDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column: Approval Queue */}
                     <div className="lg:col-span-2">
-                        <ApprovalRejectionQueue maxItems={6} />
+                        <ApprovalRejectionQueue maxItems={9} />
                     </div>
                     {/* Right Column: Team Shift & My Shifts */}
                     <div className="space-y-6">
-                        <TeamShiftList maxItems={4} />
-                        <MyShifts maxItems={3} />
+                        <TeamShiftList maxItems={3} />
+                        <MyShifts maxItems={2} />
                     </div>
                 </div>
             </main>
