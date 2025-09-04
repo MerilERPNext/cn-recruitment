@@ -1,33 +1,75 @@
 import React, { useMemo } from "react";
-import { StatusBadge } from "./AllShiftsDashboard";
-import { teamShiftsData } from "./AllShiftsDashboard";
+import { StatusBadge, teamShiftsData } from "./AllShiftsDashboard";
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 
 const AllTeamShiftsList: React.FC = () => {
     const navigate = useNavigate();
-    const sortedData = useMemo(() =>
-        [...teamShiftsData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-        []);
+
+    const sortedData = useMemo(
+        () =>
+            [...teamShiftsData].sort(
+                (a, b) =>
+                    new Date(b.start_date).getTime() -
+                    new Date(a.start_date).getTime()
+            ),
+        []
+    );
+
     return (
-        <div className="w-full mx-auto px-4">
+        <div className="w-full mx-auto px-6">
             <HeaderBar
                 title="All Team Shifts"
                 onBack={() => navigate(-1)}
             />
-            <ul className="space-y-3">
-                {sortedData.map(item => (
-                    <li key={item.id} className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
-                        <div>
-                            <p className="font-semibold text-gray-900">{item.name}</p>
-                            <p className="text-sm text-gray-600">
-                                {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: {item.time}
-                            </p>
+
+            {/* Table */}
+            <div className="overflow-x-auto mt-6 rounded-lg border border-gray-200 bg-white shadow-sm justify-center">
+                {/* Header */}
+                <div className="grid grid-cols-5 gap-4 px-6 h-12 bg-gray-50 border border-gray-200">
+                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                        EMPLOYEE
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                        SHIFT TYPE
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                        STATUS
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                        START DATE
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                        END DATE
+                    </span>
+                </div>
+
+                {/* Rows */}
+                <div className="divide-y divide-gray-200">
+                    {sortedData.map((item) => (
+                        <div
+                            key={item.name}
+                            className="grid grid-cols-5 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors text-center"
+                        >
+                            <div className="font-medium text-gray-900 truncate">
+                                {item.employee_name}
+                            </div>
+                            <div className="text-gray-700 truncate">
+                                {item.shift_type}
+                            </div>
+                            <div>
+                                <StatusBadge status={item.status} />
+                            </div>
+                            <div className="text-gray-600">
+                                {item.start_date}
+                            </div>
+                            <div className="text-gray-600 ">
+                                {item.end_date}
+                            </div>
                         </div>
-                        <StatusBadge status={item.status} />
-                    </li>
-                ))}
-            </ul>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };

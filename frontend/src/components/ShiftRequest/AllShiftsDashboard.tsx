@@ -4,19 +4,25 @@ import { useNavigate } from 'react-router-dom';
 
 // --- TYPE DEFINITIONS ---
 interface ApprovalRequest {
-    id: number;
+    name: string;
+    shift_type: string;
     employee: string;
-    type: string;
-    date: string;
-    time: string;
+    employee_name: string;
+    status: string;
+    from_date: string;
+    to_date: string;
+    approver: string;
 }
 
 interface TeamShift {
-    id: number;
     name: string;
-    date: string;
-    time: string;
+    employee: string;
+    employee_name: string;
+    shift_type: string;
+    start_date: string;
+    end_date: string;
     status: string;
+    modified: string;
 }
 
 interface MyShift {
@@ -26,7 +32,7 @@ interface MyShift {
     status: string;
 }
 
-export const approvalQueueData = [
+export const approvalQueueData: ApprovalRequest[] = [
     {
         name: "HR-SHR-25-08-00003",
         shift_type: "SH_94",
@@ -150,13 +156,66 @@ export const approvalQueueData = [
 ];
 
 export const teamShiftsData: TeamShift[] = [
-    { id: 7, name: 'Nikita Vaidya', date: '2025-08-26', time: '09:00 AM - 05:00 PM', status: 'Pending' },
-    { id: 6, name: 'Rajshree Mahajan', date: '2025-08-13', time: '10:00 AM - 06:00 PM', status: 'Approved' },
-    { id: 1, name: 'Ava Morgan', date: '2025-07-24', time: '09:00 AM - 05:00 PM', status: 'Pending' },
-    { id: 2, name: 'Liam Carter', date: '2025-07-23', time: '11:00 AM - 07:00 PM', status: 'Rejected' },
-    { id: 3, name: 'Olivia Hayes', date: '2025-07-22', time: '08:00 AM - 04:00 PM', status: 'Approved' },
-    { id: 4, name: 'Ethan Bennett', date: '2025-07-21', time: '10:00 AM - 06:00 PM', status: 'Pending' },
-    { id: 5, name: 'Sophia Clark', date: '2025-07-20', time: '09:00 AM - 05:00 PM', status: 'Approved' },
+        {
+        name: "HR-SHA-25-09-00137",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-23",
+        end_date: "2025-11-26",
+        status: "Rejected",
+        modified: "2025-09-03 15:00:43.739532",
+    },
+    {
+        name: "HR-SHA-25-09-00138",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-30",
+        end_date: "2025-12-03",
+        status: "Approved",
+        modified: "2025-09-03 15:00:43.920997",
+    },
+    {
+        name: "HR-SHA-25-09-00136",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-16",
+        end_date: "2025-11-19",
+        status: "Completed",
+        modified: "2025-09-03 15:00:43.559538",
+    },
+    {
+        name: "HR-SHA-25-09-00138",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-30",
+        end_date: "2025-12-03",
+        status: "Approved",
+        modified: "2025-09-03 15:00:43.920997",
+    },
+    {
+        name: "HR-SHA-25-09-00137",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-23",
+        end_date: "2025-11-26",
+        status: "Rejected",
+        modified: "2025-09-03 15:00:43.739532",
+    },
+    {
+        name: "HR-SHA-25-09-00136",
+        employee: "1105742",
+        employee_name: "Brittany Janet Foley",
+        shift_type: "SH_1",
+        start_date: "2025-11-16",
+        end_date: "2025-11-19",
+        status: "Completed",
+        modified: "2025-09-03 15:00:43.559538",
+    },
 ];
 
 export const myShiftsData: MyShift[] = [
@@ -274,27 +333,45 @@ const ApprovalRejectionQueue = ({ maxItems = 9 }: { maxItems?: number }) => {
     );
 };
 
-
 const TeamShiftList = ({ maxItems = 4 }: { maxItems?: number }) => {
     const navigate = useNavigate();
-    const sortedData = useMemo(() =>
-        [...teamShiftsData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-        []);
+
+    const sortedData = useMemo(
+        () =>
+            [...teamShiftsData].sort(
+                (a, b) =>
+                    new Date(b.start_date).getTime() -
+                    new Date(a.start_date).getTime()
+            ),
+        []
+    );
+
     return (
         <Card>
             <CardHeader
                 title="Team Shift List"
-                onSeeAll={() => navigate('/webapp/shift-request/all-team-shifts')}
+                onSeeAll={() => navigate("/webapp/shift-request/all-team-shifts")}
             />
-            <ul className="space-y-3">
-                {sortedData.slice(0, maxItems).map(item => (
-                    <li key={item.id} className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
+
+            <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200">
+                {sortedData.slice(0, maxItems).map((item) => (
+                    <li
+                        key={item.name}
+                        className="flex justify-between items-center px-4 py-3 hover:bg-gray-50 transition"
+                    >
+                        {/* Left section */}
                         <div>
-                            <p className="font-semibold text-gray-900">{item.name}</p>
+                            <p className="font-medium text-gray-900">
+                                {item.employee_name}
+                            </p>
                             <p className="text-sm text-gray-600">
-                                {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: {item.time}
+                                {item.start_date}{" "}
+                                →{" "}
+                                {item.end_date}
                             </p>
                         </div>
+
+                        {/* Right section */}
                         <StatusBadge status={item.status} />
                     </li>
                 ))}
