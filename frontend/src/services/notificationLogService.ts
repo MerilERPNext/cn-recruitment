@@ -1,3 +1,4 @@
+import { NotificationLog } from "../types/notificationLog";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const NotificationService = {
@@ -12,3 +13,14 @@ export const NotificationService = {
     });
   }
 }
+
+export const NotificationAlertService = {
+    getNotifications: async (): Promise<NotificationLog[]> => {
+      const response = await FrappeAPI.getDocumentList("Notification Log", {
+        fields: ["name", "subject", "for_user", "type", "read", "from_user", "creation"],
+        orderBy: "creation desc",
+        limit: 20,
+      });
+      return response.data as NotificationLog[];
+    },
+  };

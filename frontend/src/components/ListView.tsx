@@ -720,7 +720,7 @@ const FrappeListView = <T extends BaseItem>({
                     console.log(`👆 Item clicked for ${doctype}:`, item);
                     onItemClick?.(item); // Use optional chaining
                   }}
-                  className={`mb-2 ${
+                  className={`mb-2 md:mb-0 ${
                     onItemClick ? "cursor-pointer hover:bg-gray-50" : ""
                   }`}
                 >

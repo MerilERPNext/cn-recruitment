@@ -1,10 +1,5 @@
 import React, { useEffect } from "react";
-import {
-  Navigate,
-  Route,
-  Routes,
-  useNavigate,
-} from "react-router-dom"; 
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { QueryProvider } from "./providers/QueryProvider";
 import "./App.css";
 import "./utils/FormioConfig";
@@ -22,7 +17,15 @@ import { useFrappeAuth } from "frappe-react-sdk";
 import "./utils/FormioOverrides";
 
 const App: React.FC = () => {
-  const { currentUser, isLoading, isValidating } = useFrappeAuth();
+  const { currentUser, isLoading} = useFrappeAuth();
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!isLoading && (!currentUser || currentUser === "Guest")) {
+      navigate("/login", { replace: true }); // just redirect
+    }
+  }, [currentUser, isLoading, navigate]);
+
 
   const renderRoutes = (routes: AppRoute[]) =>
     routes.map(({ path, element, children, index }, idx) =>
@@ -36,14 +39,7 @@ const App: React.FC = () => {
     );
 
  
-    const navigate = useNavigate();
 
-    useEffect(() => {
-      if (isLoading || isValidating) return;
-      if (!currentUser) {
-        navigate("/#login", { replace: true }); // prevents back button loop
-      }
-    }, [currentUser, isLoading, isValidating, navigate]);
 
   return (
     <QueryProvider>
