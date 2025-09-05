@@ -17,6 +17,7 @@ import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 import { X } from "lucide-react";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -56,6 +57,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
 }) => {
+  const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [formData, setFormData] = useState<AttendanceFormData>();
   const [isForOthers, setIsForOthers] = useState(false);
@@ -589,6 +591,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     mutation.mutate(requestBody as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
+        setRefetchAttendance(true);
         toast.success("Added Attendance Request successfully!");
       },
       onError: (error: CustomError) => {

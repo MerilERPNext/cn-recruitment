@@ -77,6 +77,9 @@ interface FrappeListViewProps<T extends BaseItem> {
   permissionErrorMessage?: string;
   showRefereshButton?: boolean;
   onRefetchAvailable?: (refetch: () => void) => void;
+  onDataLoad?: (data: T[]) => void;
+  refetchTrigger?: boolean;
+  onRefetchComplete?: () => void;
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -97,6 +100,9 @@ const FrappeListView = <T extends BaseItem>({
   showRefereshButton = false,
   permissionErrorMessage,
   onRefetchAvailable,
+  onDataLoad,
+  refetchTrigger = false,
+  onRefetchComplete,
 }: FrappeListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
@@ -225,6 +231,12 @@ const FrappeListView = <T extends BaseItem>({
     }
   }, [onRefetchAvailable]);
 
+  useEffect(() => {
+    if (refetchTrigger) {
+      refreshData();
+    }
+  }, [refetchTrigger]);
+
   // Log query results
   useEffect(() => {
     if (infiniteScroll && infiniteQueryResult.data) {
@@ -293,6 +305,12 @@ const FrappeListView = <T extends BaseItem>({
     doctype,
   ]);
 
+  useEffect(() => {
+    if (onDataLoad) {
+      onDataLoad(processedData);
+    }
+  }, [processedData, onDataLoad]);
+
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll
     ? (infiniteQueryResult.data?.pages[0] as unknown as PageData)?.totalCount ||
@@ -342,6 +360,9 @@ const FrappeListView = <T extends BaseItem>({
       queryKey: ["documents-infinite", doctype],
     });
     queryClient.invalidateQueries({ queryKey: ["document-count", doctype] });
+    if (onRefetchComplete) {
+      onRefetchComplete();
+    }
   };
 
   const goToPage = (page: number) => {
