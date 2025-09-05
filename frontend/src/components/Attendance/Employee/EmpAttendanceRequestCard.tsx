@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { AttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -8,6 +9,7 @@ const EmpAttendanceRequestCard = ({
   data: AttendanceRequest;
   onClick?: () => void;
 }) => {
+  const { isDesktop } = useScreenSize();
   const getStatus = (rawStatus: string) => {
     const status = rawStatus?.toLowerCase().trim();
 
@@ -29,37 +31,64 @@ const EmpAttendanceRequestCard = ({
     }
   };
   const status = getStatus(data?.status);
-
+  const formattedFromDate = data?.from_date
+    ? format(new Date(data.from_date), "dd/MM/yyyy")
+    : "N/A";
+  const formattedToDate = data?.to_date
+    ? format(new Date(data.to_date), "dd/MM/yyyy")
+    : "N/A";
   return (
-    <div
-      className="w-full flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl"
-      // onClick={() => {
-      //   if (data?.docstatus === 0 && onClick) {
-      //     onClick();
-      //   }
-      // }}
-    >
-      <div className="px-4 py-2 w-full">
-        <div className=" flex items-start justify-between gap-1">
-          <div>
-            <div>{data?.custom_request_type}</div>
-            <div className="font-medium text-gray-900">
-              {data?.from_date
-                ? format(new Date(data?.from_date), "dd/MM/yyyy")
-                : "N/A"}
-              {data?.to_date
-                ? ` - ${format(new Date(data?.to_date), "dd/MM/yyyy")}`
-                : "N/A"}
-            </div>
-            {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
+    <>
+      {isDesktop ? (
+        <div className="grid grid-cols-4 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+          {/* Request Type */}
+          <div className="text-sm font-medium text-gray-700 text-start truncate">
+            {data?.custom_request_type}
           </div>
-          <Badge
-            backgroundColor={status?.statusColor}
-            label={status?.label || ""}
-          />
+
+          {/* From Date */}
+          <div className="text-sm text-gray-900 text-start">
+            {formattedFromDate}
+          </div>
+
+          {/* To Date */}
+          <div className="text-sm text-gray-900 text-start">
+            {formattedToDate}
+          </div>
+
+          {/* Status */}
+          <div className="flex justify-start">
+            <Badge
+              backgroundColor={status?.statusColor}
+              label={status?.label || ""}
+            />
+          </div>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div className="w-full flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl">
+          <div className="px-4 py-2 w-full">
+            <div className=" flex items-start justify-between gap-1">
+              <div>
+                <div>{data?.custom_request_type}</div>
+                <div className="font-medium text-gray-900">
+                  {data?.from_date
+                    ? format(new Date(data?.from_date), "dd/MM/yyyy")
+                    : "N/A"}
+                  {data?.to_date
+                    ? ` - ${format(new Date(data?.to_date), "dd/MM/yyyy")}`
+                    : "N/A"}
+                </div>
+                {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
+              </div>
+              <Badge
+                backgroundColor={status?.statusColor}
+                label={status?.label || ""}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

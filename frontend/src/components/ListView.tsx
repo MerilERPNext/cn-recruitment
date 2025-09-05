@@ -80,6 +80,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   onDataLoad?: (data: T[]) => void;
   refetchTrigger?: boolean;
   onRefetchComplete?: () => void;
+  orderBy?: string;
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -103,6 +104,7 @@ const FrappeListView = <T extends BaseItem>({
   onDataLoad,
   refetchTrigger = false,
   onRefetchComplete,
+  orderBy = "modified desc",
 }: FrappeListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
@@ -183,6 +185,7 @@ const FrappeListView = <T extends BaseItem>({
     filters: { ...filters, ...queryParamsFilters },
     fields: defaultFields,
     searchFields,
+    orderBy,
   };
 
   console.log(`🔧 Query params for ${doctype}:`, queryParams);
