@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import ApprovalRejectionQueue from './dashboard/ApprovalRejection';
 import ApprovalList from '../shared/ApprovalList';
 import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
 import FrappeListView from "../ListView";
