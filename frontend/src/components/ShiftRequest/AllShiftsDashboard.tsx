@@ -19,7 +19,7 @@ interface ApprovalRequest {
 }
 
 // Interface for Shift Assignment (Team Shifts from Frappe)
-interface ShiftAssignment {
+export interface ShiftAssignment {
     name: string;
     employee: string;
     employee_name: string;
@@ -196,21 +196,6 @@ const TeamShiftItem: React.FC<{
     index?: number;
     doctype: string;
 }> = ({ item }) => {
-    const getStatusColor = (status: string) => {
-        switch (status?.toLowerCase()) {
-            case "active":
-            case "approved":
-                return "bg-green-100 text-green-800";
-            case "pending":
-                return "bg-yellow-100 text-yellow-800";
-            case "rejected":
-            case "inactive":
-                return "bg-red-100 text-red-800";
-            default:
-                return "bg-gray-100 text-gray-800";
-        }
-    };
-
     const getStatusIcon = (status: string) => {
         switch (status?.toLowerCase()) {
             case "active":
@@ -414,7 +399,7 @@ const MyShiftItem: React.FC<{
     const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
     return (
-        <li className="flex justify-between mb-2 bg-gray-50 items-center rounded-lg border border-gray-200 px-4 py-3 hover:bg-gray-50 transition">
+        <li className="flex justify-between mb-2 bg-gray-50 items-center rounded-lg border border-gray-200 px-4 py-3 hover:bg-gray-100 transition">
             {/* Left section */}
             <div>
                 <p className="text-gray-600 font-semibold text-xs">
@@ -427,7 +412,7 @@ const MyShiftItem: React.FC<{
     );
 };
 
-const MyShifts = ()=> {
+const MyShifts: React.FC = () => {
     const navigate = useNavigate();
 
     return (

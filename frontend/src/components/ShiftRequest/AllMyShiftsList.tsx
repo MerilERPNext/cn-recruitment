@@ -1,47 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { StatusBadge } from "./AllShiftsDashboard";
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import FrappeListView from "../ListView";
-
-// Interface for Shift Assignment
-interface ShiftAssignment {
-    name: string;
-    employee: string;
-    employee_name: string;
-    shift_type: string;
-    start_date: string;
-    end_date: string;
-    status: string;
-    docstatus: number;
-    creation: string;
-}
+import type { ShiftAssignment } from "./AllShiftsDashboard";
 
 const MyShiftRowItem: React.FC<{
     item: ShiftAssignment;
     index?: number;
     doctype: string;
 }> = ({ item, index }) => {
-    const [currentTime, setCurrentTime] = useState(new Date());
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 60000); 
-
-        return () => clearInterval(timer);
-    }, []);
 
     const getShiftStatus = (startDate: string, endDate: string): string => {
-        const today = new Date(currentTime); 
-        today.setHours(0, 0, 0, 0); 
-        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         const start = new Date(startDate);
         start.setHours(0, 0, 0, 0);
-        
+
         const end = new Date(endDate);
         end.setHours(0, 0, 0, 0);
-        
+
         if (today < start) {
             return "Upcoming";
         } else if (today > end) {
@@ -79,7 +58,7 @@ const MyShiftRowItem: React.FC<{
 
 const AllMyShiftsList: React.FC = () => {
     const navigate = useNavigate();
-    
+
     return (
         <div className="w-full mx-auto pb-20">
             <HeaderBar
@@ -130,6 +109,3 @@ const AllMyShiftsList: React.FC = () => {
 };
 
 export default AllMyShiftsList;
-
-
-

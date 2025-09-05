@@ -3,25 +3,13 @@ import { StatusBadge } from "./AllShiftsDashboard";
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import FrappeListView from "../ListView"; 
-
-// Interface for Shift Assignment
-interface ShiftAssignment {
-    name: string;
-    employee: string;
-    employee_name: string;
-    shift_type: string;
-    start_date: string;
-    end_date: string;
-    status: string;
-    docstatus: number;
-    creation: string;
-}
+import type { ShiftAssignment } from "./AllShiftsDashboard";
 
 const TeamShiftRowItem: React.FC<{
     item: ShiftAssignment;
     index?: number;
     doctype: string;
-}> = ({ item, index }) => {
+}> = ({ item }) => {
     const formatToIndianDate = (dateString: string): string => {
         const date = new Date(dateString);
         const day = String(date.getDate()).padStart(2, '0');
@@ -32,7 +20,6 @@ const TeamShiftRowItem: React.FC<{
 
     return (
         <div
-            key={`${item.name}-${index}`}
             className="grid grid-cols-5 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors text-center border-b border-gray-200"
         >
             <div className="font-medium text-gray-900 text-sm truncate">
@@ -108,3 +95,4 @@ const AllTeamShiftsList: React.FC = () => {
 };
 
 export default AllTeamShiftsList;
+
