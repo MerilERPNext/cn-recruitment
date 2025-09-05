@@ -107,5 +107,4 @@ const AllMyShiftsList: React.FC = () => {
         </div>
     );
 };
-
 export default AllMyShiftsList;

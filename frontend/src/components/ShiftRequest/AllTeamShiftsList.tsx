@@ -93,6 +93,5 @@ const AllTeamShiftsList: React.FC = () => {
         </div>
     );
 };
-
 export default AllTeamShiftsList;
 
