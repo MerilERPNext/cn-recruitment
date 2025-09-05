@@ -23,9 +23,16 @@ export const frappeService = {
     }
   },
 
-  getDocument: async (doctype: string, name: string, fields?: string[]): Promise<unknown> => {
+  getDocument: async (
+    doctype: string,
+    name: string,
+    fields?: string[]
+  ): Promise<unknown> => {
     try {
-      console.log(`🔍 Fetching document for doctype: ${doctype}`, { name, fields });
+      console.log(`🔍 Fetching document for doctype: ${doctype}`, {
+        name,
+        fields,
+      });
       const response = await FrappeAPI.getDocument(doctype, name, fields);
       return response;
     } catch (error) {
@@ -42,6 +49,7 @@ export const frappeService = {
     filters = {},
     fields,
     searchFields,
+    orderBy,
   }: GetDocumentsParams): Promise<FrappePageResponse> => {
     try {
       console.log(`📄 Fetching page data for doctype: ${doctype}`, {
@@ -68,7 +76,11 @@ export const frappeService = {
         const filterArray: FilterCondition[] = Object.entries(filters)
           .filter(([, value]) => value !== "" && value != null)
           .map(([key, value]) => {
-            if (Array.isArray(value) && value.length === 2 && typeof value[0] === "string") {
+            if (
+              Array.isArray(value) &&
+              value.length === 2 &&
+              typeof value[0] === "string"
+            ) {
               return [key, value[0] as FilterOperator, value[1]];
             }
             return [key, "=", value];
@@ -79,14 +91,14 @@ export const frappeService = {
 
       console.log(`🔍 API Filters for ${doctype}:`, { apiFilters, orFilters });
 
-      const result = await FrappeAPI.getDocumentList(doctype, {
+      const result = (await FrappeAPI.getDocumentList(doctype, {
         fields,
         filters: apiFilters.length > 0 ? apiFilters : undefined,
         orFilters: orFilters.length > 0 ? orFilters : undefined,
         limit: pageSize,
         limitStart: pageParam,
-        orderBy: "modified desc",
-      }) as { data: DocumentItem[]; totalCount?: number };
+        orderBy: orderBy,
+      })) as { data: DocumentItem[]; totalCount?: number };
 
       const hasNextPage = result.data.length === pageSize;
       const nextCursor = hasNextPage ? pageParam + pageSize : undefined;
@@ -105,11 +117,18 @@ export const frappeService = {
   },
 
   // Added getDocumentCount method
-  getDocumentCount: async ({ doctype, searchTerm, filters }: GetCountParams): Promise<number> => {
+  getDocumentCount: async ({
+    doctype,
+    searchTerm,
+    filters,
+  }: GetCountParams): Promise<number> => {
     try {
-      console.log(`🔢 Fetching count for doctype: ${doctype}`, { searchTerm, filters });
+      console.log(`🔢 Fetching count for doctype: ${doctype}`, {
+        searchTerm,
+        filters,
+      });
       const apiFilters: FilterCondition[] = filters || [];
-      
+
       // Add search term as OR filters if provided
       const orFilters: FilterCondition[] = [];
       if (searchTerm?.trim()) {
@@ -117,11 +136,11 @@ export const frappeService = {
         orFilters.push(["name", "like", `%${searchTerm}%`]);
       }
 
-      const result = await FrappeAPI.callMethod("frappe.client.get_count", {
+      const result = (await FrappeAPI.callMethod("frappe.client.get_count", {
         doctype,
         filters: apiFilters.length > 0 ? apiFilters : undefined,
         or_filters: orFilters.length > 0 ? orFilters : undefined,
-      }) as number;
+      })) as number;
 
       return result;
     } catch (error) {
@@ -129,8 +148,11 @@ export const frappeService = {
       throw error;
     }
   },
-  
-  createDocument: async (doctype: string, data: Record<string, unknown>): Promise<DocumentItem> => {
+
+  createDocument: async (
+    doctype: string,
+    data: Record<string, unknown>
+  ): Promise<DocumentItem> => {
     try {
       console.log(`📝 Creating document in doctype: ${doctype}`, data);
       const result = await FrappeAPI.createDocument(doctype, data);
@@ -141,13 +163,20 @@ export const frappeService = {
     }
   },
 
-  updateDocument: async (doctype: string, name: string, data: Record<string, unknown>): Promise<DocumentItem> => {
+  updateDocument: async (
+    doctype: string,
+    name: string,
+    data: Record<string, unknown>
+  ): Promise<DocumentItem> => {
     try {
       console.log(`✏️ Updating document ${name} in doctype: ${doctype}`, data);
       const result = await FrappeAPI.updateDocument(doctype, name, data);
       return result as DocumentItem;
     } catch (error) {
-      console.error(`❌ Failed to update document ${name} in ${doctype}:`, error);
+      console.error(
+        `❌ Failed to update document ${name} in ${doctype}:`,
+        error
+      );
       throw error;
     }
   },
@@ -157,12 +186,18 @@ export const frappeService = {
       console.log(`🗑️ Deleting document ${name} from doctype: ${doctype}`);
       await FrappeAPI.deleteDocument(doctype, name);
     } catch (error) {
-      console.error(`❌ Failed to delete document ${name} from ${doctype}:`, error);
+      console.error(
+        `❌ Failed to delete document ${name} from ${doctype}:`,
+        error
+      );
       throw error;
     }
   },
 
-  callMethod: async (method: string, params: Record<string, unknown>): Promise<unknown> => {
+  callMethod: async (
+    method: string,
+    params: Record<string, unknown>
+  ): Promise<unknown> => {
     try {
       console.log(`🔍 Calling method: ${method}`, params);
       const result = await FrappeAPI.callMethod(method, params);
@@ -171,5 +206,5 @@ export const frappeService = {
       console.error(`❌ Failed to call method ${method}:`, error);
       throw error;
     }
-  }
+  },
 };

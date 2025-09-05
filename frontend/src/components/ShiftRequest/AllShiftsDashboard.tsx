@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ApprovalList from '../shared/ApprovalList';
 import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
 import FrappeListView from "../ListView";
 
@@ -159,8 +160,7 @@ export const approvalQueueData: ApprovalRequest[] = [
 export const StatusBadge = ({ status }: { status: string }) => {
     const baseStyle = 'px-2 py-1 rounded-2xl text-xs inline-block';
     const statusStyles: { [key: string]: string } = {
-        'Active': 'bg-green-100 text-green-800',
-        'Approved': 'bg-green-100 text-green-800',
+        'Open': 'bg-blue-100 text-blue-800',
         'Pending': 'bg-yellow-100 text-yellow-800',
         'Rejected': 'bg-red-100 text-red-800',
         'Completed': 'bg-blue-100 text-blue-800',
@@ -449,13 +449,60 @@ const MyShifts: React.FC = () => {
 };
 
 export default function AllShiftsDashboard() {
+    const navigate = useNavigate();
     return (
         <div className="bg-gray-100 min-h-screen font-sans text-sm">
             <main className="p-4 sm:p-6 lg:p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                        <ApprovalRejectionQueue maxItems={11} />
-                    </div>
+                    <div className="lg:col-span-2 ">
+                    <Card>
+                    <CardHeader
+        title="Shift Change Request"
+        onSeeAll={() =>
+          navigate("/webapp/shift-request/shift-change-request")
+        }
+      />
+<div className='border border-gray-200 rounded-lg'>
+      <div className="overflow-x-auto bg-white shadow-sm">
+        {/* Header */}
+        <div className="grid grid-cols-7 gap-4 text-xs px-6 h-12 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+          <span className="font-semibold text-gray-500 flex items-center">
+            SELECT
+          </span>
+          <span className="font-semibold text-gray-500 flex items-center">
+            EMPLOYEE
+          </span>
+          <span className="font-semibold text-gray-500 flex items-center">
+            CREATION DATE
+          </span>
+          <span className="font-semibold text-gray-500 flex items-center">
+            STATUS
+          </span>
+          <span className="font-semibold text-gray-500 flex items-center">
+          PRIORITY
+          </span>
+          <span className="font-semibold text-gray-500 flex items-center">
+            DUE DATE
+          </span>
+          <span className="font-semibold text-gray-500 flex items-center justify-center">
+            ACTIONS
+          </span>
+        </div>
+        </div>
+        <ApprovalList
+            doctype={"Shift Request"}
+            pageSize={10}
+            renderCardContent={(item) => (
+                <ApprovalRejectionQueue
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    data={item?.data}
+                    onAction={item?.onAction}
+                />
+            )}
+        />
+            </div>
+            </Card>           </div>
                     <div className="space-y-6">
                         <TeamShiftList />
                         <MyShifts />

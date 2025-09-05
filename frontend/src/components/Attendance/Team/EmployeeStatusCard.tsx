@@ -90,53 +90,9 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
     data?.status?.toLowerCase() as EmployeeStatusType
   );
 
-  const getStatusBgColor = (status: string) => {
-    if (!isDesktop) return "bg-white";
-
-    switch (status?.toLowerCase()) {
-      case "present":
-        return "bg-green-50";
-      case "absent":
-        return "bg-red-50";
-      case "on leave":
-        return "bg-amber-50";
-      case "half day":
-        return "bg-orange-50";
-      case "work from home":
-        return "bg-purple-50";
-      default:
-        return "bg-slate-50";
-    }
-  };
-
-  const getStatusBorderColor = (status: string) => {
-    if (!isDesktop) return "border-gray-100";
-
-    switch (status?.toLowerCase()) {
-      case "present":
-        return "border-green-200";
-      case "absent":
-        return "border-red-200";
-      case "on leave":
-        return "border-amber-200";
-      case "half day":
-        return "border-orange-200";
-      case "work from home":
-        return "border-purple-200";
-      default:
-        return "border-slate-200";
-    }
-  };
-
   return (
     <div
-      className={`w-full p-3 border shadow-sm rounded-xl transition-all duration-200 ${
-        isDesktop
-          ? `${getStatusBgColor(data?.status)} ${getStatusBorderColor(
-              data?.status
-            )} hover:shadow-md hover:scale-[1.02]`
-          : "bg-white border-gray-100"
-      }`}
+      className={`w-full p-3 border shadow-sm rounded-xl transition-all duration-200 bg-white border border-gray-100 mt-2`}
     >
       <div className="flex gap-4 mb-2">
         <Avatar
