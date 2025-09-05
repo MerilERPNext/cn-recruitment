@@ -288,7 +288,7 @@ export const myShiftsData: MyShift[] = [
 
 // --- HELPER COMPONENTS ---
 export const StatusBadge = ({ status }: { status: string }) => {
-    const baseStyle = 'px-3 py-1 rounded-2xl font-medium';
+    const baseStyle = 'px-3 py-1 rounded-2xl font-medium text-sm inline-block';
     const statusStyles: { [key: string]: string } = {
         'Approved': 'bg-green-100 text-green-800',
         'Pending': 'bg-yellow-100 text-yellow-800',
