@@ -102,7 +102,7 @@ const ApprovalList = ({
         }
         setRefetchListView((prev) => !prev);
         toast.success(
-          `Attendance request ${
+          `Request ${
             action === "Reject" ? "rejecte" : action.toLowerCase()
           }d successfully!`
         );
@@ -133,7 +133,7 @@ const ApprovalList = ({
           onSuccess: () => {
             // refetch();
             toast.success(
-              `Attendance requests ${
+              `Requests ${
                 action === "Reject" ? "rejecte" : action.toLowerCase()
               }d successfully!`
             );
@@ -153,7 +153,7 @@ const ApprovalList = ({
   };
 
   return (
-    <div className="px-4 py-2 bg-white">
+    <div className="bg-white">
       <FrappeListView
         doctype="ToDo"
         isSearch={false}
@@ -165,7 +165,7 @@ const ApprovalList = ({
         pageSize={pageSize}
         onDataLoad={(data) => setAllRequests(data)}
         PreListComponent={() => (
-          <div className="mb-2">
+          <div className="mb-2 p-2">
             <BulkActionBar
               selectedIds={selectedIds}
               pendingRequests={allRequests}

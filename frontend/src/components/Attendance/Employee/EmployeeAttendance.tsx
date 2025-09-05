@@ -14,6 +14,7 @@ import BottomDrawer from "../../shared/BottomDrawer";
 import LeaveRequest from "../LeaveRequest";
 import { gradientClassMap } from "../../../utils/helperUtils";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import CardTable from "../../shared/CardTable";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -351,55 +352,59 @@ const EmployeeAttendance = () => {
         {/* Request Attendance Correction */}
 
         {/* My Attendance Requests */}
-        <div className="pb-20">
-          <div className="flex justify-between items-center w-full p-4 border-b-1 border-b-gray-200">
+        <div className="pb-20 px-2 bg-white">
+          <div className="flex justify-between items-center w-full p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-1 ">
               My Attendance Requests
             </h3>
             <p
               onClick={() => navigate("/webapp/attendance/attendance-request")}
-              className="text-sm text-blue-500"
+              className="text-sm text-blue-500 cursor-pointer"
             >
               View All
             </p>
           </div>
-          <div className="bg-white px-4">
-            <FrappeListView
-              doctype="Attendance Request"
-              isSearch={false}
-              ItemComponent={(props: { item: AttendanceRequest }) => {
-                return (
-                  <EmpAttendanceRequestCard
-                    data={{
-                      ...props?.item,
-                      status: props?.item?.custom_status,
-                    }}
-                    // onClick={() => {
-                    //   setShowReqAttendanceCorrection(true);
-                    // }}
-                  />
-                );
-              }}
-              SkeletonComponent={CardSkeleton}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              defaultFilters={defaultFilters as any}
-              onItemClick={() => {}}
-              infiniteScroll={true}
-              isFilter={false}
-              pageSize={5}
-              defaultFields={[
-                "to_date",
-                "from_date",
-                "custom__request_reason",
-                "custom_request_type",
-                "custom_status",
-                "reason",
-                "modified",
-                "creation",
-                "docstatus",
-              ]}
-            />
-          </div>
+          <CardTable
+            titles={["Request Type", "From Date", "To Date", "Status"]}
+          >
+            <div>
+              <FrappeListView
+                doctype="Attendance Request"
+                isSearch={false}
+                ItemComponent={(props: { item: AttendanceRequest }) => {
+                  return (
+                    <EmpAttendanceRequestCard
+                      data={{
+                        ...props?.item,
+                        status: props?.item?.custom_status,
+                      }}
+                      // onClick={() => {
+                      //   setShowReqAttendanceCorrection(true);
+                      // }}
+                    />
+                  );
+                }}
+                SkeletonComponent={CardSkeleton}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                defaultFilters={defaultFilters as any}
+                onItemClick={() => {}}
+                infiniteScroll={false}
+                isFilter={false}
+                pageSize={5}
+                defaultFields={[
+                  "to_date",
+                  "from_date",
+                  "custom__request_reason",
+                  "custom_request_type",
+                  "custom_status",
+                  "reason",
+                  "modified",
+                  "creation",
+                  "docstatus",
+                ]}
+              />
+            </div>
+          </CardTable>
         </div>
         {showReqAttendanceCorrection && (
           <AttndanceRequestForm

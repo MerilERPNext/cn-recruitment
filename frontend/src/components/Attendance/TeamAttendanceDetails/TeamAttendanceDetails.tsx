@@ -8,10 +8,14 @@ import ApprovalList from "../../shared/ApprovalList";
 import FrappeListView from "../../ListView";
 import ApprovalCard from "./ApprovalCard";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import CardTable from "../../shared/CardTable";
 
 const TeamAttendanceDetails = () => {
   const defaultFilters = useMemo(
-    () => ({ status: ["in", ["Closed", "Cancelled"]] }),
+    () => ({
+      reference_type: "Attendance Request",
+      status: ["in", ["Closed", "Cancelled"]],
+    }),
     []
   );
   const { refetchAttendance } = useGlobalStore();
@@ -23,11 +27,11 @@ const TeamAttendanceDetails = () => {
   return (
     <>
       <div className="bg-white min-h-screen">
-        <div className="bg-white">
+        <div className="bg-white px-2">
           {/* Pending */}
 
-          <div className="flex justify-between p-4">
-            <h2 className=" text-lg font-semibold text-gray-800">
+          <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-800 pb-1">
               Pending Requests
             </h2>
             <button
@@ -41,59 +45,73 @@ const TeamAttendanceDetails = () => {
               View All
             </button>
           </div>
-
-          <ApprovalList
-            doctype={"Attendance Request"}
-            pageSize={5}
-            refetch={refetch || refetchAttendance}
-            onApprovalRefetchComplete={() => {
-              setRefetch(false);
-            }}
-            renderCardContent={(item) => (
-              <ApprovalCard
-                isSelected={item?.isSelected}
-                onToggleSelect={item?.onToggleSelect}
-                data={item?.data}
-                onAction={item?.onAction}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) => setSelectedRequest(request)}
-              />
-            )}
-          />
+          <CardTable
+            titles={[
+              "Select",
+              "Allocated To",
+              "Description",
+              "Date",
+              "Status",
+              "Actions",
+            ]}
+          >
+            <ApprovalList
+              doctype={"Attendance Request"}
+              pageSize={5}
+              refetch={refetch || refetchAttendance}
+              onApprovalRefetchComplete={() => {
+                setRefetch(false);
+              }}
+              renderCardContent={(item) => (
+                <ApprovalCard
+                  isSelected={item?.isSelected}
+                  onToggleSelect={item?.onToggleSelect}
+                  data={item?.data}
+                  onAction={item?.onAction}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onClick={(request: any) => setSelectedRequest(request)}
+                />
+              )}
+            />
+          </CardTable>
         </div>
 
         {/* Actioned */}
-        <div className="bg-white ">
+        <div className="bg-white px-2 mt-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 pb-1">
               Actioned Requests
             </h2>
-            <div className="space-y-3 px-4">
-              <FrappeListView
-                doctype="ToDo"
-                isSearch={false}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                defaultFilters={defaultFilters as any}
-                showRefereshButton={false}
-                infiniteScroll={false}
-                isFilter={false}
-                defaultFields={["*"]}
-                pageSize={3}
-                refetchTrigger={refetch || refetchAttendance}
-                onRefetchComplete={() => setRefetch(false)}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ItemComponent={(props: { item: any }) => {
-                  return (
-                    <RequestCard
-                      key={props?.item?.name}
-                      request={props?.item}
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      onClick={(request: any) => setSelectedRequest(request)}
-                    />
-                  );
-                }}
-              />
-            </div>
+            <CardTable
+              titles={["Allocated To", "Description", "Date", "Status"]}
+            >
+              <div>
+                <FrappeListView
+                  doctype="ToDo"
+                  isSearch={false}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  defaultFilters={defaultFilters as any}
+                  showRefereshButton={false}
+                  infiniteScroll={false}
+                  isFilter={false}
+                  defaultFields={["*"]}
+                  pageSize={3}
+                  refetchTrigger={refetch || refetchAttendance}
+                  onRefetchComplete={() => setRefetch(false)}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ItemComponent={(props: { item: any }) => {
+                    return (
+                      <RequestCard
+                        key={props?.item?.name}
+                        request={props?.item}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        onClick={(request: any) => setSelectedRequest(request)}
+                      />
+                    );
+                  }}
+                />
+              </div>
+            </CardTable>
           </div>
         </div>
       </div>
