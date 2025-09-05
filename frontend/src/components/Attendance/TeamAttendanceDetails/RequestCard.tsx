@@ -44,12 +44,14 @@ any & {
           className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors text-center cursor-pointer border-b"
           onClick={() => onClick?.(request)}
         >
-          <div className="font-medium text-gray-900 truncate">
+          <div className="font-medium text-gray-900 truncate text-start">
             {request?.allocated_to}
           </div>
-          <div className="text-gray-700 truncate">{request?.description}</div>
-          <div className="text-gray-600">{formattedDate}</div>
-          <div className="w-full flex justify-center">
+          <div className="text-gray-700 truncate text-start">
+            {request?.description}
+          </div>
+          <div className="text-gray-600 text-start">{formattedDate}</div>
+          <div className="w-full flex justify-start">
             <Badge
               label={status?.label as string}
               backgroundColor={status?.statusColor}
