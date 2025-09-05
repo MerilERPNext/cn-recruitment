@@ -7,6 +7,7 @@ import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import CardTable from "../../shared/CardTable";
 
 const AttendanceRequest = () => {
   const { isDesktop } = useScreenSize();
@@ -43,39 +44,53 @@ const AttendanceRequest = () => {
           }}
         />
       ) : (
-        <div className="bg-white h-screen px-4">
-          <FrappeListView
-            doctype="Attendance Request"
-            isSearch={false}
-            ItemComponent={(props: { item: AttendanceRequestType }) => {
-              return (
-                <EmpAttendanceRequestCard
-                  data={{ ...props?.item, status: props?.item?.custom_status }}
-                  // onClick={() => {
-                  //   setShowReqAttendanceCorrection(true);
-                  // }}
-                />
-              );
-            }}
-            SkeletonComponent={CardSkeleton}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            defaultFilters={defaultFilters as any}
-            onItemClick={() => {}}
-            infiniteScroll={true}
-            isFilter={false}
-            pageSize={5}
-            defaultFields={[
-              "to_date",
-              "from_date",
-              "custom__request_reason",
-              "custom_request_type",
-              "custom_status",
-              "reason",
-              "modified",
-              "creation",
-              "docstatus",
+        <div className="bg-white h-screen px-4 pt-2">
+          <CardTable
+            titles={[
+              "Select",
+              "Allocated To",
+              "Description",
+              "Date",
+              "Status",
+              "Actions",
             ]}
-          />
+          >
+            <FrappeListView
+              doctype="Attendance Request"
+              isSearch={false}
+              ItemComponent={(props: { item: AttendanceRequestType }) => {
+                return (
+                  <EmpAttendanceRequestCard
+                    data={{
+                      ...props?.item,
+                      status: props?.item?.custom_status,
+                    }}
+                    // onClick={() => {
+                    //   setShowReqAttendanceCorrection(true);
+                    // }}
+                  />
+                );
+              }}
+              SkeletonComponent={CardSkeleton}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              defaultFilters={defaultFilters as any}
+              onItemClick={() => {}}
+              infiniteScroll={true}
+              isFilter={false}
+              pageSize={5}
+              defaultFields={[
+                "to_date",
+                "from_date",
+                "custom__request_reason",
+                "custom_request_type",
+                "custom_status",
+                "reason",
+                "modified",
+                "creation",
+                "docstatus",
+              ]}
+            />
+          </CardTable>
         </div>
       )}
       {/* Add Attendance Request button - Only show for mobile since desktop has Actions button */}

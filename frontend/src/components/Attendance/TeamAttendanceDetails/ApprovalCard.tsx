@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import Badge from "../../shared/Badge";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -21,6 +22,7 @@ const ApprovalCard = ({
   onAction,
   onClick,
 }: ApprovalCardProps) => {
+  const { isDesktop } = useScreenSize();
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -45,50 +47,54 @@ const ApprovalCard = ({
     }
     return styles;
   };
+  const formattedDate = data?.date
+    ? format(new Date(data.date), "dd/MM/yyyy")
+    : "--/--/----";
 
   return (
-    <div
-      className="cursor-pointer border border-gray-200 bg-white shadow-sm rounded-xl transition-shadow"
-      onClick={() => {
-        if (onClick) {
-          onClick(data);
-        }
-      }}
-    >
-      <div className="p-4 flex items-start gap-3 w-full">
-        <input
-          type="checkbox"
-          className="mt-1 accent-blue-500"
-          checked={isSelected}
-          onClick={(e) => e.stopPropagation()}
-          onChange={() => onToggleSelect?.(data?.name)}
-          disabled={isDisabled}
-        />
+    <>
+      {isDesktop ? (
+        <div
+          className="grid grid-cols-6 items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer "
+          onClick={() => onClick?.(data)}
+        >
+          {/* Checkbox */}
+          <div className="flex items-center justify-center">
+            <input
+              type="checkbox"
+              className="accent-blue-500"
+              checked={isSelected}
+              onClick={(e) => e.stopPropagation()}
+              onChange={() => onToggleSelect?.(data?.name)}
+              disabled={isDisabled}
+            />
+          </div>
 
-        <div className="w-full">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="font-semibold text-sm text-gray-800">
-                {data?.allocated_to}
-              </h3>
-              <p className="text-sm text-gray-500">
-                {format(new Date(data?.date), "dd/MM/yyyy")}
-              </p>
-            </div>
+          {/* Allocated To */}
+          <div className="truncate text-gray-900 font-medium text-sm text-center">
+            {data?.allocated_to}
+          </div>
+
+          {/* Date */}
+          <div className="text-gray-700 text-sm text-center">
+            {formattedDate}
+          </div>
+
+          {/* Description */}
+          <div className="text-gray-600 text-sm truncate text-center">
+            {data?.description}
+          </div>
+
+          {/* Status + Actions */}
+          <div className="flex items-center justify-center">
             <Badge
               label={data?.status}
               backgroundColor={"bg-yellow-100 text-yellow-600"}
             />
           </div>
-
-          <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-            <span className="font-semibold">Description:</span>{" "}
-            {data?.description}
-          </p>
-
-          <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+          <div className="flex w-full justify-center gap-2">
             {actions?.length &&
-              actions?.map((action: string) => (
+              actions.map((action: string) => (
                 <button
                   key={action}
                   onClick={(e) => {
@@ -96,15 +102,74 @@ const ApprovalCard = ({
                     e.stopPropagation();
                     onAction(action, data);
                   }}
-                  className={getActionStyles(action)}
+                  className={`${getActionStyles(action)} text-xs`}
                 >
                   {action}
                 </button>
               ))}
           </div>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div
+          className="cursor-pointer border border-gray-200 bg-white shadow-sm rounded-xl transition-shadow"
+          onClick={() => {
+            if (onClick) {
+              onClick(data);
+            }
+          }}
+        >
+          <div className="p-4 flex items-start gap-3 w-full">
+            <input
+              type="checkbox"
+              className="mt-1 accent-blue-500"
+              checked={isSelected}
+              onClick={(e) => e.stopPropagation()}
+              onChange={() => onToggleSelect?.(data?.name)}
+              disabled={isDisabled}
+            />
+
+            <div className="w-full">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-sm text-gray-800">
+                    {data?.allocated_to}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {format(new Date(data?.date), "dd/MM/yyyy")}
+                  </p>
+                </div>
+                <Badge
+                  label={data?.status}
+                  backgroundColor={"bg-yellow-100 text-yellow-600"}
+                />
+              </div>
+
+              <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                <span className="font-semibold">Description:</span>{" "}
+                {data?.description}
+              </p>
+
+              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+                {actions?.length &&
+                  actions?.map((action: string) => (
+                    <button
+                      key={action}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onAction(action, data);
+                      }}
+                      className={getActionStyles(action)}
+                    >
+                      {action}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

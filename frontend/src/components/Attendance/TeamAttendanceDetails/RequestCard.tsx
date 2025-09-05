@@ -1,6 +1,8 @@
 import { format } from "date-fns";
 import { RequestCardProps } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+
 export function RequestCard({
   request,
   onClick,
@@ -10,6 +12,7 @@ any & {
   onToggleSelect?: (id: string) => void;
   onClick?: (request: RequestCardProps["request"]) => void;
 }) {
+  const { isDesktop } = useScreenSize();
   const getStatus = (status: string) => {
     if (status === "Open") {
       return {
@@ -30,37 +33,59 @@ any & {
   };
 
   const status = getStatus(request?.status);
+  const formattedDate = request?.date
+    ? format(new Date(request.date), "dd/MM/yyyy")
+    : "--/--/----";
 
   return (
-    <div
-      className="cursor-pointer border border-gray-200 gap-3 bg-white shadow-sm transition-shadow rounded-xl"
-      onClick={() => onClick?.(request)}
-    >
-      <div className="p-4">
-        <div className="flex items-start gap-3 w-full">
-          <div className="w-full">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-sm text-gray-800">
-                  {request?.allocated_to}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  {format(new Date(request?.date), "dd/MM/yyyy") || "--:--"}
-                </p>
-              </div>
-              <Badge
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              />
-            </div>
-
-            <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-              <span className="font-semibold">Description:</span>{" "}
-              {request.description}
-            </p>
+    <>
+      {isDesktop ? (
+        <div
+          className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors text-center cursor-pointer border-b"
+          onClick={() => onClick?.(request)}
+        >
+          <div className="font-medium text-gray-900 truncate">
+            {request?.allocated_to}
+          </div>
+          <div className="text-gray-700 truncate">{request?.description}</div>
+          <div className="text-gray-600">{formattedDate}</div>
+          <div className="w-full flex justify-center">
+            <Badge
+              label={status?.label as string}
+              backgroundColor={status?.statusColor}
+            />
           </div>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div
+          className="block cursor-pointer border border-gray-200 gap-3 bg-white shadow-sm transition-shadow rounded-xl mx-2"
+          onClick={() => onClick?.(request)}
+        >
+          <div className="p-4">
+            <div className="flex items-start gap-3 w-full">
+              <div className="w-full">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-sm text-gray-800">
+                      {request?.allocated_to}
+                    </h3>
+                    <p className="text-sm text-gray-500">{formattedDate}</p>
+                  </div>
+                  <Badge
+                    label={status?.label as string}
+                    backgroundColor={status?.statusColor}
+                  />
+                </div>
+
+                <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                  <span className="font-semibold">Description:</span>{" "}
+                  {request.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

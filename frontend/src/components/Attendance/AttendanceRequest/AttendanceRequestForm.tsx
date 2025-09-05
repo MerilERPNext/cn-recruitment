@@ -256,12 +256,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             data: {
               values: [
-                reqValidationmutation?.data?.clockin_requests
-                  ? {
-                      label: "Clockin Request",
-                      value: "Clockin",
-                    }
-                  : "",
+                {
+                  label: "Clockin Request",
+                  value: "Clockin",
+                },
                 reqValidationmutation?.data?.out_duty_requests
                   ? {
                       label: "Out Duty Request",
