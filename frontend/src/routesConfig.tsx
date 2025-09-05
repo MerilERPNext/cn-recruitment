@@ -42,11 +42,8 @@ import TeamAttendanceDetails from "./components/Attendance/TeamAttendanceDetails
 import SalarySlipApp from "./components/SalarySlip/SalarySlipApp";
 import SalarySlipsList from "./components/SalarySlip/SalarySlipList";
 import ShiftChangeForm from "./components/ShiftRequest/AddRequestForm";
-import MyShiftAssignment from "./components/ShiftRequest/MyShiftAssignment";
 import ShiftRequestList from "./components/ShiftRequest/MyShiftList";
-import ShiftChangeRequest from "./components/ShiftRequest/ShiftChangeRequest";
 import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
-import TeamShift from "./components/ShiftRequest/TeamShift";
 import Policies from "./components/Policies";
 import PoliciesEnforced from "./components/PoliciesEnforced";
 import PolicySignOff from "./components/PolicySignOff";
@@ -68,10 +65,7 @@ import InitiateForm from "./components/ApprovalTracker/InitiateForm";
 import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
 import NotificationList from "./components/Notification/Notification";
 import OrganizationalChart from "./components/OrganizationalChart/OrganizationalChart";
-import AllShiftsDashboard from "./components/ShiftRequest/AllShiftsDashboard";
-import AllTeamShiftsList from "./components/ShiftRequest/AllTeamShiftsList";
-import AllMyShiftsList from "./components/ShiftRequest/AllMyShiftsList";
-import AllShiftChangeRequestsList from "./components/ShiftRequest/AllShiftChangeRequestsList";
+import { AllShiftsDashboardRoute, MyShiftsListRoute, TeamShiftsListRoute, ShiftChangeRequestsRoute } from "./components/ShiftRequest/ShiftDynamicRoute";
 
 export interface AppRoute {
   index?: boolean;
@@ -131,14 +125,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/shift-request",
     element: <ShiftRequestApp />,
     children: [
-      { path: "all-shifts-dashboard",element: <AllShiftsDashboard /> }, // <-- Add this line
-      { path: "all-team-shifts", element: <AllTeamShiftsList /> }, // <-- Add this line
-      { path: "all-my-shifts", element: <AllMyShiftsList /> }, // <-- Add this line
-      { path: "all-shift-change-request", element: <AllShiftChangeRequestsList /> }, // <-- Add this line
-      { path: "my-shift-assignment", element: <MyShiftAssignment /> },
-      { path: "team-shift", element: <TeamShift /> },
+      { path: "all-shifts-dashboard", element: <AllShiftsDashboardRoute /> },
+      { path: "my-shift-assignment", element: <MyShiftsListRoute /> },
+      { path: "team-shift", element: <TeamShiftsListRoute /> },
+      { path: "shift-change-request", element: <ShiftChangeRequestsRoute /> },
       { path: "shift-list", element: <ShiftRequestList /> },
-      { path: "shift-change-request", element: <ShiftChangeRequest /> },
     ],
   },
 

@@ -1,6 +1,3 @@
-
-// 222
-
 import React, { useMemo } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -340,7 +337,7 @@ const ApprovalRejectionQueue = ({ maxItems = 9 }: { maxItems?: number }) => {
             <CardHeader
                 title="Shift Change Request"
                 onSeeAll={() =>
-                    navigate("/webapp/shift-request/all-shift-change-request")
+                    navigate("/webapp/shift-request/shift-change-request")
                 }
             />
 
@@ -418,7 +415,7 @@ const TeamShiftList = ({ maxItems = 4 }: { maxItems?: number }) => {
         <Card>
             <CardHeader
                 title="Team Shift List"
-                onSeeAll={() => navigate("/webapp/shift-request/all-team-shifts")}
+                onSeeAll={() => navigate("/webapp/shift-request/team-shift")}
             />
 
             <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200">
@@ -463,7 +460,7 @@ const MyShifts = ({ maxItems = 4 }: { maxItems?: number }) => {
         <Card>
             <CardHeader
                 title="My Shifts"
-                onSeeAll={() => navigate("/webapp/shift-request/all-my-shifts")}
+                onSeeAll={() => navigate("/webapp/shift-request/my-shift-assignment")}
             />
 
             <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200">
