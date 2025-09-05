@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useScreenSize } from '../hooks/useScreenSize';
 import {
   LogOut,
-  Bell,
   ChevronDown,
   User
 } from 'lucide-react';
@@ -11,6 +10,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import defaultProfile from '../assets/face-rec.png';
 import CollapsibleSidebar from './shared/CollapsibleSidebar';
 import { useFrappeAuth } from 'frappe-react-sdk';
+import NotificationBell from './Notification/NotificationBell';
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -29,7 +29,6 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const { logout } = useFrappeAuth();
   const { data: currentUser } = useCurrentUser();
   // Force static badge count for UI demo
-  const unreadCount = 0;
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -145,12 +144,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
               onClick={handleNotificationClick}
               className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <Bell className="w-5 h-5 text-gray-600" />
-              {unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </div>
-              )}
+              <NotificationBell />
             </button>
             
             <div className="relative" ref={profileDropdownRef}>

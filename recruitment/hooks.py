@@ -22,6 +22,14 @@ add_to_apps_screen = [
 		"has_permission": "recruitment.recruitment.utils.check_app_permission",
 	}
 ]
+
+# on_session_creation = [
+#      "recruitment.www.custom_login.role_based_home_page"
+# ]
+# website user home page (by Role)
+role_home_page = {
+	"System User": "/webapp"
+}
 # include js, css files in header of web template
 # web_include_css = "/assets/recruitment/css/recruitment.css"
 # web_include_js = "/assets/recruitment/js/recruitment.js"
@@ -234,6 +242,7 @@ scheduler_events = {
 override_whitelisted_methods = {
     "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee",
     "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening": "recruitment.customizations.job_requisition.job_requisition.make_job_opening",
+   
 }
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",
