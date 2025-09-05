@@ -50,9 +50,9 @@ const AllShiftChangeRequestsList: React.FC = () => {
 
                 {/* Rows */}
                 <div className="divide-y divide-gray-200">
-                    {sortedData.map((item) => (
+                    {sortedData.map((item, index) => (
                         <div
-                            key={item.name}
+                            key={`${item.name}-${index}`}
                             className="grid grid-cols-6 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors"
                         >
                             <div className="font-medium text-gray-900 truncate text-center">

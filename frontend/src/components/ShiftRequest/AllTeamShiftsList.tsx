@@ -24,16 +24,16 @@ const AllTeamShiftsList: React.FC = () => {
             />
 
             {/* Table */}
-            <div className="overflow-x-auto mt-6 rounded-lg border border-gray-200 bg-white shadow-sm justify-center">
+            <div className="overflow-x-auto mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
                 {/* Header */}
-                <div className="grid grid-cols-5 gap-4 px-6 h-12 bg-gray-50 border border-gray-200">
+                <div className="grid grid-cols-5 gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200">
                     <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
                         EMPLOYEE
                     </span>
                     <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
                         SHIFT TYPE
                     </span>
-                    
+
                     <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
                         START DATE
                     </span>
@@ -47,9 +47,9 @@ const AllTeamShiftsList: React.FC = () => {
 
                 {/* Rows */}
                 <div className="divide-y divide-gray-200">
-                    {sortedData.map((item) => (
+                    {sortedData.map((item, index) => (
                         <div
-                            key={item.name}
+                            key={`${item.name}-${index}`}
                             className="grid grid-cols-5 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors text-center"
                         >
                             <div className="font-medium text-gray-900 truncate">
@@ -58,7 +58,7 @@ const AllTeamShiftsList: React.FC = () => {
                             <div className="text-gray-700 truncate">
                                 {item.shift_type}
                             </div>
-                            
+
                             <div className="text-gray-600">
                                 {item.start_date}
                             </div>

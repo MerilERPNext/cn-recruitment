@@ -161,7 +161,7 @@ export const approvalQueueData: ApprovalRequest[] = [
 ];
 
 export const teamShiftsData: TeamShift[] = [
-        {
+    {
         name: "HR-SHA-25-09-00137",
         employee: "1105742",
         employee_name: "Brittany Janet Foley",
@@ -224,7 +224,7 @@ export const teamShiftsData: TeamShift[] = [
 ];
 
 export const myShiftsData: MyShift[] = [
-        {
+    {
         name: "HR-SHA-25-09-00137",
         employee: "1105742",
         employee_name: "Brittany Janet Foley",
@@ -303,17 +303,17 @@ const Card = ({ children, className }: { children: React.ReactNode; className?: 
 );
 
 const CardHeader = ({ title, onSeeAll }: { title: string; onSeeAll: () => void }) => (
-  <div className="flex justify-between items-center mb-4">
-    <h2 className="font-semibold text-gray-800">{title}</h2>
-    <button
-      onClick={onSeeAll}
-      className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors"
-      title="See All"
-    >
-      <span>See All</span>
-      <ExternalLink size={18} />
-    </button>
-  </div>
+    <div className="flex justify-between items-center mb-4">
+        <h2 className="font-semibold text-gray-800">{title}</h2>
+        <button
+            onClick={onSeeAll}
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors"
+            title="See All"
+        >
+            <span>See All</span>
+            <ExternalLink size={18} />
+        </button>
+    </div>
 );
 
 
@@ -366,9 +366,9 @@ const ApprovalRejectionQueue = ({ maxItems = 9 }: { maxItems?: number }) => {
 
                 {/* Rows */}
                 <div className="divide-y divide-gray-200">
-                    {sortedData.slice(0, maxItems).map((item) => (
+                    {sortedData.slice(0, maxItems).map((item, index) => (
                         <div
-                            key={item.name}
+                            key={`${item.name}-${index}`}
                             className="grid grid-cols-6 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors"
                         >
                             <div className="font-medium text-gray-900 truncate">
@@ -419,9 +419,9 @@ const TeamShiftList = ({ maxItems = 4 }: { maxItems?: number }) => {
             />
 
             <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200">
-                {sortedData.slice(0, maxItems).map((item) => (
+                {sortedData.slice(0, maxItems).map((item, index) => (
                     <li
-                        key={item.name}
+                        key={`${item.name}-${index}`}
                         className="flex justify-between items-center px-4 py-3 hover:bg-gray-50 transition"
                     >
                         {/* Left section */}
@@ -464,9 +464,9 @@ const MyShifts = ({ maxItems = 4 }: { maxItems?: number }) => {
             />
 
             <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200">
-                {sortedData.slice(0, maxItems).map((item) => (
+                {sortedData.slice(0, maxItems).map((item, index) => (
                     <li
-                        key={item.name}
+                        key={`${item.name}-${index}`}
                         className="flex justify-between items-center px-4 py-3 hover:bg-gray-50 transition"
                     >
                         {/* Left section */}
