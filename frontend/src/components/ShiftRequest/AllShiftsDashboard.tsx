@@ -430,8 +430,8 @@ export default function AllShiftsDashboard() {
 <div className='border border-gray-200 rounded-lg'>
       <div className="overflow-x-auto bg-white shadow-sm">
         {/* Header */}
-        <div className="grid grid-cols-7 gap-4 text-xs px-6 h-12 bg-gray-50 border-b border-gray-200 rounded-t-lg">
-          <span className="font-semibold text-gray-500 flex items-center">
+        <div className="grid grid-cols-7 gap-4 text-[11px] px-6 h-12 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+          <span className="font-semibold  text-gray-500 flex items-center">
             SELECT
           </span>
           <span className="font-semibold text-gray-500 flex items-center">
