@@ -5,12 +5,12 @@ import LayoutHeader from "../../shared/LayoutHeader";
 import { useNavigate } from "react-router";
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "./ApprovalCard";
+import CardTable from "../../shared/CardTable";
 
 const AllPendingRequests = () => {
   const [selectedRequest, setSelectedRequest] =
     useState<AttendanceRequest | null>(null);
   const navigate = useNavigate();
-
   return (
     <div>
       <LayoutHeader
@@ -19,21 +19,32 @@ const AllPendingRequests = () => {
           navigate(-1);
         }}
       />
-      <div>
-        <ApprovalList
-          doctype={"Attendance Request"}
-          pageSize={5}
-          renderCardContent={(item) => (
-            <ApprovalCard
-              isSelected={item?.isSelected}
-              onToggleSelect={item?.onToggleSelect}
-              data={item?.data}
-              onAction={item?.onAction}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onClick={(request: any) => setSelectedRequest(request)}
-            />
-          )}
-        />
+      <div className="p-2">
+        <CardTable
+          titles={[
+            "Select",
+            "Allocated To",
+            "Description",
+            "Date",
+            "Status",
+            "Actions",
+          ]}
+        >
+          <ApprovalList
+            doctype={"Attendance Request"}
+            pageSize={5}
+            renderCardContent={(item) => (
+              <ApprovalCard
+                isSelected={item?.isSelected}
+                onToggleSelect={item?.onToggleSelect}
+                data={item?.data}
+                onAction={item?.onAction}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onClick={(request: any) => setSelectedRequest(request)}
+              />
+            )}
+          />
+        </CardTable>
       </div>
       {selectedRequest && (
         <AttendanceDetailView
