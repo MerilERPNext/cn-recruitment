@@ -46,14 +46,7 @@ const AttendanceRequest = () => {
       ) : (
         <div className="bg-white h-screen px-4 pt-2">
           <CardTable
-            titles={[
-              "Select",
-              "Allocated To",
-              "Description",
-              "Date",
-              "Status",
-              "Actions",
-            ]}
+            titles={["Request Type", "From Date", "To Date", "Status"]}
           >
             <FrappeListView
               doctype="Attendance Request"

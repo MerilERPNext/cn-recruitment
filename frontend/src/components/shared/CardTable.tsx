@@ -13,7 +13,7 @@ const CardTable = ({
     <div
       className={
         isDesktop
-          ? `overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm p:2`
+          ? `overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm`
           : ""
       }
     >

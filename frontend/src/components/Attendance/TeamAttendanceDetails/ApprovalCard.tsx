@@ -75,14 +75,13 @@ const ApprovalCard = ({
             {data?.allocated_to}
           </div>
 
-          {/* Date */}
-          <div className="text-gray-700 text-sm text-center">
-            {formattedDate}
-          </div>
-
           {/* Description */}
           <div className="text-gray-600 text-sm truncate text-center">
             {data?.description}
+          </div>
+          {/* Date */}
+          <div className="text-gray-700 text-sm text-center">
+            {formattedDate}
           </div>
 
           {/* Status + Actions */}
