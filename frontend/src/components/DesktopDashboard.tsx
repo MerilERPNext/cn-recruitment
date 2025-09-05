@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Bell,
   CheckCircle,
   User,
   XCircle,
@@ -50,6 +49,7 @@ import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import { useFrappeAuth } from "frappe-react-sdk";
+import NotificationBell from "./Notification/NotificationBell";
 
 const statusStyles = {
   unpaid: {
@@ -92,7 +92,8 @@ const statusStyles = {
 
 const DesktopDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { logout } = useFrappeAuth();
+  const { logout } = useFrappeAuth(); // ✅ SDK ka hook
+
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -105,24 +106,24 @@ const DesktopDashboard: React.FC = () => {
         const coords = await getDeviceLocation();
         setLocation(coords);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     }
 
     fetchLocation();
   }, []);
-// logout logic
-const logoutHandler = async () => {
-  try {
-    await logout();
-    // Full reload karne ke liye
-    window.location.href = "/login";
-    // ya
-    // window.location.replace("/login#login");
-  } catch (error) {
-    console.error("Logout failed:", error);
-  }
-};
+
+  // ✅ Logout logic — ab sirf useFrappeAuth wala
+  const logoutHandler = async () => {
+    try {
+      await logout();
+      // navigate("/login", { replace: true });
+      // agar aapko Frappe ka login page dikhana hai to:
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   // Update current time every minute for real-time progress calculation
   useEffect(() => {
@@ -154,7 +155,7 @@ const logoutHandler = async () => {
   }, [showProfileDropdown]);
 
   // Static value to ensure badge is visible in UI
-  const unreadCount = 21;
+
   const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
   // Get current user data
   const { data: currentUser } = useCurrentUser();
@@ -436,12 +437,7 @@ const logoutHandler = async () => {
 
           <div className="flex items-center gap-4">
             <button onClick={() => navigate('/webapp/notification-log')} className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <Bell className="w-5 h-5 text-gray-600" />
-              {unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </div>
-              )}
+            <NotificationBell />
             </button>
 
             <div className="relative" ref={profileDropdownRef}>

@@ -11,6 +11,7 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useMarkAsRead } from "../../hooks/useNotificationLog";
 import HeaderBar from "../HeaderBar";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { useNavigate } from "react-router";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -27,10 +28,11 @@ interface NotificationLog {
 const NotificationList = () => {
   const { isDesktop } = useScreenSize();
   const [activeTab, setActiveTab] = useState<"all" | "read" | "unread">("all");
+  const navigate = useNavigate()
 
   const layout = (
     <div className="flex flex-col h-full">
-      <HeaderBar title="Notification Log" />
+      <HeaderBar title="Notification Log" onBack={() => navigate(-1)} />
 
       {/* Tabs */}
       <div className="flex border-b">

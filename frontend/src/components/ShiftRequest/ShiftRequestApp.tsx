@@ -128,7 +128,7 @@ const ShiftRequestApp: React.FC = () => {
     <DesktopLayoutWrapper title="Shifts" actionButton={actionButton}>
       <div className="flex flex-col h-full">
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto">
           <Outlet />
         </div>
          {/* Shift Request Modal for Desktop */}

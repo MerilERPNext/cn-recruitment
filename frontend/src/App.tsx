@@ -19,7 +19,8 @@ import "./utils/FormioOverrides";
 import { GlobalStoreProvider } from "./context/GlobalStoreContext";
 
 const App: React.FC = () => {
-  const { currentUser, isLoading, isValidating } = useFrappeAuth();
+const { currentUser, isLoading, isValidating } = useFrappeAuth();
+
 
   const renderRoutes = (routes: AppRoute[]) =>
     routes.map(({ path, element, children, index }, idx) =>
@@ -32,6 +33,7 @@ const App: React.FC = () => {
       )
     );
 
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,6 +42,7 @@ const App: React.FC = () => {
       navigate("/#login", { replace: true }); // prevents back button loop
     }
   }, [currentUser, isLoading, isValidating, navigate]);
+
 
   return (
     <QueryProvider>
