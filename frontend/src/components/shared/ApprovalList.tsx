@@ -16,6 +16,7 @@ type ApprovalListProps = {
     data,
     onAction,
   }: {
+    onClick: unknown;
     todoId: string;
     isSelected: boolean;
     onToggleSelect: (id: string) => void;
@@ -165,7 +166,7 @@ const ApprovalList = ({
         pageSize={pageSize}
         onDataLoad={(data) => setAllRequests(data)}
         PreListComponent={() => (
-          <div className="mb-2 p-2">
+          <div className="mt-[-10px]">
             <BulkActionBar
               selectedIds={selectedIds}
               pendingRequests={allRequests}

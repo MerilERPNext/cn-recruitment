@@ -4,7 +4,7 @@ import { Form } from "@tsed/react-formio";
 import { toast } from "react-hot-toast";
 
 import { useShiftTypes, useCreateShiftRequest } from "../../hooks/useShift";
-import { useCurrentEmployee } from "../../hooks/useEmployee"; 
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 import type { ShiftRequestFormData, FormioSubmission } from "../../types/shift";
 
@@ -20,7 +20,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({ onClose }
   const { data: employeeDetails, isLoading: employeeLoading, error: employeeError } = useCurrentEmployee();
 
   const isLoading = shiftTypesLoading || employeeLoading;
-  const error = shiftTypesError || employeeError; 
+  const error = shiftTypesError || employeeError;
 
   const handleSubmit = async () => {
     if (!formRef.current) {
@@ -233,8 +233,9 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({ onClose }
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <Form
             form={formSchema}
-            ref={formRef}
-            options={{
+            onFormReady={(instance: any) => {
+              formRef.current = instance;
+            }} options={{
               builder: { styles: false },
               submitButton: false,
               formClass: "space-y-6",

@@ -17,7 +17,6 @@ export function AttendanceDetailView({
   const mutation = useApprovalListActions();
 
   const handleAction = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (action: string) => {
       try {
         if (mutation?.isPending) return;
