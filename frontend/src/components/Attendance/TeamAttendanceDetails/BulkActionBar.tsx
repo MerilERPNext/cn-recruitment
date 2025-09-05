@@ -11,7 +11,7 @@ export function BulkActionBar({
   const allSelected = selectedIds.length === pendingRequests.length;
 
   return (
-    <div className="p-2 px-6 bg-blue-50 rounded-xl lg:rounded-none">
+    <div className="p-2 px-4 bg-blue-50 rounded-xl lg:rounded-none">
 
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">

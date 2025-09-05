@@ -21,13 +21,13 @@ const AllShiftChangeRequestsList: React.FC = () => {
                 {/* Header */}
                 <div className="grid grid-cols-7  gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200">
                 <span className="font-semibold text-xs text-gray-500 flex items-center">
-            SELECT
-          </span>
+                   SELECT
+                  </span>
                     <span className="text-xs font-bold text-gray-500 flex items-center justify-start">
                         EMPLOYEE NAME
                     </span>
                     <span className="text-xs font-bold text-gray-500 flex items-center justify-start">
-                        SHIFT TYPE
+                       CREATION DATE
                     </span>
                     <span className="text-xs font-bold text-gray-500 flex items-center justify-start">
                         STATUS

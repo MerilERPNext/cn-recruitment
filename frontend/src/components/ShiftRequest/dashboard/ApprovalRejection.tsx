@@ -32,7 +32,6 @@ const ApprovalRejectionQueue = ({
   onAction,
   onClick,
 }: ApprovalRejectionQueueProps) => {
-    console.log(data,"============================================");
   if (!data) return null;
 
 
@@ -62,7 +61,7 @@ const ApprovalRejectionQueue = ({
 
   return (
     <div
-      className="grid grid-cols-7 border border-gray-200 boder-b-none gap-4 w-full items-center px-4 h-14 hover:bg-gray-50 transition-colors cursor-pointer"
+      className="grid grid-cols-7 border-b border-gray-200 gap-4 w-full items-center px-4 h-14 hover:bg-gray-50 transition-colors cursor-pointer"
       onClick={() => onClick?.(data)}
     >
       <div className="w-full ">
@@ -75,10 +74,10 @@ const ApprovalRejectionQueue = ({
         />
       </div>
       <div className="font-medium  text-gray-900 text-xs truncate">
-        {data.employee_name || "--"}
+        {data.name || "--"}
       </div>
       <div className="text-gray-700 text-xs truncate">
-        {data.creation || "--"}
+        {data.creation ? data.creation.split(" ")[0] : "--"}
       </div>
       <div>
         <StatusBadge status={data.status} />
@@ -91,7 +90,7 @@ const ApprovalRejectionQueue = ({
           ? format(new Date(data.date), "dd/MM/yyyy")
           : "--"}
       </div>
-      <div className="flex justify-start items-center space-x-2">
+      <div className="flex justify-start items-center ml-[-10px] gap-1">
         {actions.map((action) => (
           <button
             key={action}
