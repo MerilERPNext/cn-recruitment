@@ -16,7 +16,6 @@ import {
   Clock,
   Users,
   CheckCircle,
-  PlusCircle
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 

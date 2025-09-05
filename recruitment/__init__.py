@@ -6,8 +6,6 @@ from hrms.controllers.employee_boarding_controller import EmployeeBoardingContro
 from frappe import _
 from frappe.model.document import Document
 import frappe
-from frappe.www.login import get_context
-from recruitment.www.custom_login import get_context
 class CustomEmployeeBoardingController(Document):
 
     def on_submit(self):
@@ -39,4 +37,3 @@ class CustomEmployeeBoardingController(Document):
         self.create_task_and_notify_user()
 
 EmployeeBoardingController.on_submit = CustomEmployeeBoardingController.on_submit
-login.get_context = get_context

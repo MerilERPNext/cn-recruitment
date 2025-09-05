@@ -1,139 +1,32 @@
-from urllib.parse import urlparse
 
 import frappe
-from frappe import _, cint
-from frappe.apps import get_default_path
-from frappe.core.doctype.navbar_settings.navbar_settings import get_app_logo
-from frappe.utils.data import escape_html
-from frappe.utils.html_utils import get_icon_html
-from frappe.utils.jinja import guess_is_path
-from frappe.utils.oauth import get_oauth2_authorize_url, get_oauth_keys
-from frappe.utils.password import get_decrypted_password
-from frappe.website.utils import get_home_page
-from frappe.www.login import sanitize_redirect
+from frappe.model.document import Document
 
 
-def get_context(context):
-	from frappe.integrations.frappe_providers.frappecloud_billing import get_site_login_url
-	from frappe.utils.frappecloud import on_frappecloud
+STANDARD_ROLES = ("")
 
-	redirect_to = frappe.local.request.args.get("redirect-to")
-	redirect_to = sanitize_redirect(redirect_to)
-
-	if frappe.session.user != "Guest":
-		if frappe.session.user != "Administrator":
-			employee = frappe.db.exists("Employee", {"user_id": frappe.session.user})
-			print(123, employee,"=====================================================================")
-			if employee:
-				# Employee user
-				redirect_to = "/webapp"
-		elif not redirect_to:
-			# Check if user is a website user
-			if frappe.session.data.user_type == "Website User":
-				redirect_to = get_default_path() or get_home_page()
-			else:
-				# Check if user is an Employee
-				if frappe.session.user != "Administrator":
-					employee = frappe.db.exists("Employee", {"user_id": frappe.session.user})
-					print(123, employee,"=====================================================================")
-					if employee:
-						# Employee user
-						redirect_to = "/webapp"
-					employee_default = frappe.db.get_value(
-						"Employee", {"user_id": frappe.session.user}, "default_webapp"
-					)
-					if employee_default:
-						redirect_to = employee_default
-					else:
-						# fallback for employees without default_webapp
-						redirect_to = get_default_path() or "/app"
-				else:
-					# Admin user
-					redirect_to = get_default_path() or "/app"
-
-		# Perform redirect if not login page
-		if redirect_to != "login":
-			frappe.local.flags.redirect_location = redirect_to
-			raise frappe.Redirect
+class Role(Document):
+     def disable_role(self):
+         if self.name in STANDARD_ROLES:
+             frappe.throw(frappe._("Standard roles cannot be disabled"))
+         else:
+             self.remove_roles()
 
 
-	# context settings
-	context.no_header = True
-	context.for_test = "login.html"
-	context["title"] = "Login"
-	context["hide_login"] = True
-	context["provider_logins"] = []
-	context["disable_signup"] = cint(frappe.get_website_settings("disable_signup"))
-	context["show_footer_on_login"] = cint(frappe.get_website_settings("show_footer_on_login"))
-	context["disable_user_pass_login"] = cint(frappe.get_system_settings("disable_user_pass_login"))
-	context["logo"] = get_app_logo()
-	context["app_name"] = (
-		frappe.get_website_settings("app_name")
-		or frappe.get_system_settings("app_name")
-		or _("Frappe")
-	)
 
-	# signup form
-	signup_form_template = frappe.get_hooks("signup_form_template")
-	if signup_form_template and len(signup_form_template):
-		path = signup_form_template[-1]
-		if not guess_is_path(path):
-			path = frappe.get_attr(signup_form_template[-1])()
-	else:
-		path = "frappe/templates/signup.html"
+def role_based_home_page():
+     frappe.clear_cache()
 
-	if path:
-		context["signup_form_template"] = frappe.get_template(path).render()
+     user = frappe.session.user
+     roles = frappe.get_roles(user)
 
-	# social login providers
-	providers = frappe.get_all(
-		"Social Login Key",
-		filters={"enable_social_login": 1},
-		fields=["name", "client_id", "base_url", "provider_name", "icon"],
-		order_by="name",
-	)
+     role_home_pages = {
+         "System User": "/app/recruitment",
+     }
 
-	for provider in providers:
-		client_secret = get_decrypted_password("Social Login Key", provider.name, "client_secret")
-		if not client_secret:
-			continue
+     for role in roles:
+         if role in role_home_pages:
+             print("\n\n\n homepageee",role_home_pages[role])
+             return role_home_pages[role]
 
-		icon = None
-		if provider.icon:
-			if provider.provider_name == "Custom":
-				icon = get_icon_html(provider.icon, small=True)
-			else:
-				icon = f"<img src={escape_html(provider.icon)!r} alt={escape_html(provider.provider_name)!r}>"
-
-		if provider.client_id and provider.base_url and get_oauth_keys(provider.name):
-			context.provider_logins.append(
-				{
-					"name": provider.name,
-					"provider_name": provider.provider_name,
-					"auth_url": get_oauth2_authorize_url(provider.name, redirect_to),
-					"icon": icon,
-				}
-			)
-			context["social_login"] = True
-
-	# LDAP
-	if cint(frappe.db.get_value("LDAP Settings", "LDAP Settings", "enabled")):
-		from frappe.integrations.doctype.ldap_settings.ldap_settings import LDAPSettings
-		context["ldap_settings"] = LDAPSettings.get_ldap_client_settings()
-
-	# login labels
-	login_label = [_("Email")]
-	if frappe.utils.cint(frappe.get_system_settings("allow_login_using_mobile_number")):
-		login_label.append(_("Mobile"))
-	if frappe.utils.cint(frappe.get_system_settings("allow_login_using_user_name")):
-		login_label.append(_("Username"))
-
-	context["login_label"] = f" {_('or')} ".join(login_label)
-	context["login_with_email_link"] = frappe.get_system_settings("login_with_email_link")
-	context["login_with_frappe_cloud_url"] = (
-		f"{get_site_login_url()}?site={frappe.local.site}"
-		if on_frappecloud() and frappe.conf.get("fc_communication_secret")
-		else None
-	)
-
-	return context
+     return "/app"

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useMemo } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -160,6 +161,7 @@ export const approvalQueueData: ApprovalRequest[] = [
     },
 ];
 
+
 export const teamShiftsData: TeamShift[] = [
     {
         name: "HR-SHA-25-09-00137",
@@ -222,6 +224,7 @@ export const teamShiftsData: TeamShift[] = [
         modified: "2025-09-03 15:00:43.559538",
     },
 ];
+
 
 export const myShiftsData: MyShift[] = [
     {
@@ -288,7 +291,7 @@ export const myShiftsData: MyShift[] = [
 
 // --- HELPER COMPONENTS ---
 export const StatusBadge = ({ status }: { status: string }) => {
-    const baseStyle = 'px-3 py-1 rounded-2xl font-medium text-sm inline-block';
+    const baseStyle = 'px-2 py-1 rounded-2xl  text-xs inline-block';
     const statusStyles: { [key: string]: string } = {
         'Approved': 'bg-green-100 text-green-800',
         'Pending': 'bg-yellow-100 text-yellow-800',
@@ -343,7 +346,7 @@ const ApprovalRejectionQueue = ({ maxItems = 9 }: { maxItems?: number }) => {
 
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
                 {/* Header */}
-                <div className="grid grid-cols-6 gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+                <div className="grid grid-cols-6 gap-4 text-xs px-6 h-12 bg-gray-50 border-b border-gray-200 rounded-t-lg">
                     <span className="font-semibold text-gray-500 flex items-center">
                         EMPLOYEE
                     </span>
@@ -371,22 +374,22 @@ const ApprovalRejectionQueue = ({ maxItems = 9 }: { maxItems?: number }) => {
                             key={`${item.name}-${index}`}
                             className="grid grid-cols-6 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors"
                         >
-                            <div className="font-medium text-gray-900 truncate">
+                            <div className="font-medium text-gray-900 text-xs truncate">
                                 {item.employee_name}
                             </div>
-                            <div className="text-gray-700 truncate">
+                            <div className="text-gray-700 text-xs truncate">
                                 {item.shift_type}
                             </div>
                             <div>
                                 <StatusBadge status={item.status} />
                             </div>
-                            <div className="text-gray-600">{item.from_date}</div>
-                            <div className="text-gray-600">{item.to_date}</div>
+                            <div className="text-gray-600 text-xs">{item.from_date}</div>
+                            <div className="text-gray-600 text-xs">{item.to_date}</div>
                             <div className="flex justify-end items-center space-x-2">
-                                <button className="px-3 py-1.5 font-medium rounded-lg text-green-600 bg-green-100 hover:bg-green-200 transition">
+                                <button className="px-2 py-1 text-xs font-medium rounded-lg text-green-600 bg-green-100 hover:bg-green-200 transition">
                                     Approve
                                 </button>
-                                <button className="px-3 py-1.5 font-medium rounded-lg text-red-600 bg-red-100 hover:bg-red-200 transition">
+                                <button className="px-2 py-1 font-medium text-xs rounded-lg text-red-600 bg-red-100 hover:bg-red-200 transition">
                                     Reject
                                 </button>
                             </div>
@@ -418,19 +421,19 @@ const TeamShiftList = ({ maxItems = 4 }: { maxItems?: number }) => {
                 onSeeAll={() => navigate("/webapp/shift-request/team-shift")}
             />
 
-            <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200">
+            <ul className="">
                 {sortedData.slice(0, maxItems).map((item, index) => (
                     <li
                         key={`${item.name}-${index}`}
-                        className="flex justify-between items-center px-4 py-3 hover:bg-gray-50 transition"
+                        className="flex justify-between border border-gray-200 rounded-lg mb-2 bg-gray-50 items-center px-4 py-3 hover:bg-gray-50 transition"
                     >
                         {/* Left section */}
                         <div>
-                            <p className="font-medium text-gray-900">
+                            <p className=" text-xs font-semibold text-gray-900">
                                 {item.employee_name}
                             </p>
-                            <p className="text-gray-600">
-                                {item.start_date} → {item.end_date}
+                            <p className="text-gray-500 text-xs">
+                                {item.start_date} - {item.end_date}
                             </p>
                         </div>
 
@@ -463,19 +466,19 @@ const MyShifts = ({ maxItems = 4 }: { maxItems?: number }) => {
                 onSeeAll={() => navigate("/webapp/shift-request/my-shift-assignment")}
             />
 
-            <ul className="border border-gray-200 rounded-lg divide-y divide-gray-200">
+            <ul className="">
                 {sortedData.slice(0, maxItems).map((item, index) => (
                     <li
                         key={`${item.name}-${index}`}
-                        className="flex justify-between items-center px-4 py-3 hover:bg-gray-50 transition"
+                        className="flex justify-between mb-2 bg-gray-50 items-center rounded-lg border border-gray-200 px-4 py-3 hover:bg-gray-50 transition"
                     >
                         {/* Left section */}
                         <div>
-                            <p className="font-medium text-gray-900">
+                            {/* <p className="font-semibold text-gray-900">
                                 {item.shift_type}
-                            </p>
-                            <p className="text-gray-600">
-                                {item.start_date} → {item.end_date}
+                            </p> */}
+                            <p className="text-gray-600 font-semibold text-xs">
+                                {item.start_date} - {item.end_date}
                             </p>
                         </div>
 

@@ -19,7 +19,7 @@ import "./utils/FormioOverrides";
 import { GlobalStoreProvider } from "./context/GlobalStoreContext";
 
 const App: React.FC = () => {
-  const { currentUser, isLoading} = useFrappeAuth();
+const { currentUser, isLoading, isValidating } = useFrappeAuth();
 
 
   const renderRoutes = (routes: AppRoute[]) =>

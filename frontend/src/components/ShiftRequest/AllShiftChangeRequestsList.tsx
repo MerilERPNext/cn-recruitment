@@ -27,23 +27,23 @@ const AllShiftChangeRequestsList: React.FC = () => {
             {/* Table */}
             <div className="overflow-x-auto mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
                 {/* Header */}
-                <div className="grid grid-cols-6 gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200">
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
-                        EMPLOYEE
+                <div className="grid grid-cols-7  gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200">
+                    <span className="text-xs font-bold text-gray-500 flex items-center justify-start">
+                        EMPLOYEE NAME
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="text-xs font-bold text-gray-500 flex items-center justify-center">
                         SHIFT TYPE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="text-xs font-bold text-gray-500 flex items-center justify-center">
                         STATUS
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="text-xs font-bold text-gray-500 flex items-center justify-center">
                         START DATE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="text-xs font-bold text-gray-500 flex items-center justify-center">
                         END DATE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="text-xs font-bold text-gray-500 flex items-center justify-center">
                         ACTIONS
                     </span>
                 </div>
@@ -55,7 +55,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
                             key={`${item.name}-${index}`}
                             className="grid grid-cols-6 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors"
                         >
-                            <div className="font-medium text-gray-900 truncate text-center">
+                            <div className="font-semibold text-xs text-gray-900 truncate text-start">
                                 {item.employee_name}
                             </div>
                             <div className="text-gray-700 truncate text-center">
