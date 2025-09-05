@@ -42,22 +42,22 @@ const EmpAttendanceRequestCard = ({
       {isDesktop ? (
         <div className="grid grid-cols-4 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
           {/* Request Type */}
-          <div className="text-sm font-medium text-gray-700 text-center truncate">
+          <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.custom_request_type}
           </div>
 
           {/* From Date */}
-          <div className="text-sm text-gray-900 text-center">
+          <div className="text-sm text-gray-900 text-start">
             {formattedFromDate}
           </div>
 
           {/* To Date */}
-          <div className="text-sm text-gray-900 text-center">
+          <div className="text-sm text-gray-900 text-start">
             {formattedToDate}
           </div>
 
           {/* Status */}
-          <div className="flex justify-center">
+          <div className="flex justify-start">
             <Badge
               backgroundColor={status?.statusColor}
               label={status?.label || ""}

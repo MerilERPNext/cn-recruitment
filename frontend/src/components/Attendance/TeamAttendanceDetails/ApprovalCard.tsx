@@ -59,7 +59,7 @@ const ApprovalCard = ({
           onClick={() => onClick?.(data)}
         >
           {/* Checkbox */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-start">
             <input
               type="checkbox"
               className="accent-blue-500"
@@ -71,27 +71,27 @@ const ApprovalCard = ({
           </div>
 
           {/* Allocated To */}
-          <div className="truncate text-gray-900 font-medium text-sm text-center">
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
             {data?.allocated_to}
           </div>
 
           {/* Description */}
-          <div className="text-gray-600 text-sm truncate text-center">
+          <div className="text-gray-600 text-sm truncate text-start">
             {data?.description}
           </div>
           {/* Date */}
-          <div className="text-gray-700 text-sm text-center">
+          <div className="text-gray-700 text-sm text-start">
             {formattedDate}
           </div>
 
           {/* Status + Actions */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-start">
             <Badge
               label={data?.status}
               backgroundColor={"bg-yellow-100 text-yellow-600"}
             />
           </div>
-          <div className="flex w-full justify-center gap-2">
+          <div className="flex w-full justify-start gap-2">
             {actions?.length &&
               actions.map((action: string) => (
                 <button

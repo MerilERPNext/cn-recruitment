@@ -165,7 +165,7 @@ const ApprovalList = ({
         pageSize={pageSize}
         onDataLoad={(data) => setAllRequests(data)}
         PreListComponent={() => (
-          <div className="mb-2 p-2">
+          <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
             <BulkActionBar
               selectedIds={selectedIds}
               pendingRequests={allRequests}
