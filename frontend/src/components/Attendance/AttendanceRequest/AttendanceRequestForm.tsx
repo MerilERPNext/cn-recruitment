@@ -4,6 +4,7 @@ import "formiojs/dist/formio.full.css";
 import {
   useCreateNewAttendanceRequest,
   useGetEmployeeShift,
+  useReqValidationsForAttendanceRequest,
 } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import {
@@ -16,6 +17,7 @@ import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 import { X } from "lucide-react";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -55,6 +57,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
 }) => {
+  const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [formData, setFormData] = useState<AttendanceFormData>();
   const [isForOthers, setIsForOthers] = useState(false);
@@ -66,6 +69,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedRequestType, setSelectedRequestType] = useState<string>("");
+
   const { data: reasonList } = useGetAllReasons(selectedRequestType);
   const employeeIdToShow = isForOthers
     ? selectedEmployee
@@ -110,6 +114,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   );
 
   const mutation = useCreateNewAttendanceRequest();
+  const reqValidationmutation = useReqValidationsForAttendanceRequest(
+    currentEmployee?.employee as string
+  );
 
   const handleFromDateChange = (event: { data: AttendanceFormData }) => {
     const formInstance = formAddressInstance.current;
@@ -249,17 +256,36 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             data: {
               values: [
-                { label: "Clockin Request", value: "Clockin" },
-                { label: "Out Duty Request", value: "Out Duty" },
-                {
-                  label: "Short Attendance Request",
-                  value: "Short Attendance Request",
-                },
-                {
-                  label: "Attendance Adjustment",
-                  value: "Attendance Adjustment",
-                },
-                { label: "Shift Change Request", value: "Shift Change" },
+                reqValidationmutation?.data?.clockin_requests
+                  ? {
+                      label: "Clockin Request",
+                      value: "Clockin",
+                    }
+                  : "",
+                reqValidationmutation?.data?.out_duty_requests
+                  ? {
+                      label: "Out Duty Request",
+                      value: "Out Duty",
+                    }
+                  : "",
+                reqValidationmutation?.data?.short_leave_requests
+                  ? {
+                      label: "Short Attendance Request",
+                      value: "Short Attendance Request",
+                    }
+                  : "",
+                reqValidationmutation?.data?.attendance_adjustment_requests
+                  ? {
+                      label: "Attendance Adjustment",
+                      value: "Attendance Adjustment",
+                    }
+                  : "",
+                reqValidationmutation?.data?.shift_change_requests
+                  ? {
+                      label: "Shift Change Request",
+                      value: "Shift Change",
+                    }
+                  : "",
               ],
             },
           },
@@ -303,6 +329,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "dd-mm-yyyy",
             customClass: "mb-4",
             enableTime: false,
+            disabled: selectedRequestType === "Short Attendance Request",
+
             validate: { required: true },
             defaultValue: selectedDate,
             customConditional:
@@ -471,6 +499,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       currentEmployee,
       reasonList,
       selectedRequestType,
+      reqValidationmutation,
     ]
   );
 
@@ -562,14 +591,16 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     mutation.mutate(requestBody as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
+        setRefetchAttendance(true);
         toast.success("Added Attendance Request successfully!");
       },
       onError: (error: CustomError) => {
-        const errorMessage = error?.response?.data?.exception
-          ?.split(":")
-          .slice(1)
-          .join(":")
-          .trim();
+        const errorMessage =
+          error?.response?.data?.exception
+            ?.split(":")
+            .slice(1)
+            .join(":")
+            .trim() || "Something went wrong!!";
         toast.error(errorMessage as string);
         console.error(error);
       },

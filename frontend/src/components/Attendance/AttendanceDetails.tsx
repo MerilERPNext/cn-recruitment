@@ -1,59 +1,90 @@
-import { Check, X } from "lucide-react";
+import { X } from "lucide-react";
 import Avatar from "../shared/Avatar";
-import { AttendanceRequest } from "../../types/attendance";
 import { format } from "date-fns";
-import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
-import { useState } from "react";
-import toast from "react-hot-toast";
-import { formatTimeSafe } from "../../utils/helperUtils";
+import { useCallback } from "react";
+import { useApprovalListActions } from "../../hooks/userApprovalList";
 
 export function AttendanceDetailView({
   data,
   onClose,
   onAction,
 }: {
-  data: AttendanceRequest;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
   onClose: () => void;
   onAction?: () => void;
 }) {
-  const mutation = useActionOnAttendanceRequest();
+  const mutation = useApprovalListActions();
 
-  const [currentAction, setCurrentAction] = useState<
-    "Approve" | "Reject" | null
-  >(null);
+  const handleAction = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (action: string) => {
+      try {
+        if (mutation?.isPending) return;
+        const response = await mutation?.mutateAsync({
+          action,
+          name: data?.name || "",
+        });
 
-  const handleAction = (
-    action: "Approve" | "Reject",
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentAction(action);
-    mutation.mutate(
-      {
-        todo_ids: data.todo_id,
-        selected_action: action,
-      },
-      {
-        onSettled: () => {
-          setCurrentAction(null);
-        },
+        console.log("Action response:", response);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const responseWithSession = response as unknown as { session?: any };
+        console.log("Session data:", responseWithSession?.session);
+        console.log(
+          "Assistant trigger enabled:",
+          data?.custom_open_chatnext_assistant_on_action
+        );
 
-        onSuccess: () => {
-          if (onAction) {
-            onAction();
-          }
-          toast.success(
-            `Attendance request ${action.toLowerCase()}d successfully!`
+        if (
+          (data?.custom_approval_type === "Approval Matrix" &&
+            responseWithSession?.session) ||
+          (data?.custom_approval_type === "Multi Actions" &&
+            data?.custom_open_chatnext_assistant_on_action)
+        ) {
+          console.log(
+            "Opening assistant with session:",
+            responseWithSession?.session
           );
-        },
-
-        onError: (error) => {
-          toast.error(error?.message);
-          console.error(error);
-        },
+          if (window.trigger_chatnext_assistant) {
+            window.trigger_chatnext_assistant(
+              true,
+              responseWithSession?.session
+            );
+          }
+        }
+        if (onAction) {
+          onAction();
+        }
+      } catch (error) {
+        console.error("Action failed", error);
       }
-    );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+  const actions = data?.custom_doctype_actions
+    ? JSON.parse(data?.custom_doctype_actions)
+    : [];
+
+  const getActionStyles = (action: string) => {
+    const parsedAction = action.toLowerCase().trim();
+    let styles = "";
+    switch (parsedAction) {
+      case "approve":
+        styles =
+          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        break;
+      case "reject":
+        styles =
+          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed";
+
+        break;
+      default:
+        styles =
+          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-gray-100 text-gray-600 text-sm hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        break;
+    }
+    return styles;
   };
 
   return data?.name ? (
@@ -86,130 +117,41 @@ export function AttendanceDetailView({
           {/* Employee Info */}
           <div className="py-4 border-b">
             <div className="flex items-center space-x-3">
-              <Avatar name={data?.employee_name} />
+              <Avatar name={data?.allocated_to} />
               <div>
                 <h2 className="font-semibold text-gray-900">
-                  {data?.employee_name}
+                  {data?.allocated_to}
                 </h2>
-                <p className="text-sm text-gray-500">{data?.department}</p>
-              </div>
+                {format(new Date(data?.date), "dd/MM/yyyy")}
+              </div>{" "}
             </div>
           </div>
-
-          {/* Date */}
-          <div className="py-4 border-b">
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">From Date</p>
-                <p className="font-medium">
-                  {format(new Date(data?.from_date), "dd/MM/yyyy")}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">To Date</p>
-                <p className="font-medium">
-                  {format(new Date(data?.to_date), "dd/MM/yyyy")}
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-between mt-2 pr-3">
-              <div>
-                <p className="text-sm text-gray-500">From Time</p>
-                <p className="font-medium ">
-                  {formatTimeSafe(data?.custom_from_time)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">To Time</p>
-                <p className="font-medium">
-                  {formatTimeSafe(data?.custom_to_time)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Log Details */}
-          <div className="py-4 border-b">
-            <p className="text-sm text-gray-500 mb-3">Log Details</p>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                    <Check className="h-3 w-3 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">Check In</p>
-                    <p className="text-xs text-gray-500">
-                      {data?.custom_checkin_type || ""}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500 mb-2">
-                  {formatTimeSafe(data?.custom_in_time)}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
-                    <X className="h-3 w-3 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">Check Out</p>
-                    <p className="text-xs text-gray-500">
-                      {data?.custom_checkout_time || ""}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500 mb-2">
-                  {formatTimeSafe(data?.custom_out_time)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Reason */}
-          <div className="py-4 border-b">
-            <p className="text-sm text-gray-500 mb-2">Reason</p>
-            <div className="">
-              <p className="text-sm text-gray-700 font-medium">
-                {data?.reason}
-              </p>
-            </div>
-          </div>
-
           {/* explanation */}
           <div className="py-4">
-            <p className="text-sm text-gray-500 mb-2">Explanation</p>
+            <p className="text-sm text-gray-500 mb-2">Description</p>
             <div className="bg-gray-100 p-3 rounded-lg">
-              <p className="text-sm text-gray-700">{data?.explanation}</p>
+              <p className="text-sm text-gray-700">{data?.description}</p>
             </div>
           </div>
+          {/* Date */}
         </div>
 
         {/* Actions */}
-        {data?.status === "Pending" && (
+        {actions?.length > 0 && data?.status === "Open" && (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-            <div className="flex space-x-2 w-full">
-              <button
-                className="w-1/2 px-3 py-2 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={(e) => handleAction("Reject", e)}
-                disabled={mutation.isPending}
-              >
-                {mutation.isPending && currentAction === "Reject"
-                  ? "Rejecting..."
-                  : "Reject"}
-              </button>
-              <button
-                className="w-1/2 px-3 py-2 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={(e) => handleAction("Approve", e)}
-                disabled={mutation.isPending}
-              >
-                {mutation.isPending && currentAction === "Approve"
-                  ? "Approving..."
-                  : "Approve"}
-              </button>
+            <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+              {actions?.length &&
+                actions?.map((action: string) => (
+                  <button
+                    key={action}
+                    onClick={() => {
+                      handleAction(action);
+                    }}
+                    className={getActionStyles(action)}
+                  >
+                    {action}
+                  </button>
+                ))}
             </div>
           </div>
         )}

@@ -3,6 +3,7 @@ import {
   Employee,
   EmployeeIdCard,
   EmployeeListItem,
+  EmployeeNode,
   IReason,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
@@ -167,6 +168,18 @@ export class EmployeeService {
     }
 
     return result;
+  }
+  
+  static async getEmployeeHierarchy(
+    company: string
+  ): Promise<EmployeeNode[]> {
+    const result = await FrappeAPI.callMethod(
+      "cn_hrms_core.cn_hrms_core.apis.employee_hierarchy.get_employee_hierarchy",
+      {
+        company: company,
+      }
+    );
+    return result as EmployeeNode[];
   }
 
   // Get current user's employee record

@@ -34,7 +34,6 @@ import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
 import AllPendingRequests from "./components/Attendance/TeamAttendanceDetails/AllPendingRequests";
 import AttendanceSummary from "./components/Attendance/AttendanceSummary";
 import AllEmpAttendance from "./components/Attendance/AllEmpAttendance/AllEmpAttendance";
-// import { Navigate } from "react-router";
 import AttendanceLayout from "./components/Attendance/AttendanceLayout";
 import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
 import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
@@ -52,12 +51,8 @@ import Policies from "./components/Policies";
 import PoliciesEnforced from "./components/PoliciesEnforced";
 import PolicySignOff from "./components/PolicySignOff";
 import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
-// import RequestCompOff from "./components/Attendance/Employee/RequestCompOff";
-
 import { Navigate } from "react-router";
-
 import CTCSalaryUI from "./components/SalarySlip/CTCSalaryBreakdown";
-
 import PoliciesApp from "./components/Policies/PoliciesApp";
 import PoliciesCategory from "./components/Policies/PoliciesCategory";
 import PoliciesList from "./components/Policies/PoliciesList";
@@ -71,6 +66,8 @@ import FlowRequests from "./components/ApprovalTracker/FlowRequests";
 import InitiateFlow from "./components/ApprovalTracker/InitiateFlow";
 import InitiateForm from "./components/ApprovalTracker/InitiateForm";
 import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
+import NotificationList from "./components/Notification/Notification";
+import OrganizationalChart from "./components/OrganizationalChart/OrganizationalChart";
 
 export interface AppRoute {
   index?: boolean;
@@ -80,6 +77,8 @@ export interface AppRoute {
 }
 
 export const routesConfig: AppRoute[] = [
+  // notification page route
+  { path: "/webapp/notification-log", element: <NotificationList /> },
   // Standalone Routes
   { path: "/webapp/search-members", element: <SearchMembers /> },
 
@@ -282,5 +281,9 @@ export const routesConfig: AppRoute[] = [
         element: <FlowRequestDetails />,
       },
     ],
+  },
+  {
+    path: "/webapp/organizational-chart",
+    element: <OrganizationalChart />,
   },
 ];

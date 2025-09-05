@@ -6,6 +6,7 @@ import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useUnreadNoticesCount } from "../../hooks/useNotices";
 import defaultProfile from "../../assets/face-rec.png";
 import CollapsibleSidebar from "./CollapsibleSidebar";
+import { useFrappeAuth } from "frappe-react-sdk";
 
 interface NewDesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -20,12 +21,22 @@ const NewDesktopLayoutWrapper: React.FC<NewDesktopLayoutWrapperProps> = ({
 }) => {
   const { isDesktop } = useScreenSize();
   const location = useLocation();
+  const { logout } = useFrappeAuth();
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: unreadCount = 0 } = useUnreadNoticesCount();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  const logoutHandler = async () => {
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   // Handle click outside profile dropdown
   useEffect(() => {
@@ -217,8 +228,8 @@ const NewDesktopLayoutWrapper: React.FC<NewDesktopLayoutWrapperProps> = ({
                     </button>
                     <hr className="my-2 border-gray-100" />
                     <button
-                      onClick={() => {
-                        // Add logout functionality
+                      onClick={async () => {
+                        await logoutHandler();
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"

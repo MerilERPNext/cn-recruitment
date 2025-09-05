@@ -5,6 +5,7 @@ import type {
   Attendance,
   AttendanceRecord,
   AttendanceRequest,
+  AttendanceRequestValidations,
   CanShowClockIn,
   EmployeeCheckInLog,
   EmployeeShift,
@@ -367,6 +368,23 @@ export const attendanceService = {
       return response as boolean;
     } catch (error) {
       console.error("📡 Error while Adding attendance request in:", error);
+      throw error;
+    }
+  },
+
+  reqValidationsForAttendanceRequest: async (
+    empId: string
+  ): Promise<AttendanceRequestValidations> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.cn_leave_shift_managment.overrides.attendace_request.get_active_attendance_policy",
+        {
+          employee: empId,
+        }
+      );
+      return response as AttendanceRequestValidations;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
       throw error;
     }
   },
