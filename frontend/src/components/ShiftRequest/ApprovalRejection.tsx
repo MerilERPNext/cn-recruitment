@@ -2,12 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 
 import ApprovalList from "../../components/shared/ApprovalList";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 
-const TeamAttendanceDetails = () => {
+const AllTeamTeamShiftApproval = () => {
 
-  const { refetchAttendance } = useGlobalStore();
   const [refetch, setRefetch] = useState(false);
   const navigate = useNavigate();
 
@@ -37,7 +35,7 @@ const TeamAttendanceDetails = () => {
           <ApprovalList
             doctype={"Attendance Request"}
             pageSize={5}
-            refetch={refetch || refetchAttendance}
+            refetch={refetch}
             onApprovalRefetchComplete={() => {
               setRefetch(false);
             }}
@@ -60,4 +58,4 @@ const TeamAttendanceDetails = () => {
   );
 };
 
-export default TeamAttendanceDetails;
+export default AllTeamTeamShiftApproval;

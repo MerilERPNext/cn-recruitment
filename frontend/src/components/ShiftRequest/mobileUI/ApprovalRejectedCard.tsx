@@ -21,9 +21,10 @@ type ApprovalRejectionQueueProps = {
   } | null;
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
+  maxdatas?: number;
 };
 
-const ApprovalRejectionQueue = ({
+const ApprovalRejectedForMobile = ({
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -60,10 +61,12 @@ const ApprovalRejectionQueue = ({
 
   return (
     <div
-      className="grid grid-cols-7 border-b border-gray-200 gap-4 w-full items-center px-4 h-14 hover:bg-gray-50 transition-colors cursor-pointer"
-      onClick={() => onClick?.(data)}
-    >
-      <div className=" ">
+    className="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer"
+    onClick={() => onClick?.(data)}
+  >
+    {/* Checkbox + Header */}
+    <div className="flex justify-between items-start mb-3">
+      <div className="flex items-center gap-2">
         <input
           type="checkbox"
           checked={isSelected}
@@ -71,42 +74,47 @@ const ApprovalRejectionQueue = ({
           onChange={() => onToggleSelect?.(data.name)}
           disabled={isDisabled}
         />
+        <span className="font-semibold text-gray-900 text-sm">
+          {data.name || "--"}
+        </span>
       </div>
-      <div className="font-medium  text-gray-900 text-xs truncate">
-        {data.name || "--"}
-      </div>
-      <div className="text-gray-700 text-xs truncate">
-        {data.creation ? data.creation.split(" ")[0] : "--"}
-      </div>
-      <div>
-        <StatusBadge status={data.status} />
-      </div>
-      <div className="text-gray-600 text-xs">
-        {data.priority}
-      </div>
-      <div className="text-gray-600 text-xs">
-        {data.date
-          ? format(new Date(data.date), "dd/MM/yyyy")
-          : "--"}
-      </div>
-      <div className="flex flex-wrap justify-center  items-center ml-[-10px] gap-1">
-        {actions.map((action) => (
-          <button
-            key={action}
-            className={getActionStyles(action)}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onAction(action, data);
-            }}
-          >
-            {action}
-          </button>
-        ))}
-      </div>
+      <StatusBadge status={data.status} />
     </div>
+
+    {/* Details */}
+    <div className="text-xs text-gray-600 space-y-1">
+      <p>
+        <span className="font-medium">Date:</span>{" "}
+        {data.date ? format(new Date(data.date), "yyyy-MM-dd") : "--"}
+      </p>
+      <p>
+        <span className="font-medium">Priority:</span> {data.priority || "--"}
+      </p>
+      <p>
+        <span className="font-medium">Request Date:</span>{" "}
+        {data.creation ? format(new Date(data.creation), "dd/MM/yyyy") : "--"}
+      </p>
+    </div>
+
+    {/* Actions */}
+    <div className="flex justify-start gap-3 mt-3">
+      {actions.map((action) => (
+        <button
+          key={action}
+          className={getActionStyles(action)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onAction(action, data);
+          }}
+        >
+          {action}
+        </button>
+      ))}
+    </div>
+  </div>
   );
 };
 
-export default ApprovalRejectionQueue;
+export default ApprovalRejectedForMobile;
 

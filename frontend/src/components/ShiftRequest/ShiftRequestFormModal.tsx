@@ -7,6 +7,7 @@ import { useShiftTypes, useCreateShiftRequest } from "../../hooks/useShift";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 import type { ShiftRequestFormData, FormioSubmission } from "../../types/shift";
+import { Formio } from "formiojs";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -233,7 +234,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({ onClose }
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <Form
             form={formSchema}
-            onFormReady={(instance: any) => {
+            onFormReady={(instance: Formio) => {
               formRef.current = instance;
             }} options={{
               builder: { styles: false },

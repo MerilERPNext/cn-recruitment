@@ -10,14 +10,14 @@ const AllShiftChangeRequestsList: React.FC = () => {
 
 
     return (
-        <div className="w-full mx-auto px-6">
+        <div className="w-full mx-auto ">
             <HeaderBar
                 title="All Shift Change Requests"
                 onBack={() => navigate(-1)}
             />
 
             {/* Table */}
-            <div className="overflow-x-auto mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-x-auto mt-6 mx-6 rounded-lg border border-gray-200 bg-white shadow-sm">
                 {/* Header */}
                 <div className="grid grid-cols-7  gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200">
                 <span className="font-semibold text-xs text-gray-500 flex items-center">
