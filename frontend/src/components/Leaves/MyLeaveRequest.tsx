@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import FrappeListView from "../ListView";
@@ -38,6 +38,20 @@ const MyLeaveRequest: React.FC = () => {
     setSelectedRequest(null);
   };
 
+  const unsubscribeRef = React.useRef<(() => void) | null>(null);
+
+  const handleRefetchAvailable = (refetchFn: () => void) => {
+    unsubscribeRef.current = setRefetch(refetchFn);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, [setRefetch]);
+
   if (userError || employeeError) {
     return (
       <div className="p-4 text-center text-red-600">
@@ -76,7 +90,7 @@ const MyLeaveRequest: React.FC = () => {
             ]}
             defaultFilters={{ employee: currentEmployee.name }}
             infiniteScroll={true}
-            onRefetchAvailable={setRefetch}
+            onRefetchAvailable={handleRefetchAvailable}
             SkeletonComponent={MyLeaveRequestSkeleton}
             isSearch={false}
           />
@@ -104,10 +118,7 @@ const MyLeaveRequest: React.FC = () => {
           searchFields={["name", "leave_type", "status"]}
           infiniteScroll={true}
           showRefereshButton={true}
-          onRefetchAvailable={(refetch) => {
-            const unsubscribe = setRefetch(refetch);
-            return unsubscribe;
-          }}
+          onRefetchAvailable={handleRefetchAvailable}
           SkeletonComponent={MyLeaveRequestSkeleton}
         />
       )}

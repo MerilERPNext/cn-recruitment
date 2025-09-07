@@ -16,14 +16,28 @@ const LeaveRequestCard = ({ item, onClick }: LeaveRequestCardProps) => {
   const { isDesktop } = useScreenSize();
 
   const getStatus = (rawStatus: string) => {
+    const statusMap: { [key: string]: { label: string; statusColor: string } } =
+      {
+        open: {
+          label: "Pending",
+          statusColor: "bg-yellow-100 text-yellow-800",
+        },
+        approved: {
+          label: "Approved",
+          statusColor: "bg-green-100 text-green-800",
+        },
+        cancelled: {
+          label: "Cancelled",
+          statusColor: "bg-red-100 text-red-800",
+        },
+      };
     const status = rawStatus?.toLowerCase().trim();
-    if (status === "open")
-      return { label: "Pending", statusColor: "bg-yellow-100 text-yellow-800" };
-    if (status === "approved")
-      return { label: "Approved", statusColor: "bg-green-100 text-green-800" };
-    if (status === "cancelled")
-      return { label: "Cancelled", statusColor: "bg-red-100 text-red-800" };
-    return { label: "Rejected", statusColor: "bg-red-100 text-red-800" };
+    return (
+      statusMap[status] || {
+        label: "Rejected",
+        statusColor: "bg-red-100 text-red-800",
+      }
+    );
   };
 
   const status = getStatus(item?.status);
