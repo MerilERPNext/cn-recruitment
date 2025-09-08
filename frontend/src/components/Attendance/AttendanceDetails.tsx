@@ -8,11 +8,13 @@ export function AttendanceDetailView({
   data,
   onClose,
   onAction,
+  loadingAction,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   onClose: () => void;
   onAction?: () => void;
+  loadingAction?: { id: string; action: string } | null;
 }) {
   const mutation = useApprovalListActions();
 
@@ -144,12 +146,21 @@ export function AttendanceDetailView({
                 actions?.map((action: string) => (
                   <button
                     key={action}
+                    disabled={
+                      loadingAction?.id === data?.name &&
+                      loadingAction?.action === action
+                    }
                     onClick={() => {
                       handleAction(action);
                     }}
                     className={getActionStyles(action)}
                   >
-                    {action}
+                    {loadingAction?.id === data?.name &&
+                    loadingAction?.action === action ? (
+                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      action
+                    )}
                   </button>
                 ))}
             </div>

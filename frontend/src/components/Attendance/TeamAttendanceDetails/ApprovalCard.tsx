@@ -13,6 +13,7 @@ type ApprovalCardProps = {
   refetch?: () => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onClick?: (data: any) => void;
+  loadingAction?: { id: string; action: string } | null;
 };
 const ApprovalCard = ({
   isSelected = false,
@@ -21,6 +22,7 @@ const ApprovalCard = ({
   data,
   onAction,
   onClick,
+  loadingAction,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const actions = data?.custom_doctype_actions
@@ -101,9 +103,18 @@ const ApprovalCard = ({
                     e.stopPropagation();
                     onAction(action, data);
                   }}
+                  disabled={
+                    loadingAction?.id === data?.name &&
+                    loadingAction?.action === action
+                  }
                   className={`${getActionStyles(action)} text-xs`}
                 >
-                  {action}
+                  {loadingAction?.id === data?.name &&
+                  loadingAction?.action === action ? (
+                    <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    action
+                  )}
                 </button>
               ))}
           </div>
@@ -143,10 +154,12 @@ const ApprovalCard = ({
                 />
               </div>
 
-              <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+              <div className="text-sm text-gray-600 mt-2 line-clamp-2">
                 <span className="font-semibold">Description:</span>{" "}
-                {data?.description}
-              </p>
+                <div
+                  dangerouslySetInnerHTML={{ __html: data?.description }}
+                ></div>
+              </div>
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length &&
@@ -158,9 +171,18 @@ const ApprovalCard = ({
                         e.stopPropagation();
                         onAction(action, data);
                       }}
+                      disabled={
+                        loadingAction?.id === data?.name &&
+                        loadingAction?.action === action
+                      }
                       className={getActionStyles(action)}
                     >
-                      {action}
+                      {loadingAction?.id === data?.name &&
+                      loadingAction?.action === action ? (
+                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        action
+                      )}
                     </button>
                   ))}
               </div>

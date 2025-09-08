@@ -10,6 +10,10 @@ import ApprovalCard from "./ApprovalCard";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
 
+type LoadingAction = {
+  id: string;
+  action: string;
+};
 const TeamAttendanceDetails = () => {
   const defaultFilters = useMemo(
     () => ({
@@ -21,8 +25,10 @@ const TeamAttendanceDetails = () => {
   const { refetchAttendance } = useGlobalStore();
   const [refetch, setRefetch] = useState(false);
   const navigate = useNavigate();
-  const [selectedRequest, setSelectedRequest] =
-    useState<AttendanceRequest | null>(null);
+
+  const [selectedRequest, setSelectedRequest] = useState<
+    (AttendanceRequest & { loadingAction?: LoadingAction }) | null
+  >(null);
 
   return (
     <>
@@ -57,7 +63,7 @@ const TeamAttendanceDetails = () => {
           >
             <ApprovalList
               doctype={"Attendance Request"}
-              pageSize={5}
+              pageSize={3}
               refetch={refetch || refetchAttendance}
               onApprovalRefetchComplete={() => {
                 setRefetch(false);
@@ -69,7 +75,13 @@ const TeamAttendanceDetails = () => {
                   data={item?.data}
                   onAction={item?.onAction}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onClick={(request: any) => setSelectedRequest(request)}
+                  onClick={(request: any) =>
+                    setSelectedRequest({
+                      ...request,
+                      loadingAction: item?.loadingAction,
+                    })
+                  }
+                  loadingAction={item?.loadingAction}
                 />
               )}
             />
@@ -123,6 +135,7 @@ const TeamAttendanceDetails = () => {
             setSelectedRequest(null);
             setRefetch(true);
           }}
+          loadingAction={selectedRequest?.loadingAction}
         />
       )}
     </>
