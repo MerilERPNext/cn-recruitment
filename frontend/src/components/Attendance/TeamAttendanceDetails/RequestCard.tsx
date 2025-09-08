@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { RequestCardProps } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import DOMPurify from "dompurify";
 
 export function RequestCard({
   request,
@@ -36,6 +37,7 @@ any & {
   const formattedDate = request?.date
     ? format(new Date(request.date), "dd/MM/yyyy")
     : "--/--/----";
+  const cleanDescription = DOMPurify.sanitize(request?.description || "");
 
   return (
     <>
@@ -81,7 +83,7 @@ any & {
 
                 <p className="text-sm text-gray-600 mt-2 line-clamp-2">
                   <span className="font-semibold">Description:</span>{" "}
-                  {request.description}
+                  <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
                 </p>
               </div>
             </div>
