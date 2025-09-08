@@ -15,6 +15,7 @@ type ApprovalListProps = {
     onToggleSelect,
     data,
     onAction,
+    loadingAction,
   }: {
     onClick: unknown;
     todoId: string;
@@ -22,6 +23,7 @@ type ApprovalListProps = {
     onToggleSelect: (id: string) => void;
     data: any;
     onAction: (action: string, data: any) => void;
+    loadingAction: { id: string; action: string } | null;
   }) => ReactNode;
   refetch?: boolean;
   pageSize?: number;
@@ -38,6 +40,14 @@ const ApprovalList = ({
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
   const [refetchListView, setRefetchListView] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<{
+    id: string;
+    action: string;
+  } | null>(null);
+  const [bulkLoading, setBulkLoading] = useState<{
+    action: "Approve" | "Reject";
+    isLoading: boolean;
+  } | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
@@ -71,6 +81,7 @@ const ApprovalList = ({
     async (action: string, data: any) => {
       try {
         if (mutation?.isPending) return;
+        setLoadingAction({ id: data?.name, action });
         const response = await mutation?.mutateAsync({
           action,
           name: data?.name || "",
@@ -116,6 +127,8 @@ const ApprovalList = ({
             : exceptions[1];
         console.error("Action failed", error);
         toast.error(errMessage);
+      } finally {
+        setLoadingAction(null);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,6 +138,8 @@ const ApprovalList = ({
   const batchActionMutation = useActionOnAttendanceRequest();
   const handleBulkAction = (action: "Approve" | "Reject") => {
     try {
+      setBulkLoading({ action, isLoading: true });
+
       batchActionMutation.mutate(
         {
           todo_ids: selectedIds,
@@ -150,6 +165,8 @@ const ApprovalList = ({
     } catch (error: any) {
       toast.error(error.message);
       console.error(error);
+    } finally {
+      setBulkLoading(null);
     }
   };
 
@@ -173,6 +190,7 @@ const ApprovalList = ({
               pendingRequests={allRequests}
               onSelectAll={handleSelectAll}
               onBulkAction={handleBulkAction}
+              loadingAction={bulkLoading}
             />
           </div>
         )}
@@ -184,6 +202,7 @@ const ApprovalList = ({
             onToggleSelect: handleToggleSelect,
             data: props.item,
             onAction: handleAction,
+            loadingAction: loadingAction,
           });
         }}
         refetchTrigger={refetchListView}
