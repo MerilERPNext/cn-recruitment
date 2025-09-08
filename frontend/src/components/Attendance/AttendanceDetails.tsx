@@ -3,6 +3,7 @@ import Avatar from "../shared/Avatar";
 import { format } from "date-fns";
 import { useCallback } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
+import DOMPurify from "dompurify";
 
 export function AttendanceDetailView({
   data,
@@ -17,6 +18,7 @@ export function AttendanceDetailView({
   loadingAction?: { id: string; action: string } | null;
 }) {
   const mutation = useApprovalListActions();
+  const cleanDescription = DOMPurify.sanitize(data?.description || "");
 
   const handleAction = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -132,7 +134,7 @@ export function AttendanceDetailView({
           <div className="py-4">
             <p className="text-sm text-gray-500 mb-2">Description</p>
             <div className="bg-gray-100 p-3 rounded-lg">
-              <p className="text-sm text-gray-700">{data?.description}</p>
+              <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </div>
           </div>
           {/* Date */}
@@ -143,26 +145,27 @@ export function AttendanceDetailView({
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
             <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
               {actions?.length &&
-                actions?.map((action: string) => (
-                  <button
-                    key={action}
-                    disabled={
-                      loadingAction?.id === data?.name &&
-                      loadingAction?.action === action
-                    }
-                    onClick={() => {
-                      handleAction(action);
-                    }}
-                    className={getActionStyles(action)}
-                  >
-                    {loadingAction?.id === data?.name &&
-                    loadingAction?.action === action ? (
-                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      action
-                    )}
-                  </button>
-                ))}
+                actions?.map((action: string) => {
+                  const isLoading =
+                    loadingAction?.id === data?.name &&
+                    loadingAction?.action === action;
+                  return (
+                    <button
+                      key={action}
+                      disabled={isLoading}
+                      onClick={() => {
+                        handleAction(action);
+                      }}
+                      className={getActionStyles(action)}
+                    >
+                      {isLoading ? (
+                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        action
+                      )}
+                    </button>
+                  );
+                })}
             </div>
           </div>
         )}

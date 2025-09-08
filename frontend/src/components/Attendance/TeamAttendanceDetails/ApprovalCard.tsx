@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-
+import DOMPurify from "dompurify";
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -52,6 +52,7 @@ const ApprovalCard = ({
   const formattedDate = data?.date
     ? format(new Date(data.date), "dd/MM/yyyy")
     : "--/--/----";
+  const cleanDescription = DOMPurify.sanitize(data?.description || "");
 
   return (
     <>
@@ -79,7 +80,7 @@ const ApprovalCard = ({
 
           {/* Description */}
           <div className="text-gray-600 text-sm truncate text-start">
-            {data?.description}
+            <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>
           {/* Date */}
           <div className="text-gray-700 text-sm text-start">
@@ -156,9 +157,7 @@ const ApprovalCard = ({
 
               <div className="text-sm text-gray-600 mt-2 line-clamp-2">
                 <span className="font-semibold">Description:</span>{" "}
-                <div
-                  dangerouslySetInnerHTML={{ __html: data?.description }}
-                ></div>
+                <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
               </div>
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
