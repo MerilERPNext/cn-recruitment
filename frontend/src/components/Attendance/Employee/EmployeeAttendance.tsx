@@ -15,6 +15,7 @@ import LeaveRequest from "../LeaveRequest";
 import { gradientClassMap } from "../../../utils/helperUtils";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
+import OvertimeRequest from "../OvertimeRequest";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -35,6 +36,9 @@ const EmployeeAttendance = () => {
   } = useGetAllEventsAndAttendance({ start: start, end: end });
 
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
+    useState<boolean>(false);
+
+  const [showOvertimeRequest, setShowOvertimeRequest] =
     useState<boolean>(false);
   const [showLeaveRequest, setShowLeaveRequest] = useState<boolean>(false);
 
@@ -420,6 +424,13 @@ const EmployeeAttendance = () => {
             }}
           />
         )}
+        {showOvertimeRequest && (
+          <OvertimeRequest
+            onCancel={() => {
+              setShowOvertimeRequest(false);
+            }}
+          />
+        )}
         <BottomDrawer
           isOpen={openDrawer}
           onClose={() => setOpenDrawer(false)}
@@ -445,6 +456,15 @@ const EmployeeAttendance = () => {
                 className="w-full text-left px-4 py-2  hover:bg-gray-200 rounded-lg transition-colors"
               >
                 Attendance Request
+              </button>
+              <button
+                onClick={() => {
+                  setShowOvertimeRequest(true);
+                  setOpenDrawer(false);
+                }}
+                className="w-full text-left px-4 py-2  hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Planned Overtime Request
               </button>
             </div>
           }

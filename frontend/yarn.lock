@@ -6380,10 +6380,10 @@ chartjs-adapter-moment@^1.0.0:
   resolved "https://registry.yarnpkg.com/chartjs-adapter-moment/-/chartjs-adapter-moment-1.0.1.tgz#0f04c30d330b207c14bfb57dfaae9ce332f09102"
   integrity sha512-Uz+nTX/GxocuqXpGylxK19YG4R3OSVf8326D+HwSTsNw1LgzyIGRo+Qujwro1wy6X+soNSnfj5t2vZ+r6EaDmA==
 
-chatnext-ui@^0.22.34:
-  version "0.22.43"
-  resolved "https://registry.yarnpkg.com/chatnext-ui/-/chatnext-ui-0.22.43.tgz#6f98939418c696af34d6469b00e8adab27255244"
-  integrity sha512-2OT6XdD/aS9Pk8xBMijF8ZvW7gacYIi06uOlK8X3aqfh90yNFAuBOKmPa9XcwCFa+hkAO/f8IDDLZMbMiAhbAA==
+chatnext-ui@^0.23.5:
+  version "0.23.5"
+  resolved "https://registry.yarnpkg.com/chatnext-ui/-/chatnext-ui-0.23.5.tgz#1915e6b87adaa2fcd57ac18e60dc14fa501e1ca7"
+  integrity sha512-qJHLMMw3nMP4QC8oiktrb2GwPuw+X8bl8fwkZ6Z9INmEXVSr+EF83mR3UysRBI+l7eMvBD91WMBHJSBslGj46Q==
   dependencies:
     "@calumk/editorjs-codeflask" "^1.0.9"
     "@craco/craco" "^6.2.0"
@@ -6441,7 +6441,7 @@ chatnext-ui@^0.22.34:
     eslint-config-airbnb "19.0.4"
     formiojs "4.13.12"
     framer-motion "^10.16.16"
-    frappe-react-sdk "^1.1.1"
+    frappe-react-sdk "^1.12.0"
     history "^5.3.0"
     html-react-parser "^3.0.16"
     jspdf "^2.5.1"
@@ -9840,7 +9840,7 @@ frappe-js-sdk@^1.10.0:
   dependencies:
     axios "^1.8.2"
 
-frappe-react-sdk@^1.1.1, frappe-react-sdk@^1.12.0:
+frappe-react-sdk@^1.12.0:
   version "1.12.0"
   resolved "https://registry.yarnpkg.com/frappe-react-sdk/-/frappe-react-sdk-1.12.0.tgz#f67348e6973c2614a8e98602db68b41130684192"
   integrity sha512-kWIx2deLcfZOfJGswYNZy0M8ObtluJ3vIqfMVT60AqQGo71oWKmVhQ/p1ktbxVEipUxQMfTxqd63I5iCOb4SMQ==
