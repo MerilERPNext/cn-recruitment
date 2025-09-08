@@ -41,6 +41,7 @@ const AllPendingRequests = () => {
                 onAction={item?.onAction}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onClick={(request: any) => setSelectedRequest(request)}
+                loadingAction={item?.loadingAction}
               />
             )}
           />
