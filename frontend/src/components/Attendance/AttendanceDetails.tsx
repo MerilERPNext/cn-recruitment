@@ -21,7 +21,6 @@ export function AttendanceDetailView({
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
 
   const handleAction = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (action: string) => {
       try {
         if (mutation?.isPending) return;

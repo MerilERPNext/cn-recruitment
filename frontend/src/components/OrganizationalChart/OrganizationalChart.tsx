@@ -195,7 +195,7 @@ const OrganizationalChart: React.FC = () => {
       {/* Scrollable + draggable area */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto h-full p-6 pt-20"
+        className="flex overflow-auto h-full p-6 pt-20"
         style={{ cursor: "grab", background: "#f7fafc" }}
         onMouseDown={handleMouseDown}
         onMouseLeave={handleMouseLeave}
@@ -215,7 +215,7 @@ const OrganizationalChart: React.FC = () => {
               transformOrigin: "top left",
               transition: "transform 0.15s ease",
             }}
-            className="flex gap-4 justify-center"
+            className="flex-1 gap-4 justify-center"
           >
             <DndProvider backend={HTML5Backend}>
               

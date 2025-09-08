@@ -27,7 +27,7 @@ const Organization = ({
 
   return (
     <Card
-      className="inline-block min-w-[250px] justify-start"
+      className="inline-block min-w-[250px]"
       sx={{ borderRadius: "16px" }}
       variant="outlined"
       ref={ref}

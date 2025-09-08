@@ -8,6 +8,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 type TabName = 
  'Salary Slip' 
 |'CTC Breakdown'
+| 'Loan'
 | 'Payroll Documents'
 
 type ViewMode = 'annual' | 'monthly';
@@ -15,6 +16,7 @@ type ViewMode = 'annual' | 'monthly';
 const tabRoutes: Record<TabName, string> = {
   "CTC Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
+  "Loan": "",
   "Payroll Documents": "/webapp/salary-slip-app/hr-payroll", 
 };
 
@@ -144,8 +146,8 @@ const SalarySlipApp: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Compensation">
-      <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex flex-col h-full bg-gray-50 ">
+        <div className="flex-1 overflow-y-auto px-8 py-4">
           <ViewModeContext.Provider value={{ viewMode, setViewMode }}>
             <Outlet />
           </ViewModeContext.Provider>
