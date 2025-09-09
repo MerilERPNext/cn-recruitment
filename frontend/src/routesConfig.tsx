@@ -65,8 +65,14 @@ import InitiateForm from "./components/ApprovalTracker/InitiateForm";
 import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
 import NotificationList from "./components/Notification/Notification";
 import OrganizationalChart from "./components/OrganizationalChart/OrganizationalChart";
-import { AllShiftsDashboardRoute, MyShiftsListRoute, TeamShiftsListRoute, ShiftChangeRequestsRoute } from "./components/ShiftRequest/ShiftDynamicRoute";
+import {
+  AllShiftsDashboardRoute,
+  MyShiftsListRoute,
+  TeamShiftsListRoute,
+  ShiftChangeRequestsRoute,
+} from "./components/ShiftRequest/ShiftDynamicRoute";
 import LoansPage from "./components/SalarySlip/Loan/LoanMain";
+import OvertimeRequests from "./components/Attendance/OvertimeRequests/OvertimeRequests";
 
 export interface AppRoute {
   index?: boolean;
@@ -115,9 +121,7 @@ export const routesConfig: AppRoute[] = [
       { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "hr-payroll", element: <HRPayroll /> },
-      {path: "loan",
-      element: <LoansPage />
-      },
+      { path: "loan", element: <LoansPage /> },
     ],
   },
   {
@@ -212,6 +216,7 @@ export const routesConfig: AppRoute[] = [
       { path: "team-attendance", element: <TeamAttendance /> },
       { path: "attendance-request", element: <AttendanceRequest /> },
       { path: "team-attendance-requests", element: <TeamAttendanceDetails /> },
+      { path: "planned-overtime-requests", element: <OvertimeRequests /> },
       {
         path: "team-attendance-requests/pendings",
         element: <AllPendingRequests />,
@@ -289,5 +294,4 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/organizational-chart",
     element: <OrganizationalChart />,
   },
-
 ];

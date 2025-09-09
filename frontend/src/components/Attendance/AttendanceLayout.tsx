@@ -9,7 +9,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { ChevronDown } from "lucide-react";
 import LeaveRequest from "../Attendance/LeaveRequest";
 import AttndanceRequestForm from "../Attendance/AttendanceRequest/AttendanceRequestForm";
-import OvertimeRequest from "./OvertimeRequest";
+import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 
 const AttendanceLayout: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -46,6 +46,7 @@ const AttendanceLayout: React.FC = () => {
       { label: "My Attendance Details", key: "calendar-views" },
       { label: "My Attendance Requests", key: "attendance-request" },
       { label: "Team Attendance Requests", key: "team-attendance-requests" },
+      { label: "Planned Overtime Requests", key: "planned-overtime-requests" },
     ],
     []
   );
@@ -142,7 +143,9 @@ const AttendanceLayout: React.FC = () => {
       {showOvertimeRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <OvertimeRequest onCancel={() => setShowOvertimeRequest(false)} />
+            <CreateOvertimeRequest
+              onCancel={() => setShowOvertimeRequest(false)}
+            />
           </div>
         </div>
       )}
@@ -271,7 +274,9 @@ const AttendanceLayout: React.FC = () => {
         {showOvertimeRequest && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <OvertimeRequest onCancel={() => setShowOvertimeRequest(false)} />
+              <CreateOvertimeRequest
+                onCancel={() => setShowOvertimeRequest(false)}
+              />
             </div>
           </div>
         )}

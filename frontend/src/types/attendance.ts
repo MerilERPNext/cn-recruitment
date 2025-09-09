@@ -177,3 +177,10 @@ export type Question = {
   parenttype: "Policy Question";
   doctype: "Question";
 };
+export type LoadingAction = {
+  id: string;
+  action: string;
+};
+export type CustomError = Error & {
+  response?: { data?: { message?: { error: string }; exception?: string } };
+};

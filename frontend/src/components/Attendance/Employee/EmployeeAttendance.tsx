@@ -15,7 +15,7 @@ import LeaveRequest from "../LeaveRequest";
 import { gradientClassMap } from "../../../utils/helperUtils";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
-import OvertimeRequest from "../OvertimeRequest";
+import CreateOvertimeRequest from "../OvertimeRequests/CreateOvertimeRequest";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -425,7 +425,7 @@ const EmployeeAttendance = () => {
           />
         )}
         {showOvertimeRequest && (
-          <OvertimeRequest
+          <CreateOvertimeRequest
             onCancel={() => {
               setShowOvertimeRequest(false);
             }}

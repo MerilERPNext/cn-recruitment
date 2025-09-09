@@ -1,15 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useRef, useState } from "react";
-import "../../formio.custom.css";
+import { useRef } from "react";
+import "../../../formio.custom.css";
+import { useCreatePlannedOvertimeRequest } from "../../../hooks/useAttendance";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { format, isValid, parseISO } from "date-fns";
+import toast from "react-hot-toast";
+import { CustomError } from "../../../types/attendance";
 
 const overtimeForm = {
   display: "form",
   components: [
     {
       type: "datagrid",
-      key: "overtimeRows",
+      key: "overtime_details",
       label: "Overtime Requests",
       addAnother: "New Row",
       customClass: "border-0",
@@ -17,38 +23,47 @@ const overtimeForm = {
       components: [
         {
           type: "datetime",
-          key: "shiftDate",
+          key: "shift_date",
           label: "Shift Date",
           format: "dd-MM-yyyy",
           enableTime: false,
           input: true,
+          validate: { required: true },
         },
         {
           type: "datetime",
-          key: "startDate",
+          key: "start_date",
           label: "Start Date",
           format: "dd-MM-yyyy",
           enableTime: false,
+          validate: { required: true },
+
           input: true,
         },
         {
           type: "time",
-          key: "startTime",
+          key: "start_time",
           label: "Start Time",
+          validate: { required: true },
+
           input: true,
         },
         {
           type: "datetime",
-          key: "endDate",
+          key: "end_date",
           label: "End Date",
           format: "dd-MM-yyyy",
           enableTime: false,
+          validate: { required: true },
+
           input: true,
         },
         {
           type: "time",
-          key: "endTime",
+          key: "end_time",
           label: "End Time",
+          validate: { required: true },
+
           input: true,
         },
         {
@@ -64,7 +79,7 @@ const overtimeForm = {
       type: "file",
       key: "attachment",
       label: "Attachment",
-      storage: "base64",
+      storage: "customBase64",
       input: true,
     },
   ],
@@ -75,10 +90,81 @@ interface RequestOvertimeProps {
   onCancel?: () => void;
 }
 
-const OvertimeRequest = ({ onCancel, onSuccess }: RequestOvertimeProps) => {
+const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name as string
+  );
+  const mutation = useCreatePlannedOvertimeRequest();
   const formInstance = useRef<any>(null);
-  const [formData, setFormData] = useState<any>({});
+  // const [formData, setFormData] = useState<any>({});
 
+  const handleSubmit = async () => {
+    try {
+      const submission = await formInstance.current?.submit();
+      const data = submission?.data;
+
+      const formattedOvertimeDetails = data?.overtime_details?.map(
+        (entry: any) => ({
+          ...entry,
+          shift_date: isValidDate(entry.shift_date)
+            ? formatDate(entry.shift_date)
+            : entry.shift_date,
+          start_date: isValidDate(entry.start_date)
+            ? formatDate(entry.start_date)
+            : entry.start_date,
+          end_date: isValidDate(entry.end_date)
+            ? formatDate(entry.end_date)
+            : entry.end_date,
+        })
+      );
+
+      mutation.mutate(
+        {
+          employee: currentEmployee?.employee || "",
+          overtime_details: formattedOvertimeDetails || [],
+          attachment:
+            data?.attachment && data?.attachment?.length > 0
+              ? data?.attachment
+              : "",
+        },
+        {
+          onSuccess: () => {
+            toast.success("Request submitted successfully.");
+            if (onCancel) {
+              onCancel();
+            }
+          },
+          onError: (e: CustomError) => {
+            const errorMessage =
+              e?.response?.data?.exception?.split(":")[1] ||
+              e?.response?.data?.message?.error ||
+              "Request Failed.";
+            console.error(e);
+            toast.error(errorMessage);
+          },
+        }
+      );
+    } catch (err) {
+      // If form is invalid, prevent API call
+      toast.error("Please fill in all required fields.");
+      console.warn("Form submission error:", err);
+    }
+  };
+
+  // Utility to check and format ISO dates
+  const isValidDate = (dateString: string) => {
+    try {
+      const parsed = parseISO(dateString);
+      return isValid(parsed);
+    } catch {
+      return false;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return format(parseISO(dateString), "yyyy-MM-dd");
+  };
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 max-w-full overflow-hidden"
@@ -128,13 +214,13 @@ const OvertimeRequest = ({ onCancel, onSuccess }: RequestOvertimeProps) => {
               labelClass: "mb-1 font-medium text-gray-700",
               inputClass:
                 "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 px-2 py-1",
-              validateOnInit: false,
-              validateOnBlur: false,
+              validateOnInit: true,
+              validateOnBlur: true,
               validateOnChange: false,
             }}
-            onChange={({ data }: { data: any }) => {
-              setFormData(data);
-            }}
+            // onChange={({ data }: { data: any }) => {
+            //   setFormData(data);
+            // }}
           />
         </div>
 
@@ -142,13 +228,16 @@ const OvertimeRequest = ({ onCancel, onSuccess }: RequestOvertimeProps) => {
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
           <button
             onClick={() => {
-              if (onSuccess) {
-                onSuccess(formData);
-              }
+              handleSubmit();
             }}
+            disabled={mutation?.isPending}
             className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
-            Submit Request
+            {mutation?.isPending ? (
+              <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              "Submit Request"
+            )}
           </button>
         </div>
       </div>
@@ -156,4 +245,4 @@ const OvertimeRequest = ({ onCancel, onSuccess }: RequestOvertimeProps) => {
   );
 };
 
-export default OvertimeRequest;
+export default CreateOvertimeRequest;

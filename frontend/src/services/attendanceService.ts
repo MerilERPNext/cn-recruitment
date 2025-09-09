@@ -402,6 +402,20 @@ export const attendanceService = {
     );
   },
 
+  createPlannedOvertimeRequest: async (
+    body: Record<string, unknown>
+  ): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.createDocument(
+        "Planned Overtime Request",
+        body
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while Planned Overtime Request in:", error);
+      throw error;
+    }
+  },
   //   searchAttendance: async (searchTerm: string): Promise<Attendance[]> => {
   //     const response = await FrappeAPI.getDocumentList('Attendance', {
   //       fields: ['*'],
