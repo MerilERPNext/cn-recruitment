@@ -161,29 +161,30 @@ const ApprovalCard = ({
               </div>
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-                {actions?.length &&
-                  actions?.map((action: string) => (
-                    <button
-                      key={action}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onAction(action, data);
-                      }}
-                      disabled={
-                        loadingAction?.id === data?.name &&
-                        loadingAction?.action === action
-                      }
-                      className={getActionStyles(action)}
-                    >
-                      {loadingAction?.id === data?.name &&
-                      loadingAction?.action === action ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </button>
-                  ))}
+                {actions?.length > 0
+                  ? actions?.map((action: string) => (
+                      <button
+                        key={action}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onAction(action, data);
+                        }}
+                        disabled={
+                          loadingAction?.id === data?.name &&
+                          loadingAction?.action === action
+                        }
+                        className={getActionStyles(action)}
+                      >
+                        {loadingAction?.id === data?.name &&
+                        loadingAction?.action === action ? (
+                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          action
+                        )}
+                      </button>
+                    ))
+                  : ""}
               </div>
             </div>
           </div>
