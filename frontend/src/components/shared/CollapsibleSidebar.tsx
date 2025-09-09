@@ -16,6 +16,7 @@ import {
   Clock,
   Users,
   CheckCircle,
+  Wallet,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 
@@ -147,6 +148,11 @@ console.log("Company Logo:", logoToShow, companyName);
           name: "Salary Slip",
           icon: CreditCard,
           href: "/webapp/salary-slip-app/salary-slip-list",
+        },
+        {
+          name: "Loan",
+          icon:  Wallet,
+          href: "/webapp/salary-slip-app/loan",
         },
         {
           name: "Payroll Documents",

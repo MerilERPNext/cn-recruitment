@@ -80,6 +80,10 @@ export interface BulkActionProps {
   pendingRequests: AttendanceRequest[];
   onSelectAll: () => void;
   onBulkAction: (action: "Approve" | "Reject") => void;
+  loadingAction?: {
+    action: "Approve" | "Reject";
+    isLoading: boolean;
+  } | null;
 }
 
 export type EmployeeCheckInLog = {
