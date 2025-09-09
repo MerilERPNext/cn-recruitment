@@ -30,8 +30,8 @@ const HolidaysFull: React.FC = () => {
   );
 
   useEffect(() => {
-    setRefetch(refetch);
-    return () => setRefetch(() => {});
+    const unsubscribe = setRefetch(refetch);
+    return unsubscribe;
   }, [refetch, setRefetch]);
 
   const locationState = location.state as LocationState;
