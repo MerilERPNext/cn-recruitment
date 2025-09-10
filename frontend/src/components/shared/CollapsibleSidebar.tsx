@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
 import { Link, useLocation } from "react-router-dom"
