@@ -1,10 +1,18 @@
 "use client"
 
-import { SearchIcon } from "lucide-react"
 import { useState } from "react"
+import { Search as SearchIcon } from "lucide-react"
+import { useScreenSize } from "../../../hooks/useScreenSize"
 import CreateLoanDialog from "./component/CreateLoanDailog"
 import LoanList from "./component/LoanListView"
 import { Loan } from "./Type/loan"
+import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile"
+
+
+
+
+// sampleLoans should be imported or fetched
+
 
 const sampleLoans: Loan[] = [
   {
@@ -341,40 +349,42 @@ const sampleLoans: Loan[] = [
   },
 ]
 
+
+
 export default function LoansPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { isDesktop } = useScreenSize()
 
   const filteredLoans = sampleLoans.filter(
     (loan) =>
       loan.loanName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       loan.loanType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      loan.status.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      loan.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
       loan.id.toString().includes(searchTerm)
-)
+  )
 
-  return (
+  // Desktop Layout
+  const DesktopLayout = () => (
     <div className="min-h-screen w-full overflow-x-hidden">
-      <div className="w-full max-w-[84rem]  mx-auto py-8">
+      <div className="w-full max-w-[84rem] mx-auto py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 px-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Loans For FY25-26</h1>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setIsDialogOpen(true)}
-              className="px-4 py-2 text-white bg-blue-600 border border-blue-600 rounded-md hover:bg-blue-700  transition-colors"
-            >
-              Create Loans
-            </button>
-          </div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Loans For FY25-26
+          </h1>
+          <button
+            onClick={() => setIsDialogOpen(true)}
+            className="px-4 py-2 text-white bg-blue-600 border border-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Create Loans
+          </button>
         </div>
 
         {/* Search */}
         <div className="mb-6 w-full px-4">
           <div className="relative max-w-md">
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
               <SearchIcon />
             </div>
             <input
@@ -382,24 +392,39 @@ export default function LoansPage() {
               placeholder="Search loans..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md 
+              focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
         </div>
 
-        {/* Loans List - Remove any width constraints */}
+        {/* Loans List */}
         <div className="px-4">
           <LoanList loans={filteredLoans} />
         </div>
 
         {filteredLoans.length === 0 && (
           <div className="text-center py-12 px-4">
-            <p className="text-gray-500">No loans found matching your search criteria.</p>
+            <p className="text-gray-500">
+              No loans found matching your search criteria.
+            </p>
           </div>
         )}
       </div>
-
-      <CreateLoanDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
     </div>
+  )
+
+  // Mobile Layout
+  const MobileLayout = () => (
+    <div className="min-h-screen w-full ">
+     <ListViewOfLoanForMobile/>
+    </div>
+  )
+
+  return (
+    <>
+      {isDesktop ? <DesktopLayout /> : <MobileLayout />}
+      <CreateLoanDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
+    </>
   )
 }

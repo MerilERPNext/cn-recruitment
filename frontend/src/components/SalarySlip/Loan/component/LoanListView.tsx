@@ -1,10 +1,10 @@
 "use client"
 import { useState } from "react"
+import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io"
+import { BsDashSquareFill } from "react-icons/bs"
 import { Loan } from "../Type/loan"
 import LoanDetails from "./LoanDetails"
 import LoanInstallments from "./LoanInstallment"
-import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io"
-import { BsDashSquareFill } from "react-icons/bs"
 
 interface LoanListProps {
   loans: Loan[]
@@ -30,22 +30,50 @@ export default function LoanList({ loans }: LoanListProps) {
     <div className="w-full">
       {/* Single container with proper scroll handling */}
       <div className="w-full max-h-full overflow-auto border border-gray-200 rounded-lg shadow-sm">
-        <table className="w-full divide-y divide-gray-200 min-w-[1200px]">
+        <table className="w-full divide-y divide-gray-200 ">
           <thead className="bg-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 z-10">
             <tr>
-              <th className="px-4 py-3 text-left" style={{ width: '60px' }}><span className="px-2 rounded text-blue-500"><BsDashSquareFill /></span></th>
-              <th className="px-4 py-3 text-left" style={{ width: '80px' }}>ID</th>
-              <th className="px-4 py-3 text-left" style={{ width: '140px' }}>Loan Type</th>
-              <th className="px-4 py-3 text-left" style={{ width: '160px' }}>Loan Name</th>
-              <th className="px-4 py-3 text-left" style={{ width: '120px' }}>EMI Type</th>
-              <th className="px-4 py-3 text-left" style={{ width: '140px' }}>Loan Amount</th>
-              <th className="px-4 py-3 text-left" style={{ width: '130px' }}>Rate of Interest</th>
-              <th className="px-4 py-3 text-left" style={{ width: '150px' }}>Standard Interest</th>
-              <th className="px-4 py-3 text-left" style={{ width: '120px' }}>Installments</th>
-              <th className="px-4 py-3 text-left" style={{ width: '120px' }}>Start Date</th>
-              <th className="px-4 py-3 text-left" style={{ width: '120px' }}>End Month</th>
-              <th className="px-4 py-3 text-left" style={{ width: '100px' }}>Status</th>
-              <th className="px-4 py-3 text-left" style={{ width: '120px' }}>Action</th>
+              <th className="px-4 py-3 text-left" >
+                <span className="px-2 rounded text-blue-500">
+                  <BsDashSquareFill />
+                </span>
+              </th>
+              <th className="px-4 py-3 text-left" >
+                ID
+              </th>
+              <th className="px-4 py-3 text-left" >
+                Loan Type
+              </th>
+              <th className="px-4 py-3 text-left" >
+                Loan Name
+              </th>
+              <th className="px-4 py-3 text-left" >
+                EMI Type
+              </th>
+              <th className="px-4 py-3 text-left" >
+                Loan Amount
+              </th>
+              <th className="px-4 py-3 text-left" >
+                Rate of Interest
+              </th>
+              <th className="px-4 py-3 text-left" >
+                Standard Interest
+              </th>
+              <th className="px-4 py-3 text-left" >
+                Installments
+              </th>
+              <th className="px-4 py-3 text-left" >
+                Start Date
+              </th>
+              <th className="px-4 py-3 text-left" >
+                End Month
+              </th>
+              <th className="px-4 py-3 text-left" >
+                Status
+              </th>
+              <th className="px-4 py-3 text-left" >
+                Action
+              </th>
             </tr>
           </thead>
           <tbody className="text-sm divide-y divide-gray-200 bg-white">
@@ -74,8 +102,8 @@ export default function LoanList({ loans }: LoanListProps) {
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ${
-                        loan.status === "Open" 
-                          ? "bg-green-100 text-green-800 border border-green-200" 
+                        loan.status === "Open"
+                          ? "bg-green-100 text-green-800 border border-green-200"
                           : "bg-gray-100 text-gray-800 border border-gray-200"
                       }`}
                     >
@@ -88,7 +116,7 @@ export default function LoanList({ loans }: LoanListProps) {
                     </button>
                   </td>
                 </tr>
-                
+
                 {/* Expanded Row */}
                 {expandedLoan === loan.id && (
                   <tr className="bg-gray-50">
@@ -105,8 +133,7 @@ export default function LoanList({ loans }: LoanListProps) {
           </tbody>
         </table>
       </div>
-      
-      {/* No loans message */}
+
       {loans.length === 0 && (
         <div className="text-center py-12 bg-white border border-gray-200 rounded-lg">
           <p className="text-gray-500">No loans available.</p>

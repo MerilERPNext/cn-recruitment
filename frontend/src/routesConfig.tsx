@@ -67,6 +67,7 @@ import NotificationList from "./components/Notification/Notification";
 import OrganizationalChart from "./components/OrganizationalChart/OrganizationalChart";
 import { AllShiftsDashboardRoute, MyShiftsListRoute, TeamShiftsListRoute, ShiftChangeRequestsRoute } from "./components/ShiftRequest/ShiftDynamicRoute";
 import LoansPage from "./components/SalarySlip/Loan/LoanMain";
+import LoanMainComponent from "./components/SalarySlip/Loan/component/DetailsPageForMobile";
 
 export interface AppRoute {
   index?: boolean;
@@ -107,6 +108,7 @@ export const routesConfig: AppRoute[] = [
       { path: "job-applicant-list", element: <JobApplicantList /> },
     ],
   },
+  
   //salary slip route
   {
     path: "/webapp/salary-slip-app",
@@ -115,11 +117,11 @@ export const routesConfig: AppRoute[] = [
       { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "hr-payroll", element: <HRPayroll /> },
-      {path: "loan",
-      element: <LoansPage />
-      },
+      {path: "loan",element: <LoansPage />},
     ],
+    
   },
+  {path: "/webapp/salary-slip-app/details-page-mobile", element: <LoanMainComponent />},
   {
     path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
     element: <ViewSalarySlipModal />,
