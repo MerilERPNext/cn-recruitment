@@ -6,11 +6,12 @@ import {
   ChevronDown,
   User
 } from 'lucide-react';
-import { useCurrentUser } from '../hooks/useCurrentUser';
 import defaultProfile from '../assets/face-rec.png';
 import CollapsibleSidebar from './shared/CollapsibleSidebar';
 import { useFrappeAuth } from 'frappe-react-sdk';
 import NotificationBell from './Notification/NotificationBell';
+import { useLoggedInUser } from '../hooks/useLoggedInUser';
+import { useCurrentEmployeeAllDetails } from '../hooks/useEmployee';
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -27,12 +28,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useFrappeAuth();
-  const { data: currentUser } = useCurrentUser();
   // Force static badge count for UI demo
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
-
+  const { data: userId } = useLoggedInUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
 
   // logout logic
   const logoutHandler = async () => {
@@ -46,7 +47,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       console.error("Logout failed:", error);
     }
   };
-  
+
 
   // Handle click outside profile dropdown
   useEffect(() => {
@@ -138,7 +139,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             <h1 className="text-xl font-bold text-gray-900">{getPageTitle()}</h1>
             <p className="text-xs text-gray-600">Manage your {getPageTitle().toLowerCase()}</p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <button
               onClick={handleNotificationClick}
@@ -146,7 +147,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             >
               <NotificationBell />
             </button>
-            
+
             <div className="relative" ref={profileDropdownRef}>
               <button
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -154,15 +155,15 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
               >
                 <div>
                   <p className="text-sm font-medium text-gray-900 text-right">
-                    {currentUser?.full_name || currentUser?.first_name || "Employee"}
+                    {currentEmployee?.employee_name || currentEmployee?.first_name || "Employee"}
                   </p>
                   <p className="text-xs text-gray-500 text-right">
-                    {currentUser?.email || "employee@company.com"}
+                    {currentEmployee?.personal_email || "employee@company.com"}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
                   <img
-                    src={currentUser?.user_image || defaultProfile}
+                    src={currentEmployee?.image || defaultProfile}
                     alt="User avatar"
                     className="w-full h-full object-cover"
                   />
@@ -175,22 +176,23 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                 <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300">
+                      <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
                         <img
-                          src={currentUser?.user_image || defaultProfile}
+                          src={currentEmployee?.image || defaultProfile}
                           alt="User avatar"
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">
-                          {currentUser?.full_name || currentUser?.first_name || "Employee"}
+                        <p className="font-medium text-gray-900 text-sm">
+                          {currentEmployee?.employee_name || currentEmployee?.first_name || "Employee"}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {currentUser?.email || "employee@company.com"}
+                        <p className="text-xs text-gray-500">
+                          {currentEmployee?.personal_email || "employee@company.com"}
                         </p>
                       </div>
                     </div>
+
                   </div>
 
                   <div className="py-2">
@@ -204,7 +206,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       <User className="w-4 h-4" />
                       My Profile
                     </button>
-                   
+
                     <hr className="my-2 border-gray-100" />
                     <button
                       onClick={async () => {
@@ -214,7 +216,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
                     >
                       <LogOut className="w-4 h-4" />
-                      Logout
+                      Logout 1
                     </button>
                   </div>
                 </div>
