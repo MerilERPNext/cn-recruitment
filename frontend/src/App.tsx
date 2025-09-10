@@ -115,7 +115,6 @@ const App: React.FC = () => {
         </GlobalStoreProvider>
       </EmployeeErrorBoundary>
       {/* @ts-ignore */}
-      <chatnext-app />
     </QueryProvider>
   );
 };

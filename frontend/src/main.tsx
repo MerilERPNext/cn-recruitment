@@ -2,8 +2,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
-import "chatnext-ui/dist/index.css";
-import "chatnext-ui/dist/index";
 import { FrappeProvider } from 'frappe-react-sdk';
 import { BrowserRouter } from 'react-router-dom';
 
