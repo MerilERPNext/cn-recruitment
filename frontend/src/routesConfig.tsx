@@ -64,11 +64,11 @@ import InitiateFlow from "./components/ApprovalTracker/InitiateFlow";
 import InitiateForm from "./components/ApprovalTracker/InitiateForm";
 import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
 import NotificationList from "./components/Notification/Notification";
-import OrganizationalChart from "./components/OrganizationalChart/OrganizationalChart";
 import { AllShiftsDashboardRoute, MyShiftsListRoute, TeamShiftsListRoute, ShiftChangeRequestsRoute } from "./components/ShiftRequest/ShiftDynamicRoute";
 import PendingTeamLeaves from "./components/Leaves/PendingTeamLeaves";
 import LoansPage from "./components/SalarySlip/Loan/LoanMain";
 import LoanMainComponent from "./components/SalarySlip/Loan/component/DetailsPageForMobile";
+import OrganizationChart from "./components/ORGChart/OrganizationChart";
 
 export interface AppRoute {
   index?: boolean;
@@ -293,7 +293,7 @@ export const routesConfig: AppRoute[] = [
   },
   {
     path: "/webapp/organizational-chart",
-    element: <OrganizationalChart />,
+    element: <OrganizationChart />,
   },
 
 ];
