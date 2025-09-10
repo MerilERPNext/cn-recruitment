@@ -7,6 +7,7 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
+import { useShiftRouting } from "../../hooks/useShiftRouting";
 
 type TabName =
   | "My Shift Assignment"
@@ -22,6 +23,7 @@ const tabRoutes: Record<TabName, string> = {
 };
 
 const ShiftRequestApp: React.FC = () => {
+  useShiftRouting();
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
@@ -131,7 +133,7 @@ const ShiftRequestApp: React.FC = () => {
         <div className="flex-1 overflow-y-auto">
           <Outlet />
         </div>
-         {/* Shift Request Modal for Desktop */}
+        {/* Shift Request Modal for Desktop */}
         <ExpenseFormModal
           isOpen={showShiftRequestModal}
           onClose={handleCloseShiftModal}
