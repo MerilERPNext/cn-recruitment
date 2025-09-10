@@ -1,4 +1,3 @@
-import { useScreenSize } from "../../hooks/useScreenSize";
 import AllMyShiftsList from "./AllMyShiftsList";
 import AllShiftsDashboard from "./AllShiftsDashboard";
 import AllTeamShiftsList from "./AllTeamShiftsList";
@@ -10,25 +9,21 @@ import MyShiftAssignment from "./MyShiftAssignment";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
 
 export const AllShiftsDashboardRoute = () => {
-  useShiftRouting(); // Add the routing hook
-  const { isDesktop } = useScreenSize();
+  const { isDesktop } = useShiftRouting();
   return isDesktop ? <AllShiftsDashboard /> : <Navigate to="/webapp/shift-request/my-shift-assignment" replace />;
 };
 
 export const MyShiftsListRoute = () => {
-  useShiftRouting(); // Add the routing hook
-  const { isDesktop } = useScreenSize();
+  const { isDesktop } = useShiftRouting();
   return isDesktop ? <AllMyShiftsList /> : <MyShiftAssignment />;
 };
 
 export const TeamShiftsListRoute = () => {
-  useShiftRouting(); // Add the routing hook
-  const { isDesktop } = useScreenSize();
+  const { isDesktop } = useShiftRouting();
   return isDesktop ? <AllTeamShiftsList /> : <TeamShift />;
 };
 
 export const ShiftChangeRequestsRoute = () => {
-  useShiftRouting(); // Add the routing hook
-  const { isDesktop } = useScreenSize();
+  const { isDesktop } = useShiftRouting();
   return isDesktop ? <AllShiftChangeRequestsList /> : <ShiftChangeRequest />;
 };

@@ -4,7 +4,6 @@ import HeaderBar from "../HeaderBar";
 import RequestShiftChangeButton from "./RequestShiftChangeButton";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import { useScreenSize } from "../../hooks/useScreenSize";
 import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
@@ -23,8 +22,7 @@ const tabRoutes: Record<TabName, string> = {
 };
 
 const ShiftRequestApp: React.FC = () => {
-  useShiftRouting();
-  const { isDesktop } = useScreenSize();
+  const { isDesktop } = useShiftRouting();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("My Shift Assignment");
@@ -116,7 +114,6 @@ const ShiftRequestApp: React.FC = () => {
     </div>
   );
 
-  // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
   const actionButton = (
     <button
       onClick={handleShiftForm}
