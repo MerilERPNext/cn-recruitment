@@ -68,6 +68,7 @@ import OrganizationalChart from "./components/OrganizationalChart/Organizational
 import { AllShiftsDashboardRoute, MyShiftsListRoute, TeamShiftsListRoute, ShiftChangeRequestsRoute } from "./components/ShiftRequest/ShiftDynamicRoute";
 import PendingTeamLeaves from "./components/Leaves/PendingTeamLeaves";
 import LoansPage from "./components/SalarySlip/Loan/LoanMain";
+import { useScreenSize } from "./hooks/useScreenSize";
 import LoanMainComponent from "./components/SalarySlip/Loan/component/DetailsPageForMobile";
 
 export interface AppRoute {
@@ -76,6 +77,16 @@ export interface AppRoute {
   element: ReactElement;
   children?: AppRoute[];
 }
+
+const ShiftRequestDefaultRoute = () => {
+  const { isDesktop } = useScreenSize();
+
+  if (isDesktop) {
+    return <Navigate to="/webapp/shift-request/all-shifts-dashboard" replace />;
+  } else {
+    return <Navigate to="/webapp/shift-request/my-shift-assignment" replace />;
+  }
+};
 
 export const routesConfig: AppRoute[] = [
   // notification page route
@@ -131,6 +142,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/shift-request",
     element: <ShiftRequestApp />,
     children: [
+      {
+        path: "",
+        index: true,
+        element: <ShiftRequestDefaultRoute />
+      },
       { path: "all-shifts-dashboard", element: <AllShiftsDashboardRoute /> },
       { path: "my-shift-assignment", element: <MyShiftsListRoute /> },
       { path: "team-shift", element: <TeamShiftsListRoute /> },
@@ -241,7 +257,7 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
-       {
+      {
         path: "leave-requests/pending",
         element: <PendingTeamLeaves />,
       },

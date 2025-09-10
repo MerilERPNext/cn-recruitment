@@ -11,8 +11,6 @@ import {
   Clock,
   ChevronDown,
 } from "lucide-react";
-// using a static value to ensure the badge renders
-import { useCurrentUser } from "../hooks/useCurrentUser";
 import {
   useCanShowClockIn,
   useCheckInOutService,
@@ -50,6 +48,7 @@ import toast from "react-hot-toast";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import { useFrappeAuth } from "frappe-react-sdk";
 import NotificationBell from "./Notification/NotificationBell";
+import { useLoggedInUser } from "../hooks/useLoggedInUser";
 
 const statusStyles = {
   unpaid: {
@@ -157,11 +156,8 @@ const DesktopDashboard: React.FC = () => {
   // Static value to ensure badge is visible in UI
 
   const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
-  // Get current user data
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
-  );
+  const { data: userId } = useLoggedInUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
 
   // Enhanced employee state with fallback
   const employeeState = useEmployeeWithFallback();
@@ -200,30 +196,30 @@ const DesktopDashboard: React.FC = () => {
 
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T"))
-          )
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -428,7 +424,7 @@ const DesktopDashboard: React.FC = () => {
         <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              Welcome, {currentUser?.full_name || "Employee"}
+              Welcome, {currentEmployee?.employee_name || "Employee"}
             </h1>
             <p className="text-xs text-gray-600">
               Here's your dashboard for today.
@@ -437,7 +433,7 @@ const DesktopDashboard: React.FC = () => {
 
           <div className="flex items-center gap-4">
             <button onClick={() => navigate('/webapp/notification-log')} className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <NotificationBell />
+              <NotificationBell />
             </button>
 
             <div className="relative" ref={profileDropdownRef}>
@@ -447,7 +443,7 @@ const DesktopDashboard: React.FC = () => {
               >
                 <div>
                   <p className="text-sm font-medium text-gray-900 text-right">
-                    {currentUser?.full_name || "Sangeetaa"}
+                    {currentEmployee?.employee_name || "Sangeetaa"}
                   </p>
                   <p className="text-xs text-gray-500 text-right">
                     Employee ID: {currentEmployee?.employee || "12345"}
@@ -455,15 +451,14 @@ const DesktopDashboard: React.FC = () => {
                 </div>
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
                   <img
-                    src={currentUser?.user_image || defaultProfile}
+                    src={currentEmployee?.image || defaultProfile}
                     alt="User avatar"
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
-                    showProfileDropdown ? "rotate-180" : ""
-                  }`}
+                  className={`w-4 h-4 text-gray-400 transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                    }`}
                 />
               </button>
 
@@ -474,14 +469,14 @@ const DesktopDashboard: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-300">
                         <img
-                          src={currentUser?.user_image || defaultProfile}
+                          src={currentEmployee?.image || defaultProfile}
                           alt="User avatar"
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900">
-                          {currentUser?.full_name || "Employee"}
+                          {currentEmployee?.employee_name || "Employee"}
                         </h3>
                         <p className="text-sm text-gray-600">
                           {currentEmployee?.designation || "Designation"}
@@ -490,7 +485,7 @@ const DesktopDashboard: React.FC = () => {
                           Employee ID: {currentEmployee?.employee || "N/A"}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {currentUser?.email || "email@company.com"}
+                          {currentEmployee?.company_email || currentEmployee?.personal_email || "email@company.com"}
                         </p>
                       </div>
                     </div>
@@ -686,7 +681,7 @@ const DesktopDashboard: React.FC = () => {
                     {expenseData.slice(0, 3).map((item: any) => {
                       const styles =
                         statusStyles[
-                          item.status?.toLowerCase() as keyof typeof statusStyles
+                        item.status?.toLowerCase() as keyof typeof statusStyles
                         ] || statusStyles.draft;
 
                       return (
