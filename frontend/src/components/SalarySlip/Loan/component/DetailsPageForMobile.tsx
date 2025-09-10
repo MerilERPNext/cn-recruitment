@@ -72,10 +72,10 @@ export default function LoanSummary() {
 
         {/* Table Rows */}
         <div className="divide-y divide-gray-200">
-          {installmentData.map((item) => (
+          {installmentData.map((item, index) => (
             <div
               key={item.id}
-              className={`px-4 py-4 grid grid-cols-4 gap-4 text-sm ₹{index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+              className={`px-4 py-4 grid grid-cols-4 gap-4 text-sm ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
             >
               <div className="text-gray-900 font-medium">{item.id}</div>
               <div className="text-gray-600">

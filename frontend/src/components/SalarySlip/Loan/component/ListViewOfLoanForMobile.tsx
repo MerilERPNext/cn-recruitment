@@ -22,8 +22,7 @@ interface Loan {
 const ListViewOfLoanForMobile= () => {
   const navigate = useNavigate();
 
-  const handleGoToShiftRequest = () => {
-
+  const handleGoToLoanDetails = () => {
     navigate('/webapp/salary-slip-app/details-page-mobile');
   };
 
@@ -31,8 +30,8 @@ const ListViewOfLoanForMobile= () => {
     <FrappeListView
       doctype="loan"
       ItemComponent={LoantItem}
-         onItemClick={() => {
-        handleGoToShiftRequest();
+      onItemClick={() => {
+        handleGoToLoanDetails();
       }}
       isSearch={true}
       pageSize={10}

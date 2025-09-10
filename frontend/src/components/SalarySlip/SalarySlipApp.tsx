@@ -134,9 +134,15 @@ const SalarySlipApp: React.FC = () => {
 
       {/* ✅ Loan Dialog */}
       <CreateLoanDialog
-        isOpen={isLoanDialogOpen}
-        onClose={() => setIsLoanDialogOpen(false)} // 🔹 Close dialog
-      />
+  isOpen={isLoanDialogOpen}
+  onClose={() => {
+    try {
+      setIsLoanDialogOpen(false);
+    } catch (error) {
+      console.error("Error closing loan dialog:", error);
+    }
+  }}
+/>
     </div>
   );
 

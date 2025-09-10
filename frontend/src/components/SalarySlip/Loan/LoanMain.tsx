@@ -8,12 +8,6 @@ import LoanList from "./component/LoanListView"
 import { Loan } from "./Type/loan"
 import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile"
 
-
-
-
-// sampleLoans should be imported or fetched
-
-
 const sampleLoans: Loan[] = [
   {
     id: 3,
@@ -422,9 +416,11 @@ export default function LoansPage() {
   )
 
   return (
+    <div>
     <>
-      {isDesktop ? <DesktopLayout /> : <MobileLayout />}
-      <CreateLoanDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
-    </>
+    {isDesktop ? <DesktopLayout /> : <MobileLayout />}
+  </>
+  <CreateLoanDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
+  </div>
   )
 }

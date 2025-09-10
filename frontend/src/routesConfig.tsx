@@ -119,10 +119,9 @@ export const routesConfig: AppRoute[] = [
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "hr-payroll", element: <HRPayroll /> },
       {path: "loan",element: <LoansPage />},
+      { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
     ],
-    
   },
-  {path: "/webapp/salary-slip-app/details-page-mobile", element: <LoanMainComponent />},
   {
     path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
     element: <ViewSalarySlipModal />,
