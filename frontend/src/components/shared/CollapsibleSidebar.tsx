@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Link, useLocation } from "react-router-dom"
 import {
   Home,
@@ -16,10 +17,11 @@ import {
   Clock,
   Users,
   CheckCircle,
-  Wallet,
+  ListTodo,
 } from "lucide-react";
-import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 
+import { useCompanyLogo } from "../../hooks/useCompanyLogo";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 interface SubSubMenuItem {
   name: string
@@ -45,20 +47,50 @@ interface CollapsibleSidebarProps {
   isExpanded: boolean
   setIsExpanded: (expanded: boolean) => void
 }
-
 const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ isExpanded, setIsExpanded }) => {
   const location = useLocation()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null)
 
-  const {data: companyLogo} = useCompanyLogo(); 
-  
-  const logoToShow =
-  Array.isArray(companyLogo) && companyLogo.length > 0
-    ? companyLogo[0].company_logo ||  "logo not found" :"Logo not found";
+  const { data: companyLogo, isLoading: logoLoading } = useCompanyLogo();
+  const { data: currentEmployee, isLoading: employeeLoading } = useCurrentEmployee();
 
-const companyName = Array.isArray(companyLogo) && companyLogo.length > 0 ? companyLogo[0].company_name : "Company name not found";
-console.log("Company Logo:", logoToShow, companyName);
+  const isLoading = logoLoading || employeeLoading;
+
+  const currentEmployeeCompany = currentEmployee?.company;
+
+  const matchedCompany = useMemo(() => {
+    if (isLoading || !companyLogo || !currentEmployeeCompany) {
+      return null;
+    }
+    
+    if (Array.isArray(companyLogo) && companyLogo.length > 0) {
+      return companyLogo.find(company => company.company_name === currentEmployeeCompany) || null;
+    }
+    
+    return null;
+  }, [companyLogo, currentEmployeeCompany, isLoading]);
+
+  const logoToShow = matchedCompany?.company_logo || "Not Found";
+  const companyName = matchedCompany?.company_name || currentEmployeeCompany || "Loading...";
+
+  const getAbbreviatedName = (name: string) => {
+    if (!name || name === "Loading...") return name;
+    
+    const words = name.split(' ').filter(word => word.length > 0);
+    
+    if (name.length > 15 || words.length > 1) {
+      return words.map(word => word.charAt(0).toUpperCase()).join(' ');
+    }
+    
+    return name;
+  };
+
+  const displayCompanyName = getAbbreviatedName(companyName);
+  const handleTodoClick = () => {
+    window.location.href = '/app/task_manager';
+  };
+
   const navigationItems: NavigationItem[] = [
     {
       icon: Home,
@@ -150,11 +182,6 @@ console.log("Company Logo:", logoToShow, companyName);
           href: "/webapp/salary-slip-app/salary-slip-list",
         },
         {
-          name: "Loan",
-          icon:  Wallet,
-          href: "/webapp/salary-slip-app/loan",
-        },
-        {
           name: "Payroll Documents",
           icon: FileText,
           href: "/webapp/salary-slip-app/hr-payroll",
@@ -170,6 +197,11 @@ console.log("Company Logo:", logoToShow, companyName);
       icon: Shield,
       label: "Policies",
       path: "/webapp/policies-app",
+    },
+    {
+      icon: ListTodo,
+      label: "Todo",
+      path: ""
     },
   ]
 
@@ -205,12 +237,10 @@ console.log("Company Logo:", logoToShow, companyName);
         return shiftRoutes.some((route) => location.pathname === route || location.pathname.startsWith(route + "/"))
       }
 
-      // Check for exact match first
       if (location.pathname === path) {
         return true
       }
 
-      // Then check for prefix match with proper boundary
       if (location.pathname.startsWith(path)) {
         const remainingPath = location.pathname.substring(path.length)
         return remainingPath === "" || remainingPath.startsWith("/")
@@ -220,6 +250,10 @@ console.log("Company Logo:", logoToShow, companyName);
   }
 
   const isItemActive = (item: NavigationItem) => {
+    if (item.label === "Todo") {
+      return false
+    }
+
     if (item.path === "/webapp/") {
       return location.pathname === "/webapp/"
     }
@@ -232,7 +266,7 @@ console.log("Company Logo:", logoToShow, companyName);
       return true
     }
 
-    if (location.pathname.startsWith(item.path)) {
+    if (item.path && location.pathname.startsWith(item.path)) {
       const remainingPath = location.pathname.substring(item.path.length)
       return remainingPath === "" || remainingPath.startsWith("/")
     }
@@ -307,18 +341,35 @@ console.log("Company Logo:", logoToShow, companyName);
             className="px-4 py-3 border-b border-gray-200"
             style={{ height: "73px" }}
           >
-            <div className="flex items-center  gap-3 h-full">
-            <img src={typeof logoToShow === "string" ? logoToShow : ""} alt="PayWise" className="w-12 h-12 rounded-full  flex-shrink-0" />
-              <div
-                className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}
-              >
-                <h2 className="font-semibold text-gray-900 whitespace-nowrap">
-                {companyName}
-                </h2>
-                <p className="text-sm text-gray-500 whitespace-nowrap">
-                  Employee Portal
-                </p>
-              </div>
+            <div className="flex items-center gap-3 h-full">
+              {isLoading ? (
+                <>
+                  <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
+                  <div className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse mb-1" style={{width: '120px'}} />
+                    <div className="h-3 bg-gray-200 rounded animate-pulse" style={{width: '90px'}} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <img 
+                    src={typeof logoToShow === "string" ? logoToShow : "/default-logo.png"} 
+                    alt={`${companyName} Logo`}
+                    className="w-12 h-12 rounded-full flex-shrink-0" 
+                    onError={(e) => {
+                      e.currentTarget.src = "/default-logo.png";
+                    }}
+                  />
+                  <div className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}>
+                    <h2 className="font-semibold text-gray-900 whitespace-nowrap" title={companyName}>
+                      {displayCompanyName}
+                    </h2>
+                    <p className="text-sm text-gray-500 whitespace-nowrap">
+                      Employee Portal
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div className="flex-1 p-4 space-y-1">
@@ -373,12 +424,32 @@ console.log("Company Logo:", logoToShow, companyName);
                         />
                       )}
                     </div>
+                  ) : item.label === "Todo" ? (
+                    <div
+                      onClick={handleTodoClick}
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${isItemDirectlyActive
+                        ? "bg-gray-900 text-white hover:text-white"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                        }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <span
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                            }`}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+                    </div>
                   ) : (
                     <Link
                       to={item.path}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${isItemDirectlyActive
-                          ? "bg-gray-900 text-white hover:text-white"
-                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-gray-900 text-white hover:text-white"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                         }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -412,8 +483,8 @@ console.log("Company Logo:", logoToShow, companyName);
                                 <div
                                   onClick={() => handleSubItemClick(subItem.name, true)}
                                   className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap ${isSubActive || isSubDropdownOpen
-                                      ? "bg-gray-100 text-gray-900"
-                                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    ? "bg-gray-100 text-gray-900"
+                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                     }`}
                                 >
                                   <div className="flex items-center space-x-2">
@@ -434,8 +505,8 @@ console.log("Company Logo:", logoToShow, companyName);
                                 <Link
                                   to={subItem.href || "#"}
                                   className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
-                                      ? "bg-gray-900 text-white hover:text-white"
-                                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    ? "bg-gray-900 text-white hover:text-white"
+                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                     }`}
                                 >
                                   <div className="flex items-center space-x-2">
@@ -461,8 +532,8 @@ console.log("Company Logo:", logoToShow, companyName);
                                           key={subSubItem.name}
                                           to={subSubItem.href}
                                           className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubSubActive
-                                              ? "bg-gray-900 text-white hover:text-white"
-                                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                                            ? "bg-gray-900 text-white hover:text-white"
+                                            : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
                                             }`}
                                         >
                                           <div className="flex items-center space-x-2">
