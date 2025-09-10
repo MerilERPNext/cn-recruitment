@@ -158,7 +158,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     {currentEmployee?.employee_name || currentEmployee?.first_name || "Employee"}
                   </p>
                   <p className="text-xs text-gray-500 text-right">
-                    {currentEmployee?.personal_email || "employee@company.com"}
+                    {currentEmployee?.company_email || currentEmployee?.personal_email || "email@company.com"}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
@@ -188,7 +188,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                           {currentEmployee?.employee_name || currentEmployee?.first_name || "Employee"}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {currentEmployee?.personal_email || "employee@company.com"}
+                          {currentEmployee?.company_email || currentEmployee?.personal_email || "email@company.com"}
                         </p>
                       </div>
                     </div>
@@ -216,7 +216,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
                     >
                       <LogOut className="w-4 h-4" />
-                      Logout 1
+                      Logout
                     </button>
                   </div>
                 </div>

@@ -485,7 +485,7 @@ const DesktopDashboard: React.FC = () => {
                           Employee ID: {currentEmployee?.employee || "N/A"}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {currentEmployee?.personal_email || "email@company.com"}
+                          {currentEmployee?.company_email || currentEmployee?.personal_email || "email@company.com"}
                         </p>
                       </div>
                     </div>
