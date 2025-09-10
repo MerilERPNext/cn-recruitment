@@ -49,7 +49,10 @@ apiClient.interceptors.response.use(
     const config = error.config as CustomAxiosRequestConfig;
 
     // Handle CSRF token refresh on 400 or 500 errors
-    if ((error.response?.status === 400 || error.response?.status === 500) && !config._retry) {
+    if (
+      (error.response?.status === 400 || error.response?.status === 500) &&
+      !config._retry
+    ) {
       try {
         config._retry = true;
         const csrfToken = await refreshCsrfToken();
@@ -89,7 +92,9 @@ apiClient.interceptors.response.use(
 
     // Handle 417 Expectation Failed errors (typically from device ID setting issues)
     if (error.response?.status === 417) {
-      console.warn("🚨 API returned 417 Expectation Failed - this is typically due to device ID setting issues");
+      console.warn(
+        "🚨 API returned 417 Expectation Failed - this is typically due to device ID setting issues"
+      );
       // Don't block the application, but log the warning
     }
 
@@ -163,14 +168,23 @@ export const FrappeAPI = {
       console.error(`🚨 API method ${method} failed:`, error);
 
       // Handle 417 errors specifically for attendance-related methods
-      if (error && typeof error === 'object' && 'response' in error) {
+      if (error && typeof error === "object" && "response" in error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const axiosError = error as any;
         if (axiosError.response?.status === 417) {
-          console.warn(`⚠️ Method ${method} returned 417 Expectation Failed - likely device ID or attendance API issue`);
+          console.warn(
+            `⚠️ Method ${method} returned 417 Expectation Failed - likely device ID or attendance API issue`
+          );
 
           // For specific attendance methods, return empty data instead of throwing
-          if (method.includes('get_events') || method.includes('attendance') || method.includes('device_id')) {
-            console.warn(`🔄 Returning empty result for ${method} due to 417 error`);
+          if (
+            method.includes("get_events") ||
+            method.includes("attendance") ||
+            method.includes("device_id")
+          ) {
+            console.warn(
+              `🔄 Returning empty result for ${method} due to 417 error`
+            );
             return []; // Return empty array for attendance data
           }
         }
@@ -229,16 +243,21 @@ export const FrappeAPI = {
     _doctype?: string,
     _folder?: string,
     _is_private?: string
-  ): Promise<unknown> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> => {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", file, _file_name || file.name);
     if (_file_name) formData.append("file_name", _file_name);
     if (_is_private) formData.append("is_private", _is_private);
     if (_doctype) formData.append("doctype", _doctype);
     if (_folder) formData.append("folder", _folder);
     if (_docname) formData.append("docname", _docname);
-    const response = await apiClient.post(`/api/method/upload_file`, formData);
-    return response.data.data;
+
+    const response = await apiClient.post(`/api/method/upload_file`, formData, {
+      headers: { "Content-Type": "multipart/form-data" }, // IMPORTANT
+    });
+
+    return response.data.message;
   },
 };
 

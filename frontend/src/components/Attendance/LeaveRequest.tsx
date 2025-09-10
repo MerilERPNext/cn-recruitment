@@ -175,7 +175,11 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             ? submission.data.halfDayOption
             : undefined,
           description: submission.data.description,
-          attachment: submission.data.attachment?.[0]?.url,
+          custom_attachment:
+            submission.data.attachment &&
+            submission.data.attachment?.[0]?.length > 0
+              ? submission.data.attachment?.[0]?.url
+              : "",
         },
       });
     } catch (error) {
@@ -290,11 +294,12 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         key: "attachment",
         label: "Attachment (Optional)",
         input: true,
-        storage: "base64",
+        storage: "customBase64",
         fileTypes: [
           { label: "Documents", value: ".pdf,.doc,.docx" },
           { label: "Images", value: ".jpg,.jpeg,.png" },
         ],
+        multiple: false,
         filePattern: "*/*",
         customClass: "px-2 mb-6",
       },

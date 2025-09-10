@@ -26,6 +26,7 @@ import { useExpenseClaim } from "../hooks/useExpense";
 import {
   Coordinates,
   formatDateString,
+  formatTimeSafe,
   formatTo24HourTime,
   getDeviceLocation,
 } from "../utils/helperUtils";
@@ -436,8 +437,11 @@ const DesktopDashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/webapp/notification-log')} className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <NotificationBell />
+            <button
+              onClick={() => navigate("/webapp/notification-log")}
+              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <NotificationBell />
             </button>
 
             <div className="relative" ref={profileDropdownRef}>
@@ -590,9 +594,9 @@ const DesktopDashboard: React.FC = () => {
                     SHIFT START
                   </p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {firstCheckIn?.shift_start
-                      ? formatTo24HourTime(firstCheckIn.shift_start)
-                      : "09:00 AM"}
+                    {employeeShift?.start_time
+                      ? formatTimeSafe(employeeShift?.start_time)
+                      : "--:--"}
                   </p>
                 </div>
               </div>
@@ -630,9 +634,9 @@ const DesktopDashboard: React.FC = () => {
                 <div>
                   <p className="text-sm text-gray-500 mb-1">SHIFT END</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {firstCheckIn?.shift_end
-                      ? formatTo24HourTime(firstCheckIn.shift_end)
-                      : "7:00 PM"}
+                    {employeeShift?.end_time
+                      ? formatTimeSafe(employeeShift?.end_time)
+                      : "--:--"}
                   </p>
                 </div>
               </div>

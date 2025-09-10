@@ -33,8 +33,10 @@ interface AttendanceFormData {
   custom_to_time?: string | Date;
   select_shift?: string;
   overnight_out_duty?: boolean;
-  attachments?: File[];
-  custom_attachments?: File;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  attachments?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  custom_attachment?: any;
 }
 
 interface FormioFormInstance {
@@ -94,7 +96,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
   const employeeIdToQuery = isForOthers
     ? selectedEmployee
-    : currentEmployee?.employee || "";
+    : currentEmployee?.user_id || "";
   const { data: employeeShift, refetch: refetchShift } = useGetEmployeeShift(
     employeeIdToQuery,
     { employee: employeeIdToQuery }
@@ -463,18 +465,15 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           },
           {
             label: "Attachments",
-            tableView: false,
-            webcam: true,
             fileTypes: [
-              { label: "Images", value: "image/*" },
-              { label: "Documents", value: "application/*" },
+              { label: "Documents", value: ".pdf,.doc,.docx" },
+              { label: "Images", value: ".jpg,.jpeg,.png" },
             ],
-            image: true,
-            imageSize: "200",
             storage: "customBase64",
             key: "attachments",
             type: "file",
             input: true,
+            multiple: false,
             tooltip: "Upload receipts or supporting documents.",
           },
         ],
@@ -500,6 +499,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       reasonList,
       selectedRequestType,
       reqValidationmutation,
+      employeeShift,
     ]
   );
 
@@ -584,14 +584,19 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         break;
     }
 
-    if (submission.data.attachments?.[0]) {
-      requestBody.custom_attachments = submission.data.attachments[0];
+    if (
+      submission.data.attachments?.[0] &&
+      submission?.data?.attachments?.length > 0
+    ) {
+      requestBody.custom_attachment = submission.data?.attachments?.[0]?.url;
     }
 
     mutation.mutate(requestBody as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
-        setRefetchAttendance(true);
+        setTimeout(() => {
+          setRefetchAttendance(true);
+        }, 1000);
         toast.success("Added Attendance Request successfully!");
       },
       onError: (error: CustomError) => {

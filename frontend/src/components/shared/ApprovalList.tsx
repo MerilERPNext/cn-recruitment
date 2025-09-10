@@ -26,6 +26,7 @@ type ApprovalListProps = {
   }) => ReactNode;
   refetch?: boolean;
   pageSize?: number;
+  showPagination?: boolean;
   onApprovalRefetchComplete?: () => void;
 };
 
@@ -35,6 +36,7 @@ const ApprovalList = ({
   pageSize,
   refetch,
   onApprovalRefetchComplete,
+  showPagination = true,
 }: ApprovalListProps) => {
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
@@ -54,6 +56,21 @@ const ApprovalList = ({
     () => ({ reference_type: doctype, status: "open" }),
     [doctype]
   );
+  useEffect(() => {
+    const handleChatClose = () => {
+      setRefetchListView((prev) => !prev);
+    };
+
+    document.addEventListener("chatnext:modal:chat:close", handleChatClose);
+
+    // Cleanup function to remove the event listener
+    return () => {
+      document.removeEventListener(
+        "chatnext:modal:chat:close",
+        handleChatClose
+      );
+    };
+  }, []);
 
   useEffect(() => {
     if (refetch) {
@@ -72,7 +89,15 @@ const ApprovalList = ({
     if (selectedIds.length === allRequests.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(allRequests.map((req) => req.name));
+      setSelectedIds(
+        allRequests.map((req) => {
+          if (req?.custom_doctype_actions_with_form?.length > 0) {
+            return null;
+          } else {
+            return req.name;
+          }
+        })
+      );
     }
   };
 
@@ -111,12 +136,6 @@ const ApprovalList = ({
             );
           }
         }
-        setRefetchListView((prev) => !prev);
-        toast.success(
-          `Request ${
-            action === "Reject" ? "rejecte" : action.toLowerCase()
-          }d successfully!`
-        );
         // Query invalidation now handled by Frappe realtime events
       } catch (error: any) {
         const exceptions = error?.response?.data?.exception?.split(":");
@@ -180,6 +199,7 @@ const ApprovalList = ({
         isFilter={false}
         defaultFields={["*"]}
         pageSize={pageSize}
+        showPagination={showPagination}
         onDataLoad={(data) => setAllRequests(data)}
         PreListComponent={() => (
           <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
