@@ -112,8 +112,8 @@ const Holidays: React.FC = () => {
   } = useMyLeaveRequests(currentEmployee?.name);
 
   useEffect(() => {
-    setRefetch(refetch);
-    return () => setRefetch(() => {});
+    const unsubscribe = setRefetch(refetch);
+    return unsubscribe;
   }, [refetch, setRefetch]);
 
   const today = React.useMemo(() => {

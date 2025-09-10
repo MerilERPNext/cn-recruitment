@@ -66,6 +66,7 @@ import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails"
 import NotificationList from "./components/Notification/Notification";
 import OrganizationalChart from "./components/OrganizationalChart/OrganizationalChart";
 import { AllShiftsDashboardRoute, MyShiftsListRoute, TeamShiftsListRoute, ShiftChangeRequestsRoute } from "./components/ShiftRequest/ShiftDynamicRoute";
+import PendingTeamLeaves from "./components/Leaves/PendingTeamLeaves";
 import LoansPage from "./components/SalarySlip/Loan/LoanMain";
 import LoanMainComponent from "./components/SalarySlip/Loan/component/DetailsPageForMobile";
 
@@ -241,6 +242,10 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
+       {
+        path: "leave-requests/pending",
+        element: <PendingTeamLeaves />,
+      },
     ],
   },
   {
