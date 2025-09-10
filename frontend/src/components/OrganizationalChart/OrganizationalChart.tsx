@@ -4,7 +4,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router";
 import { Minus, Plus, RotateCcw } from "lucide-react";
-import Node from "./Node";
+
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import {
   useCurrentEmployeeAllDetails,

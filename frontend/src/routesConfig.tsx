@@ -69,6 +69,7 @@ import { AllShiftsDashboardRoute, MyShiftsListRoute, TeamShiftsListRoute, ShiftC
 import PendingTeamLeaves from "./components/Leaves/PendingTeamLeaves";
 import LoansPage from "./components/SalarySlip/Loan/LoanMain";
 import { useScreenSize } from "./hooks/useScreenSize";
+import LoanMainComponent from "./components/SalarySlip/Loan/component/DetailsPageForMobile";
 
 export interface AppRoute {
   index?: boolean;
@@ -119,6 +120,7 @@ export const routesConfig: AppRoute[] = [
       { path: "job-applicant-list", element: <JobApplicantList /> },
     ],
   },
+  
   //salary slip route
   {
     path: "/webapp/salary-slip-app",
@@ -127,10 +129,8 @@ export const routesConfig: AppRoute[] = [
       { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "hr-payroll", element: <HRPayroll /> },
-      {
-        path: "loan",
-        element: <LoansPage />
-      },
+      {path: "loan",element: <LoansPage />},
+      { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
     ],
   },
   {

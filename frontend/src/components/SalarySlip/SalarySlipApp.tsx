@@ -4,6 +4,7 @@ import HeaderBar from "../HeaderBar";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize"; 
+import CreateLoanDialog from "./Loan/component/CreateLoanDailog";
 
 type TabName = 
  'Salary Slip' 
@@ -16,7 +17,7 @@ type ViewMode = 'annual' | 'monthly';
 const tabRoutes: Record<TabName, string> = {
   "CTC Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
-  "Loan": "",
+  "Loan": "/webapp/salary-slip-app/loan",
   "Payroll Documents": "/webapp/salary-slip-app/hr-payroll", 
 };
 
@@ -42,6 +43,9 @@ const SalarySlipApp: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("CTC Breakdown");
   const [viewMode, setViewMode] = useState<ViewMode>("annual");
+
+  // 🔹 Added state for CreateLoanDialog
+  const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
     key,
@@ -107,33 +111,6 @@ const SalarySlipApp: React.FC = () => {
           activeTab={activeTab}
           onTabChange={handleTabChange}
         />
-
-        {activeTab === "CTC Breakdown" && (
-          <div className="px-4 py-2">
-            <div className="flex bg-white border rounded-lg p-1 justify-center w-full">
-              <button
-                onClick={() => setViewMode('annual')}
-                className={`px-4 py-2 w-[50%] rounded-lg font-medium transition-colors ${
-                  viewMode === 'annual'
-                    ? 'bg-black text-white'
-                    : 'bg-white  text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Annual CTC
-              </button>
-              <button
-                onClick={() => setViewMode('monthly')}
-                className={`px-4 py-2 w-[50%] rounded-lg font-medium transition-colors ${
-                  viewMode === 'monthly'
-                    ? 'bg-black text-white'
-                    : 'bg-white  text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Monthly Salary
-              </button>
-            </div>
-          </div>
-        )}
       </header>
 
       <main className="p-4 z-100 flex-grow overflow-y-auto">
@@ -141,6 +118,31 @@ const SalarySlipApp: React.FC = () => {
           <Outlet />
         </ViewModeContext.Provider>
       </main>
+
+      {/* ✅ Loan Footer Button */}
+      {activeTab === "Loan" && (
+        <footer className="fixed bottom-0 left-0 w-full border-t bg-white shadow-md p-2">
+          <button
+            className="w-full bg-black text-white rounded-lg p-3 hover:bg-gray-900 transition-colors"
+            onClick={() => setIsLoanDialogOpen(true)} // 🔹 Open dialog
+            aria-label="Create Loan"
+          >
+            + Create Loan
+          </button>
+        </footer>
+      )}
+
+      {/* ✅ Loan Dialog */}
+      <CreateLoanDialog
+  isOpen={isLoanDialogOpen}
+  onClose={() => {
+    try {
+      setIsLoanDialogOpen(false);
+    } catch (error) {
+      console.error("Error closing loan dialog:", error);
+    }
+  }}
+/>
     </div>
   );
 
