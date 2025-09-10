@@ -244,7 +244,7 @@ export const FrappeAPI = {
     _folder?: string,
     _is_private?: string
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any> => {
+  ): Promise<{ file_url: string; name: string; [key: string]: any }> => {
     const formData = new FormData();
     formData.append("file", file, _file_name || file.name);
     if (_file_name) formData.append("file_name", _file_name);

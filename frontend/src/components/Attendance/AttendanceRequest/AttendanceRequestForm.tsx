@@ -33,10 +33,8 @@ interface AttendanceFormData {
   custom_to_time?: string | Date;
   select_shift?: string;
   overnight_out_duty?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  attachments?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  custom_attachment?: any;
+  attachments?: { url: string }[];
+  custom_attachment?: string;
 }
 
 interface FormioFormInstance {

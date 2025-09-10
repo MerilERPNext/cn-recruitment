@@ -176,8 +176,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             : undefined,
           description: submission.data.description,
           custom_attachment:
-            submission.data.attachment &&
-            submission.data.attachment?.[0]?.length > 0
+            submission.data.attachment && submission.data.attachment?.length > 0
               ? submission.data.attachment?.[0]?.url
               : "",
         },

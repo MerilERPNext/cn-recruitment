@@ -781,11 +781,11 @@ const FrappeListView = <T extends BaseItem>({
       </div>
 
       {/* Pagination */}
-      {!showPagination ||
-        (!isListLoading &&
-          !error &&
-          processedData.length > 0 &&
-          renderPagination())}
+      {showPagination &&
+        !isListLoading &&
+        !error &&
+        processedData.length > 0 &&
+        renderPagination()}
     </>
   );
 };
