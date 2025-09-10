@@ -30,6 +30,7 @@ import { useExpenseClaim } from "../hooks/useExpense";
 import {
   Coordinates,
   formatDateString,
+  formatTimeSafe,
   formatTo24HourTime,
   getDeviceLocation,
 } from "../utils/helperUtils";
@@ -304,7 +305,7 @@ const MobileDashboard: React.FC = () => {
       )
     );
 
-    let currentCheckIn: typeof sortedLogs[0] | null = null;
+    let currentCheckIn: (typeof sortedLogs)[0] | null = null;
 
     for (const log of sortedLogs) {
       if (log.log_type === "IN") {
@@ -407,10 +408,8 @@ const MobileDashboard: React.FC = () => {
               Shift Start
             </p>
             <p className="text-2xl font-bold text-gray-900">
-              {firstCheckIn?.shift_start
-                ? formatTo24HourTime(
-                    firstCheckIn?.shift_start || ("" as string)
-                  )
+              {employeeShift?.start_time
+                ? formatTimeSafe(employeeShift?.start_time)
                 : "--:--"}
             </p>
           </div>
@@ -433,8 +432,8 @@ const MobileDashboard: React.FC = () => {
               Shift End
             </p>
             <p className="text-2xl font-bold text-gray-900">
-              {firstCheckIn?.shift_end
-                ? formatTo24HourTime(firstCheckIn.shift_end)
+              {employeeShift?.end_time
+                ? formatTimeSafe(employeeShift?.end_time)
                 : "--:--"}
             </p>{" "}
             {/* <p className="text-sm font-bold text-gray-900">{todayAttendance?.[0]?.shift}</p> */}

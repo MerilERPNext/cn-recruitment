@@ -98,7 +98,11 @@ export type EmployeeCheckInLog = {
   shift_actual_end: string;
 };
 
-export type EmployeeShift = { shift: string };
+export type EmployeeShift = {
+  shift: string;
+  end_time: string;
+  start_time: string;
+};
 
 export type EmployeeShiftSummary = {
   present: number;

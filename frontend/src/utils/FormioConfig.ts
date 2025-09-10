@@ -1,5 +1,5 @@
 import { Formio } from "formiojs";
-import FrappeAPI from "./frappeAPI";
+import { FrappeAPI } from "./frappeAPI";
 
 Formio.setBaseUrl(window.location.origin);
 
@@ -8,22 +8,41 @@ const customProvider = {
     return {
       title: "CustomBase64",
       name: "customBase64",
+      /**
+       * Upload file to Frappe backend
+       */
       uploadFile: async (file: File, fileName: string) => {
-        const res: any = await FrappeAPI.uploadFile(file, fileName);
-        console.log({ res });
-        return res.message ? res.message : "Something went wrong";
+        const res = await FrappeAPI.uploadFile(file, fileName);
+
+        if (!res || !res.file_url) {
+          throw new Error("Invalid upload response");
+        }
+
+        return {
+          storage: "customBase64",
+          name: res.name || file.name,
+          originalName: file.name,
+          size: file.size,
+          type: file.type,
+          url: res.file_url,
+          data: res,
+        };
       },
-      downloadFile(file: File) {
-        // Return the original as there is nothing to do.
-        return Promise.resolve(file);
+
+      /**
+       * Handle file download
+       */
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      downloadFile: async (file: any) => {
+        // If backend provides a URL
+        if (file.url) {
+          return fetch(file.url).then((res) => res.blob());
+        }
+        return file;
       },
     };
   },
 };
 
-try {
-  // @ts-expect-error error in formiojs types
-  Formio.Providers.addProviders("storage", customProvider);
-} catch (error) {
-  console.log(error, "error");
-}
+// @ts-expect-error: formiojs types issue
+Formio.Providers.addProviders("storage", customProvider);

@@ -71,6 +71,7 @@ import {
   TeamShiftsListRoute,
   ShiftChangeRequestsRoute,
 } from "./components/ShiftRequest/ShiftDynamicRoute";
+import PendingTeamLeaves from "./components/Leaves/PendingTeamLeaves";
 import LoansPage from "./components/SalarySlip/Loan/LoanMain";
 import OvertimeRequests from "./components/Attendance/OvertimeRequests/OvertimeRequests";
 
@@ -217,6 +218,7 @@ export const routesConfig: AppRoute[] = [
       { path: "attendance-request", element: <AttendanceRequest /> },
       { path: "team-attendance-requests", element: <TeamAttendanceDetails /> },
       { path: "planned-overtime-requests", element: <OvertimeRequests /> },
+
       {
         path: "team-attendance-requests/pendings",
         element: <AllPendingRequests />,
@@ -244,6 +246,10 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
+      {
+        path: "leave-requests/pending",
+        element: <PendingTeamLeaves />,
+      },
     ],
   },
   {

@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useRef } from "react";
 
 type RefetchFn = () => void;
+
 type LeaveRequestRefreshContextType = {
-  setRefetch: (fn: RefetchFn) => void;
+  setRefetch: (fn: RefetchFn) => () => void;
   triggerRefetch: () => void;
 };
 
@@ -13,14 +14,15 @@ const LeaveRequestRefreshContext = createContext<
 export const LeaveRequestRefreshProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const refetchFn = useRef<RefetchFn | null>(null);
+  const refetchFns = useRef<Set<RefetchFn>>(new Set());
 
   const setRefetch = (fn: RefetchFn) => {
-    refetchFn.current = fn;
+    refetchFns.current.add(fn);
+    return () => refetchFns.current.delete(fn);
   };
 
   const triggerRefetch = () => {
-    if (refetchFn.current) refetchFn.current();
+    refetchFns.current.forEach((fn) => fn());
   };
 
   return (
@@ -29,6 +31,7 @@ export const LeaveRequestRefreshProvider: React.FC<{
     </LeaveRequestRefreshContext.Provider>
   );
 };
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const useLeaveRequestRefresh = () => {
   const ctx = useContext(LeaveRequestRefreshContext);

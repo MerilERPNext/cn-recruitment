@@ -63,11 +63,12 @@ const TeamAttendanceDetails = () => {
           >
             <ApprovalList
               doctype={"Attendance Request"}
-              pageSize={3}
+              // pageSize={3}
               refetch={refetch || refetchAttendance}
               onApprovalRefetchComplete={() => {
                 setRefetch(false);
               }}
+              showPagination={false}
               renderCardContent={(item) => (
                 <ApprovalCard
                   isSelected={item?.isSelected}
@@ -110,6 +111,7 @@ const TeamAttendanceDetails = () => {
                   pageSize={3}
                   refetchTrigger={refetch || refetchAttendance}
                   onRefetchComplete={() => setRefetch(false)}
+                  showPagination={false}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ItemComponent={(props: { item: any }) => {
                     return (
