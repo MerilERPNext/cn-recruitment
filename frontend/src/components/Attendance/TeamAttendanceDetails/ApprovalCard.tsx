@@ -69,7 +69,9 @@ const ApprovalCard = ({
               checked={isSelected}
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggleSelect?.(data?.name)}
-              disabled={isDisabled}
+              disabled={
+                isDisabled || data?.custom_doctype_actions_with_form?.length > 0
+              }
             />
           </div>
 
@@ -132,13 +134,14 @@ const ApprovalCard = ({
           <div className="p-4 flex items-start gap-3 w-full">
             <input
               type="checkbox"
-              className="mt-1 accent-blue-500"
+              className={"mt-1 accent-blue-500"}
               checked={isSelected}
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggleSelect?.(data?.name)}
-              disabled={isDisabled}
+              disabled={
+                isDisabled || data?.custom_doctype_actions_with_form?.length > 0
+              }
             />
-
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div>
