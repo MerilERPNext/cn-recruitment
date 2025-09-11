@@ -18,6 +18,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import DOMPurify from "dompurify";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -604,7 +605,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             .slice(1)
             .join(":")
             .trim() || "Something went wrong!!";
-        toast.error(errorMessage as string);
+        const cleanString = DOMPurify.sanitize(errorMessage || "");
+        toast.error(cleanString as string);
         console.error(error);
       },
     });

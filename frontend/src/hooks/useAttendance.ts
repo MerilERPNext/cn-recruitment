@@ -318,3 +318,19 @@ export function useClockInOutService() {
     },
   });
 }
+
+export function useCreatePlannedOvertimeRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.createPlannedOvertimeRequest(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["planned-overtime-request"] });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}

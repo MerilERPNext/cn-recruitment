@@ -54,8 +54,8 @@ const CallIcon = () => (
 
 // Header Component
 const Header = ({ title, onBackClick, onMailClick }: any) => (
-  <header className="bg-white shadow-sm">
-    <div className="mx-auto flex max-w-md items-center p-4">
+  <header className="bg-white border shadow-sm">
+    <div className="mx-auto flex  items-center p-4">
       <button
         className="text-gray-800 p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
         onClick={onBackClick}

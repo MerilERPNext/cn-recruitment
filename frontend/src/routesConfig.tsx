@@ -72,9 +72,12 @@ import {
 } from "./components/ShiftRequest/ShiftDynamicRoute";
 import PendingTeamLeaves from "./components/Leaves/PendingTeamLeaves";
 import LoansPage from "./components/SalarySlip/Loan/LoanMain";
+import OvertimeRequests from "./components/Attendance/OvertimeRequests/OvertimeRequests";
+import AllOvertimePendingRequests from "./components/Attendance/OvertimeRequests/AllOvertimePendingRequests";
 import { useScreenSize } from "./hooks/useScreenSize";
 import LoanMainComponent from "./components/SalarySlip/Loan/component/DetailsPageForMobile";
 import OrganizationChart from "./components/ORGChart/OrganizationChart";
+import OrganizationCharttooo from "./components/ORGChart/OrgnazationChartForTwoLavel";
 
 export interface AppRoute {
   index?: boolean;
@@ -83,11 +86,12 @@ export interface AppRoute {
   children?: AppRoute[];
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 const ShiftRequestDefaultRoute = () => {
   const { isDesktop } = useScreenSize();
 
   if (isDesktop) {
-    return <Navigate to="/webapp/shift-request/all-shifts-dashboard" replace />;
+    return <Navigate to="/webapp/attendance/all-shifts-dashboard" replace />;
   } else {
     return <Navigate to="/webapp/shift-request/my-shift-assignment" replace />;
   }
@@ -134,7 +138,7 @@ export const routesConfig: AppRoute[] = [
       { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "hr-payroll", element: <HRPayroll /> },
-      { path: "loan", element: <LoansPage /> },
+      { path: "loan", element: <LoansPage />},
       { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
     ],
   },
@@ -235,9 +239,15 @@ export const routesConfig: AppRoute[] = [
       { path: "team-attendance", element: <TeamAttendance /> },
       { path: "attendance-request", element: <AttendanceRequest /> },
       { path: "team-attendance-requests", element: <TeamAttendanceDetails /> },
+      { path: "planned-overtime-requests", element: <OvertimeRequests /> },
+
       {
         path: "team-attendance-requests/pendings",
         element: <AllPendingRequests />,
+      },
+      {
+        path: "planned-overtime-requests/pendings",
+        element: <AllOvertimePendingRequests />,
       },
       {
         path: "attendance-policies",
@@ -262,6 +272,7 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
+      
       {
         path: "leave-requests/pending",
         element: <PendingTeamLeaves />,
@@ -316,4 +327,9 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/organizational-chart",
     element: <OrganizationChart />,
   },
+  {
+    path: "/webapp/organizational-chart-two-level",
+    element: <OrganizationCharttooo />,
+  },
+
 ];

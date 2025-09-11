@@ -35,16 +35,16 @@ const ApprovalCard = ({
     switch (parsedAction) {
       case "approve":
         styles =
-          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed";
+          "w-fit sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed";
         break;
       case "reject":
         styles =
-          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed";
+          "w-fit sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed";
 
         break;
       default:
         styles =
-          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-gray-100 text-gray-600 text-sm hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed";
+          "w-fit sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-gray-100 text-gray-600 text-sm hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed";
         break;
     }
     return styles;
@@ -53,12 +53,14 @@ const ApprovalCard = ({
     ? format(new Date(data.date), "dd/MM/yyyy")
     : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  const gridTemplateColumns = "40px 160px 0.8fr 120px 140px 0.6fr";
 
   return (
     <>
       {isDesktop ? (
         <div
-          className="grid grid-cols-6 items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer "
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
           {/* Checkbox */}
@@ -110,7 +112,7 @@ const ApprovalCard = ({
                     loadingAction?.id === data?.name &&
                     loadingAction?.action === action
                   }
-                  className={`${getActionStyles(action)} text-xs`}
+                  className={`${getActionStyles(action)} text-xs w-fit`}
                 >
                   {loadingAction?.id === data?.name &&
                   loadingAction?.action === action ? (
