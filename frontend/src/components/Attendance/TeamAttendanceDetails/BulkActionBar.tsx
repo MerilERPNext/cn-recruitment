@@ -13,7 +13,6 @@ export function BulkActionBar({
 
   return (
     <div className="p-2 px-4 bg-blue-50 rounded-xl lg:rounded-none">
-
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           <input type="checkbox" checked={allSelected} onChange={onSelectAll} />
@@ -22,6 +21,10 @@ export function BulkActionBar({
           </span>
         </div>
       </div>
+      <span className="text-sm font-medium text-gray-500">
+        Note - Requests which require other actions are not selectable for bulk
+        approval
+      </span>
 
       {selectedIds.length > 0 && (
         <div className="flex space-x-2 mt-2">
@@ -35,7 +38,7 @@ export function BulkActionBar({
             {loadingAction?.isLoading && loadingAction?.action === "Reject" ? (
               <span className="animate-spin border-2 border-red-600 border-t-transparent rounded-full w-4 h-4 inline-block"></span>
             ) : (
-              <>Bulk Reject ({selectedIds.length})</>
+              <>Bulk Reject ({selectedIds?.filter((i) => i)?.length})</>
             )}
           </button>
 
@@ -49,7 +52,7 @@ export function BulkActionBar({
             {loadingAction?.isLoading && loadingAction?.action === "Approve" ? (
               <span className="animate-spin border-2 border-green-600 border-t-transparent rounded-full w-4 h-4 inline-block"></span>
             ) : (
-              <>Bulk Approve ({selectedIds.length})</>
+              <>Bulk Approve ({selectedIds?.filter((i) => i)?.length})</>
             )}
           </button>
         </div>

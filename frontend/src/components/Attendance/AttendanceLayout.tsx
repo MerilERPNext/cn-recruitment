@@ -42,6 +42,7 @@ const AttendanceLayout: React.FC = () => {
     () => [
       { label: "Attendance", key: "summary" },
       { label: "My Attendance Details", key: "calendar-views" },
+      { label: "Team Attendance", key: "team-attendance" },
       { label: "My Attendance Requests", key: "attendance-request" },
       { label: "Team Attendance Requests", key: "team-attendance-requests" },
     ],
@@ -49,10 +50,7 @@ const AttendanceLayout: React.FC = () => {
   );
 
   const calendarSubTabs = useMemo(
-    () => [
-      { label: "My Attendance Details", key: "emp-attendance" },
-      { label: "Team Attendance", key: "team-attendance" },
-    ],
+    () => [{ label: "My Attendance Details", key: "emp-attendance" }],
     []
   );
 

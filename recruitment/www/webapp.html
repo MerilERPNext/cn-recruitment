@@ -10,10 +10,21 @@
   </head>
   <body>
     <div id="root"></div>
+    <chatnext-app />
     <script>
       if (!window.csrf_token) {
         window.csrf_token = "{{ csrf_token }}";
       }
+    </script>
+    <script>
+      fetch("/assets/assets.json")
+        .then(response => response.json())
+        .then(data => {
+          const script = document.createElement("script");
+          script.src = data["cn-app.bundle.js"];
+          document.body.appendChild(script);
+          console.log(script);
+        });
     </script>
   </body>
 </html>

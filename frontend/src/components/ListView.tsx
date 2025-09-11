@@ -81,6 +81,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   refetchTrigger?: boolean;
   onRefetchComplete?: () => void;
   orderBy?: string;
+  showPagination?: boolean;
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -105,6 +106,7 @@ const FrappeListView = <T extends BaseItem>({
   refetchTrigger = false,
   onRefetchComplete,
   orderBy = "modified desc",
+  showPagination = true,
 }: FrappeListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
@@ -779,7 +781,8 @@ const FrappeListView = <T extends BaseItem>({
       </div>
 
       {/* Pagination */}
-      {!isListLoading &&
+      {showPagination &&
+        !isListLoading &&
         !error &&
         processedData.length > 0 &&
         renderPagination()}
