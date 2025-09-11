@@ -70,7 +70,6 @@ const AttendanceRequest = () => {
               onItemClick={() => {}}
               infiniteScroll={true}
               isFilter={false}
-              pageSize={5}
               defaultFields={[
                 "to_date",
                 "from_date",
