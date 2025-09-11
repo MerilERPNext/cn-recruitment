@@ -340,11 +340,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       item.subItems?.some((subItem) => isSubItemActive(subItem))
     );
 
-    if (activeParent) {
-      setOpenDropdown(activeParent.label);
-    } else {
-      setOpenDropdown(null); // This 'else' block is the key addition
-    }
+    setOpenDropdown(activeParent?.label || null);
   }, [location.pathname]);
 
   return (
