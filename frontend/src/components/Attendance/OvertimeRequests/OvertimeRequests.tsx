@@ -4,8 +4,6 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router";
 import { AttendanceRequest, LoadingAction } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
-// import FrappeListView from "../../ListView";
-// import { RequestCard } from "../TeamAttendanceDetails/RequestCard";
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
 import FrappeListView from "../../ListView";

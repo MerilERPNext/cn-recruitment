@@ -98,7 +98,6 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   );
   const mutation = useCreatePlannedOvertimeRequest();
   const formInstance = useRef<any>(null);
-  // const [formData, setFormData] = useState<any>({});
   const { setRefetchAttendance } = useGlobalStore();
 
   const handleSubmit = async () => {
@@ -223,9 +222,6 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
               validateOnBlur: true,
               validateOnChange: false,
             }}
-            // onChange={({ data }: { data: any }) => {
-            //   setFormData(data);
-            // }}
           />
         </div>
 

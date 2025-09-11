@@ -17,6 +17,7 @@ import { toast } from "react-hot-toast";
 import { useLeaveRequestRefresh } from "../Leaves/LeaveRequestRefreshContext";
 import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
 import { X } from "lucide-react";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 
 /** Local submission/data event shape used by form onChange/onFormReady handlers */
 interface FormSubmissionData {
@@ -35,6 +36,8 @@ interface RequestLeaveProps {
 }
 
 const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
+  const { setRefetchAttendance } = useGlobalStore();
+
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useEmployeeByUserId(userId);
 
@@ -56,6 +59,9 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const createLeaveMutation = useCreateFrappeDocument({
     onSuccess: () => {
+      setTimeout(() => {
+        setRefetchAttendance(true);
+      }, 1000);
       toast.success("Leave request submitted successfully!");
       triggerRefetch();
       onSuccess?.();

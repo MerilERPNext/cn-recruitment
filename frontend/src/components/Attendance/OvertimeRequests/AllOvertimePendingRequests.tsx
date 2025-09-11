@@ -39,8 +39,9 @@ const AllOvertimePendingRequests = () => {
                 onToggleSelect={item?.onToggleSelect}
                 data={item?.data}
                 onAction={item?.onAction}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) => setSelectedRequest(request)}
+                onClick={(request: AttendanceRequest) =>
+                  setSelectedRequest(request)
+                }
                 loadingAction={item?.loadingAction}
               />
             )}
