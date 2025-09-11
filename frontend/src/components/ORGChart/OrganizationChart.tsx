@@ -84,7 +84,6 @@ export default function OrganizationChart() {
   const { data: userId } = useLoggedInUser()
   const { data: user } = useCurrentEmployeeAllDetails(userId || "")
   const { data: employeeHierarchy } = useGetEmployeeHierarchy(user?.company ?? "")
-
   // Build nodes/edges when data comes
   useEffect(() => {
     if (employeeHierarchy) {
@@ -156,7 +155,7 @@ export default function OrganizationChart() {
   const proOptions = { hideAttribution: true }
 
   return (
-    <div className="w-full h-screen bg-gray-100">
+    <div className="w-full h-screen  bg-gray-100">
     <HeaderBar title="organizational chart" onBack={() => navigate(-1)} />
       <ReactFlow
         nodes={nodesWithToggle}

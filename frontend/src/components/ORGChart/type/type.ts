@@ -29,3 +29,4 @@ export type EmployeeHierarchy = {
   expandable: boolean
   children: EmployeeHierarchy[]
 }
+

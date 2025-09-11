@@ -70,6 +70,7 @@ import LoansPage from "./components/SalarySlip/Loan/LoanMain";
 import { useScreenSize } from "./hooks/useScreenSize";
 import LoanMainComponent from "./components/SalarySlip/Loan/component/DetailsPageForMobile";
 import OrganizationChart from "./components/ORGChart/OrganizationChart";
+import OrganizationCharttooo from "./components/ORGChart/OrgnazationChartForTwoLavel";
 
 export interface AppRoute {
   index?: boolean;
@@ -78,11 +79,12 @@ export interface AppRoute {
   children?: AppRoute[];
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 const ShiftRequestDefaultRoute = () => {
   const { isDesktop } = useScreenSize();
 
   if (isDesktop) {
-    return <Navigate to="/webapp/shift-request/all-shifts-dashboard" replace />;
+    return <Navigate to="/webapp/attendance/all-shifts-dashboard" replace />;
   } else {
     return <Navigate to="/webapp/shift-request/my-shift-assignment" replace />;
   }
@@ -310,6 +312,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/organizational-chart",
     element: <OrganizationChart />,
+  },
+  {
+    path: "/webapp/organizational-chart-two-level",
+    element: <OrganizationCharttooo />,
   },
 
 ];

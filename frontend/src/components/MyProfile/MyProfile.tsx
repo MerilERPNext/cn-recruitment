@@ -18,6 +18,7 @@ import defaultProfile from "../../assets/user.png";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -35,6 +36,7 @@ const MyProfile: React.FC = () => {
       { key: "address", label: "Address" },
       { key: "company-info", label: "Company Info" },
       { key: "salary-info", label: "Salary Info" },
+      { key: "ORG-chart", label: "Organization Chart" },
       // { key: "hr-letters", label: "HR Letters" },
     ],
     []
@@ -57,6 +59,7 @@ const MyProfile: React.FC = () => {
       address: <AddressInfo userAddress={userAddress?.data} user={user} />,
       "company-info": <CompanyInfo user={user} />,
       "salary-info": <SalaryInfo user={user} />,
+      "ORG-chart": <TwoLevelOrgChart />,
       // "hr-letters": <HRLetters />,
     }),
     [user, userAddress]
