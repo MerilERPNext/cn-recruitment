@@ -7,7 +7,6 @@ import PersonNode from "./PersonNode"
 import { EmployeeHierarchy, NodeData } from "./type/type"
 import { useLoggedInUser } from "../../hooks/useLoggedInUser"
 import { useCurrentEmployeeAllDetails, useGetEmployeeHierarchy } from "../../hooks/useEmployee"
-import HeaderBar from "../HeaderBar"
 import { useNavigate } from "react-router"
 import { IoChevronForwardOutline } from "react-icons/io5"
 
@@ -25,11 +24,14 @@ const isMatch = (nodeId: string, userId: unknown) => {
 }
 
 // ✅ Recursive: find node in tree
-const findNode = (root: EmployeeHierarchy, employeeId: unknown): EmployeeHierarchy | null => {
-  if (isMatch(root.id, employeeId)) return root
-  for (const child of root.children) {
-    const found = findNode(child, employeeId)
-    if (found) return found
+function findNode(hierarchy: EmployeeHierarchy[] | EmployeeHierarchy, id: string): EmployeeHierarchy | null {
+  const list = Array.isArray(hierarchy) ? hierarchy : [hierarchy]
+  for (const node of list) {
+    if (node.id === id) return node
+    if (node.children?.length) {
+      const found = findNode(node.children, id)
+      if (found) return found
+    }
   }
   return null
 }
@@ -136,8 +138,8 @@ export default function TwoLevelOrgChart() {
       console.log("⏳ Waiting for data...", { employeeHierarchy, employeeId })
       return
     }
-    const currentUser = findNode(employeeHierarchy, employeeId)
-    const parent = findParent(employeeHierarchy, employeeId)
+    const currentUser = findNode(employeeHierarchy as unknown as EmployeeHierarchy, employeeId)
+    const parent = findParent(employeeHierarchy as unknown as EmployeeHierarchy, employeeId)
     if (currentUser) {
       const { nodes, edges } = buildTwoLevelHierarchy(currentUser, parent)
       setNodes(nodes)
