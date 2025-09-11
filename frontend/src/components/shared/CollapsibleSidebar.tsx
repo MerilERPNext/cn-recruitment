@@ -63,11 +63,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ isExpanded, set
     if (isLoading || !companyLogo || !currentEmployeeCompany) {
       return null;
     }
-    
+
     if (Array.isArray(companyLogo) && companyLogo.length > 0) {
       return companyLogo.find(company => company.company_name === currentEmployeeCompany) || null;
     }
-    
+
     return null;
   }, [companyLogo, currentEmployeeCompany, isLoading]);
 
@@ -76,13 +76,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ isExpanded, set
 
   const getAbbreviatedName = (name: string) => {
     if (!name || name === "Loading...") return name;
-    
+
     const words = name.split(' ').filter(word => word.length > 0);
-    
+
     if (name.length > 15 || words.length > 1) {
       return words.map(word => word.charAt(0).toUpperCase()).join(' ');
     }
-    
+
     return name;
   };
 
@@ -183,7 +183,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ isExpanded, set
         },
         {
           name: "Loan",
-          icon:  Wallet,
+          icon: Wallet,
           href: "/webapp/salary-slip-app/loan",
         },
         {
@@ -318,8 +318,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ isExpanded, set
   useEffect(() => {
     const activeParent = navigationItems.find((item) => item.subItems?.some((subItem) => isSubItemActive(subItem)))
 
-    if (activeParent && openDropdown !== activeParent.label) {
+    if (activeParent) {
       setOpenDropdown(activeParent.label)
+    } else {
+      setOpenDropdown(null) // This 'else' block is the key addition
     }
   }, [location.pathname])
 
@@ -351,16 +353,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ isExpanded, set
                 <>
                   <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
                   <div className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse mb-1" style={{width: '120px'}} />
-                    <div className="h-3 bg-gray-200 rounded animate-pulse" style={{width: '90px'}} />
+                    <div className="h-4 bg-gray-200 rounded animate-pulse mb-1" style={{ width: '120px' }} />
+                    <div className="h-3 bg-gray-200 rounded animate-pulse" style={{ width: '90px' }} />
                   </div>
                 </>
               ) : (
                 <>
-                  <img 
-                    src={typeof logoToShow === "string" ? logoToShow : "/default-logo.png"} 
+                  <img
+                    src={typeof logoToShow === "string" ? logoToShow : "/default-logo.png"}
                     alt={`${companyName} Logo`}
-                    className="w-12 h-12 rounded-full flex-shrink-0" 
+                    className="w-12 h-12 rounded-full flex-shrink-0"
                     onError={(e) => {
                       e.currentTarget.src = "/default-logo.png";
                     }}
@@ -397,7 +399,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ isExpanded, set
                   parentItemClasses = "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 }
               } else {
-                if (isAnySubItemActive || isDropdownOpen || (isItemDirectlyActive && !hasSubItems)) {
+                if (isAnySubItemActive || (isItemDirectlyActive && !hasSubItems)) {
                   parentItemClasses = "bg-gray-900 text-white"
                 } else {
                   parentItemClasses = "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
