@@ -1,0 +1,138 @@
+import React from "react";
+import { useFrappeDocument } from "../../hooks/useFrappeQuery";
+import EmploymentHistoryCard from "./EmploymentHistoryCard";
+
+interface EmploymentHistoryProps {
+  employeeId: string | undefined;
+}
+
+export interface CustomWorkHistory {
+  doctype_name: string;
+  records: string;
+  start_date: string | null;
+  end_date: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+export interface Employee {
+  name: string;
+  custom_work_history?: CustomWorkHistory[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
+  employeeId,
+}) => {
+  const { data, isLoading, error } = useFrappeDocument(
+    "Employee",
+    employeeId || "",
+    ["custom_work_history"]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ) as { data: Employee | null; isLoading: boolean; error: any };
+
+  const history = data?.custom_work_history || [];
+
+  const groupedHistory = history.reduce<Record<string, CustomWorkHistory[]>>(
+    (acc, item) => {
+      if (!acc[item.doctype_name]) acc[item.doctype_name] = [];
+      acc[item.doctype_name].push(item);
+      return acc;
+    },
+    {}
+  );
+
+  return (
+    <div className="address-form-container h-full">
+      <div className="p-4 md:p-8">
+        <div className="border-b border-gray-200 pb-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Employment History
+          </h2>
+          <p className="text-gray-600">
+            Your employment history and organizational information
+          </p>
+        </div>
+
+        {!employeeId && (
+          <p className="p-4 text-gray-500">No employee selected</p>
+        )}
+
+        {isLoading && (
+          <div className="space-y-8">
+            {[1, 2].map((section) => (
+              <div key={section}>
+                <div className="h-5 w-32 bg-gray-200 rounded mb-4 animate-pulse" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((card) => (
+                    <div
+                      key={card}
+                      className="bg-white rounded-xl shadow-sm border p-6 animate-pulse"
+                    >
+                      <div className="h-5 w-24 bg-gray-200 rounded mb-4" />
+                      <div className="h-4 w-20 bg-gray-100 rounded mb-2" />
+                      <div className="h-4 w-28 bg-gray-100 rounded mb-2" />
+                      <div className="h-4 w-24 bg-gray-100 rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <p className="p-4 text-red-500">Failed to load employment history</p>
+        )}
+
+        {!isLoading &&
+          !error &&
+          Object.entries(groupedHistory).map(([category, items]) => {
+            const sortedItems = [...items].sort((a, b) => {
+              if (!a.end_date && b.end_date) return -1;
+              if (!b.end_date && a.end_date) return 1;
+
+              const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
+              const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
+              return bDate - aDate;
+            });
+
+            return (
+              <div key={category} className="mb-10">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                  {category}
+                </h3>
+
+                <div
+                  className={`grid gap-6 ${
+                    sortedItems.length <= 2
+                      ? "grid-cols-1 md:grid-cols-2"
+                      : "grid-cols-1 md:grid-cols-3"
+                  }`}
+                >
+                  {sortedItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className={`${
+                        sortedItems.length === 1 ? "max-w-md w-full" : ""
+                      }`}
+                    >
+                      <EmploymentHistoryCard
+                        title={item.records}
+                        start_date={item.start_date}
+                        end_date={item.end_date}
+                        isCurrent={!item.end_date}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+      </div>
+    </div>
+  );
+};
+
+export default EmploymentHistory;
