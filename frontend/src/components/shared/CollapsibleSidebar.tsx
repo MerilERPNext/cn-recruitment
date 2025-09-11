@@ -1,6 +1,6 @@
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Link, useLocation } from "react-router-dom"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   Calendar,
@@ -17,48 +17,55 @@ import {
   Users,
   CheckCircle,
   Wallet,
+  TimerIcon,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 
-
 interface SubSubMenuItem {
-  name: string
-  icon: React.ComponentType<{ className?: string }>
-  href: string
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
 }
 
 interface SubMenuItem {
-  name: string
-  icon: React.ComponentType<{ className?: string }>
-  href?: string
-  subItems?: SubSubMenuItem[]
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href?: string;
+  subItems?: SubSubMenuItem[];
 }
 
 interface NavigationItem {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  path: string
-  subItems?: SubMenuItem[]
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  path: string;
+  subItems?: SubMenuItem[];
 }
 
 interface CollapsibleSidebarProps {
-  isExpanded: boolean
-  setIsExpanded: (expanded: boolean) => void
+  isExpanded: boolean;
+  setIsExpanded: (expanded: boolean) => void;
 }
 
-const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ isExpanded, setIsExpanded }) => {
-  const location = useLocation()
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null)
+const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
+  isExpanded,
+  setIsExpanded,
+}) => {
+  const location = useLocation();
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
 
-  const {data: companyLogo} = useCompanyLogo(); 
-  
+  const { data: companyLogo } = useCompanyLogo();
+
   const logoToShow =
-  Array.isArray(companyLogo) && companyLogo.length > 0
-    ? companyLogo[0].company_logo ||  "logo not found" :"Logo not found";
+    Array.isArray(companyLogo) && companyLogo.length > 0
+      ? companyLogo[0].company_logo || "logo not found"
+      : "Logo not found";
 
-const companyName = Array.isArray(companyLogo) && companyLogo.length > 0 ? companyLogo[0].company_name : "Company name not found";
-console.log("Company Logo:", logoToShow, companyName);
+  const companyName =
+    Array.isArray(companyLogo) && companyLogo.length > 0
+      ? companyLogo[0].company_name
+      : "Company name not found";
+  console.log("Company Logo:", logoToShow, companyName);
   const navigationItems: NavigationItem[] = [
     {
       icon: Home,
@@ -123,6 +130,11 @@ console.log("Company Logo:", logoToShow, companyName);
           href: "/webapp/attendance/team-attendance-requests",
         },
         {
+          name: "Planned Overtime",
+          icon: TimerIcon,
+          href: "/webapp/attendance/planned-overtime-requests",
+        },
+        {
           name: "All Shifts",
           icon: ArrowUpDown,
           href: "/webapp/shift-request/all-shifts-dashboard",
@@ -151,7 +163,7 @@ console.log("Company Logo:", logoToShow, companyName);
         },
         {
           name: "Loan",
-          icon:  Wallet,
+          icon: Wallet,
           href: "/webapp/salary-slip-app/loan",
         },
         {
@@ -171,28 +183,30 @@ console.log("Company Logo:", logoToShow, companyName);
       label: "Policies",
       path: "/webapp/policies-app",
     },
-  ]
+  ];
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
     if (location.pathname === subSubItem.href) {
-      return true
+      return true;
     }
     if (location.pathname.startsWith(subSubItem.href)) {
-      const remainingPath = location.pathname.substring(subSubItem.href.length)
-      return remainingPath === "" || remainingPath.startsWith("/")
+      const remainingPath = location.pathname.substring(subSubItem.href.length);
+      return remainingPath === "" || remainingPath.startsWith("/");
     }
-    return false
-  }
+    return false;
+  };
 
   const isSubItemActive = (subItem: SubMenuItem) => {
-    if (subItem.subItems?.some((subSubItem) => isSubSubItemActive(subSubItem))) {
-      return true
+    if (
+      subItem.subItems?.some((subSubItem) => isSubSubItemActive(subSubItem))
+    ) {
+      return true;
     }
     if (subItem.href) {
-      const [path, query] = subItem.href.split("?", 2)
+      const [path, query] = subItem.href.split("?", 2);
 
       if (query) {
-        return location.pathname === path && location.search === `?${query}`
+        return location.pathname === path && location.search === `?${query}`;
       }
 
       if (path === "/webapp/shift-request/all-shifts-dashboard") {
@@ -201,88 +215,99 @@ console.log("Company Logo:", logoToShow, companyName);
           "/webapp/shift-request/my-shift-assignment",
           "/webapp/shift-request/shift-change-request",
           "/webapp/shift-request/team-shift",
-        ]
-        return shiftRoutes.some((route) => location.pathname === route || location.pathname.startsWith(route + "/"))
+        ];
+        return shiftRoutes.some(
+          (route) =>
+            location.pathname === route ||
+            location.pathname.startsWith(route + "/")
+        );
       }
 
       // Check for exact match first
       if (location.pathname === path) {
-        return true
+        return true;
       }
 
       // Then check for prefix match with proper boundary
       if (location.pathname.startsWith(path)) {
-        const remainingPath = location.pathname.substring(path.length)
-        return remainingPath === "" || remainingPath.startsWith("/")
+        const remainingPath = location.pathname.substring(path.length);
+        return remainingPath === "" || remainingPath.startsWith("/");
       }
     }
-    return false
-  }
+    return false;
+  };
 
   const isItemActive = (item: NavigationItem) => {
     if (item.path === "/webapp/") {
-      return location.pathname === "/webapp/"
+      return location.pathname === "/webapp/";
     }
 
-    if (item.subItems && item.subItems.some((subItem) => isSubItemActive(subItem))) {
-      return true
+    if (
+      item.subItems &&
+      item.subItems.some((subItem) => isSubItemActive(subItem))
+    ) {
+      return true;
     }
 
     if (location.pathname === item.path) {
-      return true
+      return true;
     }
 
     if (location.pathname.startsWith(item.path)) {
-      const remainingPath = location.pathname.substring(item.path.length)
-      return remainingPath === "" || remainingPath.startsWith("/")
+      const remainingPath = location.pathname.substring(item.path.length);
+      return remainingPath === "" || remainingPath.startsWith("/");
     }
 
-    return false
-  }
+    return false;
+  };
 
   const handleParentClick = (itemLabel: string, hasSubItems: boolean) => {
     if (hasSubItems) {
       if (openDropdown === itemLabel) {
-        setOpenDropdown(null)
-        setOpenSubDropdown(null)
+        setOpenDropdown(null);
+        setOpenSubDropdown(null);
       } else {
-        setOpenDropdown(itemLabel)
-        setOpenSubDropdown(null)
+        setOpenDropdown(itemLabel);
+        setOpenSubDropdown(null);
       }
-      setIsExpanded(true)
+      setIsExpanded(true);
     }
-  }
+  };
 
   const handleSubItemClick = (subItemName: string, hasSubSubItems: boolean) => {
     if (hasSubSubItems) {
       if (openSubDropdown === subItemName) {
-        setOpenSubDropdown(null)
+        setOpenSubDropdown(null);
       } else {
-        setOpenSubDropdown(subItemName)
+        setOpenSubDropdown(subItemName);
       }
     }
-  }
+  };
 
   const handleMouseLeave = () => {
-    setIsExpanded(false)
+    setIsExpanded(false);
 
     // Don't close dropdown if there's an active subItem that should keep it open
-    const activeParent = navigationItems.find((item) => item.subItems?.some((subItem) => isSubItemActive(subItem)))
+    const activeParent = navigationItems.find((item) =>
+      item.subItems?.some((subItem) => isSubItemActive(subItem))
+    );
 
     if (!activeParent) {
-      setOpenDropdown(null)
+      setOpenDropdown(null);
     }
 
-    setOpenSubDropdown(null)
-  }
+    setOpenSubDropdown(null);
+  };
 
   useEffect(() => {
-    const activeParent = navigationItems.find((item) => item.subItems?.some((subItem) => isSubItemActive(subItem)))
+    const activeParent = navigationItems.find((item) =>
+      item.subItems?.some((subItem) => isSubItemActive(subItem))
+    );
 
     if (activeParent && openDropdown !== activeParent.label) {
-      setOpenDropdown(activeParent.label)
+      setOpenDropdown(activeParent.label);
     }
-  }, [location.pathname])
+  }, [location.pathname]);
 
   return (
     <>
@@ -294,7 +319,9 @@ console.log("Company Logo:", logoToShow, companyName);
         `}
       </style>
       <aside
-        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${isExpanded ? "w-64" : "w-20"}`}
+        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${
+          isExpanded ? "w-64" : "w-20"
+        }`}
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -308,12 +335,18 @@ console.log("Company Logo:", logoToShow, companyName);
             style={{ height: "73px" }}
           >
             <div className="flex items-center  gap-3 h-full">
-            <img src={typeof logoToShow === "string" ? logoToShow : ""} alt="PayWise" className="w-12 h-12 rounded-full  flex-shrink-0" />
+              <img
+                src={typeof logoToShow === "string" ? logoToShow : ""}
+                alt="PayWise"
+                className="w-12 h-12 rounded-full  flex-shrink-0"
+              />
               <div
-                className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"}`}
+                className={`transition-all duration-300 ${
+                  isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                }`}
               >
                 <h2 className="font-semibold text-gray-900 whitespace-nowrap">
-                {companyName}
+                  {companyName}
                 </h2>
                 <p className="text-sm text-gray-500 whitespace-nowrap">
                   Employee Portal
@@ -323,28 +356,37 @@ console.log("Company Logo:", logoToShow, companyName);
           </div>
           <div className="flex-1 p-4 space-y-1">
             {navigationItems.map((item) => {
-              const Icon = item.icon
-              const hasSubItems = item.subItems && item.subItems.length > 0
-              const isAnySubItemActive = item.subItems?.some((subItem) => isSubItemActive(subItem))
-              const isItemDirectlyActive = isItemActive(item) && !isAnySubItemActive
-              const isDropdownOpen = openDropdown === item.label
+              const Icon = item.icon;
+              const hasSubItems = item.subItems && item.subItems.length > 0;
+              const isAnySubItemActive = item.subItems?.some((subItem) =>
+                isSubItemActive(subItem)
+              );
+              const isItemDirectlyActive =
+                isItemActive(item) && !isAnySubItemActive;
+              const isDropdownOpen = openDropdown === item.label;
 
-              let parentItemClasses = ""
+              let parentItemClasses = "";
               if (isExpanded) {
                 if (isAnySubItemActive) {
-                  parentItemClasses = "bg-gray-100 text-gray-900"
+                  parentItemClasses = "bg-gray-100 text-gray-900";
                 } else if (isItemDirectlyActive && !hasSubItems) {
-                  parentItemClasses = "bg-gray-900 text-white"
+                  parentItemClasses = "bg-gray-900 text-white";
                 } else if (isDropdownOpen) {
-                  parentItemClasses = "bg-gray-100 text-gray-900"
+                  parentItemClasses = "bg-gray-100 text-gray-900";
                 } else {
-                  parentItemClasses = "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  parentItemClasses =
+                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
                 }
               } else {
-                if (isAnySubItemActive || isDropdownOpen || (isItemDirectlyActive && !hasSubItems)) {
-                  parentItemClasses = "bg-gray-900 text-white"
+                if (
+                  isAnySubItemActive ||
+                  isDropdownOpen ||
+                  (isItemDirectlyActive && !hasSubItems)
+                ) {
+                  parentItemClasses = "bg-gray-900 text-white";
                 } else {
-                  parentItemClasses = "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  parentItemClasses =
+                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
                 }
               }
 
@@ -360,140 +402,177 @@ console.log("Company Logo:", logoToShow, companyName);
                           <Icon className="h-5 w-5" />
                         </div>
                         <span
-                          className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
-                            }`}
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
                         >
                           {item.label}
                         </span>
                       </div>
                       {isExpanded && (
                         <ChevronRight
-                          className={`h-4 w-4 transition-transform duration-200 ${isDropdownOpen || isAnySubItemActive ? "rotate-90" : ""
-                            }`}
+                          className={`h-4 w-4 transition-transform duration-200 ${
+                            isDropdownOpen || isAnySubItemActive
+                              ? "rotate-90"
+                              : ""
+                          }`}
                         />
                       )}
                     </div>
                   ) : (
                     <Link
                       to={item.path}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${isItemDirectlyActive
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
+                        isItemDirectlyActive
                           ? "bg-gray-900 text-white hover:text-white"
                           : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                        }`}
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
                         </div>
                         <span
-                          className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
-                            }`}
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
                         >
                           {item.label}
                         </span>
                       </div>
                     </Link>
                   )}
-                  {hasSubItems && (isDropdownOpen || isAnySubItemActive) && isExpanded && (
-                    <div className="overflow-hidden transition-all duration-300 ease-in-out">
-                      <div className="py-1 space-y-1">
-                        {item.subItems?.map((subItem) => {
-                          const SubIcon = subItem.icon
-                          const hasSubSubItems = subItem.subItems && subItem.subItems.length > 0
-                          const isSubActive = isSubItemActive(subItem)
-                          const isSubDropdownOpen = openSubDropdown === subItem.name
-                          const isAnySubSubItemActive = subItem.subItems?.some((subSubItem) =>
-                            isSubSubItemActive(subSubItem),
-                          )
+                  {hasSubItems &&
+                    (isDropdownOpen || isAnySubItemActive) &&
+                    isExpanded && (
+                      <div className="overflow-hidden transition-all duration-300 ease-in-out">
+                        <div className="py-1 space-y-1">
+                          {item.subItems?.map((subItem) => {
+                            const SubIcon = subItem.icon;
+                            const hasSubSubItems =
+                              subItem.subItems && subItem.subItems.length > 0;
+                            const isSubActive = isSubItemActive(subItem);
+                            const isSubDropdownOpen =
+                              openSubDropdown === subItem.name;
+                            const isAnySubSubItemActive =
+                              subItem.subItems?.some((subSubItem) =>
+                                isSubSubItemActive(subSubItem)
+                              );
 
-                          return (
-                            <div key={subItem.name}>
-                              {hasSubSubItems ? (
-                                <div
-                                  onClick={() => handleSubItemClick(subItem.name, true)}
-                                  className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap ${isSubActive || isSubDropdownOpen
-                                      ? "bg-gray-100 text-gray-900"
-                                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            return (
+                              <div key={subItem.name}>
+                                {hasSubSubItems ? (
+                                  <div
+                                    onClick={() =>
+                                      handleSubItemClick(subItem.name, true)
+                                    }
+                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap ${
+                                      isSubActive || isSubDropdownOpen
+                                        ? "bg-gray-100 text-gray-900"
+                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                     }`}
-                                >
-                                  <div className="flex items-center space-x-2">
-                                    <SubIcon className="h-3.5 w-3.5 opacity-70" />
-                                    <span
-                                      className={`font-medium transition-all duration-300 whitespace-nowrap ${isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
+                                  >
+                                    <div className="flex items-center space-x-2">
+                                      <SubIcon className="h-3.5 w-3.5 opacity-70" />
+                                      <span
+                                        className={`font-medium transition-all duration-300 whitespace-nowrap ${
+                                          isExpanded
+                                            ? "opacity-100 translate-x-0"
+                                            : "opacity-0 -translate-x-2"
                                         }`}
-                                    >
-                                      {subItem.name}
-                                    </span>
-                                  </div>
-                                  <ChevronRight
-                                    className={`h-3 w-3 transition-transform duration-200 ${isSubDropdownOpen || isAnySubSubItemActive ? "rotate-90" : ""
+                                      >
+                                        {subItem.name}
+                                      </span>
+                                    </div>
+                                    <ChevronRight
+                                      className={`h-3 w-3 transition-transform duration-200 ${
+                                        isSubDropdownOpen ||
+                                        isAnySubSubItemActive
+                                          ? "rotate-90"
+                                          : ""
                                       }`}
-                                  />
-                                </div>
-                              ) : (
-                                <Link
-                                  to={subItem.href || "#"}
-                                  className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
-                                      ? "bg-gray-900 text-white hover:text-white"
-                                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    />
+                                  </div>
+                                ) : (
+                                  <Link
+                                    to={subItem.href || "#"}
+                                    className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
+                                      isSubActive
+                                        ? "bg-gray-900 text-white hover:text-white"
+                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                     }`}
-                                >
-                                  <div className="flex items-center space-x-2">
-                                    <SubIcon className="h-3.5 w-3.5 opacity-70" />
-                                    <span
-                                      className={`font-medium transition-all duration-300 whitespace-nowrap ${isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
+                                  >
+                                    <div className="flex items-center space-x-2">
+                                      <SubIcon className="h-3.5 w-3.5 opacity-70" />
+                                      <span
+                                        className={`font-medium transition-all duration-300 whitespace-nowrap ${
+                                          isExpanded
+                                            ? "opacity-100 translate-x-0"
+                                            : "opacity-0 -translate-x-2"
                                         }`}
-                                    >
-                                      {subItem.name}
-                                    </span>
-                                  </div>
-                                </Link>
-                              )}
-                              {hasSubSubItems && (isSubDropdownOpen || isAnySubSubItemActive) && isExpanded && (
-                                <div className="overflow-hidden transition-all duration-300 ease-in-out">
-                                  <div className="py-1 space-y-1">
-                                    {subItem.subItems?.map((subSubItem) => {
-                                      const SubSubIcon = subSubItem.icon
-                                      const isSubSubActive = isSubSubItemActive(subSubItem)
+                                      >
+                                        {subItem.name}
+                                      </span>
+                                    </div>
+                                  </Link>
+                                )}
+                                {hasSubSubItems &&
+                                  (isSubDropdownOpen ||
+                                    isAnySubSubItemActive) &&
+                                  isExpanded && (
+                                    <div className="overflow-hidden transition-all duration-300 ease-in-out">
+                                      <div className="py-1 space-y-1">
+                                        {subItem.subItems?.map((subSubItem) => {
+                                          const SubSubIcon = subSubItem.icon;
+                                          const isSubSubActive =
+                                            isSubSubItemActive(subSubItem);
 
-                                      return (
-                                        <Link
-                                          key={subSubItem.name}
-                                          to={subSubItem.href}
-                                          className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubSubActive
-                                              ? "bg-gray-900 text-white hover:text-white"
-                                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                                            }`}
-                                        >
-                                          <div className="flex items-center space-x-2">
-                                            <SubSubIcon className="h-3 w-3 opacity-70" />
-                                            <span
-                                              className={`font-medium transition-all duration-300 whitespace-nowrap ${isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
-                                                }`}
+                                          return (
+                                            <Link
+                                              key={subSubItem.name}
+                                              to={subSubItem.href}
+                                              className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
+                                                isSubSubActive
+                                                  ? "bg-gray-900 text-white hover:text-white"
+                                                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                                              }`}
                                             >
-                                              {subSubItem.name}
-                                            </span>
-                                          </div>
-                                        </Link>
-                                      )
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
+                                              <div className="flex items-center space-x-2">
+                                                <SubSubIcon className="h-3 w-3 opacity-70" />
+                                                <span
+                                                  className={`font-medium transition-all duration-300 whitespace-nowrap ${
+                                                    isExpanded
+                                                      ? "opacity-100 translate-x-0"
+                                                      : "opacity-0 -translate-x-2"
+                                                  }`}
+                                                >
+                                                  {subSubItem.name}
+                                                </span>
+                                              </div>
+                                            </Link>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
-              )
+              );
             })}
           </div>
         </div>
       </aside>
     </>
-  )
-}
+  );
+};
 
-export default CollapsibleSidebar
+export default CollapsibleSidebar;

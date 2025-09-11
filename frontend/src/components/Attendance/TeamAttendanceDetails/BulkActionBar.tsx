@@ -21,7 +21,7 @@ export function BulkActionBar({
           </span>
         </div>
       </div>
-      <span className="text-sm font-medium text-gray-500">
+      <span className="text-xs font-medium text-gray-400">
         Note - Requests which require other actions are not selectable for bulk
         approval
       </span>
