@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
+import { useCompanyLogo } from "../hooks/useCompanyLogo";
 import {
   useCanShowClockIn,
   useCheckInOutService,
@@ -35,7 +36,6 @@ import {
   getDeviceLocation,
 } from "../utils/helperUtils";
 import defaultProfile from "../assets/face-rec.png";
-import logo from "../assets/logo.png";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
@@ -95,9 +95,7 @@ const statusStyles = {
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-
   const navigate = useNavigate();
-
   useEffect(() => {
     async function fetchLocation() {
       try {
@@ -150,6 +148,20 @@ const MobileDashboard: React.FC = () => {
     time: ["between", [start, end]],
   };
 
+  // this is for the logo
+  const { data: CompanyLogo } = useCompanyLogo();
+  const currentEmployeeCompany = currentEmployee?.company;
+  const matchedCompany =
+    Array.isArray(CompanyLogo) &&
+    CompanyLogo.length > 0 &&
+    currentEmployeeCompany
+      ? CompanyLogo.find(
+          (company) => company.company_name === currentEmployeeCompany
+        )
+      : CompanyLogo?.[0];
+
+  // logo setkarna compnay and emplyee name cuurect compnay ka
+  const logoToShow = matchedCompany?.company_logo || "logo not found";
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
   // const today = new Date().toISOString().split("T")[0];
   // const { data: leaveBalance } = useGetLeaveBalance(
@@ -340,7 +352,11 @@ const MobileDashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           {/* Left: Logo/Profile button */}
           <button className="flex items-center hover:bg-black/5 rounded-lg  transition-colors w-10 h-10 rounded-xl overflow-hidden ">
-            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+             <img
+                src={typeof logoToShow === "string" ? logoToShow : ""}
+                alt="Not Found"
+                className="w-12 h-12 p-1 rounded-full  flex-shrink-0"
+              />
           </button>
 
           {/* Right: Notification + Avatar */}

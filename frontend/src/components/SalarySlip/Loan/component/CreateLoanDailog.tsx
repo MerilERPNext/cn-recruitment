@@ -1,16 +1,17 @@
-"use client"
-
-import type React from "react"
-
-import { useState } from "react"
-
+"use client";
+import type React from "react";
+import { useState } from "react";
+import { X } from "lucide-react";
 
 interface CreateLoanDialogProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogProps) {
+export default function CreateLoanDialog({
+  isOpen,
+  onClose,
+}: CreateLoanDialogProps) {
   const [formData, setFormData] = useState({
     loanType: "",
     loanName: "",
@@ -21,21 +22,23 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
     noOfInstallments: "",
     startDate: "",
     endMonth: "",
-  })
+  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Form submitted:", formData)
+    e.preventDefault();
+    console.log("Form submitted:", formData);
     // Here you would typically send the data to your backend
-    onClose()
+    onClose();
     // Reset form
     setFormData({
       loanType: "",
@@ -47,19 +50,25 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
       noOfInstallments: "",
       startDate: "",
       endMonth: "",
-    })
-  }
+    });
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Dialog Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Create New Loan</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-           x
+          <h2 className="text-xl font-semibold text-gray-900">
+            Create New Loan
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X />
           </button>
         </div>
 
@@ -68,7 +77,10 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Loan Type */}
             <div>
-              <label htmlFor="loanType" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="loanType"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Loan Type *
               </label>
               <select
@@ -89,7 +101,10 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
 
             {/* Loan Name */}
             <div>
-              <label htmlFor="loanName" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="loanName"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Loan Name *
               </label>
               <input
@@ -106,7 +121,10 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
 
             {/* EMI Type */}
             <div>
-              <label htmlFor="emiType" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="emiType"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 EMI Type *
               </label>
               <select
@@ -124,7 +142,10 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
 
             {/* Loan Amount */}
             <div>
-              <label htmlFor="loanAmount" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="loanAmount"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Loan Amount (INR) *
               </label>
               <input
@@ -142,7 +163,10 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
 
             {/* Rate of Interest */}
             <div>
-              <label htmlFor="rateOfInterest" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="rateOfInterest"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Rate of Interest (%) *
               </label>
               <input
@@ -162,7 +186,10 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
 
             {/* Standard Interest Rate */}
             <div>
-              <label htmlFor="standardInterestRate" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="standardInterestRate"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Standard Interest Rate (%) *
               </label>
               <input
@@ -182,7 +209,10 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
 
             {/* Number of Installments */}
             <div>
-              <label htmlFor="noOfInstallments" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="noOfInstallments"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Number of Installments *
               </label>
               <input
@@ -200,7 +230,10 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
 
             {/* Start Date */}
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="startDate"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Start Date *
               </label>
               <input
@@ -216,7 +249,10 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
 
             {/* End Month */}
             <div>
-              <label htmlFor="endMonth" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="endMonth"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 End Month *
               </label>
               <input
@@ -250,5 +286,5 @@ export default function CreateLoanDialog({ isOpen, onClose }: CreateLoanDialogPr
         </form>
       </div>
     </div>
-  )
+  );
 }
