@@ -354,7 +354,7 @@ const MobileDashboard: React.FC = () => {
           <button className="flex items-center hover:bg-black/5 rounded-lg  transition-colors w-10 h-10 rounded-xl overflow-hidden ">
              <img
                 src={typeof logoToShow === "string" ? logoToShow : ""}
-                alt="Not Found"
+                alt="CompnayLogo"
                 className="w-12 h-12 p-1 rounded-full  flex-shrink-0"
               />
           </button>

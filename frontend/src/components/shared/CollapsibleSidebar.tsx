@@ -365,7 +365,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             <div className="flex items-center  gap-3 h-full">
               <img
                 src={typeof logoToShow === "string" ? logoToShow : ""}
-                alt="Not Found"
+                alt="companyLogo"
                 className="w-12 h-12 rounded-full  flex-shrink-0"
               />
               <div
