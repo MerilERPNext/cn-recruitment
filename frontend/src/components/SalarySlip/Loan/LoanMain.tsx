@@ -360,8 +360,8 @@ export default function LoansPage() {
 
   // Desktop Layout
   const DesktopLayout = () => (
-    <div className="min-h-screen w-full overflow-x-hidden">
-      <div className="w-full max-w-[84rem] mx-auto py-8">
+    <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
+      <div className="w-full max-w-[90vw] mx-auto py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 px-4">
           <h1 className="text-2xl font-semibold text-gray-900">
