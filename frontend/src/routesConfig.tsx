@@ -273,7 +273,7 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
-      {
+      
       {
         path: "leave-requests/pending",
         element: <PendingTeamLeaves />,
