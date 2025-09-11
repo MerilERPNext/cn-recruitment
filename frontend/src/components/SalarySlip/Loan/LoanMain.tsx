@@ -8,6 +8,7 @@ import LoanList from "./component/LoanListView"
 import { Loan } from "./Type/loan"
 import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile"
 
+
 const sampleLoans: Loan[] = [
   {
     id: 3,
@@ -361,7 +362,7 @@ export default function LoansPage() {
   // Desktop Layout
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
-      <div className="w-full max-w-[90vw] mx-auto py-8">
+      <div className="w-full max-w-[82vw] mx-auto py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 px-4">
           <h1 className="text-2xl font-semibold text-gray-900">
