@@ -1,17 +1,27 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import CardTable from "../../shared/CardTable";
-import ApprovalList from "../../shared/ApprovalList";
-import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router";
 import { AttendanceRequest, LoadingAction } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
+// import FrappeListView from "../../ListView";
+// import { RequestCard } from "../TeamAttendanceDetails/RequestCard";
+import ApprovalList from "../../shared/ApprovalList";
+import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
+import FrappeListView from "../../ListView";
+import { RequestCard } from "../TeamAttendanceDetails/RequestCard";
 
 const OvertimeRequests = () => {
   const { refetchAttendance } = useGlobalStore();
   const [refetch, setRefetch] = useState(false);
   const navigate = useNavigate();
-
+  const defaultFilters = useMemo(
+    () => ({
+      reference_type: "Planned Overtime Request",
+      status: ["in", ["Closed", "Cancelled"]],
+    }),
+    []
+  );
   const [selectedRequest, setSelectedRequest] = useState<
     (AttendanceRequest & { loadingAction?: LoadingAction }) | null
   >(null);
@@ -23,12 +33,12 @@ const OvertimeRequests = () => {
 
           <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
             <h2 className="text-lg font-semibold text-gray-800 pb-1">
-              Pending Requests
+              Pending Planned Overtime Requests
             </h2>
             <button
               onClick={() => {
                 navigate(
-                  "/webapp/attendance/team-attendance-requests/pendings"
+                  "/webapp/attendance/planned-overtime-requests/pendings"
                 );
               }}
               className="text-blue-600 hover:text-blue-800 font-medium"
@@ -36,9 +46,7 @@ const OvertimeRequests = () => {
               View All
             </button>
           </div>
-          <h2 className="text-xl font-semibold text-gray-800 my-8 pb-1 text-center">
-            --------------- In Progress ---------------
-          </h2>
+
           <CardTable
             titles={[
               "Select",
@@ -48,10 +56,12 @@ const OvertimeRequests = () => {
               "Status",
               "Actions",
             ]}
+            columnWidths={["40px", "160px", "0.8fr", "120px", "140px", "0.6fr"]}
           >
             <ApprovalList
               doctype={"Planned Overtime Request"}
               pageSize={3}
+              showPagination={false}
               refetch={refetch || refetchAttendance}
               onApprovalRefetchComplete={() => {
                 setRefetch(false);
@@ -75,7 +85,47 @@ const OvertimeRequests = () => {
             />
           </CardTable>
         </div>
+        {/* Actioned */}
+        <div className="bg-white px-2 mt-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 pb-1">
+              Actioned Planned Overtime Requests
+            </h2>
+            <CardTable
+              titles={["Allocated To", "Description", "Date", "Status"]}
+            >
+              <div>
+                <FrappeListView
+                  doctype="ToDo"
+                  isSearch={false}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  defaultFilters={defaultFilters as any}
+                  showRefereshButton={false}
+                  infiniteScroll={false}
+                  isFilter={false}
+                  defaultFields={["*"]}
+                  pageSize={3}
+                  refetchTrigger={refetch || refetchAttendance}
+                  onRefetchComplete={() => setRefetch(false)}
+                  showPagination={false}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ItemComponent={(props: { item: any }) => {
+                    return (
+                      <RequestCard
+                        key={props?.item?.name}
+                        request={props?.item}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        onClick={(request: any) => setSelectedRequest(request)}
+                      />
+                    );
+                  }}
+                />
+              </div>
+            </CardTable>
+          </div>
+        </div>
       </div>
+
       {selectedRequest && (
         <AttendanceDetailView
           data={selectedRequest}

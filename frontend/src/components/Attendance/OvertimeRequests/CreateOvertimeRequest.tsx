@@ -9,6 +9,7 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { format, isValid, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 const overtimeForm = {
   display: "form",
@@ -98,6 +99,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const mutation = useCreatePlannedOvertimeRequest();
   const formInstance = useRef<any>(null);
   // const [formData, setFormData] = useState<any>({});
+  const { setRefetchAttendance } = useGlobalStore();
 
   const handleSubmit = async () => {
     try {
@@ -125,11 +127,14 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           overtime_details: formattedOvertimeDetails || [],
           attachment:
             data?.attachment && data?.attachment?.length > 0
-              ? data?.attachment
+              ? data?.attachment?.[0].url
               : "",
         },
         {
           onSuccess: () => {
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 1000);
             toast.success("Request submitted successfully.");
             if (onCancel) {
               onCancel();

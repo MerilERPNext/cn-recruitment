@@ -4,17 +4,17 @@ import { AttendanceDetailView } from "../AttendanceDetails";
 import LayoutHeader from "../../shared/LayoutHeader";
 import { useNavigate } from "react-router";
 import ApprovalList from "../../shared/ApprovalList";
-import ApprovalCard from "./ApprovalCard";
 import CardTable from "../../shared/CardTable";
+import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
 
-const AllPendingRequests = () => {
+const AllOvertimePendingRequests = () => {
   const [selectedRequest, setSelectedRequest] =
     useState<AttendanceRequest | null>(null);
   const navigate = useNavigate();
   return (
     <div>
       <LayoutHeader
-        tab={"Pending Team Attendance Attendants"}
+        tab={"Pending Planned Overtime Attendants"}
         onBack={() => {
           navigate(-1);
         }}
@@ -32,7 +32,7 @@ const AllPendingRequests = () => {
           columnWidths={["40px", "160px", "0.8fr", "120px", "140px", "0.6fr"]}
         >
           <ApprovalList
-            doctype={"Attendance Request"}
+            doctype={"Planned Overtime Request"}
             renderCardContent={(item) => (
               <ApprovalCard
                 isSelected={item?.isSelected}
@@ -57,4 +57,4 @@ const AllPendingRequests = () => {
   );
 };
 
-export default AllPendingRequests;
+export default AllOvertimePendingRequests;

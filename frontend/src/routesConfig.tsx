@@ -74,6 +74,7 @@ import {
 import PendingTeamLeaves from "./components/Leaves/PendingTeamLeaves";
 import LoansPage from "./components/SalarySlip/Loan/LoanMain";
 import OvertimeRequests from "./components/Attendance/OvertimeRequests/OvertimeRequests";
+import AllOvertimePendingRequests from "./components/Attendance/OvertimeRequests/AllOvertimePendingRequests";
 
 export interface AppRoute {
   index?: boolean;
@@ -222,6 +223,10 @@ export const routesConfig: AppRoute[] = [
       {
         path: "team-attendance-requests/pendings",
         element: <AllPendingRequests />,
+      },
+      {
+        path: "planned-overtime-requests/pendings",
+        element: <AllOvertimePendingRequests />,
       },
       {
         path: "attendance-policies",

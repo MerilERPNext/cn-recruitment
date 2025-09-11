@@ -38,7 +38,7 @@ const TeamAttendanceDetails = () => {
 
           <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
             <h2 className="text-lg font-semibold text-gray-800 pb-1">
-              Pending Requests
+              Pending Team Attendance Requests
             </h2>
             <button
               onClick={() => {
@@ -60,6 +60,7 @@ const TeamAttendanceDetails = () => {
               "Status",
               "Actions",
             ]}
+            columnWidths={["40px", "160px", "0.8fr", "120px", "140px", "0.6fr"]}
           >
             <ApprovalList
               doctype={"Attendance Request"}
@@ -68,6 +69,7 @@ const TeamAttendanceDetails = () => {
               onApprovalRefetchComplete={() => {
                 setRefetch(false);
               }}
+              pageSize={3}
               showPagination={false}
               renderCardContent={(item) => (
                 <ApprovalCard
@@ -93,7 +95,7 @@ const TeamAttendanceDetails = () => {
         <div className="bg-white px-2 mt-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 pb-1">
-              Actioned Requests
+              Actioned Team Attendance Requests
             </h2>
             <CardTable
               titles={["Allocated To", "Description", "Date", "Status"]}
@@ -129,6 +131,7 @@ const TeamAttendanceDetails = () => {
           </div>
         </div>
       </div>
+
       {selectedRequest && (
         <AttendanceDetailView
           data={selectedRequest}
