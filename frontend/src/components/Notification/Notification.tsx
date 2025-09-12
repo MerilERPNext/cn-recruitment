@@ -139,14 +139,13 @@ const NotificationItem: React.FC<{
     if (diffHr < 24) return `${diffHr} hours ago`;
     return `${diffDay} days ago`;
   };
-
   return (
     <>
       {/* List item */}
       <div
         key={notification.name}
         onClick={handleClick}
-        className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+        className={`flex items-center justify-between p-4 mt-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
           isRead ? "opacity-70" : "bg-white"
         }`}
       >
@@ -175,9 +174,8 @@ const NotificationItem: React.FC<{
                 className={`${
                   isRead ? "text-gray-400" : "text-gray-600"
                 } break-words`}
-              >
-                {notification.subject}
-              </span>
+                dangerouslySetInnerHTML={{ __html: notification.subject }}
+              />
             </p>
 
             <p className="text-xs text-gray-400 truncate">
@@ -205,7 +203,10 @@ const NotificationItem: React.FC<{
           <div className="w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3 className="text-lg font-semibold">{notification.subject}</h3>
+              <h3 
+                className="text-lg font-semibold"
+                dangerouslySetInnerHTML={{ __html: notification.subject }}
+              />
               <button
                 onClick={() => setOpenDialog(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -228,12 +229,8 @@ const NotificationItem: React.FC<{
                   {new Date(notification.creation).toLocaleString()}
                 </p>
               </div>
-
               <div className="text-gray-800 leading-relaxed">
-                <p>
-                  {notification.subject} – This is the placeholder body. You can
-                  extend it to show the full notification message if available.
-                </p>
+                <div dangerouslySetInnerHTML={{ __html: notification.subject }} />
               </div>
             </div>
 

@@ -20,6 +20,7 @@ import {
   Wallet,
   TimerIcon,
   ListTodo,
+  HelpCircle,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -89,6 +90,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const handleTodoClick = () => {
     window.location.href = "/app/task_manager";
+  };
+  
+  const handleHelpDeskClick = () => {
+    window.location.href = "/app/support";
   };
 
   const navigationItems: NavigationItem[] = [
@@ -213,6 +218,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Todo",
       path: "",
     },
+    {
+      icon: HelpCircle,
+      label: "Help Desk",
+      path: "",
+    },
   ];
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
@@ -268,7 +278,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const isItemActive = (item: NavigationItem) => {
-    if (item.label === "Todo") {
+    if (item.label === "Todo" || item.label === "Help Desk") {
       return false;
     }
 
@@ -458,6 +468,30 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   ) : item.label === "Todo" ? (
                     <div
                       onClick={handleTodoClick}
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        isItemDirectlyActive
+                          ? "bg-gray-900 text-white hover:text-white"
+                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <span
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+                    </div>
+                  ) : item.label === "Help Desk" ? (
+                    <div
+                      onClick={handleHelpDeskClick}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                         isItemDirectlyActive
                           ? "bg-gray-900 text-white hover:text-white"
