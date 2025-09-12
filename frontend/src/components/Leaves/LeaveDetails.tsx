@@ -29,14 +29,8 @@ export function LeaveDetailView({
           name: data?.name || "",
         });
 
-        console.log("Action response:", response);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
-        console.log(
-          "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action
-        );
 
         if (
           (data?.custom_approval_type === "Approval Matrix" &&
@@ -44,10 +38,6 @@ export function LeaveDetailView({
           (data?.custom_approval_type === "Multi Actions" &&
             data?.custom_open_chatnext_assistant_on_action)
         ) {
-          console.log(
-            "Opening assistant with session:",
-            responseWithSession?.session
-          );
           if (window.trigger_chatnext_assistant) {
             window.trigger_chatnext_assistant(
               true,

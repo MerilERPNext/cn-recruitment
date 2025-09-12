@@ -27,7 +27,7 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
           <div className="p-2 bg-blue-50 rounded-lg">
             <Building2 className="w-5 h-5 text-blue-600" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="md:text-lg font-semibold text-gray-900">{title}</h3>
         </div>
 
         {isCurrent && (

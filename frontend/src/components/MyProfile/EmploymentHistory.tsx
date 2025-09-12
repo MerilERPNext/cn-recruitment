@@ -1,6 +1,7 @@
 import React from "react";
 import { useFrappeDocument } from "../../hooks/useFrappeQuery";
 import EmploymentHistoryCard from "./EmploymentHistoryCard";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -31,7 +32,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
     ["custom_work_history"]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) as { data: Employee | null; isLoading: boolean; error: any };
-
+  const { isDesktop } = useScreenSize();
   const history = data?.custom_work_history || [];
 
   const groupedHistory = history.reduce<Record<string, CustomWorkHistory[]>>(
@@ -46,14 +47,16 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   return (
     <div className="address-form-container h-full">
       <div className="p-4 md:p-8">
-        <div className="border-b border-gray-200 pb-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Employment History
-          </h2>
-          <p className="text-gray-600">
-            Your employment history and organizational information
-          </p>
-        </div>
+        {isDesktop && (
+          <div className="border-b border-gray-200 pb-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Employment History
+            </h2>
+            <p className="text-gray-600">
+              Your employment history and organizational information
+            </p>
+          </div>
+        )}
 
         {!employeeId && (
           <p className="p-4 text-gray-500">No employee selected</p>
@@ -100,20 +103,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
             return (
               <div key={category} className="mb-10">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                <h3 className="md:text-xl font-semibold text-gray-800 mb-4">
                   {category}
                 </h3>
 
-                <div
-                  className={`grid gap-6 ${
-                    sortedItems.length <= 2
-                      ? "grid-cols-1 md:grid-cols-2"
-                      : "grid-cols-1 md:grid-cols-3"
-                  }`}
-                >
-                  {sortedItems.map((item, idx) => (
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  {sortedItems.map((item) => (
                     <div
-                      key={idx}
+                      key={item.name}
                       className={`${
                         sortedItems.length === 1 ? "max-w-md w-full" : ""
                       }`}
