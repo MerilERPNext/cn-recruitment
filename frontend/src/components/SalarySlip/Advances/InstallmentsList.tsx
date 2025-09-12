@@ -181,144 +181,159 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   );
 
   const MobileLayout = () => (
-    <div className="min-h-screen w-full bg-gray-50">
-      {/* Header */}
-      <HeaderBar
-        title={`Installments - ${advance.name}`}
-        showBackButton={true}
-        onBack={onBack}
-        rightSlot={
-          <button
-            onClick={onToggleMask}
-            className="p-2"
-            title={maskAmounts ? "Show amounts" : "Hide amounts"}
-          >
-            {maskAmounts ? (
-              <BsToggleOff className="w-6 h-6 text-gray-400" />
-            ) : (
-              <BsToggleOn className="w-6 h-6 text-blue-500" />
-            )}
-          </button>
-        }
-      />
-
-      {/* Advance Summary Card */}
-      <div className="bg-white mx-4 mt-4 rounded-lg border border-gray-200 p-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-600">Total Amount:</span>
-            <div className="font-semibold">
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      {/* Full-screen header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+        <HeaderBar
+          title={`Installments - ${advance.name}`}
+          showBackButton={true}
+          onBack={onBack}
+          rightSlot={
+            <button
+              onClick={onToggleMask}
+              className="p-2"
+              title={maskAmounts ? "Show amounts" : "Hide amounts"}
+            >
               {maskAmounts ? (
-                <span className="blur-sm select-none">₹XX,XXX</span>
+                <BsToggleOff className="w-6 h-6 text-gray-400" />
               ) : (
-                formatCurrency(advance.amount)
+                <BsToggleOn className="w-6 h-6 text-blue-500" />
               )}
-            </div>
-          </div>
-          <div>
-            <span className="text-gray-600">Status:</span>
-            <div className="mt-1">
-              <StatusBadge status={advance.advanceStatus} />
-            </div>
-          </div>
-          <div className="col-span-2">
-            <span className="text-gray-600">Period:</span>
-            {" "}
-            <span className="font-semibold">
-              {advance.startDate} to {advance.endDate}
-            </span>
-          </div>
-        </div>
+            </button>
+          }
+        />
       </div>
 
-      {/* All Installments List */}
-      <div className="p-4 space-y-3">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          All Installments ({advance.installments.length})
-        </h3>
-
-        {advance.installments.map((installment, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
-          >
-            <div className="flex justify-between items-center mb-3">
-              <h4 className="text-lg font-semibold text-gray-900">
-                #{installment.installmentNo}
-              </h4>
-              <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                {installment.installmentDate}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3">
-              <div className="bg-blue-50 rounded-lg p-3">
-                <span className="text-blue-700 text-xs uppercase tracking-wide font-medium">
-                  Opening Balance
-                </span>
-                <div className="mt-1">
-                  {maskAmounts ? (
-                    <span className="blur-sm select-none text-gray-400 text-lg font-semibold">
-                      ₹XX,XXX
-                    </span>
-                  ) : (
-                    <span className="text-lg font-semibold text-gray-900">
-                      {formatCurrency(installment.openingBalance)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-green-50 rounded-lg p-3">
-                <span className="text-green-700 text-xs uppercase tracking-wide font-medium">
-                  Installment Amount
-                </span>
-                <div className="mt-1">
-                  {maskAmounts ? (
-                    <span className="blur-sm select-none text-gray-400 text-lg font-semibold">
-                      ₹XX,XXX
-                    </span>
-                  ) : (
-                    <span className="text-lg font-semibold text-green-600">
-                      {formatCurrency(installment.installmentAmount)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-3">
-                <span className="text-gray-700 text-xs uppercase tracking-wide font-medium">
-                  Principal Balance
-                </span>
-                <div className="mt-1">
-                  {maskAmounts ? (
-                    <span className="blur-sm select-none text-gray-400 text-lg font-semibold">
-                      ₹XX,XXX
-                    </span>
-                  ) : (
-                    <span
-                      className={`text-lg font-semibold ${
-                        installment.principalBalance === 0
-                          ? "text-green-600"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      {formatCurrency(installment.principalBalance)}
-                    </span>
-                  )}
-                </div>
+      {/* Scrollable content with proper height calculation */}
+      <div className="flex-1 overflow-y-auto bg-gray-50 min-h-0">
+        {/* Advance Summary Card */}
+        <div className="mx-4 mt-4 rounded-lg bg-blue-50 border border-blue-200 mb-6 p-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600">Total Amount:</span>
+              <div className="font-semibold">
+                {maskAmounts ? (
+                  <span className="blur-sm select-none">₹XX,XXX</span>
+                ) : (
+                  formatCurrency(advance.amount)
+                )}
               </div>
             </div>
-
-            {installment.principalBalance === 0 && (
-              <div className="mt-3 text-center">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  ✓ Completed
-                </span>
+            <div>
+              <span className="text-gray-600">Period:</span>
+              <div className="font-semibold">
+                {advance.startDate} to {advance.endDate}
               </div>
-            )}
+            </div>
           </div>
-        ))}
+          <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+            <div>
+              <span className="text-gray-600 text-right">
+                Total Installments
+              </span>
+              <div className="mt-1">{advance.installments.length}</div>
+            </div>
+            <div>
+              <span className="text-gray-600">Status:</span>
+              <div className="mt-1">
+                <StatusBadge status={advance.advanceStatus} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Table View with horizontal scroll */}
+        <div className="mx-4 mt-4 mb-4">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            {/* Horizontal scrolling container */}
+            <div className="overflow-x-auto">
+              <div className="min-w-[800px]">
+                {/* Table Header */}
+                <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                  <div className="grid grid-cols-5 gap-4 text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                    <div className="text-center">Installment No.</div>
+                    <div className="text-center">Date</div>
+                    <div className="text-center">Opening Balance</div>
+                    <div className="text-center">Installment Amount</div>
+                    <div className="text-center">Principal Balance</div>
+                  </div>
+                </div>
+
+                {/* Table Body */}
+                <div className="divide-y divide-gray-200">
+                  {advance.installments.map((installment, index) => (
+                    <div
+                      key={index}
+                      className="grid grid-cols-5 gap-4 px-4 py-3 text-sm"
+                    >
+                      {/* Installment Number */}
+                      <div className="text-center font-medium text-gray-900 flex items-center justify-center">
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-semibold">
+                          #{installment.installmentNo}
+                        </span>
+                      </div>
+
+                      {/* Date */}
+                      <div className="text-center text-gray-700 flex items-center justify-center">
+                        <div className="text-sm leading-tight">
+                          {installment.installmentDate
+                            .split("-")
+                            .reverse()
+                            .join("/")}
+                        </div>
+                      </div>
+
+                      {/* Opening Balance - Full Amount */}
+                      <div className="text-center flex items-center justify-center">
+                        {maskAmounts ? (
+                          <span className="blur-sm select-none text-gray-400 text-sm">
+                            ₹XX,XXX
+                          </span>
+                        ) : (
+                          <div className="text-sm font-medium text-gray-900 leading-tight">
+                            {formatCurrency(installment.openingBalance)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Installment Amount - Full Amount */}
+                      <div className="text-center flex items-center justify-center">
+                        {maskAmounts ? (
+                          <span className="blur-sm select-none text-gray-400 text-sm">
+                            ₹XX,XXX
+                          </span>
+                        ) : (
+                          <div className="text-sm font-medium text-blue-600 leading-tight">
+                            {formatCurrency(installment.installmentAmount)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Principal Balance - Full Amount, no "✓ Paid" shorthand */}
+                      <div className="text-center flex items-center justify-center">
+                        {maskAmounts ? (
+                          <span className="blur-sm select-none text-gray-400 text-sm">
+                            ₹XX,XXX
+                          </span>
+                        ) : (
+                          <div
+                            className={`text-sm font-medium leading-tight ${
+                              installment.principalBalance === 0
+                                ? "text-green-600"
+                                : "text-gray-900"
+                            }`}
+                          >
+                            {formatCurrency(installment.principalBalance)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

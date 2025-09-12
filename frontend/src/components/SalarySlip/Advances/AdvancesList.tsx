@@ -23,8 +23,6 @@ const AdvancesList: React.FC = () => {
   const employeeId = user?.employee ?? "";
   const { data: advancesData } = useEmployeeAdvances(employeeId || "");
 
-  console.log("Advances Data (API):", advancesData);
-
   const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
     return apiData.map((a) => ({
       name: a.advance_type,
@@ -46,8 +44,6 @@ const AdvancesList: React.FC = () => {
   const formattedData: UiAdvance[] = advancesData
     ? mapAdvanceData(advancesData)
     : [];
-
-  console.log("Mapped Advances Data (UI):", formattedData);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
