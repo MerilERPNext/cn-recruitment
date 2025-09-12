@@ -350,8 +350,8 @@ const MobileDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-4 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
-          {/* Left: Logo/Profile button */
-          <button className="flex items-center hover:bg-black/5 rounded-lg  transition-colors w-10 h-10 rounded-xl overflow-hidden ">
+          {/* Left: Logo/Profile button */}
+          <button className="flex items-center hover:bg-black/5 transition-colors w-10 h-10 rounded-xl overflow-hidden ">
              <img
                 src={typeof logoToShow === "string" ? logoToShow : ""}
                 alt="CompnayLogo"
