@@ -1,32 +1,33 @@
-import type { Node } from "@xyflow/react"
+import type { Node } from "@xyflow/react";
 
 // Collapsed state keeps track of which nodes are collapsed
-export type CollapsedState = Record<string, boolean>
+export type CollapsedState = Record<string, boolean>;
 
 // Data stored inside each ReactFlow node
 export type NodeData = {
-    id: number | string
-    name: string
-    title?: string
-    hasChildren: boolean
-    isExpanded: boolean
-    onToggleExpand: (id: string) => void
-  }
+  id: number | string;
+  name: string;
+  title?: string;
+  hasChildren: boolean;
+  isExpanded: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  childrens?: any;
+  onToggleExpand: (id: string) => void;
+};
 
 // A strongly typed Node with your NodeData
-export type EmployeeNode = Node<NodeData>
+export type EmployeeNode = Node<NodeData>;
 
 // Employee hierarchy coming from backend (Frappe API)
 export type EmployeeHierarchy = {
-  name: string
-  id: string
-  lft: number
-  rgt: number
-  reports_to: string | null
-  image: string | null
-  title: string | null
-  connections: number
-  expandable: boolean
-  children: EmployeeHierarchy[]
-}
-
+  name: string;
+  id: string;
+  lft: number;
+  rgt: number;
+  reports_to: string | null;
+  image: string | null;
+  title: string | null;
+  connections: number;
+  expandable: boolean;
+  children: EmployeeHierarchy[];
+};

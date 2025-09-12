@@ -606,7 +606,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             .join(":")
             .trim() || "Something went wrong!!";
         const cleanString = DOMPurify.sanitize(errorMessage || "");
-        toast.error(cleanString as string);
+        toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
         console.error(error);
       },
     });
