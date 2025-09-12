@@ -51,7 +51,8 @@ const LeaveRequestCard = ({ item, onClick }: LeaveRequestCardProps) => {
 
   return isDesktop ? (
     <div
-      className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 2.5fr 1fr 0.5fr" }}
+      className="grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors"
       onClick={onClick}
     >
       <div className="text-sm font-medium text-gray-700 truncate">
@@ -59,7 +60,7 @@ const LeaveRequestCard = ({ item, onClick }: LeaveRequestCardProps) => {
       </div>
       <div className="text-sm text-gray-900">{formattedFromDate}</div>
       <div className="text-sm text-gray-900">{formattedToDate}</div>
-      <div className="text-sm text-gray-600 truncate">
+      <div className="text-sm text-gray-600 truncate pr-4">
         {item.description || "—"}
       </div>
       <div className="flex justify-start">

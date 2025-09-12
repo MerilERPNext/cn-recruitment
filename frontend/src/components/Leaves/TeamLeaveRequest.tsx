@@ -5,6 +5,12 @@ import { RequestCard } from "../Attendance/TeamAttendanceDetails/RequestCard";
 import { useNavigate } from "react-router";
 import ApprovalList from "../shared/ApprovalList";
 import CardTable from "../shared/CardTable";
+import { LeaveDetailView } from "./LeaveDetails";
+
+type LoadingAction = {
+  id: string;
+  action: string;
+};
 
 const TeamLeaveRequest = () => {
   const defaultFilters = useMemo(
@@ -13,7 +19,10 @@ const TeamLeaveRequest = () => {
   );
   const [refetch, setRefetch] = useState(false);
   const navigate = useNavigate();
-
+  const [selectedRequest, setSelectedRequest] = useState<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (any & { loadingAction?: LoadingAction }) | null
+  >(null);
   return (
     <>
       <div className="bg-white min-h-full w-full">
@@ -41,18 +50,32 @@ const TeamLeaveRequest = () => {
               "Status",
               "Actions",
             ]}
+            columnWidths={["40px", "160px", "0.8fr", "120px", "140px", "0.6fr"]}
           >
             <ApprovalList
               doctype="Leave Application"
-              pageSize={5}
               refetch={refetch}
               onApprovalRefetchComplete={() => setRefetch(false)}
+              showPagination={false}
               renderCardContent={(item) => (
                 <ApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
-                  onAction={item?.onAction}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onAction={async (action: string, data: any) => {
+                    await item?.onAction?.(action, data);
+                    setSelectedRequest(null);
+                    setRefetch(true);
+                  }}
+                  loadingAction={item?.loadingAction}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onClick={(request: any) =>
+                    setSelectedRequest({
+                      ...request,
+                      loadingAction: item?.loadingAction,
+                    })
+                  }
                 />
               )}
             />
@@ -79,12 +102,28 @@ const TeamLeaveRequest = () => {
               onRefetchComplete={() => setRefetch(false)}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ItemComponent={({ item }: { item: any }) => (
-                <RequestCard key={item?.name} request={item} />
+                <RequestCard
+                  key={item?.name}
+                  request={item}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onClick={(request: any) => setSelectedRequest(request)}
+                />
               )}
             />
           </CardTable>
         </div>
       </div>
+      {selectedRequest && (
+        <LeaveDetailView
+          data={selectedRequest}
+          onClose={() => setSelectedRequest(null)}
+          onAction={() => {
+            setSelectedRequest(null);
+            setRefetch(true);
+          }}
+          loadingAction={selectedRequest?.loadingAction}
+        />
+      )}
     </>
   );
 };
