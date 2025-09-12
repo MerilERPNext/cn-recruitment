@@ -25,6 +25,7 @@
     "@tsed/react-formio": "^2.3.6",
     "@tsed/tailwind-formio": "^2.3.6",
     "@types/node": "^24.1.0",
+    "@xyflow/react": "^12.8.4",
     "axios": "^1.8.4",
     "date-fns": "^2.30.0",
     "dompurify": "^3.2.6",

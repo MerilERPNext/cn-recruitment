@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import type React from "react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -18,8 +19,11 @@ import {
   CheckCircle,
   Wallet,
   TimerIcon,
+  ListTodo,
+  HelpCircle,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 interface SubSubMenuItem {
   name: string;
@@ -55,17 +59,43 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
 
   const { data: companyLogo } = useCompanyLogo();
+  const { data: currentEmployee } = useCurrentEmployee();
 
-  const logoToShow =
-    Array.isArray(companyLogo) && companyLogo.length > 0
-      ? companyLogo[0].company_logo || "logo not found"
-      : "Logo not found";
+  const currentEmployeeCompany = currentEmployee?.company;
+  const matchedCompany =
+    Array.isArray(companyLogo) &&
+    companyLogo.length > 0 &&
+    currentEmployeeCompany
+      ? companyLogo.find(
+          (company) => company.company_name === currentEmployeeCompany
+        )
+      : companyLogo?.[0];
+  const logoToShow = matchedCompany?.company_logo || "logo not found";
+  const originalCompanyName =
+    matchedCompany?.company_name ||
+    currentEmployeeCompany ||
+    "Company name not found";
+  const getTruncatedCompanyName = (name: string, maxLength: number = 20) => {
+    if (name.length <= maxLength) {
+      return name;
+    }
+    const words = name.split(" ");
+    if (words.length > 1) {
+      return words.map((word) => word.charAt(0).toUpperCase()).join("");
+    }
+    return name.charAt(0).toUpperCase() + ".";
+  };
 
-  const companyName =
-    Array.isArray(companyLogo) && companyLogo.length > 0
-      ? companyLogo[0].company_name
-      : "Company name not found";
-  console.log("Company Logo:", logoToShow, companyName);
+  const companyName = getTruncatedCompanyName(originalCompanyName);
+
+  const handleTodoClick = () => {
+    window.location.href = "/app/task_manager";
+  };
+  
+  const handleHelpDeskClick = () => {
+    window.location.href = "/app/support";
+  };
+
   const navigationItems: NavigationItem[] = [
     {
       icon: Home,
@@ -167,6 +197,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/loan",
         },
         {
+          name: "Advances",
+          icon: CircleDollarSign,
+          href: "/webapp/salary-slip-app/advances-list",
+        },
+        {
           name: "Payroll Documents",
           icon: FileText,
           href: "/webapp/salary-slip-app/hr-payroll",
@@ -182,6 +217,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: Shield,
       label: "Policies",
       path: "/webapp/policies-app",
+    },
+    {
+      icon: ListTodo,
+      label: "Todo",
+      path: "",
+    },
+    {
+      icon: HelpCircle,
+      label: "Help Desk",
+      path: "",
     },
   ];
 
@@ -238,6 +283,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const isItemActive = (item: NavigationItem) => {
+    if (item.label === "Todo" || item.label === "Help Desk") {
+      return false;
+    }
+
     if (item.path === "/webapp/") {
       return location.pathname === "/webapp/";
     }
@@ -253,7 +302,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       return true;
     }
 
-    if (location.pathname.startsWith(item.path)) {
+    if (item.path && location.pathname.startsWith(item.path)) {
       const remainingPath = location.pathname.substring(item.path.length);
       return remainingPath === "" || remainingPath.startsWith("/");
     }
@@ -304,9 +353,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       item.subItems?.some((subItem) => isSubItemActive(subItem))
     );
 
-    if (activeParent && openDropdown !== activeParent.label) {
-      setOpenDropdown(activeParent.label);
-    }
+    setOpenDropdown(activeParent?.label || null);
   }, [location.pathname]);
 
   return (
@@ -337,7 +384,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             <div className="flex items-center  gap-3 h-full">
               <img
                 src={typeof logoToShow === "string" ? logoToShow : ""}
-                alt="PayWise"
+                alt="companyLogo"
                 className="w-12 h-12 rounded-full  flex-shrink-0"
               />
               <div
@@ -345,7 +392,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
                 }`}
               >
-                <h2 className="font-semibold text-gray-900 whitespace-nowrap">
+                <h2
+                  className="font-semibold text-gray-900 whitespace-nowrap"
+                  title={originalCompanyName}
+                >
                   {companyName}
                 </h2>
                 <p className="text-sm text-gray-500 whitespace-nowrap">
@@ -380,7 +430,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               } else {
                 if (
                   isAnySubItemActive ||
-                  isDropdownOpen ||
                   (isItemDirectlyActive && !hasSubItems)
                 ) {
                   parentItemClasses = "bg-gray-900 text-white";
@@ -420,6 +469,54 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           }`}
                         />
                       )}
+                    </div>
+                  ) : item.label === "Todo" ? (
+                    <div
+                      onClick={handleTodoClick}
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        isItemDirectlyActive
+                          ? "bg-gray-900 text-white hover:text-white"
+                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <span
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+                    </div>
+                  ) : item.label === "Help Desk" ? (
+                    <div
+                      onClick={handleHelpDeskClick}
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        isItemDirectlyActive
+                          ? "bg-gray-900 text-white hover:text-white"
+                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <span
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <Link
