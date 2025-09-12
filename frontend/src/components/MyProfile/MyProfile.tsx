@@ -18,6 +18,7 @@ import defaultProfile from "../../assets/user.png";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import EmploymentHistory from "./EmploymentHistory";
 import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 
 export interface PersonalInfoProps {
