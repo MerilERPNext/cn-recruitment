@@ -89,7 +89,7 @@ const NotificationItem: React.FC<{
   doctype: string;
   activeTab: "all" | "read" | "unread";
 }> = ({ item, activeTab }) => {
-  // Cast BaseItem -> NotificationLog
+  // Cast BaseItem -> NotificationLogs
   const notification = item as NotificationLog;
 
   const [isRead, setIsRead] = useState(notification.read === 1);
