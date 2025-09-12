@@ -20,6 +20,7 @@ import {
   Wallet,
   TimerIcon,
   ListTodo,
+  CircleDollarSign,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -190,6 +191,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Loan",
           icon: Wallet,
           href: "/webapp/salary-slip-app/loan",
+        },
+        {
+          name: "Advances",
+          icon: CircleDollarSign,
+          href: "/webapp/salary-slip-app/advances-list",
         },
         {
           name: "Payroll Documents",
