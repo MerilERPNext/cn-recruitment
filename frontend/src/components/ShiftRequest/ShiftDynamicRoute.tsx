@@ -12,7 +12,11 @@ import { useShiftRouting } from "../../hooks/useShiftRouting";
 export const AllShiftsDashboardRoute = () => {
   useShiftRouting(); // Add the routing hook
   const { isDesktop } = useScreenSize();
-  return isDesktop ? <AllShiftsDashboard /> : <Navigate to="/webapp/shift-request/my-shift-assignment" replace />;
+  return isDesktop ? (
+    <AllShiftsDashboard />
+  ) : (
+    <Navigate to="/webapp/shift-request/my-shift-assignment" replace />
+  );
 };
 
 export const MyShiftsListRoute = () => {

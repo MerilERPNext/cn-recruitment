@@ -129,7 +129,7 @@ export const routesConfig: AppRoute[] = [
       { path: "job-applicant-list", element: <JobApplicantList /> },
     ],
   },
-  
+
   //salary slip route
   {
     path: "/webapp/salary-slip-app",
@@ -138,8 +138,7 @@ export const routesConfig: AppRoute[] = [
       { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "hr-payroll", element: <HRPayroll /> },
-      { path: "loan", element: <LoansPage /> },
-      {path: "loan",element: <LoansPage />},
+      { path: "loan", element: <LoansPage />},
       { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
     ],
   },
@@ -155,7 +154,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "",
         index: true,
-        element: <ShiftRequestDefaultRoute />
+        element: <ShiftRequestDefaultRoute />,
       },
       { path: "all-shifts-dashboard", element: <AllShiftsDashboardRoute /> },
       { path: "my-shift-assignment", element: <MyShiftsListRoute /> },

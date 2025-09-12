@@ -287,7 +287,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       return true;
     }
 
-    if (location.pathname.startsWith(item.path)) {
+    if (item.path && location.pathname.startsWith(item.path)) {
       const remainingPath = location.pathname.substring(item.path.length);
       return remainingPath === "" || remainingPath.startsWith("/");
     }
@@ -338,9 +338,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       item.subItems?.some((subItem) => isSubItemActive(subItem))
     );
 
-    if (activeParent && openDropdown !== activeParent.label) {
-      setOpenDropdown(activeParent.label);
-    }
+    setOpenDropdown(activeParent?.label || null);
   }, [location.pathname]);
 
   return (
@@ -417,7 +415,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               } else {
                 if (
                   isAnySubItemActive ||
-                  isDropdownOpen ||
                   (isItemDirectlyActive && !hasSubItems)
                 ) {
                   parentItemClasses = "bg-gray-900 text-white";
