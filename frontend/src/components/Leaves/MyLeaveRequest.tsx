@@ -76,6 +76,7 @@ const MyLeaveRequest: React.FC = () => {
             "Status",
             "Actions",
           ]}
+          columnWidths={["1fr", "1fr", "1fr", "2.5fr", "1fr", "0.5fr"]}
         >
           <FrappeListView<LeaveApplicationItem>
             doctype="Leave Application"

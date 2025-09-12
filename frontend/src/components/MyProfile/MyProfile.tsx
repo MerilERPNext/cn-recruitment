@@ -18,6 +18,7 @@ import defaultProfile from "../../assets/user.png";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import EmploymentHistory from "./EmploymentHistory";
 import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 
 export interface PersonalInfoProps {
@@ -38,6 +39,7 @@ const MyProfile: React.FC = () => {
       { key: "salary-info", label: "Salary Info" },
       { key: "ORG-chart", label: "Organization Chart" },
       // { key: "hr-letters", label: "HR Letters" },
+      { key: "employment-history", label: "Employment History" },
     ],
     []
   );
@@ -61,6 +63,7 @@ const MyProfile: React.FC = () => {
       "salary-info": <SalaryInfo user={user} />,
       "ORG-chart": <TwoLevelOrgChart />,
       // "hr-letters": <HRLetters />,
+      "employment-history": <EmploymentHistory employeeId={user?.employee} />,
     }),
     [user, userAddress]
   );
@@ -150,9 +153,15 @@ const MyProfile: React.FC = () => {
                 </button>
               </div>
               <div className="text-center mt-6">
-                <h1 className="text-2xl font-bold text-gray-900">{user?.employee_name}</h1>
-                <p className="text-blue-600 font-medium mt-1">{user?.designation}</p>
-                <p className="text-gray-500 text-sm mt-1">ID: {user?.employee}</p>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {user?.employee_name}
+                </h1>
+                <p className="text-blue-600 font-medium mt-1">
+                  {user?.designation}
+                </p>
+                <p className="text-gray-500 text-sm mt-1">
+                  ID: {user?.employee}
+                </p>
               </div>
             </div>
 

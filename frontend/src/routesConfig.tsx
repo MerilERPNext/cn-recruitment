@@ -78,6 +78,7 @@ import { useScreenSize } from "./hooks/useScreenSize";
 import LoanMainComponent from "./components/SalarySlip/Loan/component/DetailsPageForMobile";
 import OrganizationChart from "./components/ORGChart/OrganizationChart";
 import OrganizationCharttooo from "./components/ORGChart/OrgnazationChartForTwoLavel";
+import AdvancesList from "./components/SalarySlip/Advances/AdvancesList";
 
 export interface AppRoute {
   index?: boolean;
@@ -140,11 +141,16 @@ export const routesConfig: AppRoute[] = [
       { path: "hr-payroll", element: <HRPayroll /> },
       { path: "loan", element: <LoansPage />},
       { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
+      { path: "advances-list", element: <AdvancesList /> },
     ],
   },
   {
     path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
     element: <ViewSalarySlipModal />,
+  },
+  {
+    path: "/webapp/salary-slip-app/loan/:loanId",
+    element: <LoanMainComponent />,
   },
 
   {

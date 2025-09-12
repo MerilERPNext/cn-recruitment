@@ -20,12 +20,11 @@ const overtimeForm = {
       label: "Overtime Requests",
       addAnother: "New Row",
       customClass: "border-0",
-
       components: [
         {
           type: "datetime",
           key: "shift_date",
-          label: "Shift Date",
+          label: "Shift Date *",
           format: "dd-MM-yyyy",
           enableTime: false,
           input: true,
@@ -34,7 +33,7 @@ const overtimeForm = {
         {
           type: "datetime",
           key: "start_date",
-          label: "Start Date",
+          label: "Start Date *",
           format: "dd-MM-yyyy",
           enableTime: false,
           validate: { required: true },
@@ -44,7 +43,7 @@ const overtimeForm = {
         {
           type: "time",
           key: "start_time",
-          label: "Start Time",
+          label: "Start Time *",
           validate: { required: true },
 
           input: true,
@@ -52,7 +51,7 @@ const overtimeForm = {
         {
           type: "datetime",
           key: "end_date",
-          label: "End Date",
+          label: "End Date *",
           format: "dd-MM-yyyy",
           enableTime: false,
           validate: { required: true },
@@ -62,7 +61,7 @@ const overtimeForm = {
         {
           type: "time",
           key: "end_time",
-          label: "End Time",
+          label: "End Time *",
           validate: { required: true },
 
           input: true,
@@ -70,7 +69,7 @@ const overtimeForm = {
         {
           type: "textfield",
           key: "message",
-          label: "Message",
+          label: "Message *",
           validate: { required: true },
           input: true,
         },
