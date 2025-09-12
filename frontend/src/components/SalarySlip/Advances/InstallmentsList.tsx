@@ -6,6 +6,9 @@ import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { StatusBadge } from "./StatusBadge";
 import { UiAdvance } from "../../../types/employeeAttendance";
+import { formatCurrency } from "../../../utils/currencyFormatter";
+import parseISO from "date-fns/parseISO";
+import { format } from "date-fns";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -20,13 +23,6 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   maskAmounts,
   onToggleMask,
 }) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
 
   const { isDesktop } = useScreenSize();
 
@@ -82,7 +78,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               <div>
                 <span className="text-gray-600">Period:</span>
                 <div className="font-semibold">
-                  {advance.startDate} to {advance.endDate}
+                  {format(parseISO(advance.startDate), 'dd/MM/yyyy')} to {format(parseISO(advance.endDate), 'dd/MM/yyyy')}
                 </div>
               </div>
               <div>
@@ -119,7 +115,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
             <div className="divide-y divide-gray-200">
               {advance.installments.map((installment, index) => (
                 <div
-                  key={index}
+                  key={`${installment.installmentNo}-${index}`}
                   className="grid grid-cols-5 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="text-center font-medium text-gray-900">
@@ -127,7 +123,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                   </div>
 
                   <div className="text-center text-gray-700">
-                    {installment.installmentDate}
+                    {format(parseISO(installment.installmentDate), 'dd/MM/yyyy')}
                   </div>
 
                   <div className="text-center">
@@ -222,7 +218,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
             <div>
               <span className="text-gray-600">Period:</span>
               <div className="font-semibold">
-                {advance.startDate} to {advance.endDate}
+                {format(parseISO(advance.startDate), 'dd/MM/yyyy')} to {format(parseISO(advance.endDate), 'dd/MM/yyyy')}
               </div>
             </div>
           </div>
@@ -276,10 +272,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                       {/* Date */}
                       <div className="text-center text-gray-700 flex items-center justify-center">
                         <div className="text-sm leading-tight">
-                          {installment.installmentDate
-                            .split("-")
-                            .reverse()
-                            .join("/")}
+                          {format(parseISO(installment.installmentDate), 'dd/MM/yyyy')}
                         </div>
                       </div>
 

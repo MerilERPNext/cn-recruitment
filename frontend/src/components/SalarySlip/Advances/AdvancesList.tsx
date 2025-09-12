@@ -10,6 +10,9 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
+import { formatCurrency } from "../../../utils/currencyFormatter";
+import parseISO from "date-fns/parseISO";
+import { format } from "date-fns";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -45,13 +48,6 @@ const AdvancesList: React.FC = () => {
     ? mapAdvanceData(advancesData)
     : [];
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
 
   const handleViewInstallments = (advance: UiAdvance) => {
     setSelectedAdvance(advance);
@@ -119,7 +115,7 @@ const AdvancesList: React.FC = () => {
             <div className="divide-y divide-gray-200">
               {formattedData.map((advance, index) => (
                 <div
-                  key={index}
+                  key={`${advance.name}-${index}`}
                   className="grid grid-cols-6 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
                   onClick={() => handleViewInstallments(advance)}
                 >
@@ -152,10 +148,10 @@ const AdvancesList: React.FC = () => {
                   </div>
 
                   <div className="text-center text-gray-700">
-                    {advance.startDate}
+                    {format(parseISO(advance.startDate), 'dd/MM/yyyy')}
                   </div>
                   <div className="text-center text-gray-700">
-                    {advance.endDate}
+                    {format(parseISO(advance.endDate), 'dd/MM/yyyy')}
                   </div>
 
                   <div className="text-center">
@@ -252,8 +248,9 @@ const AdvancesList: React.FC = () => {
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>
-                  <strong>{advance.startDate}</strong> to{" "}
-                  <strong>{advance.endDate}</strong>
+                  <strong>{format(parseISO(advance.startDate), 'dd/MM/yyyy')}</strong> to{" "}
+                  <strong>{format(parseISO(advance.endDate), 'dd/MM/yyyy')}</strong>
+                  
                 </span>
                 <span>{advance.installments.length} installments</span>
               </div>
