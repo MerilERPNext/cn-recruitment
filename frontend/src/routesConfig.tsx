@@ -146,6 +146,10 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/salary-slip-app/salary-slip-list/:salaryId",
     element: <ViewSalarySlipModal />,
   },
+  {
+    path: "/webapp/salary-slip-app/loan/:loanId",
+    element: <LoanMainComponent />,
+  },
 
   {
     path: "/webapp/shift-request",

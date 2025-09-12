@@ -1,4 +1,11 @@
 export interface Installment {
+    principal: string
+    opening_balance: number
+    payment_date: string
+    balance_loan_amount: number
+    principal_amount: number
+    total_payment: number
+    interest_amount: number
     id: number
     month: string
     openingBalance: number
@@ -12,6 +19,19 @@ export interface Installment {
   }
   
   export interface Loan {
+    total_payment: number
+    loan_amount: number
+    applicant_name: string
+    standard_interest: number
+    loan_name: string
+    loan_type: string
+    emi_type: string
+  loan_approved_amount: number
+    rate_of_interest: number
+    monthly_repayment_amount: number
+    loan_tenure: number
+    loan_start_date: string
+    repayment_schedule: Installment[]
     id: number
     loanType: string
     loanName: string
