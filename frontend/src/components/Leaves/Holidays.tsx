@@ -13,6 +13,7 @@ import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 import { HolidayCardSkeletonList } from "./LeaveSkeletons";
 import { Holiday } from "../../types/leaves";
 import { processHolidays } from "./holidayHelper";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface HolidayCardProps {
   holiday: Holiday;
@@ -33,7 +34,6 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
   const month = format(dateObj, "MMM").toUpperCase();
   const day = format(dateObj, "dd");
   const weekday = format(dateObj, "EEEE");
-
   const { openModal } = useRequestLeaveModal();
 
   return (
@@ -104,6 +104,7 @@ const Holidays: React.FC = () => {
     isLoading,
     isError,
   } = useGetHolidays(currentEmployee?.name);
+  const { isDesktop } = useScreenSize();
 
   const {
     data: leaveRequests,
@@ -203,9 +204,22 @@ const Holidays: React.FC = () => {
   return (
     <div className="p-4 min-h-full pb-24">
       <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">
-          Upcoming Regular Holidays
-        </h2>
+        <div className="mb-4 flex justify-between items-center">
+          <h2 className="text-lg font-semibold ">Upcoming Regular Holidays</h2>
+          {isDesktop && allRegular.length !== 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/webapp/leave-app/leaves/holidays/all", {
+                  state: { type: "regular", holidays: allRegular },
+                })
+              }
+              className="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              View All
+            </button>
+          )}
+        </div>
 
         {upcomingRegular.length === 0 ? (
           <p className="text-gray-500 text-center py-4">
@@ -222,7 +236,7 @@ const Holidays: React.FC = () => {
             ))}
           </>
         )}
-        {allRegular.length !== 0 && (
+        {!isDesktop && allRegular.length !== 0 && (
           <button
             type="button"
             onClick={() =>
@@ -239,15 +253,31 @@ const Holidays: React.FC = () => {
 
       <section>
         <div className="mb-4">
-          <h2 className="text-lg font-semibold mb-4">
-            Upcoming Optional Holidays
-          </h2>
+          <div className="mb-4 flex justify-between items-center ">
+            <h2 className="text-lg font-semibold ">
+              Upcoming Optional Holidays
+            </h2>
+            {isDesktop && allOptional.length !== 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  navigate("/webapp/leave-app/leaves/holidays/all", {
+                    state: { type: "optional", holidays: allOptional },
+                  })
+                }
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                View All
+              </button>
+            )}
+          </div>
+
           <div className="flex justify-between text-center border py-2 rounded-lg">
             <p className="w-full">
               Total:{" "}
               <span className="font-semibold">{optionalBalance?.entitled}</span>
             </p>
-            <p className="border-x border-black w-full">
+            <p className="border-x-2 w-full">
               Availed:{" "}
               <span className="font-semibold">{optionalBalance?.availed}</span>
             </p>
@@ -274,7 +304,7 @@ const Holidays: React.FC = () => {
             ))}
           </>
         )}
-        {allOptional.length !== 0 && (
+        {!isDesktop && allOptional.length !== 0 && (
           <button
             type="button"
             onClick={() =>
