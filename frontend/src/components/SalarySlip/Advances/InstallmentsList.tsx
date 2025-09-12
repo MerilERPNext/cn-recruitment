@@ -5,27 +5,10 @@ import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { StatusBadge } from "./StatusBadge";
-
-interface Installment {
-  installmentNo: number;
-  installmentDate: string;
-  openingBalance: number;
-  installmentAmount: number;
-  principalBalance: number;
-}
-
-interface Advance {
-  name: string;
-  amount: number;
-  numberOfDeductions: number;
-  startDate: string;
-  endDate: string;
-  advanceStatus: string;
-  installments: Installment[];
-}
+import { UiAdvance } from "../../../types/employeeAttendance";
 
 interface InstallmentsListProps {
-  advance: Advance;
+  advance: UiAdvance;
   onBack: () => void;
   maskAmounts: boolean;
   onToggleMask: () => void;
