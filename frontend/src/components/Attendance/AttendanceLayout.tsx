@@ -9,12 +9,14 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { ChevronDown } from "lucide-react";
 import LeaveRequest from "../Attendance/LeaveRequest";
 import AttndanceRequestForm from "../Attendance/AttendanceRequest/AttendanceRequestForm";
+import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 
 const AttendanceLayout: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [showLeaveRequest, setShowLeaveRequest] = useState(false);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
+  const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
 
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +47,7 @@ const AttendanceLayout: React.FC = () => {
       { label: "Team Attendance", key: "team-attendance" },
       { label: "My Attendance Requests", key: "attendance-request" },
       { label: "Team Attendance Requests", key: "team-attendance-requests" },
+      { label: "Planned Overtime Requests", key: "planned-overtime-requests" },
     ],
     []
   );
@@ -135,6 +138,15 @@ const AttendanceLayout: React.FC = () => {
           </div>
         </div>
       )}
+      {showOvertimeRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CreateOvertimeRequest
+              onCancel={() => setShowOvertimeRequest(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -193,6 +205,22 @@ const AttendanceLayout: React.FC = () => {
                   </p>
                 </div>
               </button>
+              <button
+                onClick={() => {
+                  setShowOvertimeRequest(true);
+                  setShowActionsDropdown(false);
+                }}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors group"
+              >
+                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    Planned Overtime Request
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
         )}
@@ -237,6 +265,15 @@ const AttendanceLayout: React.FC = () => {
             <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <AttndanceRequestForm
                 onClose={() => setShowAttendanceRequest(false)}
+              />
+            </div>
+          </div>
+        )}
+        {showOvertimeRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <CreateOvertimeRequest
+                onCancel={() => setShowOvertimeRequest(false)}
               />
             </div>
           </div>

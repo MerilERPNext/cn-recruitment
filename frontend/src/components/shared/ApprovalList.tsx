@@ -53,7 +53,10 @@ const ApprovalList = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
   const defaultFilters = useMemo(
-    () => ({ reference_type: doctype, status: "open" }),
+    () => ({
+      reference_type: doctype,
+      status: "open",
+    }),
     [doctype]
   );
   useEffect(() => {

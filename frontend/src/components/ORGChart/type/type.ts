@@ -5,7 +5,7 @@ export type CollapsedState = Record<string, boolean>
 
 // Data stored inside each ReactFlow node
 export type NodeData = {
-    id: number
+    id: number | string
     name: string
     title?: string
     hasChildren: boolean
@@ -29,3 +29,4 @@ export type EmployeeHierarchy = {
   expandable: boolean
   children: EmployeeHierarchy[]
 }
+

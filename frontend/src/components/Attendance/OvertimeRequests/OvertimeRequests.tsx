@@ -1,49 +1,42 @@
 import { useMemo, useState } from "react";
-import { RequestCard } from "./RequestCard";
-import { AttendanceRequest } from "../../../types/attendance";
-import { AttendanceDetailView } from "../AttendanceDetails";
-import { useNavigate } from "react-router";
-
-import ApprovalList from "../../shared/ApprovalList";
-import FrappeListView from "../../ListView";
-import ApprovalCard from "./ApprovalCard";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useNavigate } from "react-router";
+import { AttendanceRequest, LoadingAction } from "../../../types/attendance";
+import { AttendanceDetailView } from "../AttendanceDetails";
+import ApprovalList from "../../shared/ApprovalList";
+import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
+import FrappeListView from "../../ListView";
+import { RequestCard } from "../TeamAttendanceDetails/RequestCard";
 
-type LoadingAction = {
-  id: string;
-  action: string;
-};
-const TeamAttendanceDetails = () => {
+const OvertimeRequests = () => {
+  const { refetchAttendance } = useGlobalStore();
+  const [refetch, setRefetch] = useState(false);
+  const navigate = useNavigate();
   const defaultFilters = useMemo(
     () => ({
-      reference_type: "Attendance Request",
+      reference_type: "Planned Overtime Request",
       status: ["in", ["Closed", "Cancelled"]],
     }),
     []
   );
-  const { refetchAttendance } = useGlobalStore();
-  const [refetch, setRefetch] = useState(false);
-  const navigate = useNavigate();
-
   const [selectedRequest, setSelectedRequest] = useState<
     (AttendanceRequest & { loadingAction?: LoadingAction }) | null
   >(null);
-
   return (
-    <>
+    <div>
       <div className="bg-white min-h-screen">
         <div className="bg-white px-2">
           {/* Pending */}
 
           <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
             <h2 className="text-lg font-semibold text-gray-800 pb-1">
-              Pending Team Attendance Requests
+              Pending Planned Overtime Requests
             </h2>
             <button
               onClick={() => {
                 navigate(
-                  "/webapp/attendance/team-attendance-requests/pendings"
+                  "/webapp/attendance/planned-overtime-requests/pendings"
                 );
               }}
               className="text-blue-600 hover:text-blue-800 font-medium"
@@ -51,6 +44,7 @@ const TeamAttendanceDetails = () => {
               View All
             </button>
           </div>
+
           <CardTable
             titles={[
               "Select",
@@ -63,14 +57,13 @@ const TeamAttendanceDetails = () => {
             columnWidths={["40px", "160px", "0.8fr", "120px", "140px", "0.6fr"]}
           >
             <ApprovalList
-              doctype={"Attendance Request"}
-              // pageSize={3}
+              doctype={"Planned Overtime Request"}
+              pageSize={3}
+              showPagination={false}
               refetch={refetch || refetchAttendance}
               onApprovalRefetchComplete={() => {
                 setRefetch(false);
               }}
-              pageSize={3}
-              showPagination={false}
               renderCardContent={(item) => (
                 <ApprovalCard
                   isSelected={item?.isSelected}
@@ -90,12 +83,11 @@ const TeamAttendanceDetails = () => {
             />
           </CardTable>
         </div>
-
         {/* Actioned */}
         <div className="bg-white px-2 mt-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 pb-1">
-              Actioned Team Attendance Requests
+              Actioned Planned Overtime Requests
             </h2>
             <CardTable
               titles={["Allocated To", "Description", "Date", "Status"]}
@@ -143,8 +135,8 @@ const TeamAttendanceDetails = () => {
           loadingAction={selectedRequest?.loadingAction}
         />
       )}
-    </>
+    </div>
   );
 };
 
-export default TeamAttendanceDetails;
+export default OvertimeRequests;

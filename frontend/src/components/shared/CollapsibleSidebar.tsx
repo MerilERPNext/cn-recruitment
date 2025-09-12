@@ -17,10 +17,10 @@ import {
   Clock,
   Users,
   CheckCircle,
-  ListTodo,
   Wallet,
+  TimerIcon,
+  ListTodo,
 } from "lucide-react";
-
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 
@@ -155,6 +155,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/attendance/team-attendance-requests",
         },
         {
+          name: "Planned Overtime",
+          icon: TimerIcon,
+          href: "/webapp/attendance/planned-overtime-requests",
+        },
+        {
           name: "All Shifts",
           icon: ArrowUpDown,
           href: "/webapp/shift-request/all-shifts-dashboard",
@@ -253,6 +258,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         return true;
       }
 
+      // Then check for prefix match with proper boundary
       if (location.pathname.startsWith(path)) {
         const remainingPath = location.pathname.substring(path.length);
         return remainingPath === "" || remainingPath.startsWith("/");
@@ -281,7 +287,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       return true;
     }
 
-    if (item.path && location.pathname.startsWith(item.path)) {
+    if (location.pathname.startsWith(item.path)) {
       const remainingPath = location.pathname.substring(item.path.length);
       return remainingPath === "" || remainingPath.startsWith("/");
     }
@@ -629,4 +635,5 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     </>
   );
 };
+
 export default CollapsibleSidebar;
