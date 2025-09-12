@@ -1,10 +1,8 @@
-"use client"
-
 import { Handle, Position, type NodeProps } from "@xyflow/react"
 import { User, ChevronUp, ChevronDown } from "lucide-react"
+import type { EmployeeNode } from "./type/type"
 
-
-export default function PersonNode({ data }: NodeProps<NodeData>) {
+export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
   const { id, name, title, hasChildren, isExpanded, onToggleExpand } = data
 
   return (
@@ -28,7 +26,7 @@ export default function PersonNode({ data }: NodeProps<NodeData>) {
 
           {hasChildren && (
             <button
-              onClick={() => onToggleExpand(id)}
+              onClick={() => onToggleExpand(String(id))}
               className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors duration-200"
               aria-label={isExpanded ? "Collapse" : "Expand"}
             >
