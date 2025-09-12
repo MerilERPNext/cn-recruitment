@@ -10,6 +10,7 @@ type TabName =
  'Salary Slip' 
 |'CTC Breakdown'
 | 'Loan'
+| 'Advances'
 | 'Payroll Documents'
 
 type ViewMode = 'annual' | 'monthly';
@@ -18,6 +19,7 @@ const tabRoutes: Record<TabName, string> = {
   "CTC Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
   "Loan": "/webapp/salary-slip-app/loan",
+  "Advances": "/webapp/salary-slip-app/advances-list",
   "Payroll Documents": "/webapp/salary-slip-app/hr-payroll", 
 };
 
