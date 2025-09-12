@@ -69,3 +69,11 @@
 [data-testid="formioContainer"] .formio-button-remove-row:hover {
   background: #fee2e2 !important;
 }
+
+.field-required:after {
+  display: none !important;
+}
+
+.form-control.input {
+  border-radius: 4px 0 0 4px !important;
+}

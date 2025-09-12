@@ -1,4 +1,4 @@
-import { LockIcon, EditIcon } from "lucide-react"
+import { EditIcon } from "lucide-react"
 import { Installment } from "../Type/loan"
 
 
@@ -40,29 +40,27 @@ export default function LoanInstallments({ installments }: LoanInstallmentsProps
             </tr>
           </thead>
           <tbody>
-            {installments.map((installment) => (
-              <tr key={installment.id} className="border-b hover:bg-gray-50">
-                <td className="p-3">{installment.id}</td>
-                <td className="p-3">{installment.month}</td>
-                <td className="p-3">{formatCurrency(installment.openingBalance)}</td>
-                <td className="p-3">{formatCurrency(installment.installmentAmount)}</td>
-                <td className="p-3">{formatNumber(installment.interest)}</td>
-                <td className="p-3">{formatCurrency(installment.loanEmi)}</td>
-                <td className="p-3">{formatNumber(installment.standardInterest)}</td>
-                <td className="p-3">{formatCurrency(installment.principalBalance)}</td>
-                <td className="p-3">{installment.perquisites}</td>
+            {installments.map((installment, index) => (
+              <tr key={installment.id || index} className="border-b hover:bg-gray-50">
+                <td className="p-3">{index + 1}</td>
+                <td className="p-3">{installment.payment_date}</td>
                 <td className="p-3">
-                  {installment.isLocked ? (
-                    <div className="text-gray-400">
-                      <LockIcon />
-                    </div>
-                  ) : (
-                    <button className="p-1 h-8 w-8 hover:bg-gray-100 rounded transition-colors">
-                      <div className="text-blue-600">
-                        <EditIcon />
-                      </div>
-                    </button>
+                  {formatCurrency(
+                    installment.balance_loan_amount + installment.principal_amount
                   )}
+                </td>
+                <td className="p-3">{formatCurrency(installment.total_payment)}</td>
+                <td className="p-3">{formatNumber(installment.interest_amount)}</td>
+                <td className="p-3">{formatCurrency(installment.total_payment)}</td>
+                <td className="p-3">{formatNumber(installment.interest_amount)}</td>
+                <td className="p-3">{formatCurrency(installment.principal_amount)}</td>
+                <td className="p-3">-</td>
+                <td className="p-3">
+                  <button className="p-1 h-8 w-8 hover:bg-gray-100 rounded transition-colors">
+                    <div className="text-blue-600">
+                      <EditIcon />
+                    </div>
+                  </button>
                 </td>
               </tr>
             ))}

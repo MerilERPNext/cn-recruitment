@@ -19,20 +19,18 @@ interface Loan {
   creation: string;
 }
 
-const ListViewOfLoanForMobile= () => {
+const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
 
-  const handleGoToLoanDetails = () => {
-    navigate('/webapp/salary-slip-app/details-page-mobile');
+  const handleGoToLoanDetails = (loan_application: string) => {
+    navigate(`/webapp/salary-slip-app/loan/${loan_application}`);
   };
 
   return (
     <FrappeListView
       doctype="loan"
       ItemComponent={LoantItem}
-      onItemClick={() => {
-        handleGoToLoanDetails();
-      }}
+      onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_application)} // ✅ Pass item.name
       isSearch={true}
       pageSize={10}
       defaultFields={["*"]}
@@ -47,36 +45,32 @@ const LoantItem: React.FC<{
   index?: number;
   doctype: string;
 }> = ({ item }) => {
-
-
   return (
     <div
-    key={item.name}
-    className="flex justify-between items-center bg-white p-4 mt-2 rounded-xl border cursor-pointer hover:shadow-md transition-shadow"
-  >
-    {/* Left content */}
-    <div className="flex flex-col flex-grow">
-      <h3 className="text-[var(--text-primary)] text-base font-semibold mb-1">
-        {item.applicant_name}
-      </h3>
-      <p className="text-sm text-[var(--secondary-color)]">
-        Name:{" "}
-        <span className="font-semibold">{item.name}</span>
-      </p>
+      key={item.name}
+      className="flex justify-between items-center bg-white p-4 mt-2 rounded-xl border cursor-pointer hover:shadow-md transition-shadow"
+    >
+      {/* Left content */}
+      <div className="flex flex-col flex-grow">
+        <h3 className="text-[var(--text-primary)] text-base font-semibold mb-1">
+          {item.applicant_name}
+        </h3>
+        <p className="text-sm text-[var(--secondary-color)]">
+          Name: <span className="font-semibold">{item.name}</span>
+        </p>
+      </div>
+
+      {/* Right content */}
+      <div className="flex items-center gap-3">
+        <p className="flex items-center text-sm text-[var(--text-primary)]">
+          <PiCurrencyInrFill className="mr-1 text-[var(--secondary-color)]" />
+          <span className="font-bold">{item.loan_amount}</span>
+        </p>
+        <button className="text-xl text-[var(--secondary-color)] hover:text-[var(--text-primary)] transition-colors">
+          <IoIosArrowForward />
+        </button>
+      </div>
     </div>
-  
-    {/* Right content */}
-    <div className="flex items-center gap-3">
-      <p className="flex items-center text-sm text-[var(--text-primary)]">
-        <PiCurrencyInrFill className="mr-1 text-[var(--secondary-color)]" />
-        <span className="font-bold">{item.loan_amount}</span>
-      </p>
-      <button className="text-xl text-[var(--secondary-color)] hover:text-[var(--text-primary)] transition-colors">
-        <IoIosArrowForward />
-      </button>
-    </div>
-  </div>
-  
   );
 };
 

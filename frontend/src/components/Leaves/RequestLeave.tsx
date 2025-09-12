@@ -16,6 +16,7 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { toast } from "react-hot-toast";
 import { useLeaveRequestRefresh } from "../Leaves/LeaveRequestRefreshContext";
 import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -48,14 +49,33 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     pageParam: 0,
     pageSize: 100,
   });
-
+  const queryClient = useQueryClient();
   const { triggerRefetch } = useLeaveRequestRefresh();
   const { defaults } = useRequestLeaveModal();
 
   const createLeaveMutation = useCreateFrappeDocument({
-    onSuccess: () => {
+    onSuccess: (newDoc) => {
       toast.success("Leave request submitted successfully!");
+      queryClient.setQueryData(
+        ["documents", "Leave Application"],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (old: any) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            data: [newDoc, ...(old.data || [])],
+          };
+        }
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: ["documents", "Leave Application"],
+        exact: false,
+      });
+
       triggerRefetch();
+
       onSuccess?.();
       onCancel?.();
     },
@@ -173,7 +193,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             ? submission.data.halfDayOption
             : undefined,
           description: submission.data.description,
-          attachment: submission.data.attachment?.[0]?.url,
+          custom_attachment: submission.data?.custom_attachment?.[0]?.url,
         },
       });
     } catch (error) {
@@ -287,10 +307,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       },
       {
         type: "file",
-        key: "attachment",
+        key: "custom_attachment",
         label: "Attachment (Optional)",
         input: true,
-        storage: "base64",
+        storage: "customBase64",
         fileTypes: [
           { label: "Documents", value: ".pdf,.doc,.docx" },
           { label: "Images", value: ".jpg,.jpeg,.png" },
