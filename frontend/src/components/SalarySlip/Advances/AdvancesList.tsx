@@ -142,16 +142,16 @@ const AdvancesList: React.FC = () => {
                       </span>
                     ) : (
                       <span className="font-medium">
-                        {formatCurrency(advance.numberOfDeductions)}
+                        {advance.numberOfDeductions}
                       </span>
                     )}
                   </div>
 
                   <div className="text-center text-gray-700">
-                    {format(parseISO(advance.startDate), 'dd/MM/yyyy')}
+                    {advance.startDate}
                   </div>
                   <div className="text-center text-gray-700">
-                    {format(parseISO(advance.endDate), 'dd/MM/yyyy')}
+                    {advance.endDate}
                   </div>
 
                   <div className="text-center">

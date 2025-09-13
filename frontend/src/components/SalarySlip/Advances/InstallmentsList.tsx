@@ -7,8 +7,6 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { StatusBadge } from "./StatusBadge";
 import { UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
-import parseISO from "date-fns/parseISO";
-import { format } from "date-fns";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -78,7 +76,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               <div>
                 <span className="text-gray-600">Period:</span>
                 <div className="font-semibold">
-                  {format(parseISO(advance.startDate), 'dd/MM/yyyy')} to {format(parseISO(advance.endDate), 'dd/MM/yyyy')}
+                  {advance.startDate} to {advance.endDate}
                 </div>
               </div>
               <div>
@@ -123,7 +121,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                   </div>
 
                   <div className="text-center text-gray-700">
-                    {format(parseISO(installment.installmentDate), 'dd/MM/yyyy')}
+                    {installment.installmentDate}
                   </div>
 
                   <div className="text-center">
@@ -218,7 +216,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
             <div>
               <span className="text-gray-600">Period:</span>
               <div className="font-semibold">
-                {format(parseISO(advance.startDate), 'dd/MM/yyyy')} to {format(parseISO(advance.endDate), 'dd/MM/yyyy')}
+                {advance.startDate} to {advance.endDate}
               </div>
             </div>
           </div>
@@ -272,7 +270,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                       {/* Date */}
                       <div className="text-center text-gray-700 flex items-center justify-center">
                         <div className="text-sm leading-tight">
-                          {format(parseISO(installment.installmentDate), 'dd/MM/yyyy')}
+                          {installment.installmentDate}
                         </div>
                       </div>
 

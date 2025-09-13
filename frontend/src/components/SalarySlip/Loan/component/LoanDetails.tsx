@@ -16,7 +16,7 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
   }
 
   return (
-    <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+    <div className="mb-6 p-4 bg-blue-100  rounded-lg">
       <h3 className="font-semibold mb-4 text-gray-900">Loans Details</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
         <div>
