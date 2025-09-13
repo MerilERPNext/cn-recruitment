@@ -198,7 +198,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Advances",
-          icon: CircleDollarSign,
+          icon: DollarSign,
           href: "/webapp/salary-slip-app/advances-list",
         },
         {

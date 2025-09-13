@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 "use client";
 
 import { useEffect } from "react";
@@ -36,7 +37,6 @@ const isMatch = (nodeId: string, userId: unknown) => {
 };
 
 // ✅ Recursive: find node in tree
-// eslint-disable-next-line react-refresh/only-export-components
 export function findNode(
   hierarchy: EmployeeHierarchy[] | EmployeeHierarchy,
   id: string
@@ -53,12 +53,11 @@ export function findNode(
 }
 
 // ✅ Recursive: find parent of a node
-// eslint-disable-next-line react-refresh/only-export-components
 export const findParent = (
   root: EmployeeHierarchy,
   employeeId: unknown
 ): EmployeeHierarchy | null => {
-  for (const child of root.children) {
+  for (const child of root.children || []) {
     if (isMatch(child.id, employeeId)) return root;
     const found = findParent(child, employeeId);
     if (found) return found;
@@ -100,24 +99,24 @@ const buildTwoLevelHierarchy = (
     });
   }
 
-  // Current user
-  nodes.push({
+// Current user
+nodes.push({
+  id: user.id,
+  type: "person",
+  position: { x: 400, y: baseY + 150 },
+  data: {
     id: user.id,
-    type: "person",
-    position: { x: 400, y: baseY + 150 },
-    data: {
-      id: user.id,
-      name: user.name,
-      title: user.title || "",
-      hasChildren: user.children.length > 0,
-      isExpanded: true,
-      onToggleExpand: () => {},
-    },
-  });
+    name: user.name,
+    title: user.title || "",
+    hasChildren: (user.children || []).length > 0,
+    isExpanded: true,
+    onToggleExpand: () => {},
+  },
+});
 
   // Children
-  user.children.forEach((child, index) => {
-    const childX = 400 - (user.children.length - 1) * 200 + index * 400;
+  (user.children || []).forEach((child, index) => {
+    const childX = 400 - ((user.children || []).length - 1) * 200 + index * 400;
     nodes.push({
       id: child.id,
       type: "person",
@@ -126,7 +125,7 @@ const buildTwoLevelHierarchy = (
         id: child.id,
         name: child.name,
         title: child.title || "",
-        hasChildren: child.children.length > 0,
+        hasChildren: (child.children || []).length > 0,
         isExpanded: true,
         onToggleExpand: () => {},
       },
