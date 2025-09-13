@@ -54,7 +54,9 @@ h1 {
   line-height: 1.1;
 }
  
-
+.react-datepicker__sr-only {
+  display: none !important;
+}
 
 /* button {
   border-radius: 8px;
