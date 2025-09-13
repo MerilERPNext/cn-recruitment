@@ -11,8 +11,6 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { formatCurrency } from "../../../utils/currencyFormatter";
-import parseISO from "date-fns/parseISO";
-import { format } from "date-fns";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -248,8 +246,8 @@ const AdvancesList: React.FC = () => {
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>
-                  <strong>{format(parseISO(advance.startDate), 'dd/MM/yyyy')}</strong> to{" "}
-                  <strong>{format(parseISO(advance.endDate), 'dd/MM/yyyy')}</strong>
+                  <strong>{advance.startDate}</strong> to{" "}
+                  <strong>{advance.endDate}</strong>
                   
                 </span>
                 <span>{advance.installments.length} installments</span>
