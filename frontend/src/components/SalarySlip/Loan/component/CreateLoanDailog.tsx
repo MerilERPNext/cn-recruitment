@@ -1,11 +1,16 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import {
-  useCurrentEmployeeAllDetails,
-  useGetAllEmployees,
-} from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
+import {
+  useCreateNewLoanApplication,
+  useLoanProducts,
+} from "../../../../hooks/useLoan";
+import toast from "react-hot-toast";
+import { CustomError } from "../../../../types/attendance";
+import DOMPurify from "dompurify";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
 
 interface CreateLoanDialogProps {
   isOpen: boolean;
@@ -16,29 +21,47 @@ export default function CreateLoanDialog({
   isOpen,
   onClose,
 }: CreateLoanDialogProps) {
+  const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
-  const { data: employeeList } = useGetAllEmployees();
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-
+  const { data: loanProducts } = useLoanProducts();
+  const mutation = useCreateNewLoanApplication();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
   const handleSubmit = async () => {
     const submission = await formRef.current?.submit();
     const formData = submission?.data;
-    console.log("Submitted Loan Form Data", formData);
+    const submissionData = {
+      ...formData,
+      company: currentEmployee?.company,
+      applicant_type: "Employee",
+      applicant: currentEmployee?.employee,
+    };
+    console.log("Submitted Loan Form Data", submissionData);
+
+    mutation.mutate(submissionData as Record<string, unknown>, {
+      onSuccess: () => {
+        onClose();
+
+        toast.success("Added Loan Request successfully!");
+      },
+      onError: (error: CustomError) => {
+        const errorMessage =
+          error?.response?.data?.exception
+            ?.split(":")
+            .slice(1)
+            .join(":")
+            .trim() || "Something went wrong!!";
+        const cleanString = DOMPurify.sanitize(errorMessage || "");
+        toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
+        console.error(error);
+      },
+    });
+
     // Call API here
   };
-  const handleEmployeeChange = (event: { data: { employee: string } }) => {
-    const employeeId = event?.data?.employee || "";
-    setSelectedEmployee(employeeId);
-
-    console.log(employeeId, "--------");
-  };
-
-  //  applicant type, applicant, company, posting date, loan appliction, branch, repay from salary
 
   const createLoanFormSchema = {
     type: "form",
@@ -46,118 +69,106 @@ export default function CreateLoanDialog({
     components: [
       {
         key: "loanPanel",
-        customClass: "py-4 px-12",
+        customClass: "py-4 px-6",
         components: [
           {
+            type: "select",
+            key: "loan_product",
+            label: "Loan Product",
+            placeholder: "Select Applicant Type",
+            validate: { required: true },
+            input: true,
+            data: {
+              values:
+                loanProducts?.data?.map((item: { name: string }) => ({
+                  label: item?.name,
+                  value: item?.name,
+                })) || [],
+            },
+            customClass: "w-full",
+          },
+
+          {
+            type: "number",
+            key: "loan_amount",
+            label: "Loan Amount (INR)",
+            validate: { required: true, min: 1 },
+            input: true,
+          },
+
+          {
             type: "columns",
+            key: "repayment_columns",
+            customClass: isDesktop ? "mb-4" : "mb-4 gap-4", // Tailwind to reduce spacing
             columns: [
               {
-                width: "100%",
+                width: 6,
                 components: [
                   {
                     type: "select",
-                    key: "applicant_type",
-                    label: "Applicant Type",
-                    placeholder: "Select Applicant Type",
-                    validate: { required: true },
+                    key: "repayment_method",
+                    label: "Repayment Method",
                     input: true,
+                    defaultValue: "Repay Over Number of Periods",
+                    validate: { required: true },
                     data: {
                       values: [
-                        { label: "Employee", value: "Employee" },
-                        { label: "Member", value: "Member" },
-                        { label: "Customer", value: "Customer" },
+                        {
+                          label: "Repay Over Number of Periods",
+                          value: "Repay Over Number of Periods",
+                        },
+                        {
+                          label: "Repay Fixed Amount per Period",
+                          value: "Repay Fixed Amount per Period",
+                        },
                       ],
                     },
                     customClass: "w-full",
                   },
-                  {
-                    label: "Company",
-                    key: "company",
-                    type: "textfield",
-                    input: true,
-                    placeholder: !selectedEmployee
-                      ? "Select an employee first"
-                      : "Loading company information...",
-                    customClass: "mb-4",
-                    disabled: true,
-                    defaultValue: currentEmployee?.company || "Not Assigned",
-                    value: currentEmployee?.company || "Not Assigned",
-                    clearOnHide: false,
-                  },
-                  {
-                    // this nees to be updated with dynamic values
-                    type: "select",
-                    key: "loan_application",
-                    label: "Loan Application",
-                    placeholder: "Select Loan Application",
-                    validate: { required: true },
-                    input: true,
-                    data: {
-                      values: [
-                        { label: "Education Loan", value: "Education Loan" },
-                        { label: "Home Loan", value: "Home Loan" },
-                        { label: "Personal Loan", value: "Personal Loan" },
-                        { label: "Car Loan", value: "Car Loan" },
-                      ],
-                    },
-                    customClass: "mb-6 w-full",
-                  },
                 ],
               },
               {
-                width: "100%",
+                width: 6,
                 components: [
                   {
-                    label: "Applicant",
-                    key: "applicant",
-                    type: "select",
+                    type: "number",
+                    key: "repayment_amount",
+                    label: "Monthly Repayment Amount",
                     input: true,
-                    placeholder: "Select Applicant",
-                    customClass: "mb-4",
-                    onChange: handleEmployeeChange,
+                    customConditional:
+                      "show = ['Repay Fixed Amount per Period'].includes(data.repayment_method || '');",
                     validate: { required: true },
-                    data: {
-                      values:
-                        employeeList && employeeList?.length > 0
-                          ? employeeList?.map(
-                              (item: {
-                                name: string;
-                                employee_name: string;
-                              }) => ({
-                                label: `${item?.employee_name} (${item?.name})`,
-                                value: item?.name,
-                              })
-                            )
-                          : [],
-                    },
-                  },
-
-                  {
-                    type: "datetime",
-                    key: "posting_date",
-                    label: "Posting Date",
-                    input: true,
-                    enableTime: false,
-                    validate: { required: true },
-                    customClass: "mb-6",
+                    customClass: "w-full",
                   },
                   {
                     type: "number",
-                    key: "rateOfInterest",
-                    label: "Rate of Interest (%)",
-                    validate: {
-                      required: true,
-                      min: 0,
-                      max: 100,
-                      step: 0.01,
-                    },
+                    key: "repayment_periods",
+                    label: "Repayment Period in Months",
                     input: true,
-                    customClass: "mb-6",
+                    customConditional:
+                      "show = ['Repay Over Number of Periods'].includes(data.repayment_method || '');",
+                    validate: { required: true, min: 1, max: 12 },
+                    customClass: "w-full",
                   },
                 ],
               },
             ],
-            customClass: "grid grid-cols-1 md:grid-cols-2 gap-6",
+          },
+          {
+            type: "textarea",
+            key: "description",
+            label: "Reason",
+            validate: { required: true },
+            input: true,
+            placeholder: "Enter reason",
+          },
+          {
+            type: "textarea",
+            key: "custom_note_remark",
+            label: "Note (Remark)",
+            validate: { required: true },
+            input: true,
+            placeholder: "Enter reason",
           },
         ],
       },
