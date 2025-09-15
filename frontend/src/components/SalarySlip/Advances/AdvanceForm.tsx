@@ -3,10 +3,12 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import HeaderBar from "../../HeaderBar";
+import { X } from "lucide-react";
 
 interface AdvanceFormProps {
-  user?: any; // Replace with your user type
-  onClose?: () => void; // Add close handler prop
+  user?: any;
+  onClose?: () => void;
 }
 
 export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
@@ -26,7 +28,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
           customClass:
             "bg-white rounded-lg shadow-md mb-6 w-full max-w-3xl mx-auto p-4", // 🔑 reduced width
           components: [
-            // Row 1: Employee + Advance Amount
             {
               type: "columns",
               key: "employeeRow",
@@ -64,8 +65,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                 },
               ],
             },
-
-            // Row 2: Advance Type + Repayment End Date
             {
               type: "columns",
               key: "advanceTypeRow",
@@ -99,11 +98,12 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                   components: [
                     {
                       type: "datetime",
-                      key: "repayment_end_date",
-                      label: "Repayment End Date",
+                      key: "repayment_start_date",
+                      label: "Repayment Start Date",
                       input: true,
+                      validate: { required: true },
                       enableTime: false,
-                      placeholder: "Select end date",
+                      placeholder: "Select start date",
                       dateFormat: "dd-MM-yyyy",
                       customClass: "mb-4",
                     },
@@ -111,8 +111,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                 },
               ],
             },
-
-            // Row 3: Repayment Type + Repayment Start Date
             {
               type: "columns",
               key: "repaymentInfo1",
@@ -143,12 +141,11 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                   components: [
                     {
                       type: "datetime",
-                      key: "repayment_start_date",
-                      label: "Repayment Start Date",
+                      key: "repayment_end_date",
+                      label: "Repayment End Date",
                       input: true,
-                      validate: { required: true },
                       enableTime: false,
-                      placeholder: "Select start date",
+                      placeholder: "Select end date",
                       dateFormat: "dd-MM-yyyy",
                       customClass: "mb-4",
                     },
@@ -156,8 +153,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                 },
               ],
             },
-
-            // Row 4: Repayment Period + Monthly Repayment Amount
             {
               type: "columns",
               key: "repaymentInfo2",
@@ -192,8 +187,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                 },
               ],
             },
-
-            // Row 5: Advance Account + Mode of Payment
             {
               type: "columns",
               key: "accountingInfo",
@@ -266,11 +259,33 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     };
   }, [user]);
 
+  // mapping function
+  function transformAdvanceFormData(formData: Record<string, any>) {
+    return {
+      employee: formData.employee,
+      purpose: formData.purpose,
+      custom_repayment_type: formData.repayment_type,
+      custom_repayment_start_date: formData.repayment_start_date,
+      advance_account: formData.advance_account,
+      mode_of_payment: formData.mode_of_payment,
+      custom_advance_type: formData.advance_type,
+      advance_amount: formData.advance_amount,
+      custom_repayment_period_in_months: formData.repayment_period_months,
+      custom_monthly_repayment_amount: formData.monthly_repayment_amount,
+      custom_repayment_end_date: formData.repayment_end_date,
+      repay_unclaimed_amount_from_salary:
+        formData.repay_unclaimed_amount_from_salary,
+    };
+  }
+
   const handleSubmit = useCallback(async () => {
     try {
       const submission = await formAdvanceInstance.current.submit();
       const formData = submission.data as Record<string, any>;
+      // 🔑 transform keys for API
       console.log("Advance Form Data:", formData);
+      const payload = transformAdvanceFormData(formData);
+      console.log("Payload for API:", payload);
       alert("Advance request submitted successfully!");
     } catch (error) {
       console.error("Form submission error:", error);
@@ -289,41 +304,36 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     <div className="advance-form-container h-full bg-gray-50">
       {/* Fixed Header */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8"> 
-          <div className="flex items-center justify-between h-16">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-semibold text-gray-900 truncate md:text-2xl">
-                Advance Request
-              </h2>
-              <p className="text-sm text-gray-600 mt-1 hidden md:block">
-                Submit your advance request with repayment details
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="ml-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-              type="button"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        <div className="max-w-3xl mx-auto px-2 sm:px-6 lg:px-8">
+          {isDesktop ? (
+            <div className="flex items-center justify-between h-16">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-semibold text-gray-900 truncate md:text-2xl">
+                  Advance Request
+                </h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="ml-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                type="button"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          ) : (
+            <HeaderBar
+              title="Advance Request"
+              showBackButton={true}
+              onBack={onClose}
+            />
+          )}
         </div>
       </div>
 
       {/* Form Content */}
-      <div className="max-w-3xl mx-auto p-4 md:p-8 pt-6"> {/* 🔑 reduced width */}
+      <div className="max-w-3xl mx-auto">
+        {" "}
+        {/* 🔑 reduced width */}
         <Form
           key="advance-form"
           form={advanceForm}
@@ -334,20 +344,22 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
             submitButton: false,
           }}
         />
-
         {/* Action Buttons */}
-        <div className="mt-8 md:flex md:justify-end md:space-x-4">
-          <div className="fixed bottom-0 left-0 w-full bg-white py-3 px-4 border-t md:relative md:w-auto md:p-0 md:border-t-0 md:bg-transparent">
+        <div className="mb-6 px-5">
+          <div
+            className="fixed bottom-0 left-0 w-full bg-white py-3 px-4 border-t 
+                     md:relative md:w-auto md:p-0 md:border-t-0 md:bg-transparent"
+          >
             <div className="flex space-x-3 md:space-x-4">
               <button
                 onClick={handleCancel}
-                className="flex justify-center w-full py-3 px-6 rounded-lg font-medium transition-colors border border-gray-300 text-gray-700 hover:bg-gray-50 md:w-auto"
+                className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors border border-gray-300 text-gray-700"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="flex justify-center w-full py-3 px-6 rounded-lg font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700 md:w-auto"
+                className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors bg-black text-white hover:bg-gray-800"
               >
                 Submit Request
               </button>

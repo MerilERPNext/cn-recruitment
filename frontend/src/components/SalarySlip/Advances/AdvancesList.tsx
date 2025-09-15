@@ -5,7 +5,7 @@ import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { X } from "lucide-react";
 import InstallmentsList from "./InstallmentsList";
 import { StatusBadge } from "./StatusBadge";
-import AdvanceForm from "./AdvanceForm"; // Import your AdvanceForm
+import AdvanceForm from "./AdvanceForm"; 
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -15,9 +15,11 @@ import { formatCurrency } from "../../../utils/currencyFormatter";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
-  const [selectedAdvance, setSelectedAdvance] = useState<UiAdvance | null>(null);
+  const [selectedAdvance, setSelectedAdvance] = useState<UiAdvance | null>(
+    null
+  );
   const [showInstallments, setShowInstallments] = useState(false);
-  const [showAdvanceForm, setShowAdvanceForm] = useState(false); // New state for modal
+  const [showAdvanceForm, setShowAdvanceForm] = useState(false); 
 
   const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
@@ -43,7 +45,9 @@ const AdvancesList: React.FC = () => {
     }));
   };
 
-  const formattedData: UiAdvance[] = advancesData ? mapAdvanceData(advancesData) : [];
+  const formattedData: UiAdvance[] = advancesData
+    ? mapAdvanceData(advancesData)
+    : [];
 
   const handleViewInstallments = (advance: UiAdvance) => {
     setSelectedAdvance(advance);
@@ -67,14 +71,28 @@ const AdvancesList: React.FC = () => {
     children,
     onClose,
   }) => {
-    return (
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        {/* Backdrop with Blur (NO onClick here) */}
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" />
+    const isMobile = !isDesktop;
 
-        {/* Modal Content */}
-        <div className="flex min-h-full items-center justify-center p-4">
-          <div className="relative bg-white rounded-lg shadow-xl w-[75rem] max-w-4xl max-h-[90vh] overflow-hidden">
+    return (
+      <div className="fixed inset-0 z-50">
+        {/* Backdrop */}
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" />
+
+        {/* Container: center on desktop, full-screen on mobile */}
+        <div
+          className={
+            isMobile
+              ? "flex items-start justify-start h-full"
+              : "flex min-h-full items-center justify-center p-4"
+          }
+        >
+          <div
+            className={
+              isMobile
+                ? "relative bg-white w-full h-full max-w-none max-h-none rounded-none overflow-y-auto"
+                : "relative bg-white rounded-lg shadow-xl w-[75rem] max-w-4xl max-h-[90vh] overflow-hidden"
+            }
+          >
             {/* Close Button (Cross) */}
             <button
               onClick={onClose}
@@ -83,8 +101,8 @@ const AdvancesList: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Modal Body */}
-            <div className="overflow-y-auto max-h-[90vh]">{children}</div>
+            {/* Modal Body (make it scrollable / full height) */}
+            <div className="overflow-y-auto h-full">{children}</div>
           </div>
         </div>
       </div>
@@ -120,12 +138,16 @@ const AdvancesList: React.FC = () => {
             >
               {maskAmounts ? (
                 <>
-                  <span className="text-sm font-medium text-gray-700">Show Amounts</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    Show Amounts
+                  </span>
                   <BsToggleOff className="w-6 h-6 text-gray-400" />
                 </>
               ) : (
                 <>
-                  <span className="text-sm font-medium text-gray-700">Hide Amounts</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    Hide Amounts
+                  </span>
                   <BsToggleOn className="w-6 h-6 text-blue-500" />
                 </>
               )}
@@ -153,23 +175,37 @@ const AdvancesList: React.FC = () => {
                   className="grid grid-cols-6 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
                   onClick={() => handleViewInstallments(advance)}
                 >
-                  <div className="font-medium text-gray-900">{advance.name}</div>
+                  <div className="font-medium text-gray-900">
+                    {advance.name}
+                  </div>
                   <div className="text-center">
                     {maskAmounts ? (
-                      <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+                      <span className="blur-sm select-none text-gray-400">
+                        ₹XX,XXX
+                      </span>
                     ) : (
-                      <span className="font-medium">{formatCurrency(advance.amount)}</span>
+                      <span className="font-medium">
+                        {formatCurrency(advance.amount)}
+                      </span>
                     )}
                   </div>
                   <div className="text-center">
                     {maskAmounts ? (
-                      <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+                      <span className="blur-sm select-none text-gray-400">
+                        ₹XX,XXX
+                      </span>
                     ) : (
-                      <span className="font-medium">{advance.numberOfDeductions}</span>
+                      <span className="font-medium">
+                        {advance.numberOfDeductions}
+                      </span>
                     )}
                   </div>
-                  <div className="text-center text-gray-700">{advance.startDate}</div>
-                  <div className="text-center text-gray-700">{advance.endDate}</div>
+                  <div className="text-center text-gray-700">
+                    {advance.startDate}
+                  </div>
+                  <div className="text-center text-gray-700">
+                    {advance.endDate}
+                  </div>
                   <div className="text-center">
                     <StatusBadge status={advance.advanceStatus} />
                   </div>
@@ -205,12 +241,16 @@ const AdvancesList: React.FC = () => {
           >
             {maskAmounts ? (
               <>
-                <span className="text-sm font-medium text-gray-700">Show Amounts</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Show Amounts
+                </span>
                 <BsToggleOff className="w-6 h-6 text-gray-400" />
               </>
             ) : (
               <>
-                <span className="text-sm font-medium text-gray-700">Hide Amounts</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Hide Amounts
+                </span>
                 <BsToggleOn className="w-6 h-6 text-blue-500" />
               </>
             )}
@@ -225,34 +265,49 @@ const AdvancesList: React.FC = () => {
           >
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{advance.name}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {advance.name}
+                </h3>
               </div>
               <StatusBadge status={advance.advanceStatus} />
             </div>
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
-                <span className="text-gray-600 text-xs uppercase tracking-wide">Total Amount</span>
+                <span className="text-gray-600 text-xs uppercase tracking-wide">
+                  Total Amount
+                </span>
                 {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+                  <span className="blur-sm select-none text-gray-400">
+                    ₹XX,XXX
+                  </span>
                 ) : (
-                  <span className="font-medium">{formatCurrency(advance.amount)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(advance.amount)}
+                  </span>
                 )}
               </div>
             </div>
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
-                <span className="text-gray-600 text-xs uppercase tracking-wide">Deduction Amount</span>
+                <span className="text-gray-600 text-xs uppercase tracking-wide">
+                  Deduction Amount
+                </span>
                 {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+                  <span className="blur-sm select-none text-gray-400">
+                    ₹XX,XXX
+                  </span>
                 ) : (
-                  <span className="font-medium">{formatCurrency(advance.numberOfDeductions)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(advance.numberOfDeductions)}
+                  </span>
                 )}
               </div>
             </div>
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>
-                  <strong>{advance.startDate}</strong> to <strong>{advance.endDate}</strong>
+                  <strong>{advance.startDate}</strong> to{" "}
+                  <strong>{advance.endDate}</strong>
                 </span>
                 <span>{advance.installments.length} installments</span>
               </div>
