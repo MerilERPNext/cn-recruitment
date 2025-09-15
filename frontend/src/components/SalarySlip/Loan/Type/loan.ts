@@ -19,43 +19,23 @@ export interface Installment {
   }
   
   export interface Loan {
-    remaining_amount: number
-    total_paid_amount: number
-    total_loan_amount: number
-    remaining_months: number
-    total_months: number
-    total_payment: number
-    loan_amount: number
-    paid_months: number
-    applicant_name: string
-    standard_interest: number
-    loan_name: string
-    loan_type: string
-    emi_type: string
-  loan_approved_amount: number
-    rate_of_interest: number
     monthly_repayment_amount: number
-    loan_tenure: number
-    loan_start_date: string
-    repayment_schedule: Installment[]
-    id: number
-    loanType: string
-    loanName: string
-    emiType: string
+    total_months: number
+    paid_months: number
+    total_loan_amount: number
+    total_paid_amount: number
+    remaining_amount: number
+    remaining_months: number
+    remainingAmount: number
+    totalPaidAmount: number
+    totalLoanAmount: number
+    remainingMonths: number
+    totalMonths: number
+    totalPayment: number
     loanAmount: number
-    rateOfInterest: number
-    standardInterestRate: number
-    noOfInstallments: number
-    startDate: string
-    endMonth: string
-    status: "Open" | "Closed" | "Pending"
-    pendingMonths: number
-    totalPrincipal: number
-    totalPrincipalWithInterest: number
-    paidPrincipal: number
-    paidPrincipalWithInterest: number
-    pendingPrincipalAmount: number
-    pendingPrincipalWithInterest: number
-    installments: Installment[]
+    paidMonths: number
+    applicantName: string
+    standardInterest: number
+    loanName: string
   }
   

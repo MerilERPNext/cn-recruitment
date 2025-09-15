@@ -21,19 +21,19 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
         <div>
           <div className="text-gray-600 mb-1">Monthly Repayment</div>
-          <div className="font-medium">{loan.monthly_repayment_amount}</div>
+          <div className="font-medium">{formatCurrency(loan.monthly_repayment_amount)}</div>
         </div>
         <div>
           <div className="text-gray-600 mb-1">Total Months</div>
-          <div className="font-medium">{formatCurrency(loan.total_months) || "0"}</div>
+          <div className="font-medium">{loan.total_months || "0"}</div>
         </div>
         <div>
           <div className="text-gray-600 mb-1">Paid Months</div>
-          <div className="font-medium">{formatCurrency(loan.paid_months) || "0"}</div>
+          <div className="font-medium">{loan.paid_months || "0"}</div>
         </div>
         <div>
           <div className="text-gray-600 mb-1">Remaining Months</div>
-          <div className="font-medium">{formatCurrency(loan.remaining_months)}</div>
+          <div className="font-medium">{loan.remaining_months}</div>
         </div>
         <div>
           <div className="text-gray-600 mb-1">Total Loan Amount</div>
@@ -47,6 +47,7 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
           <div className="text-gray-600 mb-1">Remaining Amount</div>
           <div className="font-medium">{formatCurrency(loan.remaining_amount)}</div>
         </div>
+
       </div>
     </div>
   )

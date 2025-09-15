@@ -21,47 +21,42 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   maskAmounts,
   onToggleMask,
 }) => {
-
   const { isDesktop } = useScreenSize();
 
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
-             <div className="flex items-center rounded-lg justify-between mb-4">
-            <HeaderBar
-              title={`Installments - ${advance.name}`}
-              showBackButton={true}
-              onBack={onBack}
-              rightSlot={
-                <button
-                  onClick={onToggleMask}
-                  className="flex items-center gap-2 whitespace-nowrap border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors duration-200"
-                  title={maskAmounts ? "Show amounts" : "Hide amounts"}
-                >
-                  {maskAmounts ? (
-                    <>
-                      <span className="text-sm font-medium text-gray-700">
-                        Show Amounts
-                      </span>
-                      <BsToggleOff className="w-6 h-6 text-gray-400" />
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-sm font-medium text-gray-700">
-                        Hide Amounts
-                      </span>
-                      <BsToggleOn className="w-6 h-6 text-blue-500" />
-                    </>
-                  )}
-                </button>
-              }
-            />
-          </div>
+      <div className="flex items-center rounded-lg justify-between mb-4">
+        <HeaderBar
+          title={`Installments - ${advance.name}`}
+          showBackButton={true}
+          onBack={onBack}
+          rightSlot={
+            <button
+              onClick={onToggleMask}
+              className="flex items-center gap-2 whitespace-nowrap border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors duration-200"
+              title={maskAmounts ? "Show amounts" : "Hide amounts"}
+            >
+              {maskAmounts ? (
+                <>
+                  <span className="text-sm font-medium text-gray-700">
+                    Show Amounts
+                  </span>
+                  <BsToggleOff className="w-6 h-6 text-gray-400" />
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-gray-700">
+                    Hide Amounts
+                  </span>
+                  <BsToggleOn className="w-6 h-6 text-blue-500" />
+                </>
+              )}
+            </button>
+          }
+        />
+      </div>
       <div className="w-full max-w-[100vw] mx-auto py-0">
-        {/* Header with toggle */}
         <div className="mb-6 px-0">
-   
-
-          {/* Advance Summary Card */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-center">
               <div>
