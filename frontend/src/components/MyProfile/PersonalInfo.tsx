@@ -61,7 +61,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                           validate: { required: true },
                           placeholder: "1990-08-15",
                           dateFormate: "dd-MM-yyyy",
-                          flatpickr: { appendTo: ".address-form-container" },
+                          flatpickr: { appendTo: "" },
                           autofocus: false,
                         },
                       ],
@@ -204,7 +204,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
   }, [user]);
 
   return (
-    <div className="address-form-container h-full">
+    <div className="h-full">
       <div className="p-4 md:p-8">
         {isDesktop && (
           <div className="border-b border-gray-200 pb-6 mb-8">

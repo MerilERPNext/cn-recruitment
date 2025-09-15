@@ -26,10 +26,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
 
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
-      <div className="w-full max-w-[100vw] mx-auto py-0">
-        {/* Header with toggle */}
-        <div className="mb-6 px-0">
-          <div className="flex items-center justify-between mb-4">
+             <div className="flex items-center rounded-lg justify-between mb-4">
             <HeaderBar
               title={`Installments - ${advance.name}`}
               showBackButton={true}
@@ -59,6 +56,10 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               }
             />
           </div>
+      <div className="w-full max-w-[100vw] mx-auto py-0">
+        {/* Header with toggle */}
+        <div className="mb-6 px-0">
+   
 
           {/* Advance Summary Card */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">

@@ -19,8 +19,14 @@ export interface Installment {
   }
   
   export interface Loan {
+    remaining_amount: number
+    total_paid_amount: number
+    total_loan_amount: number
+    remaining_months: number
+    total_months: number
     total_payment: number
     loan_amount: number
+    paid_months: number
     applicant_name: string
     standard_interest: number
     loan_name: string

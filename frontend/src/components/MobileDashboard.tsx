@@ -300,7 +300,7 @@ const MobileDashboard: React.FC = () => {
   };
 
   const handleNotificationClick = () => {
-    navigate("/webapp/notices");
+    navigate("/webapp/notification-log");
   };
 
   const getTotalTime = () => {
