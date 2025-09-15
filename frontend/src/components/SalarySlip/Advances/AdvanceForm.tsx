@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -201,7 +199,7 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       label: "Advance Account",
                       input: true,
                       validate: { required: true },
-                      defaultValue: "Cash - HybrowLabs Private Limited - HL",
+                      defaultValue: "Cash - HybrowLabs Private Limited",
                       customClass: "mb-4",
                     },
                   ],
@@ -282,8 +280,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     try {
       const submission = await formAdvanceInstance.current.submit();
       const formData = submission.data as Record<string, any>;
-      // 🔑 transform keys for API
-      console.log("Advance Form Data:", formData);
       const payload = transformAdvanceFormData(formData);
       console.log("Payload for API:", payload);
       alert("Advance request submitted successfully!");

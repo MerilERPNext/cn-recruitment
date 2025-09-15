@@ -2,7 +2,6 @@
 import type React from "react";
 import { useState } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
-import { X } from "lucide-react";
 import InstallmentsList from "./InstallmentsList";
 import { StatusBadge } from "./StatusBadge";
 import AdvanceForm from "./AdvanceForm"; 
@@ -12,6 +11,8 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { formatCurrency } from "../../../utils/currencyFormatter";
+import Modal from "./commonModal"
+
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -65,48 +66,6 @@ const AdvancesList: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowAdvanceForm(false);
-  };
-
-  const Modal: React.FC<{ children: React.ReactNode; onClose: () => void }> = ({
-    children,
-    onClose,
-  }) => {
-    const isMobile = !isDesktop;
-
-    return (
-      <div className="fixed inset-0 z-50">
-        {/* Backdrop */}
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" />
-
-        {/* Container: center on desktop, full-screen on mobile */}
-        <div
-          className={
-            isMobile
-              ? "flex items-start justify-start h-full"
-              : "flex min-h-full items-center justify-center p-4"
-          }
-        >
-          <div
-            className={
-              isMobile
-                ? "relative bg-white w-full h-full max-w-none max-h-none rounded-none overflow-y-auto"
-                : "relative bg-white rounded-lg shadow-xl w-[75rem] max-w-4xl max-h-[90vh] overflow-hidden"
-            }
-          >
-            {/* Close Button (Cross) */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 z-10 p-2 text-gray-400 hover:text-gray-600 bg-white rounded-full shadow-md"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Modal Body (make it scrollable / full height) */}
-            <div className="overflow-y-auto h-full">{children}</div>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   if (showInstallments && selectedAdvance) {
