@@ -20,10 +20,8 @@
   display: flex !important;
   flex-wrap: nowrap !important;
 }
-
-.flatpickr-calendar {
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+.formio-component-select label {
+  pointer-events: none;
 }
 
 .custom-w-fill-available {
@@ -33,3 +31,4 @@
 .address-form-container .choices__inner::after {
   display: none !important;
 }
+
