@@ -41,12 +41,14 @@ const overtimeForm = {
           input: true,
         },
         {
-          type: "time",
+          type: "datetime",
           key: "start_time",
           label: "Start Time *",
-          validate: { required: true },
-
+          enableDate: false,
+          enableTime: true,
           input: true,
+          widget: { type: "calendar" },
+          validate: { required: true },
         },
         {
           type: "datetime",
@@ -55,17 +57,19 @@ const overtimeForm = {
           format: "dd-MM-yyyy",
           enableTime: false,
           validate: { required: true },
-
           input: true,
         },
         {
-          type: "time",
+          type: "datetime",
           key: "end_time",
           label: "End Time *",
-          validate: { required: true },
-
+          enableDate: false,
+          enableTime: true,
           input: true,
+          widget: { type: "calendar" },
+          validate: { required: true },
         },
+
         {
           type: "textfield",
           key: "message",
@@ -171,16 +175,13 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 max-w-full overflow-hidden"
-      onMouseDown={() => {
-        if (onCancel) {
-          onCancel();
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onCancel?.();
         }
       }}
     >
-      <div
-        className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
