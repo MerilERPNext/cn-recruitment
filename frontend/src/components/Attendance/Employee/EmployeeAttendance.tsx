@@ -388,6 +388,7 @@ const EmployeeAttendance = () => {
                     />
                   );
                 }}
+                showPagination={false}
                 SkeletonComponent={CardSkeleton}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 defaultFilters={defaultFilters as any}
@@ -457,6 +458,8 @@ const EmployeeAttendance = () => {
               >
                 Attendance Request
               </button>
+              <div className="border-b border-gray-200 m-0 p-0"></div>
+
               <button
                 onClick={() => {
                   setShowOvertimeRequest(true);

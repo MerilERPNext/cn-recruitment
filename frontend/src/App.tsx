@@ -17,6 +17,9 @@ import { X, CheckCircle2, CircleX } from "lucide-react";
 import { useFrappeAuth } from "frappe-react-sdk";
 import "./utils/FormioOverrides";
 import { GlobalStoreProvider } from "./context/GlobalStoreContext";
+import { Formio } from "formiojs";
+
+Formio.setBaseUrl("/");
 
 const App: React.FC = () => {
   const { currentUser, isLoading, isValidating } = useFrappeAuth();

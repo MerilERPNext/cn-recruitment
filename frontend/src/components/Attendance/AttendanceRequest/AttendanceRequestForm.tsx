@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
