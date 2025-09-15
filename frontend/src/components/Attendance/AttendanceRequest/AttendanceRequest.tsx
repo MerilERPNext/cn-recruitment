@@ -44,7 +44,7 @@ const AttendanceRequest = () => {
           }}
         />
       ) : (
-        <div className="bg-white h-screen px-4 pt-2">
+        <div className="bg-white h-full px-4 pt-2 pb-12">
           <CardTable
             titles={["Request Type", "From Date", "To Date", "Status"]}
           >

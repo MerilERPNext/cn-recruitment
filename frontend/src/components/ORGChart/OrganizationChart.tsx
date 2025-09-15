@@ -97,6 +97,7 @@ export default function OrganizationChart() {
 
   // Build nodes/edges when data comes
   useEffect(() => {
+    if (!employeeHierarchy) return;
     if (employeeId) {
       const currentUser = findNode(
         employeeHierarchy as unknown as EmployeeHierarchy,
