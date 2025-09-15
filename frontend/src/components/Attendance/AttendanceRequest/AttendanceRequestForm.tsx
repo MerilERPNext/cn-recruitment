@@ -690,7 +690,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                         try {
                           (other as any)._flatpickr.close();
                         } catch (err) {
-                          console.log("flatpickr close failed", err);
+                          console.error("flatpickr close failed", err);
                         }
                       }
                     });
