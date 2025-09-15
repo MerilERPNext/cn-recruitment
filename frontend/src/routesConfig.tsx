@@ -1,84 +1,109 @@
-import { ReactElement } from "react";
+import { ReactElement, lazy, Suspense } from "react";
+import { Navigate } from "react-router";
+import { useScreenSize } from "./hooks/useScreenSize";
+import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
+
+// Keep critical components as static imports for better UX
 import SearchMembers from "./components/SearchMembers";
 import IdCard from "./components/IdCard";
-import Expenses from "./components/Expenses";
-import RecruitmentApp from "./components/RecruitmentApp";
-import MyProfile from "./components/MyProfile/MyProfile";
-import InterviewPage from "./components/InterviewDetails";
-import InterviewList from "./components/interview";
-import AddNewReferral from "./components/AddNewReferral";
-import ReferralDetails from "./components/ReferralDetails";
-import InterviewFeedbackForm from "./components/Feedback";
-import AddRequisition from "./components/AddRequisition";
-import JobRequisition from "./components/JobRequisition";
-import RequisitionDetails from "./components/RequisitionDetails";
-import ReferralList from "./components/ReferralList";
-import JobOpeningsUI from "./components/JobOpening/JobOpening";
-import JobApplicantList from "./components/JobApplicantList";
-import JobApplicantDetails from "./components/JobApplicantDetail";
-import NoticesLayout from "./components/Notices/NoticesLayout";
-import NoticesTab from "./components/Notices/NoticesTab";
-import NoticeDetails from "./components/Notices/NoticeDetails";
-import ExpensesApp from "./components/Expenses-App/ExpensesApp";
-import ExpensesList from "./components/Expenses-App/ExpensesList";
-import GeneralExpenseClaim from "./components/Expenses-App/GeneralExpenseClaim";
-import MileageExpenseClaim from "./components/Expenses-App/MileageExpenseClaim";
-import NewExpenseType from "./components/Expenses-App/NewExpenseType";
-import Holidays from "./components/Leaves/Holidays";
-import HolidaysFull from "./components/Leaves/HolidaysFull";
-import LeaveApp from "./components/Leaves/LeaveApp";
-import LeaveBalance from "./components/Leaves/LeaveBalance";
-import LeaveRequestApp from "./components/Leaves/LeaveRequestApp";
-import MyLeaveRequest from "./components/Leaves/MyLeaveRequest";
-import TeamLeaveRequest from "./components/Leaves/TeamLeaveRequest";
-import AllPendingRequests from "./components/Attendance/TeamAttendanceDetails/AllPendingRequests";
-import AttendanceSummary from "./components/Attendance/AttendanceSummary";
-import AllEmpAttendance from "./components/Attendance/AllEmpAttendance/AllEmpAttendance";
-import AttendanceLayout from "./components/Attendance/AttendanceLayout";
-import AttendanceRequest from "./components/Attendance/AttendanceRequest/AttendanceRequest";
-import EmployeeAttendance from "./components/Attendance/Employee/EmployeeAttendance";
-import TeamAttendance from "./components/Attendance/Team/TeamAttendance";
-import TeamAttendanceDetails from "./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails";
-import SalarySlipApp from "./components/SalarySlip/SalarySlipApp";
-import SalarySlipsList from "./components/SalarySlip/SalarySlipList";
-import ShiftChangeForm from "./components/ShiftRequest/AddRequestForm";
-import ShiftRequestList from "./components/ShiftRequest/MyShiftList";
-import ShiftRequestApp from "./components/ShiftRequest/ShiftRequestApp";
-import Policies from "./components/Policies";
-import PoliciesEnforced from "./components/PoliciesEnforced";
-import PolicySignOff from "./components/PolicySignOff";
-import DailyAllowanceClaim from "./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim";
-import { Navigate } from "react-router";
-import CTCSalaryUI from "./components/SalarySlip/CTCSalaryBreakdown";
-import PoliciesApp from "./components/Policies/PoliciesApp";
-import PoliciesCategory from "./components/Policies/PoliciesCategory";
-import PoliciesList from "./components/Policies/PoliciesList";
-import ViewPolicy from "./components/Policies/ViewPolicy";
-import ViewSalarySlipModal from "./components/SalarySlip/SalarySlipPDF";
-import EmployeeAttendanceDetails from "./components/Attendance/Employee/EmployeeAttendanceDetails";
-import HRPayroll from "./components/SalarySlip/HR-Payroll";
-import AttendancePolicies from "./components/Attendance/AttendancePolicies/AttendancePolicies";
-import TrackerApp from "./components/ApprovalTracker/TrackerApp";
-import FlowRequests from "./components/ApprovalTracker/FlowRequests";
-import InitiateFlow from "./components/ApprovalTracker/InitiateFlow";
-import InitiateForm from "./components/ApprovalTracker/InitiateForm";
-import FlowRequestDetails from "./components/ApprovalTracker/FlowRequestDetails";
 import NotificationList from "./components/Notification/Notification";
-import {
-  AllShiftsDashboardRoute,
-  MyShiftsListRoute,
-  TeamShiftsListRoute,
-  ShiftChangeRequestsRoute,
-} from "./components/ShiftRequest/ShiftDynamicRoute";
-import PendingTeamLeaves from "./components/Leaves/PendingTeamLeaves";
-import LoansPage from "./components/SalarySlip/Loan/LoanMain";
-import OvertimeRequests from "./components/Attendance/OvertimeRequests/OvertimeRequests";
-import AllOvertimePendingRequests from "./components/Attendance/OvertimeRequests/AllOvertimePendingRequests";
-import { useScreenSize } from "./hooks/useScreenSize";
-import LoanMainComponent from "./components/SalarySlip/Loan/component/DetailsPageForMobile";
-import OrganizationChart from "./components/ORGChart/OrganizationChart";
-import OrganizationCharttooo from "./components/ORGChart/OrgnazationChartForTwoLavel";
-import AdvancesList from "./components/SalarySlip/Advances/AdvancesList";
+
+// Lazy load heavy components
+const Expenses = lazy(() => import("./components/Expenses"));
+const RecruitmentApp = lazy(() => import("./components/RecruitmentApp"));
+const MyProfile = lazy(() => import("./components/MyProfile/MyProfile"));
+const InterviewPage = lazy(() => import("./components/InterviewDetails"));
+const InterviewList = lazy(() => import("./components/interview"));
+const AddNewReferral = lazy(() => import("./components/AddNewReferral"));
+const ReferralDetails = lazy(() => import("./components/ReferralDetails"));
+const InterviewFeedbackForm = lazy(() => import("./components/Feedback"));
+const AddRequisition = lazy(() => import("./components/AddRequisition"));
+const JobRequisition = lazy(() => import("./components/JobRequisition"));
+const RequisitionDetails = lazy(() => import("./components/RequisitionDetails"));
+const ReferralList = lazy(() => import("./components/ReferralList"));
+const JobOpeningsUI = lazy(() => import("./components/JobOpening/JobOpening"));
+const JobApplicantList = lazy(() => import("./components/JobApplicantList"));
+const JobApplicantDetails = lazy(() => import("./components/JobApplicantDetail"));
+const NoticesLayout = lazy(() => import("./components/Notices/NoticesLayout"));
+const NoticesTab = lazy(() => import("./components/Notices/NoticesTab"));
+const NoticeDetails = lazy(() => import("./components/Notices/NoticeDetails"));
+const ExpensesApp = lazy(() => import("./components/Expenses-App/ExpensesApp"));
+const ExpensesList = lazy(() => import("./components/Expenses-App/ExpensesList"));
+const GeneralExpenseClaim = lazy(() => import("./components/Expenses-App/GeneralExpenseClaim"));
+const MileageExpenseClaim = lazy(() => import("./components/Expenses-App/MileageExpenseClaim"));
+const NewExpenseType = lazy(() => import("./components/Expenses-App/NewExpenseType"));
+const Holidays = lazy(() => import("./components/Leaves/Holidays"));
+const HolidaysFull = lazy(() => import("./components/Leaves/HolidaysFull"));
+const LeaveApp = lazy(() => import("./components/Leaves/LeaveApp"));
+const LeaveBalance = lazy(() => import("./components/Leaves/LeaveBalance"));
+const LeaveRequestApp = lazy(() => import("./components/Leaves/LeaveRequestApp"));
+const MyLeaveRequest = lazy(() => import("./components/Leaves/MyLeaveRequest"));
+const TeamLeaveRequest = lazy(() => import("./components/Leaves/TeamLeaveRequest"));
+const AllPendingRequests = lazy(() => import("./components/Attendance/TeamAttendanceDetails/AllPendingRequests"));
+const AttendanceSummary = lazy(() => import("./components/Attendance/AttendanceSummary"));
+const AllEmpAttendance = lazy(() => import("./components/Attendance/AllEmpAttendance/AllEmpAttendance"));
+const AttendanceLayout = lazy(() => import("./components/Attendance/AttendanceLayout"));
+const AttendanceRequest = lazy(() => import("./components/Attendance/AttendanceRequest/AttendanceRequest"));
+const EmployeeAttendance = lazy(() => import("./components/Attendance/Employee/EmployeeAttendance"));
+const TeamAttendance = lazy(() => import("./components/Attendance/Team/TeamAttendance"));
+const TeamAttendanceDetails = lazy(() => import("./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails"));
+const SalarySlipApp = lazy(() => import("./components/SalarySlip/SalarySlipApp"));
+const SalarySlipsList = lazy(() => import("./components/SalarySlip/SalarySlipList"));
+const ShiftChangeForm = lazy(() => import("./components/ShiftRequest/AddRequestForm"));
+const ShiftRequestList = lazy(() => import("./components/ShiftRequest/MyShiftList"));
+const ShiftRequestApp = lazy(() => import("./components/ShiftRequest/ShiftRequestApp"));
+const Policies = lazy(() => import("./components/Policies"));
+const PoliciesEnforced = lazy(() => import("./components/PoliciesEnforced"));
+const PolicySignOff = lazy(() => import("./components/PolicySignOff"));
+const DailyAllowanceClaim = lazy(() => import("./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim"));
+const CTCSalaryUI = lazy(() => import("./components/SalarySlip/CTCSalaryBreakdown"));
+const PoliciesApp = lazy(() => import("./components/Policies/PoliciesApp"));
+const PoliciesCategory = lazy(() => import("./components/Policies/PoliciesCategory"));
+const PoliciesList = lazy(() => import("./components/Policies/PoliciesList"));
+const ViewPolicy = lazy(() => import("./components/Policies/ViewPolicy"));
+const ViewSalarySlipModal = lazy(() => import("./components/SalarySlip/SalarySlipPDF"));
+const EmployeeAttendanceDetails = lazy(() => import("./components/Attendance/Employee/EmployeeAttendanceDetails"));
+const HRPayroll = lazy(() => import("./components/SalarySlip/HR-Payroll"));
+const AttendancePolicies = lazy(() => import("./components/Attendance/AttendancePolicies/AttendancePolicies"));
+const TrackerApp = lazy(() => import("./components/ApprovalTracker/TrackerApp"));
+const FlowRequests = lazy(() => import("./components/ApprovalTracker/FlowRequests"));
+const InitiateFlow = lazy(() => import("./components/ApprovalTracker/InitiateFlow"));
+const InitiateForm = lazy(() => import("./components/ApprovalTracker/InitiateForm"));
+const FlowRequestDetails = lazy(() => import("./components/ApprovalTracker/FlowRequestDetails"));
+const AllShiftsDashboardRoute = lazy(() => import("./components/ShiftRequest/ShiftDynamicRoute").then(module => ({ default: module.AllShiftsDashboardRoute })));
+const MyShiftsListRoute = lazy(() => import("./components/ShiftRequest/ShiftDynamicRoute").then(module => ({ default: module.MyShiftsListRoute })));
+const TeamShiftsListRoute = lazy(() => import("./components/ShiftRequest/ShiftDynamicRoute").then(module => ({ default: module.TeamShiftsListRoute })));
+const ShiftChangeRequestsRoute = lazy(() => import("./components/ShiftRequest/ShiftDynamicRoute").then(module => ({ default: module.ShiftChangeRequestsRoute })));
+const PendingTeamLeaves = lazy(() => import("./components/Leaves/PendingTeamLeaves"));
+const LoansPage = lazy(() => import("./components/SalarySlip/Loan/LoanMain"));
+const OvertimeRequests = lazy(() => import("./components/Attendance/OvertimeRequests/OvertimeRequests"));
+const AllOvertimePendingRequests = lazy(() => import("./components/Attendance/OvertimeRequests/AllOvertimePendingRequests"));
+const LoanMainComponent = lazy(() => import("./components/SalarySlip/Loan/component/DetailsPageForMobile"));
+const OrganizationChart = lazy(() => import("./components/ORGChart/OrganizationChart"));
+const OrganizationCharttooo = lazy(() => import("./components/ORGChart/OrgnazationChartForTwoLavel"));
+const AdvancesList = lazy(() => import("./components/SalarySlip/Advances/AdvancesList"));
+
+// Loading component for Suspense fallbacks
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600 text-sm">Loading...</p>
+    </div>
+  </div>
+);
+
+
+// HOC to wrap components with Suspense and Error Boundary
+const withLazyLoading = (Component: React.ComponentType, fallback = <LoadingSpinner />) => {
+  return (props: any) => (
+    <EmployeeErrorBoundary>
+      <Suspense fallback={fallback}>
+        <Component {...props} />
+      </Suspense>
+    </EmployeeErrorBoundary>
+  );
+};
 
 export interface AppRoute {
   index?: boolean;
@@ -339,3 +364,6 @@ export const routesConfig: AppRoute[] = [
   },
 
 ];
+
+// Export lazy loading utility for potential use elsewhere
+export { withLazyLoading };
