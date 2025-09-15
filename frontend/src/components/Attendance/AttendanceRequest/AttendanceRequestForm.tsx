@@ -331,7 +331,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             enableTime: false,
             disabled: selectedRequestType === "Short Attendance Request",
-
             validate: { required: true },
             defaultValue: selectedDate,
             customConditional:
@@ -614,13 +613,14 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onMouseDown={onClose}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       {/* Modal Container */}
-      <div
-        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      <div className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -668,8 +668,44 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             onChange={(submission: any) => {
               setFormData(submission?.data);
             }}
-            onFormReady={(instance: FormioFormInstance) => {
+            onFormReady={(instance: any) => {
               formAddressInstance.current = instance;
+
+              try {
+                const rootEl: HTMLElement | Document =
+                  (instance && instance.element) || document;
+
+                const flatInputs: NodeListOf<HTMLInputElement> = (
+                  rootEl as HTMLElement
+                ).querySelectorAll
+                  ? (rootEl as HTMLElement).querySelectorAll(
+                      "input.flatpickr-input"
+                    )
+                  : document.querySelectorAll("input.flatpickr-input");
+
+                flatInputs.forEach((input) => {
+                  const handler = () => {
+                    flatInputs.forEach((other) => {
+                      if (other !== input && (other as any)._flatpickr) {
+                        try {
+                          (other as any)._flatpickr.close();
+                        } catch (err) {
+                          console.error("flatpickr close failed", err);
+                        }
+                      }
+                    });
+                  };
+
+                  // avoid adding duplicate listeners
+                  if (!(input as any).__closeOtherFPHandler) {
+                    input.addEventListener("focus", handler);
+                    (input as any).__closeOtherFPHandler = handler;
+                  }
+                });
+              } catch (err) {
+                // non-fatal: attach failed, but app continues
+                console.warn("flatpickr focus bind failed", err);
+              }
             }}
             className="formio-no-border address-form-container mt-4"
           />

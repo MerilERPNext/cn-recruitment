@@ -1,16 +1,18 @@
 "use client";
-
 import type React from "react";
 import { useState } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import InstallmentsList from "./InstallmentsList";
 import { StatusBadge } from "./StatusBadge";
+import AdvanceForm from "./AdvanceForm"; 
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { formatCurrency } from "../../../utils/currencyFormatter";
+import Modal from "./commonModal"
+
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -18,6 +20,8 @@ const AdvancesList: React.FC = () => {
     null
   );
   const [showInstallments, setShowInstallments] = useState(false);
+  const [showAdvanceForm, setShowAdvanceForm] = useState(false); 
+
   const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
@@ -46,7 +50,6 @@ const AdvancesList: React.FC = () => {
     ? mapAdvanceData(advancesData)
     : [];
 
-
   const handleViewInstallments = (advance: UiAdvance) => {
     setSelectedAdvance(advance);
     setShowInstallments(true);
@@ -55,6 +58,14 @@ const AdvancesList: React.FC = () => {
   const handleBackToAdvances = () => {
     setShowInstallments(false);
     setSelectedAdvance(null);
+  };
+
+  const handleCreateAdvance = () => {
+    setShowAdvanceForm(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAdvanceForm(false);
   };
 
   if (showInstallments && selectedAdvance) {
@@ -73,6 +84,12 @@ const AdvancesList: React.FC = () => {
       <div className="w-full max-w-[100vw] mx-auto py-0">
         <div className="mb-6 w-full px-0">
           <div className="flex items-center justify-end gap-4">
+            <button
+              onClick={handleCreateAdvance}
+              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 whitespace-nowrap"
+            >
+              Create Advance
+            </button>
             <button
               onClick={() => setMaskAmounts(!maskAmounts)}
               className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors duration-200 whitespace-nowrap"
@@ -114,13 +131,12 @@ const AdvancesList: React.FC = () => {
               {formattedData.map((advance, index) => (
                 <div
                   key={`${advance.name}-${index}`}
-                  className="grid grid-cols-6 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
+                  className="grid grid-cols-6 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
                   onClick={() => handleViewInstallments(advance)}
                 >
                   <div className="font-medium text-gray-900">
                     {advance.name}
                   </div>
-
                   <div className="text-center">
                     {maskAmounts ? (
                       <span className="blur-sm select-none text-gray-400">
@@ -132,7 +148,6 @@ const AdvancesList: React.FC = () => {
                       </span>
                     )}
                   </div>
-
                   <div className="text-center">
                     {maskAmounts ? (
                       <span className="blur-sm select-none text-gray-400">
@@ -144,14 +159,12 @@ const AdvancesList: React.FC = () => {
                       </span>
                     )}
                   </div>
-
                   <div className="text-center text-gray-700">
                     {advance.startDate}
                   </div>
                   <div className="text-center text-gray-700">
                     {advance.endDate}
                   </div>
-
                   <div className="text-center">
                     <StatusBadge status={advance.advanceStatus} />
                   </div>
@@ -173,7 +186,13 @@ const AdvancesList: React.FC = () => {
   const MobileLayout = () => (
     <div className="min-h-screen w-full bg-gray-50">
       <div className="p-0 space-y-3">
-        <div className="flex items-center justify-end gap-4">
+        <div className="flex items-center justify-between gap-4">
+          <button
+            onClick={handleCreateAdvance}
+            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 whitespace-nowrap"
+          >
+            Create Advance
+          </button>
           <button
             onClick={() => setMaskAmounts(!maskAmounts)}
             className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors duration-200 whitespace-nowrap"
@@ -196,10 +215,11 @@ const AdvancesList: React.FC = () => {
             )}
           </button>
         </div>
+
         {formattedData.map((advance, index) => (
           <div
             key={index}
-            className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
+            className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm cursor-pointer"
             onClick={() => handleViewInstallments(advance)}
           >
             <div className="flex justify-between items-start">
@@ -242,13 +262,11 @@ const AdvancesList: React.FC = () => {
                 )}
               </div>
             </div>
-
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>
                   <strong>{advance.startDate}</strong> to{" "}
                   <strong>{advance.endDate}</strong>
-                  
                 </span>
                 <span>{advance.installments.length} installments</span>
               </div>
@@ -265,7 +283,18 @@ const AdvancesList: React.FC = () => {
     </div>
   );
 
-  return <div>{isDesktop ? <DesktopLayout /> : <MobileLayout />}</div>;
+  return (
+    <div>
+      {isDesktop ? <DesktopLayout /> : <MobileLayout />}
+
+      {/* Modal for Advance Form */}
+      {showAdvanceForm && (
+        <Modal onClose={handleCloseModal}>
+          <AdvanceForm user={user} onClose={handleCloseModal} />
+        </Modal>
+      )}
+    </div>
+  );
 };
 
 export default AdvancesList;
