@@ -19,6 +19,16 @@ export interface Installment {
   }
   
   export interface Loan {
+    loan_name: string
+    loan_type:  string
+    emi_type: string
+    rate_of_interest: number
+    standard_interest: number
+    loan_tenure: number
+    loan_start_date: string
+    loan_approved_amount: number
+    status: string
+    repayment_schedule: Installment[]
     monthly_repayment_amount: number
     total_months: number
     paid_months: number
