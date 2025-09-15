@@ -107,7 +107,8 @@
             fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl=' + appl + "&url=" + window.location.origin, {
                 method: 'POST',
             });
-            window.location.href = window.location.origin + "/thank_you";
+            // window.location.href = window.location.origin + "/thank_you";
+			window.location.href = window.location.origin + "/employee-onboarding/new" + "?job_offer=" + data.message.jo_id + "&job_applicant=" + appl;
         })
         .catch(error => {
             console.error('There was a problem with your fetch operation:', error);
