@@ -46,7 +46,6 @@ const overtimeForm = {
           label: "Start Time *",
           enableDate: false,
           enableTime: true,
-          // timePicker: { showMeridian: true }, // optional
           input: true,
           widget: { type: "calendar" },
           validate: { required: true },
@@ -66,7 +65,6 @@ const overtimeForm = {
           label: "End Time *",
           enableDate: false,
           enableTime: true,
-          timePicker: { showMeridian: true }, // optional
           input: true,
           widget: { type: "calendar" },
           validate: { required: true },
