@@ -33,7 +33,7 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
         </div>
         <div>
           <div className="text-gray-600 mb-1">Remaining Months</div>
-          <div className="font-medium">{loan.remaining_months}</div>
+          <div className="font-medium">{loan.remaining_months || "0"}</div>
         </div>
         <div>
           <div className="text-gray-600 mb-1">Total Loan Amount</div>
