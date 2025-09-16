@@ -206,7 +206,7 @@ const AdvancesList: React.FC = () => {
         {formattedData.map((advance, index) => (
           // CHANGED: Using .content-card for a consistent card style
           <div
-            key={index}
+            key={`${advance.name}-${index}`}
             className="content-card cursor-pointer"
             onClick={() => handleViewInstallments(advance)}
           >

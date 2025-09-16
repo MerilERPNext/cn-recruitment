@@ -179,7 +179,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
 
                 <div className="divide-y divide-gray-200">
                   {advance.installments.map((installment, index) => (
-                    <div key={index} className="data-row grid grid-cols-5 gap-4 px-4 py-3 text-sm">
+                    <div key={`${installment.installmentNo}-${index}`} className="data-row grid grid-cols-5 gap-4 px-4 py-3 text-sm">
                       <div className="data-cell text-center font-medium flex items-center justify-center">
                         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-semibold">#{installment.installmentNo}</span>
                       </div>
