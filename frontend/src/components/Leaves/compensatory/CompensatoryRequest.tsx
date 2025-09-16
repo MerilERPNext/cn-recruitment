@@ -105,8 +105,6 @@ const CompensatoryRequest: React.FC = () => {
         <CompOffDetailsModal
           compOff={selectedRequest}
           onClose={handleCloseModal}
-          isMyRequest={true}
-          onCancel={() => console.log("Cancel CompOff triggered")}
         />
       )}
     </div>

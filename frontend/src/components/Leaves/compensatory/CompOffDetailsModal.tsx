@@ -8,8 +8,6 @@ import toast from "react-hot-toast";
 interface CompOffDetailsModalProps {
   compOff: CompensatoryRequestItem;
   onClose: () => void;
-  isMyRequest?: boolean;
-  onCancel?: () => void;
 }
 
 const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({

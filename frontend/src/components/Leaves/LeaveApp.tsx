@@ -46,7 +46,7 @@ const LeaveAppInner: React.FC = () => {
       { key: "requests-status", label: "Request Status" },
       {
         key: "compensatory",
-        label: "Compenstory",
+        label: "Compensatory",
       },
     ],
     []

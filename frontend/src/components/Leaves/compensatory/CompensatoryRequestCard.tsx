@@ -86,7 +86,7 @@ const CompensatoryRequestCard = ({
       onClick={onClick}
     >
       <div className="text-sm font-medium text-gray-700 truncate">
-        {item?.leave_type}
+        {item.leave_type}
       </div>
       <div className="text-sm text-gray-900">{formattedFromDate}</div>
       <div className="text-sm text-gray-900">{formattedToDate}</div>
