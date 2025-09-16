@@ -28,7 +28,7 @@ export function useCreateNewLoanApplication() {
     mutationFn: (body: Record<string, unknown>) => createLoanApplication(body),
     onSuccess: () => {
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ["loan-application"] });
+      queryClient.invalidateQueries({ queryKey: ["loan"] });
     },
     onError: (e) => {
       console.log(e);

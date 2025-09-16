@@ -16,6 +16,7 @@ import type {
   EmployeeShift,
   EmployeeShiftSummary,
   PolicyQuestion,
+  UserRoles,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
 
@@ -124,6 +125,16 @@ export const useAllAttendanceRequests = (
     queryKey: ["attendance", "all", filters],
     queryFn: () =>
       attendanceService.getAllAttendanceRequests(pageSize, filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+export const useGetUserRoles = (
+  filters?: FilterCondition[]
+): UseQueryResult<UserRoles, Error> => {
+  return useQuery<UserRoles, Error>({
+    queryKey: ["user-roles", "all", filters],
+    queryFn: () => attendanceService.getUserRoles(filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
@@ -262,6 +273,27 @@ export function useReqValidationsForAttendanceRequest(empId: string) {
     enabled: !!empId,
   });
 }
+
+export const usePlannedOvertimeAllowed = (employee: string) => {
+  return useQuery<boolean>({
+    queryKey: ["planned-overtime-allowed", employee],
+    queryFn: () => {
+      return attendanceService.plannedOvertimeAllowed(employee);
+    },
+    enabled: !!employee,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+export const usePlannedOvertimeRequestAttachments = (employee: string) => {
+  return useQuery<any>({
+    queryKey: ["planned-overtime-attachments-allowed", employee],
+    queryFn: () => {
+      return attendanceService.plannedOvertimeRequestAttachments(employee);
+    },
+    enabled: !!employee,
+    staleTime: 5 * 60 * 1000,
+  });
+};
 
 type ActionOnAttendanceRequestVariables = {
   todo_ids: string | string[];

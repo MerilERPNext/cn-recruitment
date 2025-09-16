@@ -24,7 +24,7 @@ export default function CreateLoanDialog({
   const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name || ""
   );
   const { data: loanProducts } = useLoanProducts();
   const mutation = useCreateNewLoanApplication();

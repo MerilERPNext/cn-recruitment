@@ -6,11 +6,16 @@ import { useNavigate } from "react-router";
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "./ApprovalCard";
 import CardTable from "../../shared/CardTable";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 const AllPendingRequests = () => {
   const [selectedRequest, setSelectedRequest] =
     useState<AttendanceRequest | null>(null);
+  const [refetch, setRefetch] = useState(false);
+
   const navigate = useNavigate();
+  const { refetchAttendance } = useGlobalStore();
+
   return (
     <div>
       <LayoutHeader
@@ -33,6 +38,11 @@ const AllPendingRequests = () => {
         >
           <ApprovalList
             doctype={"Attendance Request"}
+            pageSize={13}
+            refetch={refetchAttendance || refetch}
+            onApprovalRefetchComplete={() => {
+              setRefetch(false);
+            }}
             renderCardContent={(item) => (
               <ApprovalCard
                 isSelected={item?.isSelected}

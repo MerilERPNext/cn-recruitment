@@ -7,7 +7,10 @@ import {
   IReason,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
-import { debugEmployeeData, validateEmployeeFields } from "../utils/employeeDebug";
+import {
+  debugEmployeeData,
+  validateEmployeeFields,
+} from "../utils/employeeDebug";
 import logger from "../utils/logger";
 
 function hasRequiredProperties<T extends Record<string, unknown>>(
@@ -26,7 +29,9 @@ function hasRequiredProperties<T extends Record<string, unknown>>(
 // Type guards for runtime validation
 function isEmployee(obj: unknown): obj is Employee {
   if (!obj || typeof obj !== "object") {
-    console.warn("isEmployee validation failed: object is null, undefined, or not an object");
+    console.warn(
+      "isEmployee validation failed: object is null, undefined, or not an object"
+    );
     return false;
   }
 
@@ -39,7 +44,11 @@ function isEmployee(obj: unknown): obj is Employee {
       return false;
     }
     if (typeof employee[field] !== "string") {
-      console.warn(`isEmployee validation failed: field '${field}' is not a string, got ${typeof employee[field]}`);
+      console.warn(
+        `isEmployee validation failed: field '${field}' is not a string, got ${typeof employee[
+          field
+        ]}`
+      );
       return false;
     }
     if (!employee[field]) {
@@ -54,7 +63,9 @@ function isEmployee(obj: unknown): obj is Employee {
       employee.status as string
     )
   ) {
-    console.warn(`isEmployee validation failed: invalid status '${employee.status}'`);
+    console.warn(
+      `isEmployee validation failed: invalid status '${employee.status}'`
+    );
     return false;
   }
 
@@ -169,15 +180,23 @@ export class EmployeeService {
 
     return result;
   }
-  
-  static async getEmployeeHierarchy(
-    company: string
-  ): Promise<EmployeeNode[]> {
+
+  static async getEmployeeHierarchy(company: string): Promise<EmployeeNode[]> {
     const result = await FrappeAPI.callMethod(
       "cn_hrms_core.cn_hrms_core.apis.employee_hierarchy.get_employee_hierarchy",
       {
         company: company,
       }
+    );
+    return result as EmployeeNode[];
+  }
+
+  static async getEmployeeSubordinateHierarchy(
+    employee: string
+  ): Promise<EmployeeNode[]> {
+    const result = await FrappeAPI.callMethod(
+      "cn_hrms_core.cn_hrms_core.apis.employee_hierarchy.get_employee_subordinates",
+      { employee: employee }
     );
     return result as EmployeeNode[];
   }
@@ -273,18 +292,21 @@ export class EmployeeService {
       });
 
       // Debug the API response
-      debugEmployeeData(result, `getCurrentEmployeeAllDetails API response for user_id: ${user_id}`);
+      debugEmployeeData(
+        result,
+        `getCurrentEmployeeAllDetails API response for user_id: ${user_id}`
+      );
 
       // Handle different response structures
       let employeeDataArray: unknown[] = [];
 
-      if (result && 'data' in result && Array.isArray(result.data)) {
+      if (result && "data" in result && Array.isArray(result.data)) {
         // Standard Frappe API response structure
         employeeDataArray = result.data;
       } else if (Array.isArray(result)) {
         // Direct array response
         employeeDataArray = result;
-      } else if (result && typeof result === 'object') {
+      } else if (result && typeof result === "object") {
         // Single object response
         employeeDataArray = [result];
       } else {
@@ -292,8 +314,12 @@ export class EmployeeService {
           user_id,
           resultExists: !!result,
           resultType: typeof result,
-          hasDataProperty: result && 'data' in result,
-          dataIsArray: result && typeof result === 'object' && 'data' in result && Array.isArray((result as { data?: unknown }).data)
+          hasDataProperty: result && "data" in result,
+          dataIsArray:
+            result &&
+            typeof result === "object" &&
+            "data" in result &&
+            Array.isArray((result as { data?: unknown }).data),
         });
         return null;
       }
@@ -312,20 +338,33 @@ export class EmployeeService {
 
       // Validate the employee data
       if (!isEmployee(employeeData)) {
-        logger.employeeError("getCurrentEmployeeAllDetails validation failed", user_id, new Error("Invalid employee data structure"), {
-          missingFields: validation.missingFields,
-          invalidFields: validation.invalidFields,
-          receivedData: employeeData
-        });
+        logger.employeeError(
+          "getCurrentEmployeeAllDetails validation failed",
+          user_id,
+          new Error("Invalid employee data structure"),
+          {
+            missingFields: validation.missingFields,
+            invalidFields: validation.invalidFields,
+            receivedData: employeeData,
+          }
+        );
 
         // Try to provide helpful suggestions
-        if (validation.missingFields.includes('name') && employeeData && typeof employeeData === 'object') {
+        if (
+          validation.missingFields.includes("name") &&
+          employeeData &&
+          typeof employeeData === "object"
+        ) {
           const emp = employeeData as Record<string, unknown>;
           logger.debug("Potential name fields found", {
             user_id,
-            potentialFields: Object.keys(emp).filter(key =>
-              key.toLowerCase().includes('name') || key.toLowerCase().includes('id')
-            ).map(key => ({ key, value: emp[key] }))
+            potentialFields: Object.keys(emp)
+              .filter(
+                (key) =>
+                  key.toLowerCase().includes("name") ||
+                  key.toLowerCase().includes("id")
+              )
+              .map((key) => ({ key, value: emp[key] })),
           });
         }
 
@@ -355,10 +394,15 @@ export class EmployeeService {
       return null;
     }
   }
-  
-  static async updateCurrentEmployeeProfile(employeeDetails: unknown): Promise<unknown> {
+
+  static async updateCurrentEmployeeProfile(
+    employeeDetails: unknown
+  ): Promise<unknown> {
     try {
-      const result = await FrappeAPI.callMethod("cn_hrms_core.cn_hrms_core.apis.profile_change_request.save_profile_change", {data : employeeDetails});
+      const result = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.profile_change_request.save_profile_change",
+        { data: employeeDetails }
+      );
       return result;
     } catch (error) {
       console.error("Error updating current employee profile:", error);
@@ -429,10 +473,10 @@ export class EmployeeService {
   }
 
   static async getAllEmployees(): Promise<Employee[]> {
-    const response = FrappeAPI.getDocumentList('Employee', {
-      fields: ["name","employee_name", "company"],
-      limit:20,
-      filters:[["status","=","Active"]]
+    const response = FrappeAPI.getDocumentList("Employee", {
+      fields: ["name", "employee_name", "company"],
+      limit: 20,
+      filters: [["status", "=", "Active"]],
     });
     const data = await response;
     if (!response || data?.data?.length === 0) {

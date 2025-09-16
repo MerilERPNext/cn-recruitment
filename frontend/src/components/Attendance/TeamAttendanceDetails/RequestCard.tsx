@@ -38,21 +38,25 @@ any & {
     ? format(new Date(request.date), "dd/MM/yyyy")
     : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(request?.description || "");
+  const gridTemplateColumns = "280px 28% 140px 0.6fr";
 
   return (
     <>
       {isDesktop ? (
         <div
           className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors text-center cursor-pointer border-b"
+          style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
-          <div className="font-medium text-gray-900 truncate text-start">
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
             {request?.allocated_to}
           </div>
-          <div className="text-gray-700 truncate text-start">
-            {request?.description}
+          <div className="text-gray-600 text-sm truncate text-start">
+            <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>
-          <div className="text-gray-600 text-start">{formattedDate}</div>
+          <div className="text-gray-700 text-sm text-start">
+            {formattedDate}
+          </div>
           <div className="w-full flex justify-start">
             <Badge
               label={status?.label as string}
