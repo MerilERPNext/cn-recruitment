@@ -28,7 +28,7 @@ const Modal: React.FC<ModalProps> = ({ children, onClose }) => {
           className={
             isMobile
               ? "relative bg-white w-full h-full max-w-none max-h-none rounded-none overflow-y-auto"
-              : "relative bg-white rounded-lg shadow-xl w-[75rem] max-w-4xl max-h-[90vh] overflow-hidden"
+              : "relative bg-white rounded-lg shadow-xl w-[75rem] max-w-4xl overflow-y-auto max-h-[90vh]"
           }
         >
           {/* Close Button */}

@@ -357,7 +357,7 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                 onClick={handleSubmit}
                 className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors bg-black text-white hover:bg-gray-800"
               >
-                Submit Request
+                Submit
               </button>
             </div>
           </div>
