@@ -25,8 +25,8 @@
   }
 
   .table-header-text {
-    /* Uses the 'xxs' and 'semibold' from your config */
-    @apply px-6 py-3 text-xxs text-gray-500 font-semibold uppercase tracking-wider;
+    /* Uses the 'sm' and 'semibold' from your config */
+    @apply px-6 py-3 text-sm text-gray-500 font-semibold uppercase tracking-wider;
   }
 
   /* Table Row */
