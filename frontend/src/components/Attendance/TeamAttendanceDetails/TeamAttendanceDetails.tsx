@@ -20,6 +20,7 @@ const TeamAttendanceDetails = () => {
 
   const defaultFilters = useMemo(
     () => ({
+      reference_type: "Attendance Request",
       allocated_to: currentUser?.name,
       status: ["in", ["Closed", "Cancelled"]],
     }),

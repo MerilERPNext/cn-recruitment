@@ -18,6 +18,7 @@ const OvertimeRequests = () => {
 
   const defaultFilters = useMemo(
     () => ({
+      reference_type: "Planned Overtime Request",
       allocated_to: currentUser?.name,
       status: ["in", ["Closed", "Cancelled"]],
     }),
