@@ -135,11 +135,12 @@ const SalarySlipsList = () => {
             {/* Filters + Mask toggle */}
             <div className="mb-4 flex items-center justify-between gap-4">
               <div className="flex-1 max-w-xs">
+                {/* CHANGED: Using .form-input for consistent styling */}
                 <select
                   id="yearFilter"
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                 >
                   <option value="">All Years</option>
                   {years.map((year) => (
@@ -149,10 +150,10 @@ const SalarySlipsList = () => {
                   ))}
                 </select>
               </div>
-
+              {/* CHANGED: Using .btn-secondary for consistent styling */}
               <button
                 onClick={() => setMaskSalary((prev) => !prev)}
-                className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors duration-200"
+                className="btn-secondary"
                 title={maskSalary ? "Show amounts" : "Hide amounts"}
               >
                 {maskSalary ? (
@@ -163,7 +164,7 @@ const SalarySlipsList = () => {
                 ) : (
                   <>
                     <span className="text-sm font-medium text-gray-700">Hide Amounts</span>
-                    <BsToggleOn className="w-6 h-6 text-blue-500" />
+                    <BsToggleOn className="w-6 h-6 text-primary" />
                   </>
                 )}
               </button>
@@ -171,14 +172,16 @@ const SalarySlipsList = () => {
 
             {/* Desktop table header */}
             {isDesktop && (
-              <div className="bg-gray-50 border border-gray-200 rounded-t-lg">
-                <div className="flex items-center justify-between px-6 py-3 text-sm font-semibold text-gray-600 uppercase tracking-wide">
-                  <div className="flex-1 min-w-0">Employee</div>
-                  <div className="flex-1 min-w-0 text-center">Start Date</div>
-                  <div className="flex-1 min-w-0 text-center">End Date</div>
-                  <div className="flex-1 min-w-0 text-center">Posting Date</div>
-                  <div className="flex-1 min-w-0 text-center">Gross Pay</div>
-                  <div className="w-24 text-center">Actions</div>
+              // CHANGED: Using .table-header
+              <div className="table-header rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  {/* CHANGED: Using .table-header-text */}
+                  <div className="table-header-text flex-1 min-w-0">Employee</div>
+                  <div className="table-header-text flex-1 min-w-0 text-center">Start Date</div>
+                  <div className="table-header-text flex-1 min-w-0 text-center">End Date</div>
+                  <div className="table-header-text flex-1 min-w-0 text-center">Posting Date</div>
+                  <div className="table-header-text flex-1 min-w-0 text-center">Gross Pay</div>
+                  <div className="table-header-text w-24 text-center">Actions</div>
                 </div>
               </div>
             )}
@@ -201,11 +204,7 @@ const SalarySlipItem: React.FC<{
   if (item.status.toLowerCase() !== "submitted") return null
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 2,
-    }).format(amount)
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "INR", minimumFractionDigits: 2 }).format(amount)
   }
 
   const formatToIndianDate = (dateString: string): string => {
@@ -217,38 +216,33 @@ const SalarySlipItem: React.FC<{
   }
 
   return (
-    <div
-      key={item.name}
-      className="flex justify-between items-center gap-3 bg-white p-4 mt-1 rounded-xl border hover:shadow-sm transition-shadow"
-    >
+    // CHANGED: Using .content-card for consistent card styling
+    <div key={item.name} className="content-card flex justify-between items-center gap-3 mt-1">
       <div className="flex-grow">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-[var(--text-primary)] text-base font-semibold">{formatToIndianDate(item.start_date)}</h3>
+          <h3 className="text-gray-900 text-base font-semibold">{formatToIndianDate(item.start_date)}</h3>
         </div>
-        <div className="text-sm text-[var(--secondary-color)] space-y-1">
+        <div className="text-sm text-gray-600 space-y-1">
           <p className="font-medium">
             Gross Pay:{" "}
-            {maskSalary ? (
-              <span className="blur-sm select-none">XXXXXXXXX</span>
-            ) : (
-              <span>{formatCurrency(item.gross_pay)}</span>
-            )}
+            {maskSalary ? <span className="blur-sm select-none">XXXXXXXXX</span> : <span>{formatCurrency(item.gross_pay)}</span>}
           </p>
         </div>
       </div>
-
       <div className="flex items-center gap-2 ml-3">
+        {/* CHANGED: Using .btn-icon for consistent button styling */}
         <button
           onClick={(e) => onDownload(e, item.name)}
           disabled={isDownloading}
-          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          className="btn-icon"
           title="Download Salary Slip"
         >
           <Download className="w-4 h-4" />
         </button>
+        {/* CHANGED: Using .btn-icon for consistent button styling */}
         <button
           onClick={() => onViewPDF(item.name, item.start_date)}
-          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          className="btn-icon"
           title="View Salary Slip"
         >
           <FaRegEye className="w-4 h-4" />
@@ -270,11 +264,7 @@ const SalarySlipItemDesktop: React.FC<{
   if (item.status.toLowerCase() !== "submitted") return null
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 2,
-    }).format(amount)
+    return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2 }).format(amount)
   }
 
   const formatToIndianDate = (dateString: string): string => {
@@ -286,50 +276,31 @@ const SalarySlipItemDesktop: React.FC<{
   }
 
   return (
-    <div className="bg-white border-x border-b border-gray-200 hover:bg-gray-50 transition-colors">
-      <div className="flex items-center justify-between px-6 py-4 text-sm">
-        {/* Employee */}
-        <div className="flex-1 min-w-0 font-medium text-gray-900 truncate">
-          {item.employee}
+    // CHANGED: Using .data-row
+    <div className="data-row">
+      <div className="flex items-center justify-between">
+        {/* CHANGED: Using .data-cell for consistent cell styling */}
+        <div className="data-cell flex-1 min-w-0 font-medium truncate">{item.employee}</div>
+        <div className="data-cell flex-1 min-w-0 text-center">{formatToIndianDate(item.start_date)}</div>
+        <div className="data-cell flex-1 min-w-0 text-center"><span className="font-medium">{formatToIndianDate(item.end_date)}</span></div>
+        <div className="data-cell flex-1 min-w-0 text-center"><span className="font-medium">{formatToIndianDate(item.posting_date)}</span></div>
+        <div className="data-cell flex-1 min-w-0 text-center">
+          {maskSalary ? <span className="blur-sm select-none text-gray-400">₹XX,XXX</span> : <span className="font-medium">{formatCurrency(item.gross_pay)}</span>}
         </div>
-
-        {/* Start Date */}
-        <div className="flex-1 min-w-0 text-center text-gray-700">
-          {formatToIndianDate(item.start_date)}
-        </div>
-
-        {/* End Date */}
-        <div className="flex-1 min-w-0 text-center text-gray-700">
-          <span className="font-medium">{formatToIndianDate(item.end_date)}</span>
-        </div>
-
-        {/* Posting Date */}
-        <div className="flex-1 min-w-0 text-center text-gray-700">
-          <span className="font-medium">{formatToIndianDate(item.posting_date)}</span>
-        </div>
-
-        {/* Gross Pay */}
-        <div className="flex-1 min-w-0 text-center text-gray-700">
-          {maskSalary ? (
-            <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
-          ) : (
-            <span className="font-medium">{formatCurrency(item.gross_pay)}</span>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="w-24 flex items-center justify-center gap-2">
+        <div className="data-cell w-24 flex items-center justify-center gap-2">
+          {/* CHANGED: Using .btn-icon */}
           <button
             onClick={(e) => onDownload(e, item.name)}
             disabled={isDownloading}
-            className="flex items-center border justify-center p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-icon disabled:cursor-not-allowed"
             title="Download Salary Slip"
           >
             <Download className="w-4 h-4" />
           </button>
+          {/* CHANGED: Using .btn-icon */}
           <button
             onClick={() => onViewPDF(item.name, item.start_date)}
-            className="flex items-center justify-center border p-2 text-blue-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
+            className="btn-icon"
             title="View Salary Slip"
           >
             <FaRegEye className="w-4 h-4" />

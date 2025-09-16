@@ -1,6 +1,5 @@
 import { Loan } from "../Type/loan"
 
-
 interface LoanDetailsProps {
   loan: Loan
 }
@@ -16,7 +15,8 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
   }
 
   return (
-    <div className="mb-6 p-4 bg-blue-100  rounded-lg">
+    // CHANGED: Using the reusable .info-card class for consistency.
+    <div className="info-card mb-6">
       <h3 className="font-semibold mb-4 text-gray-900">Loans Details</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
         <div>
@@ -47,7 +47,6 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
           <div className="text-gray-600 mb-1">Remaining Amount</div>
           <div className="font-medium">{formatCurrency(loan.remaining_amount)}</div>
         </div>
-
       </div>
     </div>
   )
