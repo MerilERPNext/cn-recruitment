@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================== */
+/* ===== START: Add your new component classes here ===== */
+/* ================================================== */
+
+@layer base {
+  /* Set the default font for the entire application based on your tailwind.config.js */
+  body {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+  /* A standard button using your PRIMARY color */
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors;
+  }
+
+  /* Table Header using your fonts and colors */
+  .table-header {
+    @apply bg-gray-100 border-b border-gray-200;
+  }
+
+  .table-header-text {
+    /* Uses the 'xxs' and 'semibold' from your config */
+    @apply px-6 py-3 text-xxs text-gray-500 font-semibold uppercase tracking-wider;
+  }
+
+  /* Table Row */
+  .table-row {
+    @apply bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors;
+  }
+
+  .table-cell {
+    /* Uses the 'gray-darker' color from your config */
+    @apply px-6 py-4 text-sm text-gray-darker;
+  }
+
+  .btn-secondary {
+    @apply flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors duration-200 whitespace-nowrap;
+  }
+
+  .content-card {
+    @apply bg-white rounded-xl border border-gray-200 p-4 shadow-sm;
+  }
+}
+
+/* ================================================ */
+/* ===== END: Your new component classes ====== */
+/* ================================================ */
+
+/* Your existing styles below */
 #root {
   @apply h-full;
   @apply w-full;
@@ -31,4 +82,3 @@
 .address-form-container .choices__inner::after {
   display: none !important;
 }
-
