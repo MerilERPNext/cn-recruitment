@@ -84,30 +84,28 @@ const AdvancesList: React.FC = () => {
       <div className="w-full max-w-[100vw] mx-auto py-0">
         <div className="mb-6 w-full px-0">
           <div className="flex items-center justify-end gap-4">
+            {/* CHANGED: Using .btn-primary */}
             <button
               onClick={handleCreateAdvance}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 whitespace-nowrap"
+              className="btn-primary flex items-center gap-2 whitespace-nowrap"
             >
               Create Advance
             </button>
+            {/* CHANGED: Using .btn-secondary */}
             <button
               onClick={() => setMaskAmounts(!maskAmounts)}
-              className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors duration-200 whitespace-nowrap"
+              className="btn-secondary"
               title={maskAmounts ? "Show amounts" : "Hide amounts"}
             >
               {maskAmounts ? (
                 <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Show Amounts
-                  </span>
+                  <span className="text-sm font-medium text-gray-700">Show Amounts</span>
                   <BsToggleOff className="w-6 h-6 text-gray-400" />
                 </>
               ) : (
                 <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Hide Amounts
-                  </span>
-                  <BsToggleOn className="w-6 h-6 text-blue-500" />
+                  <span className="text-sm font-medium text-gray-700">Hide Amounts</span>
+                  <BsToggleOn className="w-6 h-6 text-primary" /> {/* CHANGED: Using brand color */}
                 </>
               )}
             </button>
@@ -115,57 +113,48 @@ const AdvancesList: React.FC = () => {
         </div>
 
         <div className="px-0">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 border-b border-gray-200">
-              <div className="grid grid-cols-6 gap-4 px-6 py-3 text-sm font-semibold text-gray-600 uppercase tracking-wide">
-                <div>Advance Name</div>
-                <div className="text-center">Amount</div>
-                <div className="text-center">Deductions</div>
-                <div className="text-center">Start Date</div>
-                <div className="text-center">End Date</div>
-                <div className="text-center">Status</div>
+          <div className="rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            {/* CHANGED: Using .table-header */}
+            <div className="table-header">
+              <div className="grid grid-cols-6 gap-4">
+                {/* CHANGED: Using .table-header-text on all header titles */}
+                <div className="table-header-text">Advance Name</div>
+                <div className="table-header-text text-center">Amount</div>
+                <div className="table-header-text text-center">Deductions</div>
+                <div className="table-header-text text-center">Start Date</div>
+                <div className="table-header-text text-center">End Date</div>
+                <div className="table-header-text text-center">Status</div>
               </div>
             </div>
 
             <div className="divide-y divide-gray-200">
               {formattedData.map((advance, index) => (
+                // CHANGED: Using .table-row and grid layout. Children use .table-cell
                 <div
                   key={`${advance.name}-${index}`}
-                  className="grid grid-cols-6 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="table-row grid grid-cols-6 gap-4 cursor-pointer"
                   onClick={() => handleViewInstallments(advance)}
                 >
-                  <div className="font-medium text-gray-900">
+                  <div className="table-cell font-medium">
                     {advance.name}
                   </div>
-                  <div className="text-center">
+                  <div className="table-cell text-center">
                     {maskAmounts ? (
-                      <span className="blur-sm select-none text-gray-400">
-                        ₹XX,XXX
-                      </span>
+                      <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
                     ) : (
-                      <span className="font-medium">
-                        {formatCurrency(advance.amount)}
-                      </span>
+                      <span className="font-medium">{formatCurrency(advance.amount)}</span>
                     )}
                   </div>
-                  <div className="text-center">
+                  <div className="table-cell text-center">
                     {maskAmounts ? (
-                      <span className="blur-sm select-none text-gray-400">
-                        ₹XX,XXX
-                      </span>
+                      <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
                     ) : (
-                      <span className="font-medium">
-                        {advance.numberOfDeductions}
-                      </span>
+                      <span className="font-medium">{advance.numberOfDeductions}</span>
                     )}
                   </div>
-                  <div className="text-center text-gray-700">
-                    {advance.startDate}
-                  </div>
-                  <div className="text-center text-gray-700">
-                    {advance.endDate}
-                  </div>
-                  <div className="text-center">
+                  <div className="table-cell text-center">{advance.startDate}</div>
+                  <div className="table-cell text-center">{advance.endDate}</div>
+                  <div className="table-cell text-center">
                     <StatusBadge status={advance.advanceStatus} />
                   </div>
                 </div>
@@ -187,86 +176,70 @@ const AdvancesList: React.FC = () => {
     <div className="min-h-screen w-full bg-gray-50">
       <div className="p-0 space-y-3">
         <div className="flex items-center justify-between gap-4">
+          {/* CHANGED: Using .btn-primary */}
           <button
             onClick={handleCreateAdvance}
-            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 whitespace-nowrap"
+            className="btn-primary flex items-center gap-2 whitespace-nowrap"
           >
             Create Advance
           </button>
+          {/* CHANGED: Using .btn-secondary */}
           <button
             onClick={() => setMaskAmounts(!maskAmounts)}
-            className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors duration-200 whitespace-nowrap"
+            className="btn-secondary"
             title={maskAmounts ? "Show amounts" : "Hide amounts"}
           >
-            {maskAmounts ? (
-              <>
-                <span className="text-sm font-medium text-gray-700">
-                  Show Amounts
-                </span>
-                <BsToggleOff className="w-6 h-6 text-gray-400" />
-              </>
-            ) : (
-              <>
-                <span className="text-sm font-medium text-gray-700">
-                  Hide Amounts
-                </span>
-                <BsToggleOn className="w-6 h-6 text-blue-500" />
-              </>
-            )}
+             {maskAmounts ? (
+                <>
+                  <span className="text-sm font-medium text-gray-700">Show Amounts</span>
+                  <BsToggleOff className="w-6 h-6 text-gray-400" />
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-gray-700">Hide Amounts</span>
+                  <BsToggleOn className="w-6 h-6 text-primary" /> {/* CHANGED: Using brand color */}
+                </>
+              )}
           </button>
         </div>
 
         {formattedData.map((advance, index) => (
+          // CHANGED: Using .content-card for a consistent card style
           <div
             key={index}
-            className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm cursor-pointer"
+            className="content-card cursor-pointer"
             onClick={() => handleViewInstallments(advance)}
           >
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {advance.name}
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">{advance.name}</h3>
               </div>
               <StatusBadge status={advance.advanceStatus} />
             </div>
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
-                <span className="text-gray-600 text-xs uppercase tracking-wide">
-                  Total Amount
-                </span>
+                <span className="text-gray-600 text-xs uppercase tracking-wide">Total Amount</span>
                 {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">
-                    ₹XX,XXX
-                  </span>
+                  <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
                 ) : (
-                  <span className="font-medium">
-                    {formatCurrency(advance.amount)}
-                  </span>
+                  <span className="font-medium">{formatCurrency(advance.amount)}</span>
                 )}
               </div>
             </div>
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
-                <span className="text-gray-600 text-xs uppercase tracking-wide">
-                  Deduction Amount
-                </span>
+                <span className="text-gray-600 text-xs uppercase tracking-wide">Deduction Amount</span>
                 {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">
-                    ₹XX,XXX
-                  </span>
+                  <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
                 ) : (
-                  <span className="font-medium">
-                    {formatCurrency(advance.numberOfDeductions)}
-                  </span>
+                  <span className="font-medium">{formatCurrency(advance.numberOfDeductions)}</span>
                 )}
               </div>
             </div>
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>
-                  <strong>{advance.startDate}</strong> to{" "}
-                  <strong>{advance.endDate}</strong>
+                  <strong>{advance.startDate}</strong> to <strong>{advance.endDate}</strong>
                 </span>
                 <span>{advance.installments.length} installments</span>
               </div>
