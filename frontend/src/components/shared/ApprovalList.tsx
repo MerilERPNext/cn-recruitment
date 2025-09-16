@@ -61,7 +61,7 @@ const ApprovalList = ({
       reference_type: doctype,
       status: "open",
     }),
-    [doctype]
+    [doctype, currentUser?.name]
   );
   useEffect(() => {
     const handleChatClose = () => {
