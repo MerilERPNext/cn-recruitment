@@ -1,9 +1,9 @@
 import { X } from "lucide-react";
-import Avatar from "../shared/Avatar";
 import { format } from "date-fns";
 import { useCallback } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
+import Badge from "../shared/Badge";
 
 export function AttendanceDetailView({
   data,
@@ -19,6 +19,30 @@ export function AttendanceDetailView({
 }) {
   const mutation = useApprovalListActions();
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  const getStatus = (status: string) => {
+    if (status === "Open") {
+      return {
+        label: "Open",
+        statusColor: "bg-yellow-100 text-yellow-600",
+      };
+    } else if (status === "Closed") {
+      return {
+        label: "Closed",
+        statusColor: "bg-green-100 text-green-600",
+      };
+    } else if (status === "Cancelled") {
+      return {
+        label: "Cancelled",
+        statusColor: "bg-red-100 text-red-600",
+      };
+    }
+    return {
+      label: status || "Unknown",
+      statusColor: "bg-gray-100 text-gray-600",
+    };
+  };
+
+  const status = getStatus(data?.status);
 
   const handleAction = useCallback(
     async (action: string) => {
@@ -103,9 +127,14 @@ export function AttendanceDetailView({
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Attendance Request
-          </h2>
+          <div className="flex gap-2 justify-center items-center">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Attendance Request
+            </h2>
+            <div className="font-semibold">
+              ({format(new Date(data?.date), "dd/MM/yyyy")})
+            </div>{" "}
+          </div>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -118,17 +147,14 @@ export function AttendanceDetailView({
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
           {/* Employee Info */}
-          <div className="py-4 border-b">
-            <div className="flex items-center space-x-3">
-              <Avatar name={data?.allocated_to} />
-              <div>
-                <h2 className="font-semibold text-gray-900">
-                  {data?.allocated_to}
-                </h2>
-                {format(new Date(data?.date), "dd/MM/yyyy")}
-              </div>{" "}
-            </div>
+          <div className="py-4">
+            <p className="text-sm text-gray-500 mb-2">Status</p>
+            <Badge
+              label={status?.label as string}
+              backgroundColor={status?.statusColor}
+            />{" "}
           </div>
+
           {/* explanation */}
           <div className="py-4">
             <p className="text-sm text-gray-500 mb-2">Description</p>

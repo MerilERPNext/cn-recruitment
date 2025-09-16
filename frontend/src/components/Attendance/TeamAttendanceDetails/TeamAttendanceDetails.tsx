@@ -9,18 +9,22 @@ import FrappeListView from "../../ListView";
 import ApprovalCard from "./ApprovalCard";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 
 type LoadingAction = {
   id: string;
   action: string;
 };
 const TeamAttendanceDetails = () => {
+  const { data: currentUser } = useCurrentUser();
+
   const defaultFilters = useMemo(
     () => ({
       reference_type: "Attendance Request",
+      allocated_to: currentUser?.name,
       status: ["in", ["Closed", "Cancelled"]],
     }),
-    []
+    [currentUser]
   );
   const { refetchAttendance } = useGlobalStore();
   const [refetch, setRefetch] = useState(false);
@@ -52,15 +56,8 @@ const TeamAttendanceDetails = () => {
             </button>
           </div>
           <CardTable
-            titles={[
-              "Select",
-              "Allocated To",
-              "Description",
-              "Date",
-              "Status",
-              "Actions",
-            ]}
-            columnWidths={["100px", "160px", "28%", "140px", "140px", "0.6fr"]}
+            titles={["Select", "Description", "Date", "Status", "Actions"]}
+            columnWidths={["10%", "30%", "10%", "10%", "30%"]}
           >
             <ApprovalList
               doctype={"Attendance Request"}
@@ -98,8 +95,8 @@ const TeamAttendanceDetails = () => {
               Actioned Team Attendance Requests
             </h2>
             <CardTable
-              titles={["Allocated To", "Description", "Date", "Status"]}
-              columnWidths={["280px", "28%", "140px", "0.6fr"]}
+              titles={["Description", "Date", "Status"]}
+              columnWidths={["42%", "10%", "33%"]}
             >
               <div>
                 <FrappeListView

@@ -53,7 +53,7 @@ const ApprovalCard = ({
     ? format(new Date(data.date), "dd/MM/yyyy")
     : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const gridTemplateColumns = "100px 160px 28% 140px 140px 0.6fr";
+  const gridTemplateColumns = "10% 30% 10% 10% 20%";
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -102,9 +102,9 @@ const ApprovalCard = ({
           </div>
 
           {/* Allocated To */}
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
+          {/* <div className="truncate text-gray-900 font-medium text-sm text-start">
             {data?.allocated_to}
-          </div>
+          </div> */}
 
           {/* Description */}
           <div className="text-gray-600 text-sm truncate text-start">
@@ -171,9 +171,9 @@ const ApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold text-sm text-gray-800">
+                  {/* <h3 className="font-semibold text-sm text-gray-800">
                     {data?.allocated_to}
-                  </h3>
+                  </h3> */}
                   <p className="text-sm text-gray-500">
                     {format(new Date(data?.date), "dd/MM/yyyy")}
                   </p>

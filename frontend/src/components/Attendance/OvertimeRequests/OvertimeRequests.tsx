@@ -8,17 +8,21 @@ import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
 import FrappeListView from "../../ListView";
 import { RequestCard } from "../TeamAttendanceDetails/RequestCard";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 
 const OvertimeRequests = () => {
   const { refetchAttendance } = useGlobalStore();
   const [refetch, setRefetch] = useState(false);
   const navigate = useNavigate();
+  const { data: currentUser } = useCurrentUser();
+
   const defaultFilters = useMemo(
     () => ({
       reference_type: "Planned Overtime Request",
+      allocated_to: currentUser?.name,
       status: ["in", ["Closed", "Cancelled"]],
     }),
-    []
+    [currentUser]
   );
   const [selectedRequest, setSelectedRequest] = useState<
     (AttendanceRequest & { loadingAction?: LoadingAction }) | null
@@ -46,15 +50,8 @@ const OvertimeRequests = () => {
           </div>
 
           <CardTable
-            titles={[
-              "Select",
-              "Allocated To",
-              "Description",
-              "Date",
-              "Status",
-              "Actions",
-            ]}
-            columnWidths={["100px", "160px", "28%", "140px", "140px", "0.6fr"]}
+            titles={["Select", "Description", "Date", "Status", "Actions"]}
+            columnWidths={["10%", "30%", "10%", "10%", "30%"]}
           >
             <ApprovalList
               doctype={"Planned Overtime Request"}
@@ -90,8 +87,8 @@ const OvertimeRequests = () => {
               Actioned Planned Overtime Requests
             </h2>
             <CardTable
-              columnWidths={["280px", "28%", "140px", "0.6fr"]}
-              titles={["Allocated To", "Description", "Date", "Status"]}
+              columnWidths={["42%", "10%", "33%"]}
+              titles={["Description", "Date", "Status"]}
             >
               <div>
                 <FrappeListView

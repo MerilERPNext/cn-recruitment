@@ -38,7 +38,7 @@ any & {
     ? format(new Date(request.date), "dd/MM/yyyy")
     : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(request?.description || "");
-  const gridTemplateColumns = "280px 28% 140px 0.6fr";
+  const gridTemplateColumns = "42% 10% 33%";
 
   return (
     <>
@@ -48,9 +48,9 @@ any & {
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
+          {/* <div className="truncate text-gray-900 font-medium text-sm text-start">
             {request?.allocated_to}
-          </div>
+          </div> */}
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>
@@ -74,9 +74,9 @@ any & {
               <div className="w-full">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-sm text-gray-800">
+                    {/* <h3 className="font-semibold text-sm text-gray-800">
                       {request?.allocated_to}
-                    </h3>
+                    </h3> */}
                     <p className="text-sm text-gray-500">{formattedDate}</p>
                   </div>
                   <Badge
