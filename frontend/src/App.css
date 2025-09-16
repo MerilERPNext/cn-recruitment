@@ -25,8 +25,8 @@
   }
 
   .table-header-text {
-    /* Uses the 'sm' and 'semibold' from your config */
-    @apply px-6 py-3 text-sm text-gray-500 font-semibold uppercase tracking-wider;
+    /* Uses the 'xs' and 'semibold' from your config */
+    @apply px-6 py-3 text-xs text-gray-500 font-semibold uppercase tracking-wider;
   }
 
   /* Table Row */
@@ -64,6 +64,22 @@
 
   .empty-state-card {
     @apply text-center py-12 bg-white border border-gray-200 rounded-lg;
+  }
+
+  .dashboard-card {
+    @apply bg-white border border-gray-200 rounded-lg p-6;
+  }
+
+  .card-header-title {
+    @apply font-semibold text-gray-800;
+  }
+
+  .card-header-action {
+    @apply flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition-colors;
+  }
+
+  .list-item-card {
+    @apply flex justify-between items-center gap-3 bg-gray-50 p-3 mb-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors;
   }
 }
 
