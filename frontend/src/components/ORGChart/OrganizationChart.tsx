@@ -12,15 +12,15 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import PersonNode from "./PersonNode";
-import { CollapsedState, EmployeeHierarchy, NodeData } from "./type/type";
+import { CollapsedState, NodeData } from "./type/type";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import {
   useCurrentEmployeeAllDetails,
   useGetEmployeeHierarchy,
+  useGetEmployeeSubordinateHierarchy,
 } from "../../hooks/useEmployee";
 import HeaderBar from "../HeaderBar";
 import { useLocation, useNavigate } from "react-router";
-import { findNode, findParent } from "./OrgnazationChartForTwoLavel";
 
 const nodeTypes = {
   person: PersonNode,
@@ -90,36 +90,42 @@ export default function OrganizationChart() {
   const { data: employeeHierarchy } = useGetEmployeeHierarchy(
     user?.company ?? ""
   );
-
   const { search } = useLocation();
   const query = new URLSearchParams(search);
   const employeeId = query.get("employee");
 
+  const {
+    data: employeeSubordinateHierarchy,
+    isLoading: employeeSubordinateHierarchyIsLoading,
+  } = useGetEmployeeSubordinateHierarchy(employeeId ?? "");
+
   // Build nodes/edges when data comes
   useEffect(() => {
-    if (employeeId) {
-      const currentUser = findNode(
-        employeeHierarchy as unknown as EmployeeHierarchy,
-        employeeId
-      );
-      const parent = findParent(
-        employeeHierarchy as unknown as EmployeeHierarchy,
-        employeeId
-      );
-      if (currentUser) {
-        const { nodes, edges } = buildHierarchy(currentUser, parent as any);
-        setNodes(nodes);
-        setEdges(edges);
-      }
+    if (
+      employeeId &&
+      employeeSubordinateHierarchy &&
+      !employeeSubordinateHierarchyIsLoading
+    ) {
+      const { nodes, edges } = buildHierarchy(employeeSubordinateHierarchy);
+      setNodes(nodes);
+      setEdges(edges);
       return;
     }
 
+    // Otherwise, use the full company hierarchy
     if (employeeHierarchy) {
       const { nodes, edges } = buildHierarchy(employeeHierarchy);
       setNodes(nodes);
       setEdges(edges);
     }
-  }, [employeeHierarchy, setNodes, setEdges, employeeId]);
+  }, [
+    employeeId,
+    employeeSubordinateHierarchy,
+    employeeHierarchy,
+    setNodes,
+    setEdges,
+    employeeSubordinateHierarchyIsLoading,
+  ]);
 
   const onConnect = useCallback(
     (params: Edge | Connection) =>

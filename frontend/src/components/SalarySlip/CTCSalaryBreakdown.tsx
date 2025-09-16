@@ -292,7 +292,7 @@ const CTCSalaryUI = () => {
         {activeTab === 'annual' && (
           <div className="space-y-8">
             {/* Hero Card */}
-            <div className="bg-emerald-50 rounded-xl shadow-lg p-6 text-gray-800 relative overflow-hidden border border-emerald-200">
+            <div className="bg-emerald-50 rounded-xl z-1 shadow-lg p-6 text-gray-800 relative overflow-hidden border border-emerald-200">
               <div className="absolute top-0 right-0 w-24 h-24  bg-opacity-30 rounded-full -translate-y-12 translate-x-12"></div>
               <div className="absolute bottom-0 left-0 w-16 h-16 bg-opacity-30 rounded-full translate-y-8 -translate-x-8"></div>
               <div className="relative z-10">

@@ -4,6 +4,7 @@ import "formiojs/dist/formio.full.css";
 import {
   useCreateNewAttendanceRequest,
   useGetEmployeeShift,
+  useGetUserRoles,
   useReqValidationsForAttendanceRequest,
 } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
@@ -67,6 +68,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     currentUser?.name as string
   );
   const { data: employeeList } = useGetAllEmployees();
+  const { data: userRoles } = useGetUserRoles();
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedRequestType, setSelectedRequestType] = useState<string>("");
@@ -594,7 +596,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         onClose();
         setTimeout(() => {
           setRefetchAttendance(true);
-        }, 1000);
+        }, 2000);
         toast.success("Added Attendance Request successfully!");
       },
       onError: (error: CustomError) => {
@@ -637,25 +639,26 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
         {/* Content Area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
-          <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
-            <button
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                !isForOthers ? "bg-black text-white" : ""
-              }`}
-              onClick={() => setIsForOthers(false)}
-            >
-              Self
-            </button>
-            <button
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                isForOthers ? "bg-black text-white" : ""
-              }`}
-              onClick={() => setIsForOthers(true)}
-            >
-              For Others
-            </button>
-          </div>
-
+          {userRoles?.roles["Employee Direct Manager"] ? (
+            <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
+              <button
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+                  !isForOthers ? "bg-black text-white" : ""
+                }`}
+                onClick={() => setIsForOthers(false)}
+              >
+                Self
+              </button>
+              <button
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+                  isForOthers ? "bg-black text-white" : ""
+                }`}
+                onClick={() => setIsForOthers(true)}
+              >
+                For Others
+              </button>
+            </div>
+          ) : null}
           <Form
             form={formSchema}
             onSubmit={handleSubmit}
@@ -668,6 +671,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             onChange={(submission: any) => {
               setFormData(submission?.data);
             }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onFormReady={(instance: any) => {
               formAddressInstance.current = instance;
 
@@ -686,8 +690,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                 flatInputs.forEach((input) => {
                   const handler = () => {
                     flatInputs.forEach((other) => {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       if (other !== input && (other as any)._flatpickr) {
                         try {
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (other as any)._flatpickr.close();
                         } catch (err) {
                           console.error("flatpickr close failed", err);
@@ -697,8 +703,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                   };
 
                   // avoid adding duplicate listeners
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   if (!(input as any).__closeOtherFPHandler) {
                     input.addEventListener("focus", handler);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (input as any).__closeOtherFPHandler = handler;
                   }
                 });

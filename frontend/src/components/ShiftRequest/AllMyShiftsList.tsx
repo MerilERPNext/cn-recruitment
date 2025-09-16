@@ -32,24 +32,25 @@ const MyShiftRowItem: React.FC<{
 
     const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
+    // CHANGED: Using .data-row for the container and .data-cell for children.
     return (
         <div
             key={`${item.name}-${index}`}
-            className="grid grid-cols-5 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors text-center border-b border-gray-200"
+            className="data-row grid grid-cols-5 gap-4 items-center text-center"
         >
-            <div className="font-medium text-gray-900 truncate">
+            <div className="data-cell font-medium truncate">
                 {item.employee_name}
             </div>
-            <div className="text-gray-700 truncate">
+            <div className="data-cell truncate">
                 {item.shift_type}
             </div>
-            <div className="text-gray-600">
+            <div className="data-cell">
                 {item.start_date}
             </div>
-            <div className="text-gray-600">
+            <div className="data-cell">
                 {item.end_date}
             </div>
-            <div>
+            <div className="data-cell flex justify-center">
                 <StatusBadge status={shiftStatus} />
             </div>
         </div>
@@ -66,20 +67,22 @@ const AllMyShiftsList: React.FC = () => {
                 onBack={() => navigate(-1)}
             />
             <div className="overflow-x-auto mt-6 mx-6 rounded-lg border border-gray-200 bg-white shadow-sm">
-                <div className="grid grid-cols-5 gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200">
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                {/* CHANGED: Using .table-header for consistent header styling. */}
+                <div className="table-header grid grid-cols-5 gap-4">
+                    {/* CHANGED: Using .table-header-text for consistent column titles. */}
+                    <span className="table-header-text flex items-center justify-center">
                         EMPLOYEE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="table-header-text flex items-center justify-center">
                         SHIFT TYPE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="table-header-text flex items-center justify-center">
                         START DATE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="table-header-text flex items-center justify-center">
                         END DATE
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex items-center justify-center">
+                    <span className="table-header-text flex items-center justify-center">
                         STATUS
                     </span>
                 </div>

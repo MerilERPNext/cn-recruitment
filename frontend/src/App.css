@@ -2,6 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================== */
+/* ===== START: Add your new component classes here ===== */
+/* ================================================== */
+
+@layer base {
+  /* Set the default font for the entire application based on your tailwind.config.js */
+  body {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+  /* A standard button using your PRIMARY color */
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors;
+  }
+
+  /* Table Header using your fonts and colors */
+  .table-header {
+    @apply bg-gray-100 border-b border-gray-200;
+  }
+
+  .table-header-text {
+    /* Uses the 'xs' and 'semibold' from your config */
+    @apply px-6 py-3 text-xs text-gray-500 font-semibold uppercase tracking-wider;
+  }
+
+  /* Table Row */
+  .data-row {
+    @apply bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors;
+  }
+
+  .data-cell {
+    @apply px-6 py-4 text-sm text-gray-darker;
+  }
+
+  .btn-secondary {
+    @apply flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors duration-200 whitespace-nowrap;
+  }
+
+  .content-card {
+    @apply bg-white rounded-xl border border-gray-200 p-4 shadow-sm;
+  }
+
+  .info-card {
+    @apply bg-blue-50 border border-blue-200 rounded-lg p-4;
+  }
+
+  .form-input {
+    @apply w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary;
+  }
+
+  .btn-icon {
+    @apply flex items-center justify-center p-2 border border-gray-300 rounded-lg text-primary hover:bg-primary-50 transition-colors duration-200 disabled:opacity-50;
+  }
+
+  .btn-subtle {
+    @apply px-2 py-1 text-xs text-primary bg-primary-100 border border-primary-200 rounded hover:bg-primary-200 transition-colors font-medium;
+  }
+
+  .empty-state-card {
+    @apply text-center py-12 bg-white border border-gray-200 rounded-lg;
+  }
+
+  .dashboard-card {
+    @apply bg-white border border-gray-200 rounded-lg p-6;
+  }
+
+  .card-header-title {
+    @apply font-semibold text-gray-800;
+  }
+
+  .card-header-action {
+    @apply flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition-colors;
+  }
+
+  .list-item-card {
+    @apply flex justify-between items-center gap-3 bg-gray-50 p-3 mb-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors;
+  }
+}
+
+/* ================================================ */
+/* ===== END: Your new component classes ====== */
+/* ================================================ */
+
+/* Your existing styles below */
 #root {
   @apply h-full;
   @apply w-full;
@@ -31,4 +117,3 @@
 .address-form-container .choices__inner::after {
   display: none !important;
 }
-

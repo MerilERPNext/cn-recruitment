@@ -10,8 +10,19 @@ import { ChevronDown } from "lucide-react";
 import LeaveRequest from "../Attendance/LeaveRequest";
 import AttndanceRequestForm from "../Attendance/AttendanceRequest/AttendanceRequestForm";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
+import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 
 const AttendanceLayout: React.FC = () => {
+  const { data: userId } = useLoggedInUser();
+
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    user?.employee || ""
+  );
+
   const { isDesktop } = useScreenSize();
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [showLeaveRequest, setShowLeaveRequest] = useState(false);
@@ -100,13 +111,12 @@ const AttendanceLayout: React.FC = () => {
       navigate(`/webapp/attendance/${tab.key}`);
     }
   };
-
   const mobileLayout = (
     <div className="min-h-screen bg-white">
       {/* Fixed Header */}
       <HeaderBar title={activeTab.label} onBack={() => navigate("/webapp")} />
       {tabs.some((tab) => tab.key === activeTab?.key) && (
-        <div className="sticky top-[58px] z-50 border-t border-gray-200">
+        <div className="sticky top-[58px] z-40 border-t border-gray-200">
           <NavigationTabs
             tabs={tabs}
             activeTab={activeTab?.key}
@@ -205,22 +215,24 @@ const AttendanceLayout: React.FC = () => {
                   </p>
                 </div>
               </button>
-              <button
-                onClick={() => {
-                  setShowOvertimeRequest(true);
-                  setShowActionsDropdown(false);
-                }}
-                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors group"
-              >
-                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">
-                    Planned Overtime Request
-                  </p>
-                </div>
-              </button>
+              {plannedOvertimAllowed ? (
+                <button
+                  onClick={() => {
+                    setShowOvertimeRequest(true);
+                    setShowActionsDropdown(false);
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors group"
+                >
+                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      Planned Overtime Request
+                    </p>
+                  </div>
+                </button>
+              ) : null}
             </div>
           </div>
         )}

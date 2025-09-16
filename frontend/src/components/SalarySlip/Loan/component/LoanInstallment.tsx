@@ -1,4 +1,3 @@
-import { EditIcon } from "lucide-react";
 import { Installment } from "../Type/loan";
 
 interface LoanInstallmentsProps {
@@ -22,49 +21,36 @@ export default function LoanInstallments({ installments }: LoanInstallmentsProps
   return (
     <div>
       <h3 className="font-semibold mb-4 text-gray-900">Loans Breakup Details</h3>
-
       <div className="overflow-x-auto border rounded">
-        {/* Header */}
-        <div className="grid grid-cols-10 bg-gray-200 rounded-t border-b text-sm font-medium text-gray-700">
-          <div className="p-3">Installment</div>
-          <div className="p-3">Installment Month</div>
-          <div className="p-3">Opening Balance</div>
-          <div className="p-3">Installment Amount</div>
-          <div className="p-3">Interest (1)</div>
-          <div className="p-3">Loans EMI</div>
-          <div className="p-3">Standard Interest (2)</div>
-          <div className="p-3">Principal Balance</div>
-          <div className="p-3">Perquisites</div>
-          <div className="p-3">Operations</div>
+        {/* CHANGED: Using .table-header and .table-header-text */}
+        <div className="table-header grid grid-cols-9 rounded-t">
+          <div className="table-header-text">Installment</div>
+          <div className="table-header-text">Installment Month</div>
+          <div className="table-header-text">Opening Balance</div>
+          <div className="table-header-text">Installment Amount</div>
+          <div className="table-header-text">Interest (1)</div>
+          <div className="table-header-text">Loans EMI</div>
+          <div className="table-header-text">Standard Interest (2)</div>
+          <div className="table-header-text">Principal Balance</div>
+          <div className="table-header-text">Perquisites</div>
         </div>
 
-        {/* Rows */}
         <div className="text-sm divide-y divide-gray-200">
           {installments.map((installment, index) => (
+            // CHANGED: Using .data-row and .data-cell
             <div
               key={installment.id || index}
-              className="grid grid-cols-10 hover:bg-gray-50 transition-colors"
+              className="data-row grid grid-cols-9"
             >
-              <div className="p-3">{index + 1}</div>
-              <div className="p-3">{installment.payment_date}</div>
-              <div className="p-3">
-                {formatCurrency(
-                  installment.balance_loan_amount + installment.principal_amount
-                )}
-              </div>
-              <div className="p-3">{formatCurrency(installment.total_payment)}</div>
-              <div className="p-3">{formatNumber(installment.interest_amount)}</div>
-              <div className="p-3">{formatCurrency(installment.total_payment)}</div>
-              <div className="p-3">{formatNumber(installment.interest_amount)}</div>
-              <div className="p-3">{formatCurrency(installment.principal_amount)}</div>
-              <div className="p-3">-</div>
-              <div className="p-3">
-                <button className="p-1 h-8 w-8 hover:bg-gray-100 rounded transition-colors">
-                  <div className="text-blue-600">
-                    <EditIcon />
-                  </div>
-                </button>
-              </div>
+              <div className="data-cell">{index + 1}</div>
+              <div className="data-cell">{installment.payment_date}</div>
+              <div className="data-cell">{formatCurrency(installment.balance_loan_amount + installment.principal_amount)}</div>
+              <div className="data-cell">{formatCurrency(installment.total_payment)}</div>
+              <div className="data-cell">{formatNumber(installment.interest_amount)}</div>
+              <div className="data-cell">{formatCurrency(installment.total_payment)}</div>
+              <div className="data-cell">{formatNumber(installment.interest_amount)}</div>
+              <div className="data-cell">{formatCurrency(installment.principal_amount)}</div>
+              <div className="data-cell">-</div>
             </div>
           ))}
         </div>

@@ -184,11 +184,14 @@ const OrganizationCharttooo = lazy(
 const AdvancesList = lazy(
   () => import("./components/SalarySlip/Advances/AdvancesList")
 );
+
 const CompensatoryRequest = lazy(
   () => import("./components/Leaves/compensatory/CompensatoryRequest")
 );
 
+
 // Loading component for Suspense fallbacks
+// eslint-disable-next-line react-refresh/only-export-components
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="text-center">
@@ -203,6 +206,7 @@ const withLazyLoading = (
   Component: React.ComponentType,
   fallback = <LoadingSpinner />
 ) => {
+
   return (props: any) => (
     <EmployeeErrorBoundary>
       <Suspense fallback={fallback}>
@@ -410,6 +414,7 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
+
       {
         path: "leave-requests/pending",
         element: <PendingTeamLeaves />,

@@ -5,7 +5,12 @@ import {
   UseQueryResult,
 } from "@tanstack/react-query";
 import { EmployeeService } from "../services/employeeService";
-import { Employee, EmployeeIdCard, EmployeeListItem, EmployeeNode } from "../types/employee";
+import {
+  Employee,
+  EmployeeIdCard,
+  EmployeeListItem,
+  EmployeeNode,
+} from "../types/employee";
 import { profileService } from "../services/profileService";
 import { AddressInfoData } from "../types/profile";
 import toast from "react-hot-toast";
@@ -42,8 +47,11 @@ export const useCurrentEmployeeAllDetails = (user_id: string) => {
   return useQuery<Employee | null, Error>({
     queryKey: ["currentEmployeeAllDetails", user_id],
     queryFn: async () => {
-      if (!user_id || typeof user_id !== 'string' || user_id.trim() === '') {
-        console.warn("useCurrentEmployeeAllDetails: Invalid user_id provided:", user_id);
+      if (!user_id || typeof user_id !== "string" || user_id.trim() === "") {
+        console.warn(
+          "useCurrentEmployeeAllDetails: Invalid user_id provided:",
+          user_id
+        );
         return null;
       }
       return EmployeeService.getCurrentEmployeeAllDetails(user_id);
@@ -51,9 +59,8 @@ export const useCurrentEmployeeAllDetails = (user_id: string) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 2, // Increased retry count
-    enabled: !!user_id && typeof user_id === 'string' && user_id.trim() !== '',
+    enabled: !!user_id && typeof user_id === "string" && user_id.trim() !== "",
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
-
   });
 };
 export const useCurrentEmployeeAddress = (user_id: string) => {
@@ -67,14 +74,22 @@ export const useCurrentEmployeeAddress = (user_id: string) => {
   });
 };
 
-export const useGetEmployeeHierarchy = (
-  company: string,
-) => {
+export const useGetEmployeeHierarchy = (company: string) => {
   return useQuery<EmployeeNode[]>({
     queryKey: ["Employee-hierarchy", company],
     queryFn: () => {
       return EmployeeService.getEmployeeHierarchy(company);
     },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+export const useGetEmployeeSubordinateHierarchy = (employee: string) => {
+  return useQuery<EmployeeNode[]>({
+    queryKey: ["Employee-subordinate-hierarchy", employee],
+    queryFn: () => {
+      return EmployeeService.getEmployeeSubordinateHierarchy(employee);
+    },
+    enabled: !!employee,
     staleTime: 5 * 60 * 1000,
   });
 };

@@ -54,7 +54,7 @@ const OvertimeRequests = () => {
               "Status",
               "Actions",
             ]}
-            columnWidths={["40px", "160px", "0.8fr", "120px", "140px", "0.6fr"]}
+            columnWidths={["100px", "160px", "28%", "140px", "140px", "0.6fr"]}
           >
             <ApprovalList
               doctype={"Planned Overtime Request"}
@@ -90,6 +90,7 @@ const OvertimeRequests = () => {
               Actioned Planned Overtime Requests
             </h2>
             <CardTable
+              columnWidths={["280px", "28%", "140px", "0.6fr"]}
               titles={["Allocated To", "Description", "Date", "Status"]}
             >
               <div>

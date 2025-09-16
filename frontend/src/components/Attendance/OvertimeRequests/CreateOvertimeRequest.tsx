@@ -3,91 +3,16 @@ import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useRef } from "react";
 import "../../../formio.custom.css";
-import { useCreatePlannedOvertimeRequest } from "../../../hooks/useAttendance";
+import {
+  useCreatePlannedOvertimeRequest,
+  usePlannedOvertimeRequestAttachments,
+} from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { format, isValid, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-
-const overtimeForm = {
-  display: "form",
-  components: [
-    {
-      type: "datagrid",
-      key: "overtime_details",
-      label: "Overtime Requests",
-      addAnother: "New Row",
-      customClass: "border-0",
-      components: [
-        {
-          type: "datetime",
-          key: "shift_date",
-          label: "Shift Date *",
-          format: "dd-MM-yyyy",
-          enableTime: false,
-          input: true,
-          validate: { required: true },
-        },
-        {
-          type: "datetime",
-          key: "start_date",
-          label: "Start Date *",
-          format: "dd-MM-yyyy",
-          enableTime: false,
-          validate: { required: true },
-
-          input: true,
-        },
-        {
-          type: "datetime",
-          key: "start_time",
-          label: "Start Time *",
-          enableDate: false,
-          enableTime: true,
-          input: true,
-          widget: { type: "calendar" },
-          validate: { required: true },
-        },
-        {
-          type: "datetime",
-          key: "end_date",
-          label: "End Date *",
-          format: "dd-MM-yyyy",
-          enableTime: false,
-          validate: { required: true },
-          input: true,
-        },
-        {
-          type: "datetime",
-          key: "end_time",
-          label: "End Time *",
-          enableDate: false,
-          enableTime: true,
-          input: true,
-          widget: { type: "calendar" },
-          validate: { required: true },
-        },
-
-        {
-          type: "textfield",
-          key: "message",
-          label: "Message *",
-          validate: { required: true },
-          input: true,
-        },
-      ],
-    },
-    {
-      type: "file",
-      key: "attachment",
-      label: "Attachment",
-      storage: "customBase64",
-      input: true,
-    },
-  ],
-};
 
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
@@ -100,26 +25,103 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
     currentUser?.name as string
   );
   const mutation = useCreatePlannedOvertimeRequest();
+  const { data: plannedOvertimeRequestAttachments } =
+    usePlannedOvertimeRequestAttachments(currentEmployee?.employee || "");
+
   const formInstance = useRef<any>(null);
   const { setRefetchAttendance } = useGlobalStore();
+
+  const overtimeForm = {
+    display: "form",
+    components: [
+      {
+        type: "datagrid",
+        key: "overtime_details",
+        label: "Overtime Requests",
+        addAnother: "New Row",
+        customClass: "border-0",
+        components: [
+          {
+            type: "datetime",
+            key: "start_date",
+            label: "Start Date *",
+            format: "dd-MM-yyyy",
+            enableTime: false,
+            validate: { required: true },
+
+            input: true,
+          },
+          {
+            type: "datetime",
+            key: "start_time",
+            label: "Start Time *",
+            enableDate: false,
+            enableTime: true,
+            input: true,
+            widget: { type: "calendar" },
+            validate: { required: true },
+          },
+          {
+            type: "datetime",
+            key: "end_date",
+            label: "End Date *",
+            format: "dd-MM-yyyy",
+            enableTime: false,
+            validate: { required: true },
+            input: true,
+          },
+          {
+            type: "datetime",
+            key: "end_time",
+            label: "End Time *",
+            enableDate: false,
+            enableTime: true,
+            input: true,
+            widget: { type: "calendar" },
+            validate: { required: true },
+          },
+
+          {
+            type: "textfield",
+            key: "message",
+            label: "Message *",
+            validate: { required: true },
+            input: true,
+          },
+        ],
+      },
+      plannedOvertimeRequestAttachments
+        ? {
+            type: "file",
+            key: "attachment",
+            label: "Attachment",
+            storage: "customBase64",
+            input: true,
+            validate: { required: true },
+          }
+        : null,
+    ],
+  };
 
   const handleSubmit = async () => {
     try {
       const submission = await formInstance.current?.submit();
       const data = submission?.data;
-
       const formattedOvertimeDetails = data?.overtime_details?.map(
         (entry: any) => ({
-          ...entry,
-          shift_date: isValidDate(entry.shift_date)
-            ? formatDate(entry.shift_date)
-            : entry.shift_date,
+          shift_date: isValidDate(entry.start_date)
+            ? formatDate(entry.start_date)
+            : entry.start_date,
           start_date: isValidDate(entry.start_date)
             ? formatDate(entry.start_date)
             : entry.start_date,
           end_date: isValidDate(entry.end_date)
             ? formatDate(entry.end_date)
             : entry.end_date,
+          start_time: format(new Date(entry?.start_time), "HH:mm:ss"),
+
+          end_time: format(new Date(entry?.end_time), "HH:mm:ss"),
+          message: entry?.message,
         })
       );
 
@@ -155,7 +157,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
     } catch (err) {
       // If form is invalid, prevent API call
       toast.error("Please fill in all required fields.");
-      console.warn("Form submission error:", err);
+      console.warn("Form submission error -", err);
     }
   };
 
