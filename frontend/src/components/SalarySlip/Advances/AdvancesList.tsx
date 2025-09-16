@@ -132,7 +132,7 @@ const AdvancesList: React.FC = () => {
                 // CHANGED: Using .table-row and grid layout. Children use .table-cell
                 <div
                   key={`${advance.name}-${index}`}
-                  className="table-row grid grid-cols-6 gap-4 cursor-pointer"
+                  className="data-row grid grid-cols-6 gap-4 cursor-pointer"
                   onClick={() => handleViewInstallments(advance)}
                 >
                   <div className="table-cell font-medium">
