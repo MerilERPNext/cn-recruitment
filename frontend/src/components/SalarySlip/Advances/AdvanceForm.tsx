@@ -1,8 +1,17 @@
-import React, { useCallback, useMemo, useRef } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import HeaderBar from "../../HeaderBar";
 import { X } from "lucide-react";
+import DOMPurify from "dompurify";
+import {
+  useAdvancesType,
+  useCreateNewAdvance,
+  useEmployeeAdvancesAmount,
+} from "../../../hooks/useEmployeeAdvances";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import toast from "react-hot-toast";
 
 interface AdvanceFormProps {
   user?: any;
@@ -12,7 +21,81 @@ interface AdvanceFormProps {
 export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const formAdvanceInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
+  const { data: advanceType } = useAdvancesType();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    user?.employee as string
+  );
 
+  const [selectedAdvanceType, setSelectedAdvanceType] = useState<string>();
+  const [postingDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  ); // today date
+
+  const { data: advanceAmountData } = useEmployeeAdvancesAmount(
+    user?.employee,
+    selectedAdvanceType,
+    postingDate
+  );
+
+  const mutation = useCreateNewAdvance();
+
+  /** ✅ Auto update Advance Amount when fetched */
+  useEffect(() => {
+    if (
+      advanceAmountData &&
+      formAdvanceInstance.current &&
+      advanceAmountData[0]?.amount
+    ) {
+      formAdvanceInstance.current.setComponentValue(
+        "advance_amount",
+        advanceAmountData[0].amount
+      );
+    }
+  }, [advanceAmountData]);
+
+  /** ✅ Handle Submit */
+  const handleSubmit = async () => {
+    try {
+      const submission = await formAdvanceInstance.current?.submit();
+      const formData = submission?.data;
+
+      if (!formData) {
+        toast.error("Please fill the required fields.");
+        return;
+      }
+
+      const submissionData = {
+        ...formData,
+        custom_advance_type: selectedAdvanceType, // ✅ ensure correct custom_advance_type
+        advance_amount: formData.advance_amount, // ✅ ensure amount is included
+        company: currentEmployee?.company,
+        applicant_type: "Employee",
+        applicant: currentEmployee?.employee,
+      };
+
+      console.log("✅ Final Submitted Payload:", submissionData);
+
+      mutation.mutate(submissionData as Record<string, unknown>, {
+        onSuccess: () => {
+          onClose?.();
+          toast.success("Advance Request submitted successfully!");
+        },
+        onError: (error: any) => {
+          const errorMessage =
+            error?.response?.data?.exception?.split(":").slice(1).join(":").trim() ||
+            "Something went wrong!!";
+
+          const cleanString = DOMPurify.sanitize(errorMessage || "");
+          toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
+        },
+      });
+    } catch (err) {
+      console.error("❌ Form submission error", err);
+      toast.error("Form submission failed!");
+    }
+  };
+
+  /** ✅ Form Schema with Validations */
   const advanceForm = useMemo(() => {
     return {
       type: "form",
@@ -24,12 +107,12 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
           title: "Advance Request",
           hideLabel: true,
           customClass:
-            "bg-white rounded-lg shadow-md mb-6 w-full max-w-3xl mx-auto p-4", // 🔑 reduced width
+            "bg-white rounded-lg shadow-md mb-6 w-full max-w-3xl mx-auto p-4",
           components: [
+            // Row 1
             {
               type: "columns",
               key: "employeeRow",
-              customClass: "mb-6",
               columns: [
                 {
                   width: 6,
@@ -42,7 +125,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       validate: { required: true },
                       defaultValue: user?.employee || "",
                       placeholder: "Enter employee ID/name",
-                      customClass: "mb-4",
                     },
                   ],
                 },
@@ -54,72 +136,47 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       key: "advance_amount",
                       label: "Advance Amount",
                       input: true,
-                      validate: { required: true },
                       placeholder: "0.00",
+                      defaultValue: advanceAmountData,
+                      validate: { required: true, min: 1 },
                       currency: "INR",
-                      customClass: "mb-4",
                     },
                   ],
                 },
               ],
             },
+
+            // Row 2 - Advance Type & Repayment Type
             {
               type: "columns",
               key: "advanceTypeRow",
-              customClass: "mb-6",
               columns: [
                 {
                   width: 6,
                   components: [
                     {
                       type: "select",
-                      key: "advance_type",
+                      key: "custom_advance_type",
                       label: "Advance Type",
                       input: true,
                       validate: { required: true },
                       placeholder: "Select advance type",
                       data: {
-                        values: [
-                          { value: "salary", label: "Salary Advance" },
-                          { value: "travel", label: "Travel Advance" },
-                          { value: "medical", label: "Medical Advance" },
-                          { value: "emergency", label: "Emergency Advance" },
-                          { value: "other", label: "Other" },
-                        ],
+                        values:
+                          advanceType?.data?.map((item: { name: string }) => ({
+                            label: item?.name,
+                            value: item?.name,
+                          })) || [],
                       },
-                      customClass: "mb-4",
                     },
                   ],
                 },
-                {
-                  width: 6,
-                  components: [
-                    {
-                      type: "datetime",
-                      key: "repayment_start_date",
-                      label: "Repayment Start Date",
-                      input: true,
-                      validate: { required: true },
-                      enableTime: false,
-                      placeholder: "Select start date",
-                      dateFormat: "dd-MM-yyyy",
-                      customClass: "mb-4",
-                    },
-                  ],
-                },
-              ],
-            },
-            {
-              type: "columns",
-              key: "repaymentInfo1",
-              customClass: "mb-6",
-              columns: [
                 {
                   width: 6,
                   components: [
                     {
                       type: "select",
-                      key: "repayment_type",
+                      key: "custom_repayment_type",
                       label: "Repayment Type",
                       input: true,
                       validate: { required: true },
@@ -127,10 +184,42 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       data: {
                         values: [
                           { value: "one_time", label: "One Time" },
-                          { value: "installment", label: "Installment" },
+                          { value: "recurring", label: "Recurring" },
                         ],
                       },
-                      customClass: "mb-4",
+                    },
+                  ],
+                },
+              ],
+            },
+
+            // Row 3 - Repayment Method + Start Date
+            {
+              type: "columns",
+              key: "repaymentMethodRow",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "select",
+                      key: "repayment_method",
+                      label: "Repayment Method",
+                      input: true,
+                      customConditional:
+                        "show = data.custom_repayment_type === 'recurring';",
+                      data: {
+                        values: [
+                          {
+                            label: "Repay Over Number of Periods",
+                            value: "Repay Over Number of Periods",
+                          },
+                          {
+                            label: "Repay Fixed Amount per Period",
+                            value: "Repay Fixed Amount per Period",
+                          },
+                        ],
+                      },
                     },
                   ],
                 },
@@ -139,33 +228,46 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                   components: [
                     {
                       type: "datetime",
-                      key: "repayment_end_date",
-                      label: "Repayment End Date",
+                      key: "custom_repayment_start_date",
+                      label: "Repayment Start Date",
                       input: true,
                       enableTime: false,
-                      placeholder: "Select end date",
+                      placeholder: "Select start date",
                       dateFormat: "dd-MM-yyyy",
-                      customClass: "mb-4",
+                      customConditional: `
+                        show = (
+                          data.custom_repayment_type === 'one_time' ||
+                          data.custom_repayment_type === 'recurring'
+                        );
+                      `,
+                      validate: { required: true },
                     },
                   ],
                 },
               ],
             },
+
+            // Row 4 - Repayment Period or Amount
             {
               type: "columns",
-              key: "repaymentInfo2",
-              customClass: "mb-6",
+              key: "repaymentDetails",
               columns: [
                 {
                   width: 6,
                   components: [
                     {
                       type: "number",
-                      key: "repayment_period_months",
+                      key: "repayment_periods",
                       label: "Repayment Period in Months",
                       input: true,
                       placeholder: "Number of months",
-                      customClass: "mb-4",
+                      customConditional: `
+                        show = (
+                          data.custom_repayment_type === 'recurring' && 
+                          data.repayment_method === 'Repay Over Number of Periods'
+                        );
+                      `,
+                      validate: { required: true, min: 1, max: 36 },
                     },
                   ],
                 },
@@ -173,74 +275,43 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                   width: 6,
                   components: [
                     {
-                      type: "currency",
-                      key: "monthly_repayment_amount",
+                      type: "number",
+                      key: "repayment_amount",
                       label: "Monthly Repayment Amount",
                       input: true,
                       placeholder: "0.00",
-                      currency: "INR",
-                      customClass: "mb-4",
+                      customConditional:
+                        "show = data.custom_repayment_type === 'recurring' && data.repayment_method === 'Repay Fixed Amount per Period';",
+                      validate: { required: true, min: 1 },
                     },
                   ],
                 },
               ],
             },
+
+            // Row 5 - Repayment End Date
             {
               type: "columns",
-              key: "accountingInfo",
-              customClass: "mb-6",
+              key: "repaymentInfo2",
               columns: [
                 {
                   width: 6,
                   components: [
                     {
-                      type: "textfield",
-                      key: "advance_account",
-                      label: "Advance Account",
+                      type: "datetime",
+                      key: "custom_repayment_end_date",
+                      label: "Repayment End Date",
                       input: true,
-                      validate: { required: true },
-                      defaultValue: "Cash - HybrowLabs Private Limited",
-                      customClass: "mb-4",
-                    },
-                  ],
-                },
-                {
-                  width: 6,
-                  components: [
-                    {
-                      type: "select",
-                      key: "mode_of_payment",
-                      label: "Mode of Payment",
-                      input: true,
-                      validate: { required: true },
-                      placeholder: "Select payment mode",
-                      data: {
-                        values: [
-                          { value: "cash", label: "Cash" },
-                          { value: "cheque", label: "Cheque" },
-                          { value: "bank_transfer", label: "Bank Transfer" },
-                          { value: "upi", label: "UPI" },
-                          { value: "card", label: "Card" },
-                        ],
-                      },
-                      customClass: "mb-4",
+                      enableTime: false,
+                      placeholder: "Select end date",
+                      dateFormat: "dd-MM-yyyy",
                     },
                   ],
                 },
               ],
             },
 
-            // Row 6: Checkbox
-            {
-              type: "checkbox",
-              key: "repay_unclaimed_amount_from_salary",
-              label: "Repay Unclaimed Amount from Salary",
-              input: true,
-              defaultValue: false,
-              customClass: "mt-4 mb-4",
-            },
-
-            // Row 7: Purpose
+            // Purpose
             {
               type: "textarea",
               key: "purpose",
@@ -249,46 +320,14 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
               validate: { required: true },
               placeholder: "Describe the purpose of advance",
               rows: 4,
-              customClass: "mb-4",
             },
           ],
         },
       ],
     };
-  }, [user]);
+  }, [user, advanceType, advanceAmountData]);
 
-  // mapping function
-  function transformAdvanceFormData(formData: Record<string, any>) {
-    return {
-      employee: formData.employee,
-      purpose: formData.purpose,
-      custom_repayment_type: formData.repayment_type,
-      custom_repayment_start_date: formData.repayment_start_date,
-      advance_account: formData.advance_account,
-      mode_of_payment: formData.mode_of_payment,
-      custom_advance_type: formData.advance_type,
-      advance_amount: formData.advance_amount,
-      custom_repayment_period_in_months: formData.repayment_period_months,
-      custom_monthly_repayment_amount: formData.monthly_repayment_amount,
-      custom_repayment_end_date: formData.repayment_end_date,
-      repay_unclaimed_amount_from_salary:
-        formData.repay_unclaimed_amount_from_salary,
-    };
-  }
-
-  const handleSubmit = useCallback(async () => {
-    try {
-      const submission = await formAdvanceInstance.current.submit();
-      const formData = submission.data as Record<string, any>;
-      const payload = transformAdvanceFormData(formData);
-      console.log("Payload for API:", payload);
-      alert("Advance request submitted successfully!");
-    } catch (error) {
-      console.error("Form submission error:", error);
-      alert("Error submitting advance request. Please try again.");
-    }
-  }, []);
-
+  /** Cancel Handler */
   const handleCancel = useCallback(() => {
     if (formAdvanceInstance.current) {
       formAdvanceInstance.current.resetValue();
@@ -297,17 +336,15 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   }, [onClose]);
 
   return (
-    <div className="advance-form-container h-full bg-gray-50">
+    <div className="advance-form-container flex flex-col h-full bg-gray-50">
       {/* Fixed Header */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-2 sm:px-6 lg:px-8">
           {isDesktop ? (
             <div className="flex items-center justify-between h-16">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-semibold text-gray-900 truncate md:text-2xl">
-                  Advance Request
-                </h2>
-              </div>
+              <h2 className="text-xl font-semibold text-gray-900 truncate md:text-2xl">
+                Advance Request
+              </h2>
               <button
                 onClick={onClose}
                 className="ml-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
@@ -326,44 +363,44 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
         </div>
       </div>
 
-      {/* Form Content */}
-      <div className="max-w-3xl mx-auto">
-        {" "}
-        {/* 🔑 reduced width */}
-        <Form
-          key="advance-form"
-          form={advanceForm}
-          onFormReady={(instance: any) =>
-            (formAdvanceInstance.current = instance)
-          }
-          options={{
-            submitButton: false,
-          }}
-        />
-        {/* Action Buttons */}
-        <div className="mb-6 px-5">
-          <div
-            className="fixed bottom-0 left-0 w-full bg-white py-3 px-4 border-t 
-                     md:relative md:w-auto md:p-0 md:border-t-0 md:bg-transparent"
-          >
-            <div className="flex space-x-3 md:space-x-4">
-              <button
-                onClick={handleCancel}
-                className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors border border-gray-300 text-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors bg-black text-white hover:bg-gray-800"
-              >
-                Submit
-              </button>
-            </div>
-          </div>
+      {/* Scrollable Form */}
+      <div className="flex-1 overflow-y-auto px-4">
+        <div className="max-w-3xl mx-auto">
+          <Form
+            key="advance-form"
+            form={advanceForm}
+            onFormReady={(instance: any) =>
+              (formAdvanceInstance.current = instance)
+            }
+            options={{
+              submitButton: false,
+            }}
+            onChange={(submission: any) => {
+              if (submission.data.custom_advance_type) {
+                setSelectedAdvanceType(submission.data.custom_advance_type);
+              }
+            }}
+          />
         </div>
       </div>
-      <div className="h-20 md:hidden"></div>
+
+      {/* Fixed Footer Buttons */}
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3">
+        <div className="max-w-3xl mx-auto flex space-x-3">
+          <button
+            onClick={handleCancel}
+            className="flex-1 py-3 px-6 rounded-lg font-medium border border-gray-300 text-gray-700"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="flex-1 py-3 px-6 rounded-lg font-medium bg-black text-white hover:bg-gray-800"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

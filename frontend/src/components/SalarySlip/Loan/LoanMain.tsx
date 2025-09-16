@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import {  useMemo, useState } from "react"
 import { Search as SearchIcon } from "lucide-react"
 import { useScreenSize } from "../../../hooks/useScreenSize"
 import CreateLoanDialog from "./component/CreateLoanDailog"
@@ -23,11 +23,36 @@ export default function LoansPage() {
 
  
 
-  const filteredLoans = (loanData || []).filter((loan: { status: string }) =>
-    loan.status?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-  console.log("loanDasdasdaata",filteredLoans)
+  // const filteredLoans = (loanData || []).filter((loan: { status: string }) =>
+  //   loan.status?.toLowerCase().includes(searchTerm.toLowerCase())
+  // )
 
+  // const filteredLoans = useMemo(() => {
+  //   if (!searchTerm.trim()){
+  //     return loanData || []
+  //   }
+  //   const lowercasedSearchTerm = searchTerm.toLowerCase()
+  //   return (loanData || []).filter(
+  //     (loan) =>
+  //     loan.loan_name?.toLowerCase().includes(lowercasedSearchTerm) ||
+  //     loan.loan_type?.toLowerCase().includes(lowercasedSearchTerm) ||
+  //     loan.status?.toLowerCase().includes(lowercasedSearchTerm),
+  //   )
+  // },[loanData, searchTerm]
+  // )
+
+
+  const filteredLoans = useMemo(() => {
+    if (!loanData) return []
+    const lower = searchTerm.toLowerCase()
+    return loanData.filter(
+      (loan) =>
+        loan.loan_name?.toLowerCase().includes(lower) ||
+        loan.loan_type?.toLowerCase().includes(lower) ||
+        loan.status?.toLowerCase().includes(lower)
+    )
+  }, [loanData, searchTerm])
+  
   // Desktop Layout
   const DesktopLayout = () => (
     <div className="min-h-screen   overflow-x-hidden">
@@ -53,9 +78,14 @@ export default function LoansPage() {
             </div>
             <input
               type="text"
+              key={loanData?.length}
               placeholder="Search loans..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                // Ye ensure karega state properly update ho
+                const val = e.target.value
+                setSearchTerm(val)
+              }}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md 
               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
