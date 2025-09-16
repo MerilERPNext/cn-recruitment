@@ -6,6 +6,7 @@ import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
+import useCurrentUser from "../../hooks/useCurrentUser";
 
 type ApprovalListProps = {
   doctype: string;
@@ -38,6 +39,8 @@ const ApprovalList = ({
   onApprovalRefetchComplete,
   showPagination = true,
 }: ApprovalListProps) => {
+  const { data: currentUser } = useCurrentUser();
+
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
   const [refetchListView, setRefetchListView] = useState(false);
@@ -54,6 +57,7 @@ const ApprovalList = ({
   const [allRequests, setAllRequests] = useState<any[]>([]);
   const defaultFilters = useMemo(
     () => ({
+      allocated_to: currentUser?.name,
       reference_type: doctype,
       status: "open",
     }),
