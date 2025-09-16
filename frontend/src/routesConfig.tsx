@@ -185,6 +185,11 @@ const AdvancesList = lazy(
   () => import("./components/SalarySlip/Advances/AdvancesList")
 );
 
+const CompensatoryRequest = lazy(
+  () => import("./components/Leaves/compensatory/CompensatoryRequest")
+);
+
+
 // Loading component for Suspense fallbacks
 // eslint-disable-next-line react-refresh/only-export-components
 const LoadingSpinner = () => (
@@ -201,7 +206,7 @@ const withLazyLoading = (
   Component: React.ComponentType,
   fallback = <LoadingSpinner />
 ) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   return (props: any) => (
     <EmployeeErrorBoundary>
       <Suspense fallback={fallback}>
@@ -413,6 +418,10 @@ export const routesConfig: AppRoute[] = [
       {
         path: "leave-requests/pending",
         element: <PendingTeamLeaves />,
+      },
+      {
+        path: "compensatory-request",
+        element: <CompensatoryRequest />,
       },
     ],
   },

@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { leaveService } from "../services/leaveService";
+import { CompOffResponse } from "../types/leaves";
+
 import type {
   LeaveDetailsResponse,
   HolidayGroup,
@@ -94,6 +96,30 @@ export function usePostTaskAction() {
     }) => leaveService.postTaskAction(todo_ids, selected_action),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
+    },
+  });
+}
+
+export const useGetCompOffList = (employeeId: string | undefined) => {
+  return useQuery<CompOffResponse[]>({
+    queryKey: ["comp-off-list", employeeId],
+    queryFn: () => {
+      if (!employeeId) throw new Error("Employee ID is required");
+      return leaveService.getCompOffList(employeeId);
+    },
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000, // cache for 5 minutes
+  });
+};
+
+export function usePayCompOff() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (comp_off_name: string) =>
+      leaveService.payCompOff(comp_off_name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comp-off-list"] });
     },
   });
 }

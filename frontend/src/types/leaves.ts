@@ -102,3 +102,13 @@ export interface TeamRequest {
   description?: string;
   todo_id: string;
 }
+
+export interface CompOffResponse {
+  name: string;
+  work_from_date: string;
+  work_end_date: string;
+  leave_type: string;
+  reason: string;
+  custom_status: string;
+  pay_button_required: boolean;
+}

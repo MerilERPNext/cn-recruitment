@@ -2,6 +2,7 @@ import FrappeAPI from "../utils/frappeAPI";
 import type { LeaveRequest, TeamRequest } from "../types/leaves";
 import { HolidayApiResponse } from "../types/leaves";
 import type { LeaveDetailsResponse, HolidayGroup } from "../types/leaves";
+import { CompOffResponse } from "../types/leaves";
 
 export const leaveService = {
   getMyLeaveRequests: async (employeeId: string): Promise<LeaveRequest[]> => {
@@ -86,6 +87,26 @@ export const leaveService = {
       {
         todo_ids: Array.isArray(todo_ids) ? todo_ids : [todo_ids],
         selected_action,
+      }
+    );
+  },
+
+  getCompOffList: async (employeeId: string): Promise<CompOffResponse[]> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.overtime.get_employee_compoff_with_pay_status",
+      {
+        employee: employeeId,
+      }
+    );
+
+    return response as CompOffResponse[];
+  },
+
+  payCompOff: async (comp_off_name: string) => {
+    return FrappeAPI.callMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.compoff_sandwich.create_leave_encashment",
+      {
+        comp_off_name,
       }
     );
   },
