@@ -13,13 +13,18 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import FormDialog from "../shared/FormDialog";
 
-type TabName = "leave-balance" | "requests-status" | "holidays";
+type TabName =
+  | "leave-balance"
+  | "requests-status"
+  | "holidays"
+  | "compensatory";
 type SubTabName = "My Requests" | "Team Requests";
 
 const tabRoutes: Record<TabName, string> = {
   "leave-balance": "/webapp/leave-app/leaves/leave-balance",
   holidays: "/webapp/leave-app/leaves/holidays",
   "requests-status": "/webapp/leave-app/leaves/leave-requests",
+  compensatory: "/webapp/leave-app/compensatory-request",
 };
 
 const subTabRoutes: Record<SubTabName, string> = {
@@ -39,6 +44,10 @@ const LeaveAppInner: React.FC = () => {
       { key: "leave-balance", label: "Leave Balance" },
       { key: "holidays", label: "Holidays" },
       { key: "requests-status", label: "Request Status" },
+      {
+        key: "compensatory",
+        label: "Compensatory",
+      },
     ],
     []
   );
