@@ -73,6 +73,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         queryKey: ["documents", "Leave Application"],
         exact: false,
       });
+      queryClient.invalidateQueries({ queryKey: ["comp-off-list"] });
 
       triggerRefetch();
 

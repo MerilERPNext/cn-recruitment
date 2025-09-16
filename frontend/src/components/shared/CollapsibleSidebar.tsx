@@ -91,7 +91,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const handleTodoClick = () => {
     window.location.href = "/app/task_manager";
   };
-  
+
   const handleHelpDeskClick = () => {
     window.location.href = "/app/support";
   };
@@ -126,6 +126,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Holidays",
           icon: Calendar,
           href: "/webapp/leave-app/leaves/holidays",
+        },
+        {
+          name: "Compensatory",
+          icon: User,
+          href: "/webapp/leave-app/compensatory-request",
         },
       ],
     },
