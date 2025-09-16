@@ -120,10 +120,10 @@ export function AttendanceDetailView({
           {/* Employee Info */}
           <div className="py-4 border-b">
             <div className="flex items-center space-x-3">
-              <Avatar name={data?.allocated_to} />
+              <Avatar name={data?.allocated_to_name || data?.allocated_to} />
               <div>
                 <h2 className="font-semibold text-gray-900">
-                  {data?.allocated_to}
+                  {data?.allocated_to_name || data?.allocated_to}{" "}
                 </h2>
                 {format(new Date(data?.date), "dd/MM/yyyy")}
               </div>{" "}

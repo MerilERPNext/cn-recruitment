@@ -79,7 +79,7 @@ const ApprovalCard = ({
 
           {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.allocated_to}
+            {data?.allocated_to_name || data?.allocated_to}
           </div>
 
           {/* Description */}
@@ -148,7 +148,7 @@ const ApprovalCard = ({
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold text-sm text-gray-800">
-                    {data?.allocated_to}
+                    {data?.allocated_to_name || data?.allocated_to}
                   </h3>
                   <p className="text-sm text-gray-500">
                     {format(new Date(data?.date), "dd/MM/yyyy")}

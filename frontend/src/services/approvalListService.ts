@@ -21,4 +21,27 @@ export const approvalListServices = {
       throw error;
     }
   },
+  fetchUsers: async (
+    emails: string[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> => {
+    try {
+      const res = (await FrappeAPI.callMethod("frappe.client.get_list", {
+        doctype: "User",
+        filters: [["email", "in", emails]],
+        fields: ["email", "full_name"], // we need email to build map
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      })) as any[];
+
+      // Convert to key-value pair: { email: full_name }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const map = {} as any;
+      res.forEach((user: { email: string | number; full_name: string }) => {
+        map[user.email] = user.full_name || user.email;
+      });
+      return map;
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    }
+  },
 };

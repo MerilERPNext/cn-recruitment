@@ -46,8 +46,8 @@ any & {
           className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors text-center cursor-pointer border-b"
           onClick={() => onClick?.(request)}
         >
-          <div className="font-medium text-gray-900 truncate text-start">
-            {request?.allocated_to}
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
+            {request?.allocated_to_name || request?.allocated_to}
           </div>
           <div className="text-gray-700 truncate text-start">
             {request?.description}
@@ -71,7 +71,7 @@ any & {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-semibold text-sm text-gray-800">
-                      {request?.allocated_to}
+                      {request?.allocated_to_name || request?.allocated_to}
                     </h3>
                     <p className="text-sm text-gray-500">{formattedDate}</p>
                   </div>

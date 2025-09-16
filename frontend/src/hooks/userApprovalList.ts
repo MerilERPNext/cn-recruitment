@@ -16,3 +16,18 @@ export function useApprovalListActions() {
     },
   });
 }
+
+export function useFetchUsers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ emails }: { emails: string[] }) =>
+      approvalListServices.fetchUsers(emails),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}

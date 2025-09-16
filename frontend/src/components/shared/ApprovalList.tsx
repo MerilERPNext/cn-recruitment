@@ -2,7 +2,10 @@
 import { useMemo, useState, ReactNode, useCallback, useEffect } from "react";
 import FrappeListView from "../ListView";
 import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
+import {
+  useApprovalListActions,
+  useFetchUsers,
+} from "../../hooks/userApprovalList";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -40,6 +43,7 @@ const ApprovalList = ({
 }: ApprovalListProps) => {
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
+  const fetchUsersMutation = useFetchUsers();
   const [refetchListView, setRefetchListView] = useState(false);
   const [loadingAction, setLoadingAction] = useState<{
     id: string;
@@ -191,6 +195,22 @@ const ApprovalList = ({
     }
   };
 
+  const [userMap, setUserMap] = useState<{ [k: string]: string }>({});
+
+  useEffect(() => {
+    const emails: string[] = allRequests?.map((item) => item?.allocated_to);
+    if (!emails || emails.length === 0) return;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    fetchUsersMutation?.mutate(
+      { emails: emails },
+      {
+        onSuccess: (data: any) => {
+          setUserMap(data);
+        },
+      }
+    );
+  }, [allRequests]);
+
   return (
     <div className="bg-white">
       <FrappeListView
@@ -221,7 +241,10 @@ const ApprovalList = ({
             todoId: todoId,
             isSelected: selectedIds.includes(todoId),
             onToggleSelect: handleToggleSelect,
-            data: props.item,
+            data: {
+              ...props.item,
+              allocated_to_name: userMap[props?.item?.allocated_to],
+            },
             onAction: handleAction,
             loadingAction: loadingAction,
           });

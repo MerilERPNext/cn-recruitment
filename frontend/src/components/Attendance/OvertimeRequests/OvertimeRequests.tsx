@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CardTable from "../../shared/CardTable";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router";
@@ -8,6 +8,7 @@ import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
 import FrappeListView from "../../ListView";
 import { RequestCard } from "../TeamAttendanceDetails/RequestCard";
+import { useFetchUsers } from "../../../hooks/userApprovalList";
 
 const OvertimeRequests = () => {
   const { refetchAttendance } = useGlobalStore();
@@ -23,6 +24,28 @@ const OvertimeRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState<
     (AttendanceRequest & { loadingAction?: LoadingAction }) | null
   >(null);
+
+  const fetchUsersMutation = useFetchUsers();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [allRequests, setAllRequests] = useState<any[]>([]);
+
+  const [userMap, setUserMap] = useState<{ [k: string]: string }>({});
+
+  useEffect(() => {
+    const emails: string[] = allRequests?.map((item) => item?.allocated_to);
+    if (!emails || emails.length === 0) return;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    fetchUsersMutation?.mutate(
+      { emails: emails },
+      {
+        onSuccess: (data: { [k: string]: string }) => {
+          setUserMap(data);
+        },
+      }
+    );
+  }, [allRequests]);
+
   return (
     <div>
       <div className="bg-white min-h-screen">
@@ -103,6 +126,7 @@ const OvertimeRequests = () => {
                   isFilter={false}
                   defaultFields={["*"]}
                   pageSize={3}
+                  onDataLoad={(data) => setAllRequests(data)}
                   refetchTrigger={refetch || refetchAttendance}
                   onRefetchComplete={() => setRefetch(false)}
                   showPagination={false}
@@ -111,7 +135,10 @@ const OvertimeRequests = () => {
                     return (
                       <RequestCard
                         key={props?.item?.name}
-                        request={props?.item}
+                        request={{
+                          ...props.item,
+                          allocated_to_name: userMap[props?.item?.allocated_to],
+                        }}
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onClick={(request: any) => setSelectedRequest(request)}
                       />
