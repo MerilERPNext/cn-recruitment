@@ -106,13 +106,38 @@ const SalarySlipApp: React.FC = () => {
         }
       `}</style>
 
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
+<header className="sticky top-0 z-50 bg-white shadow-sm">
         <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
         <NavigationTabs
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={handleTabChange}
         />
+                  {/* ✅ Annual / Monthly Toggle */}
+                  {activeTab === "CTC Breakdown" && (
+        <div className="flex justify-center gap-3 px-4 py-2 bg-white border-b">
+          <button
+            className={`flex-1 py-2 rounded-lg font-medium transition ${
+              viewMode === "annual"
+                ? "bg-black text-white"
+                : "bg-gray-100 text-gray-700"
+            }`}
+            onClick={() => setViewMode("annual")}
+          >
+            Annual CTC
+          </button>
+          <button
+            className={`flex-1 py-2 rounded-lg font-medium transition ${
+              viewMode === "monthly"
+                ? "bg-black text-white"
+                : "bg-gray-100 text-gray-700"
+            }`}
+            onClick={() => setViewMode("monthly")}
+          >
+            Monthly CTC
+          </button>
+        </div>
+      )}
       </header>
 
       <main className="p-4 z-100 flex-grow overflow-y-auto">
