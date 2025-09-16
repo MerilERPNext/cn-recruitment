@@ -11,6 +11,7 @@ import type {
   EmployeeShift,
   EmployeeShiftSummary,
   PolicyQuestion,
+  UserRoles,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
 
@@ -321,19 +322,17 @@ export const attendanceService = {
     );
     return response as AttendanceRequest[];
   },
-
-  // getAllAttendanceRequests: async (
-  //   pageSize: number,
-  //   filters?: FilterCondition[]
-  // ): Promise<AttendanceRequest[]> => {
-  //   const response = await FrappeAPI.getDocumentList("Attendance Request", {
-  //     fields: ["*"],
-  //     limit: pageSize,
-  //     filters: filters,
-  //     orderBy: "creation desc",
-  //   });
-  //   return response.data as AttendanceRequest[];
-  // },
+  getUserRoles: async (filters?: FilterCondition[]): Promise<UserRoles> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_user_roles",
+      {
+        fields: ["*"],
+        filters: filters,
+        orderBy: "creation desc",
+      }
+    );
+    return response as UserRoles;
+  },
 
   getAttendanceById: async (id: string): Promise<Attendance> => {
     if (!id) throw new Error("Attendance ID is required");
@@ -402,6 +401,23 @@ export const attendanceService = {
     );
   },
 
+  plannedOvertimeAllowed: async (empId: string) => {
+    return FrappeAPI.callMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.doctype.planned_overtime_request.planned_overtime_request.planned_overtime_allowed",
+      {
+        employee: empId,
+      }
+    );
+  },
+  plannedOvertimeRequestAttachments: async (empId: string) => {
+    return FrappeAPI.callMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.doctype.planned_overtime_request.planned_overtime_request.attest",
+      {
+        employee: empId,
+      }
+    );
+  },
+
   createPlannedOvertimeRequest: async (
     body: Record<string, unknown>
   ): Promise<boolean> => {
@@ -416,11 +432,4 @@ export const attendanceService = {
       throw error;
     }
   },
-  //   searchAttendance: async (searchTerm: string): Promise<Attendance[]> => {
-  //     const response = await FrappeAPI.getDocumentList('Attendance', {
-  //       fields: ['*'],
-  //       filters: [['employee', 'like', `%${searchTerm}%`]],
-  //     });
-  //     return response.data;
-  //   },
 };

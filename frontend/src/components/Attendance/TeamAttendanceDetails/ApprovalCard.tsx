@@ -53,7 +53,27 @@ const ApprovalCard = ({
     ? format(new Date(data.date), "dd/MM/yyyy")
     : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const gridTemplateColumns = "40px 160px 0.8fr 120px 140px 0.6fr";
+  const gridTemplateColumns = "100px 160px 28% 140px 140px 0.6fr";
+
+  const getStatus = (status: string) => {
+    if (status === "Open") {
+      return {
+        label: "Open",
+        statusColor: "bg-yellow-100 text-yellow-600",
+      };
+    } else if (status === "Closed") {
+      return {
+        label: "Closed",
+        statusColor: "bg-green-100 text-green-600",
+      };
+    } else if (status === "Cancelled") {
+      return {
+        label: "Cancelled",
+        statusColor: "bg-red-100 text-red-600",
+      };
+    }
+  };
+  const status = getStatus(data?.status);
 
   return (
     <>
@@ -94,8 +114,8 @@ const ApprovalCard = ({
           {/* Status + Actions */}
           <div className="flex items-center justify-start">
             <Badge
-              label={data?.status}
-              backgroundColor={"bg-yellow-100 text-yellow-600"}
+              label={status?.label as string}
+              backgroundColor={status?.statusColor}
             />
           </div>
           <div className="flex w-full justify-start gap-2">

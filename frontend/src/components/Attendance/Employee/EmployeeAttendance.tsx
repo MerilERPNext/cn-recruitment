@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import DatePicker from "react-datepicker";
 import { ArrowLeft, ArrowUpRight, Plus, XCircle } from "lucide-react";
-import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
+import {
+  useGetAllEventsAndAttendance,
+  usePlannedOvertimeAllowed,
+} from "../../../hooks/useAttendance";
 import FrappeListView from "../../ListView";
 import { AttendanceRecord, AttendanceRequest } from "../../../types/attendance";
 import { useNavigate } from "react-router";
@@ -34,7 +37,9 @@ const EmployeeAttendance = () => {
     isError,
     error,
   } = useGetAllEventsAndAttendance({ start: start, end: end });
-
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    currentEmployee?.employee as string
+  );
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState<boolean>(false);
 
@@ -460,15 +465,17 @@ const EmployeeAttendance = () => {
               </button>
               <div className="border-b border-gray-200 m-0 p-0"></div>
 
-              <button
-                onClick={() => {
-                  setShowOvertimeRequest(true);
-                  setOpenDrawer(false);
-                }}
-                className="w-full text-left px-4 py-2  hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                Planned Overtime Request
-              </button>
+              {plannedOvertimAllowed ? (
+                <button
+                  onClick={() => {
+                    setShowOvertimeRequest(true);
+                    setOpenDrawer(false);
+                  }}
+                  className="w-full text-left px-4 py-2  hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Planned Overtime Request
+                </button>
+              ) : null}
             </div>
           }
         />

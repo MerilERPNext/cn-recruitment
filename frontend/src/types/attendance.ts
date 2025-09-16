@@ -188,3 +188,9 @@ export type LoadingAction = {
 export type CustomError = Error & {
   response?: { data?: { message?: { error: string }; exception?: string } };
 };
+
+export type UserRoles = {
+  user: string;
+  roles: Record<string, 0 | 1>;
+  total_assigned: number;
+};
