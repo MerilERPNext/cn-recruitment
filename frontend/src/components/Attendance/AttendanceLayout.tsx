@@ -20,7 +20,7 @@ const AttendanceLayout: React.FC = () => {
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    user?.employee as string
+    user?.employee || ""
   );
 
   const { isDesktop } = useScreenSize();

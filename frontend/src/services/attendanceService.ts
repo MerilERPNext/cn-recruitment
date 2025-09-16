@@ -401,13 +401,19 @@ export const attendanceService = {
     );
   },
 
-  plannedOvertimeAllowed: async (empId: string) => {
-    return FrappeAPI.callMethod(
-      "cn_leave_shift_managment.cn_leave_shift_managment.doctype.planned_overtime_request.planned_overtime_request.planned_overtime_allowed",
-      {
-        employee: empId,
-      }
-    );
+  plannedOvertimeAllowed: async (empId: string): Promise<boolean> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.cn_leave_shift_managment.doctype.planned_overtime_request.planned_overtime_request.planned_overtime_allowed",
+        {
+          employee: empId,
+        }
+      );
+      return res as boolean;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
   },
   plannedOvertimeRequestAttachments: async (empId: string) => {
     return FrappeAPI.callMethod(

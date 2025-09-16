@@ -275,7 +275,7 @@ export function useReqValidationsForAttendanceRequest(empId: string) {
 }
 
 export const usePlannedOvertimeAllowed = (employee: string) => {
-  return useQuery<any>({
+  return useQuery<boolean>({
     queryKey: ["planned-overtime-allowed", employee],
     queryFn: () => {
       return attendanceService.plannedOvertimeAllowed(employee);

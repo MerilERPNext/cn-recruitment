@@ -72,6 +72,10 @@ const ApprovalCard = ({
         statusColor: "bg-red-100 text-red-600",
       };
     }
+    return {
+      label: status || "Unknown",
+      statusColor: "bg-gray-100 text-gray-600",
+    };
   };
   const status = getStatus(data?.status);
 

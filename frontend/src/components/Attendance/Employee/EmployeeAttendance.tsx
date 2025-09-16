@@ -38,7 +38,7 @@ const EmployeeAttendance = () => {
     error,
   } = useGetAllEventsAndAttendance({ start: start, end: end });
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    currentEmployee?.employee as string
+    currentEmployee?.employee || ""
   );
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState<boolean>(false);

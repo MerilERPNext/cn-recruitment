@@ -26,7 +26,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   );
   const mutation = useCreatePlannedOvertimeRequest();
   const { data: plannedOvertimeRequestAttachments } =
-    usePlannedOvertimeRequestAttachments(currentEmployee?.employee as string);
+    usePlannedOvertimeRequestAttachments(currentEmployee?.employee || "");
 
   const formInstance = useRef<any>(null);
   const { setRefetchAttendance } = useGlobalStore();
@@ -90,14 +90,16 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           },
         ],
       },
-      plannedOvertimeRequestAttachments && {
-        type: "file",
-        key: "attachment",
-        label: "Attachment",
-        storage: "customBase64",
-        input: true,
-        validate: { required: true },
-      },
+      plannedOvertimeRequestAttachments
+        ? {
+            type: "file",
+            key: "attachment",
+            label: "Attachment",
+            storage: "customBase64",
+            input: true,
+            validate: { required: true },
+          }
+        : null,
     ],
   };
 
@@ -155,7 +157,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
     } catch (err) {
       // If form is invalid, prevent API call
       toast.error("Please fill in all required fields.");
-      console.log("Form submission error -", err);
+      console.warn("Form submission error -", err);
     }
   };
 

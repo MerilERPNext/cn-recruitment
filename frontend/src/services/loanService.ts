@@ -22,6 +22,6 @@ export const createLoanApplication = async (
     return !!response;
   } catch (error) {
     console.error("📡 Error while Adding Loan Application in:", error);
-    return false;
+    throw error;
   }
 };
