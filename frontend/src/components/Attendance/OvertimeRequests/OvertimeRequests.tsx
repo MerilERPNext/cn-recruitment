@@ -21,7 +21,7 @@ const OvertimeRequests = () => {
       allocated_to: currentUser?.name,
       status: ["in", ["Closed", "Cancelled"]],
     }),
-    []
+    [currentUser]
   );
   const [selectedRequest, setSelectedRequest] = useState<
     (AttendanceRequest & { loadingAction?: LoadingAction }) | null

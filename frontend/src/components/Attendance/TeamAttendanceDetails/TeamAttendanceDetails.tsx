@@ -23,7 +23,7 @@ const TeamAttendanceDetails = () => {
       allocated_to: currentUser?.name,
       status: ["in", ["Closed", "Cancelled"]],
     }),
-    []
+    [currentUser]
   );
   const { refetchAttendance } = useGlobalStore();
   const [refetch, setRefetch] = useState(false);
