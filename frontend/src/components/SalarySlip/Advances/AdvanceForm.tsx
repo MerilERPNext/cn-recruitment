@@ -29,7 +29,7 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string>();
   const [postingDate] = useState<string>(
     new Date().toISOString().split("T")[0]
-  ); // today date
+  ); // today date only
 
   const { data: advanceAmountData } = useEmployeeAdvancesAmount(
     user?.employee,
@@ -64,13 +64,23 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
         return;
       }
 
+      // ✅ ensure only date part is sent (yyyy-MM-dd)
+      if (formData.custom_repayment_start_date) {
+        formData.custom_repayment_start_date = new Date(
+          formData.custom_repayment_start_date
+        )
+          .toISOString()
+          .split("T")[0];
+      }
+
       const submissionData = {
         ...formData,
-        custom_advance_type: selectedAdvanceType, // ✅ ensure correct custom_advance_type
-        advance_amount: formData.advance_amount, // ✅ ensure amount is included
+        custom_advance_type: selectedAdvanceType,
+        advance_amount: formData.advance_amount,
         company: currentEmployee?.company,
         applicant_type: "Employee",
         applicant: currentEmployee?.employee,
+        exchange_rate: 1.0,
       };
 
       console.log("✅ Final Submitted Payload:", submissionData);
@@ -140,6 +150,7 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       defaultValue: advanceAmountData,
                       validate: { required: true, min: 1 },
                       currency: "INR",
+                      exchange_rate: 1.0,
                     },
                   ],
                 },
@@ -183,8 +194,8 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       placeholder: "Select repayment type",
                       data: {
                         values: [
-                          { value: "one_time", label: "One Time" },
-                          { value: "recurring", label: "Recurring" },
+                          { value: "One Time", label: "One Time" },
+                          { value: "Recurring", label: "Recurring" },
                         ],
                       },
                     },
@@ -207,7 +218,7 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       label: "Repayment Method",
                       input: true,
                       customConditional:
-                        "show = data.custom_repayment_type === 'recurring';",
+                        "show = data.custom_repayment_type === 'Recurring';",
                       data: {
                         values: [
                           {
@@ -231,13 +242,15 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       key: "custom_repayment_start_date",
                       label: "Repayment Start Date",
                       input: true,
-                      enableTime: false,
                       placeholder: "Select start date",
-                      dateFormat: "dd-MM-yyyy",
+                      enableTime: false, // ✅ only date
+                      format: "yyyy-MM-dd", // ✅ force only date format
+                      displayInTimezone: "utc",
+                      useLocaleSettings: false,
                       customConditional: `
                         show = (
-                          data.custom_repayment_type === 'one_time' ||
-                          data.custom_repayment_type === 'recurring'
+                          data.custom_repayment_type === 'One Time' ||
+                          data.custom_repayment_type === 'Recurring'
                         );
                       `,
                       validate: { required: true },
@@ -263,7 +276,7 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       placeholder: "Number of months",
                       customConditional: `
                         show = (
-                          data.custom_repayment_type === 'recurring' && 
+                          data.custom_repayment_type === 'Recurring' && 
                           data.repayment_method === 'Repay Over Number of Periods'
                         );
                       `,
@@ -281,30 +294,8 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       input: true,
                       placeholder: "0.00",
                       customConditional:
-                        "show = data.custom_repayment_type === 'recurring' && data.repayment_method === 'Repay Fixed Amount per Period';",
+                        "show = data.custom_repayment_type === 'Recurring' && data.repayment_method === 'Repay Fixed Amount per Period';",
                       validate: { required: true, min: 1 },
-                    },
-                  ],
-                },
-              ],
-            },
-
-            // Row 5 - Repayment End Date
-            {
-              type: "columns",
-              key: "repaymentInfo2",
-              columns: [
-                {
-                  width: 6,
-                  components: [
-                    {
-                      type: "datetime",
-                      key: "custom_repayment_end_date",
-                      label: "Repayment End Date",
-                      input: true,
-                      enableTime: false,
-                      placeholder: "Select end date",
-                      dateFormat: "dd-MM-yyyy",
                     },
                   ],
                 },
