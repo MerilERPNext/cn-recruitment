@@ -129,32 +129,32 @@ const AdvancesList: React.FC = () => {
 
             <div className="divide-y divide-gray-200">
               {formattedData.map((advance, index) => (
-                // CHANGED: Using .table-row and grid layout. Children use .table-cell
+                // CHANGED: Using .table-row and grid layout. Children use .data-cell
                 <div
                   key={`${advance.name}-${index}`}
                   className="data-row grid grid-cols-6 gap-4 cursor-pointer"
                   onClick={() => handleViewInstallments(advance)}
                 >
-                  <div className="table-cell font-medium">
+                  <div className="data-cell font-medium">
                     {advance.name}
                   </div>
-                  <div className="table-cell text-center">
+                  <div className="data-cell text-center">
                     {maskAmounts ? (
                       <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
                     ) : (
                       <span className="font-medium">{formatCurrency(advance.amount)}</span>
                     )}
                   </div>
-                  <div className="table-cell text-center">
+                  <div className="data-cell text-center">
                     {maskAmounts ? (
                       <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
                     ) : (
                       <span className="font-medium">{advance.numberOfDeductions}</span>
                     )}
                   </div>
-                  <div className="table-cell text-center">{advance.startDate}</div>
-                  <div className="table-cell text-center">{advance.endDate}</div>
-                  <div className="table-cell text-center">
+                  <div className="data-cell text-center">{advance.startDate}</div>
+                  <div className="data-cell text-center">{advance.endDate}</div>
+                  <div className="data-cell text-center">
                     <StatusBadge status={advance.advanceStatus} />
                   </div>
                 </div>
