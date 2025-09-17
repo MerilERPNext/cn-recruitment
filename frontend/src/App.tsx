@@ -40,7 +40,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isLoading || isValidating) return;
     if (!currentUser) {
-      navigate("/#login", { replace: true }); // prevents back button loop
+      navigate("/#asdasdalogin", { replace: true }); // prevents back button loop
     }
   }, [currentUser, isLoading, isValidating, navigate]);
 
