@@ -37,6 +37,82 @@ def job_offer_update(status, appl):
     
     return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
 
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def request_discussion(appl=None, origin=None):
+    if not appl:
+        frappe.throw("Missing applicant id")
+
+    frappe.set_user("Administrator")
+
+    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl}, "name", order_by="modified desc")
+    current_status = frappe.db.get_value("Job Offer", jo_id, "status") if jo_id else None
+    if current_status in ["Accepted", "Rejected", "Discussion Requested"]:
+        return {"status": current_status, "jo_id": jo_id, "already_processed": True, "recruiter_email_sent": False, "candidate_email_sent": False}
+
+    applicant = frappe.get_doc("Job Applicant", appl)
+    candidate_name = applicant.get("applicant_name") or applicant.get("candidate_name") or "Candidate"
+    candidate_email = applicant.get("email_id")
+    recruiter_link = applicant.get("custom_recruiter")
+    recruiter_name = None
+    recruiter_email = None
+
+    if recruiter_link and frappe.db.exists("User", recruiter_link):
+        user = frappe.get_doc("User", recruiter_link)
+        recruiter_name = user.full_name or user.first_name or user.username or user.name
+        recruiter_email = user.email
+
+    if jo_id:
+        frappe.db.set_value("Job Offer", jo_id, "status", "Discussion Requested", update_modified=True)
+        frappe.db.set_value("Job Applicant", appl, "status", "Hold", update_modified=True)
+
+    recruiter_email_sent = False
+    candidate_email_sent = False
+
+    if recruiter_email:
+        offer_url = f"{origin}/app/job-offer/{jo_id}"
+        frappe.sendmail(
+            recipients=[recruiter_email],
+            subject="Candidate wants to discuss job offer",
+            message=f"""
+                <p>Hi {frappe.utils.escape_html(recruiter_name or 'Recruiter')},</p>
+                <p><strong>{frappe.utils.escape_html(candidate_name)}</strong> ({frappe.utils.escape_html(candidate_email or '')}) has requested to discuss the job offer further.</p>
+                {f'<p>Offer page: <a href="{offer_url}">{offer_url}</a></p>' if offer_url else ''}
+                <p>Please reach out to the candidate with next steps.</p>
+            """,
+            reference_doctype="Job Applicant",
+            reference_name=appl,
+        )
+        recruiter_email_sent = True
+
+    if candidate_email and recruiter_email:
+        frappe.sendmail(
+            recipients=[candidate_email],
+            subject="We’ve notified your recruiter",
+            message=f"""
+                <p>Hi {frappe.utils.escape_html(candidate_name)},</p>
+                <p>We’ve let your recruiter know you’d like to discuss your offer further.</p>
+                <p><strong>Recruiter:</strong> {frappe.utils.escape_html(recruiter_name or '')}<br>
+                <strong>Email:</strong> {frappe.utils.escape_html(recruiter_email or '')}</p>
+                <p>They will be in touch soon.</p>
+            """,
+            reference_doctype="Job Applicant",
+            reference_name=appl,
+        )
+        candidate_email_sent = True
+
+    frappe.db.commit()
+
+    return {
+        "status": "Discussion Requested",
+        "jo_id": jo_id,
+        "recruiter_email": recruiter_email,
+        "recruiter_name": recruiter_name,
+        "already_processed": False,
+        "recruiter_email_sent": recruiter_email_sent,
+        "candidate_email_sent": candidate_email_sent,
+    }
+
+
 @frappe.whitelist()
 def request_for_offer(jo_id):
     doc_data = frappe.get_doc("Job Applicant",jo_id)
