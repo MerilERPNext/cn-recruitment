@@ -6,6 +6,8 @@ import { useNavigate } from "react-router";
 import ApprovalList from "../shared/ApprovalList";
 import CardTable from "../shared/CardTable";
 import { LeaveDetailView } from "./LeaveDetails";
+import useCurrentUser from "../../hooks/useCurrentUser";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 
 type LoadingAction = {
   id: string;
@@ -13,10 +15,16 @@ type LoadingAction = {
 };
 
 const TeamLeaveRequest = () => {
+  const { data: currentUser } = useCurrentUser();
   const defaultFilters = useMemo(
-    () => ({ status: ["in", ["Closed", "Cancelled"]] }),
-    []
+    () => ({
+      reference_type: "Leave Application",
+      allocated_to: currentUser?.name,
+      status: ["in", ["Closed", "Cancelled"]],
+    }),
+    [currentUser]
   );
+  const { refetchAttendance } = useGlobalStore();
   const [refetch, setRefetch] = useState(false);
   const navigate = useNavigate();
   const [selectedRequest, setSelectedRequest] = useState<
@@ -42,19 +50,12 @@ const TeamLeaveRequest = () => {
           </div>
 
           <CardTable
-            titles={[
-              "Select",
-              "Allocated To",
-              "Description",
-              "Date",
-              "Status",
-              "Actions",
-            ]}
-            columnWidths={["40px", "160px", "0.8fr", "120px", "140px", "0.6fr"]}
+            titles={["Select", "Description", "Date", "Status", "Actions"]}
+            columnWidths={["10%", "30%", "10%", "10%", "30%"]}
           >
             <ApprovalList
               doctype="Leave Application"
-              refetch={refetch}
+              refetch={refetch || refetchAttendance}
               onApprovalRefetchComplete={() => setRefetch(false)}
               showPagination={false}
               renderCardContent={(item) => (
@@ -87,7 +88,10 @@ const TeamLeaveRequest = () => {
             Actioned Requests
           </h2>
 
-          <CardTable titles={["Allocated To", "Description", "Date", "Status"]}>
+          <CardTable
+            titles={["Description", "Date", "Status"]}
+            columnWidths={["42%", "10%", "33%"]}
+          >
             <FrappeListView
               doctype="ToDo"
               isSearch={false}
@@ -98,6 +102,7 @@ const TeamLeaveRequest = () => {
               isFilter={false}
               defaultFields={["*"]}
               pageSize={3}
+              showPagination={false}
               refetchTrigger={refetch}
               onRefetchComplete={() => setRefetch(false)}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
