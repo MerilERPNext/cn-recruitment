@@ -56,7 +56,7 @@ const TeamAttendance = () => {
       <div className="flex flex-col gap-2 pb-4">
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
         <div className="bg-white w-full border-b-1 border-gray-200">
-          <div className="flex items-end flex-col p-1">
+          <div className="employee_datepicker--small flex items-end flex-col p-1">
             <DatePicker
               inline
               selected={selectedDate}
@@ -78,23 +78,21 @@ const TeamAttendance = () => {
                 const baseClasses = "transition-all duration-200";
 
                 if (isDesktop) {
-                  // Enhanced desktop styling with light colors
+                  // Desktop styling
                   if (isSelected) {
                     return `${baseClasses} !bg-blue-50 !text-blue-800 border border-blue-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105`;
                   }
                   return `${baseClasses} hover:!bg-gray-50 !text-gray-700 border border-transparent rounded-lg hover:border-gray-200 hover:shadow-sm`;
                 } else {
-                  // Original mobile styling
+                  // Mobile styling
                   return isSelected ? "bg-blue-100" : "transparent";
                 }
               }}
               renderDayContents={(day, date) => {
-                if (isDesktop) {
-                  const isSelected =
-                    date.toDateString() === selectedDate?.toDateString();
-                  // const isToday =
-                  //   date.toDateString() === new Date().toDateString();
+                const isSelected =
+                  date.toDateString() === selectedDate?.toDateString();
 
+                if (isDesktop) {
                   return (
                     <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
                       <span
@@ -104,17 +102,25 @@ const TeamAttendance = () => {
                       >
                         {day}
                       </span>
-                      {/* {isToday && (
-                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
-                          <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
-                        </div>
-                      )} */}
                     </div>
                   );
                 }
-                return <>{day}</>;
+
+                // Mobile rendering for selected day
+                return (
+                  <div
+                    className={`relative w-full h-full flex justify-center items-center p-1 ${
+                      isSelected
+                        ? "bg-blue-50 border-1 border-blue-400 text-blue-700 rounded-md"
+                        : ""
+                    }`}
+                  >
+                    {day}
+                  </div>
+                );
               }}
             />
+
             {/* Clear Button */}
             {hasFilters && (
               <button

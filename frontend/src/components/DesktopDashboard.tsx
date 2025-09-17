@@ -33,7 +33,6 @@ import defaultProfile from "../assets/face-rec.png";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
-import AttendanceChart from "./AttendanceChart";
 import {
   compareAsc,
   compareDesc,
@@ -433,14 +432,14 @@ const DesktopDashboard: React.FC = () => {
             </p>
           </div>
           <div className="relative">
-          <input
-            type="text"
-            placeholder="Search members..."
-            onClick={() => navigate("/webapp/search-members")}
-            className="w-full pl-10 pr-4 py-1 min-w-[28rem] cursor-pointer bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-        </div>
+            <input
+              type="text"
+              placeholder="Search members..."
+              onClick={() => navigate("/webapp/search-members")}
+              className="w-full pl-10 pr-4 py-1 min-w-[28rem] cursor-pointer bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          </div>
 
           <div className="flex items-center gap-4">
             <button
@@ -674,11 +673,6 @@ const DesktopDashboard: React.FC = () => {
             {/* Left Column */}
             <div className="col-span-2 space-y-6">
               {/* Attendance Chart */}
-              <AttendanceChart
-                present={employeeAttendanceSummary?.present || 20}
-                absent={employeeAttendanceSummary?.absent || 1}
-                leaves={employeeAttendanceSummary?.leaves || 2}
-              />
 
               {/* Unpaid Expense Claims */}
               {expenseData && expenseData.length > 0 && (

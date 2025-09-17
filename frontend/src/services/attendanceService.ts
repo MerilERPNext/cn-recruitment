@@ -311,16 +311,12 @@ export const attendanceService = {
     pageSize: number | string,
     filters?: FilterCondition[]
   ): Promise<AttendanceRequest[]> => {
-    const response = await FrappeAPI.callMethod(
-      "cn_leave_shift_managment.api.get_attendance_requests",
-      {
-        fields: ["*"],
-        limit: pageSize,
-        filters: filters,
-        orderBy: "creation desc",
-      }
-    );
-    return response as AttendanceRequest[];
+    const response = await FrappeAPI.getDocumentList("Attendance Request", {
+      fields: ["*"],
+      filters: filters,
+      limit: Number(pageSize),
+    });
+    return response.data as AttendanceRequest[];
   },
   getUserRoles: async (filters?: FilterCondition[]): Promise<UserRoles> => {
     const response = await FrappeAPI.callMethod(

@@ -31,6 +31,7 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import SummaryCard from "./SummaryCard";
+import AttendanceChart from "../AttendanceChart";
 
 const AttendanceSummary = () => {
   const navigate = useNavigate();
@@ -160,36 +161,39 @@ const AttendanceSummary = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white p-4">
+        {/* Date Navigation */}
+        <div className="flex items-center justify-between mb-4 bg-white border border-gray-200 p-4 rounded-xl">
+          <button
+            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+            onClick={goToPreviousMonth}
+          >
+            <ChevronLeft className="h-5 w-5 text-gray-600" />
+          </button>
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-gray-900">
+              {format(currentDate, "MMMM yyyy")}
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">Attendance Overview</p>
+          </div>
+          <button
+            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+            onClick={goToNextMonth}
+          >
+            <ChevronRight className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+
+        <AttendanceChart
+          present={employeeAttendanceSummary?.present || 20}
+          absent={employeeAttendanceSummary?.absent || 1}
+          leaves={employeeAttendanceSummary?.leaves || 2}
+        />
         {isDesktop ? (
           // Desktop Layout
-          <div className="flex p-4">
+          <div className="flex py-4">
             {/* Left/Main Column */}
             <div className="flex-1 space-y-6">
-              {/* Date Navigation */}
-              <div className="flex items-center justify-between mb-4 bg-white border border-gray-200 p-4 rounded-xl">
-                <button
-                  className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-                  onClick={goToPreviousMonth}
-                >
-                  <ChevronLeft className="h-5 w-5 text-gray-600" />
-                </button>
-                <div className="text-center">
-                  <h1 className="text-xl font-bold text-gray-900">
-                    {format(currentDate, "MMMM yyyy")}
-                  </h1>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Attendance Overview
-                  </p>
-                </div>
-                <button
-                  className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-                  onClick={goToNextMonth}
-                >
-                  <ChevronRight className="h-5 w-5 text-gray-600" />
-                </button>
-              </div>
-
               {/* Quick Summary */}
               <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
                 <h2 className="text-xl font-semibold">Quick Summary</h2>
@@ -298,32 +302,8 @@ const AttendanceSummary = () => {
           <div className="min-h-screen bg-white">
             {/* Header */}
             <div className="mb-4">
-              {/* Date Navigation */}
-              <div className="flex items-center justify-between mb-4 border-b-1 bg-white border-gray-200 p-4">
-                <button
-                  className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200"
-                  onClick={goToPreviousMonth}
-                >
-                  <ChevronLeft className="h-5 w-5 text-gray-600" />
-                </button>
-                <div className="text-center">
-                  <h1 className="text-xl font-bold text-gray-900">
-                    {format(currentDate, "MMMM yyyy")}
-                  </h1>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Attendance Overview
-                  </p>
-                </div>
-                <button
-                  className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200"
-                  onClick={goToNextMonth}
-                >
-                  <ChevronRight className="h-5 w-5 text-gray-600" />
-                </button>
-              </div>
-
               {/* Quick Summary */}
-              <div className="space-y-3 border-b-1 bg-white border-gray-200 p-4 pt-0">
+              <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4">
                 <h2 className="text-xl font-semibold">Quick Summary</h2>
                 <div className="grid grid-cols-3 gap-3">
                   {quickSummaryData.map((data, index) => (
@@ -343,7 +323,7 @@ const AttendanceSummary = () => {
               </div>
 
               {/* Team Summary */}
-              <div className="space-y-3 border-b-1 bg-white border-gray-200 p-4 pt-0">
+              <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0">
                 <h2 className="text-xl font-semibold">Today's Team Summary</h2>
                 <div className="grid grid-cols-3 gap-3">
                   {teamSummaryData.map((data, index) => (

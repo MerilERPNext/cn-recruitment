@@ -614,7 +614,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   };
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -624,7 +624,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       {/* Modal Container */}
       <div className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
+        <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-[10001]">
           <h2 className="text-lg font-semibold text-gray-800">
             Create Attendance Request
           </h2>
@@ -720,7 +720,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         </div>
 
         {/* Submit Bar */}
-        <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+        <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-[10001]">
           <div className="max-w-4xl mx-auto">
             <button
               onClick={() => formAddressInstance.current?.submit()}

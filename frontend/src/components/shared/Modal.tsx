@@ -31,6 +31,19 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', classNa
 
     const heightClasses = size === 'full' ? '' : isDesktop ? 'max-h-[90vh]' : 'max-h-[95vh]';
 
+    // For mobile full-screen modals, remove backdrop and padding
+    const isFullScreenMobile = size === 'full' && !isDesktop;
+
+    if (isFullScreenMobile) {
+        return (
+            <div className="fixed inset-0 z-50 bg-white">
+                <div className={`w-full h-full overflow-auto ${className}`}>
+                    {children}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"

@@ -1,27 +1,42 @@
 import LayoutHeader from "../../shared/LayoutHeader";
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 // import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import { useLocation } from "react-router";
 import { endOfDay, format, startOfDay, isValid } from "date-fns";
-import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
+import {
+  useAllEmployeeCheckIns,
+  useAllAttendanceRequests,
+} from "../../../hooks/useAttendance";
 import { EmployeeCheckInLog } from "../../../types/attendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 
-const EmployeeAttendanceDetails = () => {
+interface EmployeeAttendanceDetailsProps {
+  date?: Date;
+  status?: string;
+  onClose?: () => void;
+}
+
+const EmployeeAttendanceDetails = ({
+  date: propDate,
+  status: propStatus,
+  onClose,
+}: EmployeeAttendanceDetailsProps = {}) => {
   const { search } = useLocation();
   const query = new URLSearchParams(search);
   const dateParam = query.get("date");
-  const status = query.get("status");
+  const status = propStatus || query.get("status");
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState(false);
 
   const validDate = useMemo(() => {
+    if (propDate) return propDate;
     const d = new Date(dateParam || "");
     return isValid(d) ? d : null;
-  }, [dateParam]);
+  }, [propDate, dateParam]);
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
@@ -43,9 +58,36 @@ const EmployeeAttendanceDetails = () => {
       : []
   );
 
+  const { data: attendanceRequests } = useAllAttendanceRequests(
+    1000,
+    validDate && currentEmployee?.employee
+      ? [
+          ["employee", "=", currentEmployee.employee],
+          ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
+          ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
+        ]
+      : []
+  );
+
+  const hasExistingRequest =
+    attendanceRequests && attendanceRequests.length > 0;
+
   return (
-    <div className="bg-white flex flex-col">
-      <LayoutHeader tab="Attendance Details" />
+    <div className="bg-white flex flex-col h-full">
+      <div className="flex justify-between items-center p-4 border-b">
+        <h2 className="text-lg font-semibold text-gray-900">
+          Attendance Details
+        </h2>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        )}
+      </div>
+      {!onClose && <LayoutHeader tab="Attendance Details" />}
 
       {isLoading ? (
         <div className="flex-grow flex items-center justify-center">
@@ -76,35 +118,45 @@ const EmployeeAttendanceDetails = () => {
         </div>
       )}
 
-      <div className="p-3 border-t bg-white absolute bottom-0 right-0 w-full z-50 ">
-        <button
-          disabled={
-            status !== "absent" &&
-            status !== "half-day" &&
-            status !== "half day"
-          }
-          className={` w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${
-            status !== "absent" &&
-            status !== "half-day" &&
-            status !== "half day"
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-black hover:bg-gray-800"
-          } text-white`}
-          onClick={() =>
-            setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
-          }
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Attendance Request
-        </button>
+      <div className="p-3 border-t bg-white sticky bottom-0 w-full z-40 mt-auto">
+        {hasExistingRequest ? (
+          <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-blue-800 text-sm font-medium">
+              Attendance Request is already submitted for this date.
+            </p>
+          </div>
+        ) : (
+          <button
+            disabled={
+              status !== "absent" &&
+              status !== "half-day" &&
+              status !== "half day"
+            }
+            className={` w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${
+              status !== "absent" &&
+              status !== "half-day" &&
+              status !== "half day"
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-black hover:bg-gray-800"
+            } text-white`}
+            onClick={() =>
+              setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
+            }
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Attendance Request
+          </button>
+        )}
       </div>
 
-      {showReqAttendanceCorrection && (
-        <AttendanceRequestForm
-          onClose={() => setShowReqAttendanceCorrection(false)}
-          selectedDate={new Date(dateParam as string)}
-        />
-      )}
+      {showReqAttendanceCorrection &&
+        createPortal(
+          <AttendanceRequestForm
+            onClose={() => setShowReqAttendanceCorrection(false)}
+            selectedDate={validDate || new Date()}
+          />,
+          document.body
+        )}
     </div>
   );
 };

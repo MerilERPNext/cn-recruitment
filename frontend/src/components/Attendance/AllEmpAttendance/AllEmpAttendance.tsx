@@ -15,6 +15,8 @@ import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import { getStatusGradient } from "../../../utils/helperUtils";
 import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import Modal from "../../shared/Modal";
+import EmployeeAttendanceDetails from "../Employee/EmployeeAttendanceDetails";
 
 const formatTimeSafe = (timeStr: string | undefined) => {
   if (!timeStr) return "--:--";
@@ -36,6 +38,7 @@ const AllEmpAttendance = () => {
     label: format(new Date(), "MMM-yyyy"),
     value: format(new Date(), "yyyy-MM"),
   });
+  const [showDetailsFor, setShowDetailsFor] = useState<{date: Date; status: string} | null>(null);
 
   const selectedMonthStr =
     selectedMonth?.value ?? format(new Date(), "yyyy-MM");
@@ -148,9 +151,10 @@ const AllEmpAttendance = () => {
                       item?.status !== "Holiday" &&
                       item?.status !== "Weekly Off"
                     ) {
-                      navigate(
-                        `/webapp/attendance/emp-attendance/details?date=${dateObj}&status=${item?.status?.toLowerCase()}`
-                      );
+                      setShowDetailsFor({
+                        date: dateObj,
+                        status: item?.status?.toLowerCase()
+                      });
                     }
                   }}
                   key={index}
@@ -236,6 +240,21 @@ const AllEmpAttendance = () => {
             })}
         </div>
       </div>
+
+      {/* Attendance Details Modal */}
+      {showDetailsFor && (
+        <Modal
+          isOpen={true}
+          onClose={() => setShowDetailsFor(null)}
+          size={isDesktop ? "lg" : "full"}
+        >
+          <EmployeeAttendanceDetails
+            date={showDetailsFor.date}
+            status={showDetailsFor.status}
+            onClose={() => setShowDetailsFor(null)}
+          />
+        </Modal>
+      )}
 
       {showSelectByMonth && (
         <SelectByMonth

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import { ArrowLeft, ArrowUpRight, Plus, XCircle } from "lucide-react";
 import {
@@ -10,7 +10,7 @@ import { AttendanceRecord, AttendanceRequest } from "../../../types/attendance";
 import { useNavigate } from "react-router";
 import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard";
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
-import { endOfMonth, format, startOfMonth } from "date-fns";
+import { endOfMonth, format, startOfMonth, parse } from "date-fns";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import BottomDrawer from "../../shared/BottomDrawer";
@@ -19,11 +19,118 @@ import { gradientClassMap } from "../../../utils/helperUtils";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import CreateOvertimeRequest from "../OvertimeRequests/CreateOvertimeRequest";
+import EmployeeAttendanceDetails from "./EmployeeAttendanceDetails";
+import Modal from "../../shared/Modal";
+import { useSidebar } from "../SidebarContext";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
+  const { setSidebarOpen } = useSidebar();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [showDetailsFor, setShowDetailsFor] = useState<{
+    date: Date;
+    status: string;
+  } | null>(null);
+
+  // Update sidebar context when showDetailsFor changes
+  useEffect(() => {
+    setSidebarOpen(!!showDetailsFor && isDesktop);
+  }, [showDetailsFor, isDesktop, setSidebarOpen]);
+
+  const getEventDotColor = (doctype: string): string => {
+    switch (doctype) {
+      case "Attendance Request":
+        return "bg-blue-500";
+      case "Leave Request":
+        return "bg-pink-500";
+      case "Overtime Request":
+        return "bg-orange-500";
+      default:
+        return "bg-gray-400";
+    }
+  };
+
+  const AttendanceLegend = ({ isCompact = false }: { isCompact?: boolean }) => {
+    const attendanceLegendItems = [
+      {
+        label: "Present",
+        bgColor: "bg-green-100",
+        textColor: "text-green-700",
+        borderColor: "border-green-200",
+      },
+      {
+        label: "Absent",
+        bgColor: "bg-red-100",
+        textColor: "text-red-700",
+        borderColor: "border-red-200",
+      },
+      {
+        label: "On Leave",
+        bgColor: "bg-yellow-100",
+        textColor: "text-orange-700",
+        borderColor: "border-yellow-200",
+      },
+      {
+        label: "WFH",
+        bgColor: "bg-purple-100",
+        textColor: "text-purple-700",
+        borderColor: "border-purple-200",
+      },
+      {
+        label: "Holiday",
+        bgColor: "bg-blue-100",
+        textColor: "text-blue-700",
+        borderColor: "border-blue-200",
+      },
+      {
+        label: "Week Off",
+        bgColor: "bg-gray-200",
+        textColor: "text-gray-700",
+        borderColor: "border-gray-300",
+      },
+    ];
+
+    const eventDotLegendItems = [
+      { label: "Attendance Request", dotColor: "bg-blue-500" },
+      { label: "Leave Request", dotColor: "bg-pink-500" },
+      { label: "Overtime Request", dotColor: "bg-orange-500" },
+    ];
+
+    const containerClass = isCompact
+      ? "flex flex-wrap gap-2 text-xs justify-between px-4"
+      : "flex flex-wrap gap-7 text-xs ml-5";
+
+    const itemClass = isCompact
+      ? "flex items-center gap-1 px-1 py-1 rounded-lg border"
+      : "flex items-center gap-1 px-2 py-1 rounded-lg border";
+
+    return (
+      <div className="space-y-3">
+        <div className={containerClass}>
+          {attendanceLegendItems.map((item, index) => (
+            <span
+              key={index}
+              className={`${itemClass} ${item.bgColor} ${item.textColor} ${item.borderColor}`}
+            >
+              {item.label}
+            </span>
+          ))}
+        </div>
+        <div className={containerClass}>
+          <span className="text-gray-700 font-medium mr-2">
+            Event Indicators:
+          </span>
+          {eventDotLegendItems.map((item, index) => (
+            <span key={index} className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${item.dotColor}`}></div>
+              <span className="text-gray-700">{item.label}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -37,6 +144,7 @@ const EmployeeAttendance = () => {
     isError,
     error,
   } = useGetAllEventsAndAttendance({ start: start, end: end });
+
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
     currentEmployee?.employee || ""
   );
@@ -72,72 +180,102 @@ const EmployeeAttendance = () => {
     status: Status;
     firstHalf?: string;
     secondHalf?: string;
+    events: AttendanceRecord[]; // all non-attendance-type records on the same day
   };
+
+  const parseLocalDate = (dateStr: string): Date =>
+    parse(dateStr, "yyyy-MM-dd", new Date());
+
+  const formatDateKey = (date: Date): string => format(date, "yyyy-MM-dd");
 
   const createAttendanceStatusGetter = (
     attendances: AttendanceRecord[] = []
   ) => {
     const statusMap: Record<string, AttendanceStatusInfo> = {};
+    const groupedByDate: Record<string, AttendanceRecord[]> = {};
 
-    const formatDateKey = (date: Date): string =>
-      date.toLocaleDateString("en-CA");
+    attendances.forEach((record) => {
+      const dateKey = formatDateKey(parseLocalDate(record.start));
+      if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+      groupedByDate[dateKey].push(record);
+    });
 
-    attendances
-      .filter(
-        (record) =>
-          record.doctype === "Attendance" ||
-          record.doctype === "Holiday" ||
-          record.doctype === "Holidays"
-      )
-      .forEach((record) => {
-        const dateKey = formatDateKey(new Date(record.start));
-        const rawStatus = record.status?.toLowerCase().trim();
-        let status: Status = "default";
+    Object.entries(groupedByDate).forEach(([dateKey, records]) => {
+      let status: Status = "default";
+      let firstHalf = "";
+      let secondHalf = "";
+      const events: AttendanceRecord[] = [];
 
-        switch (rawStatus) {
-          case "present":
-            status = "present";
-            break;
-          case "absent":
-            status = "absent";
-            break;
-          case "on leave":
-          case "leave":
-            status = "on-leave";
-            break;
-          case "holiday":
-            status = "holiday";
-            break;
-          case "weekly off":
-            status = "week-off";
-            break;
-          case "work from home":
-            status = "work-from-home";
-            break;
-          case "half day":
-            status = "half-day";
-            break;
-          default:
-            status = "default";
+      records.forEach((record) => {
+        const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
+          record.doctype
+        );
+
+        if (isAttendanceType) {
+          // Handle Attendance Request records differently
+          if (record.doctype === "Attendance Request") {
+            // For attendance requests, use the request type or a pending status
+            // You might want to show these as "pending" or based on request type
+            const requestStatus = record.status?.toLowerCase().trim();
+            if (requestStatus === "approved") {
+              // If approved, use the intended status from the request
+              status = "present"; // or derive from request details
+            } else {
+              // For pending/rejected requests, keep current status or mark as pending
+              status = status === "default" ? "absent" : status;
+            }
+          } else {
+            // Handle regular Attendance, Holiday records
+            const rawStatus = record.status?.toLowerCase().trim();
+            switch (rawStatus) {
+              case "present":
+                status = "present";
+                break;
+              case "absent":
+                status = "absent";
+                break;
+              case "on leave":
+              case "leave":
+                status = "on-leave";
+                break;
+              case "holiday":
+                status = "holiday";
+                break;
+              case "weekly off":
+                status = "week-off";
+                break;
+              case "work from home":
+                status = "work-from-home";
+                break;
+              case "half day":
+                status = "half-day";
+                firstHalf = record.half_day_status_first_half || "";
+                secondHalf = record.half_day_status_second_half || "";
+                break;
+              default:
+                status = "default";
+            }
+          }
+        } else {
+          events.push(record);
         }
-
-        const attendanceInfo: AttendanceStatusInfo = {
-          status,
-        };
-
-        if (status === "half-day") {
-          attendanceInfo.firstHalf = record.half_day_status_first_half || "";
-          attendanceInfo.secondHalf = record.half_day_status_second_half || "";
-        }
-
-        statusMap[dateKey] = attendanceInfo;
       });
+
+      statusMap[dateKey] = {
+        status,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        ...(status === "half-day" ? { firstHalf, secondHalf } : {}),
+        events,
+      };
+    });
 
     return (date: Date): AttendanceStatusInfo => {
       const key = formatDateKey(date);
-      return statusMap[key] || { status: "default" };
+      return statusMap[key] || { status: "default", events: [] };
     };
   };
+
   const getAttendanceStatus = useMemo(() => {
     return createAttendanceStatusGetter(allAttendance ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -181,38 +319,23 @@ const EmployeeAttendance = () => {
   );
 
   return (
-    <div>
-      <div className="flex flex-col">
+    <div className={`flex ${showDetailsFor ? "gap-4" : ""}`}>
+      <div
+        className={`flex flex-col ${
+          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+        }`}
+      >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
         <div className=" w-full pb-2 bg-white">
           <div className="w-full flex justify-end md:justify-between  items-center border-b-1 border-gray-200 pb-2">
             {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
             {isDesktop && (
-              <div className="flex items-center gap-2 mt-4 mx-5">
+              <div className="flex flex-col gap-2 mt-4 mx-5">
                 <h4 className="text-sm font-semibold text-gray-700">
                   Attendance Legend:
                 </h4>
-                <div className="flex flex-wrap gap-7 text-xs ml-5">
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
-                    Present
-                  </span>
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-100 text-red-700 border border-red-200">
-                    Absent
-                  </span>
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-100 text-orange-700 border border-yellow-200">
-                    On Leave
-                  </span>
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-100 text-purple-700 border border-purple-200">
-                    WFH
-                  </span>
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-100 text-blue-700 border border-blue-200">
-                    Holiday
-                  </span>
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-                    Week Off
-                  </span>
-                </div>
+                <AttendanceLegend />
               </div>
             )}
             <button
@@ -236,9 +359,12 @@ const EmployeeAttendance = () => {
                   attendance?.status !== "week-off" &&
                   attendance?.status !== "holiday"
                 ) {
-                  navigate(
-                    `/webapp/attendance/emp-attendance/details?date=${date}&status=${attendance?.status}`
-                  );
+                  setShowDetailsFor({
+                    date: date as Date,
+                    status: attendance?.status,
+                  });
+                } else {
+                  setShowDetailsFor(null);
                 }
               }}
               onMonthChange={(date) => {
@@ -246,8 +372,9 @@ const EmployeeAttendance = () => {
               }}
               openToDate={selectedDate as Date}
               inline
-              dayClassName={(date) => {
+              renderDayContents={(day, date) => {
                 const attendance = getAttendanceStatus(date);
+
                 const isSelected =
                   selectedDate?.toDateString() === date.toDateString();
                 const baseClasses = "transition-all duration-200";
@@ -269,14 +396,12 @@ const EmployeeAttendance = () => {
                       return "hover:!bg-gray-100 !text-gray-700 rounded-md";
                   }
                 })();
-                return `${baseClasses} ${highlightClass} ${
-                  isSelected && attendance?.status === "default"
-                    ? "!bg-transparent border-none"
-                    : ""
-                }`;
-              }}
-              renderDayContents={(day, date) => {
-                const attendance = getAttendanceStatus(date);
+                const selectedClass = isSelected
+                  ? "bg-gray-300 text-black border-none rounded-md" // Custom selected day class
+                  : "";
+
+                const dayClasses = `${baseClasses} ${highlightClass} ${selectedClass}`;
+                const dayBoxStyles = `w-full h-full flex items-center justify-center text-base ${dayClasses}`;
 
                 // Original mobile rendering
                 if (attendance?.status === "half-day") {
@@ -292,9 +417,11 @@ const EmployeeAttendance = () => {
 
                   return (
                     <div
+                      className={dayBoxStyles}
                       style={{
                         backgroundImage: gradient,
                         borderRadius: "0.375rem",
+                        color: "black",
                         width: "100%",
                         height: "100%",
                         display: "flex",
@@ -306,35 +433,36 @@ const EmployeeAttendance = () => {
                     </div>
                   );
                 }
-                return <>{day}</>;
+                return (
+                  <div className={dayBoxStyles}>
+                    <div className="flex flex-col items-center gap-1">
+                      <span>{day}</span>
+                      {attendance?.events?.length > 0 && (
+                        <div className="flex gap-1">
+                          {Array.from(
+                            new Set(
+                              attendance?.events?.map((event) => event.doctype)
+                            )
+                          ).map((doctype, index) => (
+                            <div
+                              key={index}
+                              className={`w-2 h-2 rounded-full ${getEventDotColor(
+                                doctype
+                              )}`}
+                              title={doctype}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
               }}
             />
           </div>
 
           {/* Legends - Only show for mobile since desktop shows at top */}
-          {!isDesktop && (
-            // Original mobile legends
-            <div className="flex flex-wrap gap-2 text-xs justify-between px-4">
-              <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200">
-                Present
-              </span>
-              <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-red-100 text-red-700 border border-red-200">
-                Absent
-              </span>
-              <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-yellow-100 text-orange-700 border border-yellow-200">
-                On Leave
-              </span>
-              <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-purple-100 text-purple-700 border border-purple-200">
-                WFH
-              </span>
-              <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-blue-100 text-blue-700 border border-blue-200">
-                Holiday
-              </span>
-              <span className="flex items-center gap-1 px-1 py-1 rounded-lg bg-gray-200 text-gray-700 border border-gray-300">
-                Week Off
-              </span>
-            </div>
-          )}
+          {!isDesktop && <AttendanceLegend isCompact={true} />}
         </div>
         {/* Legend */}
 
@@ -480,6 +608,32 @@ const EmployeeAttendance = () => {
           }
         />
       </div>
+
+      {/* Conditionally render the details component */}
+      {showDetailsFor && isDesktop && (
+        <div className="w-1/3 h-screen sticky top-0">
+          <EmployeeAttendanceDetails
+            date={showDetailsFor.date}
+            status={showDetailsFor.status}
+            onClose={() => setShowDetailsFor(null)}
+          />
+        </div>
+      )}
+
+      {/* Modal for mobile devices */}
+      {showDetailsFor && !isDesktop && (
+        <Modal
+          isOpen={true}
+          onClose={() => setShowDetailsFor(null)}
+          size="full"
+        >
+          <EmployeeAttendanceDetails
+            date={showDetailsFor.date}
+            status={showDetailsFor.status}
+            onClose={() => setShowDetailsFor(null)}
+          />
+        </Modal>
+      )}
     </div>
   );
 };
