@@ -137,6 +137,30 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
   React.useEffect(() => {
     if (formAddressInstance.current) {
+      const employeeComponent =
+        formAddressInstance.current.getComponent("employee");
+
+      if (isForOthers) {
+        // Reset when switching to "For Others"
+        setSelectedEmployee("");
+        if (employeeComponent) {
+          employeeComponent.setValue("", { noUpdateEvent: true });
+          employeeComponent.redraw();
+        }
+      } else {
+        // Auto-fill current employee when switching back to "Self"
+        const empId = currentEmployee?.employee || "";
+        setSelectedEmployee(empId);
+        if (employeeComponent) {
+          employeeComponent.setValue(empId, { noUpdateEvent: true });
+          employeeComponent.redraw();
+        }
+      }
+    }
+  }, [isForOthers, currentEmployee]);
+
+  React.useEffect(() => {
+    if (formAddressInstance.current) {
       const checkInComponent = formAddressInstance.current.getComponent(
         "latest_checkin_time"
       );
@@ -159,7 +183,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       let company = "Not Assigned";
       if (isForOthers && selectedEmployee) {
         const selectedEmp = employeeList?.find(
-          (emp) => emp.name === selectedEmployee
+          (emp) => emp.name == selectedEmployee
         );
         company = selectedEmp?.company || "Not Assigned";
       } else if (currentEmployee?.company) {
@@ -639,7 +663,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
         {/* Content Area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
-          {userRoles?.roles["Employee Direct Manager"] ? (
+          {!userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
                 className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
