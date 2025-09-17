@@ -164,10 +164,9 @@ const ApprovalList = ({
   const handleBulkAction = (action: "Approve" | "Reject") => {
     try {
       setBulkLoading({ action, isLoading: true });
-
       batchActionMutation.mutate(
         {
-          todo_ids: selectedIds,
+          todo_ids: selectedIds?.filter((i) => i),
           selected_action: action,
         },
         {
