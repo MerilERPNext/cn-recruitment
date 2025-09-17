@@ -137,6 +137,27 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
   React.useEffect(() => {
     if (formAddressInstance.current) {
+      const employeeComponent =
+        formAddressInstance.current.getComponent("employee");
+
+      if (employeeComponent) {
+        if (isForOthers) {
+          // Reset when switching to "For Others"
+          setSelectedEmployee("");
+          employeeComponent.setValue("", { noUpdateEvent: true });
+        } else {
+          // Auto-fill current employee when switching back to "Self"
+          const empId = currentEmployee?.employee || "";
+          setSelectedEmployee(empId);
+          employeeComponent.setValue(empId, { noUpdateEvent: true });
+        }
+        employeeComponent.redraw();
+      }
+    }
+  }, [isForOthers, currentEmployee]);
+
+  React.useEffect(() => {
+    if (formAddressInstance.current) {
       const checkInComponent = formAddressInstance.current.getComponent(
         "latest_checkin_time"
       );
@@ -159,7 +180,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       let company = "Not Assigned";
       if (isForOthers && selectedEmployee) {
         const selectedEmp = employeeList?.find(
-          (emp) => emp.name === selectedEmployee
+          (emp) => emp.name == selectedEmployee
         );
         company = selectedEmp?.company || "Not Assigned";
       } else if (currentEmployee?.company) {
