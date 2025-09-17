@@ -40,7 +40,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isLoading || isValidating) return;
     if (!currentUser) {
-      navigate("/#asdasdalogin", { replace: true }); // prevents back button loop
+      window.location.href = "/login?redirect-to=%2Fwebapp" 
     }
   }, [currentUser, isLoading, isValidating, navigate]);
 
