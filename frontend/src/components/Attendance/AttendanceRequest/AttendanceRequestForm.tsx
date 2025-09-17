@@ -140,21 +140,18 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       const employeeComponent =
         formAddressInstance.current.getComponent("employee");
 
-      if (isForOthers) {
-        // Reset when switching to "For Others"
-        setSelectedEmployee("");
-        if (employeeComponent) {
+      if (employeeComponent) {
+        if (isForOthers) {
+          // Reset when switching to "For Others"
+          setSelectedEmployee("");
           employeeComponent.setValue("", { noUpdateEvent: true });
-          employeeComponent.redraw();
-        }
-      } else {
-        // Auto-fill current employee when switching back to "Self"
-        const empId = currentEmployee?.employee || "";
-        setSelectedEmployee(empId);
-        if (employeeComponent) {
+        } else {
+          // Auto-fill current employee when switching back to "Self"
+          const empId = currentEmployee?.employee || "";
+          setSelectedEmployee(empId);
           employeeComponent.setValue(empId, { noUpdateEvent: true });
-          employeeComponent.redraw();
         }
+        employeeComponent.redraw();
       }
     }
   }, [isForOthers, currentEmployee]);
