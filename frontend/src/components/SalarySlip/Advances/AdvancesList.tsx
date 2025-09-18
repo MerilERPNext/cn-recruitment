@@ -46,6 +46,16 @@ const AdvancesList: React.FC = () => {
     }));
   };
 
+  const formatToIndianDate = (dateString?: string): string => {
+    if (!dateString) return "N/A"; // show N/A if no value
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A"; // handle invalid date
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   const formattedData: UiAdvance[] = advancesData
     ? mapAdvanceData(advancesData)
     : [];
@@ -152,8 +162,8 @@ const AdvancesList: React.FC = () => {
                       <span className="font-medium">{advance.numberOfDeductions}</span>
                     )}
                   </div>
-                  <div className="data-cell text-center">{advance.startDate}</div>
-                  <div className="data-cell text-center">{advance.endDate}</div>
+                  <div className="data-cell text-center">{formatToIndianDate(advance.startDate)}</div>
+                  <div className="data-cell text-center">{formatToIndianDate(advance.endDate)}</div>
                   <div className="data-cell text-center">
                     <StatusBadge status={advance.advanceStatus} />
                   </div>
@@ -239,7 +249,7 @@ const AdvancesList: React.FC = () => {
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>
-                  <strong>{advance.startDate}</strong> to <strong>{advance.endDate}</strong>
+                  <strong>{formatToIndianDate(advance.startDate)}</strong> to <strong>{formatToIndianDate(advance.endDate)}</strong>
                 </span>
                 <span>{advance.installments.length} installments</span>
               </div>
