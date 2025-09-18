@@ -199,20 +199,23 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                 <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                      {/* Avatar */}
+                      <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
                         <img
                           src={currentEmployee?.image || defaultProfile}
                           alt="User avatar"
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">
+
+                      {/* Text */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">
                           {currentEmployee?.employee_name ||
                             currentEmployee?.first_name ||
                             "Temp User"}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 break-words whitespace-normal">
                           {currentEmployee?.company_email ||
                             currentEmployee?.personal_email ||
                             "Temp Email"}
