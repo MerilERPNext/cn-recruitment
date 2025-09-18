@@ -160,7 +160,6 @@ const DesktopDashboard: React.FC = () => {
   const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
-  console.log("Current Employee Data:", currentEmployee);
 
   // Enhanced employee state with fallback
   const employeeState = useEmployeeWithFallback();
