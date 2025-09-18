@@ -2,13 +2,10 @@ import { format } from "date-fns";
 import { AttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { Edit2 } from "lucide-react";
+import Tooltip from "../../shared/Tooltip";
 
-const EmpAttendanceRequestCard = ({
-  data,
-}: {
-  data: AttendanceRequest;
-  onClick?: () => void;
-}) => {
+const EmpAttendanceRequestCard = ({ data }: { data: AttendanceRequest }) => {
   const { isDesktop } = useScreenSize();
   const getStatus = (rawStatus: string) => {
     const status = rawStatus?.toLowerCase().trim();
@@ -30,7 +27,7 @@ const EmpAttendanceRequestCard = ({
       };
     }
   };
-  const status = getStatus(data?.status);
+  const status = getStatus(data?.custom_status);
   const formattedFromDate = data?.from_date
     ? format(new Date(data.from_date), "dd/MM/yyyy")
     : "N/A";
@@ -40,7 +37,7 @@ const EmpAttendanceRequestCard = ({
   return (
     <>
       {isDesktop ? (
-        <div className="grid grid-cols-4 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+        <div className="grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.custom_request_type}
@@ -58,14 +55,19 @@ const EmpAttendanceRequestCard = ({
 
           {/* Status */}
           <div className="flex justify-start">
-            <Badge
-              backgroundColor={status?.statusColor}
-              label={status?.label || ""}
-            />
+            <Tooltip content={status?.label === "Pending" ? "Test" : ""}>
+              <Badge
+                backgroundColor={status?.statusColor}
+                label={status?.label || ""}
+              />
+            </Tooltip>
+          </div>
+          <div className="text-sm text-gray-900 text-start">
+            <Edit2 />
           </div>
         </div>
       ) : (
-        <div className="w-full flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl">
+        <div className="w-full flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl cursor-pointer hover:shadow-md transition-shadow">
           <div className="px-4 py-2 w-full">
             <div className=" flex items-start justify-between gap-1">
               <div>

@@ -1,8 +1,7 @@
 import { Plus } from "lucide-react";
-import FrappeListView from "../../ListView";
+import DataListView from "../../DataListView";
 import AttndanceRequestForm from "./AttendanceRequestForm";
 import { useMemo, useState } from "react";
-import { AttendanceRequest as AttendanceRequestType } from "../../../types/attendance";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -46,45 +45,49 @@ const AttendanceRequest = () => {
       ) : (
         <div className="bg-white h-full px-4 pt-2 pb-12">
           <CardTable
-            titles={["Request Type", "From Date", "To Date", "Status"]}
+            titles={[
+              "Request Type",
+              "From Date",
+              "To Date",
+              "Status",
+              "Actions",
+            ]}
           >
-            <FrappeListView
-              doctype="Attendance Request"
-              isSearch={false}
-              ItemComponent={(props: { item: AttendanceRequestType }) => {
+            <DataListView
+              queryKey="attendance-requests"
+              customAPI={{
+                method: "cn_leave_shift_managment.api.get_open_approval_todos",
+                params: {
+                  doctype: "Attendance Request",
+                  ...defaultFilters,
+                },
+              }}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              ItemComponent={(props: { item: any }) => {
                 return (
                   <EmpAttendanceRequestCard
                     data={{
-                      ...props?.item,
+                      ...props?.item?.reference_document,
                       status: props?.item?.custom_status,
                     }}
-                    // onClick={() => {
-                    //   setShowReqAttendanceCorrection(true);
-                    // }}
                   />
                 );
               }}
               SkeletonComponent={CardSkeleton}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              defaultFilters={defaultFilters as any}
-              onItemClick={() => {}}
+              onItemClick={(data) => {
+                console.log(data);
+              }}
               infiniteScroll={true}
+              isSearch={false}
               isFilter={false}
-              defaultFields={[
-                "to_date",
-                "from_date",
-                "custom__request_reason",
-                "custom_request_type",
-                "custom_status",
-                "reason",
-                "modified",
-                "creation",
-                "docstatus",
-              ]}
+              pageSize={20}
+              showRefreshButton={false}
+              orderBy="modified desc"
             />
           </CardTable>
         </div>
       )}
+
       {/* Add Attendance Request button - Only show for mobile since desktop has Actions button */}
       {!isDesktop && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">

@@ -280,12 +280,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             data: {
               values: [
-                reqValidationmutation?.data?.clockin_requests
-                  ? {
-                      label: "Clockin Request",
-                      value: "Clockin",
-                    }
-                  : "",
+                {
+                  label: "Clockin Request",
+                  value: "Clockin",
+                },
                 reqValidationmutation?.data?.out_duty_requests
                   ? {
                       label: "Out Duty Request",
@@ -635,7 +633,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   };
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -645,7 +643,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       {/* Modal Container */}
       <div className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-[10001]">
+        <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
             Create Attendance Request
           </h2>
@@ -660,7 +658,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
         {/* Content Area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
-          {userRoles?.roles["Employee Direct Manager"] ? (
+          {!userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
                 className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
@@ -741,7 +739,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         </div>
 
         {/* Submit Bar */}
-        <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-[10001]">
+        <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
           <div className="max-w-4xl mx-auto">
             <button
               onClick={() => formAddressInstance.current?.submit()}
