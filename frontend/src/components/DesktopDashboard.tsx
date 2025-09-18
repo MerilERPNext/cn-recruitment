@@ -425,7 +425,7 @@ const DesktopDashboard: React.FC = () => {
         <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              Welcome, {currentEmployee?.employee_name || "Employee"}
+              Welcome, {currentEmployee?.employee_name || "Temp User"}!
             </h1>
             <p className="text-xs text-gray-600">
               Here's your dashboard for today.
@@ -456,10 +456,10 @@ const DesktopDashboard: React.FC = () => {
               >
                 <div>
                   <p className="text-sm font-medium text-gray-900 text-right">
-                    {currentEmployee?.employee_name || "Sangeetaa"}
+                    {currentEmployee?.employee_name || "Temp User"}
                   </p>
                   <p className="text-xs text-gray-500 text-right">
-                    Employee ID: {currentEmployee?.employee || "12345"}
+                    Employee ID: {currentEmployee?.employee || "N/A"}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
@@ -490,10 +490,10 @@ const DesktopDashboard: React.FC = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900">
-                          {currentEmployee?.employee_name || "Employee"}
+                          {currentEmployee?.employee_name || "Temp User"}
                         </h3>
                         <p className="text-sm text-gray-600">
-                          {currentEmployee?.designation || "Designation"}
+                          {currentEmployee?.designation || "Temp Designation"}
                         </p>
                         <p className="text-xs text-gray-500">
                           Employee ID: {currentEmployee?.employee || "N/A"}
@@ -501,7 +501,7 @@ const DesktopDashboard: React.FC = () => {
                         <p className="text-xs text-gray-500">
                           {currentEmployee?.company_email ||
                             currentEmployee?.personal_email ||
-                            "email@company.com"}
+                            "Temp Email"}
                         </p>
                       </div>
                     </div>

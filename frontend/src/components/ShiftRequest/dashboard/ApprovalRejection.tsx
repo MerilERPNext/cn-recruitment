@@ -8,6 +8,8 @@ type ApprovalRejectionQueueProps = {
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
   data?: {
+    allocated_to: string;
+    custom_doctype_actions_with_form: any;
     creation: string;
     date: string | number | Date;
     priority: string;
@@ -64,16 +66,19 @@ const ApprovalRejectionQueue = ({
       onClick={() => onClick?.(data)}
     >
       <div className=" ">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onClick={(e) => e.stopPropagation()}
-          onChange={() => onToggleSelect?.(data.name)}
-          disabled={isDisabled}
-        />
+      <input
+              type="checkbox"
+              className="accent-blue-500"
+              checked={isSelected}
+              onClick={(e) => e.stopPropagation()}
+              onChange={() => onToggleSelect?.(data?.name)}
+              disabled={
+                isDisabled || data?.custom_doctype_actions_with_form?.length > 0
+              }
+            />
       </div>
       <div className="font-medium  text-gray-900 text-xs truncate">
-        {data.name || "--"}
+        {data.allocated_to || "--"}
       </div>
       <div className="text-gray-700 text-xs truncate">
         {data.creation ? data.creation.split(" ")[0] : "--"}

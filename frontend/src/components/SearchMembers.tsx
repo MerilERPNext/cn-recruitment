@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import FrappeListView from "./ListView";
-import LayoutHeader from "./shared/LayoutHeader";
+import HeaderBar from "./HeaderBar";
 
 const ChevronRightIcon = () => (
   <svg
@@ -128,8 +128,8 @@ const SearchMembersApp = () => {
   };
 
   return (
-    <div className="pt-12">
-      <LayoutHeader tab="Search Members" onBack={() => navigate(-1)} />
+    <div className="">
+      <HeaderBar title="Search Members" onBack={() => navigate(-1)} />
       <div className="flex-grow h-screen w-full bg-white overflow-y-auto p-4">
         <FrappeListView
           doctype="Employee"

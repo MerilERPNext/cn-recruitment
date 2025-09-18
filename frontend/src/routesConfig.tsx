@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactElement, lazy, Suspense } from "react";
 import { Navigate } from "react-router";
 import { useScreenSize } from "./hooks/useScreenSize";
@@ -7,6 +8,7 @@ import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
 import SearchMembers from "./components/SearchMembers";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
+import DashboardModel from "./components/Dasktop/Deshboard";
 
 // Lazy load heavy components
 const Expenses = lazy(() => import("./components/Expenses"));
@@ -468,6 +470,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/organizational-chart-two-level",
     element: <OrganizationCharttooo />,
+  },
+  {
+    path: "/webapp/dashboard",
+    element: <DashboardModel />,
   },
 ];
 

@@ -28,7 +28,7 @@ const ListViewOfLoanForMobile = () => {
 
   return (
     <FrappeListView
-      doctype="loan"
+      doctype="Loan"
       ItemComponent={LoantItem}
       onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_application)} // ✅ Pass item.name
       isSearch={true}

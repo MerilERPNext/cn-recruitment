@@ -252,7 +252,7 @@ const CTCSalaryUI = () => {
   // Desktop layout component with enhanced design
   const DesktopLayout = () => (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full mx-auto">
         {/* Enhanced Header Section */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-6 overflow-hidden">
           <div className="bg-blue-500 p-4">

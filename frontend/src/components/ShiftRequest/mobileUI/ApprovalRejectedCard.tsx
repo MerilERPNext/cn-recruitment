@@ -8,6 +8,7 @@ type ApprovalRejectionQueueProps = {
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
   data?: {
+    custom_doctype_actions_with_form: any;
     creation: string;
     date: string | number | Date;
     priority: string;
@@ -72,7 +73,10 @@ const ApprovalRejectedForMobile = ({
           checked={isSelected}
           onClick={(e) => e.stopPropagation()}
           onChange={() => onToggleSelect?.(data.name)}
-          disabled={isDisabled}
+          disabled={
+            isDisabled || data?.custom_doctype_actions_with_form?.length > 0
+          }
+          
         />
         <span className="font-semibold text-gray-900 text-sm">
           {data.name || "--"}
