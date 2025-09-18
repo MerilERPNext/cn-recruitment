@@ -1,0 +1,11 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#10b981" rx="80"/>
+  
+  <!-- User Icon - Simple and Clear -->
+  <!-- Head -->
+  <circle cx="200" cy="130" r="50" fill="#ffffff"/>
+  
+  <!-- Body -->
+  <ellipse cx="200" cy="270" rx="90" ry="70" fill="#ffffff"/>
+</svg>
