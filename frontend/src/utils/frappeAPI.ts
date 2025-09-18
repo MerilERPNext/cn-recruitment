@@ -4,7 +4,15 @@ import { FilterCondition } from "../types/frappe";
 import { refreshCsrfToken } from "./csrf";
 
 // Base configuration for Frappe API calls
-const API_BASE = window.location.origin;
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (typeof window !== "undefined" ? window.location.origin : "");
+
+  if (!API_BASE) {
+    console.warn(
+      "⚠️ API_BASE is empty! Please set VITE_API_BASE_URL in your .env file"
+    );
+  }
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
 }
@@ -24,11 +32,15 @@ const apiClient = axios.create({
           Authorization: "token " + import.meta.env.VITE_DEV_FRAPPE_API_TOKEN,
         }
       : {}),
-    "X-Frappe-CSRF-Token": window.csrf_token, // ✅ Now TypeScript understands
+    // ✅ Safe check for csrf_token
+    "X-Frappe-CSRF-Token":
+      typeof window !== "undefined" && window.csrf_token
+        ? window.csrf_token
+        : "",
   },
 });
 
-// Request interceptor to add CSRF token dynamically
+
 apiClient.interceptors.request.use(
   async (config) => {
     if (
