@@ -38,7 +38,7 @@ import {
 import { useState } from "react";
 
 export default function DashboardModel() {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, _setCurrentTime] = useState(new Date());
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
   const { data: employeeShift } = useGetEmployeeShift(
@@ -53,8 +53,6 @@ export default function DashboardModel() {
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
   const {
     data: homeSummary,
-    refetch: refetchHomeSummary,
-    isRefetching,
   } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
@@ -178,6 +176,14 @@ export default function DashboardModel() {
       (totalWorkedMinutes / totalShiftMinutes) * 100
     );
     return Math.min(percentage, 100);
+  };
+
+  const handleTodoClick = () => {
+    window.location.href = "/app/task_manager";
+  };
+
+  const handleHelpDeskClick = () => {
+    window.location.href = "/helpdesk/my-tickets";
   };
 
   return (
@@ -347,7 +353,7 @@ export default function DashboardModel() {
           </div>
           {/* Second Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="grid grid-cols-1 gap-6 border-2 border-red-500">
+            <div className="grid grid-cols-1 gap-6">
               {/* Total Hours Worked */}
               <div className="bg-white text-blue-600 p-6 rounded-lg shadow-sm">
                 <div className="text-center">
@@ -387,18 +393,26 @@ export default function DashboardModel() {
                   Helpdesk / Todo's
                 </h3>
                 <div className="flex flex-col gap-4">
-                  <button className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                  <button
+                    onClick={handleHelpDeskClick}
+                    className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                  >
                     <HelpCircle className="w-4 h-4" />
                     Help Desk
                   </button>
-                  <button className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                  <button
+                    onClick={handleTodoClick}
+                    className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                  >
                     <HelpCircle className="w-4 h-4" />
                     Todo List
                   </button>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg p-6 shadow-sm border-2 border-blue-500">
+            {/* Requests Cards*/}
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-gray-900">Requests</h3>
                 <div className="flex items-center gap-2">
@@ -408,7 +422,9 @@ export default function DashboardModel() {
                   <span className="text-gray-400">•••</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              
+              <div className="grid grid-cols-2 gap-4">
+
                 <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-blue-600" />
@@ -417,14 +433,7 @@ export default function DashboardModel() {
                     Apply Leave
                   </p>
                 </div>
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <p className="text-sm text-gray-600 font-medium">
-                    Initiate Flow
-                  </p>
-                </div>
+                
                 <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <FileText className="w-6 h-6 text-blue-600" />
@@ -433,12 +442,7 @@ export default function DashboardModel() {
                     Request Letter
                   </p>
                 </div>
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <Award className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <p className="text-sm text-gray-600 font-medium">Add Goals</p>
-                </div>
+                
                 <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <Users className="w-6 h-6 text-purple-600" />
