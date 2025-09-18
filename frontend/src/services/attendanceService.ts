@@ -315,6 +315,7 @@ export const attendanceService = {
       fields: ["*"],
       filters: filters,
       limit: Number(pageSize),
+      orderBy: "creation desc",
     });
     return response.data as AttendanceRequest[];
   },

@@ -249,14 +249,13 @@ const EmployeeAttendance = () => {
           events.push(record);
         }
       });
-
-      statusMap[dateKey] = {
-        status,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        ...(status === "half-day" ? { firstHalf, secondHalf } : {}),
-        events,
-      };
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      if (status === "half-day") {
+        statusMap[dateKey] = { status, firstHalf, secondHalf, events };
+      } else {
+        statusMap[dateKey] = { status, events };
+      }
     });
 
     return (date: Date): AttendanceStatusInfo => {
