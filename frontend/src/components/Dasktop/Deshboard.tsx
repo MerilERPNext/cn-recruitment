@@ -19,8 +19,17 @@ import {
   XCircle,
 } from "lucide-react";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { useGetEmployeeShift } from "../../hooks/useAttendance";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { formatTimeSafe } from "../../utils/helperUtils";
 
 export default function DashboardModel() {
+  const { data: userId } = useLoggedInUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: employeeShift } = useGetEmployeeShift(
+      currentEmployee?.user_id || ""
+    );
   return (
     <DesktopLayoutWrapper title="Dashboard">
       <div className="absolute inset-0 overflow-y-auto bg-gray-50 p-4 sm:p-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -39,8 +48,8 @@ export default function DashboardModel() {
               </div>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-2 border-green-500">
             {/* Tasks Awaiting */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-4">
@@ -122,7 +131,9 @@ export default function DashboardModel() {
                         SHIFT START
                       </p>
                       <p className="text-lg sm:text-xl font-bold text-blue-600">
-                        --:--
+                        {employeeShift?.start_time
+                          ? formatTimeSafe(employeeShift?.start_time)
+                          : "--:--"}
                       </p>
                     </div>
                   </div>
@@ -154,7 +165,9 @@ export default function DashboardModel() {
                         SHIFT END
                       </p>
                       <p className="text-lg sm:text-xl font-bold text-blue-600">
-                        --:--
+                        {employeeShift?.end_time
+                      ? formatTimeSafe(employeeShift?.end_time)
+                      : "--:--"}
                       </p>
                     </div>
                   </div>
@@ -178,8 +191,8 @@ export default function DashboardModel() {
               </div>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Second Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-2 border-red-500">
             <div className="grid grid-cols-1 gap-6">
               {/* Total Hours Worked */}
               <div className="bg-white text-blue-600 p-6 rounded-lg shadow-sm">
