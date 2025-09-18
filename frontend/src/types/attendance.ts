@@ -61,6 +61,15 @@ export interface AttendanceRequest {
   custom_status: string;
   custom_request_type: string;
 }
+
+export interface MyAttendanceRequest {
+  reference_document: AttendanceRequest;
+  allocated_to: string;
+  custom_allow_revoke: boolean;
+  todo_id: string;
+  username: string;
+  reference_name: string;
+}
 export interface AttendanceRequestValidations {
   attendance_adjustment_requests: number;
   clockin_requests: number;

@@ -38,7 +38,10 @@ const AllEmpAttendance = () => {
     label: format(new Date(), "MMM-yyyy"),
     value: format(new Date(), "yyyy-MM"),
   });
-  const [showDetailsFor, setShowDetailsFor] = useState<{date: Date; status: string} | null>(null);
+  const [showDetailsFor, setShowDetailsFor] = useState<{
+    date: Date;
+    status: string;
+  } | null>(null);
 
   const selectedMonthStr =
     selectedMonth?.value ?? format(new Date(), "yyyy-MM");
@@ -153,7 +156,7 @@ const AllEmpAttendance = () => {
                     ) {
                       setShowDetailsFor({
                         date: dateObj,
-                        status: item?.status?.toLowerCase()
+                        status: item?.status?.toLowerCase(),
                       });
                     }
                   }}
@@ -163,10 +166,10 @@ const AllEmpAttendance = () => {
                   {/* Date Box */}
                   <div
                     className={`flex flex-col items-center justify-center rounded-md p-4 w-14 ${getStatusColor(
-                      item.status.toLocaleLowerCase()
+                      item?.status?.toLocaleLowerCase()
                     )}`}
                     style={
-                      item.status.toLocaleLowerCase() === "half day"
+                      item?.status?.toLocaleLowerCase() === "half day"
                         ? getStatusGradient(
                             item?.half_day_status_first_half || "",
                             item?.half_day_status_second_half || ""

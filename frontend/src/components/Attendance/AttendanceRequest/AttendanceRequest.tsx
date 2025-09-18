@@ -7,6 +7,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
+import { MyAttendanceRequest } from "../../../types/attendance";
 
 const AttendanceRequest = () => {
   const { isDesktop } = useScreenSize();
@@ -62,13 +63,11 @@ const AttendanceRequest = () => {
                   ...defaultFilters,
                 },
               }}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ItemComponent={(props: { item: any }) => {
+              ItemComponent={(props: { item: MyAttendanceRequest }) => {
                 return (
                   <EmpAttendanceRequestCard
                     data={{
-                      ...props?.item?.reference_document,
-                      status: props?.item?.custom_status,
+                      ...props?.item,
                     }}
                   />
                 );
