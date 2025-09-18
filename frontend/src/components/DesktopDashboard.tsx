@@ -17,8 +17,10 @@ import {
   Zap,
   CheckCircle,
   XCircle,
+  LogOut,
+  Search,
+  ChevronDown,
 } from "lucide-react";
-import DesktopLayoutWrapper from "../components/DesktopLayoutWrapper";
 import {
   useGetEmployeeShift,
   useHomeSummaryDetails,
@@ -35,10 +37,23 @@ import {
   parseISO,
   startOfDay,
 } from "date-fns";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import CollapsibleSidebar from "./shared/CollapsibleSidebar";
+import NotificationBell from "./Notification/NotificationBell";
+import defaultProfile from "../assets/face-rec.png";
+import { useFrappeAuth } from "frappe-react-sdk";
+import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
+import EmployeeFallback from "./EmployeeFallback";
 
 export default function DesktopDashboard() {
-  const [currentTime, _setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const navigate = useNavigate();
+  const { logout } = useFrappeAuth();
+const employeeState = useEmployeeWithFallback();
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
   const { data: employeeShift } = useGetEmployeeShift(
@@ -51,9 +66,10 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const {
-    data: homeSummary,
-  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
+  const { data: homeSummary } = useHomeSummaryDetails(
+    currentEmployee?.user_id || "",
+    encodedFilters
+  );
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
@@ -185,11 +201,227 @@ export default function DesktopDashboard() {
   const handleHelpDeskClick = () => {
     window.location.href = "/helpdesk/my-tickets";
   };
+  const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
+
+  const logoutHandler = async () => {
+    try {
+      await logout();
+      // navigate("/login", { replace: true });
+      // agar aapko Frappe ka login page dikhana hai to:
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    if (showProfileDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showProfileDropdown]);
 
   return (
-    <DesktopLayoutWrapper title="Dashboard">
-      <div className="absolute inset-0 overflow-y-auto bg-gray-50 p-4 sm:p-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className="w-full space-y-6">
+    <div className="h-screen bg-gray-50 flex">
+      {/* Collapsible Sidebar */}
+      <CollapsibleSidebar
+        isExpanded={isSidebarExpanded}
+        setIsExpanded={setIsSidebarExpanded}
+      />
+
+      {/* Main Content */}
+      <div
+        className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}
+      >
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">
+              Welcome, {currentEmployee?.employee_name || "Temp User"}!
+            </h1>
+            <p className="text-xs text-gray-600">
+              Here's your dashboard for today.
+            </p>
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search members..."
+              onClick={() => navigate("/webapp/search-members")}
+              className="w-full pl-10 pr-4 py-1 min-w-[28rem] cursor-pointer bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/webapp/notification-log")}
+              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <NotificationBell />
+            </button>
+
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900 text-right">
+                    {currentEmployee?.employee_name || "Temp User"}
+                  </p>
+                  <p className="text-xs text-gray-500 text-right">
+                    Employee ID: {currentEmployee?.employee || "N/A"}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                  <img
+                    src={currentEmployee?.image || defaultProfile}
+                    alt="User avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-400 transition-transform ${
+                    showProfileDropdown ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {/* Profile Dropdown */}
+              {showProfileDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      {/* Profile Image */}
+                      <div className="w-16 h-16 flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
+                        <img
+                          src={currentEmployee?.image || defaultProfile}
+                          alt="User avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      {/* Text Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900">
+                          {currentEmployee?.employee_name || "Temp User"}
+                        </h3>
+                        <p className="text-sm text-gray-600 break-words whitespace-normal max-w-xs">
+                          {currentEmployee?.designation || "Temp Designation"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Employee ID: {currentEmployee?.employee || "N/A"}
+                        </p>
+                        <p className="text-xs text-gray-500 break-words whitespace-normal max-w-xs">
+                          {currentEmployee?.company_email ||
+                            currentEmployee?.personal_email ||
+                            "Temp Email"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="py-2">
+                    <div className="px-4 py-2">
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Company Information
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Department:</span>
+                          <span className="text-gray-900">
+                            {currentEmployee?.department || "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Company:</span>
+                          <span className="text-gray-900">
+                            {currentEmployee?.company || "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Join Date:</span>
+                          <span className="text-gray-900">
+                            {currentEmployee?.date_of_joining || "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Status:</span>
+                          <span className="text-green-600 font-medium">
+                            {currentEmployee?.status || "Active"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr className="my-2 border-gray-100" />
+
+                    <button
+                      onClick={() => {
+                        navigate("/webapp/my-profile");
+                        setShowProfileDropdown(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      <User className="w-4 h-4" />
+                      View Full Profile
+                    </button>
+                    <hr className="my-2 border-gray-100" />
+                    <button
+                      onClick={async () => {
+                        await logoutHandler();
+                        setShowProfileDropdown(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard Content */}
+        <div className="p-8 flex-1 overflow-y-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          
+          {/* Employee Data Error Handling */}
+          {!employeeState.isLoading && !employeeState.hasValidData && (
+            <EmployeeFallback
+              message={
+                employeeState.hasEmployeeRecord
+                  ? "Employee data is incomplete. Please contact HR."
+                  : "No employee record found. Please contact HR to set up your profile."
+              }
+              variant="banner"
+              showRetry={employeeState.canRetry}
+              onRetry={employeeState.retry}
+            />
+          )}
+
           {/* Hero Banner */}
           <div className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-lg p-6 text-white relative overflow-hidden">
             <div className="relative z-10">
@@ -204,6 +436,7 @@ export default function DesktopDashboard() {
               </div>
             </div>
           </div>
+
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tasks Awaiting */}
@@ -351,6 +584,7 @@ export default function DesktopDashboard() {
               </div>
             </div>
           </div>
+
           {/* Second Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="grid grid-cols-1 gap-6">
@@ -412,7 +646,6 @@ export default function DesktopDashboard() {
             </div>
             {/* Requests Cards*/}
             <div className="bg-white rounded-lg p-6 shadow-sm">
-              
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-gray-900">Requests</h3>
                 <div className="flex items-center gap-2">
@@ -422,9 +655,8 @@ export default function DesktopDashboard() {
                   <span className="text-gray-400">•••</span>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
 
+              <div className="grid grid-cols-2 gap-4">
                 <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-blue-600" />
@@ -433,7 +665,7 @@ export default function DesktopDashboard() {
                     Apply Leave
                   </p>
                 </div>
-                
+
                 <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <FileText className="w-6 h-6 text-blue-600" />
@@ -442,7 +674,7 @@ export default function DesktopDashboard() {
                     Request Letter
                   </p>
                 </div>
-                
+
                 <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <Users className="w-6 h-6 text-purple-600" />
@@ -558,6 +790,6 @@ export default function DesktopDashboard() {
           </div>
         </div>
       </div>
-    </DesktopLayoutWrapper>
+    </div>
   );
 }
