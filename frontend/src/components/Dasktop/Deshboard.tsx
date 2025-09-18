@@ -29,13 +29,16 @@ import { formatTimeSafe, formatTo24HourTime } from "../../utils/helperUtils";
 import {
   compareAsc,
   compareDesc,
+  differenceInMinutes,
   endOfDay,
   format,
   parseISO,
   startOfDay,
 } from "date-fns";
+import { useState } from "react";
 
 export default function DashboardModel() {
+  const [currentTime, setCurrentTime] = useState(new Date());
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
   const { data: employeeShift } = useGetEmployeeShift(
@@ -72,6 +75,111 @@ export default function DashboardModel() {
       )[0]
     : undefined;
 
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T"))
+          )
+        )[0]
+      : undefined;
+
+  const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
+
+  const getTotalTime = () => {
+    if (!homeSummary || homeSummary.length === 0) {
+      return "00:00";
+    }
+
+    // Calculate total worked time by pairing check-ins and check-outs
+    let totalMinutes = 0;
+    const sortedLogs = [...homeSummary].sort((a, b) =>
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    );
+
+    let currentCheckIn: (typeof sortedLogs)[0] | null = null;
+
+    for (const log of sortedLogs) {
+      if (log.log_type === "IN") {
+        currentCheckIn = log;
+      } else if (log.log_type === "OUT" && currentCheckIn) {
+        // Calculate time between check-in and check-out
+        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+        const checkOutTime = parseISO(log.time.replace(" ", "T"));
+        totalMinutes += differenceInMinutes(checkOutTime, checkInTime);
+        currentCheckIn = null;
+      }
+    }
+
+    // If still checked in, add time from last check-in to now
+    if (currentCheckIn && isCurrentlyCheckedIn) {
+      const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+      totalMinutes += differenceInMinutes(currentTime, checkInTime);
+    }
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  const getWorkPercentage = () => {
+    if (!firstCheckIn || !firstCheckIn.shift_start || !firstCheckIn.shift_end) {
+      return 0;
+    }
+
+    // Calculate total worked time in minutes
+    let totalWorkedMinutes = 0;
+
+    if (homeSummary && homeSummary.length > 0) {
+      const sortedLogs = [...homeSummary].sort((a, b) =>
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      );
+
+      let currentCheckIn: (typeof sortedLogs)[0] | null = null;
+
+      for (const log of sortedLogs) {
+        if (log.log_type === "IN") {
+          currentCheckIn = log;
+        } else if (log.log_type === "OUT" && currentCheckIn) {
+          const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+          const checkOutTime = parseISO(log.time.replace(" ", "T"));
+          totalWorkedMinutes += differenceInMinutes(checkOutTime, checkInTime);
+          currentCheckIn = null;
+        }
+      }
+
+      // If still checked in, add time from last check-in to now
+      if (currentCheckIn && isCurrentlyCheckedIn) {
+        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+        totalWorkedMinutes += differenceInMinutes(currentTime, checkInTime);
+      }
+    }
+
+    // Calculate expected shift duration
+    const shiftStart = parseISO(firstCheckIn.shift_start.replace(" ", "T"));
+    const shiftEnd = parseISO(firstCheckIn.shift_end.replace(" ", "T"));
+    const totalShiftMinutes = differenceInMinutes(shiftEnd, shiftStart);
+
+    if (totalShiftMinutes <= 0) {
+      return 0;
+    }
+
+    // Calculate percentage, but cap at 100%
+    const percentage = Math.round(
+      (totalWorkedMinutes / totalShiftMinutes) * 100
+    );
+    return Math.min(percentage, 100);
+  };
+
   return (
     <DesktopLayoutWrapper title="Dashboard">
       <div className="absolute inset-0 overflow-y-auto bg-gray-50 p-4 sm:p-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -91,7 +199,7 @@ export default function DashboardModel() {
             </div>
           </div>
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-2 border-green-500">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tasks Awaiting */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-4">
@@ -160,7 +268,7 @@ export default function DashboardModel() {
             {/* Announcements */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-4">
-                Announcements
+                Daily Timings
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg border border-gray-200">
@@ -238,16 +346,16 @@ export default function DashboardModel() {
             </div>
           </div>
           {/* Second Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-2 border-red-500">
-            <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 border-2 border-red-500">
               {/* Total Hours Worked */}
               <div className="bg-white text-blue-600 p-6 rounded-lg shadow-sm">
                 <div className="text-center">
                   <p className=" text-sm mb-2 tracking-wide text-left font-semibold text-gray-900">
                     TOTAL HOURS WORKED
                   </p>
-                  <p className="text-xl font-bold mb-1">10:00AM</p>
-                  <p className="text-blue-600 text-sm mb-6">8h 55m target</p>
+                  <p className="text-xl font-bold mb-1">{getTotalTime()}</p>
+                  <p className="text-blue-600 text-sm mb-6">8h 30m target</p>
 
                   {/* Enhanced Progress Bar */}
                   <div className="relative px-4 mb-3">
@@ -255,7 +363,7 @@ export default function DashboardModel() {
                       <div
                         className="bg-blue-700 h-3 transition-all duration-700 ease-out shadow-sm rounded-lg"
                         style={{
-                          width: `${Math.min(30, 100)}%`,
+                          width: `${Math.min(getWorkPercentage(), 100)}%`,
                         }}
                       ></div>
                     </div>
@@ -268,7 +376,7 @@ export default function DashboardModel() {
                     </div>
                   </div>
                   <p className="text-blue-600 text-sm font-medium">
-                    30% completed
+                    {getWorkPercentage()}% completed
                   </p>
                 </div>
               </div>
@@ -276,7 +384,7 @@ export default function DashboardModel() {
               {/* Helpdesk */}
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h3 className="font-semibold text-gray-900 mb-4">
-                  Helpdesk / TODO's
+                  Helpdesk / Todo's
                 </h3>
                 <div className="flex flex-col gap-4">
                   <button className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
@@ -290,7 +398,7 @@ export default function DashboardModel() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-white rounded-lg p-6 shadow-sm border-2 border-blue-500">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-gray-900">Requests</h3>
                 <div className="flex items-center gap-2">
