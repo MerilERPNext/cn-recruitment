@@ -13,9 +13,11 @@ import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { SidebarProvider, useSidebar } from "./SidebarContext";
 
-const AttendanceLayout: React.FC = () => {
+const AttendanceLayoutContent: React.FC = () => {
   const { data: userId } = useLoggedInUser();
+  const { isSidebarOpen } = useSidebar();
 
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
@@ -240,7 +242,9 @@ const AttendanceLayout: React.FC = () => {
     );
   };
   // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
-  const actionButton = <ActionsButton />;
+  // Hide the button when sidebar is actually open (which has its own sidebar button)
+  const shouldShowActionButton = !isSidebarOpen;
+  const actionButton = shouldShowActionButton ? <ActionsButton /> : null;
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Attendance" actionButton={actionButton}>
@@ -295,6 +299,14 @@ const AttendanceLayout: React.FC = () => {
   );
 
   return isDesktop ? desktopLayout : mobileLayout;
+};
+
+const AttendanceLayout: React.FC = () => {
+  return (
+    <SidebarProvider>
+      <AttendanceLayoutContent />
+    </SidebarProvider>
+  );
 };
 
 export default AttendanceLayout;

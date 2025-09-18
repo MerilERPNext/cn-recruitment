@@ -33,7 +33,6 @@ import defaultProfile from "../assets/face-rec.png";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
-import AttendanceChart from "./AttendanceChart";
 import {
   compareAsc,
   compareDesc,
@@ -411,7 +410,7 @@ const DesktopDashboard: React.FC = () => {
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   return (
-    <div className="h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Collapsible Sidebar */}
       <CollapsibleSidebar
         isExpanded={isSidebarExpanded}
@@ -420,7 +419,7 @@ const DesktopDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div
-        className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}
+        className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out`}
       >
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
@@ -572,7 +571,7 @@ const DesktopDashboard: React.FC = () => {
         </div>
 
         {/* Dashboard Content */}
-        <div className="p-8 flex-1 overflow-y-auto">
+        <div className="p-8 flex-1">
           {/* Employee Data Error Handling */}
           {!employeeState.isLoading && !employeeState.hasValidData && (
             <EmployeeFallback
@@ -674,11 +673,6 @@ const DesktopDashboard: React.FC = () => {
             {/* Left Column */}
             <div className="col-span-2 space-y-6">
               {/* Attendance Chart */}
-              <AttendanceChart
-                present={employeeAttendanceSummary?.present || 20}
-                absent={employeeAttendanceSummary?.absent || 1}
-                leaves={employeeAttendanceSummary?.leaves || 2}
-              />
 
               {/* Unpaid Expense Claims */}
               {expenseData && expenseData.length > 0 && (

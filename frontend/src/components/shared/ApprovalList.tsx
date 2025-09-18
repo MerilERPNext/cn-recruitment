@@ -113,10 +113,19 @@ const ApprovalList = ({
       try {
         if (mutation?.isPending) return;
         setLoadingAction({ id: data?.name, action });
-        const response = await mutation?.mutateAsync({
-          action,
-          name: data?.name || "",
-        });
+        const response = await mutation?.mutateAsync(
+          {
+            action,
+            name: data?.name || "",
+          },
+          {
+            onSuccess: () => {
+              if (action.toLowerCase() !== "approve") {
+                setRefetchListView((prev) => !prev);
+              }
+            },
+          }
+        );
 
         console.log("Action response:", response);
         const responseWithSession = response as unknown as { session?: any };
