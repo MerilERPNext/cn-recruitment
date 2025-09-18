@@ -19,17 +19,59 @@ import {
   XCircle,
 } from "lucide-react";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import { useGetEmployeeShift } from "../../hooks/useAttendance";
+import {
+  useGetEmployeeShift,
+  useHomeSummaryDetails,
+} from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import { formatTimeSafe } from "../../utils/helperUtils";
+import { formatTimeSafe, formatTo24HourTime } from "../../utils/helperUtils";
+import {
+  compareAsc,
+  compareDesc,
+  endOfDay,
+  format,
+  parseISO,
+  startOfDay,
+} from "date-fns";
 
 export default function DashboardModel() {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
   const { data: employeeShift } = useGetEmployeeShift(
-      currentEmployee?.user_id || ""
-    );
+    currentEmployee?.user_id || ""
+  );
+
+  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
+  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
+  const filters = {
+    time: ["between", [start, end]],
+  };
+  const encodedFilters = encodeURIComponent(JSON.stringify(filters));
+  const {
+    data: homeSummary,
+    refetch: refetchHomeSummary,
+    isRefetching,
+  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
+  const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
+  const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
+  const firstCheckIn = checkIns.length
+    ? checkIns.sort((a, b) =>
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
+    : undefined;
+  const lastCheckOut = checkOuts.length
+    ? checkOuts.sort((a, b) =>
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
+    : undefined;
+
   return (
     <DesktopLayoutWrapper title="Dashboard">
       <div className="absolute inset-0 overflow-y-auto bg-gray-50 p-4 sm:p-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -149,7 +191,9 @@ export default function DashboardModel() {
                         IN TIME
                       </p>
                       <p className="text-lg sm:text-xl font-bold text-green-600">
-                        09:05 AM
+                        {firstCheckIn?.time
+                          ? formatTo24HourTime(firstCheckIn.time)
+                          : "--:--"}
                       </p>
                     </div>
                   </div>
@@ -166,8 +210,8 @@ export default function DashboardModel() {
                       </p>
                       <p className="text-lg sm:text-xl font-bold text-blue-600">
                         {employeeShift?.end_time
-                      ? formatTimeSafe(employeeShift?.end_time)
-                      : "--:--"}
+                          ? formatTimeSafe(employeeShift?.end_time)
+                          : "--:--"}
                       </p>
                     </div>
                   </div>
@@ -183,7 +227,9 @@ export default function DashboardModel() {
                         OUT TIME
                       </p>
                       <p className="text-lg sm:text-xl font-bold text-red-600">
-                        10:00 PM
+                        {lastCheckOut?.time
+                          ? formatTo24HourTime(lastCheckOut.time)
+                          : "--:--"}
                       </p>
                     </div>
                   </div>
