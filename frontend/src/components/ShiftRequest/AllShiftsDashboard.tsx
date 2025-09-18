@@ -132,6 +132,7 @@ const MyShifts: React.FC = () => {
           ItemComponent={MyShiftItem}
           isSearch={false}
           pageSize={3}
+          orderBy="start_date desc"
           defaultFields={[
             "name",
             "employee",
