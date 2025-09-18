@@ -4,21 +4,13 @@ import { useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import FrappeListView from "../ListView";
 import type { ShiftAssignment } from "./AllShiftsDashboard";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 const TeamShiftRowItem: React.FC<{
   item: ShiftAssignment;
   index?: number;
   doctype: string;
 }> = ({ item, index }) => {
-  const formatToIndianDate = (dateString?: string): string => {
-    if (!dateString) return "N/A"; // show N/A if no value
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "N/A"; // handle invalid date
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
 
   // CHANGED: Using .data-row for the container and .data-cell for children.
   return (

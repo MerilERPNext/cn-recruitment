@@ -52,7 +52,7 @@ export default function DesktopDashboard() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const navigate = useNavigate();
   const { logout } = useFrappeAuth();
-const employeeState = useEmployeeWithFallback();
+  const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
@@ -100,6 +100,42 @@ const employeeState = useEmployeeWithFallback();
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
+
+  const logoutHandler = async () => {
+    try {
+      await logout();
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    if (showProfileDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showProfileDropdown]);
 
   const getTotalTime = () => {
     if (!homeSummary || homeSummary.length === 0) {
@@ -202,44 +238,6 @@ const employeeState = useEmployeeWithFallback();
     window.location.href = "/helpdesk/my-tickets";
   };
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
-
-  const logoutHandler = async () => {
-    try {
-      await logout();
-      // navigate("/login", { replace: true });
-      // agar aapko Frappe ka login page dikhana hai to:
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileDropdownRef.current &&
-        !profileDropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowProfileDropdown(false);
-      }
-    };
-
-    if (showProfileDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showProfileDropdown]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

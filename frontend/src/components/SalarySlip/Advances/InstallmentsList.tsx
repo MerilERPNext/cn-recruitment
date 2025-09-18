@@ -7,6 +7,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { StatusBadge } from "./StatusBadge";
 import { UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -22,15 +23,6 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   onToggleMask,
 }) => {
   const { isDesktop } = useScreenSize();
-  const formatToIndianDate = (dateString?: string): string => {
-    if (!dateString) return "N/A"; // show N/A if no value
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "N/A"; // handle invalid date
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
 
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">

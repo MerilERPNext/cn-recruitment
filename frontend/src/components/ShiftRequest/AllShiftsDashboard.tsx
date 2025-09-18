@@ -5,6 +5,7 @@ import ApprovalList from "../shared/ApprovalList";
 import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
 import FrappeListView from "../ListView";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 // Interface for Shift Assignment (Team Shifts from Frappe)
 export interface ShiftAssignment {
@@ -75,15 +76,6 @@ const MyShiftItem: React.FC<{
   index?: number;
   doctype: string;
 }> = ({ item }) => {
-  const formatToIndianDate = (dateString?: string): string => {
-    if (!dateString) return "N/A"; // show N/A if no value
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "N/A"; // handle invalid date
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-};
 
   const getShiftStatus = (startDate: string, endDate: string): string => {
     const today = new Date();
@@ -135,7 +127,6 @@ const MyShifts: React.FC = () => {
           isSearch={false}
           orderBy="start_date"
           pageSize={3}
-          orderBy="start_date desc"
           defaultFields={[
             "name",
             "employee",
@@ -174,16 +165,6 @@ const TeamShiftItem: React.FC<{
         return null;
     }
   };
-
-  const formatToIndianDate = (dateString?: string): string => {
-    if (!dateString) return "N/A"; // show N/A if no value
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "N/A"; // handle invalid date
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-};
 
   // CHANGED: Using the reusable .list-item-card class
   return (
