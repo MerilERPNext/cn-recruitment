@@ -1,6 +1,13 @@
 import { useMemo, useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
-import { ArrowLeft, ArrowUpRight, Plus, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  XCircle,
+} from "lucide-react";
 import {
   useGetAllEventsAndAttendance,
   usePlannedOvertimeAllowed,
@@ -118,9 +125,6 @@ const EmployeeAttendance = () => {
           ))}
         </div>
         <div className={containerClass}>
-          <span className="text-gray-700 font-medium mr-2">
-            Event Indicators:
-          </span>
           {eventDotLegendItems.map((item, index) => (
             <span key={index} className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${item.dotColor}`}></div>
@@ -212,49 +216,34 @@ const EmployeeAttendance = () => {
         );
 
         if (isAttendanceType) {
-          // Handle Attendance Request records differently
-          if (record.doctype === "Attendance Request") {
-            // For attendance requests, use the request type or a pending status
-            // You might want to show these as "pending" or based on request type
-            const requestStatus = record.status?.toLowerCase().trim();
-            if (requestStatus === "approved") {
-              // If approved, use the intended status from the request
-              status = "present"; // or derive from request details
-            } else {
-              // For pending/rejected requests, keep current status or mark as pending
-              status = status === "default" ? "absent" : status;
-            }
-          } else {
-            // Handle regular Attendance, Holiday records
-            const rawStatus = record.status?.toLowerCase().trim();
-            switch (rawStatus) {
-              case "present":
-                status = "present";
-                break;
-              case "absent":
-                status = "absent";
-                break;
-              case "on leave":
-              case "leave":
-                status = "on-leave";
-                break;
-              case "holiday":
-                status = "holiday";
-                break;
-              case "weekly off":
-                status = "week-off";
-                break;
-              case "work from home":
-                status = "work-from-home";
-                break;
-              case "half day":
-                status = "half-day";
-                firstHalf = record.half_day_status_first_half || "";
-                secondHalf = record.half_day_status_second_half || "";
-                break;
-              default:
-                status = "default";
-            }
+          const rawStatus = record.status?.toLowerCase().trim();
+          switch (rawStatus) {
+            case "present":
+              status = "present";
+              break;
+            case "absent":
+              status = "absent";
+              break;
+            case "on leave":
+            case "leave":
+              status = "on-leave";
+              break;
+            case "holiday":
+              status = "holiday";
+              break;
+            case "weekly off":
+              status = "week-off";
+              break;
+            case "work from home":
+              status = "work-from-home";
+              break;
+            case "half day":
+              status = "half-day";
+              firstHalf = record.half_day_status_first_half || "";
+              secondHalf = record.half_day_status_second_half || "";
+              break;
+            default:
+              status = "default";
           }
         } else {
           events.push(record);
@@ -319,15 +308,15 @@ const EmployeeAttendance = () => {
   );
 
   return (
-    <div className={`flex ${showDetailsFor ? "gap-4" : ""}`}>
+    <div className={`flex  bg-gray-100 `}>
       <div
-        className={`flex flex-col ${
+        className={`flex  bg-gray-100 p-2 flex-col ${
           showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
         }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
-        <div className=" w-full pb-2 bg-white">
+        <div className=" w-full pb-2 bg-white rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg">
           <div className="w-full flex justify-end md:justify-between  items-center border-b-1 border-gray-200 pb-2">
             {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
             {isDesktop && (
@@ -348,9 +337,11 @@ const EmployeeAttendance = () => {
               <ArrowUpRight className="h-5 w-5" />
             </button>
           </div>
-          <div className="p-1">
+          <div className="p-1 employee-datepicker-lg">
             <DatePicker
               selected={selectedDate}
+              showPopperArrow={false}
+              showMonthDropdown={false}
               onChange={(date) => {
                 setSelectedDate(date);
                 const attendance = getAttendanceStatus(date as Date);
@@ -372,6 +363,34 @@ const EmployeeAttendance = () => {
               }}
               openToDate={selectedDate as Date}
               inline
+              renderCustomHeader={({
+                date,
+                decreaseMonth,
+                increaseMonth,
+                prevMonthButtonDisabled,
+                nextMonthButtonDisabled,
+              }) => (
+                <div className="flex items-center justify-between px-2 py-2">
+                  <button
+                    onClick={decreaseMonth}
+                    disabled={prevMonthButtonDisabled}
+                    className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <span className="font-semibold">
+                    {date.toLocaleString("default", { month: "long" })}{" "}
+                    {date.getFullYear()}
+                  </span>
+                  <button
+                    onClick={increaseMonth}
+                    disabled={nextMonthButtonDisabled}
+                    className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
               renderDayContents={(day, date) => {
                 const attendance = getAttendanceStatus(date);
 
@@ -397,13 +416,12 @@ const EmployeeAttendance = () => {
                   }
                 })();
                 const selectedClass = isSelected
-                  ? "bg-gray-300 text-black border-none rounded-md" // Custom selected day class
+                  ? "bg-gray-300 text-black border-none rounded-md"
                   : "";
 
                 const dayClasses = `${baseClasses} ${highlightClass} ${selectedClass}`;
                 const dayBoxStyles = `w-full h-full flex items-center justify-center text-base ${dayClasses}`;
 
-                // Original mobile rendering
                 if (attendance?.status === "half-day") {
                   const firstColor =
                     gradientClassMap[
@@ -470,7 +488,7 @@ const EmployeeAttendance = () => {
 
         {/* Request Attendance Correction - Only show for mobile */}
         {!isDesktop && (
-          <div className="bg-white p-4 border-b-1 border-gray-200">
+          <div className="bg-white p-4 border-b-1 border-gray-200 rounded-bl-lg rounded-br-lg">
             <div className="flex gap-2">
               <button
                 className="w-full flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
@@ -489,7 +507,7 @@ const EmployeeAttendance = () => {
         {/* Request Attendance Correction */}
 
         {/* My Attendance Requests */}
-        <div className="pb-20 px-2 bg-white">
+        <div className="pb-20 px-2 bg-white mt-2 rounded-lg">
           <div className="flex justify-between items-center w-full p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-1 ">
               My Attendance Requests
@@ -611,7 +629,7 @@ const EmployeeAttendance = () => {
 
       {/* Conditionally render the details component */}
       {showDetailsFor && isDesktop && (
-        <div className="w-1/3 h-screen sticky top-0">
+        <div className="w-1/3 h-screen sticky top-2">
           <EmployeeAttendanceDetails
             date={showDetailsFor.date}
             status={showDetailsFor.status}

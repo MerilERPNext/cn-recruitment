@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { useSearchParams } from "react-router-dom";
 import { EmployeeStatus } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const TeamAttendance = () => {
   const { isDesktop } = useScreenSize();
@@ -60,6 +61,36 @@ const TeamAttendance = () => {
             <DatePicker
               inline
               selected={selectedDate}
+              showPopperArrow={false}
+              showMonthDropdown={false}
+              renderCustomHeader={({
+                date,
+                decreaseMonth,
+                increaseMonth,
+                prevMonthButtonDisabled,
+                nextMonthButtonDisabled,
+              }) => (
+                <div className="flex items-center justify-between px-2 py-2">
+                  <button
+                    onClick={decreaseMonth}
+                    disabled={prevMonthButtonDisabled}
+                    className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <span className="font-semibold">
+                    {date.toLocaleString("default", { month: "long" })}{" "}
+                    {date.getFullYear()}
+                  </span>
+                  <button
+                    onClick={increaseMonth}
+                    disabled={nextMonthButtonDisabled}
+                    className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
               onChange={(date) => {
                 if (!date) return;
                 const localDateStr = date.toISOString().split("T")[0];

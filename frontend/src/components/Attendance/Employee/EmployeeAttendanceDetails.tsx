@@ -73,7 +73,7 @@ const EmployeeAttendanceDetails = ({
     attendanceRequests && attendanceRequests.length > 0;
 
   return (
-    <div className="bg-white flex flex-col h-full">
+    <div className="bg-white flex flex-col h-full rounded-lg">
       <div className="flex justify-between items-center p-4 border-b">
         <h2 className="text-lg font-semibold text-gray-900">
           Attendance Details
@@ -118,7 +118,7 @@ const EmployeeAttendanceDetails = ({
         </div>
       )}
 
-      <div className="p-3 border-t bg-white sticky bottom-0 w-full z-40 mt-auto">
+      <div className="p-3 border-t bg-white sticky bottom-0 w-full z-40 mt-auto rounded-bl-lg rounded-br-lg">
         {hasExistingRequest ? (
           <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-blue-800 text-sm font-medium">
@@ -166,10 +166,10 @@ export default EmployeeAttendanceDetails;
 const AttendanceCard = ({ record }: { record: EmployeeCheckInLog }) => {
   return (
     <div className="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:shadow-lg transition">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold text-gray-800">
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-semibold text-gray-800">
           {record.employee}
-        </h2>
+        </h3>
         <span
           className={`text-sm font-medium px-2 py-1 rounded-lg
             ${

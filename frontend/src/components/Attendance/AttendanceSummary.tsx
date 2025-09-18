@@ -17,7 +17,6 @@ import {
   CheckCircle,
   AlertCircle,
   Timer,
-  Clock8,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -71,45 +70,6 @@ const AttendanceSummary = () => {
     }, 0);
   }
 
-  const quickSummaryData = [
-    {
-      icon: CheckCircle,
-      color: "green",
-      label: "Present Days",
-      value: employeeAttendanceSummary?.present || 0,
-    },
-    {
-      icon: AlertCircle,
-      color: "red",
-      label: "Absent Days",
-      value: employeeAttendanceSummary?.absent || 0,
-    },
-    {
-      icon: Calendar,
-      color: "orange",
-      label: "Leaves",
-      value: employeeAttendanceSummary?.leaves || 0,
-    },
-    {
-      icon: Timer,
-      color: "yellow",
-      label: "Avg. Overtime",
-      value: employeeAttendanceSummary?.avg_overtime || 0,
-    },
-    {
-      icon: Clock,
-      color: "blue",
-      label: "Avg. Work Duration",
-      value: employeeAttendanceSummary?.avg_working_hours || 0,
-    },
-    {
-      icon: Clock8,
-      color: "purple",
-      label: "Avg. Late By",
-      value: employeeAttendanceSummary?.avg_late_by || 0,
-    },
-  ];
-
   const teamSummaryData = [
     {
       icon: CheckCircle,
@@ -161,7 +121,7 @@ const AttendanceSummary = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-white p-4">
+      <div className="bg-white p-4">
         {/* Date Navigation */}
         <div className="flex items-center justify-between mb-4 bg-white border border-gray-200 p-4 rounded-xl">
           <button
@@ -185,35 +145,20 @@ const AttendanceSummary = () => {
         </div>
 
         <AttendanceChart
-          present={employeeAttendanceSummary?.present || 20}
-          absent={employeeAttendanceSummary?.absent || 1}
-          leaves={employeeAttendanceSummary?.leaves || 2}
+          present={employeeAttendanceSummary?.present || 0}
+          absent={employeeAttendanceSummary?.absent || 0}
+          leaves={employeeAttendanceSummary?.leaves || 0}
+          avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
+          avg_working_hours={
+            Number(employeeAttendanceSummary?.avg_working_hours) || 0
+          }
+          avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
         />
         {isDesktop ? (
           // Desktop Layout
           <div className="flex py-4">
             {/* Left/Main Column */}
             <div className="flex-1 space-y-6">
-              {/* Quick Summary */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-                <h2 className="text-xl font-semibold">Quick Summary</h2>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                  {quickSummaryData.map((data, index) => (
-                    <SummaryCard
-                      key={index}
-                      icon={data.icon}
-                      iconColor={`text-${data.color}-600`}
-                      bgColor={`bg-${data.color}-50`}
-                      borderColor={`border-${data.color}-100`}
-                      value={data.value}
-                      label={data.label}
-                      isDesktop={isDesktop}
-                      isMetric={true}
-                    />
-                  ))}
-                </div>
-              </div>
-
               {/* Today's Team Summary */}
               <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
                 <h2 className="text-xl font-semibold">Today's Team Summary</h2>
@@ -299,29 +244,9 @@ const AttendanceSummary = () => {
           </div>
         ) : (
           // Mobile Layout
-          <div className="min-h-screen bg-white">
+          <div className="bg-white">
             {/* Header */}
             <div className="mb-4">
-              {/* Quick Summary */}
-              <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4">
-                <h2 className="text-xl font-semibold">Quick Summary</h2>
-                <div className="grid grid-cols-3 gap-3">
-                  {quickSummaryData.map((data, index) => (
-                    <SummaryCard
-                      key={index}
-                      icon={data.icon}
-                      iconColor={`text-${data.color}-600`}
-                      bgColor={`bg-${data.color}-50`}
-                      borderColor={`border-${data.color}-100`}
-                      value={data.value}
-                      label={data.label}
-                      isDesktop={isDesktop}
-                      isMetric={true}
-                    />
-                  ))}
-                </div>
-              </div>
-
               {/* Team Summary */}
               <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0">
                 <h2 className="text-xl font-semibold">Today's Team Summary</h2>

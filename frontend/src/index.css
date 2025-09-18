@@ -153,10 +153,11 @@ code {
 }
 
 .react-datepicker__day {
-  width: calc(100% / 7) !important;
-  height: 2.5rem !important;
-  max-width: 2.5rem !important;
-  margin: 0.125rem auto !important;
+  cursor: pointer;
+  width: 100% !important;
+  height: 3rem !important;
+  /* max-width: 2.5rem !important; */
+  margin: 0.2rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -164,7 +165,6 @@ code {
   font-weight: 500 !important;
   aspect-ratio: 1 !important;
 }
-
 .react-datepicker__day-names {
   display: flex !important;
   width: 100% !important;
@@ -216,6 +216,9 @@ code {
   border-width: 2px 2px 0 0 !important;
   top: 10px !important;
   left: -4px !important;
+}
+.react-datepicker__aria-live {
+  display: none !important;
 }
 
 /* Remove default hover and focus styles */

@@ -1,23 +1,40 @@
 import React from "react";
-import { CheckCircle, XCircle, Timer, Calendar } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Timer,
+  Calendar,
+  Clock,
+  Clock8,
+} from "lucide-react";
+import SummaryCard from "./Attendance/SummaryCard";
+import { useScreenSize } from "../hooks/useScreenSize";
 
 interface AttendanceChartProps {
   present?: number;
   absent?: number;
   leaves?: number;
+  avg_late_by?: number;
+  avg_working_hours?: number;
+  avg_overtime?: number;
   className?: string;
 }
 
 const AttendanceChart: React.FC<AttendanceChartProps> = ({
-  present = 20,
-  absent = 1,
-  leaves = 2,
+  present = 0,
+  absent = 0,
+  leaves = 0,
+  avg_working_hours = 0,
+  avg_overtime = 0,
+  avg_late_by = 0,
   className = "",
 }) => {
+  const { isDesktop } = useScreenSize();
+
   const total = present + absent + leaves;
   const presentPercent = total > 0 ? (present / total) * 100 : 0;
   const absentPercent = total > 0 ? (absent / total) * 100 : 0;
-  const leavesPercent = total > 0 ? (leaves / total) * 100 : 0;
+  // const leavesPercent = total > 0 ? (leaves / total) * 100 : 0;
 
   // Convert percentages to angles (360 degrees = 100%)
   const presentAngle = (presentPercent / 100) * 360;
@@ -47,16 +64,6 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
 
     return `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z`;
   };
-
-  const weeklyData = [
-    { day: "Mon", present: 1, absent: 0, leave: 0 },
-    { day: "Tue", present: 1, absent: 0, leave: 0 },
-    { day: "Wed", present: 0, absent: 0, leave: 1 },
-    { day: "Thu", present: 1, absent: 0, leave: 0 },
-    { day: "Fri", present: 1, absent: 0, leave: 0 },
-    { day: "Sat", present: 0, absent: 0, leave: 0 },
-    { day: "Sun", present: 0, absent: 0, leave: 0 },
-  ];
 
   return (
     <div
@@ -125,157 +132,76 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
         </div>
 
         {/* Statistics */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-100 hover:bg-green-100 transition-colors">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-green-800">Present Days</p>
-                <p className="text-sm text-green-600">
-                  {presentPercent.toFixed(1)}% of total
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-green-800">{present}</p>
-              <div className="w-12 h-1 bg-green-300 rounded-lg">
-                <div
-                  className="h-1 bg-green-600 rounded-lg transition-all duration-500"
-                  style={{ width: `${presentPercent}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
+        {/* Attendance Summary Cards */}
+        <div className={`grid gap-3 ${isDesktop ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          {/* Present Summary Card */}
+          <SummaryCard
+            icon={CheckCircle}
+            iconColor="text-green-600"
+            bgColor="bg-green-50"
+            borderColor="border-green-100"
+            value={present}
+            label="Present Days"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
 
-          <div className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100 hover:bg-red-100 transition-colors">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <XCircle className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-red-800">Absent Days</p>
-                <p className="text-sm text-red-600">
-                  {absentPercent.toFixed(1)}% of total
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-red-800">{absent}</p>
-              <div className="w-12 h-1 bg-red-300 rounded-lg">
-                <div
-                  className="h-1 bg-red-600 rounded-lg transition-all duration-500"
-                  style={{ width: `${Math.max(absentPercent, 5)}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
+          {/* Absent Summary Card */}
+          <SummaryCard
+            icon={XCircle}
+            iconColor="text-red-600"
+            bgColor="bg-red-50"
+            borderColor="border-red-100"
+            value={absent}
+            label="Absent Days"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
 
-          <div className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-100 hover:bg-amber-100 transition-colors">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                <Timer className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-amber-800">Leave Days</p>
-                <p className="text-sm text-amber-600">
-                  {leavesPercent.toFixed(1)}% of total
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-amber-800">{leaves}</p>
-              <div className="w-12 h-1 bg-amber-300 rounded-lg">
-                <div
-                  className="h-1 bg-amber-600 rounded-lg transition-all duration-500"
-                  style={{ width: `${Math.max(leavesPercent, 5)}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+          {/* Leave Summary Card */}
+          <SummaryCard
+            icon={Calendar}
+            iconColor="text-orange-600"
+            bgColor="bg-orange-50"
+            borderColor="border-orange-100"
+            value={leaves}
+            label="Leave Days"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
 
-      {/* Weekly Bar Chart */}
-      <div className="mt-8 pt-6 border-t border-gray-100">
-        <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
-          <Calendar className="w-4 h-4 mr-2" />
-          This Week's Activity
-        </h4>
-        <div className="flex items-end justify-between space-x-2 h-24">
-          {weeklyData.map((day) => {
-            const dayTotal = day.present + day.absent + day.leave;
-            const maxHeight = 60;
+          <SummaryCard
+            icon={Timer}
+            iconColor="text-yellow-600"
+            bgColor="bg-yellow-50"
+            borderColor="border-yellow-100"
+            value={avg_late_by}
+            label="Avg. Overtime"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
 
-            return (
-              <div key={day.day} className="flex-1 flex flex-col items-center">
-                <div
-                  className="flex flex-col space-y-0.5 mb-2"
-                  style={{ height: maxHeight }}
-                >
-                  {/* Present bar */}
-                  {day.present > 0 && (
-                    <div
-                      className="w-full bg-green-500 rounded-sm transition-all duration-500 hover:bg-green-600"
-                      style={{ height: `${(day.present / 1) * maxHeight}px` }}
-                      title={`Present: ${day.present}`}
-                    ></div>
-                  )}
+          <SummaryCard
+            icon={Clock}
+            iconColor="text-blue-600"
+            bgColor="bg-blue-50"
+            borderColor="border-blue-100"
+            value={avg_working_hours}
+            label="Avg. Work Duration"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
 
-                  {/* Leave bar */}
-                  {day.leave > 0 && (
-                    <div
-                      className="w-full bg-amber-500 rounded-sm transition-all duration-500 hover:bg-amber-600"
-                      style={{ height: `${(day.leave / 1) * maxHeight}px` }}
-                      title={`Leave: ${day.leave}`}
-                    ></div>
-                  )}
-
-                  {/* Absent bar */}
-                  {day.absent > 0 && (
-                    <div
-                      className="w-full bg-red-500 rounded-sm transition-all duration-500 hover:bg-red-600"
-                      style={{ height: `${(day.absent / 1) * maxHeight}px` }}
-                      title={`Absent: ${day.absent}`}
-                    ></div>
-                  )}
-
-                  {/* Empty state */}
-                  {dayTotal === 0 && (
-                    <div
-                      className="w-full bg-gray-200 rounded-sm"
-                      style={{ height: "8px" }}
-                      title="No data"
-                    ></div>
-                  )}
-                </div>
-                <span
-                  className={`text-xs font-medium ${
-                    dayTotal > 0 ? "text-gray-700" : "text-gray-400"
-                  }`}
-                >
-                  {day.day}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Legend */}
-        <div className="flex justify-center space-x-6 mt-4 pt-4 border-t border-gray-100">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
-            <span className="text-xs text-gray-600">Present</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-amber-500 rounded-sm"></div>
-            <span className="text-xs text-gray-600">Leave</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
-            <span className="text-xs text-gray-600">Absent</span>
-          </div>
+          <SummaryCard
+            icon={Clock8}
+            iconColor="text-purple-600"
+            bgColor="bg-purple-50"
+            borderColor="border-purple-100"
+            value={avg_overtime}
+            label="Avg. Late By"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
         </div>
       </div>
     </div>
