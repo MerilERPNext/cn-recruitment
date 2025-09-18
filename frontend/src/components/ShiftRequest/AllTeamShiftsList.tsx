@@ -26,7 +26,7 @@ const TeamShiftRowItem: React.FC<{
             <div className="data-cell font-medium truncate">
                 {item.employee_name || item.employee}
             </div>
-            <div className="data-cell truncate">
+            <div className="data-cell truncate" title={item.creation}>
                 {item.shift_type}
             </div>
             <div className="data-cell">
