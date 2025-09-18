@@ -118,9 +118,7 @@ const ViewPolicy = lazy(() => import("./components/Policies/ViewPolicy"));
 const ViewSalarySlipModal = lazy(
   () => import("./components/SalarySlip/SalarySlipPDF")
 );
-const EmployeeAttendanceDetails = lazy(
-  () => import("./components/Attendance/Employee/EmployeeAttendanceDetails")
-);
+
 const HRPayroll = lazy(() => import("./components/SalarySlip/HR-Payroll"));
 const AttendancePolicies = lazy(
   () => import("./components/Attendance/AttendancePolicies/AttendancePolicies")
@@ -190,7 +188,6 @@ const CompensatoryRequest = lazy(
   () => import("./components/Leaves/compensatory/CompensatoryRequest")
 );
 
-
 // Loading component for Suspense fallbacks
 // eslint-disable-next-line react-refresh/only-export-components
 const LoadingSpinner = () => (
@@ -207,7 +204,6 @@ const withLazyLoading = (
   Component: React.ComponentType,
   fallback = <LoadingSpinner />
 ) => {
-
   return (props: any) => (
     <EmployeeErrorBoundary>
       <Suspense fallback={fallback}>
@@ -374,10 +370,6 @@ export const routesConfig: AppRoute[] = [
       {
         path: "emp-attendance/all",
         element: <AllEmpAttendance />,
-      },
-      {
-        path: "emp-attendance/details",
-        element: <EmployeeAttendanceDetails />,
       },
       { path: "team-attendance", element: <TeamAttendance /> },
       { path: "attendance-request", element: <AttendanceRequest /> },

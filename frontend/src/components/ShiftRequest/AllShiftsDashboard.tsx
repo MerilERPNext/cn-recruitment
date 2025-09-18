@@ -135,6 +135,7 @@ const MyShifts: React.FC = () => {
           isSearch={false}
           orderBy="start_date"
           pageSize={3}
+          orderBy="start_date desc"
           defaultFields={[
             "name",
             "employee",
