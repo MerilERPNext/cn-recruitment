@@ -464,7 +464,7 @@ const EmployeeAttendance = () => {
                           ).map((doctype, index) => (
                             <div
                               key={index}
-                              className={`w-2 h-2 rounded-full ${getEventDotColor(
+                              className={`w-[6px] h-[6px] rounded-full ${getEventDotColor(
                                 doctype
                               )}`}
                               title={doctype}
