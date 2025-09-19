@@ -4,22 +4,14 @@ import {
   FileText,
   Users,
   Settings,
-  Award,
-  CreditCard,
-  FileCheck,
-  UserCheck,
-  Building,
-  MessageSquare,
-  DollarSign,
-  Download,
   User,
   HelpCircle,
-  Zap,
   CheckCircle,
   XCircle,
   LogOut,
   Search,
   ChevronDown,
+  Headset,
 } from "lucide-react";
 import {
   useGetEmployeeShift,
@@ -45,6 +37,8 @@ import defaultProfile from "../assets/face-rec.png";
 import { useFrappeAuth } from "frappe-react-sdk";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
+import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
+import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -326,7 +320,8 @@ export default function DesktopDashboard() {
                           {currentEmployee?.employee_name || "Temp User"}
                         </h3>
                         <p className="text-sm text-gray-600 break-words whitespace-normal max-w-xs">
-                          {currentEmployee?.designation || "Temp Designation"}
+                          {currentEmployee?.custom_designation_name ||
+                            "Temp Designation"}
                         </p>
                         <p className="text-xs text-gray-500">
                           Employee ID: {currentEmployee?.employee || "N/A"}
@@ -404,7 +399,7 @@ export default function DesktopDashboard() {
         </div>
 
         {/* Dashboard Content */}
-        <div className="p-8 flex-1">
+        <div className="p-4 flex-1">
           {/* Employee Data Error Handling */}
           {!employeeState.isLoading && !employeeState.hasValidData && (
             <EmployeeFallback
@@ -420,89 +415,21 @@ export default function DesktopDashboard() {
           )}
 
           {/* Hero Banner */}
-          <div className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-lg p-6 text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <h2 className="text-2xl font-bold mb-2">Keep Up the Rhythm!</h2>
-              <p className="text-teal-100">
+          <div className="bg-gray-200 mb-2 to-teal-500 rounded-lg p-6 text-gray-800 relative overflow-hidden">
+            <div className="relative z-0">
+              <h2 className="text-xl font-bold mb-2">Keep Up the Rhythm!</h2>
+              <p className="text-gray-500">
                 Your contributions are making the day amazing!
               </p>
-            </div>
-            <div className="absolute right-4 top-4 w-20 h-20 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <div className="w-12 h-12 bg-yellow-200 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-gray-700" />
-              </div>
             </div>
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             {/* Tasks Awaiting */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Tasks Awaiting You (34569)
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-start p-2 rounded-lg bg-gray-100 gap-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-sm font-medium">
-                        Requisition Activation
-                      </span>
-                      <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
-                        Due on 27 Sep
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600">
-                      For: Priya Arora (PW1080) | Associate Manager
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start p-2 rounded-lg bg-gray-100 gap-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-sm font-medium">
-                        Requisition Activation
-                      </span>
-                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                        Due on 14 Oct
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600">
-                      For: Chayan Bose (PW2225) | Professor
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start p-2 rounded-lg bg-gray-100 gap-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-sm font-medium">
-                        Requisition Activation
-                      </span>
-                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                        Due on 20 Nov
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600">
-                      For: Kiya Aggarwal (PW2210) | Trainee Professor
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+            <TasksAwaiting/>
             {/* Announcements */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-white rounded-lg mb-2 p-6 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-4">
                 Daily Timings
               </h3>
@@ -583,8 +510,8 @@ export default function DesktopDashboard() {
           </div>
 
           {/* Second Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 mb-2 gap-2">
+            <div className="grid grid-cols-1 gap-2">
               {/* Total Hours Worked */}
               <div className="bg-white text-blue-600 p-6 rounded-lg shadow-sm">
                 <div className="text-center">
@@ -623,21 +550,35 @@ export default function DesktopDashboard() {
                 <h3 className="font-semibold text-gray-900 mb-4">
                   Helpdesk / Todo's
                 </h3>
-                <div className="flex flex-col gap-4">
-                  <button
-                    onClick={handleHelpDeskClick}
-                    className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
-                  >
-                    <HelpCircle className="w-4 h-4" />
-                    Help Desk
-                  </button>
-                  <button
-                    onClick={handleTodoClick}
-                    className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
-                  >
-                    <HelpCircle className="w-4 h-4" />
-                    Todo List
-                  </button>
+                <div className="flex flex-row w-full gap-4">
+                  <div className="flex w-full flex-col gap-2 bg-gray-100 p-2 rounded-lg hover:bg-gray-200 ">
+                    <div className="bg-blue-200 w-full p-2 rounded-lg ">
+                      <button
+                        onClick={handleHelpDeskClick}
+                        className="flex items-center w-full justify-center gap-2 text-white px-4 py-2 rounded-lg  text-sm"
+                      >
+                        <Headset className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="text-sm text-gray-600 font-medium text-center">
+                      Helpdesk
+                    </div>
+                  </div>
+
+                  {/*todo*/}
+                  <div className="flex w-full flex-col gap-2 bg-gray-100 p-2 rounded-lg hover:bg-gray-200 ">
+                    <div className="bg-green-200 p-2 items-center justify-center rounded-lg ">
+                      <button
+                        onClick={handleTodoClick}
+                        className="flex items-center w-full justify-center gap-2 text-white px-4 py-2 rounded-lg  text-sm"
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="text-sm text-gray-600 font-medium text-center">
+                      ToDo List
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -689,102 +630,8 @@ export default function DesktopDashboard() {
               </div>
             </div>
           </div>
-
           {/* Admin Apps */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Admin Apps</h3>
-              <span className="text-blue-600 text-sm cursor-pointer">
-                View All
-              </span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <Settings className="w-6 h-6 text-yellow-600" />
-                </div>
-                <p className="text-xs text-gray-600">Settings</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-pink-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-pink-600" />
-                </div>
-                <p className="text-xs text-gray-600">Onboarding</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-teal-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <Award className="w-6 h-6 text-teal-600" />
-                </div>
-                <p className="text-xs text-gray-600">Recognitions</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-green-600" />
-                </div>
-                <p className="text-xs text-gray-600">Performance</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-blue-600" />
-                </div>
-                <p className="text-xs text-gray-600">PolicyDesk</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-cyan-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-cyan-600" />
-                </div>
-                <p className="text-xs text-gray-600">Travel & Expenses</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <FileCheck className="w-6 h-6 text-emerald-600" />
-                </div>
-                <p className="text-xs text-gray-600">HRIS Documents</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-gray-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <Building className="w-6 h-6 text-gray-600" />
-                </div>
-                <p className="text-xs text-gray-600">MIS Encashment</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-slate-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <UserCheck className="w-6 h-6 text-slate-600" />
-                </div>
-                <p className="text-xs text-gray-600">Separations</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-indigo-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-indigo-600" />
-                </div>
-                <p className="text-xs text-gray-600">OrgChart</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-blue-600" />
-                </div>
-                <p className="text-xs text-gray-600">Offboarding</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <Download className="w-6 h-6 text-yellow-600" />
-                </div>
-                <p className="text-xs text-gray-600">Talent Mgmt</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <User className="w-6 h-6 text-purple-600" />
-                </div>
-                <p className="text-xs text-gray-600">Separation Help...</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-teal-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                  <HelpCircle className="w-6 h-6 text-teal-600" />
-                </div>
-                <p className="text-xs text-gray-600">Ask Themis</p>
-              </div>
-            </div>
-          </div>
+         <MicroAppInDashboard/>
         </div>
       </div>
     </div>

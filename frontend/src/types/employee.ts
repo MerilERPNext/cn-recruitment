@@ -8,7 +8,7 @@ export interface Employee {
   middle_name?: string;
   last_name?: string;
   employee_number?: string;
-  designation?: string;
+  custom_designation_name?: string;
   department?: string;
   company?: string;
   branch?: string;
