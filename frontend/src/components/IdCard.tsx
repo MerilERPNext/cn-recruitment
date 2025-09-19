@@ -432,189 +432,155 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
     <DesktopLayoutWrapper title="Employee ID Card">
       <div className="h-full overflow-y-auto bg-gray-50">
         <div className="min-h-full p-4 sm:p-6 lg:p-8">
-          
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <HeaderBar title="Employee ID Card" onBack={() => navigate(-1)} />
-              {/* Header */}
-              <div className="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 sm:gap-6">
-                    <EmployeeAvatar
-                      imageUrl={employee.avatar}
-                      name={employee.employee_name}
-                      size="w-16 h-16 sm:w-20 sm:h-20"
-                    />
-                    <div>
-                      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                        {employee.employee_name}
-                      </h1>
-                      <p className="text-gray-600 text-base sm:text-lg">
-                        Employee ID: {employee.employee_number || employee.id}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-                    <button
-                      onClick={handleEmail}
-                      className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm sm:text-base"
-                    >
-                      <EmailIcon />
-                      Email
-                    </button>
-                    <button
-                      onClick={handleChat}
-                      className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm sm:text-base"
-                    >
-                      <ChatIcon />
-                      Chat
-                    </button>
-                    <button
-                      onClick={handleCall}
-                      className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
-                    >
-                      <CallIcon />
-                      Call
-                    </button>
+            {/* Header */}
+            <div className="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 sm:gap-6">
+                  <EmployeeAvatar
+                    imageUrl={employee.avatar}
+                    name={employee.employee_name}
+                    size="w-16 h-16 sm:w-20 sm:h-20"
+                  />
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                      {employee.employee_name}
+                    </h1>
+                    <p className="text-gray-600 text-base sm:text-lg">
+                      Employee ID: {employee.employee_number || employee.id}
+                    </p>
                   </div>
                 </div>
+                <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+                  <button
+                    onClick={handleEmail}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm sm:text-base"
+                  >
+                    <EmailIcon />
+                    Email
+                  </button>
+                  <button
+                    onClick={handleChat}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm sm:text-base"
+                  >
+                    <ChatIcon />
+                    Chat
+                  </button>
+                  <button
+                    onClick={handleCall}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
+                  >
+                    <CallIcon />
+                    Call
+                  </button>
+                </div>
               </div>
+            </div>
 
-              {/* Main Content */}
-              <div className="p-4 sm:p-6 lg:p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-                  {/* Left Column - Personal & Employment Info */}
-                  <div className="lg:col-span-2 space-y-6 lg:space-y-8">
-                    {/* Personal Information */}
-                    <div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                        Personal Information
-                      </h2>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Full Name
-                          </span>
-                          <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
-                            {employee.employee_name}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Gender
-                          </span>
-                          <span className="text-gray-900 font-medium text-sm sm:text-base">
-                            Male
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Date of Birth
-                          </span>
-                          <span className="text-gray-900 font-medium text-sm sm:text-base">
-                            October 15, 1990
-                          </span>
-                        </div>
+            {/* Main Content */}
+            <div className="p-4 sm:p-6 lg:p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                {/* Left Column - Personal & Employment Info */}
+                <div className="lg:col-span-2 space-y-6 lg:space-y-8">
+                  {/* Personal Information */}
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      Personal Information
+                    </h2>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Full Name
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.employee_name}
+                        </span>
                       </div>
-                    </div>
-
-                    {/* Employment Details */}
-                    <div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                        Employment Details
-                      </h2>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Department
-                          </span>
-                          <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
-                            {employee.department}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Designation
-                          </span>
-                          <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
-                            {employee.designation || "Not Specified"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Start Date
-                          </span>
-                          <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
-                            {formatDate(employee.startDate)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Location
-                          </span>
-                          <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
-                            {employee.location || "Not Specified"}
-                          </span>
-                        </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Phone Number
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.contact || "Not Provided"}
+                        </span>
                       </div>
-                    </div>
-
-                    {/* Contact Information */}
-                    <div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                        Contact Information
-                      </h2>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Email Address
-                          </span>
-                          <span className="text-blue-600 font-medium text-sm sm:text-base text-right break-all">
-                            {employee.email || "Not Provided"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Phone Number
-                          </span>
-                          <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
-                            {employee.contact || "Not Provided"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm sm:text-base">
-                            Mailing Address
-                          </span>
-                          <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
-                            123 Innovation Drive, Suite 456, Tech Park, CA 94107
-                          </span>
-                        </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Email Address
+                        </span>
+                        <span className="text-blue-600 font-medium text-sm sm:text-base text-right break-all">
+                          {employee.email || "Not Provided"}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Column - QR Code */}
-                  <div className="flex flex-col items-center lg:items-start">
-                    <div className="bg-pink-50 rounded-lg p-4 sm:p-6 w-full max-w-sm lg:max-w-none">
-                      <div className="flex justify-center mb-4">
-                        <img
-                          src={
-                            generateEmployeeQRCodeURL(employee, 200) ||
-                            "/placeholder.svg"
-                          }
-                          alt={`QR Code for ${employee.employee_name}`}
-                          className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 rounded-lg"
-                          loading="lazy"
-                        />
+                  {/* Employment Details */}
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      Employment Details
+                    </h2>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Department
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.department}
+                        </span>
                       </div>
-                      <p className="text-center text-gray-600 text-xs sm:text-sm">
-                        Scan to view profile on a mobile device or add to
-                        contacts.
-                      </p>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Designation
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.designation || "Not Specified"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Start Date
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {formatDate(employee.startDate)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Location
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.location || "Not Specified"}
+                        </span>
+                      </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Right Column - QR Code */}
+                <div className="flex flex-col items-center lg:items-start">
+                  <div className="bg-pink-50 rounded-lg p-4 sm:p-6 w-full max-w-sm lg:max-w-none">
+                    <div className="flex justify-center mb-4">
+                      <img
+                        src={
+                          generateEmployeeQRCodeURL(employee, 200) ||
+                          "/placeholder.svg"
+                        }
+                        alt={`QR Code for ${employee.employee_name}`}
+                        className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 rounded-lg"
+                        loading="lazy"
+                      />
+                    </div>
+                    <p className="text-center text-gray-600 text-xs sm:text-sm">
+                      Scan to view profile on a mobile device or add to
+                      contacts.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
         </div>
 
         {/* Toast notification */}
@@ -684,6 +650,8 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
   const handleMailClick = () => {
     if (employee?.email) {
       window.location.href = `mailto:${employee.email}`;
+    } else {
+      showToast("No email available for this employee.", "info");
     }
   };
 
