@@ -12,6 +12,7 @@ import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import Modal from "./commonModal"
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 
 const AdvancesList: React.FC = () => {
@@ -152,8 +153,8 @@ const AdvancesList: React.FC = () => {
                       <span className="font-medium">{advance.numberOfDeductions}</span>
                     )}
                   </div>
-                  <div className="data-cell text-center">{advance.startDate}</div>
-                  <div className="data-cell text-center">{advance.endDate}</div>
+                  <div className="data-cell text-center">{formatToIndianDate(advance.startDate)}</div>
+                  <div className="data-cell text-center">{formatToIndianDate(advance.endDate)}</div>
                   <div className="data-cell text-center">
                     <StatusBadge status={advance.advanceStatus} />
                   </div>
@@ -239,7 +240,7 @@ const AdvancesList: React.FC = () => {
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>
-                  <strong>{advance.startDate}</strong> to <strong>{advance.endDate}</strong>
+                  <strong>{formatToIndianDate(advance.startDate)}</strong> to <strong>{formatToIndianDate(advance.endDate)}</strong>
                 </span>
                 <span>{advance.installments.length} installments</span>
               </div>

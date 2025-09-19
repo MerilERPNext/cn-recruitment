@@ -93,7 +93,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const handleHelpDeskClick = () => {
-    window.location.href = "/app/helpdesk";
+    window.location.href = "/helpdesk/my-tickets";
   };
 
   const navigationItems: NavigationItem[] = [
