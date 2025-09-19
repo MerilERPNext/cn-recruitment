@@ -85,13 +85,6 @@ const AdvancesList: React.FC = () => {
       <div className="w-full max-w-[100vw] mx-auto py-0">
         <div className="mb-6 w-full px-0">
           <div className="flex items-center justify-end gap-4">
-            {/* CHANGED: Using .btn-primary */}
-            <button
-              onClick={handleCreateAdvance}
-              className="btn-primary flex items-center gap-2 whitespace-nowrap"
-            >
-              Create Advance
-            </button>
             {/* CHANGED: Using .btn-secondary */}
             <button
               onClick={() => setMaskAmounts(!maskAmounts)}
@@ -109,6 +102,13 @@ const AdvancesList: React.FC = () => {
                   <BsToggleOn className="w-6 h-6 text-primary" /> {/* CHANGED: Using brand color */}
                 </>
               )}
+            </button>
+            {/* CHANGED: Using .btn-primary */}
+            <button
+              onClick={handleCreateAdvance}
+              className="btn-primary flex items-center gap-2 whitespace-nowrap"
+            >
+              Create Advance
             </button>
           </div>
         </div>
@@ -177,13 +177,6 @@ const AdvancesList: React.FC = () => {
     <div className="min-h-screen w-full bg-gray-50">
       <div className="p-0 space-y-3">
         <div className="flex items-center justify-between gap-4">
-          {/* CHANGED: Using .btn-primary */}
-          <button
-            onClick={handleCreateAdvance}
-            className="btn-primary flex items-center gap-2 whitespace-nowrap"
-          >
-            Create Advance
-          </button>
           {/* CHANGED: Using .btn-secondary */}
           <button
             onClick={() => setMaskAmounts(!maskAmounts)}
@@ -201,6 +194,13 @@ const AdvancesList: React.FC = () => {
                   <BsToggleOn className="w-6 h-6 text-primary" /> {/* CHANGED: Using brand color */}
                 </>
               )}
+          </button>
+          {/* CHANGED: Using .btn-primary */}
+          <button
+            onClick={handleCreateAdvance}
+            className="btn-primary flex items-center gap-2 whitespace-nowrap"
+          >
+            Create Advance
           </button>
         </div>
 
