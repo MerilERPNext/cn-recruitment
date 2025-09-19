@@ -82,6 +82,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   onRefetchComplete?: () => void;
   orderBy?: string;
   showPagination?: boolean;
+  layout?: "row" | "column";
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -98,6 +99,7 @@ const FrappeListView = <T extends BaseItem>({
   defaultFields = ["name", "modified"],
   searchFields = [],
   onItemClick,
+  layout = "row",
   infiniteScroll = false,
   showRefereshButton = false,
   permissionErrorMessage,
@@ -731,7 +733,13 @@ const FrappeListView = <T extends BaseItem>({
             <span className="text-gray-500">No records found</span>
           </div>
         ) : (
-          <div>
+          <div
+          className={
+            layout === "column"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+              : "flex flex-col"
+          }
+          >
             {processedData.map((item, index) => {
               if (index < 3) {
                 console.log(
