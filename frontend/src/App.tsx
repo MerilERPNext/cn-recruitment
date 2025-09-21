@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import React, { useEffect } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { QueryProvider } from "./providers/QueryProvider";
 import "./App.css";
 import "./utils/FormioConfig";
@@ -18,11 +18,13 @@ import { useFrappeAuth } from "frappe-react-sdk";
 import "./utils/FormioOverrides";
 import { GlobalStoreProvider } from "./context/GlobalStoreContext";
 import { Formio } from "formiojs";
+import { preloadCriticalRoutes, preloadAdjacentRoutes } from "./utils/routePreloader";
 
 Formio.setBaseUrl("/");
 
 const App: React.FC = () => {
   const { currentUser, isLoading, isValidating } = useFrappeAuth();
+  const location = useLocation();
 
   const renderRoutes = (routes: AppRoute[]) =>
     routes.map(({ path, element, children, index }, idx) =>
@@ -40,9 +42,29 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isLoading || isValidating) return;
     if (!currentUser) {
-      window.location.href = "/login?redirect-to=%2Fwebapp" 
+      window.location.href = "/login?redirect-to=%2Fwebapp"
     }
   }, [currentUser, isLoading, isValidating, navigate]);
+
+  // Preload critical routes after initial load
+  useEffect(() => {
+    // Only start preloading after the user is authenticated and app is loaded
+    if (currentUser && !isLoading) {
+      // Start preloading critical routes after a short delay
+      const timeout = setTimeout(() => {
+        preloadCriticalRoutes();
+      }, 1000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [currentUser, isLoading]);
+
+  // Preload adjacent routes on navigation
+  useEffect(() => {
+    if (currentUser && !isLoading) {
+      preloadAdjacentRoutes(location.pathname);
+    }
+  }, [location.pathname, currentUser, isLoading]);
 
   return (
     <QueryProvider>
