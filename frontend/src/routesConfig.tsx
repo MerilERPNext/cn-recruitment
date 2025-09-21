@@ -9,7 +9,6 @@ import { lazyWithRetry } from "./utils/lazyWithRetry";
 import SearchMembers from "./components/SearchMembers";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
-import DashboardModel from "./components/Dasktop/Deshboard";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(() => import("./components/Expenses"), "Expenses");
@@ -514,10 +513,6 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/organizational-chart-two-level",
     element: <OrganizationCharttooo />,
-  },
-  {
-    path: "/webapp/dashboard",
-    element: <DashboardModel />,
   },
 ];
 

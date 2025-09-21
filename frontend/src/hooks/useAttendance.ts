@@ -174,6 +174,7 @@ export const useGetAllEventsAndAttendance = (
         throw error;
       }
     },
+    enabled: !!filters?.start,
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
