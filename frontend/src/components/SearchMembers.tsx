@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import FrappeListView from "./ListView";
 import HeaderBar from "./HeaderBar";
+import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
 
 const ChevronRightIcon = () => (
   <svg
@@ -128,35 +129,37 @@ const SearchMembersApp = () => {
   };
 
   return (
-    <div className="">
-      <HeaderBar title="Search Members" onBack={() => navigate(-1)} />
-      <div className="flex-grow h-screen w-full bg-white overflow-y-auto p-4">
-        <FrappeListView
-          doctype="Employee"
-          ItemComponent={MemberCard}
-          onItemClick={handleMemberClick}
-          infiniteScroll={true}
-          // isFilter={true}
-          defaultFields={[
-            "name",
-            "first_name",
-            "last_name",
-            "department",
-            "designation",
-            "status",
-            "image",
-          ]}
-          searchFields={[
-            "name",
-            "first_name",
-            "last_name",
-            "department",
-            "designation",
-            "status",
-          ]}
-        />
+    <DesktopLayoutWrapper title="Search Members">
+      <div className="">
+        <HeaderBar title="Search Members" onBack={() => navigate(-1)} />
+        <div className="flex-grow h-screen w-full bg-white overflow-y-auto p-4">
+          <FrappeListView
+            doctype="Employee"
+            ItemComponent={MemberCard}
+            onItemClick={handleMemberClick}
+            infiniteScroll={true}
+            // isFilter={true}
+            defaultFields={[
+              "name",
+              "first_name",
+              "last_name",
+              "department",
+              "designation",
+              "status",
+              "image",
+            ]}
+            searchFields={[
+              "name",
+              "first_name",
+              "last_name",
+              "department",
+              "designation",
+              "status",
+            ]}
+          />
+        </div>
       </div>
-    </div>
+    </DesktopLayoutWrapper>
   );
 };
 
