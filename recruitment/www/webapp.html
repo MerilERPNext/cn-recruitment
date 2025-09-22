@@ -1,15 +1,20 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/assets/recruitment/webapp/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/assets/nextai/node_modules/chatnext-ui/dist/index.css" />
     <title>physics wallah</title>
+    <style>
+      /* Do Not Add In Any CSS file/ */
+      body > chatnext-app > div:first-child {
+        display: none !important;
+      }
+    </style>
     <script type="module" crossorigin src="/assets/recruitment/webapp/index.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-react-vcsGh2lm.js">
-    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-mui-kDVSpU55.js">
-    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-utils-KR_f2o28.js">
+    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-react-Dw8mphSb.js">
+    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-mui-5UwgOev2.js">
+    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-utils-CtS1Pyml.js">
     <link rel="stylesheet" crossorigin href="/assets/recruitment/webapp/index.css">
   </head>
   <body>
@@ -22,12 +27,11 @@
     </script>
     <script>
       fetch("/assets/assets.json")
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => response.json())
+        .then((data) => {
           const script = document.createElement("script");
           script.src = data["cn-app.bundle.js"];
           document.body.appendChild(script);
-          
         });
     </script>
   </body>

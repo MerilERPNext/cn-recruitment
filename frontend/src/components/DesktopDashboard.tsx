@@ -1,200 +1,71 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Link, useNavigate } from "react-router-dom";
 import {
-  CheckCircle,
-  User,
-  XCircle,
-  FileEdit,
-  Timer,
-  BanknoteX,
-  LogOut,
+  Calendar,
   Clock,
-  ChevronDown,
+  FileText,
+  Users,
+  Settings,
+  User,
+  HelpCircle,
+  CheckCircle,
+  XCircle,
+  LogOut,
   Search,
+  ChevronDown,
+  Headset,
 } from "lucide-react";
 import {
-  useCanShowClockIn,
-  useCheckInOutService,
-  useClockInOutService,
   useGetEmployeeShift,
-  useGetQuickAttendanceSummary,
   useHomeSummaryDetails,
 } from "../hooks/useAttendance";
-
-import { useExpenseClaim } from "../hooks/useExpense";
-import {
-  Coordinates,
-  formatDateString,
-  formatTimeSafe,
-  formatTo24HourTime,
-  getDeviceLocation,
-} from "../utils/helperUtils";
-import defaultProfile from "../assets/face-rec.png";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
-import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
-import EmployeeFallback from "./EmployeeFallback";
+import { useLoggedInUser } from "../hooks/useLoggedInUser";
+import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
 import {
   compareAsc,
   compareDesc,
   differenceInMinutes,
   endOfDay,
-  endOfMonth,
   format,
   parseISO,
   startOfDay,
-  startOfMonth,
 } from "date-fns";
-import { useEffect, useState, useRef } from "react";
-import toast from "react-hot-toast";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
-import { useFrappeAuth } from "frappe-react-sdk";
 import NotificationBell from "./Notification/NotificationBell";
-import { useLoggedInUser } from "../hooks/useLoggedInUser";
+import defaultProfile from "../assets/face-rec.png";
+import { useFrappeAuth } from "frappe-react-sdk";
+import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
+import EmployeeFallback from "./EmployeeFallback";
+import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
+import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 
-const statusStyles = {
-  unpaid: {
-    bg: "bg-yellow-50",
-    border: "border-yellow-100",
-    iconBg: "bg-yellow-200",
-    iconText: "text-yellow-600",
-    badgeBg: "bg-yellow-200",
-    badgeText: "text-yellow-800",
-    icon: <BanknoteX className="w-4 h-4 text-yellow-600" />,
-  },
-  draft: {
-    bg: "bg-orange-50",
-    border: "border-orange-100",
-    iconBg: "bg-orange-200",
-    iconText: "text-orange-600",
-    badgeBg: "bg-orange-200",
-    badgeText: "text-orange-800",
-    icon: <FileEdit className="w-4 h-4 text-orange-600" />,
-  },
-  approved: {
-    bg: "bg-green-100",
-    border: "border-green-200",
-    iconBg: "bg-green-200",
-    iconText: "text-green-600",
-    badgeBg: "bg-green-200",
-    badgeText: "text-green-800",
-    icon: <CheckCircle className="w-4 h-4 text-green-600" />,
-  },
-  rejected: {
-    bg: "bg-red-50",
-    border: "border-red-100",
-    iconBg: "bg-red-100",
-    iconText: "text-red-600",
-    badgeBg: "bg-red-100",
-    badgeText: "text-red-800",
-    icon: <XCircle className="w-4 h-4 text-red-600" />,
-  },
-};
-
-const DesktopDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const { logout } = useFrappeAuth(); // ✅ SDK ka hook
-
-  const [location, setLocation] = useState<Coordinates | null>(null);
+export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const navigate = useNavigate();
+  const { logout } = useFrappeAuth();
+  const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    async function fetchLocation() {
-      try {
-        const coords = await getDeviceLocation();
-        setLocation(coords);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    fetchLocation();
-  }, []);
-
-  // ✅ Logout logic — ab sirf useFrappeAuth wala
-  const logoutHandler = async () => {
-    try {
-      await logout();
-      // navigate("/login", { replace: true });
-      // agar aapko Frappe ka login page dikhana hai to:
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
-  // Update current time every minute for real-time progress calculation
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000); // Update every minute
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // Handle click outside profile dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileDropdownRef.current &&
-        !profileDropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowProfileDropdown(false);
-      }
-    };
-
-    if (showProfileDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showProfileDropdown]);
-
-  // Static value to ensure badge is visible in UI
-
-  const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
-
-  // Enhanced employee state with fallback
-  const employeeState = useEmployeeWithFallback();
-  const { data: canShowClockIn } = useCanShowClockIn(
-    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
-  );
-  const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(
-    currentEmployee?.employee || "",
-    format(startOfMonth(new Date()), "yyyy-MM-dd"),
-    format(endOfMonth(new Date()), "yyyy-MM-dd")
-  );
-
-  const { mutate: checkInCheckOutMutation, isPending: checkInCheckOutPending } =
-    useCheckInOutService();
-  const { mutate: clockInCheckOutMutation, isPending: clockInCheckOutPending } =
-    useClockInOutService();
-  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-
-  const filters = {
-    time: ["between", [start, end]],
-  };
-
-  const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-
-  const {
-    data: homeSummary,
-    refetch: refetchHomeSummary,
-    isRefetching,
-  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
+
+  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
+  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
+  const filters = {
+    time: ["between", [start, end]],
+  };
+  const encodedFilters = encodeURIComponent(JSON.stringify(filters));
+  const { data: homeSummary } = useHomeSummaryDetails(
+    currentEmployee?.user_id || "",
+    encodedFilters
+  );
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
-
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
         compareAsc(
@@ -203,7 +74,6 @@ const DesktopDashboard: React.FC = () => {
         )
       )[0]
     : undefined;
-
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
         compareDesc(
@@ -225,93 +95,41 @@ const DesktopDashboard: React.FC = () => {
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
 
-  type CustomError = Error & {
-    response?: { data?: { message?: { error: string } } };
-  };
-
-  const handleCheckInOut = (type: string) => {
-    if (type === "checkIn") {
-      checkInCheckOutMutation(
-        {
-          employee: currentEmployee?.employee,
-          shift: employeeShift?.shift,
-          action: "Check In",
-          latitude: location?.latitude,
-          longitude: location?.longitude,
-        },
-        {
-          onSuccess: () => {
-            refetchHomeSummary();
-          },
-          onError: (e: CustomError) => {
-            toast.error(
-              e?.response?.data?.message?.error || "Error while Checking In"
-            );
-          },
-        }
-      );
-    } else {
-      checkInCheckOutMutation(
-        {
-          employee: currentEmployee?.employee,
-          shift: employeeShift?.shift,
-          action: "Check Out",
-          latitude: location?.latitude,
-          longitude: location?.longitude,
-        },
-        {
-          onSuccess: () => {
-            refetchHomeSummary();
-          },
-          onError: (e: CustomError) => {
-            toast.error(
-              e?.response?.data?.message?.error || "Error while Checking out"
-            );
-          },
-        }
-      );
+  const logoutHandler = async () => {
+    try {
+      await logout();
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout failed:", error);
     }
   };
 
-  const handleClockInOut = (type: string) => {
-    if (type === "clockIn") {
-      clockInCheckOutMutation(
-        {
-          employee: currentEmployee?.employee,
-          shift: employeeShift?.shift,
-          action: "Clock In",
-        },
-        {
-          onSuccess: () => {
-            refetchHomeSummary();
-          },
-          onError: (e: CustomError) => {
-            toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking out"
-            );
-          },
-        }
-      );
-    } else {
-      clockInCheckOutMutation(
-        {
-          employee: currentEmployee?.employee,
-          shift: employeeShift?.shift,
-          action: "Clock Out",
-        },
-        {
-          onSuccess: () => {
-            refetchHomeSummary();
-          },
-          onError: (e: CustomError) => {
-            toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking out"
-            );
-          },
-        }
-      );
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    if (showProfileDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
     }
-  };
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showProfileDropdown]);
 
   const getTotalTime = () => {
     if (!homeSummary || homeSummary.length === 0) {
@@ -406,7 +224,13 @@ const DesktopDashboard: React.FC = () => {
     return Math.min(percentage, 100);
   };
 
-  // Calculate dynamic margin based on sidebar width
+  const handleTodoClick = () => {
+    window.location.href = "/app/task_manager";
+  };
+
+  const handleHelpDeskClick = () => {
+    window.location.href = "/helpdesk/my-tickets";
+  };
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   return (
@@ -481,24 +305,28 @@ const DesktopDashboard: React.FC = () => {
                 <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-300">
+                      {/* Profile Image */}
+                      <div className="w-16 h-16 flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
                         <img
                           src={currentEmployee?.image || defaultProfile}
                           alt="User avatar"
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="flex-1">
+
+                      {/* Text Info */}
+                      <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900">
                           {currentEmployee?.employee_name || "Temp User"}
                         </h3>
-                        <p className="text-sm text-gray-600">
-                          {currentEmployee?.designation || "Temp Designation"}
+                        <p className="text-sm text-gray-600 break-words whitespace-normal max-w-xs">
+                          {currentEmployee?.custom_designation_name ||
+                            "Temp Designation"}
                         </p>
                         <p className="text-xs text-gray-500">
                           Employee ID: {currentEmployee?.employee || "N/A"}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 break-words whitespace-normal max-w-xs">
                           {currentEmployee?.company_email ||
                             currentEmployee?.personal_email ||
                             "Temp Email"}
@@ -571,7 +399,7 @@ const DesktopDashboard: React.FC = () => {
         </div>
 
         {/* Dashboard Content */}
-        <div className="p-8 flex-1">
+        <div className="p-4 flex-1">
           {/* Employee Data Error Handling */}
           {!employeeState.isLoading && !employeeState.hasValidData && (
             <EmployeeFallback
@@ -586,170 +414,118 @@ const DesktopDashboard: React.FC = () => {
             />
           )}
 
-          {/* Time Cards */}
-          <div className="grid grid-cols-4 gap-6 mb-8">
-            <div className="bg-blue-50 p-6 rounded-lg border border-gray-200">
-              <div className="flex items-center gap-3">
-                {/* Icon Box */}
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-blue-600" />
-                </div>
-
-                {/* Text Content */}
-                <div>
-                  <p className="text-xs font-medium text-gray-500 tracking-wide">
-                    SHIFT START
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {employeeShift?.start_time
-                      ? formatTimeSafe(employeeShift?.start_time)
-                      : "--:--"}
-                  </p>
-                </div>
-              </div>
+          {/* Hero Banner */}
+          <div className="bg-gray-200 mb-2 to-teal-500 rounded-lg p-6 text-gray-800 relative overflow-hidden">
+            <div className="relative z-0">
+              <h2 className="text-xl font-bold mb-2">Keep Up the Rhythm!</h2>
+              <p className="text-gray-500">
+                Your contributions are making the day amazing!
+              </p>
             </div>
+          </div>
 
-            <div className="bg-green-50 p-6 rounded-lg border border-gray-200">
-              <div className="flex items-center gap-3">
-                {/* Icon Box */}
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+            {/* Tasks Awaiting */}
+            <TasksAwaiting/>
+            {/* Announcements */}
+            <div className="bg-white rounded-lg mb-2 p-6 shadow-sm">
+              <h3 className="font-semibold text-gray-900 mb-4">
+                Daily Timings
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 tracking-wide">
+                        SHIFT START
+                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-blue-600">
+                        {employeeShift?.start_time
+                          ? formatTimeSafe(employeeShift?.start_time)
+                          : "--:--"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Text Content */}
-                <div>
-                  <p className="text-xs font-medium text-gray-500 tracking-wide">
-                    IN TIME
-                  </p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {firstCheckIn?.time
-                      ? formatTo24HourTime(firstCheckIn.time)
-                      : "09:05 AM"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 p-6 rounded-lg border border-gray-200">
-              <div className="flex items-center gap-3">
-                {/* Icon Box */}
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-blue-600" />
+                <div className="bg-green-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 tracking-wide">
+                        IN TIME
+                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-green-600">
+                        {firstCheckIn?.time
+                          ? formatTo24HourTime(firstCheckIn.time)
+                          : "--:--"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Text Content */}
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">SHIFT END</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {employeeShift?.end_time
-                      ? formatTimeSafe(employeeShift?.end_time)
-                      : "--:--"}
-                  </p>
+                <div className="bg-blue-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 tracking-wide">
+                        SHIFT END
+                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-blue-600">
+                        {employeeShift?.end_time
+                          ? formatTimeSafe(employeeShift?.end_time)
+                          : "--:--"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="bg-red-50 p-6 rounded-lg border border-gray-200">
-              <div className="flex items-center gap-3">
-                {/* Icon Box */}
-                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                  <XCircle className="w-5 h-5 text-red-600" />
-                </div>
-
-                {/* Text Content */}
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">OUT TIME</p>
-                  <p className="text-2xl font-bold text-red-600">
-                    {lastCheckOut?.time
-                      ? formatTo24HourTime(lastCheckOut.time)
-                      : "10:00 PM"}
-                  </p>
+                <div className="bg-red-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                      <XCircle className="w-4 h-4 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 tracking-wide">
+                        OUT TIME
+                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-red-600">
+                        {lastCheckOut?.time
+                          ? formatTo24HourTime(lastCheckOut.time)
+                          : "--:--"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-8">
-            {/* Left Column */}
-            <div className="col-span-2 space-y-6">
-              {/* Attendance Chart */}
-
-              {/* Unpaid Expense Claims */}
-              {expenseData && expenseData.length > 0 && (
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">
-                      Unpaid Expense Claims
-                    </h3>
-                    <Link
-                      to="/webapp/expenses-app"
-                      className="text-blue-600 text-sm font-medium hover:text-blue-700"
-                    >
-                      View All
-                    </Link>
-                  </div>
-                  <div className="space-y-3">
-                    {expenseData.slice(0, 3).map((item: any) => {
-                      const styles =
-                        statusStyles[
-                          item.status?.toLowerCase() as keyof typeof statusStyles
-                        ] || statusStyles.draft;
-
-                      return (
-                        <div
-                          key={item.name}
-                          className={`flex items-center justify-between p-4 rounded-lg border ${styles.border} ${styles.bg}`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div
-                              className={`w-10 h-10 ${styles.iconBg} rounded-lg flex items-center justify-center`}
-                            >
-                              {styles.icon}
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                Office Supplies
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {formatDateString(item.creation)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-gray-900">
-                              {item.total_claimed_amount} Rs
-                            </p>
-                            <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${styles.badgeBg} ${styles.badgeText}`}
-                            >
-                              {item.status}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
+          {/* Second Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 mb-2 gap-2">
+            <div className="grid grid-cols-1 gap-2">
               {/* Total Hours Worked */}
-              <div className="bg-blue-50 text-blue-600 border  p-6 rounded-lg">
+              <div className="bg-white text-blue-600 p-6 rounded-lg shadow-sm">
                 <div className="text-center">
-                  <p className="text-blue-600 text-sm mb-2 font-medium tracking-wide">
+                  <p className=" text-sm mb-2 tracking-wide text-left font-semibold text-gray-900">
                     TOTAL HOURS WORKED
                   </p>
-                  <p className="text-4xl font-bold mb-1">{getTotalTime()}</p>
-                  <p className="text-blue-600 text-sm mb-6">8h 55m target</p>
+                  <p className="text-xl font-bold mb-1">{getTotalTime()}</p>
+                  <p className="text-blue-600 text-sm mb-6">8h 30m target</p>
 
                   {/* Enhanced Progress Bar */}
-                  <div className="relative mb-3">
-                    <div className="bg-blue-400 h-3 shadow-inner rounded-lg ">
+                  <div className="relative px-4 mb-3">
+                    <div className="bg-blue-200 h-3 shadow-inner rounded-lg">
                       <div
-                        className="bg-blue-700 h-3 transition-all duration-700 ease-out shadow-sm 
-                         rounded-lg"
+                        className="bg-blue-700 h-3 transition-all duration-700 ease-out shadow-sm rounded-lg"
                         style={{
                           width: `${Math.min(getWorkPercentage(), 100)}%`,
                         }}
@@ -769,108 +545,95 @@ const DesktopDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Check In/Out Buttons */}
-              <div className="space-y-3">
-                {currentEmployee?.custom_allow_mobile_checkin && (
-                  <button
-                    onClick={() =>
-                      handleCheckInOut(
-                        isCurrentlyCheckedIn ? "checkOut" : "checkIn"
-                      )
-                    }
-                    className="w-full py-3 px-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
-                    disabled={checkInCheckOutPending || !employeeShift?.shift}
-                  >
-                    {checkInCheckOutPending || isRefetching ? (
-                      <span className="flex items-center justify-center">
-                        <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
-                        Processing...
-                      </span>
-                    ) : isCurrentlyCheckedIn ? (
-                      "Check Out"
-                    ) : (
-                      "Check In"
-                    )}
-                  </button>
-                )}
-
-                {canShowClockIn?.can_show && (
-                  <button
-                    onClick={() =>
-                      handleClockInOut(
-                        isCurrentlyCheckedIn ? "clockOut" : "clockIn"
-                      )
-                    }
-                    className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                    disabled={clockInCheckOutPending || !employeeShift?.shift}
-                  >
-                    {clockInCheckOutPending || isRefetching ? (
-                      <span className="flex items-center justify-center">
-                        <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
-                        Processing...
-                      </span>
-                    ) : isCurrentlyCheckedIn ? (
-                      "Clock Out"
-                    ) : (
-                      "Clock In"
-                    )}
-                  </button>
-                )}
-              </div>
-
-              {/* Attendance Summary */}
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Attendance</h3>
-                  <Link
-                    to="/webapp/attendance"
-                    className="text-blue-600 text-sm font-medium hover:text-blue-700"
-                  >
-                    View Details
-                  </Link>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
-                      <span className="text-sm font-medium text-green-800">
-                        Present
-                      </span>
+              {/* Helpdesk */}
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-4">
+                  Helpdesk / Todo's
+                </h3>
+                <div className="flex flex-row w-full gap-4">
+                  <div className="flex w-full flex-col gap-2 bg-gray-100 p-2 rounded-lg hover:bg-gray-200 ">
+                    <div className="bg-blue-200 w-full p-2 rounded-lg ">
+                      <button
+                        onClick={handleHelpDeskClick}
+                        className="flex items-center w-full justify-center gap-2 text-white px-4 py-2 rounded-lg  text-sm"
+                      >
+                        <Headset className="w-4 h-4" />
+                      </button>
                     </div>
-                    <span className="text-lg font-bold text-green-800">
-                      {employeeAttendanceSummary?.present || 20}
-                    </span>
+                    <div className="text-sm text-gray-600 font-medium text-center">
+                      Helpdesk
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-                    <div className="flex items-center">
-                      <XCircle className="w-5 h-5 text-red-600 mr-3" />
-                      <span className="text-sm font-medium text-red-800">
-                        Absent
-                      </span>
+
+                  {/*todo*/}
+                  <div className="flex w-full flex-col gap-2 bg-gray-100 p-2 rounded-lg hover:bg-gray-200 ">
+                    <div className="bg-green-200 p-2 items-center justify-center rounded-lg ">
+                      <button
+                        onClick={handleTodoClick}
+                        className="flex items-center w-full justify-center gap-2 text-white px-4 py-2 rounded-lg  text-sm"
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                      </button>
                     </div>
-                    <span className="text-lg font-bold text-red-800">
-                      {employeeAttendanceSummary?.absent || 1}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                    <div className="flex items-center">
-                      <Timer className="w-5 h-5 text-orange-600 mr-3" />
-                      <span className="text-sm font-medium text-orange-800">
-                        Leaves
-                      </span>
+                    <div className="text-sm text-gray-600 font-medium text-center">
+                      ToDo List
                     </div>
-                    <span className="text-lg font-bold text-orange-800">
-                      {employeeAttendanceSummary?.leaves || 2}
-                    </span>
                   </div>
                 </div>
               </div>
             </div>
+            {/* Requests Cards*/}
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-semibold text-gray-900">Requests</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-600 text-sm cursor-pointer">
+                    View All
+                  </span>
+                  <span className="text-gray-400">•••</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Apply Leave
+                  </p>
+                </div>
+
+                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Request Letter
+                  </p>
+                </div>
+
+                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Team Request
+                  </p>
+                </div>
+                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
+                    <Settings className="w-6 h-6 text-green-600" />
+                  </div>
+                  <p className="text-sm text-gray-600 font-medium">Settings</p>
+                </div>
+              </div>
+            </div>
           </div>
+          {/* Admin Apps */}
+         <MicroAppInDashboard/>
         </div>
       </div>
     </div>
   );
-};
-
-export default DesktopDashboard;
+}

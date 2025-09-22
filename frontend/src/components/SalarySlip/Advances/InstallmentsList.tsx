@@ -7,6 +7,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { StatusBadge } from "./StatusBadge";
 import { UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -66,7 +67,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               </div>
               <div>
                 <span className="text-gray-600">Period:</span>
-                <div className="font-semibold">{advance.startDate} to {advance.endDate}</div>
+                <div className="font-semibold">{formatToIndianDate(advance.startDate)} to {formatToIndianDate(advance.endDate)}</div>
               </div>
               <div>
                 <span className="text-gray-600">Status:</span>
@@ -102,7 +103,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                   className="data-row grid grid-cols-5 gap-4"
                 >
                   <div className="data-cell text-center font-medium">#{installment.installmentNo}</div>
-                  <div className="data-cell text-center">{installment.installmentDate}</div>
+                  <div className="data-cell text-center">{formatToIndianDate(installment.installmentDate)}</div>
                   <div className="data-cell text-center">
                     {maskAmounts ? <span className="blur-sm select-none">₹XX,XXX</span> : <span className="font-medium">{formatCurrency(installment.openingBalance)}</span>}
                   </div>
@@ -147,7 +148,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
             </div>
             <div>
               <span className="text-gray-600">Period:</span>
-              <div className="font-semibold">{advance.startDate} to {advance.endDate}</div>
+              <div className="font-semibold">{formatToIndianDate(advance.startDate)} to {formatToIndianDate(advance.endDate)}</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm mt-4">
@@ -183,7 +184,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                       <div className="data-cell text-center font-medium flex items-center justify-center">
                         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-semibold">#{installment.installmentNo}</span>
                       </div>
-                      <div className="data-cell text-center flex items-center justify-center">{installment.installmentDate}</div>
+                      <div className="data-cell text-center flex items-center justify-center">{formatToIndianDate(installment.installmentDate)}</div>
                       <div className="data-cell text-center flex items-center justify-center">
                         {maskAmounts ? <span className="blur-sm select-none text-sm">₹XX,XXX</span> : <div className="text-sm font-medium leading-tight">{formatCurrency(installment.openingBalance)}</div>}
                       </div>

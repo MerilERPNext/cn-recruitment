@@ -4,6 +4,11 @@ import "./index.css";
 import App from "./App.tsx";
 import { FrappeProvider } from "frappe-react-sdk";
 import { BrowserRouter } from "react-router-dom";
+import { installChunkErrorHandler } from "./utils/chunkErrorHandler";
+
+// Install chunk error handler before anything else
+installChunkErrorHandler();
+
 const link = document.createElement("link");
 link.href = `/assets/nextai/node_modules/chatnext-ui/dist/index.css`;
 link.rel = "stylesheet";

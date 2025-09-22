@@ -16,7 +16,7 @@ app_include_js = ["/assets/recruitment/js/teams_utils.js"]
 add_to_apps_screen = [
 	{
 		"name": "recruitment",
-		"logo": "/assets/recruitment/image/logo.png",
+		"logo": "/assets/recruitment/image/logo.svg",
 		"title": "Employee Self Service",
 		"route": "/webapp",
 		"has_permission": "recruitment.recruitment.utils.check_app_permission",

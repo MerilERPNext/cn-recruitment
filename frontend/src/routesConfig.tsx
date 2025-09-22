@@ -1,192 +1,235 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ReactElement, lazy, Suspense } from "react";
+import { ReactElement, Suspense } from "react";
 import { Navigate } from "react-router";
 import { useScreenSize } from "./hooks/useScreenSize";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
+import { lazyWithRetry } from "./utils/lazyWithRetry";
 
 // Keep critical components as static imports for better UX
 import SearchMembers from "./components/SearchMembers";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
-import DashboardModel from "./components/Dasktop/Deshboard";
 
-// Lazy load heavy components
-const Expenses = lazy(() => import("./components/Expenses"));
-const RecruitmentApp = lazy(() => import("./components/RecruitmentApp"));
-const MyProfile = lazy(() => import("./components/MyProfile/MyProfile"));
-const InterviewPage = lazy(() => import("./components/InterviewDetails"));
-const InterviewList = lazy(() => import("./components/interview"));
-const AddNewReferral = lazy(() => import("./components/AddNewReferral"));
-const ReferralDetails = lazy(() => import("./components/ReferralDetails"));
-const InterviewFeedbackForm = lazy(() => import("./components/Feedback"));
-const AddRequisition = lazy(() => import("./components/AddRequisition"));
-const JobRequisition = lazy(() => import("./components/JobRequisition"));
-const RequisitionDetails = lazy(
-  () => import("./components/RequisitionDetails")
+// Lazy load heavy components with retry mechanism
+const Expenses = lazyWithRetry(() => import("./components/Expenses"), "Expenses");
+const RecruitmentApp = lazyWithRetry(() => import("./components/RecruitmentApp"), "RecruitmentApp");
+const MyProfile = lazyWithRetry(() => import("./components/MyProfile/MyProfile"), "MyProfile");
+const InterviewPage = lazyWithRetry(() => import("./components/InterviewDetails"), "InterviewPage");
+const InterviewList = lazyWithRetry(() => import("./components/interview"), "InterviewList");
+const AddNewReferral = lazyWithRetry(() => import("./components/AddNewReferral"), "AddNewReferral");
+const ReferralDetails = lazyWithRetry(() => import("./components/ReferralDetails"), "ReferralDetails");
+const InterviewFeedbackForm = lazyWithRetry(() => import("./components/Feedback"), "InterviewFeedbackForm");
+const AddRequisition = lazyWithRetry(() => import("./components/AddRequisition"), "AddRequisition");
+const JobRequisition = lazyWithRetry(() => import("./components/JobRequisition"), "JobRequisition");
+const RequisitionDetails = lazyWithRetry(
+  () => import("./components/RequisitionDetails"),
+  "RequisitionDetails"
 );
-const ReferralList = lazy(() => import("./components/ReferralList"));
-const JobOpeningsUI = lazy(() => import("./components/JobOpening/JobOpening"));
-const JobApplicantList = lazy(() => import("./components/JobApplicantList"));
-const JobApplicantDetails = lazy(
-  () => import("./components/JobApplicantDetail")
+const ReferralList = lazyWithRetry(() => import("./components/ReferralList"), "ReferralList");
+const JobOpeningsUI = lazyWithRetry(() => import("./components/JobOpening/JobOpening"), "JobOpeningsUI");
+const JobApplicantList = lazyWithRetry(() => import("./components/JobApplicantList"), "JobApplicantList");
+const JobApplicantDetails = lazyWithRetry(
+  () => import("./components/JobApplicantDetail"),
+  "JobApplicantDetails"
 );
-const NoticesLayout = lazy(() => import("./components/Notices/NoticesLayout"));
-const NoticesTab = lazy(() => import("./components/Notices/NoticesTab"));
-const NoticeDetails = lazy(() => import("./components/Notices/NoticeDetails"));
-const ExpensesApp = lazy(() => import("./components/Expenses-App/ExpensesApp"));
-const ExpensesList = lazy(
-  () => import("./components/Expenses-App/ExpensesList")
+const NoticesLayout = lazyWithRetry(() => import("./components/Notices/NoticesLayout"), "NoticesLayout");
+const NoticesTab = lazyWithRetry(() => import("./components/Notices/NoticesTab"), "NoticesTab");
+const NoticeDetails = lazyWithRetry(() => import("./components/Notices/NoticeDetails"), "NoticeDetails");
+const ExpensesApp = lazyWithRetry(() => import("./components/Expenses-App/ExpensesApp"), "ExpensesApp");
+const ExpensesList = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpensesList"),
+  "ExpensesList"
 );
-const GeneralExpenseClaim = lazy(
-  () => import("./components/Expenses-App/GeneralExpenseClaim")
+const GeneralExpenseClaim = lazyWithRetry(
+  () => import("./components/Expenses-App/GeneralExpenseClaim"),
+  "GeneralExpenseClaim"
 );
-const MileageExpenseClaim = lazy(
-  () => import("./components/Expenses-App/MileageExpenseClaim")
+const MileageExpenseClaim = lazyWithRetry(
+  () => import("./components/Expenses-App/MileageExpenseClaim"),
+  "MileageExpenseClaim"
 );
-const NewExpenseType = lazy(
-  () => import("./components/Expenses-App/NewExpenseType")
+const NewExpenseType = lazyWithRetry(
+  () => import("./components/Expenses-App/NewExpenseType"),
+  "NewExpenseType"
 );
-const Holidays = lazy(() => import("./components/Leaves/Holidays"));
-const HolidaysFull = lazy(() => import("./components/Leaves/HolidaysFull"));
-const LeaveApp = lazy(() => import("./components/Leaves/LeaveApp"));
-const LeaveBalance = lazy(() => import("./components/Leaves/LeaveBalance"));
-const LeaveRequestApp = lazy(
-  () => import("./components/Leaves/LeaveRequestApp")
+const Holidays = lazyWithRetry(() => import("./components/Leaves/Holidays"), "Holidays");
+const HolidaysFull = lazyWithRetry(() => import("./components/Leaves/HolidaysFull"), "HolidaysFull");
+const LeaveApp = lazyWithRetry(() => import("./components/Leaves/LeaveApp"), "LeaveApp");
+const LeaveBalance = lazyWithRetry(() => import("./components/Leaves/LeaveBalance"), "LeaveBalance");
+const LeaveRequestApp = lazyWithRetry(
+  () => import("./components/Leaves/LeaveRequestApp"),
+  "LeaveRequestApp"
 );
-const MyLeaveRequest = lazy(() => import("./components/Leaves/MyLeaveRequest"));
-const TeamLeaveRequest = lazy(
-  () => import("./components/Leaves/TeamLeaveRequest")
+const MyLeaveRequest = lazyWithRetry(() => import("./components/Leaves/MyLeaveRequest"), "MyLeaveRequest");
+const TeamLeaveRequest = lazyWithRetry(
+  () => import("./components/Leaves/TeamLeaveRequest"),
+  "TeamLeaveRequest"
 );
-const AllPendingRequests = lazy(
+const AllPendingRequests = lazyWithRetry(
   () =>
-    import("./components/Attendance/TeamAttendanceDetails/AllPendingRequests")
+    import("./components/Attendance/TeamAttendanceDetails/AllPendingRequests"),
+  "AllPendingRequests"
 );
-const AttendanceSummary = lazy(
-  () => import("./components/Attendance/AttendanceSummary")
+const AttendanceSummary = lazyWithRetry(
+  () => import("./components/Attendance/AttendanceSummary"),
+  "AttendanceSummary"
 );
-const AllEmpAttendance = lazy(
-  () => import("./components/Attendance/AllEmpAttendance/AllEmpAttendance")
+const AllEmpAttendance = lazyWithRetry(
+  () => import("./components/Attendance/AllEmpAttendance/AllEmpAttendance"),
+  "AllEmpAttendance"
 );
-const AttendanceLayout = lazy(
-  () => import("./components/Attendance/AttendanceLayout")
+const AttendanceLayout = lazyWithRetry(
+  () => import("./components/Attendance/AttendanceLayout"),
+  "AttendanceLayout"
 );
-const AttendanceRequest = lazy(
-  () => import("./components/Attendance/AttendanceRequest/AttendanceRequest")
+const AttendanceRequest = lazyWithRetry(
+  () => import("./components/Attendance/AttendanceRequest/AttendanceRequest"),
+  "AttendanceRequest"
 );
-const EmployeeAttendance = lazy(
-  () => import("./components/Attendance/Employee/EmployeeAttendance")
+const EmployeeAttendance = lazyWithRetry(
+  () => import("./components/Attendance/Employee/EmployeeAttendance"),
+  "EmployeeAttendance"
 );
-const TeamAttendance = lazy(
-  () => import("./components/Attendance/Team/TeamAttendance")
+const TeamAttendance = lazyWithRetry(
+  () => import("./components/Attendance/Team/TeamAttendance"),
+  "TeamAttendance"
 );
-const TeamAttendanceDetails = lazy(
+const TeamAttendanceDetails = lazyWithRetry(
   () =>
     import(
       "./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails"
-    )
+    ),
+  "TeamAttendanceDetails"
 );
-const SalarySlipApp = lazy(
-  () => import("./components/SalarySlip/SalarySlipApp")
+const SalarySlipApp = lazyWithRetry(
+  () => import("./components/SalarySlip/SalarySlipApp"),
+  "SalarySlipApp"
 );
-const SalarySlipsList = lazy(
-  () => import("./components/SalarySlip/SalarySlipList")
+const SalarySlipsList = lazyWithRetry(
+  () => import("./components/SalarySlip/SalarySlipList"),
+  "SalarySlipsList"
 );
-const ShiftChangeForm = lazy(
-  () => import("./components/ShiftRequest/AddRequestForm")
+const ShiftChangeForm = lazyWithRetry(
+  () => import("./components/ShiftRequest/AddRequestForm"),
+  "ShiftChangeForm"
 );
-const ShiftRequestList = lazy(
-  () => import("./components/ShiftRequest/MyShiftList")
+const ShiftRequestList = lazyWithRetry(
+  () => import("./components/ShiftRequest/MyShiftList"),
+  "ShiftRequestList"
 );
-const ShiftRequestApp = lazy(
-  () => import("./components/ShiftRequest/ShiftRequestApp")
+const ShiftRequestApp = lazyWithRetry(
+  () => import("./components/ShiftRequest/ShiftRequestApp"),
+  "ShiftRequestApp"
 );
-const Policies = lazy(() => import("./components/Policies"));
-const PoliciesEnforced = lazy(() => import("./components/PoliciesEnforced"));
-const PolicySignOff = lazy(() => import("./components/PolicySignOff"));
-const DailyAllowanceClaim = lazy(
+const Policies = lazyWithRetry(() => import("./components/Policies"), "Policies");
+const PoliciesEnforced = lazyWithRetry(() => import("./components/PoliciesEnforced"), "PoliciesEnforced");
+const PolicySignOff = lazyWithRetry(() => import("./components/PolicySignOff"), "PolicySignOff");
+const DailyAllowanceClaim = lazyWithRetry(
   () =>
-    import("./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim")
+    import("./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim"),
+  "DailyAllowanceClaim"
 );
-const CTCSalaryUI = lazy(
-  () => import("./components/SalarySlip/CTCSalaryBreakdown")
+const CTCSalaryUI = lazyWithRetry(
+  () => import("./components/SalarySlip/CTCSalaryBreakdown"),
+  "CTCSalaryUI"
 );
-const PoliciesApp = lazy(() => import("./components/Policies/PoliciesApp"));
-const PoliciesCategory = lazy(
-  () => import("./components/Policies/PoliciesCategory")
+const PoliciesApp = lazyWithRetry(() => import("./components/Policies/PoliciesApp"), "PoliciesApp");
+const PoliciesCategory = lazyWithRetry(
+  () => import("./components/Policies/PoliciesCategory"),
+  "PoliciesCategory"
 );
-const PoliciesList = lazy(() => import("./components/Policies/PoliciesList"));
-const ViewPolicy = lazy(() => import("./components/Policies/ViewPolicy"));
-const ViewSalarySlipModal = lazy(
-  () => import("./components/SalarySlip/SalarySlipPDF")
+const PoliciesList = lazyWithRetry(() => import("./components/Policies/PoliciesList"), "PoliciesList");
+const ViewPolicy = lazyWithRetry(() => import("./components/Policies/ViewPolicy"), "ViewPolicy");
+const ViewSalarySlipModal = lazyWithRetry(
+  () => import("./components/SalarySlip/SalarySlipPDF"),
+  "ViewSalarySlipModal"
 );
 
-const HRPayroll = lazy(() => import("./components/SalarySlip/HR-Payroll"));
-const AttendancePolicies = lazy(
-  () => import("./components/Attendance/AttendancePolicies/AttendancePolicies")
+const HRPayroll = lazyWithRetry(() => import("./components/SalarySlip/HR-Payroll"), "HRPayroll");
+const AttendancePolicies = lazyWithRetry(
+  () => import("./components/Attendance/AttendancePolicies/AttendancePolicies"),
+  "AttendancePolicies"
 );
-const TrackerApp = lazy(
-  () => import("./components/ApprovalTracker/TrackerApp")
+const TrackerApp = lazyWithRetry(
+  () => import("./components/ApprovalTracker/TrackerApp"),
+  "TrackerApp"
 );
-const FlowRequests = lazy(
-  () => import("./components/ApprovalTracker/FlowRequests")
+const FlowRequests = lazyWithRetry(
+  () => import("./components/ApprovalTracker/FlowRequests"),
+  "FlowRequests"
 );
-const InitiateFlow = lazy(
-  () => import("./components/ApprovalTracker/InitiateFlow")
+const InitiateFlow = lazyWithRetry(
+  () => import("./components/ApprovalTracker/InitiateFlow"),
+  "InitiateFlow"
 );
-const InitiateForm = lazy(
-  () => import("./components/ApprovalTracker/InitiateForm")
+const InitiateForm = lazyWithRetry(
+  () => import("./components/ApprovalTracker/InitiateForm"),
+  "InitiateForm"
 );
-const FlowRequestDetails = lazy(
-  () => import("./components/ApprovalTracker/FlowRequestDetails")
+const FlowRequestDetails = lazyWithRetry(
+  () => import("./components/ApprovalTracker/FlowRequestDetails"),
+  "FlowRequestDetails"
 );
-const AllShiftsDashboardRoute = lazy(() =>
+const AllShiftsDashboardRoute = lazyWithRetry(() =>
   import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
     default: module.AllShiftsDashboardRoute,
-  }))
+  })),
+  "AllShiftsDashboardRoute"
 );
-const MyShiftsListRoute = lazy(() =>
+const MyShiftsListRoute = lazyWithRetry(() =>
   import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
     default: module.MyShiftsListRoute,
-  }))
+  })),
+  "MyShiftsListRoute"
 );
-const TeamShiftsListRoute = lazy(() =>
+const TeamShiftsListRoute = lazyWithRetry(() =>
   import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
     default: module.TeamShiftsListRoute,
-  }))
+  })),
+  "TeamShiftsListRoute"
 );
-const ShiftChangeRequestsRoute = lazy(() =>
+const ShiftChangeRequestsRoute = lazyWithRetry(() =>
   import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
     default: module.ShiftChangeRequestsRoute,
-  }))
+  })),
+  "ShiftChangeRequestsRoute"
 );
-const PendingTeamLeaves = lazy(
-  () => import("./components/Leaves/PendingTeamLeaves")
+const PendingTeamLeaves = lazyWithRetry(
+  () => import("./components/Leaves/PendingTeamLeaves"),
+  "PendingTeamLeaves"
 );
-const LoansPage = lazy(() => import("./components/SalarySlip/Loan/LoanMain"));
-const OvertimeRequests = lazy(
-  () => import("./components/Attendance/OvertimeRequests/OvertimeRequests")
+const LoansPage = lazyWithRetry(() => import("./components/SalarySlip/Loan/LoanMain"), "LoansPage");
+const OvertimeRequests = lazyWithRetry(
+  () => import("./components/Attendance/OvertimeRequests/OvertimeRequests"),
+  "OvertimeRequests"
 );
-const AllOvertimePendingRequests = lazy(
+const AllOvertimePendingRequests = lazyWithRetry(
   () =>
     import(
       "./components/Attendance/OvertimeRequests/AllOvertimePendingRequests"
-    )
+    ),
+  "AllOvertimePendingRequests"
 );
-const LoanMainComponent = lazy(
-  () => import("./components/SalarySlip/Loan/component/DetailsPageForMobile")
+const LoanMainComponent = lazyWithRetry(
+  () => import("./components/SalarySlip/Loan/component/DetailsPageForMobile"),
+  "LoanMainComponent"
 );
-const OrganizationChart = lazy(
-  () => import("./components/ORGChart/OrganizationChart")
+const OrganizationChart = lazyWithRetry(
+  () => import("./components/ORGChart/OrganizationChart"),
+  "OrganizationChart"
 );
-const OrganizationCharttooo = lazy(
-  () => import("./components/ORGChart/OrgnazationChartForTwoLavel")
+const OrganizationCharttooo = lazyWithRetry(
+  () => import("./components/ORGChart/OrgnazationChartForTwoLavel"),
+  "OrganizationCharttooo"
 );
-const AdvancesList = lazy(
-  () => import("./components/SalarySlip/Advances/AdvancesList")
+const AdvancesList = lazyWithRetry(
+  () => import("./components/SalarySlip/Advances/AdvancesList"),
+  "AdvancesList"
 );
 
-const CompensatoryRequest = lazy(
-  () => import("./components/Leaves/compensatory/CompensatoryRequest")
+const CompensatoryRequest = lazyWithRetry(
+  () => import("./components/Leaves/compensatory/CompensatoryRequest"),
+  "CompensatoryRequest"
 );
 
 // Loading component for Suspense fallbacks
@@ -470,10 +513,6 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/organizational-chart-two-level",
     element: <OrganizationCharttooo />,
-  },
-  {
-    path: "/webapp/dashboard",
-    element: <DashboardModel />,
   },
 ];
 
