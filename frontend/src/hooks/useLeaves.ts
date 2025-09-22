@@ -6,6 +6,8 @@ import type {
   LeaveDetailsResponse,
   HolidayGroup,
   TeamRequest,
+  LeaveFieldResponse,
+  LeaveReason,
 } from "../types/leaves";
 
 export type LeaveType = {
@@ -108,7 +110,7 @@ export const useGetCompOffList = (employeeId: string | undefined) => {
       return leaveService.getCompOffList(employeeId);
     },
     enabled: !!employeeId,
-    staleTime: 5 * 60 * 1000, // cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -123,3 +125,29 @@ export function usePayCompOff() {
     },
   });
 }
+
+export const useGetLeaveRequestFields = (
+  leaveType: string | undefined,
+  fromDate: string,
+  toDate: string
+) => {
+  return useQuery<LeaveFieldResponse>({
+    queryKey: ["leave-request-fields", leaveType, fromDate, toDate],
+    queryFn: () => {
+      if (!leaveType || !fromDate || !toDate) {
+        throw new Error("leaveType, fromDate, and toDate are required");
+      }
+      return leaveService.getLeaveRequestFields(leaveType, fromDate, toDate);
+    },
+    enabled: !!leaveType && !!fromDate && !!toDate,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useGetLeaveReason = () => {
+  return useQuery<LeaveReason[]>({
+    queryKey: ["leave-reasons"],
+    queryFn: () => leaveService.getLeaveReason(),
+    staleTime: 5 * 60 * 1000,
+  });
+};

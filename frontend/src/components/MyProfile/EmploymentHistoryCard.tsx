@@ -22,19 +22,13 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-sm border p-6 relative">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Building2 className="w-5 h-5 text-blue-600" />
-          </div>
-          <h3 className="md:text-lg font-semibold text-gray-900">{title}</h3>
+      <div className="flex items-center gap-3  mb-6">
+        <div className="p-2 bg-blue-50 rounded-lg">
+          <Building2 className="w-5 h-5 text-blue-600" />
         </div>
-
-        {isCurrent && (
-          <span className="bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-xl">
-            Current
-          </span>
-        )}
+        <h3 className=" font-medium text-gray-900 truncate">
+          <span title={title || ""}>{title}</span>
+        </h3>
       </div>
 
       <div className="space-y-3">
@@ -46,7 +40,13 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">End Date</span>
-          <span className="text-sm font-medium bg-gray-50 px-3 py-1 rounded-md">
+          <span
+            style={{
+              backgroundColor: `${isCurrent ? "#DCFCE7" : "#F9FAFB"}`,
+              color: `${isCurrent ? "#166534" : ""}`,
+            }}
+            className="text-sm font-medium px-3 py-1 rounded-md"
+          >
             {end_date ? formatDate(end_date) : "Present"}
           </span>
         </div>
