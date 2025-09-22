@@ -1,5 +1,10 @@
 import FrappeAPI from "../utils/frappeAPI";
-import type { LeaveRequest, TeamRequest } from "../types/leaves";
+import type {
+  LeaveFieldResponse,
+  LeaveReason,
+  LeaveRequest,
+  TeamRequest,
+} from "../types/leaves";
 import { HolidayApiResponse } from "../types/leaves";
 import type { LeaveDetailsResponse, HolidayGroup } from "../types/leaves";
 import { CompOffResponse } from "../types/leaves";
@@ -109,5 +114,29 @@ export const leaveService = {
         comp_off_name,
       }
     );
+  },
+
+  getLeaveRequestFields: async (
+    leaveType: string,
+    fromDate: string,
+    toDate: string
+  ): Promise<LeaveFieldResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_leave_application_field_config",
+      {
+        leave_type: leaveType,
+        from_date: fromDate,
+        to_date: toDate,
+      }
+    );
+
+    return response as LeaveFieldResponse;
+  },
+
+  getLeaveReason: async (): Promise<LeaveReason[]> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_leave_application_reasons"
+    );
+    return response as LeaveReason[];
   },
 };

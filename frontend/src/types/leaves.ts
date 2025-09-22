@@ -32,12 +32,14 @@ export interface LeaveBalance {
   availed: number;
   balance: number;
   carry_over: number;
+  dont_show_in_frontend: number;
 }
 
 export interface LeaveTransaction {
   type: string;
   total: number;
   monthly: number[];
+  dont_show_in_frontend: number;
 }
 
 export interface LeaveDetailsResponse {
@@ -111,4 +113,46 @@ export interface CompOffResponse {
   reason: string;
   custom_status: string;
   pay_button_required: boolean;
+}
+
+export interface LeaveFieldFlags {
+  leave_type: number;
+  from_date: number;
+  to_date: number;
+  custom_reason: number;
+  description: number;
+  custom_attachment: number;
+  half_day: number;
+  half_day_date: number;
+  custom_second_half_day_date: number;
+}
+
+export interface LeaveFieldResponse {
+  show: LeaveFieldFlags;
+  mandatory: LeaveFieldFlags;
+  custom_min_days_for_mandatory_attachment: number;
+}
+
+export interface LeaveReason {
+  name: string;
+  reason: string;
+  reason_type: string;
+  reason_frequency: string;
+  limit: string;
+  assignment_type: string;
+  company: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+}
+
+export interface MyLeaveRequestType {
+  reference_document: LeaveRequest;
+  allocated_to: string;
+  custom_allow_revoke: boolean;
+  todo_id: string;
+  username: string;
+  reference_name: string;
 }
