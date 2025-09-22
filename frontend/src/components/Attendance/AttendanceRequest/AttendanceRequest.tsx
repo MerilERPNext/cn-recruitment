@@ -8,13 +8,24 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import { MyAttendanceRequest } from "../../../types/attendance";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
-const AttendanceRequest = () => {
+const AttendanceRequest = ({
+  pageSize = 10,
+  showPagination = true,
+  showAttendanceRequest = true,
+}: {
+  pageSize?: number;
+  showPagination?: boolean;
+  showAttendanceRequest?: boolean;
+}) => {
   const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+
   const defaultFilters = useMemo(() => {
     if (!currentEmployee?.employee) return undefined;
     return { employee: currentEmployee?.employee };
@@ -44,7 +55,7 @@ const AttendanceRequest = () => {
           }}
         />
       ) : (
-        <div className="bg-white h-full px-4 pt-2 pb-12">
+        <div className="bg-white h-full px-4 pt-2 mb-32">
           <CardTable
             titles={[
               "Request Type",
@@ -76,19 +87,25 @@ const AttendanceRequest = () => {
               onItemClick={(data) => {
                 console.log(data);
               }}
-              infiniteScroll={true}
+              onRefetchComplete={() => {
+                setRefetchAttendance(false);
+              }}
+              refetchTrigger={refetchAttendance}
               isSearch={false}
               isFilter={false}
-              pageSize={20}
+              pageSize={pageSize}
               showRefreshButton={false}
               orderBy="modified desc"
+              infiniteScroll={false}
+              loadMorePagination={true}
+              showPagination={showPagination}
             />
           </CardTable>
         </div>
       )}
 
       {/* Add Attendance Request button - Only show for mobile since desktop has Actions button */}
-      {!isDesktop && (
+      {!isDesktop && showAttendanceRequest && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
             <button

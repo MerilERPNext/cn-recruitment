@@ -18,35 +18,17 @@ import {
   RepeatIcon as RetryIcon,
 } from "lucide-react";
 import { useLocation } from "react-router";
-import FrappeAPI from "../utils/frappeAPI";
+import {
+  customApiService,
+  type CustomAPIConfig,
+  type FetchParams,
+} from "../services/customApiService";
+import type { FrappePageResponse } from "../types/frappe";
 
 interface BaseItem {
   name?: string;
   id?: string | number;
   [key: string]: any;
-}
-
-interface FetchParams {
-  page?: number;
-  pageSize?: number;
-  searchTerm?: string;
-  filters?: Record<string, any>;
-  orderBy?: string;
-  [key: string]: any;
-}
-
-interface CustomAPIConfig {
-  method: string;
-  params?: Record<string, any>;
-  body?: Record<string, any>;
-  searchFields?: string[];
-}
-
-interface FetchResult<T> {
-  data: T[];
-  totalCount?: number;
-  hasNextPage?: boolean;
-  nextCursor?: any;
 }
 
 export interface PreListComponentProps<T> {
@@ -94,7 +76,7 @@ interface FilterField {
 
 interface DataListViewProps<T extends BaseItem> {
   queryKey: string | string[];
-  fetchFunction?: (params: FetchParams) => Promise<FetchResult<T>>;
+  fetchFunction?: (params: FetchParams) => Promise<FrappePageResponse>;
   customAPI?: CustomAPIConfig;
   ItemComponent: React.ComponentType<{
     item: T;
@@ -111,6 +93,7 @@ interface DataListViewProps<T extends BaseItem> {
   searchFields?: string[];
   onItemClick?: (item: T) => void;
   infiniteScroll?: boolean;
+  loadMorePagination?: boolean;
   permissionErrorMessage?: string;
   showRefreshButton?: boolean;
   onRefetchAvailable?: (refetch: () => void) => void;
@@ -140,6 +123,7 @@ const DataListView = <T extends BaseItem>({
   searchFields = [],
   onItemClick,
   infiniteScroll = false,
+  loadMorePagination = false,
   showRefreshButton = false,
   permissionErrorMessage,
   onRefetchAvailable,
@@ -162,6 +146,8 @@ const DataListView = <T extends BaseItem>({
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearchTerm, setDebouncedSearchTerm] =
     useState(initialSearchQuery);
+  const [accumulatedData, setAccumulatedData] = useState<T[]>([]);
+  const [loadMorePage, setLoadMorePage] = useState(1);
   const queryClient = useQueryClient();
 
   const filtersString = enableUrlParams ? queryParam.get("filters") : null;
@@ -197,7 +183,11 @@ const DataListView = <T extends BaseItem>({
   // Reset to first page when search or filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm, filters]);
+    if (loadMorePagination) {
+      setLoadMorePage(1);
+      setAccumulatedData([]);
+    }
+  }, [debouncedSearchTerm, JSON.stringify(filters), loadMorePagination]);
 
   // Create internal fetch function for custom API
   const internalFetchFunction = useMemo(() => {
@@ -206,64 +196,8 @@ const DataListView = <T extends BaseItem>({
     }
 
     if (customAPI) {
-      return async (params: FetchParams): Promise<FetchResult<T>> => {
-        try {
-          // Prepare API call parameters
-          const apiParams = {
-            ...customAPI.params,
-            ...params.filters,
-            ...(params.searchTerm && customAPI.searchFields
-              ? {
-                  search_term: params.searchTerm,
-                  search_fields: customAPI.searchFields,
-                }
-              : {}),
-            ...(params.page !== undefined ? { page: params.page } : {}),
-            ...(params.pageSize ? { page_size: params.pageSize } : {}),
-            ...(params.orderBy ? { order_by: params.orderBy } : {}),
-          };
-
-          // Combine body data
-          const apiBody = {
-            ...customAPI.body,
-            ...apiParams,
-          };
-
-          // Call the custom API method
-          const response = await FrappeAPI.callMethod(
-            customAPI.method,
-            apiBody
-          );
-
-          // Handle different response formats
-          let data: T[] = [];
-          let totalCount = 0;
-          let hasNextPage = false;
-
-          if (Array.isArray(response)) {
-            data = response;
-            totalCount = response.length;
-          } else if (response && typeof response === "object") {
-            data = (response as any).data || (response as any).results || [];
-            totalCount =
-              (response as any).total_count ||
-              (response as any).totalCount ||
-              data.length;
-            hasNextPage =
-              (response as any).has_next_page ||
-              (response as any).hasNextPage ||
-              false;
-          }
-
-          return {
-            data,
-            totalCount,
-            hasNextPage,
-          };
-        } catch (error) {
-          console.error(`Error calling custom API ${customAPI.method}:`, error);
-          throw error;
-        }
+      return (params: FetchParams): Promise<FrappePageResponse> => {
+        return customApiService.fetchData<T>(customAPI, params);
       };
     }
 
@@ -295,16 +229,13 @@ const DataListView = <T extends BaseItem>({
     queryFn: ({ pageParam = 0 }) =>
       internalFetchFunction({
         ...queryParams,
-        page: pageParam,
+        pageParam: pageParam as number,
       }),
     enabled: infiniteScroll && !isLoading,
-    getNextPageParam: (lastPage, pages) => {
-      if (lastPage.hasNextPage) {
-        return pages.length;
-      }
-      return undefined;
-    },
+    getNextPageParam: (lastPage: FrappePageResponse) => lastPage.nextCursor,
     initialPageParam: 0,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Traditional pagination query
@@ -313,15 +244,34 @@ const DataListView = <T extends BaseItem>({
     queryFn: () =>
       internalFetchFunction({
         ...queryParams,
-        page: currentPage - 1,
+        pageParam: (currentPage - 1) * (queryParams.pageSize || 20),
       }),
-    enabled: !infiniteScroll && !isLoading,
+    enabled: !infiniteScroll && !loadMorePagination && !isLoading,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Load more pagination query
+  const loadMoreQueryResult = useQuery({
+    queryKey: [queryKey, "loadMore", queryParams, loadMorePage],
+    queryFn: () =>
+      internalFetchFunction({
+        ...queryParams,
+        pageParam: (loadMorePage - 1) * (queryParams.pageSize || 20),
+      }),
+    enabled: loadMorePagination && !isLoading,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Refetch functionality
   const refetch = useCallback(() => {
     if (infiniteScroll) {
       infiniteQueryResult.refetch();
+    } else if (loadMorePagination) {
+      setLoadMorePage(1);
+      setAccumulatedData([]);
+      loadMoreQueryResult.refetch();
     } else {
       paginationQueryResult.refetch();
     }
@@ -330,8 +280,10 @@ const DataListView = <T extends BaseItem>({
     }
   }, [
     infiniteScroll,
+    loadMorePagination,
     infiniteQueryResult,
     paginationQueryResult,
+    loadMoreQueryResult,
     onRefetchComplete,
   ]);
 
@@ -350,6 +302,8 @@ const DataListView = <T extends BaseItem>({
   // Determine which query result to use
   const queryResult = infiniteScroll
     ? infiniteQueryResult
+    : loadMorePagination
+    ? loadMoreQueryResult
     : paginationQueryResult;
 
   // Process data based on query type
@@ -357,14 +311,52 @@ const DataListView = <T extends BaseItem>({
     let data: T[] = [];
 
     if (infiniteScroll) {
-      data = (infiniteQueryResult.data?.pages?.flatMap((page) => page.data) ||
-        []) as T[];
+      data = (infiniteQueryResult.data?.pages?.flatMap(
+        (page: FrappePageResponse) => page.data
+      ) || []) as unknown as T[];
+    } else if (loadMorePagination) {
+      data = accumulatedData;
     } else {
-      data = (paginationQueryResult.data?.data || []) as T[];
+      data = (paginationQueryResult.data?.data || []) as unknown as T[];
     }
 
     return data;
-  }, [infiniteScroll, infiniteQueryResult.data, paginationQueryResult.data]);
+  }, [
+    infiniteScroll,
+    loadMorePagination,
+    infiniteQueryResult.data,
+    paginationQueryResult.data,
+    accumulatedData,
+  ]);
+
+  // Handle accumulating data for load more pagination
+  useEffect(() => {
+    if (loadMorePagination && loadMoreQueryResult.data?.data) {
+      const newData = loadMoreQueryResult.data.data as unknown as T[];
+      if (loadMorePage === 1) {
+        // For first page, always set the data
+        setAccumulatedData(newData);
+      } else {
+        setAccumulatedData(prev => {
+          // Check if this data is already included to prevent duplicates
+          const existingIds = new Set(prev.map(item => item.name || item.id || JSON.stringify(item)));
+          const filteredNewData = newData.filter(item => {
+            const id = item.name || item.id || JSON.stringify(item);
+            return !existingIds.has(id);
+          });
+          return filteredNewData.length > 0 ? [...prev, ...filteredNewData] : prev;
+        });
+      }
+    }
+  }, [loadMorePagination, loadMoreQueryResult.data, loadMorePage]);
+
+  // Initialize accumulated data with first page data when available
+  useEffect(() => {
+    if (loadMorePagination && loadMorePage === 1 && loadMoreQueryResult.data?.data && accumulatedData.length === 0) {
+      const newData = loadMoreQueryResult.data.data as unknown as T[];
+      setAccumulatedData(newData);
+    }
+  }, [loadMorePagination, loadMoreQueryResult.data, loadMorePage, accumulatedData.length]);
 
   useEffect(() => {
     if (onDataLoad) {
@@ -375,10 +367,21 @@ const DataListView = <T extends BaseItem>({
   // Calculate pagination values for traditional pagination
   const totalCount = useMemo(() => {
     if (infiniteScroll) {
-      return infiniteQueryResult.data?.pages[0]?.totalCount || 0;
+      return (
+        (infiniteQueryResult.data?.pages[0] as FrappePageResponse)
+          ?.totalCount || 0
+      );
+    } else if (loadMorePagination) {
+      return (loadMoreQueryResult.data as FrappePageResponse)?.totalCount || 0;
     }
-    return paginationQueryResult.data?.totalCount || 0;
-  }, [infiniteScroll, infiniteQueryResult.data, paginationQueryResult.data]);
+    return (paginationQueryResult.data as FrappePageResponse)?.totalCount || 0;
+  }, [
+    infiniteScroll,
+    loadMorePagination,
+    infiniteQueryResult.data,
+    paginationQueryResult.data,
+    loadMoreQueryResult.data,
+  ]);
 
   const totalPages = Math.ceil(totalCount / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -400,6 +403,10 @@ const DataListView = <T extends BaseItem>({
     setSearchTerm("");
     setDebouncedSearchTerm("");
     setQueryParamsFilters({});
+    if (loadMorePagination) {
+      setLoadMorePage(1);
+      setAccumulatedData([]);
+    }
     if (enableUrlParams) {
       const url = new URL(window.location.href);
       url.searchParams.delete("filters");
@@ -420,11 +427,18 @@ const DataListView = <T extends BaseItem>({
   };
 
   const loadMore = () => {
-    if (
-      infiniteQueryResult.hasNextPage &&
-      !infiniteQueryResult.isFetchingNextPage
-    ) {
-      infiniteQueryResult.fetchNextPage();
+    if (infiniteScroll) {
+      if (
+        infiniteQueryResult.hasNextPage &&
+        !infiniteQueryResult.isFetchingNextPage
+      ) {
+        infiniteQueryResult.fetchNextPage();
+      }
+    } else if (loadMorePagination) {
+      const hasMoreData = accumulatedData.length < totalCount;
+      if (hasMoreData && !loadMoreQueryResult.isFetching) {
+        setLoadMorePage(prev => prev + 1);
+      }
     }
   };
 
@@ -454,6 +468,37 @@ const DataListView = <T extends BaseItem>({
               </button>
             </div>
           ) : null}
+        </div>
+      );
+    }
+
+    if (loadMorePagination) {
+      const hasMoreData = accumulatedData.length < totalCount;
+      return (
+        <div>
+          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200">
+            <div className="flex items-center text-sm text-gray-700">
+              <span>
+                Showing {accumulatedData.length} of {totalCount} results
+              </span>
+            </div>
+            {hasMoreData && (
+              <button
+                onClick={loadMore}
+                disabled={loadMoreQueryResult.isFetching}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {loadMoreQueryResult.isFetching ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Load More"
+                )}
+              </button>
+            )}
+          </div>
         </div>
       );
     }

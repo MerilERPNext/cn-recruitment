@@ -121,7 +121,7 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
         <div
           className={`mb-2 w-full px-4 py-3 rounded-xl flex justify-between ${
             isDesktop
-              ? "bg-white bg-opacity-60 border border-white border-opacity-50"
+              ? "bg-gray-100 border border-white border-opacity-50"
               : "bg-gray-100"
           }`}
         >

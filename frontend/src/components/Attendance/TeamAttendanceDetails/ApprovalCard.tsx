@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
+import Button from "../../shared/atoms/Button";
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -29,22 +30,31 @@ const ApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const getActionStyles = (action: string) => {
+  const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();
-    let styles = "";
+    let styles = {
+      bg: "gray-100",
+      text: "gray-600",
+    };
     switch (parsedAction) {
       case "approve":
-        styles =
-          "w-fit sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        styles = {
+          bg: "green-100",
+          text: "green-600",
+        };
         break;
       case "reject":
-        styles =
-          "w-fit sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        styles = {
+          bg: "red-100",
+          text: "red-600",
+        };
 
         break;
       default:
-        styles =
-          "w-fit sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-gray-100 text-gray-600 text-sm hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        styles = {
+          bg: "gray-200",
+          text: "gray-600",
+        };
         break;
     }
     return styles;
@@ -118,6 +128,7 @@ const ApprovalCard = ({
           {/* Status + Actions */}
           <div className="flex items-center justify-start">
             <Badge
+              size="sm"
               label={status?.label as string}
               backgroundColor={status?.statusColor}
             />
@@ -125,18 +136,19 @@ const ApprovalCard = ({
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
               actions.map((action: string) => (
-                <button
+                <Button
                   key={action}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     onAction(action, data);
                   }}
+                  bgColor={getActionStyles(action).bg}
+                  textColor={getActionStyles(action).text}
                   disabled={
                     loadingAction?.id === data?.name &&
                     loadingAction?.action === action
                   }
-                  className={`${getActionStyles(action)} text-xs w-fit`}
                 >
                   {loadingAction?.id === data?.name &&
                   loadingAction?.action === action ? (
@@ -144,13 +156,13 @@ const ApprovalCard = ({
                   ) : (
                     action
                   )}
-                </button>
+                </Button>
               ))}
           </div>
         </div>
       ) : (
         <div
-          className="cursor-pointer border border-gray-200 bg-white shadow-sm rounded-xl transition-shadow"
+          className="cursor-pointer border-1 border-gray-200 bg-white rounded-xl"
           onClick={() => {
             if (onClick) {
               onClick(data);
@@ -179,6 +191,7 @@ const ApprovalCard = ({
                   </p>
                 </div>
                 <Badge
+                  size="sm"
                   label={data?.status}
                   backgroundColor={"bg-yellow-100 text-yellow-600"}
                 />
@@ -192,18 +205,19 @@ const ApprovalCard = ({
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length > 0
                   ? actions?.map((action: string) => (
-                      <button
+                      <Button
                         key={action}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           onAction(action, data);
                         }}
+                        bgColor={getActionStyles(action).bg}
+                        textColor={getActionStyles(action).text}
                         disabled={
                           loadingAction?.id === data?.name &&
                           loadingAction?.action === action
                         }
-                        className={getActionStyles(action)}
                       >
                         {loadingAction?.id === data?.name &&
                         loadingAction?.action === action ? (
@@ -211,7 +225,7 @@ const ApprovalCard = ({
                         ) : (
                           action
                         )}
-                      </button>
+                      </Button>
                     ))
                   : ""}
               </div>

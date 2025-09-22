@@ -59,6 +59,7 @@ any & {
           </div>
           <div className="w-full flex justify-start">
             <Badge
+              size="sm"
               label={status?.label as string}
               backgroundColor={status?.statusColor}
             />
@@ -80,6 +81,7 @@ any & {
                     <p className="text-sm text-gray-500">{formattedDate}</p>
                   </div>
                   <Badge
+                    size="sm"
                     label={status?.label as string}
                     backgroundColor={status?.statusColor}
                   />

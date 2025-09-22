@@ -2,20 +2,30 @@ import { format } from "date-fns";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { Edit2 } from "lucide-react";
+import { Edit2, RotateCcw } from "lucide-react";
 import Tooltip from "../../shared/Tooltip";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import Button from "../../shared/atoms/Button";
 
 const EmpAttendanceRequestCard = ({ data }: { data: MyAttendanceRequest }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
+  const { setRefetchAttendance } = useGlobalStore();
 
   const handleRevokeClick = () => {
     if (data?.todo_id) {
-      revokeEventMutation.mutate({
-        docname: data?.reference_name,
-        todo: data?.todo_id,
-      });
+      revokeEventMutation.mutate(
+        {
+          docname: data?.reference_name,
+          todo: data?.todo_id,
+        },
+        {
+          onSuccess: () => {
+            setRefetchAttendance(true);
+          },
+        }
+      );
     }
   };
 
@@ -69,39 +79,49 @@ const EmpAttendanceRequestCard = ({ data }: { data: MyAttendanceRequest }) => {
           <div className="flex justify-start">
             <Tooltip content={status?.label === "Pending" ? "Test" : ""}>
               <Badge
+                size="sm"
                 backgroundColor={status?.statusColor}
                 label={status?.label || ""}
               />
             </Tooltip>
           </div>
-          <div className="text-sm text-gray-900 text-start flex gap-2">
+          <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
+            <Button
+              icon={<Edit2 className="h-3 w-3" />}
+              variant="subtle"
+              size="sm"
+            >
+              Edit
+            </Button>
             {data?.custom_allow_revoke ? (
-              <button
+              <Button
+                icon={<RotateCcw className="h-3 w-3" />}
+                variant="contain"
+                size="sm"
                 onClick={handleRevokeClick}
                 disabled={revokeEventMutation.isPending}
-                className="w-fit bg-black text-white text-xs py-1 px-2 rounded-lg disabled:opacity-50"
               >
                 {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-              </button>
+              </Button>
             ) : (
               <></>
             )}
-            <Edit2 className="h-5 w-5" />
           </div>
         </div>
       ) : (
-        <div className="w-full flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl cursor-pointer hover:shadow-md transition-shadow">
-          <div className="px-4 py-2 w-full">
-            <div className=" flex items-start justify-between gap-1">
-              <div>
+        <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
+          <div className="p-2 w-full ">
+            <div className=" flex items-start justify-between gap-4">
+              <div className="flex gap-1 flex-col">
                 <div className="flex gap-2">
                   {data?.reference_document?.custom_request_type}
                   <Badge
+                    size="sm"
                     backgroundColor={status?.statusColor}
                     label={status?.label || ""}
                   />
                 </div>
-                <div className="font-medium text-gray-900">
+                <div className="text-sm text-gray-500">
                   {data?.reference_document?.from_date
                     ? format(
                         new Date(data?.reference_document?.from_date),
@@ -117,19 +137,27 @@ const EmpAttendanceRequestCard = ({ data }: { data: MyAttendanceRequest }) => {
                 </div>
                 {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
-              <div className="text-sm text-gray-900 text-start flex gap-2 mt-2">
+              <div className="text-sm text-gray-900 text-start flex gap-2">
+                <Button
+                  icon={<Edit2 className="h-3 w-3" />}
+                  variant="subtle"
+                  size="sm"
+                >
+                  Edit
+                </Button>{" "}
                 {data?.custom_allow_revoke ? (
-                  <button
+                  <Button
+                    icon={<RotateCcw className="h-3 w-3" />}
+                    variant="contain"
+                    size="sm"
                     onClick={handleRevokeClick}
                     disabled={revokeEventMutation.isPending}
-                    className="w-fit bg-black text-white text-xs py-1 px-2 rounded-lg disabled:opacity-50"
                   >
                     {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                  </button>
+                  </Button>
                 ) : (
                   <></>
                 )}
-                <Edit2 className="h-5 w-5" />
               </div>
             </div>
           </div>
