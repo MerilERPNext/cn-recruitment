@@ -2,13 +2,19 @@ import { format } from "date-fns";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { Edit2, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import Tooltip from "../../shared/Tooltip";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import Button from "../../shared/atoms/Button";
 
-const EmpAttendanceRequestCard = ({ data }: { data: MyAttendanceRequest }) => {
+const EmpAttendanceRequestCard = ({
+  data,
+  columns = 5,
+}: {
+  data: MyAttendanceRequest;
+  columns?: number;
+}) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
@@ -59,7 +65,9 @@ const EmpAttendanceRequestCard = ({ data }: { data: MyAttendanceRequest }) => {
   return (
     <>
       {isDesktop ? (
-        <div className="grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+        <div
+          className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
+        >
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.custom_request_type}
@@ -77,7 +85,9 @@ const EmpAttendanceRequestCard = ({ data }: { data: MyAttendanceRequest }) => {
 
           {/* Status */}
           <div className="flex justify-start">
-            <Tooltip content={status?.label === "Pending" ? "Test" : ""}>
+            <Tooltip
+              content={status?.label === "Pending" ? data?.allocated_to : ""}
+            >
               <Badge
                 size="sm"
                 backgroundColor={status?.statusColor}
@@ -86,13 +96,6 @@ const EmpAttendanceRequestCard = ({ data }: { data: MyAttendanceRequest }) => {
             </Tooltip>
           </div>
           <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
-            <Button
-              icon={<Edit2 className="h-3 w-3" />}
-              variant="subtle"
-              size="sm"
-            >
-              Edit
-            </Button>
             {data?.custom_allow_revoke ? (
               <Button
                 icon={<RotateCcw className="h-3 w-3" />}
@@ -138,13 +141,6 @@ const EmpAttendanceRequestCard = ({ data }: { data: MyAttendanceRequest }) => {
                 {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
               <div className="text-sm text-gray-900 text-start flex gap-2">
-                <Button
-                  icon={<Edit2 className="h-3 w-3" />}
-                  variant="subtle"
-                  size="sm"
-                >
-                  Edit
-                </Button>{" "}
                 {data?.custom_allow_revoke ? (
                   <Button
                     icon={<RotateCcw className="h-3 w-3" />}

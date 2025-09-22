@@ -12,6 +12,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
     isExpanded,
     onToggleExpand,
     childrens,
+    showExpand = true,
   } = data;
   const navigate = useNavigate();
   return (
@@ -29,7 +30,6 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
 
       <div
         className="min-w-[160px] px-4 py-3 bg-white border border-gray-300 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg"
-       
         onClick={() => {
           const tabname = window.location.pathname.split("/").pop();
           if (tabname === "my-profile") {
@@ -50,7 +50,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
               {title && (
                 <p className="text-gray-500 text-xs truncate mt-0.5">{title}</p>
               )}
-              {!isExpanded ? (
+              {!isExpanded && childrens?.length > 0 ? (
                 <p className="text-green-500 bg-green-100 rounded-sm text-xs truncate mt-0.5 px-1">
                   {childrens?.length || ""}
                 </p>
@@ -60,7 +60,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
             </div>
           </div>
 
-          {hasChildren && (
+          {hasChildren && showExpand && (
             <button
               onClick={(e) => {
                 e.stopPropagation();

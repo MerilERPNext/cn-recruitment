@@ -280,10 +280,12 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             data: {
               values: [
-                {
-                  label: "Clockin Request",
-                  value: "Clockin",
-                },
+                reqValidationmutation?.data?.clockin_requests
+                  ? {
+                      label: "Clockin Request",
+                      value: "Clockin",
+                    }
+                  : "",
                 reqValidationmutation?.data?.out_duty_requests
                   ? {
                       label: "Out Duty Request",
@@ -658,7 +660,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
         {/* Content Area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
-          {!userRoles?.roles["Employee Direct Manager"] ? (
+          {userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
                 className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${

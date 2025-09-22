@@ -58,6 +58,7 @@ function isObjectResponse<T>(
 }
 
 export const customApiService = {
+  // Pure API service function - wrapped by React Query hooks in useCustomApi.ts for reactivity
   async fetchData<T>(
     customAPI: CustomAPIConfig,
     params: FetchParams
@@ -66,7 +67,6 @@ export const customApiService = {
       // Prepare API call parameters with correct parameter names
       const apiParams: Record<string, unknown> = {
         ...customAPI.params,
-        ...params.filters,
         ...(params.searchTerm && customAPI.searchFields
           ? {
               search_term: params.searchTerm,
@@ -78,6 +78,11 @@ export const customApiService = {
         ...(params.pageSize ? { page_length: params.pageSize } : {}),
         ...(params.orderBy ? { order_by: params.orderBy } : {}),
       };
+
+      // Handle filters separately - format as JSON string for URL parameter
+      if (params.filters && Object.keys(params.filters).length > 0) {
+        apiParams.filters = JSON.stringify(params.filters);
+      }
 
       // Combine body data
       const apiBody: Record<string, unknown> = {

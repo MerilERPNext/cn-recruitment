@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
 import Badge from "../shared/Badge";
+import Button from "../shared/atoms/Button";
 
 export function AttendanceDetailView({
   data,
@@ -93,27 +94,35 @@ export function AttendanceDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const getActionStyles = (action: string) => {
+  const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();
-    let styles = "";
+    let styles = {
+      bg: "gray-100",
+      text: "gray-600",
+    };
     switch (parsedAction) {
       case "approve":
-        styles =
-          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-green-100 text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        styles = {
+          bg: "green-100",
+          text: "green-600",
+        };
         break;
       case "reject":
-        styles =
-          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-red-100 text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        styles = {
+          bg: "red-100",
+          text: "red-600",
+        };
 
         break;
       default:
-        styles =
-          "w-full sm:w-auto px-3 sm:px-4 py-1.5 rounded-md bg-gray-100 text-gray-600 text-sm hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed";
+        styles = {
+          bg: "gray-200",
+          text: "gray-600",
+        };
         break;
     }
     return styles;
   };
-
   return data?.name ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -175,20 +184,22 @@ export function AttendanceDetailView({
                     loadingAction?.id === data?.name &&
                     loadingAction?.action === action;
                   return (
-                    <button
+                    <Button
                       key={action}
                       disabled={isLoading}
                       onClick={() => {
                         handleAction(action);
                       }}
-                      className={getActionStyles(action)}
+                      size="md"
+                      bgColor={getActionStyles(action).bg}
+                      textColor={getActionStyles(action).text}
                     >
                       {isLoading ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action
                       )}
-                    </button>
+                    </Button>
                   );
                 })}
             </div>

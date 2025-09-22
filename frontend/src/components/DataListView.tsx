@@ -6,6 +6,7 @@ import {
   useQuery,
   useInfiniteQuery,
 } from "@tanstack/react-query";
+import { useCustomApiQuery, useCustomApiInfiniteQuery } from "../hooks/useCustomApi";
 import {
   Search,
   Filter,
@@ -168,9 +169,12 @@ const DataListView = <T extends BaseItem>({
     }
   }, [filtersString, enableUrlParams]);
 
+  // Memoize stringified defaultFilters to avoid complex dependency
+  const defaultFiltersString = useMemo(() => JSON.stringify(defaultFilters), [defaultFilters]);
+
   useEffect(() => {
     setFilters(defaultFilters || {});
-  }, [JSON.stringify(defaultFilters)]);
+  }, [defaultFiltersString]);
 
   // Debounce search term
   useEffect(() => {
@@ -180,6 +184,9 @@ const DataListView = <T extends BaseItem>({
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Memoize stringified filters to avoid complex dependency
+  const currentFiltersString = useMemo(() => JSON.stringify(filters), [filters]);
+
   // Reset to first page when search or filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -187,7 +194,7 @@ const DataListView = <T extends BaseItem>({
       setLoadMorePage(1);
       setAccumulatedData([]);
     }
-  }, [debouncedSearchTerm, JSON.stringify(filters), loadMorePagination]);
+  }, [debouncedSearchTerm, currentFiltersString, loadMorePagination]);
 
   // Create internal fetch function for custom API
   const internalFetchFunction = useMemo(() => {
@@ -223,46 +230,99 @@ const DataListView = <T extends BaseItem>({
     ]
   );
 
-  // Infinite query for infinite scroll
-  const infiniteQueryResult = useInfiniteQuery({
+  // Infinite query for infinite scroll - always call both hooks but enable conditionally
+  const customApiInfiniteResult = useCustomApiInfiniteQuery<T>(
+    customAPI || { method: "", params: {} },
+    {
+      pageSize: queryParams.pageSize,
+      searchTerm: queryParams.searchTerm,
+      filters: queryParams.filters,
+      searchFields: queryParams.searchFields,
+      orderBy: queryParams.orderBy,
+    },
+    {
+      enabled: infiniteScroll && !isLoading && !!customAPI,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const fetchFunctionInfiniteResult = useInfiniteQuery({
     queryKey: [queryKey, "infinite", queryParams],
     queryFn: ({ pageParam = 0 }) =>
       internalFetchFunction({
         ...queryParams,
         pageParam: pageParam as number,
       }),
-    enabled: infiniteScroll && !isLoading,
+    enabled: infiniteScroll && !isLoading && !!fetchFunction && !customAPI,
     getNextPageParam: (lastPage: FrappePageResponse) => lastPage.nextCursor,
     initialPageParam: 0,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Traditional pagination query
-  const paginationQueryResult = useQuery({
+  const infiniteQueryResult = customAPI ? customApiInfiniteResult : fetchFunctionInfiniteResult;
+
+  // Traditional pagination query - always call both hooks but enable conditionally
+  const customApiPaginationResult = useCustomApiQuery<T>(
+    customAPI || { method: "", params: {} },
+    {
+      pageSize: queryParams.pageSize,
+      searchTerm: queryParams.searchTerm,
+      filters: queryParams.filters,
+      searchFields: queryParams.searchFields,
+      orderBy: queryParams.orderBy,
+      pageParam: (currentPage - 1) * (queryParams.pageSize || 20),
+    },
+    {
+      enabled: !infiniteScroll && !loadMorePagination && !isLoading && !!customAPI,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const fetchFunctionPaginationResult = useQuery({
     queryKey: [queryKey, "pagination", queryParams, currentPage],
     queryFn: () =>
       internalFetchFunction({
         ...queryParams,
         pageParam: (currentPage - 1) * (queryParams.pageSize || 20),
       }),
-    enabled: !infiniteScroll && !loadMorePagination && !isLoading,
+    enabled: !infiniteScroll && !loadMorePagination && !isLoading && !!fetchFunction && !customAPI,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Load more pagination query
-  const loadMoreQueryResult = useQuery({
+  const paginationQueryResult = customAPI ? customApiPaginationResult : fetchFunctionPaginationResult;
+
+  // Load more pagination query - always call both hooks but enable conditionally
+  const customApiLoadMoreResult = useCustomApiQuery<T>(
+    customAPI || { method: "", params: {} },
+    {
+      pageSize: queryParams.pageSize,
+      searchTerm: queryParams.searchTerm,
+      filters: queryParams.filters,
+      searchFields: queryParams.searchFields,
+      orderBy: queryParams.orderBy,
+      pageParam: (loadMorePage - 1) * (queryParams.pageSize || 20),
+    },
+    {
+      enabled: loadMorePagination && !isLoading && !!customAPI,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const fetchFunctionLoadMoreResult = useQuery({
     queryKey: [queryKey, "loadMore", queryParams, loadMorePage],
     queryFn: () =>
       internalFetchFunction({
         ...queryParams,
         pageParam: (loadMorePage - 1) * (queryParams.pageSize || 20),
       }),
-    enabled: loadMorePagination && !isLoading,
+    enabled: loadMorePagination && !isLoading && !!fetchFunction && !customAPI,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const loadMoreQueryResult = customAPI ? customApiLoadMoreResult : fetchFunctionLoadMoreResult;
 
   // Refetch functionality
   const refetch = useCallback(() => {
@@ -311,9 +371,11 @@ const DataListView = <T extends BaseItem>({
     let data: T[] = [];
 
     if (infiniteScroll) {
-      data = (infiniteQueryResult.data?.pages?.flatMap(
-        (page: FrappePageResponse) => page.data
-      ) || []) as unknown as T[];
+      // For infinite scroll, pages is an array of FrappePageResponse objects
+      const pages = infiniteQueryResult.data?.pages;
+      if (pages && Array.isArray(pages)) {
+        data = pages.flatMap((page: any) => page.data || []) as T[];
+      }
     } else if (loadMorePagination) {
       data = accumulatedData;
     } else {
@@ -337,14 +399,18 @@ const DataListView = <T extends BaseItem>({
         // For first page, always set the data
         setAccumulatedData(newData);
       } else {
-        setAccumulatedData(prev => {
+        setAccumulatedData((prev) => {
           // Check if this data is already included to prevent duplicates
-          const existingIds = new Set(prev.map(item => item.name || item.id || JSON.stringify(item)));
-          const filteredNewData = newData.filter(item => {
+          const existingIds = new Set(
+            prev.map((item) => item.name || item.id || JSON.stringify(item))
+          );
+          const filteredNewData = newData.filter((item) => {
             const id = item.name || item.id || JSON.stringify(item);
             return !existingIds.has(id);
           });
-          return filteredNewData.length > 0 ? [...prev, ...filteredNewData] : prev;
+          return filteredNewData.length > 0
+            ? [...prev, ...filteredNewData]
+            : prev;
         });
       }
     }
@@ -352,11 +418,21 @@ const DataListView = <T extends BaseItem>({
 
   // Initialize accumulated data with first page data when available
   useEffect(() => {
-    if (loadMorePagination && loadMorePage === 1 && loadMoreQueryResult.data?.data && accumulatedData.length === 0) {
+    if (
+      loadMorePagination &&
+      loadMorePage === 1 &&
+      loadMoreQueryResult.data?.data &&
+      accumulatedData.length === 0
+    ) {
       const newData = loadMoreQueryResult.data.data as unknown as T[];
       setAccumulatedData(newData);
     }
-  }, [loadMorePagination, loadMoreQueryResult.data, loadMorePage, accumulatedData.length]);
+  }, [
+    loadMorePagination,
+    loadMoreQueryResult.data,
+    loadMorePage,
+    accumulatedData.length,
+  ]);
 
   useEffect(() => {
     if (onDataLoad) {
@@ -367,10 +443,8 @@ const DataListView = <T extends BaseItem>({
   // Calculate pagination values for traditional pagination
   const totalCount = useMemo(() => {
     if (infiniteScroll) {
-      return (
-        (infiniteQueryResult.data?.pages[0] as FrappePageResponse)
-          ?.totalCount || 0
-      );
+      const firstPage = infiniteQueryResult.data?.pages?.[0];
+      return (firstPage as any)?.totalCount || 0;
     } else if (loadMorePagination) {
       return (loadMoreQueryResult.data as FrappePageResponse)?.totalCount || 0;
     }
@@ -437,7 +511,7 @@ const DataListView = <T extends BaseItem>({
     } else if (loadMorePagination) {
       const hasMoreData = accumulatedData.length < totalCount;
       if (hasMoreData && !loadMoreQueryResult.isFetching) {
-        setLoadMorePage(prev => prev + 1);
+        setLoadMorePage((prev) => prev + 1);
       }
     }
   };
