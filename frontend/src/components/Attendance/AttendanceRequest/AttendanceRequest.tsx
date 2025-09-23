@@ -98,6 +98,7 @@ const AttendanceRequest = ({
                       ItemComponent={(props: { item: MyAttendanceRequest }) => {
                         return (
                           <EmpAttendanceRequestCard
+                            type="pending"
                             data={{
                               ...props?.item,
                             }}
@@ -136,9 +137,7 @@ const AttendanceRequest = ({
                 </h2>
                 <button
                   onClick={() => {
-                    navigate(
-                      "/webapp/attendance/attendance-request/actioned"
-                    );
+                    navigate("/webapp/attendance/attendance-request/actioned");
                   }}
                   className="text-blue-600 hover:text-blue-800 font-medium"
                 >
@@ -147,13 +146,7 @@ const AttendanceRequest = ({
               </div>
 
               <CardTable
-                titles={[
-                  "Request Type",
-                  "From Date",
-                  "To Date",
-                  "Status",
-                  "Actions",
-                ]}
+                titles={["Request Type", "From Date", "To Date", "Status"]}
               >
                 {currentEmployee?.employee ? (
                   <DataListView
@@ -172,6 +165,8 @@ const AttendanceRequest = ({
                     ItemComponent={(props: { item: MyAttendanceRequest }) => {
                       return (
                         <EmpAttendanceRequestCard
+                          type="actioned"
+                          columns={4}
                           data={{
                             ...props?.item,
                           }}

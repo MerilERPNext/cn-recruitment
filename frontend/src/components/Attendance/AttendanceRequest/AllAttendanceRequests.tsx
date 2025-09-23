@@ -9,7 +9,8 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import LayoutHeader from "../../shared/LayoutHeader";
 
 const AllAttendanceRequest = ({
   pageSize = 10,
@@ -49,7 +50,7 @@ const AllAttendanceRequest = ({
   }, [currentEmployee?.employee, statusType]);
 
   const [showForm, setShowForm] = useState(false);
-
+  const navigate = useNavigate();
   const CardSkeleton = () => (
     <div className="rounded-xl bg-gray-100 animate-pulse my-4">
       <div className="px-4 py-2">
@@ -65,6 +66,14 @@ const AllAttendanceRequest = ({
   );
   return (
     <>
+      <LayoutHeader
+        tab={`${
+          statusType === "pending" ? "Pending" : "Actioned"
+        } Attendance Requests`}
+        onBack={() => {
+          navigate(-1);
+        }}
+      />
       {showForm ? (
         <AttndanceRequestForm
           onClose={() => {
@@ -93,6 +102,7 @@ const AllAttendanceRequest = ({
               ItemComponent={(props: { item: MyAttendanceRequest }) => {
                 return (
                   <EmpAttendanceRequestCard
+                    type={statusType}
                     data={{
                       ...props?.item,
                     }}

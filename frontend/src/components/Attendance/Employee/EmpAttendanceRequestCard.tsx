@@ -10,10 +10,12 @@ import Button from "../../shared/atoms/Button";
 
 const EmpAttendanceRequestCard = ({
   data,
+  type,
   columns = 5,
 }: {
   data: MyAttendanceRequest;
   columns?: number;
+  type: "actioned" | "pending";
 }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
@@ -95,8 +97,8 @@ const EmpAttendanceRequestCard = ({
               />
             </Tooltip>
           </div>
-          <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
-            {data?.custom_allow_revoke ? (
+          {data?.custom_allow_revoke && type === "pending" ? (
+            <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
               <Button
                 icon={<RotateCcw className="h-3 w-3" />}
                 variant="contain"
@@ -106,10 +108,10 @@ const EmpAttendanceRequestCard = ({
               >
                 {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
               </Button>
-            ) : (
-              <></>
-            )}
-          </div>
+            </div>
+          ) : (
+            <></>
+          )}
         </div>
       ) : (
         <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
@@ -141,7 +143,7 @@ const EmpAttendanceRequestCard = ({
                 {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
               <div className="text-sm text-gray-900 text-start flex gap-2">
-                {data?.custom_allow_revoke ? (
+                {data?.custom_allow_revoke && type === "pending" ? (
                   <Button
                     icon={<RotateCcw className="h-3 w-3" />}
                     variant="contain"
