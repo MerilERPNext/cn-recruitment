@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createAdvance, getAdvances, getAdvancesAmount, getAllAdvancesTypes } from "../services/employeeAdvances";
+import { createAdvance, getAdvanceAccount, getAdvances, getAdvancesAmount, getAllAdvancesTypes } from "../services/employeeAdvances";
 import { ApiAdvance } from "../types/employeeAttendance";
 
 export const useEmployeeAdvances = (employeeId?: string) => {
@@ -36,11 +36,25 @@ export function useCreateNewAdvance() {
 export const useEmployeeAdvancesAmount = (
   employeeId?: string,
   advanceType?: string,
-  postingDate?: string
+  postingDate?: string,
+  company?: string
 ) => {
   return useQuery<ApiAdvance[]>({
-    queryKey: ["advances", employeeId, advanceType, postingDate],
-    queryFn: () => getAdvancesAmount(employeeId!, advanceType, postingDate),
-    enabled: !!employeeId && !!advanceType && !!postingDate,
+    queryKey: ["advances", employeeId, advanceType, postingDate, company],
+    queryFn: () => getAdvancesAmount(employeeId!, advanceType, postingDate, company),
+    enabled: !!employeeId && !!advanceType && !!postingDate && !!company,
+  });
+};
+
+export const useAdvancesAcount = (
+  employeeId?: string,
+  advanceType?: string,
+  postingDate?: string,
+  company?: string
+) => {
+  return useQuery<ApiAdvance[]>({
+    queryKey: ["advances", employeeId, advanceType, postingDate, company],
+    queryFn: () => getAdvanceAccount(employeeId!, advanceType, postingDate, company),
+    enabled: !!employeeId && !!advanceType && !!postingDate && !!company,
   });
 };

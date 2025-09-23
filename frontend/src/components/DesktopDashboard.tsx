@@ -14,12 +14,20 @@ import {
   Headset,
 } from "lucide-react";
 import {
+  useCanShowClockIn,
+  useCheckInOutService,
+  useClockInOutService,
   useGetEmployeeShift,
   useHomeSummaryDetails,
 } from "../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { useLoggedInUser } from "../hooks/useLoggedInUser";
-import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
+import { 
+  formatTimeSafe, 
+  formatTo24HourTime,
+  getDeviceLocation,
+  Coordinates 
+} from "../utils/helperUtils";
 import {
   compareAsc,
   compareDesc,
@@ -39,11 +47,13 @@ import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
+import toast from "react-hot-toast";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [location, setLocation] = useState<Coordinates | null>(null);
   const navigate = useNavigate();
   const { logout } = useFrappeAuth();
   const employeeState = useEmployeeWithFallback();
@@ -53,6 +63,15 @@ export default function DesktopDashboard() {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
+  
+  // New hooks for check-in/check-out functionality
+  const { data: canShowClockIn } = useCanShowClockIn(
+    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
+  );
+  const { mutate: checkInCheckOutMutation, isPending: checkInCheckOutPending } =
+    useCheckInOutService();
+  const { mutate: clockInCheckOutMutation, isPending: clockInCheckOutPending } =
+    useClockInOutService();
 
   const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
   const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
@@ -60,10 +79,15 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const { data: homeSummary } = useHomeSummaryDetails(
+  const { 
+    data: homeSummary,
+    refetch: refetchHomeSummary,
+    isRefetching 
+  } = useHomeSummaryDetails(
     currentEmployee?.user_id || "",
     encodedFilters
   );
+  
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
@@ -94,6 +118,20 @@ export default function DesktopDashboard() {
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
+
+  // Get device location on component mount
+  useEffect(() => {
+    async function fetchLocation() {
+      try {
+        const coords = await getDeviceLocation();
+        setLocation(coords);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    fetchLocation();
+  }, []);
 
   const logoutHandler = async () => {
     try {
@@ -130,6 +168,99 @@ export default function DesktopDashboard() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showProfileDropdown]);
+
+  // Check-in/Check-out handlers
+  type CustomError = Error & {
+    response?: { data?: { message?: { error: string } } };
+  };
+
+  const handleCheckInOut = (type: string) => {
+    if (type === "checkIn") {
+      checkInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Check In",
+          latitude: location?.latitude,
+          longitude: location?.longitude,
+        },
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+            toast.success("Successfully checked in!");
+          },
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Checking In"
+            );
+          },
+        }
+      );
+    } else {
+      checkInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Check Out",
+          latitude: location?.latitude,
+          longitude: location?.longitude,
+        },
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+            toast.success("Successfully checked out!");
+          },
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Checking out"
+            );
+          },
+        }
+      );
+    }
+  };
+
+  const handleClockInOut = (type: string) => {
+    if (type === "clockIn") {
+      clockInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Clock In",
+        },
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+            toast.success("Successfully clocked in!");
+          },
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Clocking in"
+            );
+          },
+        }
+      );
+    } else {
+      clockInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Clock Out",
+        },
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+            toast.success("Successfully clocked out!");
+          },
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Clocking out"
+            );
+          },
+        }
+      );
+    }
+  };
 
   const getTotalTime = () => {
     if (!homeSummary || homeSummary.length === 0) {
@@ -231,6 +362,7 @@ export default function DesktopDashboard() {
   const handleHelpDeskClick = () => {
     window.location.href = "/helpdesk/my-tickets";
   };
+  
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   return (
@@ -468,6 +600,7 @@ export default function DesktopDashboard() {
                       </p>
                     </div>
                   </div>
+                  
                 </div>
 
                 <div className="bg-blue-50 p-4 rounded-lg border border-gray-200">
@@ -503,6 +636,67 @@ export default function DesktopDashboard() {
                           : "--:--"}
                       </p>
                     </div>
+                  </div>
+                </div>
+                
+              </div>
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-4">
+                  Attendance Actions
+                </h3>
+                <div className="space-y-3">
+                  {currentEmployee?.custom_allow_mobile_checkin && (
+                    <button
+                      onClick={() =>
+                        handleCheckInOut(
+                          isCurrentlyCheckedIn ? "checkOut" : "checkIn"
+                        )
+                      }
+                      className="w-full py-3 px-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                      disabled={checkInCheckOutPending || !employeeShift?.shift || isRefetching}
+                    >
+                      {checkInCheckOutPending || isRefetching ? (
+                        <span className="flex items-center justify-center">
+                          <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
+                          Processing...
+                        </span>
+                      ) : isCurrentlyCheckedIn ? (
+                        "Check Out"
+                      ) : (
+                        "Check In"
+                      )}
+                    </button>
+                  )}
+
+                  {canShowClockIn?.can_show && (
+                    <button
+                      onClick={() =>
+                        handleClockInOut(
+                          isCurrentlyCheckedIn ? "clockOut" : "clockIn"
+                        )
+                      }
+                      className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      disabled={clockInCheckOutPending || !employeeShift?.shift || isRefetching}
+                    >
+                      {clockInCheckOutPending || isRefetching ? (
+                        <span className="flex items-center justify-center">
+                          <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
+                          Processing...
+                        </span>
+                      ) : isCurrentlyCheckedIn ? (
+                        "Clock Out"
+                      ) : (
+                        "Clock In"
+                      )}
+                    </button>
+                  )}
+                  
+                  {/* Current Status Indicator */}
+                  <div className="flex items-center justify-center gap-2 text-sm">
+                    <div className={`w-2 h-2 rounded-full ${isCurrentlyCheckedIn ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className={isCurrentlyCheckedIn ? 'text-green-600' : 'text-red-600'}>
+                      Currently {isCurrentlyCheckedIn ? 'Checked In' : 'Checked Out'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -544,6 +738,9 @@ export default function DesktopDashboard() {
                   </p>
                 </div>
               </div>
+
+              {/* Check In/Out Buttons */}
+          
 
               {/* Helpdesk */}
               <div className="bg-white rounded-lg p-6 shadow-sm">

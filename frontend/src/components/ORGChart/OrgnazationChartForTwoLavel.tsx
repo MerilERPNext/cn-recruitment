@@ -66,6 +66,7 @@ export const findParent = (
 };
 
 // ✅ Build nodes/edges for only parent + current user + children
+ 
 const buildTwoLevelHierarchy = (
   user: EmployeeHierarchy,
   parent: EmployeeHierarchy | null
@@ -99,45 +100,19 @@ const buildTwoLevelHierarchy = (
     });
   }
 
-// Current user
-nodes.push({
-  id: user.id,
-  type: "person",
-  position: { x: 400, y: baseY + 150 },
-  data: {
+  // Current user
+  nodes.push({
     id: user.id,
-    name: user.name,
-    title: user.title || "",
-    hasChildren: (user.children || []).length > 0,
-    isExpanded: true,
-    onToggleExpand: () => {},
-  },
-});
-
-  // Children
-  (user.children || []).forEach((child, index) => {
-    const childX = 400 - ((user.children || []).length - 1) * 200 + index * 400;
-    nodes.push({
-      id: child.id,
-      type: "person",
-      position: { x: childX, y: baseY + 300 },
-      data: {
-        id: child.id,
-        name: child.name,
-        title: child.title || "",
-        hasChildren: (child.children || []).length > 0,
-        isExpanded: true,
-        onToggleExpand: () => {},
-      },
-    });
-
-    edges.push({
-      id: `e${user.id}-${child.id}`,
-      source: user.id,
-      target: child.id,
-      type: "step",
-      style: { stroke: "#d1d5db", strokeWidth: 2 },
-    });
+    type: "person",
+    position: { x: 400, y: baseY + 150 },
+    data: {
+      id: user.id,
+      name: user.name,
+      title: user.title || "",
+      hasChildren: (user.children || []).length > 0,
+      isExpanded: false,
+      onToggleExpand: () => {},
+    },
   });
 
   return { nodes, edges };

@@ -25,9 +25,28 @@ export const getAllAdvancesTypes = async (): Promise<{
 };
 
 export const getAdvancesAmount = async (
+employeeId: string, advanceType?: string, postingDate?: string, company?: string,): Promise<ApiAdvance[]> => {
+  if (!employeeId) throw new Error("Employee ID is required");
+
+  const result = await FrappeAPI.callMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.employee_advance.get_advance_amount_checking",
+    {
+      employee: employeeId,
+      advance_type: advanceType,
+      posting_date: postingDate,
+      company: company,
+    }
+  );
+
+  return result as ApiAdvance[];
+};
+
+
+export const getAdvanceAccount = async (
   employeeId: string,
   advanceType?: string,
-  postingDate?: string
+  postingDate?: string,
+  company?: string | undefined
 ): Promise<ApiAdvance[]> => {
   if (!employeeId) throw new Error("Employee ID is required");
 
@@ -37,12 +56,12 @@ export const getAdvancesAmount = async (
       employee: employeeId,
       advance_type: advanceType,
       posting_date: postingDate,
+      company: company,
     }
   );
 
   return result as ApiAdvance[];
 };
-
 export const createAdvance = async (
   body: Record<string, unknown>
 ): Promise<boolean> => {
