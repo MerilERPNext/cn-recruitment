@@ -2502,7 +2502,7 @@
    "name": "Employee Onboarding-custom_marital_status",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "\nUnmarried\nMarried\nDivorced\nWidowed",
+   "options": "\nSingle\nMarried\nDivorced\nWidowed",
    "owner": "Administrator",
    "permlevel": 0,
    "precision": "",
