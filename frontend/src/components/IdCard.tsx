@@ -1,13 +1,21 @@
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useCurrentEmployeeIdCard, useEmployeeIdCard } from '../hooks/useEmployee';
-import { EmployeeIdCard } from '../types/employee';
-import { 
-  generateEmployeeQRCodeURL, 
-  formatDate, 
-  getDefaultAvatarURL 
-} from '../utils/qrCodeUtils';
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import {
+  useCurrentEmployeeIdCard,
+  useEmployeeIdCard,
+} from "../hooks/useEmployee";
+import type { EmployeeIdCard } from "../types/employee";
+import {
+  generateEmployeeQRCodeURL,
+  formatDate,
+  getDefaultAvatarURL,
+} from "../utils/qrCodeUtils";
+import { useScreenSize } from "../hooks/useScreenSize";
+import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
+import HeaderBar from "./HeaderBar";
+import { useNavigate } from "react-router-dom";
 
 // Icon Components
 const BackIcon = () => (
@@ -35,8 +43,14 @@ const MailIcon = () => (
 );
 
 const WhatsAppIcon = () => (
-  <svg fill="currentColor" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.488"/>
+  <svg
+    fill="currentColor"
+    height="20"
+    viewBox="0 0 24 24"
+    width="20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.488" />
   </svg>
 );
 
@@ -52,10 +66,34 @@ const CallIcon = () => (
   </svg>
 );
 
+const EmailIcon = () => (
+  <svg
+    fill="currentColor"
+    height="20"
+    viewBox="0 0 256 256"
+    width="20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M208,56H48A16,16,0,0,0,32,72V184a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V72A16,16,0,0,0,208,56ZM48,72H208V95.4L134.63,144a8,8,0,0,1-9.26,0L48,95.4ZM208,184H48V111.84l72,48a15.91,15.91,0,0,0,16.06,0l72-48Z"></path>
+  </svg>
+);
+
+const ChatIcon = () => (
+  <svg
+    fill="currentColor"
+    height="20"
+    viewBox="0 0 256 256"
+    width="20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M216,48H40A16,16,0,0,0,24,64V224a15.85,15.85,0,0,0,9.24,14.5A16.13,16.13,0,0,0,40,240a15.89,15.89,0,0,0,10.25-3.78L69.33,221H216a16,16,0,0,0,16-16V64A16,16,0,0,0,216,48ZM216,205H69.33a16,16,0,0,0-10.25,3.78L40,224V64H216Z"></path>
+  </svg>
+);
+
 // Header Component
 const Header = ({ title, onBackClick, onMailClick }: any) => (
   <header className="bg-white border shadow-sm">
-    <div className="mx-auto flex  items-center p-4">
+    <div className="mx-auto flex items-center p-4">
       <button
         className="text-gray-800 p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
         onClick={onBackClick}
@@ -109,15 +147,15 @@ const EmployeeAvatar = ({
       className={`relative rounded-full ${size} border-4 border-white shadow-md overflow-hidden flex-shrink-0`}
       role="img"
       aria-label={`${name}'s profile picture`}
-      style={{ aspectRatio: '1 / 1' }}
+      style={{ aspectRatio: "1 / 1" }}
     >
       <img
-        src={imageSrc}
+        src={imageSrc || "/placeholder.svg"}
         alt={`${name}'s profile picture`}
         className="w-full h-full object-cover object-center"
         onError={handleImageError}
         loading="lazy"
-        style={{ aspectRatio: '1 / 1' }}
+        style={{ aspectRatio: "1 / 1" }}
       />
     </div>
   );
@@ -150,7 +188,7 @@ const QRCode = ({
       <img
         alt={alt}
         className="rounded-lg shadow w-48 h-48"
-        src={qrCodeUrl}
+        src={qrCodeUrl || "/placeholder.svg"}
         loading="lazy"
       />
     </div>
@@ -230,18 +268,10 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
 // Action Buttons Component
 const ActionButtons = ({ onWhatsApp, onCall }: any) => (
   <div className="mt-8 flex gap-4">
-    <ActionButton
-      variant="primary"
-      icon={WhatsAppIcon}
-      onClick={onWhatsApp}
-    >
+    <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
       WhatsApp
     </ActionButton>
-    <ActionButton
-      variant="secondary"
-      icon={CallIcon}
-      onClick={onCall}
-    >
+    <ActionButton variant="secondary" icon={CallIcon} onClick={onCall}>
       Call
     </ActionButton>
   </div>
@@ -334,11 +364,246 @@ const Toast = ({
   );
 };
 
+const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "error" | "info";
+  } | null>(null);
+
+  const navigate = useNavigate();
+  // Automatically hide the toast after a few seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const showToast = (message: string, type: "error" | "info") => {
+    setToast({ message, type });
+  };
+
+  const handleEmail = () => {
+    if (employee?.email) {
+      window.location.href = `mailto:${employee.email}`;
+    } else {
+      showToast("No email available for this employee.", "info");
+    }
+  };
+
+  const handleChat = () => {
+    if (employee?.contact) {
+      const phoneNumber = employee.contact.replace(/\D/g, "");
+      if (phoneNumber) {
+        window.nativeInterface?.execute("openWhatsApp", {
+          payloadNumber: employee.contact,
+          payloadText: `Hello, I am ${employee.employee_name} from ${employee.department} Department.`,
+        });
+      } else {
+        showToast(
+          "Invalid phone number format. Please check the contact information.",
+          "error"
+        );
+      }
+    } else {
+      showToast("No contact number available for this employee.", "info");
+    }
+  };
+
+  const handleCall = () => {
+    if (employee?.contact) {
+      const phoneNumber = employee.contact.replace(/\D/g, "");
+      if (phoneNumber) {
+        window.location.href = `tel:${phoneNumber}`;
+      } else {
+        showToast(
+          "Invalid phone number format. Please check the contact information.",
+          "error"
+        );
+      }
+    } else {
+      showToast("No contact number available for this employee.", "info");
+    }
+  };
+
+  return (
+    <DesktopLayoutWrapper title="Employee ID Card">
+      <div className="h-full overflow-y-auto bg-gray-50">
+        <div className="min-h-full p-4 sm:p-6 lg:p-8">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <HeaderBar title="Employee ID Card" onBack={() => navigate(-1)} />
+            {/* Header */}
+            <div className="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 sm:gap-6">
+                  <EmployeeAvatar
+                    imageUrl={employee.avatar}
+                    name={employee.employee_name}
+                    size="w-16 h-16 sm:w-20 sm:h-20"
+                  />
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                      {employee.employee_name}
+                    </h1>
+                    <p className="text-gray-600 text-base sm:text-lg">
+                      Employee ID: {employee.employee_number || employee.id}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+                  <button
+                    onClick={handleEmail}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm sm:text-base"
+                  >
+                    <EmailIcon />
+                    Email
+                  </button>
+                  <button
+                    onClick={handleChat}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm sm:text-base"
+                  >
+                    <ChatIcon />
+                    Chat
+                  </button>
+                  <button
+                    onClick={handleCall}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
+                  >
+                    <CallIcon />
+                    Call
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="p-4 sm:p-6 lg:p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                {/* Left Column - Personal & Employment Info */}
+                <div className="lg:col-span-2 space-y-6 lg:space-y-8">
+                  {/* Personal Information */}
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      Personal Information
+                    </h2>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Full Name
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.employee_name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Phone Number
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.contact || "Not Provided"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Email Address
+                        </span>
+                        <span className="text-blue-600 font-medium text-sm sm:text-base text-right break-all">
+                          {employee.email || "Not Provided"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Employment Details */}
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                      Employment Details
+                    </h2>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Department
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.department}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Designation
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.designation || "Not Specified"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Start Date
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {formatDate(employee.startDate)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-sm sm:text-base">
+                          Location
+                        </span>
+                        <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
+                          {employee.location || "Not Specified"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column - QR Code */}
+                <div className="flex flex-col items-center lg:items-start">
+                  <div className="bg-pink-50 rounded-lg p-4 sm:p-6 w-full max-w-sm lg:max-w-none">
+                    <div className="flex justify-center mb-4">
+                      <img
+                        src={
+                          generateEmployeeQRCodeURL(employee, 200) ||
+                          "/placeholder.svg"
+                        }
+                        alt={`QR Code for ${employee.employee_name}`}
+                        className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 rounded-lg"
+                        loading="lazy"
+                      />
+                    </div>
+                    <p className="text-center text-gray-600 text-xs sm:text-sm">
+                      Scan to view profile on a mobile device or add to
+                      contacts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Toast notification */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+      </div>
+    </DesktopLayoutWrapper>
+  );
+};
+
 // Main App Component
 const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
   // Get employee ID from router params if not provided as prop
   const params = useParams<{ employeeId: string }>();
   const targetEmployeeId = employeeId || params.employeeId;
+
+  const { isMobile } = useScreenSize();
+
   // Use specific employee if ID is provided, otherwise use current employee
   const {
     data: currentEmployee,
@@ -385,6 +650,8 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
   const handleMailClick = () => {
     if (employee?.email) {
       window.location.href = `mailto:${employee.email}`;
+    } else {
+      showToast("No email available for this employee.", "info");
     }
   };
 
@@ -397,16 +664,15 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
       const phoneNumber = employee.contact.replace(/\D/g, "");
 
       if (phoneNumber) {
-        window.nativeInterface.execute('openWhatsApp', {
+        window.nativeInterface.execute("openWhatsApp", {
           payloadNumber: employee.contact,
-          payloadText: `Hello, I am ${employee.employee_name} from ${employee.department} Department.`
+          payloadText: `Hello, I am ${employee.employee_name} from ${employee.department} Department.`,
         });
       } else {
         showToast(
           "Invalid phone number format. Please check the contact information.",
           "error"
         );
-
       }
     } else {
       showToast("No contact number available for this employee.", "info");
@@ -429,6 +695,13 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
       showToast("No contact number available for this employee.", "info");
     }
   };
+
+  if (!isMobile && employee && !isLoading && !error) {
+    // Validate essential employee data before rendering desktop view
+    if (employee.employee_name && employee.id) {
+      return <DesktopLayout employee={employee} />;
+    }
+  }
 
   return (
     <div

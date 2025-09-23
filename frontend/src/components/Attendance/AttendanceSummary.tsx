@@ -268,7 +268,7 @@ const AttendanceSummary = () => {
               </div>
 
               {/* Settings */}
-              <div className="bg-white border-gray-200 p-4">
+              <div className="bg-white border-gray-200 py-4">
                 <div
                   className={isDesktop ? "grid grid-cols-2 gap-4" : "space-y-4"}
                 >

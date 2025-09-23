@@ -16,3 +16,19 @@ export function useApprovalListActions() {
     },
   });
 }
+
+export function useRevokeEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ docname, todo }: { docname: string; todo: string }) =>
+      approvalListServices.revokeEvent(docname, todo),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}

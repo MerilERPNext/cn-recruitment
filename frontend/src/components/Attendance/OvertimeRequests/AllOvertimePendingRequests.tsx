@@ -14,7 +14,7 @@ const AllOvertimePendingRequests = () => {
   return (
     <div>
       <LayoutHeader
-        tab={"Pending Planned Overtime Attendants"}
+        tab={"Pending Planned Overtime Requests"}
         onBack={() => {
           navigate(-1);
         }}

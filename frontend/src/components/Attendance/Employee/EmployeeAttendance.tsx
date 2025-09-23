@@ -12,10 +12,8 @@ import {
   useGetAllEventsAndAttendance,
   usePlannedOvertimeAllowed,
 } from "../../../hooks/useAttendance";
-import FrappeListView from "../../ListView";
-import { AttendanceRecord, AttendanceRequest } from "../../../types/attendance";
+import { AttendanceRecord } from "../../../types/attendance";
 import { useNavigate } from "react-router";
-import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard";
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import { endOfMonth, format, startOfMonth, parse } from "date-fns";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -24,11 +22,11 @@ import BottomDrawer from "../../shared/BottomDrawer";
 import LeaveRequest from "../LeaveRequest";
 import { gradientClassMap } from "../../../utils/helperUtils";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import CardTable from "../../shared/CardTable";
 import CreateOvertimeRequest from "../OvertimeRequests/CreateOvertimeRequest";
 import EmployeeAttendanceDetails from "./EmployeeAttendanceDetails";
 import Modal from "../../shared/Modal";
 import { useSidebar } from "../SidebarContext";
+import AttendanceRequest from "../AttendanceRequest/AttendanceRequest";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -172,14 +170,6 @@ const EmployeeAttendance = () => {
     | "holiday"
     | "week-off";
 
-  const defaultFilters = useMemo(() => {
-    if (!currentEmployee?.employee || !selectedDate) return undefined;
-    return {
-      employee: currentEmployee?.employee,
-      creation: ["between", [start, end]],
-    };
-  }, [currentEmployee, selectedDate, start, end]);
-
   type AttendanceStatusInfo = {
     status: Status;
     firstHalf?: string;
@@ -291,20 +281,6 @@ const EmployeeAttendance = () => {
       </div>
     );
   }
-
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-2">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
-          </div>
-          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className={`flex  bg-gray-100 `}>
@@ -518,48 +494,11 @@ const EmployeeAttendance = () => {
               View All
             </p>
           </div>
-          <CardTable
-            titles={["Request Type", "From Date", "To Date", "Status"]}
-          >
-            <div>
-              <FrappeListView
-                doctype="Attendance Request"
-                isSearch={false}
-                ItemComponent={(props: { item: AttendanceRequest }) => {
-                  return (
-                    <EmpAttendanceRequestCard
-                      data={{
-                        ...props?.item,
-                        status: props?.item?.custom_status,
-                      }}
-                      // onClick={() => {
-                      //   setShowReqAttendanceCorrection(true);
-                      // }}
-                    />
-                  );
-                }}
-                showPagination={false}
-                SkeletonComponent={CardSkeleton}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                defaultFilters={defaultFilters as any}
-                onItemClick={() => {}}
-                infiniteScroll={false}
-                isFilter={false}
-                pageSize={5}
-                defaultFields={[
-                  "to_date",
-                  "from_date",
-                  "custom__request_reason",
-                  "custom_request_type",
-                  "custom_status",
-                  "reason",
-                  "modified",
-                  "creation",
-                  "docstatus",
-                ]}
-              />
-            </div>
-          </CardTable>
+          <AttendanceRequest
+            pageSize={5}
+            showPagination={false}
+            showAttendanceRequest={false}
+          />
         </div>
         {showReqAttendanceCorrection && (
           <AttndanceRequestForm

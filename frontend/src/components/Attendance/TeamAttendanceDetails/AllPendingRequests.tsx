@@ -19,7 +19,7 @@ const AllPendingRequests = () => {
   return (
     <div>
       <LayoutHeader
-        tab={"Pending Team Attendance Attendants"}
+        tab={"Pending Team Attendance Requests"}
         onBack={() => {
           navigate(-1);
         }}

@@ -113,19 +113,10 @@ const ApprovalList = ({
       try {
         if (mutation?.isPending) return;
         setLoadingAction({ id: data?.name, action });
-        const response = await mutation?.mutateAsync(
-          {
-            action,
-            name: data?.name || "",
-          },
-          {
-            onSuccess: () => {
-              if (action.toLowerCase() !== "approve") {
-                setRefetchListView((prev) => !prev);
-              }
-            },
-          }
-        );
+        const response = await mutation?.mutateAsync({
+          action,
+          name: data?.name || "",
+        });
 
         console.log("Action response:", response);
         const responseWithSession = response as unknown as { session?: any };
@@ -145,11 +136,15 @@ const ApprovalList = ({
             "Opening assistant with session:",
             responseWithSession?.session
           );
+
           if (window.trigger_chatnext_assistant) {
             window.trigger_chatnext_assistant(
               true,
               responseWithSession?.session
             );
+          }
+          if (action.toLowerCase() !== "approve") {
+            setRefetchListView((prev) => !prev);
           }
         }
         // Query invalidation now handled by Frappe realtime events

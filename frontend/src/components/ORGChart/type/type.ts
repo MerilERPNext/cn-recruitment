@@ -13,6 +13,7 @@ export type NodeData = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   childrens?: any;
   onToggleExpand: (id: string) => void;
+  showExpand?: boolean;
 };
 
 // A strongly typed Node with your NodeData

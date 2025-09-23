@@ -94,6 +94,7 @@ export const useFrappeMethodInfiniteQuery = (
   method: string,
   params: Record<string, unknown>,
   options?: Omit<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     UseInfiniteQueryOptions<any>,
     "queryKey" | "queryFn" | "getNextPageParam" | "initialPageParam"
   >
