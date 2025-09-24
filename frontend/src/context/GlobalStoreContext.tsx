@@ -3,6 +3,7 @@ import { createContext, useReducer, ReactNode } from "react";
 // --- Types ---
 interface GlobalState {
   refetchAttendance: boolean;
+  refetchShift: boolean;
 }
 
 type Action =
@@ -17,6 +18,7 @@ export interface GlobalStore extends GlobalState {
 // --- Initial State ---
 const initialState: GlobalState = {
   refetchAttendance: false,
+  refetchShift: false,
 };
 
 // --- Reducer ---
