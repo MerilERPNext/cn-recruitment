@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import AttendanceAssignments from "./Attendance/AttendanceAssignments";
 import {
   useCurrentEmployeeIdCard,
   useEmployeeIdCard,
@@ -369,6 +370,8 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
     message: string;
     type: "error" | "info";
   } | null>(null);
+  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
+    useState(false);
 
   const navigate = useNavigate();
   // Automatically hide the toast after a few seconds
@@ -473,6 +476,12 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
                   >
                     <CallIcon />
                     Call
+                  </button>
+                  <button
+                    onClick={() => setIsAttendanceAssignmentsOpen(true)}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
+                  >
+                    Attendance Assignments
                   </button>
                 </div>
               </div>
@@ -591,6 +600,12 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
             onClose={() => setToast(null)}
           />
         )}
+
+        {/* Attendance Assignments Modal */}
+        <AttendanceAssignments
+          open={isAttendanceAssignmentsOpen}
+          onClose={() => setIsAttendanceAssignmentsOpen(false)}
+        />
       </div>
     </DesktopLayoutWrapper>
   );

@@ -5,7 +5,14 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query";
-import { attendanceService } from "../services/attendanceService";
+import {
+  attendanceService,
+  getAllAttendancePolicies,
+  getAllIpRestrictions,
+  getAllShiftBlocks,
+  getAllShiftLocations,
+  getAllWeekOffs,
+} from "../services/attendanceService";
 import type {
   AllEventsAndAttendanceT,
   Attendance,
@@ -285,6 +292,25 @@ export const usePlannedOvertimeAllowed = (employee: string) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+export function useAddAttendanceAssignment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ employee, data }: { employee: string; data: object }) =>
+      attendanceService.addAttendanceAssignment(employee, data),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["attendance", "all"],
+      });
+    },
+
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
 export const usePlannedOvertimeRequestAttachments = (employee: string) => {
   return useQuery<any>({
     queryKey: ["planned-overtime-attachments-allowed", employee],
@@ -367,3 +393,34 @@ export function useCreatePlannedOvertimeRequest() {
     },
   });
 }
+export const useAllAttendancePolicies = (filters?: FilterCondition[]) => {
+  return useQuery({
+    queryKey: ["all-attendance-policies", filters],
+    queryFn: () => getAllAttendancePolicies(filters),
+  });
+};
+
+export const useAllWeekOffs = (filters?: FilterCondition[]) => {
+  return useQuery({
+    queryKey: ["all-week-offs", filters],
+    queryFn: () => getAllWeekOffs(filters),
+  });
+};
+export const useAllIpRestrictions = (filters?: FilterCondition[]) => {
+  return useQuery({
+    queryKey: ["all-ip-restrictions", filters],
+    queryFn: () => getAllIpRestrictions(filters),
+  });
+};
+export const useAllShiftLocations = (filters?: FilterCondition[]) => {
+  return useQuery({
+    queryKey: ["all-shift-locations", filters],
+    queryFn: () => getAllShiftLocations(filters),
+  });
+};
+export const useAllShiftBlocks = (filters?: FilterCondition[]) => {
+  return useQuery({
+    queryKey: ["all-shift-blocks", filters],
+    queryFn: () => getAllShiftBlocks(filters),
+  });
+};

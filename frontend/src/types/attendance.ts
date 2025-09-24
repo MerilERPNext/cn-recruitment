@@ -203,3 +203,70 @@ export type UserRoles = {
   roles: Record<string, 0 | 1>;
   total_assigned: number;
 };
+
+export type Policy = {
+  name: string;
+};
+
+export type WeeklyOff = {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  weekly_off: string;
+  weekly_off_code: string;
+  assignment_type: string;
+  company: string;
+  description: string;
+  consider_as_halfday: number;
+};
+export type IPRestrictionsT = {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  network_name: string;
+  group_company: string;
+  ip_address_from: string;
+  ip_address_to: string;
+  tag: string;
+};
+
+export type ShiftLocationT = {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  location_name: string;
+  checkin_radius: number;
+  custom_parent_company_id: string;
+  latitude: number;
+  longitude: number;
+  custom_tags: string | null;
+  geolocation: string | null;
+};
+
+export type ShiftBlock = {
+  name: string;
+  owner: string;
+  creation: string; // ISO date-time string or custom format
+  modified: string; // ISO date-time string or custom format
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  shift_block_name: string;
+  naming_series: string;
+  assignment_type: string;
+  company: string;
+  shift_block_type: string;
+  weekly_off: string;
+};

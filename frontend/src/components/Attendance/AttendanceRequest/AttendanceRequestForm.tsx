@@ -53,10 +53,12 @@ interface FormioFormInstance {
 interface AttndanceRequestFormProps {
   onClose: () => void;
   selectedDate?: Date | string;
+  isEditing?: boolean;
 }
 
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
+  isEditing = false,
   selectedDate = new Date(),
 }) => {
   const { setRefetchAttendance } = useGlobalStore();
@@ -194,11 +196,23 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       }
       if (employeeShift) {
         const shiftValue = employeeShift.shift || "Not Assigned";
+        const shiftStartValue = employeeShift.start_time || "Not Assigned";
+        const shiftEndValue = employeeShift.end_time || "Not Assigned";
         const shiftComponent =
           formAddressInstance.current.getComponent("current_shift");
-        if (shiftComponent) {
+        const shiftStartComponent =
+          formAddressInstance.current.getComponent("shift_start");
+        const shiftEndComponent =
+          formAddressInstance.current.getComponent("shift_end");
+        if (shiftComponent && shiftEndComponent && shiftStartComponent) {
           shiftComponent.setValue(shiftValue, { noUpdateEvent: true });
+          shiftStartComponent.setValue(shiftStartValue, {
+            noUpdateEvent: true,
+          });
+          shiftEndComponent.setValue(shiftEndValue, { noUpdateEvent: true });
           shiftComponent.redraw();
+          shiftEndComponent.redraw();
+          shiftStartComponent.redraw();
         }
       }
     }
@@ -215,7 +229,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       refetchShift();
     }
   }, [employeeIdToQuery, refetchShift]);
-
   const baseFormComponents = (isForOthers: boolean) => {
     const components = [
       {
@@ -237,6 +250,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                   customClass: "mb-4",
                   onChange: handleEmployeeChange,
                   validate: { required: true },
+                  disabled: isEditing,
                   data: {
                     values:
                       employeeList && employeeList?.length > 0
@@ -277,6 +291,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             input: true,
             onChange: handleRequestTypeChange,
             placeholder: "Select a Request Type",
+            disabled: isEditing,
             customClass: "mb-4",
             data: {
               values: [
@@ -328,6 +343,56 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             value: employeeShift?.shift || "Not Assigned",
             clearOnHide: false,
           },
+
+          {
+            type: "columns",
+            key: "dateColumns",
+            columns: [
+              {
+                width: 6,
+                components: [
+                  {
+                    type: "textfield",
+                    key: "shift_start",
+                    label: "Shift Start",
+                    enableDate: true,
+                    enableTime: false,
+                    placeholder:
+                      isForOthers && !selectedEmployee
+                        ? "Select an employee first"
+                        : "Loading shift information...",
+                    input: true,
+                    defaultValue: employeeShift?.start_time || "Not Assigned",
+                    value: employeeShift?.start_time || "Not Assigned",
+                    customClass: "mb-4",
+                    disabled: true,
+                  },
+                ],
+              },
+              {
+                width: 6,
+                components: [
+                  {
+                    type: "textfield",
+                    key: "shift_end",
+                    label: "Shift End",
+                    placeholder:
+                      isForOthers && !selectedEmployee
+                        ? "Select an employee first"
+                        : "Loading shift information...",
+                    enableDate: true,
+                    enableTime: false,
+                    defaultValue: employeeShift?.end_time || "Not Assigned",
+                    value: employeeShift?.end_time || "Not Assigned",
+                    input: true,
+                    customClass: "mb-4",
+                    disabled: true,
+                  },
+                ],
+              },
+            ],
+          },
+
           {
             label: "From Date",
             key: "from_date",
@@ -340,7 +405,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             enableTime: false,
             defaultValue: selectedDate,
             onChange: handleFromDateChange,
-            disabled: selectedRequestType === "Clockin",
+            disabled: selectedRequestType === "Clockin" || isEditing,
             redrawOn: "request_type",
           },
           {
@@ -353,7 +418,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "dd-mm-yyyy",
             customClass: "mb-4",
             enableTime: false,
-            disabled: selectedRequestType === "Short Attendance Request",
+            disabled:
+              selectedRequestType === "Short Attendance Request" || isEditing,
             validate: { required: true },
             defaultValue: selectedDate,
             customConditional:
@@ -378,6 +444,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               enableTime: true,
               dateFormat: "H:i",
             },
+            disabled: isEditing,
           },
           {
             label: "To Time",
@@ -405,6 +472,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                 enableTime: true,
                 dateFormat: "H:i",
               },
+              disabled: isEditing,
             },
           },
 
@@ -416,6 +484,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             customConditional: "show = data.request_type === 'Out Duty';",
             defaultValue: false,
+            disabled: isEditing,
           },
           {
             label: "Latest Check-In Time",
@@ -450,6 +519,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             input: true,
             placeholder: "Select shift",
             customClass: "mb-4",
+            disabled: isEditing,
             customConditional: "show = data.request_type === 'Shift Change';",
             data: {
               values:
@@ -474,6 +544,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                   value: item?.name,
                 })) || [],
             },
+            disabled: isEditing,
           },
           {
             label: "Message",
@@ -483,9 +554,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "Provide additional details...",
             rows: 4,
             customClass: "mb-4",
+            disabled: isEditing,
           },
           {
             label: "Attachments",
+            disabled: isEditing,
             fileTypes: [
               { label: "Documents", value: ".pdf,.doc,.docx" },
               { label: "Images", value: ".jpg,.jpeg,.png" },
