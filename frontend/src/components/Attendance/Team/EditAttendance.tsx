@@ -271,7 +271,7 @@ export const EditAttendance = ({
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           {!attendanceForm && isLoading ? (
             <div className="h-full w-full flex justify-center items-center">
-              <CircularLoader size="md" />
+              <CircularLoader size="lg" />
             </div>
           ) : (
             <Form
