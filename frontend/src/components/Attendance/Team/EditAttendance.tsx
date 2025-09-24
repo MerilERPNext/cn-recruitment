@@ -12,7 +12,7 @@ import {
 import CircularLoader from "../../shared/atoms/CircularLoader";
 import { format } from "date-fns";
 
-interface RequestOvertimeProps {
+interface EditAttendanceProps {
   onClose: () => void;
   open?: boolean;
   requestId: string;
@@ -27,7 +27,7 @@ export const EditAttendance = ({
   employeeId,
   employeeName,
   onRefetchData,
-}: RequestOvertimeProps) => {
+}: EditAttendanceProps) => {
   const formInstance = useRef<any>(null);
   const { data, isLoading } = useAttendanceById(open, [
     ["name", "=", requestId],
@@ -134,11 +134,9 @@ export const EditAttendance = ({
                 key: "status",
                 type: "select",
                 input: true,
-                placeholder: "Select Employee",
+                placeholder: "Select Status",
                 customClass: "mb-4",
                 defaultValue: data[0].status || "",
-
-                // onChange: handleEmployeeChange,
                 validate: { required: true },
                 data: {
                   values: [
@@ -306,7 +304,11 @@ export const EditAttendance = ({
             className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
             disabled={!attendanceForm}
           >
-            Update
+            {mutation?.isPending ? (
+              <CircularLoader size="sm" color="white" />
+            ) : (
+              "Update"
+            )}{" "}
           </button>
         </div>
       </div>

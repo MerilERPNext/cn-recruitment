@@ -16,8 +16,9 @@ import {
 } from "../../hooks/useAttendance";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import CircularLoader from "../shared/atoms/CircularLoader";
 
-interface RequestOvertimeProps {
+interface AttendanceAssignmentsProps {
   onSuccess?: (data?: any) => void;
   onCancel?: () => void;
   onClose: () => void;
@@ -27,7 +28,7 @@ interface RequestOvertimeProps {
 const AttendanceAssignments = ({
   onClose,
   open = true,
-}: RequestOvertimeProps) => {
+}: AttendanceAssignmentsProps) => {
   const formInstance = useRef<any>(null);
 
   const { data: shiftList } = useShiftTypes();
@@ -38,7 +39,7 @@ const AttendanceAssignments = ({
   const { data: allShiftBlocks } = useAllShiftBlocks();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name || ""
   );
   const mutation = useAddAttendanceAssignment();
   const overtimeForm = {
@@ -126,7 +127,7 @@ const AttendanceAssignments = ({
             key: "shift",
             type: "select",
             input: true,
-            placeholder: "Select Employee",
+            placeholder: "Shift  Name",
             customClass: "mb-4",
             validate: { required: true },
             data: {
@@ -161,7 +162,7 @@ const AttendanceAssignments = ({
             key: "weekly_off",
             type: "select",
             input: true,
-            placeholder: "Select Employee",
+            placeholder: "Weekly Off",
             customClass: "mb-4",
             validate: { required: true },
             data: {
@@ -178,7 +179,7 @@ const AttendanceAssignments = ({
             key: "policy_name",
             type: "select",
             input: true,
-            placeholder: "Select Employee",
+            placeholder: "Policy Name",
             customClass: "mb-4",
             validate: { required: true },
             data: {
@@ -222,17 +223,20 @@ const AttendanceAssignments = ({
         effective_from: submissionData.effective_from?.split("T")[0] || "none",
       };
 
-      mutation.mutate(
-        {
-          employee: currentEmployee?.employee || "",
-          data: mappedData,
-        },
-        {
-          onSuccess() {
-            toast.success("Form submitted successfully.");
+      if (currentEmployee?.employee) {
+        mutation.mutate(
+          {
+            employee: currentEmployee?.employee,
+            data: mappedData,
           },
-        }
-      );
+          {
+            onSuccess() {
+              toast.success("Form submitted successfully.");
+              onClose();
+            },
+          }
+        );
+      }
     } catch (err) {
       // If form is invalid, prevent API call
       toast.error("Please fill in all required fields.");
@@ -299,9 +303,13 @@ const AttendanceAssignments = ({
             onClick={() => {
               handleSubmit();
             }}
-            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="w-full rounded-lg py-3 bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
-            Update
+            {mutation?.isPending ? (
+              <CircularLoader size="sm" color="white" />
+            ) : (
+              "Update"
+            )}
           </button>
         </div>
       </div>

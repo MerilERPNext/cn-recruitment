@@ -28,9 +28,9 @@ const CircularLoader: React.FC<CircularLoaderProps> = ({
   const sizeClasses = sizeMap[size];
   const colorClass = colorMap[color] || "border-gray-700"; // fallback
 
-  const finalClassName = `animate-spin border-2 border-t-transparent rounded-full ${colorClass} ${sizeClasses} ${className}`;
+  const finalClassName = `inline-block animate-spin border-2 border-t-transparent rounded-full ${colorClass} ${sizeClasses} ${className}`;
 
-  return <span className={finalClassName}></span>;
+  return <div className={finalClassName}></div>;
 };
 
 export default CircularLoader;

@@ -266,8 +266,17 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
   </div>
 );
 
+interface ActionButtonsProps {
+  onWhatsApp: () => void;
+  onCall: () => void;
+  onAttendanceAssignments: () => void;
+}
 // Action Buttons Component
-const ActionButtons = ({ onWhatsApp, onCall, onAttendanceAssignments }: any) => (
+const ActionButtons = ({
+  onWhatsApp,
+  onCall,
+  onAttendanceAssignments,
+}: ActionButtonsProps) => (
   <div className="mt-8 space-y-4">
     <div className="flex gap-4">
       <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
@@ -763,7 +772,9 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
                   <ActionButtons
                     onWhatsApp={handleWhatsApp}
                     onCall={handleCall}
-                    onAttendanceAssignments={() => setIsAttendanceAssignmentsOpen(true)}
+                    onAttendanceAssignments={() =>
+                      setIsAttendanceAssignmentsOpen(true)
+                    }
                   />
                 </>
               ) : (

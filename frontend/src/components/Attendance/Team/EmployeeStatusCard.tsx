@@ -7,7 +7,13 @@ import { Edit, EllipsisVertical } from "lucide-react";
 import ContextualPopup from "../../shared/molecules/ContextualPopup";
 import { EditAttendance } from "./EditAttendance";
 
-const EmployeeStatusCard = ({ data, onRefetchData }: { data: EmployeeStatus; onRefetchData?: (() => void) | null }) => {
+const EmployeeStatusCard = ({
+  data,
+  onRefetchData,
+}: {
+  data: EmployeeStatus;
+  onRefetchData?: (() => void) | null;
+}) => {
   const { isDesktop } = useScreenSize();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [editAttendance, setEditAttendance] = useState(false);
@@ -169,7 +175,6 @@ const EmployeeStatusCard = ({ data, onRefetchData }: { data: EmployeeStatus; onR
         requestId={data?.name}
         onRefetchData={onRefetchData}
       />
-      ,
       <ContextualPopup
         isOpen={isPopupOpen}
         onClose={() => {
