@@ -138,10 +138,10 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-[100] flex justify-center md:items-center items-end"
       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
     >
-      <div className="bg-white rounded-xl shadow-md w-full max-w-md relative pb-3">
+      <div className="bg-white md:rounded-xl rounded-t-xl shadow-md w-full max-w-md relative pb-3">
         <div className="flex justify-between items-center border-b px-4 py-4">
           <h2 className="text-lg font-semibold">Replace Leave Type</h2>
           <button
