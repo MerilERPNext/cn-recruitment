@@ -8,11 +8,13 @@ interface GlobalState {
 
 type Action =
   | { type: "TOGGLE_REFETCH_ATTENDANCE" }
-  | { type: "SET_REFETCH_ATTENDANCE"; payload: boolean };
+  | { type: "SET_REFETCH_ATTENDANCE"; payload: boolean }
+  | { type: "SET_REFETCH_SHIFT"; payload: boolean };
 
 export interface GlobalStore extends GlobalState {
   toggleRefetchAttendance: () => void;
   setRefetchAttendance: (value: boolean) => void;
+  setRefetchShift: (value: boolean) => void;
 }
 
 // --- Initial State ---
@@ -46,6 +48,8 @@ export const GlobalStoreProvider = ({ children }: { children: ReactNode }) => {
       dispatch({ type: "TOGGLE_REFETCH_ATTENDANCE" }),
     setRefetchAttendance: (value: boolean) =>
       dispatch({ type: "SET_REFETCH_ATTENDANCE", payload: value }),
+    setRefetchShift: (value: boolean) =>
+      dispatch({ type: "SET_REFETCH_SHIFT", payload: value }),
   };
 
   return (
