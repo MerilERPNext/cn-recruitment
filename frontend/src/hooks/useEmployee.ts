@@ -204,3 +204,10 @@ export const useGenderTypes = () => {
     staleTime: 1000 * 60 * 5,
   });
 };
+export const useGetAllEmployeeFields = () => {
+  return useQuery({
+    queryKey: ["all-emp-fields"],
+    queryFn: () => profileService.getAllEmployeeFields(),
+    staleTime: 1000 * 60 * 5,
+  });
+};
