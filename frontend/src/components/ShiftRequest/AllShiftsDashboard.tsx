@@ -251,11 +251,11 @@ const TeamShiftChangeRequest = () => {
         {/* Pending */}
         <div className="flex justify-between pt-4 mb-2 border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 pb-1">
-            Pending Team Shift Requests
+            All Shift Change Requests
           </h2>
           <button
             onClick={() => {
-              navigate("/webapp/shift-request/shift-change-request")
+              navigate("/webapp/shift-request/shift-change-request");
             }}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
@@ -268,7 +268,7 @@ const TeamShiftChangeRequest = () => {
         >
           <ApprovalList
             doctype={"Shift Request"}
-            pageSize={3}
+            pageSize={4}
             refetch={refetch || refetchShift}
             onApprovalRefetchComplete={() => {
               setRefetch(false);
@@ -336,11 +336,11 @@ const MyShiftChangesRequest = () => {
 
         <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 pb-1">
-            Pending My Shift Requests
+            My Shift Requests
           </h2>
           <button
             onClick={() => {
-              navigate("/webapp/shift-request/shift-change-request")
+              navigate("/webapp/shift-request/shift-change-request");
             }}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
@@ -348,7 +348,7 @@ const MyShiftChangesRequest = () => {
           </button>
         </div>
         <CardTable
-          titles={["Request Type", "From Date", "To Date", "Status", "Actions"]}
+          titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
         >
           {currentEmployee?.employee ? (
             <DataListView
@@ -360,13 +360,9 @@ const MyShiftChangesRequest = () => {
                   employee: currentEmployee?.employee,
                 },
               }}
-              defaultFilters={{
-                status: "Pending",
-              }}
               ItemComponent={(props: { item: MyShiftRequest }) => {
                 return (
                   <EmpShiftRequestCard
-                    type="pending"
                     data={{
                       ...props?.item,
                     }}
@@ -383,7 +379,7 @@ const MyShiftChangesRequest = () => {
               refetchTrigger={refetchShift}
               isSearch={false}
               isFilter={false}
-              pageSize={3}
+              pageSize={4}
               showRefreshButton={false}
               orderBy="modified desc"
               infiniteScroll={false}

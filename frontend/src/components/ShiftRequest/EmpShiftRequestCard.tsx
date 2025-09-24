@@ -10,12 +10,10 @@ import { MyShiftRequest } from "../../types/shift";
 
 const EmpShiftRequestCard = ({
   data,
-  type,
   columns = 5,
 }: {
   data: MyShiftRequest;
   columns?: number;
-  type: "actioned" | "pending";
 }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
@@ -39,10 +37,10 @@ const EmpShiftRequestCard = ({
 
   const getStatus = (rawStatus: string) => {
     const status = rawStatus?.toLowerCase().trim();
-
-    if (status === "pending") {
+    
+    if (status === "draft") {
       return {
-        label: "Pending",
+        label: "Draft",
         statusColor: "bg-yellow-100 text-yellow-800",
       };
     } else if (status === "approved") {
@@ -57,7 +55,7 @@ const EmpShiftRequestCard = ({
       };
     }
   };
-  const status = getStatus(data?.reference_document?.custom_status);
+  const status = getStatus(data?.reference_document?.status);
   const formattedFromDate = data?.reference_document?.from_date
     ? format(new Date(data?.reference_document.from_date), "dd/MM/yyyy")
     : "N/A";
@@ -72,7 +70,7 @@ const EmpShiftRequestCard = ({
         >
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.reference_document?.custom_request_type}
+            {data?.reference_document?.shift_type}
           </div>
 
           {/* From Date */}
@@ -97,7 +95,7 @@ const EmpShiftRequestCard = ({
               />
             </Tooltip>
           </div>
-          {data?.custom_allow_revoke && type === "pending" ? (
+          {data?.custom_allow_revoke && data?.reference_document?.status === "Draft" ? (
             <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
               <Button
                 icon={<RotateCcw className="h-3 w-3" />}
@@ -119,7 +117,7 @@ const EmpShiftRequestCard = ({
             <div className=" flex items-start justify-between gap-4">
               <div className="flex gap-1 flex-col">
                 <div className="flex gap-2">
-                  {data?.reference_document?.custom_request_type}
+                  {data?.reference_document?.shift_type}
                   <Badge
                     size="sm"
                     backgroundColor={status?.statusColor}
@@ -143,7 +141,7 @@ const EmpShiftRequestCard = ({
                 {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
               <div className="text-sm text-gray-900 text-start flex gap-2">
-                {data?.custom_allow_revoke && type === "pending" ? (
+                {data?.custom_allow_revoke && data?.reference_document?.status === "Draft" ? (
                   <Button
                     icon={<RotateCcw className="h-3 w-3" />}
                     variant="contain"
