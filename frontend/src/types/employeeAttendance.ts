@@ -7,8 +7,10 @@ export interface ApiRepayment {
   balance_amount: number;
 }
 
-export interface ApiAdvance {
-  amount: any;
+export type ApiAdvance =  {
+  amount: number;
+  advance_account: string;
+  employee: string;
   advance_type: string;
   status: string;
   start_date: string;

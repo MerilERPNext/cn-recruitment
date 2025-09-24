@@ -36,11 +36,13 @@ export function useCreateNewAdvance() {
 export const useEmployeeAdvancesAmount = (
   employeeId?: string,
   advanceType?: string,
-  postingDate?: string
+  postingDate?: string,
+  company?: string
 ) => {
-  return useQuery<ApiAdvance[]>({
-    queryKey: ["advances", employeeId, advanceType, postingDate],
-    queryFn: () => getAdvancesAmount(employeeId!, advanceType, postingDate),
-    enabled: !!employeeId && !!advanceType && !!postingDate,
+  return useQuery<ApiAdvance>({
+    queryKey: ["advances", employeeId, advanceType, postingDate, company],
+    queryFn: () => getAdvancesAmount(employeeId!, advanceType, postingDate, company),
+    enabled: !!employeeId && !!advanceType && !!postingDate && !!company,
   });
 };
+

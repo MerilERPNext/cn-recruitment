@@ -19,6 +19,8 @@ export interface Installment {
   }
   
   export interface Loan {
+    loan_requested_amount: number
+    loan_amount: number
     loan_name: string
     loan_type:  string
     emi_type: string

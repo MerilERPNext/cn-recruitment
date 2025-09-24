@@ -1,6 +1,8 @@
 import React from "react";
 import { FileText } from "lucide-react";
 import FrappeListView from "../ListView";
+import DOMPurify from "dompurify";
+
 
 interface ToDo {
   custom_due_datetime: string;
@@ -50,7 +52,11 @@ const MyToDoItem: React.FC<{
       <div className="flex w-full">
         <div className="flex w-full items-center gap-2 mb-1 flex-wrap">
           <span className="text-xs font-medium">
-            {item.description || "Task"}
+            <div
+               dangerouslySetInnerHTML={{
+               __html: DOMPurify.sanitize(item.description || "Task"),
+             }}
+             />
           </span>
           <div className="flex items-center justify-between w-full pr-8">
             {item.date && (

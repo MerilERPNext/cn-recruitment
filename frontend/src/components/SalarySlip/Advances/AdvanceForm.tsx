@@ -10,8 +10,8 @@ import {
   useCreateNewAdvance,
   useEmployeeAdvancesAmount,
 } from "../../../hooks/useEmployeeAdvances";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import toast from "react-hot-toast";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 interface AdvanceFormProps {
   user?: any;
@@ -22,9 +22,8 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const formAdvanceInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
   const { data: advanceType } = useAdvancesType();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    user?.employee as string
-  );
+  const { setRefetchAttendance } = useGlobalStore();
+
 
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string>();
   const [postingDate] = useState<string>(
@@ -34,7 +33,8 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const { data: advanceAmountData } = useEmployeeAdvancesAmount(
     user?.employee,
     selectedAdvanceType,
-    postingDate
+    postingDate,
+    user?.company
   );
 
   const mutation = useCreateNewAdvance();
@@ -44,12 +44,12 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     if (
       advanceAmountData &&
       formAdvanceInstance.current &&
-      advanceAmountData[0]?.amount
+      advanceAmountData?.amount
     ) {
-      formAdvanceInstance.current.setComponentValue(
-        "advance_amount",
-        advanceAmountData[0].amount
-      );
+      // correct method
+      formAdvanceInstance.current.setValue({
+        advance_amount: advanceAmountData?.amount,
+      });
     }
   }, [advanceAmountData]);
 
@@ -77,9 +77,10 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
         ...formData,
         custom_advance_type: selectedAdvanceType,
         advance_amount: formData.advance_amount,
-        company: currentEmployee?.company,
         applicant_type: "Employee",
-        applicant: currentEmployee?.employee,
+        company: user?.company,  
+        employee: user?.employee,
+        advance_account: advanceAmountData?.advance_account,
         exchange_rate: 1.0,
       };
 
@@ -88,6 +89,9 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
       mutation.mutate(submissionData as Record<string, unknown>, {
         onSuccess: () => {
           onClose?.();
+          setTimeout(() => {
+            setRefetchAttendance(true);
+          }, 2000);
           toast.success("Advance Request submitted successfully!");
         },
         onError: (error: any) => {
@@ -119,7 +123,7 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
           customClass:
             "bg-white rounded-lg shadow-md mb-6 w-full max-w-3xl mx-auto p-4",
           components: [
-            // Row 1
+            // Row 1 - Employee + Advance Type
             {
               type: "columns",
               key: "employeeRow",
@@ -141,44 +145,38 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                 {
                   width: 6,
                   components: [
-                    {
-                      type: "currency",
-                      key: "advance_amount",
-                      label: "Advance Amount",
-                      input: true,
-                      placeholder: "0.00",
-                      defaultValue: advanceAmountData,
-                      validate: { required: true, min: 1 },
-                      currency: "INR",
-                      exchange_rate: 1.0,
+                    { type: "select",
+                      key: "custom_advance_type", 
+                      label: "Advance Type", 
+                      input: true, 
+                      validate: { required: true }, 
+                      placeholder: "Select advance type", 
+                      data: {
+                         values: advanceType?.data?.map((item: { name: string }) => ({ label: item?.name, value: item?.name, })) || [], },
                     },
                   ],
                 },
               ],
             },
 
-            // Row 2 - Advance Type & Repayment Type
+            // Row 2 - Advance Amount + Repayment Type
             {
               type: "columns",
-              key: "advanceTypeRow",
+              key: "advanceAmountRow",
               columns: [
                 {
                   width: 6,
                   components: [
                     {
-                      type: "select",
-                      key: "custom_advance_type",
-                      label: "Advance Type",
+                      type: "currency",
+                      key: "advance_amount",
+                      label: "Advance Amount",
                       input: true,
-                      validate: { required: true },
-                      placeholder: "Select advance type",
-                      data: {
-                        values:
-                          advanceType?.data?.map((item: { name: string }) => ({
-                            label: item?.name,
-                            value: item?.name,
-                          })) || [],
-                      },
+                      placeholder: "0.00",
+                      defaultValue: advanceAmountData?.amount,
+                      validate: { required: true, min: 1 },
+                      currency: "INR",
+                      exchange_rate: 1.0,
                     },
                   ],
                 },
@@ -243,8 +241,8 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       label: "Repayment Start Date",
                       input: true,
                       placeholder: "Select start date",
-                      enableTime: false, // ✅ only date
-                      format: "yyyy-MM-dd", // ✅ force only date format
+                      enableTime: false,
+                      format: "yyyy-MM-dd",
                       displayInTimezone: "utc",
                       useLocaleSettings: false,
                       customConditional: `
@@ -397,3 +395,4 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
 };
 
 export default AdvanceForm;
+
