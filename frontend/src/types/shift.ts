@@ -61,3 +61,34 @@ export interface ShiftRequest {
     modified?: string;
     [key: string]: unknown;
   };
+  export interface MyShiftRequest {
+    reference_document: ShiftRequest;
+    allocated_to: string;
+    custom_allow_revoke: boolean;
+    todo_id: string;
+    username: string;
+    reference_name: string;
+  }
+  export interface RequestCardProps {
+    request: ShiftRequest;
+    isActionedCard?: boolean;
+    isSelected?: boolean;
+    onAction?: () => void;
+  }
+
+  export type LoadingAction = {
+  id: string;
+  action: string;
+};
+
+  export interface BulkActionProps {
+    selectedIds: string[];
+    pendingRequests: ShiftRequest[];
+    onSelectAll: () => void;
+    onBulkAction: (action: "Approve" | "Reject") => void;
+    loadingAction?: {
+      action: "Approve" | "Reject";
+      isLoading: boolean;
+    } | null;
+  }
+  
