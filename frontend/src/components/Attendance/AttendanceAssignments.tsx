@@ -75,7 +75,7 @@ const AttendanceAssignments = ({
             input: true,
             customClass: "mb-4",
             defaultValue: false,
-            customConditional: "show = !!data.enable_checkin ;",
+            customConditional: "show = !!data.enable_check_in ;",
           },
           {
             label: "IP Restriction",
@@ -111,7 +111,7 @@ const AttendanceAssignments = ({
                   value: item.name,
                 })) || [],
             },
-            customConditional: "show = !!data.enable_checkin ;",
+            customConditional: "show = !!data.enable_check_in ;",
           },
           {
             label: "Use Shift Blocks",

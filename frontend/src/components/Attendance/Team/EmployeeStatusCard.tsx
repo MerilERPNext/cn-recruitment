@@ -5,8 +5,7 @@ import Avatar from "../../shared/Avatar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Edit, EllipsisVertical } from "lucide-react";
 import ContextualPopup from "../../shared/molecules/ContextualPopup";
-import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
-import { createPortal } from "react-dom";
+import { EditAttendance } from "./EditAttendance";
 
 const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
   const { isDesktop } = useScreenSize();
@@ -162,14 +161,14 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
           </div>
         </div>
       )}
-      {editAttendance &&
-        createPortal(
-          <AttendanceRequestForm
-            isEditing={true}
-            onClose={() => setEditAttendance(false)}
-          />,
-          document.body
-        )}{" "}
+      <EditAttendance
+        employeeId={data?.employee}
+        employeeName={data?.employee_name}
+        onClose={() => setEditAttendance(false)}
+        open={editAttendance}
+        requestId={data?.name}
+      />
+      ,
       <ContextualPopup
         isOpen={isPopupOpen}
         onClose={() => {

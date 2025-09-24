@@ -178,9 +178,16 @@ const TeamAttendance = () => {
             infiniteScroll={true}
             isFilter={false}
             defaultFilters={{
-              attendance_date: new Date().toISOString(),
+              attendance_date: new Date(selectedDate || "").toISOString(),
             }}
-            defaultFields={["employee_name", "status", "in_time", "out_time"]}
+            defaultFields={[
+              "employee_name",
+              "status",
+              "in_time",
+              "out_time",
+              "name",
+              "employee",
+            ]}
           />
         </div>
       </div>

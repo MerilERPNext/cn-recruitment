@@ -199,15 +199,18 @@ export const useGetPolicyForDate = (
 };
 
 export const useAttendanceById = (
-  id: string | null
-): UseQueryResult<Attendance, Error> => {
-  return useQuery<Attendance, Error>({
-    queryKey: ["attendance", id],
-    queryFn: () => attendanceService.getAttendanceById(id!),
-    enabled: !!id,
+  enabled: boolean,
+  filters?: FilterCondition[]
+): UseQueryResult<Attendance[], Error> => {
+  return useQuery<Attendance[], Error>({
+    queryKey: ["attendance", "all", filters],
+    queryFn: () => attendanceService.getAttendanceById(filters),
+    enabled: enabled,
+    refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
 };
+
 export const useAttendancePolicies = (
   filters?: any
 ): UseQueryResult<PolicyQuestion, Error> => {

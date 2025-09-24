@@ -324,6 +324,16 @@ export const attendanceService = {
     });
     return response.data as AttendanceRequest[];
   },
+  getAttendanceById: async (
+    filters?: FilterCondition[]
+  ): Promise<Attendance[]> => {
+    const response = await FrappeAPI.getDocumentList("Attendance", {
+      fields: ["*"],
+      filters: filters,
+      orderBy: "creation desc",
+    });
+    return response.data as Attendance[];
+  },
   getUserRoles: async (filters?: FilterCondition[]): Promise<UserRoles> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_user_roles",
@@ -334,13 +344,6 @@ export const attendanceService = {
       }
     );
     return response as UserRoles;
-  },
-
-  getAttendanceById: async (id: string): Promise<Attendance> => {
-    if (!id) throw new Error("Attendance ID is required");
-    const result = await FrappeAPI.getDocument("Attendance", id);
-    if (!result) throw new Error("Attendance record not found");
-    return result as Attendance;
   },
 
   getAttendance: async (filters?: FilterCondition[]): Promise<Attendance[]> => {

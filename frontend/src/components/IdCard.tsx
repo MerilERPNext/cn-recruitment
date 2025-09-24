@@ -267,13 +267,22 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
 );
 
 // Action Buttons Component
-const ActionButtons = ({ onWhatsApp, onCall }: any) => (
-  <div className="mt-8 flex gap-4">
-    <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
-      WhatsApp
-    </ActionButton>
-    <ActionButton variant="secondary" icon={CallIcon} onClick={onCall}>
-      Call
+const ActionButtons = ({ onWhatsApp, onCall, onAttendanceAssignments }: any) => (
+  <div className="mt-8 space-y-4">
+    <div className="flex gap-4">
+      <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
+        WhatsApp
+      </ActionButton>
+      <ActionButton variant="secondary" icon={CallIcon} onClick={onCall}>
+        Call
+      </ActionButton>
+    </div>
+    <ActionButton
+      variant="secondary"
+      onClick={onAttendanceAssignments}
+      className="w-full"
+    >
+      Attendance Assignments
     </ActionButton>
   </div>
 );
@@ -646,6 +655,8 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     message: string;
     type: "error" | "info";
   } | null>(null);
+  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
+    useState(false);
 
   // Automatically hide the toast after a few seconds
   useEffect(() => {
@@ -752,6 +763,7 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
                   <ActionButtons
                     onWhatsApp={handleWhatsApp}
                     onCall={handleCall}
+                    onAttendanceAssignments={() => setIsAttendanceAssignmentsOpen(true)}
                   />
                 </>
               ) : (
@@ -772,6 +784,12 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Attendance Assignments Modal */}
+      <AttendanceAssignments
+        open={isAttendanceAssignmentsOpen}
+        onClose={() => setIsAttendanceAssignmentsOpen(false)}
+      />
     </div>
   );
 };

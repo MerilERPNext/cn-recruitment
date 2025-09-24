@@ -53,12 +53,10 @@ interface FormioFormInstance {
 interface AttndanceRequestFormProps {
   onClose: () => void;
   selectedDate?: Date | string;
-  isEditing?: boolean;
 }
 
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
-  isEditing = false,
   selectedDate = new Date(),
 }) => {
   const { setRefetchAttendance } = useGlobalStore();
@@ -250,7 +248,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                   customClass: "mb-4",
                   onChange: handleEmployeeChange,
                   validate: { required: true },
-                  disabled: isEditing,
                   data: {
                     values:
                       employeeList && employeeList?.length > 0
@@ -291,7 +288,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             input: true,
             onChange: handleRequestTypeChange,
             placeholder: "Select a Request Type",
-            disabled: isEditing,
             customClass: "mb-4",
             data: {
               values: [
@@ -405,7 +401,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             enableTime: false,
             defaultValue: selectedDate,
             onChange: handleFromDateChange,
-            disabled: selectedRequestType === "Clockin" || isEditing,
+            disabled: selectedRequestType === "Clockin",
             redrawOn: "request_type",
           },
           {
@@ -418,8 +414,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "dd-mm-yyyy",
             customClass: "mb-4",
             enableTime: false,
-            disabled:
-              selectedRequestType === "Short Attendance Request" || isEditing,
+            disabled: selectedRequestType === "Short Attendance Request",
             validate: { required: true },
             defaultValue: selectedDate,
             customConditional:
@@ -444,7 +439,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               enableTime: true,
               dateFormat: "H:i",
             },
-            disabled: isEditing,
           },
           {
             label: "To Time",
@@ -472,7 +466,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                 enableTime: true,
                 dateFormat: "H:i",
               },
-              disabled: isEditing,
             },
           },
 
@@ -484,7 +477,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             customConditional: "show = data.request_type === 'Out Duty';",
             defaultValue: false,
-            disabled: isEditing,
           },
           {
             label: "Latest Check-In Time",
@@ -519,7 +511,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             input: true,
             placeholder: "Select shift",
             customClass: "mb-4",
-            disabled: isEditing,
             customConditional: "show = data.request_type === 'Shift Change';",
             data: {
               values:
@@ -544,7 +535,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                   value: item?.name,
                 })) || [],
             },
-            disabled: isEditing,
           },
           {
             label: "Message",
@@ -554,11 +544,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "Provide additional details...",
             rows: 4,
             customClass: "mb-4",
-            disabled: isEditing,
           },
           {
             label: "Attachments",
-            disabled: isEditing,
             fileTypes: [
               { label: "Documents", value: ".pdf,.doc,.docx" },
               { label: "Images", value: ".jpg,.jpeg,.png" },

@@ -133,6 +133,8 @@ export interface EmployeeStatus extends BaseItem {
   status: EmployeeStatusType;
   in_time?: string;
   out_time?: string;
+  name: string;
+  employee: string;
 }
 
 export type CanShowClockIn = {
