@@ -10,7 +10,6 @@ export type NodeData = {
   title?: string;
   hasChildren: boolean;
   isExpanded: boolean;
-  showExpand: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   childrens?: any;
   onToggleExpand: (id: string) => void;
