@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import AttendanceAssignments from "./Attendance/AttendanceAssignments";
 import {
   useCurrentEmployeeIdCard,
   useEmployeeIdCard,
@@ -265,14 +266,32 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
   </div>
 );
 
+interface ActionButtonsProps {
+  onWhatsApp: () => void;
+  onCall: () => void;
+  onAttendanceAssignments: () => void;
+}
 // Action Buttons Component
-const ActionButtons = ({ onWhatsApp, onCall }: any) => (
-  <div className="mt-8 flex gap-4">
-    <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
-      WhatsApp
-    </ActionButton>
-    <ActionButton variant="secondary" icon={CallIcon} onClick={onCall}>
-      Call
+const ActionButtons = ({
+  onWhatsApp,
+  onCall,
+  onAttendanceAssignments,
+}: ActionButtonsProps) => (
+  <div className="mt-8 space-y-4">
+    <div className="flex gap-4">
+      <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
+        WhatsApp
+      </ActionButton>
+      <ActionButton variant="secondary" icon={CallIcon} onClick={onCall}>
+        Call
+      </ActionButton>
+    </div>
+    <ActionButton
+      variant="secondary"
+      onClick={onAttendanceAssignments}
+      className="w-full"
+    >
+      Attendance Assignments
     </ActionButton>
   </div>
 );
@@ -369,6 +388,8 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
     message: string;
     type: "error" | "info";
   } | null>(null);
+  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
+    useState(false);
 
   const navigate = useNavigate();
   // Automatically hide the toast after a few seconds
@@ -473,6 +494,12 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
                   >
                     <CallIcon />
                     Call
+                  </button>
+                  <button
+                    onClick={() => setIsAttendanceAssignmentsOpen(true)}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
+                  >
+                    Attendance Assignments
                   </button>
                 </div>
               </div>
@@ -591,6 +618,12 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
             onClose={() => setToast(null)}
           />
         )}
+
+        {/* Attendance Assignments Modal */}
+        <AttendanceAssignments
+          open={isAttendanceAssignmentsOpen}
+          onClose={() => setIsAttendanceAssignmentsOpen(false)}
+        />
       </div>
     </DesktopLayoutWrapper>
   );
@@ -631,6 +664,8 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     message: string;
     type: "error" | "info";
   } | null>(null);
+  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
+    useState(false);
 
   // Automatically hide the toast after a few seconds
   useEffect(() => {
@@ -737,6 +772,9 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
                   <ActionButtons
                     onWhatsApp={handleWhatsApp}
                     onCall={handleCall}
+                    onAttendanceAssignments={() =>
+                      setIsAttendanceAssignmentsOpen(true)
+                    }
                   />
                 </>
               ) : (
@@ -757,6 +795,12 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Attendance Assignments Modal */}
+      <AttendanceAssignments
+        open={isAttendanceAssignmentsOpen}
+        onClose={() => setIsAttendanceAssignmentsOpen(false)}
+      />
     </div>
   );
 };
