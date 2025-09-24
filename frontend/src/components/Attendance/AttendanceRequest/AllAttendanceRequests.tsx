@@ -102,6 +102,7 @@ const AllAttendanceRequest = ({
               ItemComponent={(props: { item: MyAttendanceRequest }) => {
                 return (
                   <EmpAttendanceRequestCard
+                    columns={statusType === "actioned" ? 4 : 5}
                     type={statusType}
                     data={{
                       ...props?.item,
