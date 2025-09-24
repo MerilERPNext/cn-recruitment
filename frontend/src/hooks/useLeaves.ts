@@ -8,7 +8,10 @@ import type {
   TeamRequest,
   LeaveFieldResponse,
   LeaveReason,
+  ButtonStatusResponse,
+  EditApprovedLeavePayload,
 } from "../types/leaves";
+import toast from "react-hot-toast";
 
 export type LeaveType = {
   allocated_leaves: number;
@@ -151,3 +154,128 @@ export const useGetLeaveReason = () => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+export const useGetButtonsStatus = (employee: string) => {
+  return useQuery<ButtonStatusResponse>({
+    queryKey: ["leave-buttons-status", employee],
+    queryFn: () => leaveService.getButtonsStatus(employee),
+    enabled: !!employee,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export function useReplaceLeave() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: {
+      leave_application: string;
+      new_leave_type?: string;
+      first_half_leave_type?: string;
+      second_half_leave_type?: string;
+    }) => leaveService.replaceLeave(params),
+
+    onSuccess: () => {
+      toast.dismiss();
+      toast.success("Leave replaced successfully");
+
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+    },
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError: (err: any) => {
+      let errorMsg = "Submission failed. Please try again.";
+
+      try {
+        const raw = err?.response?.data?._server_messages;
+        if (raw) {
+          const messages = JSON.parse(raw);
+          if (Array.isArray(messages) && messages.length > 0) {
+            const firstMessage = JSON.parse(messages[0]);
+            if (firstMessage?.message) {
+              errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse server error message:", e);
+      }
+
+      toast.error(errorMsg);
+    },
+  });
+}
+
+export function useRevokeApprovedLeave() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (leave_application_name: string) =>
+      leaveService.revokeApproved(leave_application_name),
+
+    onSuccess: () => {
+      toast.dismiss();
+      toast.success("Leave revoked successfully");
+
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+    },
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError: (err: any) => {
+      let errorMsg = "Failed to revoke leave. Please try again.";
+
+      try {
+        const raw = err?.response?.data?._server_messages;
+        if (raw) {
+          const messages = JSON.parse(raw);
+          if (Array.isArray(messages) && messages.length > 0) {
+            const firstMessage = JSON.parse(messages[0]);
+            if (firstMessage?.message) {
+              errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse server error message:", e);
+      }
+
+      toast.error(errorMsg);
+    },
+  });
+}
+
+export function useEditApprovedLeave() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: EditApprovedLeavePayload) =>
+      leaveService.editApproved(params.leave_application, params.new_values),
+    onSuccess: () => {
+      toast.dismiss();
+      toast.success("Leave updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError: (err: any) => {
+      let errorMsg = "Failed to update leave. Please try again.";
+      try {
+        const raw = err?.response?.data?._server_messages;
+        if (raw) {
+          const messages = JSON.parse(raw);
+          if (Array.isArray(messages) && messages.length > 0) {
+            const firstMessage = JSON.parse(messages[0]);
+            if (firstMessage?.message) {
+              errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse server error message:", e);
+      }
+      toast.error(errorMsg);
+    },
+  });
+}
