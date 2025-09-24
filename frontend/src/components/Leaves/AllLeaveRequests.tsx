@@ -119,7 +119,7 @@ const AllLeaveRequest = ({
   );
 
   return (
-    <div className="flex flex-col min-h-screen md:min-h-full bg-white absolute inset-0 z-[150]">
+    <div className="flex flex-col min-h-screen md:min-h-full bg-white absolute inset-0 z-50">
       {!isDesktop && (
         <header className="sticky top-0 z-50 bg-white shadow-sm">
           <HeaderBar title={title} onBack={() => navigate(-1)} />
