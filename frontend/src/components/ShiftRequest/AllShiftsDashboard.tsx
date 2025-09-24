@@ -8,8 +8,12 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 import CardTable from "../shared/CardTable";
 import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
-import { ShiftRequest, LoadingAction } from "../../types/shift";
+import { ShiftRequest, LoadingAction, MyShiftRequest } from "../../types/shift";
 import { ShiftDetailView } from "./ShiftDetailView";
+import useCurrentUser from "../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import DataListView from "../DataListView";
+import EmpShiftRequestCard from "./EmpShiftRequestCard";
 
 // Interface for Shift Assignment (Team Shifts from Frappe)
 export interface ShiftAssignment {
@@ -251,7 +255,7 @@ const TeamShiftChangeRequest = () => {
           </h2>
           <button
             onClick={() => {
-              navigate("/webapp/attendance/team-attendance-requests/pendings");
+              navigate("/webapp/shift-request/shift-change-request")
             }}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
@@ -304,6 +308,97 @@ const TeamShiftChangeRequest = () => {
   );
 };
 
+const MyShiftChangesRequest = () => {
+  const navigate = useNavigate();
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name as string
+  );
+  const { refetchShift, setRefetchShift } = useGlobalStore();
+  const CardSkeleton = () => (
+    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+      <div className="px-4 py-2">
+        <div className="flex items-center justify-between gap-1">
+          <div>
+            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+            <div className="h-3 w-24 bg-gray-300 rounded"></div>
+          </div>
+          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <div className="bg-white px-2 pb-4 rounded-lg mb-8">
+        {/* Pending */}
+
+        <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-800 pb-1">
+            Pending My Shift Requests
+          </h2>
+          <button
+            onClick={() => {
+              navigate("/webapp/shift-request/shift-change-request")
+            }}
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            View All
+          </button>
+        </div>
+        <CardTable
+          titles={["Request Type", "From Date", "To Date", "Status", "Actions"]}
+        >
+          {currentEmployee?.employee ? (
+            <DataListView
+              queryKey="shift-requests"
+              customAPI={{
+                method: "cn_leave_shift_managment.api.get_open_approval_todos",
+                params: {
+                  doctype: "Shift Request",
+                  employee: currentEmployee?.employee,
+                },
+              }}
+              defaultFilters={{
+                status: "Pending",
+              }}
+              ItemComponent={(props: { item: MyShiftRequest }) => {
+                return (
+                  <EmpShiftRequestCard
+                    type="pending"
+                    data={{
+                      ...props?.item,
+                    }}
+                  />
+                );
+              }}
+              SkeletonComponent={CardSkeleton}
+              onItemClick={(data) => {
+                console.log(data);
+              }}
+              onRefetchComplete={() => {
+                setRefetchShift(false);
+              }}
+              refetchTrigger={refetchShift}
+              isSearch={false}
+              isFilter={false}
+              pageSize={3}
+              showRefreshButton={false}
+              orderBy="modified desc"
+              infiniteScroll={false}
+              loadMorePagination={true}
+              showPagination={false}
+            />
+          ) : (
+            <></>
+          )}
+        </CardTable>
+      </div>
+    </>
+  );
+};
+
 export default function AllShiftsDashboard() {
   return (
     <div className="bg-gray-100 font-sans text-sm h-full overflow-auto">
@@ -311,6 +406,7 @@ export default function AllShiftsDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <TeamShiftChangeRequest />
+            <MyShiftChangesRequest />
           </div>
           <div className="space-y-6">
             <MyShifts />
