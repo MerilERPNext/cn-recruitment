@@ -57,6 +57,8 @@ const LeaveAppInner: React.FC = () => {
   const isLeaveRequestsActive = activeTab === "requests-status";
   const isHolidaysActive = activeTab === "holidays";
 
+  const isViewAllActive = location.pathname.includes("/actioned");
+
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
       location.pathname.startsWith(tabRoutes[tab])
@@ -159,7 +161,7 @@ const LeaveAppInner: React.FC = () => {
         <Outlet />
       </main>
 
-      {!showModal && activeTab === "requests-status" && (
+      {!showModal && activeTab === "requests-status" && !isViewAllActive && (
         <div className="sticky bottom-0 bg-white rounded-md shadow-lg py-4 px-4 w-full z-50">
           <div className="max-w-4xl mx-auto flex">
             <button

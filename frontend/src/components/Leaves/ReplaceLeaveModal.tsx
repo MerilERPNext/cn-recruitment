@@ -20,7 +20,6 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
   onClose,
   onReplace,
   currentLeaveType,
-  currentLeaveName,
 }) => {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useEmployeeByUserId(userId);
@@ -29,7 +28,6 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
     currentEmployee?.name,
     today
   );
-  console.log(currentLeaveName);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
