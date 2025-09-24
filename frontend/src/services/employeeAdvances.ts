@@ -46,8 +46,7 @@ employeeId: string, advanceType?: string, postingDate?: string, company?: string
 export const createAdvance = async (
   body: Record<string, unknown>
 ): Promise<boolean> => {
-  console.log("Creating Employee Advance with body:", body);
-  try {
+    try {
     const response = await FrappeAPI.createDocument("Employee Advance", body);
     return response as boolean;
   } catch (error) {

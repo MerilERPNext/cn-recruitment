@@ -36,7 +36,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     postingDate,
     user?.company
   );
-console.log("Advance Amount Data:=====================", advanceAmountData);
 
   const mutation = useCreateNewAdvance();
 

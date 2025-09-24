@@ -125,8 +125,8 @@ export default function DesktopDashboard() {
       try {
         const coords = await getDeviceLocation();
         setLocation(coords);
-      } catch (err) {
-        console.log(err);
+      } catch (Error) {
+        toast.error("Could not fetch your location.", Error as object);
       }
     }
 
