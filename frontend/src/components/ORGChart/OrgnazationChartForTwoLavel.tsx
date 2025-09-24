@@ -66,7 +66,6 @@ export const findParent = (
 };
 
 // ✅ Build nodes/edges for only parent + current user + children
- 
 const buildTwoLevelHierarchy = (
   user: EmployeeHierarchy,
   parent: EmployeeHierarchy | null
@@ -87,7 +86,8 @@ const buildTwoLevelHierarchy = (
         title: parent.title || "",
         hasChildren: true,
         isExpanded: true,
-        onToggleExpand: () => {},
+        onToggleExpand: () => { },
+        showExpand: false
       },
     });
 
@@ -110,6 +110,8 @@ const buildTwoLevelHierarchy = (
       name: user.name,
       title: user.title || "",
       hasChildren: (user.children || []).length > 0,
+      childrens: user?.children || [],
+      showExpand: false,
       isExpanded: false,
       onToggleExpand: () => {},
     },
