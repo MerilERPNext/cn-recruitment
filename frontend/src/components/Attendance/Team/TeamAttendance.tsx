@@ -1,7 +1,7 @@
 import DatePicker from "react-datepicker";
 import EmployeeStatusCard from "./EmployeeStatusCard";
 import FrappeListView from "../../ListView";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useSearchParams } from "react-router-dom";
 import { EmployeeStatus } from "../../../types/attendance";
@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const TeamAttendance = () => {
   const { isDesktop } = useScreenSize();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [refetchFn, setRefetchFn] = useState<(() => void) | null>(null);
 
   const [searchParams] = useSearchParams();
 
@@ -171,12 +172,15 @@ const TeamAttendance = () => {
           <FrappeListView
             doctype="Attendance"
             ItemComponent={(props: { item: EmployeeStatus }) => {
-              return <EmployeeStatusCard data={props?.item} />;
+              return <EmployeeStatusCard data={props?.item} onRefetchData={refetchFn} />;
             }}
             SkeletonComponent={CardSkeleton}
             onItemClick={() => {}}
             infiniteScroll={true}
             isFilter={false}
+            onRefetchAvailable={useCallback((refetch: () => void) => {
+              setRefetchFn(() => refetch);
+            }, [])}
             defaultFilters={{
               attendance_date: new Date(selectedDate || "").toISOString(),
             }}

@@ -5,8 +5,12 @@ import { useRef } from "react";
 import { createPortal } from "react-dom";
 import "../../../formio.custom.css";
 import toast from "react-hot-toast";
-import { useAttendanceById } from "../../../hooks/useAttendance";
+import {
+  useAttendanceById,
+  useEditAttendance,
+} from "../../../hooks/useAttendance";
 import CircularLoader from "../../shared/atoms/CircularLoader";
+import { format } from "date-fns";
 
 interface RequestOvertimeProps {
   onClose: () => void;
@@ -14,6 +18,7 @@ interface RequestOvertimeProps {
   requestId: string;
   employeeName: string;
   employeeId: string;
+  onRefetchData?: (() => void) | null;
 }
 export const EditAttendance = ({
   onClose,
@@ -21,13 +26,14 @@ export const EditAttendance = ({
   requestId,
   employeeId,
   employeeName,
+  onRefetchData,
 }: RequestOvertimeProps) => {
   const formInstance = useRef<any>(null);
   const { data, isLoading } = useAttendanceById(open, [
     ["name", "=", requestId],
     ["employee", "=", employeeId],
   ]);
-
+  const mutation = useEditAttendance();
   // Only build form after data is available
   const attendanceForm = data?.[0]
     ? {
@@ -83,10 +89,18 @@ export const EditAttendance = ({
                         key: "in_time",
                         type: "datetime",
                         input: true,
-                        widget: { type: "calendar" },
-                        format: "dd-MM-yyyy HH:mm:ss",
-                        defaultValue: data[0].in_time,
+                        enableDate: false,
                         enableTime: true,
+                        format: "HH:mm:ss",
+                        placeholder: "hh:mm",
+                        defaultValue: data[0].in_time,
+                        widget: {
+                          type: "calendar",
+                          time_24hr: true,
+                          noCalendar: true,
+                          enableTime: true,
+                          dateFormat: "H:i",
+                        },
                       },
                     ],
                   },
@@ -97,23 +111,61 @@ export const EditAttendance = ({
                         key: "out_time",
                         type: "datetime",
                         input: true,
-                        widget: { type: "calendar" },
-                        format: "dd-MM-yyyy HH:mm:ss",
-                        defaultValue: data[0].out_time,
+                        enableDate: false,
                         enableTime: true,
+                        format: "HH:mm:ss",
+                        placeholder: "hh:mm",
+                        widget: {
+                          type: "calendar",
+                          time_24hr: true,
+                          noCalendar: true,
+                          enableTime: true,
+                          dateFormat: "H:i",
+                        },
+                        defaultValue: data[0].out_time,
                       },
                     ],
                   },
                 ],
               },
+
               {
                 label: "Status",
                 key: "status",
-                type: "textfield",
+                type: "select",
                 input: true,
+                placeholder: "Select Employee",
                 customClass: "mb-4",
                 defaultValue: data[0].status || "",
+
+                // onChange: handleEmployeeChange,
+                validate: { required: true },
+                data: {
+                  values: [
+                    {
+                      label: "Present",
+                      value: "Present",
+                    },
+                    {
+                      label: "Absent",
+                      value: "Absent",
+                    },
+                    {
+                      label: "On Leave",
+                      value: "On Leave",
+                    },
+                    {
+                      label: "Half Day",
+                      value: "Half Day",
+                    },
+                    {
+                      label: "Work From Home",
+                      value: "Work From Home",
+                    },
+                  ],
+                },
               },
+
               {
                 label: "Working Hours",
                 key: "working_hours",
@@ -148,11 +200,38 @@ export const EditAttendance = ({
       }
     : null;
 
+  const formatTime = (date: Date | string | undefined): string | undefined => {
+    if (!date) return undefined;
+    const d = new Date(date);
+
+    // Format the date using date-fns
+    return format(d, "yyyy-MM-dd HH:mm:ss");
+  };
+
   const handleSubmit = async () => {
     try {
       const submission = await formInstance.current?.submit();
       const submissionData = submission?.data || {};
-      console.log(submissionData);
+      mutation.mutate(
+        {
+          attendance_doc_name: requestId,
+          attendance_fields: {
+            ...data?.[0],
+            in_time: formatTime(submissionData?.in_time),
+            out_time: formatTime(submissionData?.out_time),
+            status: submissionData?.status,
+          },
+        },
+        {
+          onSuccess() {
+            toast.success("Updated Attendance Successfully.");
+            if (onRefetchData) {
+              onRefetchData();
+            }
+            onClose();
+          },
+        }
+      );
     } catch (err) {
       toast.error("Please fill in all required fields.");
       console.warn("Form submission error -", err);

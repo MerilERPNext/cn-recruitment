@@ -116,6 +116,18 @@ export const attendanceService = {
       throw error;
     }
   },
+  editAttendance: async (body: Record<string, unknown>): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.attendance.delete_and_recreate_attendance_from_leave_application",
+        body
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
+  },
   canShowClockIn: async (
     params: Record<string, unknown>
   ): Promise<CanShowClockIn> => {

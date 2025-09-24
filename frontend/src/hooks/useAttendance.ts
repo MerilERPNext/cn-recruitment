@@ -365,6 +365,22 @@ export function useCheckInOutService() {
     },
   });
 }
+export function useEditAttendance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.editAttendance(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["edit-attendance"] });
+    },
+    onError: (e) => {
+      console.log(e);
+      throw e;
+    },
+  });
+}
 export function useClockInOutService() {
   const queryClient = useQueryClient();
   return useMutation({
