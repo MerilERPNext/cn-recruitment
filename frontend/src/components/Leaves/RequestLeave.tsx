@@ -11,26 +11,29 @@ import { useCreateFrappeDocument } from "../../hooks/useFrappeQuery";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { toast } from "react-hot-toast";
-import { useLeaveRequestRefresh } from "../Leaves/LeaveRequestRefreshContext";
 import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  useEditApprovedLeave,
   useGetLeaveReason,
   useGetLeaveRequestFields,
 } from "../../hooks/useLeaves";
 import { LeaveFieldFlags } from "../../types/leaves";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 
 interface FormSubmissionData {
   leaveType?: string;
   fromDate?: string;
   toDate?: string;
   halfDay?: boolean;
+  half_day?: 0 | 1;
   halfDayOption?: "First Half" | "Second Half";
   description?: string;
   half_day_date?: string;
   custom_second_half_day_date?: string;
   attachment?: { url: string }[];
+  custom_reason?: string;
 }
 
 interface RequestLeaveProps {
@@ -41,7 +44,7 @@ interface RequestLeaveProps {
 const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useEmployeeByUserId(userId);
-
+  const { setRefetchAttendance } = useGlobalStore();
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(
     currentEmployee?.name,
@@ -49,30 +52,60 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   );
 
   const queryClient = useQueryClient();
-  const { triggerRefetch } = useLeaveRequestRefresh();
   const { defaults } = useRequestLeaveModal();
-  const createLeaveMutation = useCreateFrappeDocument({
-    onSuccess: (newDoc) => {
-      toast.success("Leave request submitted successfully!");
-      queryClient.setQueryData(
-        ["documents", "Leave Application"],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            data: [newDoc, ...(old.data || [])],
-          };
-        }
-      );
-      queryClient.invalidateQueries({
-        queryKey: ["documents", "Leave Application"],
-        exact: false,
+  const editLeaveMutation = useEditApprovedLeave();
+
+  const handleUpdate = useCallback(async () => {
+    if (!currentEmployee?.name) {
+      toast.error("Employee data not loaded.");
+      return;
+    }
+    if (!formInstance?.current) {
+      return;
+    }
+    try {
+      const submission = await formInstance.current.submit();
+      await editLeaveMutation.mutateAsync({
+        leave_application: defaults?.leave_application || "",
+        new_values: {
+          employee: currentEmployee.name,
+          leave_type: submission.data.leaveType,
+          from_date: submission.data.fromDate?.split("T")[0],
+          to_date: submission.data.toDate?.split("T")[0],
+          half_day: submission.data.halfDay ? 1 : 0,
+          half_day_date: submission.data.half_day_date?.split("T")[0],
+          custom_half_day_type: submission.data.halfDay
+            ? submission.data.halfDayOption
+            : undefined,
+          custom_second_half_day_date:
+            submission.data?.custom_second_half_day_date?.split("T")[0],
+          description: submission.data.description,
+          custom_reason: submission.data.custom_reason,
+          custom_attachment: submission.data?.custom_attachment?.[0]?.url,
+        },
       });
+      setTimeout(() => {
+        setRefetchAttendance(true);
+      }, 2000);
+
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+
+      onSuccess?.();
+      onCancel?.();
+    } catch (error) {
+      console.error("Update submit error:", error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEmployee, editLeaveMutation, defaults, onSuccess, onCancel]);
+
+  const createLeaveMutation = useCreateFrappeDocument({
+    onSuccess: () => {
+      toast.success("Leave request submitted successfully!");
+      setTimeout(() => {
+        setRefetchAttendance(true);
+      }, 2000);
       queryClient.invalidateQueries({ queryKey: ["comp-off-list"] });
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
-      triggerRefetch();
       onSuccess?.();
       onCancel?.();
     },
@@ -152,16 +185,23 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   } = useGetLeaveReason();
 
   useEffect(() => {
-    if (defaults?.fromDate && defaults?.toDate) {
+    if (defaults) {
       const initial: FormSubmissionData = {
+        leaveType: defaults.leaveType,
         fromDate: defaults.fromDate,
         toDate: defaults.toDate,
-        halfDay: formData.halfDay || false,
+        halfDay: defaults.halfDay,
+        halfDayOption: defaults.halfDayOption,
+        half_day_date: defaults.half_day_date,
+        custom_second_half_day_date: defaults.custom_second_half_day_date,
+        description: defaults.description,
+        custom_reason: defaults.custom_reason,
+        attachment: defaults.custom_attachment,
       };
+
       setFormData(initial);
       calculateLeaveDays(initial);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaults, calculateLeaveDays]);
 
   const handleFromDateChange = useCallback(
@@ -228,7 +268,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
     const show: LeaveFieldFlags = fields?.show ?? defaultFieldFlags;
     const mandatory: LeaveFieldFlags = fields?.mandatory ?? defaultFieldFlags;
-
     const baseComponents = [
       {
         type: "select",
@@ -240,7 +279,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         validate: { required: true },
         data: { values: leaveTypeOptions },
         customClass: "px-2 mb-4",
-        disabled: Boolean(defaults?.leaveType),
+        disabled: defaults?.isEdit ? false : Boolean(defaults?.leaveType),
       },
       {
         type: "columns",
@@ -265,7 +304,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
                 onChange: handleFromDateChange,
-                disabled: Boolean(defaults?.fromDate),
+                disabled: defaults?.isEdit
+                  ? false
+                  : Boolean(defaults?.fromDate),
               },
             ],
           },
@@ -286,7 +327,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
-                disabled: Boolean(defaults?.toDate),
+                disabled: defaults?.isEdit ? false : Boolean(defaults?.toDate),
               },
             ],
           },
@@ -300,6 +341,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             type: "checkbox",
             key: "halfDay",
             label: "Half-Day Leave",
+            defaultValue: defaults?.halfDay,
             input: true,
             labelPosition: "bottom",
             validate: { required: !!mandatory.half_day },
@@ -340,6 +382,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                         customClass: "w-full",
                         format: "dd-MM-yyyy",
                         validate: { required: !!mandatory.half_day_date },
+                        defaultValue: defaults?.half_day_date ?? "",
                         datePicker: {
                           minDate: formData.fromDate
                             ? formData.fromDate
@@ -369,6 +412,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                         validate: {
                           required: !!mandatory.custom_second_half_day_date,
                         },
+                        defaultValue:
+                          defaults?.custom_second_half_day_date ?? "",
                         datePicker: {
                           minDate: formData.fromDate
                             ? formData.fromDate
@@ -392,6 +437,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         type: "textarea",
         key: "description",
         label: "Message",
+        defaultValue: defaults?.description ?? "",
         placeholder: "Enter the message for leave",
         rows: 3,
         validate: { required: !!mandatory.description, minLength: 3 },
@@ -403,6 +449,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         key: "custom_reason",
         label: "Reason",
         placeholder: "Select a reason",
+        defaultValue: defaults?.custom_reason ?? "",
         input: true,
         validate: { required: !!mandatory.custom_reason },
         data: {
@@ -418,6 +465,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       {
         type: "file",
         key: "custom_attachment",
+        defaultValue: defaults?.custom_attachment ?? [],
         label: "Attachment",
         input: true,
         storage: "customBase64",
@@ -493,12 +541,22 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         />
       </div>
       <div className="border-t border-gray-200 py-4 px-4">
-        <button
-          onClick={handleSubmit}
-          className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-        >
-          Submit Request
-        </button>
+        {!defaults?.isEdit ? (
+          <button
+            onClick={handleSubmit}
+            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
+            {createLeaveMutation.isPending ? "Processing..." : "Submit Request"}
+          </button>
+        ) : (
+          <button
+            onClick={handleUpdate}
+            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            disabled={editLeaveMutation.isPending}
+          >
+            {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
+          </button>
+        )}
       </div>
     </div>
   );

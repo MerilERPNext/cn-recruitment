@@ -22,11 +22,11 @@ import {
 } from "../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { useLoggedInUser } from "../hooks/useLoggedInUser";
-import { 
-  formatTimeSafe, 
+import {
+  formatTimeSafe,
   formatTo24HourTime,
   getDeviceLocation,
-  Coordinates 
+  Coordinates,
 } from "../utils/helperUtils";
 import {
   compareAsc,
@@ -63,7 +63,7 @@ export default function DesktopDashboard() {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
-  
+
   // New hooks for check-in/check-out functionality
   const { data: canShowClockIn } = useCanShowClockIn(
     currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
@@ -79,15 +79,12 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const { 
+  const {
     data: homeSummary,
     refetch: refetchHomeSummary,
-    isRefetching 
-  } = useHomeSummaryDetails(
-    currentEmployee?.user_id || "",
-    encodedFilters
-  );
-  
+    isRefetching,
+  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
+
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
@@ -362,7 +359,7 @@ export default function DesktopDashboard() {
   const handleHelpDeskClick = () => {
     window.location.href = "/helpdesk/my-tickets";
   };
-  
+
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   return (
@@ -559,9 +556,38 @@ export default function DesktopDashboard() {
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             {/* Tasks Awaiting */}
-            <TasksAwaiting/>
+            <TasksAwaiting />
             {/* Announcements */}
             <div className="bg-white rounded-lg mb-2 p-6 shadow-sm">
+              <div className="text-center">
+                <p className=" text-sm mb-2 tracking-wide text-left font-semibold text-gray-900">
+                  TOTAL HOURS WORKED
+                </p>
+                <p className="text-xl font-bold mb-1">{getTotalTime()}</p>
+                <p className="text-blue-600 text-sm mb-6">8h 30m target</p>
+
+                {/* Enhanced Progress Bar */}
+                <div className="relative px-4 mb-3">
+                  <div className="bg-blue-200 h-3 shadow-inner rounded-lg">
+                    <div
+                      className="bg-blue-700 h-3 transition-all duration-700 ease-out shadow-sm rounded-lg"
+                      style={{
+                        width: `${Math.min(getWorkPercentage(), 100)}%`,
+                      }}
+                    ></div>
+                  </div>
+                  {/* Progress indicator dots */}
+                  <div className="absolute top-1/2 left-0 w-full h-0.5 flex justify-between px-1 -translate-y-px">
+                    <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
+                    <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
+                    <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
+                    <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
+                  </div>
+                </div>
+                <p className="text-blue-600 text-sm font-medium">
+                  {getWorkPercentage()}% completed
+                </p>
+              </div>
               <h3 className="font-semibold text-gray-900 mb-4">
                 Daily Timings
               </h3>
@@ -600,7 +626,6 @@ export default function DesktopDashboard() {
                       </p>
                     </div>
                   </div>
-                  
                 </div>
 
                 <div className="bg-blue-50 p-4 rounded-lg border border-gray-200">
@@ -638,64 +663,81 @@ export default function DesktopDashboard() {
                     </div>
                   </div>
                 </div>
-                
               </div>
-              <div className="bg-white rounded-lg p-6 shadow-sm">
+              <div className="bg-white rounded-lg py-4 shadow-sm">
                 <h3 className="font-semibold text-gray-900 mb-4">
                   Attendance Actions
                 </h3>
                 <div className="space-y-3">
-                  {currentEmployee?.custom_allow_mobile_checkin && (
-                    <button
-                      onClick={() =>
-                        handleCheckInOut(
-                          isCurrentlyCheckedIn ? "checkOut" : "checkIn"
-                        )
-                      }
-                      className="w-full py-3 px-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
-                      disabled={checkInCheckOutPending || !employeeShift?.shift || isRefetching}
-                    >
-                      {checkInCheckOutPending || isRefetching ? (
-                        <span className="flex items-center justify-center">
-                          <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
-                          Processing...
-                        </span>
-                      ) : isCurrentlyCheckedIn ? (
-                        "Check Out"
-                      ) : (
-                        "Check In"
-                      )}
-                    </button>
-                  )}
+                  <div className="flex w-full gap-4">
+                    {currentEmployee?.custom_allow_mobile_checkin && (
+                      <button
+                        onClick={() =>
+                          handleCheckInOut(
+                            isCurrentlyCheckedIn ? "checkOut" : "checkIn"
+                          )
+                        }
+                        className="w-full py-3 px-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                        disabled={
+                          checkInCheckOutPending ||
+                          !employeeShift?.shift ||
+                          isRefetching
+                        }
+                      >
+                        {checkInCheckOutPending || isRefetching ? (
+                          <span className="flex items-center justify-center">
+                            <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
+                            Processing...
+                          </span>
+                        ) : isCurrentlyCheckedIn ? (
+                          "Check Out"
+                        ) : (
+                          "Check In"
+                        )}
+                      </button>
+                    )}
 
-                  {canShowClockIn?.can_show && (
-                    <button
-                      onClick={() =>
-                        handleClockInOut(
-                          isCurrentlyCheckedIn ? "clockOut" : "clockIn"
-                        )
-                      }
-                      className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                      disabled={clockInCheckOutPending || !employeeShift?.shift || isRefetching}
-                    >
-                      {clockInCheckOutPending || isRefetching ? (
-                        <span className="flex items-center justify-center">
-                          <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
-                          Processing...
-                        </span>
-                      ) : isCurrentlyCheckedIn ? (
-                        "Clock Out"
-                      ) : (
-                        "Clock In"
-                      )}
-                    </button>
-                  )}
-                  
+                    {canShowClockIn?.can_show && (
+                      <button
+                        onClick={() =>
+                          handleClockInOut(
+                            isCurrentlyCheckedIn ? "clockOut" : "clockIn"
+                          )
+                        }
+                        className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        disabled={
+                          clockInCheckOutPending ||
+                          !employeeShift?.shift ||
+                          isRefetching
+                        }
+                      >
+                        {clockInCheckOutPending || isRefetching ? (
+                          <span className="flex items-center justify-center">
+                            <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
+                            Processing...
+                          </span>
+                        ) : isCurrentlyCheckedIn ? (
+                          "Clock Out"
+                        ) : (
+                          "Clock In"
+                        )}
+                      </button>
+                    )}
+                  </div>
                   {/* Current Status Indicator */}
                   <div className="flex items-center justify-center gap-2 text-sm">
-                    <div className={`w-2 h-2 rounded-full ${isCurrentlyCheckedIn ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className={isCurrentlyCheckedIn ? 'text-green-600' : 'text-red-600'}>
-                      Currently {isCurrentlyCheckedIn ? 'Checked In' : 'Checked Out'}
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    ></div>
+                    <span
+                      className={
+                        isCurrentlyCheckedIn ? "text-green-600" : "text-red-600"
+                      }
+                    >
+                      Currently{" "}
+                      {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
                     </span>
                   </div>
                 </div>
@@ -710,37 +752,13 @@ export default function DesktopDashboard() {
               <div className="bg-white text-blue-600 p-6 rounded-lg shadow-sm">
                 <div className="text-center">
                   <p className=" text-sm mb-2 tracking-wide text-left font-semibold text-gray-900">
-                    TOTAL HOURS WORKED
+                    ANNOUNCEMENTS
                   </p>
-                  <p className="text-xl font-bold mb-1">{getTotalTime()}</p>
-                  <p className="text-blue-600 text-sm mb-6">8h 30m target</p>
-
-                  {/* Enhanced Progress Bar */}
-                  <div className="relative px-4 mb-3">
-                    <div className="bg-blue-200 h-3 shadow-inner rounded-lg">
-                      <div
-                        className="bg-blue-700 h-3 transition-all duration-700 ease-out shadow-sm rounded-lg"
-                        style={{
-                          width: `${Math.min(getWorkPercentage(), 100)}%`,
-                        }}
-                      ></div>
-                    </div>
-                    {/* Progress indicator dots */}
-                    <div className="absolute top-1/2 left-0 w-full h-0.5 flex justify-between px-1 -translate-y-px">
-                      <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
-                      <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
-                      <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
-                      <div className="w-0.5 h-0.5 bg-blue-300 opacity-60"></div>
-                    </div>
-                  </div>
-                  <p className="text-blue-600 text-sm font-medium">
-                    {getWorkPercentage()}% completed
-                  </p>
+                  <div className="text-gray-500">Coming Soon...</div>
                 </div>
               </div>
 
               {/* Check In/Out Buttons */}
-          
 
               {/* Helpdesk */}
               <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -828,7 +846,7 @@ export default function DesktopDashboard() {
             </div>
           </div>
           {/* Admin Apps */}
-         <MicroAppInDashboard/>
+          <MicroAppInDashboard />
         </div>
       </div>
     </div>
