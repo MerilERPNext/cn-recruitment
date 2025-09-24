@@ -36,9 +36,11 @@ export default function LoanList({ loans }: LoanListProps) {
     <div className="w-full">
       <div className="w-full max-h-full overflow-auto border border-gray-200 rounded-lg shadow-sm">
         {/* CHANGED: Using .table-header and .table-header-text */}
-        <div className="table-header grid grid-cols-11 sticky top-0 z-10">
+        <div className="table-header grid grid-cols-10 sticky top-0 z-10">
           <div className="table-header-text flex items-center">
-            <span className="px-2 rounded text-primary"><BsDashSquareFill /></span>
+            <span className="px-2 rounded text-primary">
+              <BsDashSquareFill />
+            </span>
           </div>
           <div className="table-header-text">Loan Type</div>
           <div className="table-header-text">EMI Type</div>
@@ -49,37 +51,53 @@ export default function LoanList({ loans }: LoanListProps) {
           <div className="table-header-text">Start Date</div>
           <div className="table-header-text">End Month</div>
           <div className="table-header-text">Status</div>
-          <div className="table-header-text">Action</div>
         </div>
 
         <div className="text-sm bg-white divide-y divide-gray-200">
           {loans.map((loan) => (
             <div key={loan.loan_name} className="border-b border-gray-200">
               {/* CHANGED: Using .data-row and .data-cell */}
-              <div className="data-row grid grid-cols-11">
+              <div className="data-row grid grid-cols-10">
                 <div className="data-cell flex items-center">
-                  <button onClick={() => toggleLoanExpansion(loan.loan_name)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded transition-colors text-gray-600 font-mono">
-                    {expandedLoan === loan.loan_name ? <IoIosArrowUp /> : <IoIosArrowDown />}
+                  <button
+                    onClick={() => toggleLoanExpansion(loan.loan_name)}
+                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded transition-colors text-gray-600 font-mono"
+                  >
+                    {expandedLoan === loan.loan_name ? (
+                      <IoIosArrowUp />
+                    ) : (
+                      <IoIosArrowDown />
+                    )}
                   </button>
                 </div>
                 <div className="data-cell">{loan.loan_type}</div>
                 <div className="data-cell">{loan.emi_type}</div>
-                <div className="data-cell font-medium">{formatCurrency(loan.loan_approved_amount)}</div>
-                <div className="data-cell">{loan.rate_of_interest}%</div>
-                <div className="data-cell">{loan.standard_interest}%</div>
-                <div className="data-cell">{loan.loan_tenure}</div>
-                <div className="data-cell">{loan.loan_start_date}</div>
+                <div className="data-cell font-medium">
+                  {loan.status === "Open"
+                    ? loan.loan_requested_amount
+                    : formatCurrency(loan.loan_approved_amount)}
+                </div>
+                <div className="data-cell">{loan.rate_of_interest || "0"}%</div>
                 <div className="data-cell">
-                  {loan.loan_start_date && loan.loan_tenure ? calculateEndMonth(loan.loan_start_date, loan.loan_tenure) : "-"}
+                  {loan.standard_interest || "0"}%
+                </div>
+                <div className="data-cell">{loan.loan_tenure || "0"}</div>
+                <div className="data-cell">{loan.loan_start_date || "-"}</div>
+                <div className="data-cell">
+                  {loan.loan_start_date && loan.loan_tenure
+                    ? calculateEndMonth(loan.loan_start_date, loan.loan_tenure)
+                    : "-"}
                 </div>
                 <div className="data-cell">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ${loan.status === "Open" ? "bg-green-100 text-green-800 border border-green-200" : "bg-gray-100 text-gray-800 border border-gray-200"}`}>
-                    {loan.status || "Open"}
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ${
+                      loan.status === "Open"
+                        ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                        : "bg-green-100 text-green-800 border border-green-200"
+                    }`}
+                  >
+                    {loan.status === "Open" ? "Pending" : loan.status}
                   </span>
-                </div>
-                <div className="data-cell">
-                  {/* CHANGED: Using new .btn-subtle class */}
-                  <button className="btn-subtle">Complete</button>
                 </div>
               </div>
 

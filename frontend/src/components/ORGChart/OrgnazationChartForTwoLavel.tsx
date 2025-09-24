@@ -86,7 +86,8 @@ const buildTwoLevelHierarchy = (
         title: parent.title || "",
         hasChildren: true,
         isExpanded: true,
-        onToggleExpand: () => {},
+        onToggleExpand: () => { },
+        showExpand: false
       },
     });
 

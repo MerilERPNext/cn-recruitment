@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import { CustomError } from "../../../../types/attendance";
 import DOMPurify from "dompurify";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 
 interface CreateLoanDialogProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export default function CreateLoanDialog({
   onClose,
 }: CreateLoanDialogProps) {
   const { isDesktop } = useScreenSize();
+    const { setRefetchAttendance } = useGlobalStore();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || ""
@@ -44,6 +46,9 @@ export default function CreateLoanDialog({
     mutation.mutate(submissionData as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
+        setTimeout(() => {
+          setRefetchAttendance(true);
+        }, 2000);
 
         toast.success("Added Loan Request successfully!");
       },

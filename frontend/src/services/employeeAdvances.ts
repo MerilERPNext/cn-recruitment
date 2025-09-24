@@ -25,10 +25,7 @@ export const getAllAdvancesTypes = async (): Promise<{
 };
 
 export const getAdvancesAmount = async (
-  employeeId: string,
-  advanceType?: string,
-  postingDate?: string
-): Promise<ApiAdvance[]> => {
+employeeId: string, advanceType?: string, postingDate?: string, company?: string,): Promise<ApiAdvance> => {
   if (!employeeId) throw new Error("Employee ID is required");
 
   const result = await FrappeAPI.callMethod(
@@ -37,16 +34,19 @@ export const getAdvancesAmount = async (
       employee: employeeId,
       advance_type: advanceType,
       posting_date: postingDate,
+      company: company,
     }
   );
 
-  return result as ApiAdvance[];
+  return result as ApiAdvance;
 };
+
+
 
 export const createAdvance = async (
   body: Record<string, unknown>
 ): Promise<boolean> => {
-  try {
+    try {
     const response = await FrappeAPI.createDocument("Employee Advance", body);
     return response as boolean;
   } catch (error) {

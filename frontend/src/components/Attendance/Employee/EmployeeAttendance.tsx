@@ -12,7 +12,10 @@ import {
   useGetAllEventsAndAttendance,
   usePlannedOvertimeAllowed,
 } from "../../../hooks/useAttendance";
-import { AttendanceRecord } from "../../../types/attendance";
+import {
+  AttendanceRecord,
+  MyAttendanceRequest,
+} from "../../../types/attendance";
 import { useNavigate } from "react-router";
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import { endOfMonth, format, startOfMonth, parse } from "date-fns";
@@ -26,7 +29,10 @@ import CreateOvertimeRequest from "../OvertimeRequests/CreateOvertimeRequest";
 import EmployeeAttendanceDetails from "./EmployeeAttendanceDetails";
 import Modal from "../../shared/Modal";
 import { useSidebar } from "../SidebarContext";
-import AttendanceRequest from "../AttendanceRequest/AttendanceRequest";
+import DataListView from "../../DataListView";
+import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import CardTable from "../../shared/CardTable";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -37,6 +43,7 @@ const EmployeeAttendance = () => {
     date: Date;
     status: string;
   } | null>(null);
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   // Update sidebar context when showDetailsFor changes
   useEffect(() => {
@@ -158,6 +165,20 @@ const EmployeeAttendance = () => {
   const [showLeaveRequest, setShowLeaveRequest] = useState<boolean>(false);
 
   const [openDrawer, setOpenDrawer] = useState<boolean>(false);
+
+  const CardSkeleton = () => (
+    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+      <div className="px-4 py-2">
+        <div className="flex items-center justify-between gap-1">
+          <div>
+            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+            <div className="h-3 w-24 bg-gray-300 rounded"></div>
+          </div>
+          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+        </div>
+      </div>
+    </div>
+  );
   type Status =
     | "present"
     | "absent"
@@ -494,11 +515,60 @@ const EmployeeAttendance = () => {
               View All
             </p>
           </div>
-          <AttendanceRequest
-            pageSize={5}
-            showPagination={false}
-            showAttendanceRequest={false}
-          />
+          <CardTable
+            titles={[
+              "Request Type",
+              "From Date",
+              "To Date",
+              "Status",
+              "Actions",
+            ]}
+          >
+            {currentEmployee?.employee ? (
+              <DataListView
+                queryKey="attendance-requests"
+                customAPI={{
+                  method:
+                    "cn_leave_shift_managment.api.get_open_approval_todos",
+                  params: {
+                    doctype: "Attendance Request",
+                    employee: currentEmployee?.employee,
+                  },
+                }}
+                defaultFilters={{
+                  status: "Pending",
+                }}
+                ItemComponent={(props: { item: MyAttendanceRequest }) => {
+                  return (
+                    <EmpAttendanceRequestCard
+                      type="pending"
+                      data={{
+                        ...props?.item,
+                      }}
+                    />
+                  );
+                }}
+                SkeletonComponent={CardSkeleton}
+                onItemClick={(data) => {
+                  console.log(data);
+                }}
+                onRefetchComplete={() => {
+                  setRefetchAttendance(false);
+                }}
+                refetchTrigger={refetchAttendance}
+                isSearch={false}
+                isFilter={false}
+                pageSize={5}
+                showRefreshButton={false}
+                orderBy="modified desc"
+                infiniteScroll={false}
+                loadMorePagination={true}
+                showPagination={false}
+              />
+            ) : (
+              <></>
+            )}
+          </CardTable>
         </div>
         {showReqAttendanceCorrection && (
           <AttndanceRequestForm
