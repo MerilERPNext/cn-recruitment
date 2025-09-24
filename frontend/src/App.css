@@ -117,3 +117,26 @@
 .address-form-container .choices__inner::after {
   display: none !important;
 }
+
+/* Removes scrollbar from the profile form */
+.profile-form .nav-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  gap: 32px !important;
+  width: 100%;
+}
+
+.profile-form .nav-tabs .nav-link.active {
+  color: rgb(15, 100, 238) !important;
+}
+.profile-form .nav-tabs {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.profile-form .nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+/* Removes scrollbar from the profile form */

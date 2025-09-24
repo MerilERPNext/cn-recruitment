@@ -124,7 +124,7 @@ const SearchMembersApp = () => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleMemberClick = (member: any) => {
-    navigate(`/webapp/id-card/${member.name}`);
+    navigate(`/webapp/employee-profile/${member.name}`);
     // Handle member selection/navigation
   };
 
