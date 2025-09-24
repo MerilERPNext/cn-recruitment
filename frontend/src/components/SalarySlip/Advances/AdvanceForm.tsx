@@ -10,7 +10,6 @@ import {
   useCreateNewAdvance,
   useEmployeeAdvancesAmount,
 } from "../../../hooks/useEmployeeAdvances";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
@@ -24,9 +23,7 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const { isDesktop } = useScreenSize();
   const { data: advanceType } = useAdvancesType();
   const { setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    user?.employee as string
-  );
+
 
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string>();
   const [postingDate] = useState<string>(
@@ -48,12 +45,12 @@ console.log("Advance Amount Data:=====================", advanceAmountData);
     if (
       advanceAmountData &&
       formAdvanceInstance.current &&
-      advanceAmountData[0]?.amount
+      advanceAmountData?.amount
     ) {
-      formAdvanceInstance.current.setComponentValue(
-        "advance_amount",
-        advanceAmountData[0].amount
-      );
+      // correct method
+      formAdvanceInstance.current.setValue({
+        advance_amount: advanceAmountData?.amount,
+      });
     }
   }, [advanceAmountData]);
 
@@ -81,9 +78,9 @@ console.log("Advance Amount Data:=====================", advanceAmountData);
         ...formData,
         custom_advance_type: selectedAdvanceType,
         advance_amount: formData.advance_amount,
-        company: currentEmployee?.company,
         applicant_type: "Employee",
-        applicant: currentEmployee?.employee,
+        company: user?.company,  
+        employee: user?.employee,
         advance_account: advanceAmountData?.advance_account,
         exchange_rate: 1.0,
       };
