@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FilterCondition } from "../types/frappe";
-import { GenderResponse } from "../types/profile";
+import { GenderResponse, IField } from "../types/profile";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const profileService = {
@@ -19,15 +18,15 @@ export const profileService = {
       throw error;
     }
   },
-  getAllEmployeeFields: async (filters?: FilterCondition[]): Promise<any> => {
+  getAllEmployeeFields: async (employee_id: string): Promise<IField[]> => {
     const response = await FrappeAPI.callMethod(
       "cn_hrms_core.cn_hrms_core.apis.employee_hierarchy.get_meta",
       {
         fields: ["*"],
-        filters: filters,
+        employee_id: employee_id,
         orderBy: "creation desc",
       }
     );
-    return response as any;
+    return response as IField[];
   },
 };

@@ -204,10 +204,12 @@ export const useGenderTypes = () => {
     staleTime: 1000 * 60 * 5,
   });
 };
-export const useGetAllEmployeeFields = () => {
+
+export const useGetAllEmployeeFields = (employee_id: string) => {
   return useQuery({
-    queryKey: ["all-emp-fields"],
-    queryFn: () => profileService.getAllEmployeeFields(),
+    queryKey: ["all-emp-fields", employee_id],
+    queryFn: () => profileService.getAllEmployeeFields(employee_id),
     staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
   });
 };
