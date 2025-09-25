@@ -22,8 +22,7 @@ const SearchCard: React.FC<SearchCardProps> = ({
           idx={idx}
           onRemove={onRemove}
           showRemove={showRemove}
-         
-          key={`${emp.name}-${idx}`}
+          key={emp.name}
           emp={emp}
         />
       ))}
