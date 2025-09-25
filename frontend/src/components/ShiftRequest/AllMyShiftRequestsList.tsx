@@ -33,10 +33,7 @@ const AllMyShiftRequestsList = () => {
     <>
       <div className="w-full mx-auto pt-2 px-6">
         {/* Pending */}
-        <HeaderBar
-        title="My Shift Requests"
-        onBack={() => navigate(-1)}
-      />
+        <HeaderBar title="My Shift Requests" onBack={() => navigate(-1)} />
         <CardTable
           titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
         >

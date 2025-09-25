@@ -8,11 +8,7 @@ import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { MyShiftRequest } from "../../types/shift";
 
-const EmpShiftRequestCard = ({
-  data,
-}: {
-  data: MyShiftRequest;
-}) => {
+const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchShift } = useGlobalStore();

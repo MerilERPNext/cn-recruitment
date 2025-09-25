@@ -54,8 +54,7 @@ export const GlobalStoreProvider = ({ children }: { children: ReactNode }) => {
       dispatch({ type: "TOGGLE_REFETCH_ATTENDANCE" }),
     setRefetchAttendance: (value: boolean) =>
       dispatch({ type: "SET_REFETCH_ATTENDANCE", payload: value }),
-   toggleRefetchShift: () =>
-      dispatch({ type: "TOGGLE_REFETCH_SHIFT" }),
+    toggleRefetchShift: () => dispatch({ type: "TOGGLE_REFETCH_SHIFT" }),
     setRefetchShift: (value: boolean) =>
       dispatch({ type: "SET_REFETCH_SHIFT", payload: value }),
   };

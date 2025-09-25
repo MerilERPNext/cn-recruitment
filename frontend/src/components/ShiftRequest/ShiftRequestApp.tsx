@@ -55,7 +55,6 @@ const ShiftRequestApp: React.FC = () => {
     }
   }, [location.pathname, navigate]);
 
-
   const handleTabChange = (tabKey: string) => {
     const tab = tabKey as TabName;
     setActiveTab(tab);

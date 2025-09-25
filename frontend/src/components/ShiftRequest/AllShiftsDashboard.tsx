@@ -240,7 +240,7 @@ const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name ?? ""
   );
   const { refetchShift, setRefetchShift } = useGlobalStore();
   const CardSkeleton = () => (
@@ -263,9 +263,7 @@ const AllMyShiftRequestsList = () => {
         {/* Pending */}
         <CardHeader
           title="My Shift Requests"
-          onSeeAll={() =>
-            navigate("/webapp/shift-request/shift-list")
-          }
+          onSeeAll={() => navigate("/webapp/shift-request/shift-list")}
         />
         <CardTable
           titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
