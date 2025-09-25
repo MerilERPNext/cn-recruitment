@@ -76,7 +76,7 @@ const TasksAwaiting: React.FC = () => {
   return (
     <div className="bg-white rounded-lg p-6 mb-2 shadow-sm">
       <h3 className="font-semibold text-gray-900 mb-4">Tasks Awaiting You</h3>
-      <div className="overflow-y-auto h-68">
+      <div className="overflow-y-auto h-[25rem]">
     <FrappeListView
         doctype="ToDo"
         ItemComponent={MyToDoItem}

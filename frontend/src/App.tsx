@@ -20,7 +20,7 @@ import { GlobalStoreProvider } from "./context/GlobalStoreContext";
 import { Formio } from "formiojs";
 import { preloadCriticalRoutes, preloadAdjacentRoutes } from "./utils/routePreloader";
 
-Formio.setBaseUrl("/");
+Formio.setBaseUrl(window.location.origin);
 
 const App: React.FC = () => {
   const { currentUser, isLoading, isValidating } = useFrappeAuth();
