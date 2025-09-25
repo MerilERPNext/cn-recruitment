@@ -8,17 +8,28 @@ import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 import type { ShiftRequestFormData, FormioSubmission } from "../../types/shift";
 import { Formio } from "formiojs";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
 }
 
-const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
+const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
+  onClose,
+}) => {
   const formRef = useRef<any>(null);
-
-  const { data: shiftTypes, isLoading: shiftTypesLoading, error: shiftTypesError } = useShiftTypes();
+  const { setRefetchShift } = useGlobalStore();
+  const {
+    data: shiftTypes,
+    isLoading: shiftTypesLoading,
+    error: shiftTypesError,
+  } = useShiftTypes();
   const { mutate: createShiftRequest } = useCreateShiftRequest();
-  const { data: employeeDetails, isLoading: employeeLoading, error: employeeError } = useCurrentEmployee();
+  const {
+    data: employeeDetails,
+    isLoading: employeeLoading,
+    error: employeeError,
+  } = useCurrentEmployee();
 
   const isLoading = shiftTypesLoading || employeeLoading;
   const error = shiftTypesError || employeeError;
@@ -60,6 +71,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({ onClose }
 
       createShiftRequest(payload, {
         onSuccess: () => {
+          setRefetchShift(true);
           if (onClose) onClose();
           // Let the mutation's built-in success toast handle the message
         },
@@ -124,10 +136,11 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({ onClose }
         input: true,
         placeholder: "Select shift type",
         data: {
-          values: shiftTypes?.data?.map((s: any) => ({
-            label: s?.name,
-            value: s?.name,
-          })) || [],
+          values:
+            shiftTypes?.data?.map((s: any) => ({
+              label: s?.name,
+              value: s?.name,
+            })) || [],
         },
         validate: { required: true },
       },
@@ -186,8 +199,16 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({ onClose }
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5 text-red-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div>
@@ -195,13 +216,18 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({ onClose }
                   Unable to Load Form Data
                 </h3>
                 <div className="mt-2 text-sm text-red-700">
-                  <p>There was an error loading the required data for this form. This could be due to:</p>
+                  <p>
+                    There was an error loading the required data for this form.
+                    This could be due to:
+                  </p>
                   <ul className="list-disc list-inside mt-1 space-y-1">
                     <li>Network connectivity issues</li>
                     <li>Missing employee information</li>
                     <li>Server temporarily unavailable</li>
                   </ul>
-                  <p className="mt-2">Please try again or contact support if the problem persists.</p>
+                  <p className="mt-2">
+                    Please try again or contact support if the problem persists.
+                  </p>
                 </div>
               </div>
             </div>
@@ -236,7 +262,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({ onClose }
             form={formSchema}
             onFormReady={(instance: Formio) => {
               formRef.current = instance;
-            }} options={{
+            }}
+            options={{
               builder: { styles: false },
               submitButton: false,
               formClass: "space-y-6",

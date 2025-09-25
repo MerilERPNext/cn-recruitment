@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ApprovalList from "../shared/ApprovalList";
@@ -6,6 +6,13 @@ import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
 import FrappeListView from "../ListView";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import useCurrentUser from "../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { MyShiftRequest } from "../../types/shift";
+import EmpShiftRequestCard from "./EmpShiftRequestCard";
+import DataListView from "../DataListView";
+import CardTable from "../shared/CardTable";
 
 // Interface for Shift Assignment (Team Shifts from Frappe)
 export interface ShiftAssignment {
@@ -76,7 +83,6 @@ const MyShiftItem: React.FC<{
   index?: number;
   doctype: string;
 }> = ({ item }) => {
-
   const getShiftStatus = (startDate: string, endDate: string): string => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -176,14 +182,21 @@ const TeamShiftItem: React.FC<{
           </h3>
         </div>
         <div className="text-xs text-gray-600">
-          <p>Shift: <span className="font-medium">{item.shift_type}</span></p>
-          <p>{formatToIndianDate(item.start_date)} - {formatToIndianDate(item.end_date)}</p>
+          <p>
+            Shift: <span className="font-medium">{item.shift_type}</span>
+          </p>
+          <p>
+            {formatToIndianDate(item.start_date)} -{" "}
+            {formatToIndianDate(item.end_date)}
+          </p>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
         <StatusBadge status={item.status} />
-        <span className="flex items-center justify-center">{getStatusIcon(item.status)}</span>
+        <span className="flex items-center justify-center">
+          {getStatusIcon(item.status)}
+        </span>
       </div>
     </div>
   );
@@ -205,7 +218,15 @@ const TeamShiftList = () => {
           pageSize={3}
           isSearch={false}
           defaultFields={[
-            "name", "employee", "employee_name", "shift_type", "start_date", "end_date", "status", "docstatus", "creation",
+            "name",
+            "employee",
+            "employee_name",
+            "shift_type",
+            "start_date",
+            "end_date",
+            "status",
+            "docstatus",
+            "creation",
           ]}
           searchFields={["employee", "employee_name", "shift_type", "status"]}
           showPagination={false}
@@ -215,34 +236,132 @@ const TeamShiftList = () => {
   );
 };
 
+const AllMyShiftRequestsList = () => {
+  const navigate = useNavigate();
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name ?? ""
+  );
+  const { refetchShift, setRefetchShift } = useGlobalStore();
+  const CardSkeleton = () => (
+    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+      <div className="px-4 py-2">
+        <div className="flex items-center justify-between gap-1">
+          <div>
+            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+            <div className="h-3 w-24 bg-gray-300 rounded"></div>
+          </div>
+          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <div className="bg-white p-6 rounded-lg mt-6">
+        {/* Pending */}
+        <CardHeader
+          title="My Shift Requests"
+          onSeeAll={() => navigate("/webapp/shift-request/shift-list")}
+        />
+        <CardTable
+          titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
+        >
+          {currentEmployee?.employee ? (
+            <DataListView
+              queryKey="shift-requests"
+              customAPI={{
+                method: "cn_leave_shift_managment.api.get_open_approval_todos",
+                params: {
+                  doctype: "Shift Request",
+                  employee: currentEmployee?.employee,
+                },
+              }}
+              ItemComponent={(props: { item: MyShiftRequest }) => {
+                return (
+                  <EmpShiftRequestCard
+                    data={{
+                      ...props?.item,
+                    }}
+                  />
+                );
+              }}
+              SkeletonComponent={CardSkeleton}
+              onItemClick={(data) => {
+                console.log(data);
+              }}
+              onRefetchComplete={() => {
+                setRefetchShift(false);
+              }}
+              refetchTrigger={refetchShift}
+              isSearch={false}
+              isFilter={false}
+              pageSize={4}
+              showRefreshButton={false}
+              orderBy="modified desc"
+              infiniteScroll={false}
+              loadMorePagination={true}
+              showPagination={false}
+            />
+          ) : (
+            <></>
+          )}
+        </CardTable>
+      </div>
+    </>
+  );
+};
+
 export default function AllShiftsDashboard() {
   const navigate = useNavigate();
+  const [refetch, setRefetch] = useState(false);
+  const { refetchShift } = useGlobalStore();
   return (
     <div className="bg-gray-100 min-h-screen font-sans text-sm">
       <main className="p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 gap-6">
+          <div>
             <Card>
               <CardHeader
                 title="Shift Change Request"
-                onSeeAll={() => navigate("/webapp/shift-request/shift-change-request")}
+                onSeeAll={() =>
+                  navigate("/webapp/shift-request/shift-change-request")
+                }
               />
-              <div className="border border-gray-200 rounded-lg">
-                <div className="overflow-x-auto bg-white shadow-sm">
+              <div className="border border-gray-200 rounded-lg overflow-x-auto" >
+                <div className="overflow-x-auto bg-white shadow-sm w-full">
                   {/* CHANGED: Using .table-header and .table-header-text */}
-                  <div className="table-header grid grid-cols-7 gap-4 rounded-t-lg">
-                    <span className="table-header-text flex items-center">SELECT</span>
-                    <span className="table-header-text flex items-center">EMPLOYEE</span>
-                    <span className="table-header-text flex items-center">CREATION DATE</span>
-                    <span className="table-header-text flex items-center">STATUS</span>
-                    <span className="table-header-text flex items-center">PRIORITY</span>
-                    <span className="table-header-text flex items-center">DUE DATE</span>
-                    <span className="table-header-text flex items-center justify-center">ACTIONS</span>
+                  <div className="table-header grid grid-cols-7 gap-4 rounded-t-lg w-full">
+                    <span className="table-header-text flex items-center">
+                      SELECT
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      EMPLOYEE
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      CREATION DATE
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      STATUS
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      PRIORITY
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      DUE DATE
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      ACTIONS
+                    </span>
                   </div>
                 </div>
                 <ApprovalList
                   doctype={"Shift Request"}
-                  pageSize={10}
+                  pageSize={4}
+                  showPagination={false}
+                  refetch={refetchShift || refetch}
+                  onApprovalRefetchComplete={() => setRefetch(false)}
                   renderCardContent={(item) => (
                     <ApprovalRejectionQueue
                       isSelected={item?.isSelected}
@@ -254,8 +373,10 @@ export default function AllShiftsDashboard() {
                 />
               </div>
             </Card>
+            
+            <AllMyShiftRequestsList />
           </div>
-          <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6 mb-14">
             <MyShifts />
             <TeamShiftList />
           </div>

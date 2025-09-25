@@ -76,12 +76,13 @@ const TasksAwaiting: React.FC = () => {
   return (
     <div className="bg-white rounded-lg p-6 mb-2 shadow-sm">
       <h3 className="font-semibold text-gray-900 mb-4">Tasks Awaiting You</h3>
-      <FrappeListView
+      <div className="overflow-y-auto h-68">
+    <FrappeListView
         doctype="ToDo"
         ItemComponent={MyToDoItem}
         isSearch={false}
         orderBy="date"
-        pageSize={3}
+        defaultFilters={{ status: "Open" }} 
         defaultFields={[
           "name",
           "description",
@@ -94,6 +95,8 @@ const TasksAwaiting: React.FC = () => {
         searchFields={["description", "owner", "status"]}
         showPagination={false}
       />
+      </div>
+      
     </div>
   );
 };
