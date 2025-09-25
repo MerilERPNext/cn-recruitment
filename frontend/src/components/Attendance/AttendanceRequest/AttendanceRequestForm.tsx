@@ -194,11 +194,23 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       }
       if (employeeShift) {
         const shiftValue = employeeShift.shift || "Not Assigned";
+        const shiftStartValue = employeeShift.start_time || "Not Assigned";
+        const shiftEndValue = employeeShift.end_time || "Not Assigned";
         const shiftComponent =
           formAddressInstance.current.getComponent("current_shift");
-        if (shiftComponent) {
+        const shiftStartComponent =
+          formAddressInstance.current.getComponent("shift_start");
+        const shiftEndComponent =
+          formAddressInstance.current.getComponent("shift_end");
+        if (shiftComponent && shiftEndComponent && shiftStartComponent) {
           shiftComponent.setValue(shiftValue, { noUpdateEvent: true });
+          shiftStartComponent.setValue(shiftStartValue, {
+            noUpdateEvent: true,
+          });
+          shiftEndComponent.setValue(shiftEndValue, { noUpdateEvent: true });
           shiftComponent.redraw();
+          shiftEndComponent.redraw();
+          shiftStartComponent.redraw();
         }
       }
     }
@@ -215,7 +227,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       refetchShift();
     }
   }, [employeeIdToQuery, refetchShift]);
-
   const baseFormComponents = (isForOthers: boolean) => {
     const components = [
       {
@@ -328,6 +339,56 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             value: employeeShift?.shift || "Not Assigned",
             clearOnHide: false,
           },
+
+          {
+            type: "columns",
+            key: "dateColumns",
+            columns: [
+              {
+                width: 6,
+                components: [
+                  {
+                    type: "textfield",
+                    key: "shift_start",
+                    label: "Shift Start",
+                    enableDate: true,
+                    enableTime: false,
+                    placeholder:
+                      isForOthers && !selectedEmployee
+                        ? "Select an employee first"
+                        : "Loading shift information...",
+                    input: true,
+                    defaultValue: employeeShift?.start_time || "Not Assigned",
+                    value: employeeShift?.start_time || "Not Assigned",
+                    customClass: "mb-4",
+                    disabled: true,
+                  },
+                ],
+              },
+              {
+                width: 6,
+                components: [
+                  {
+                    type: "textfield",
+                    key: "shift_end",
+                    label: "Shift End",
+                    placeholder:
+                      isForOthers && !selectedEmployee
+                        ? "Select an employee first"
+                        : "Loading shift information...",
+                    enableDate: true,
+                    enableTime: false,
+                    defaultValue: employeeShift?.end_time || "Not Assigned",
+                    value: employeeShift?.end_time || "Not Assigned",
+                    input: true,
+                    customClass: "mb-4",
+                    disabled: true,
+                  },
+                ],
+              },
+            ],
+          },
+
           {
             label: "From Date",
             key: "from_date",

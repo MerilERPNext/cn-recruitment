@@ -1,10 +1,23 @@
 import { format } from "date-fns";
+import { useState, useRef } from "react";
 import { EmployeeStatus, EmployeeStatusType } from "../../../types/attendance";
 import Avatar from "../../shared/Avatar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { Edit, EllipsisVertical } from "lucide-react";
+import ContextualPopup from "../../shared/molecules/ContextualPopup";
+import { EditAttendance } from "./EditAttendance";
 
-const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
+const EmployeeStatusCard = ({
+  data,
+  onRefetchData,
+}: {
+  data: EmployeeStatus;
+  onRefetchData?: (() => void) | null;
+}) => {
   const { isDesktop } = useScreenSize();
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [editAttendance, setEditAttendance] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const getStatusIndicatorColor = (
     status:
@@ -115,8 +128,14 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
             </p>
           </div>
         </div>
+        <button
+          ref={buttonRef}
+          onClick={() => setIsPopupOpen(true)}
+          className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          <EllipsisVertical size={18} />
+        </button>
       </div>
-
       {(data?.in_time || data?.out_time) && (
         <div
           className={`mb-2 w-full px-4 py-3 rounded-xl flex justify-between ${
@@ -148,6 +167,33 @@ const EmployeeStatusCard = ({ data }: { data: EmployeeStatus }) => {
           </div>
         </div>
       )}
+      <EditAttendance
+        employeeId={data?.employee}
+        employeeName={data?.employee_name}
+        onClose={() => setEditAttendance(false)}
+        open={editAttendance}
+        requestId={data?.name}
+        onRefetchData={onRefetchData}
+      />
+      <ContextualPopup
+        isOpen={isPopupOpen}
+        onClose={() => {
+          setIsPopupOpen(false);
+        }}
+        triggerRef={buttonRef}
+      >
+        <div className="p-1">
+          <button
+            onClick={() => {
+              setEditAttendance(true);
+            }}
+            className="w-full text-left font-md px-4 py-2 text-sm hover:bg-gray-100 transition-colors flex gap-2 justify-start items-center"
+          >
+            <Edit size={16} />
+            <span>Edit</span>
+          </button>
+        </div>
+      </ContextualPopup>
     </div>
   );
 };

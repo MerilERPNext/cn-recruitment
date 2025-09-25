@@ -10,8 +10,13 @@ import type {
   EmployeeCheckInLog,
   EmployeeShift,
   EmployeeShiftSummary,
+  IPRestrictionsT,
+  Policy,
   PolicyQuestion,
+  ShiftBlock,
+  ShiftLocationT,
   UserRoles,
+  WeeklyOff,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
 
@@ -103,6 +108,18 @@ export const attendanceService = {
     try {
       const response = await FrappeAPI.callMethod(
         "cn_leave_shift_managment.api.create_employee_checkin",
+        body
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
+  },
+  editAttendance: async (body: Record<string, unknown>): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.attendance.delete_and_recreate_attendance_from_leave_application",
         body
       );
       return response as boolean;
@@ -319,6 +336,16 @@ export const attendanceService = {
     });
     return response.data as AttendanceRequest[];
   },
+  getAttendanceById: async (
+    filters?: FilterCondition[]
+  ): Promise<Attendance[]> => {
+    const response = await FrappeAPI.getDocumentList("Attendance", {
+      fields: ["*"],
+      filters: filters,
+      orderBy: "creation desc",
+    });
+    return response.data as Attendance[];
+  },
   getUserRoles: async (filters?: FilterCondition[]): Promise<UserRoles> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_user_roles",
@@ -329,13 +356,6 @@ export const attendanceService = {
       }
     );
     return response as UserRoles;
-  },
-
-  getAttendanceById: async (id: string): Promise<Attendance> => {
-    if (!id) throw new Error("Attendance ID is required");
-    const result = await FrappeAPI.getDocument("Attendance", id);
-    if (!result) throw new Error("Attendance record not found");
-    return result as Attendance;
   },
 
   getAttendance: async (filters?: FilterCondition[]): Promise<Attendance[]> => {
@@ -412,6 +432,24 @@ export const attendanceService = {
       throw error;
     }
   },
+  addAttendanceAssignment: async (
+    empId: string,
+    data: object
+  ): Promise<boolean> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.assign_shift",
+        {
+          employees: JSON.stringify([empId]),
+          assignment_data: JSON.stringify(data),
+        }
+      );
+      return res as boolean;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
+  },
   plannedOvertimeRequestAttachments: async (empId: string) => {
     return FrappeAPI.callMethod(
       "cn_leave_shift_managment.cn_leave_shift_managment.doctype.planned_overtime_request.planned_overtime_request.attest",
@@ -435,4 +473,64 @@ export const attendanceService = {
       throw error;
     }
   },
+};
+
+export const getAllAttendancePolicies = async (
+  filters?: FilterCondition[]
+): Promise<{ data: Policy[] }> => {
+  const res = await FrappeAPI.getDocumentList("Attendance Policies", {
+    filters: filters,
+    orderBy: "creation desc",
+  });
+  return {
+    data: res.data as Policy[], // Return the expected format
+  };
+};
+export const getAllWeekOffs = async (
+  filters?: FilterCondition[]
+): Promise<{ data: WeeklyOff[] }> => {
+  const res = await FrappeAPI.getDocumentList("Week Off", {
+    filters: filters,
+    fields: ["*"],
+    orderBy: "creation desc",
+  });
+  return {
+    data: res.data as WeeklyOff[], // Return the expected format
+  };
+};
+export const getAllIpRestrictions = async (
+  filters?: FilterCondition[]
+): Promise<{ data: IPRestrictionsT[] }> => {
+  const res = await FrappeAPI.getDocumentList("IP Restrictions", {
+    filters: filters,
+    fields: ["*"],
+    orderBy: "creation desc",
+  });
+  return {
+    data: res.data as IPRestrictionsT[], // Return the expected format
+  };
+};
+export const getAllShiftLocations = async (
+  filters?: FilterCondition[]
+): Promise<{ data: ShiftLocationT[] }> => {
+  const res = await FrappeAPI.getDocumentList("Shift Location", {
+    filters: filters,
+    fields: ["*"],
+    orderBy: "creation desc",
+  });
+  return {
+    data: res.data as ShiftLocationT[], // Return the expected format
+  };
+};
+export const getAllShiftBlocks = async (
+  filters?: FilterCondition[]
+): Promise<{ data: ShiftBlock[] }> => {
+  const res = await FrappeAPI.getDocumentList("Shift Blocks", {
+    filters: filters,
+    fields: ["*"],
+    orderBy: "creation desc",
+  });
+  return {
+    data: res.data as ShiftBlock[], // Return the expected format
+  };
 };

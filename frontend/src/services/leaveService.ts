@@ -1,5 +1,6 @@
 import FrappeAPI from "../utils/frappeAPI";
 import type {
+  ButtonStatusResponse,
   LeaveFieldResponse,
   LeaveReason,
   LeaveRequest,
@@ -138,5 +139,96 @@ export const leaveService = {
       "cn_leave_shift_managment.api.get_leave_application_reasons"
     );
     return response as LeaveReason[];
+  },
+
+  getButtonsStatus: async (employee: string): Promise<ButtonStatusResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.custom_apis.get_leave_application_buttons",
+      {
+        employee,
+      }
+    );
+    return response as ButtonStatusResponse;
+  },
+
+  replaceLeave: async (params: {
+    leave_application: string;
+    new_leave_type?: string;
+    first_half_leave_type?: string;
+    second_half_leave_type?: string;
+  }) => {
+    const {
+      leave_application,
+      new_leave_type,
+      first_half_leave_type,
+      second_half_leave_type,
+    } = params;
+
+    if (!leave_application) {
+      throw new Error("leave_application is required");
+    }
+
+    if (new_leave_type && !first_half_leave_type && !second_half_leave_type) {
+      return FrappeAPI.callMethod(
+        "cn_leave_shift_managment.custom_apis.replace_leave_application",
+        {
+          leave_application,
+          new_leave_type,
+        }
+      );
+    }
+
+    if (first_half_leave_type && second_half_leave_type && !new_leave_type) {
+      return FrappeAPI.callMethod(
+        "cn_leave_shift_managment.custom_apis.replace_half_day_leave_application",
+        {
+          leave_application,
+          first_half_leave_type,
+          second_half_leave_type,
+        }
+      );
+    }
+
+    throw new Error(
+      "Invalid parameters provided. Pass either new_leave_type OR both first_half_leave_type and second_half_leave_type."
+    );
+  },
+
+  revokeApproved: async (leave_application_name: string) => {
+    if (!leave_application_name) {
+      throw new Error("leave_application_name is required");
+    }
+
+    return FrappeAPI.callMethod(
+      "cn_leave_shift_managment.custom_apis.force_cancel_leave_application",
+      {
+        leave_application_name,
+      }
+    );
+  },
+
+  editApproved: async (
+    leave_application: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    new_values: string | Record<string, any>
+  ) => {
+    if (!leave_application) {
+      throw new Error("leave_application is required");
+    }
+
+    if (!new_values) {
+      throw new Error("new_values is required");
+    }
+
+    const formattedValues =
+      typeof new_values === "string" ? new_values : JSON.stringify(new_values);
+
+    return FrappeAPI.callMethod(
+      "cn_leave_shift_managment.custom_apis.handle_edit_approved_application",
+      {
+        leave_application,
+        new_values: formattedValues,
+      }
+    );
   },
 };

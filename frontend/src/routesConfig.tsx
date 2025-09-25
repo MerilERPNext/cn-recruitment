@@ -11,6 +11,7 @@ import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
 import AllAttendanceRequest from "./components/Attendance/AttendanceRequest/AllAttendanceRequests";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
+import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -563,6 +564,15 @@ export const routesConfig: AppRoute[] = [
       {
         path: "leave-requests/pending",
         element: <PendingTeamLeaves />,
+      },
+      //my requests view all
+      {
+        path: "requests/pendings",
+        element: <AllLeaveRequest />,
+      },
+      {
+        path: "requests/actioned",
+        element: <AllLeaveRequest />,
       },
       {
         path: "compensatory-request",

@@ -7,6 +7,11 @@ export interface LeaveRequest {
   employee_name: string;
   description?: string;
   department?: string;
+  custom_reason?: string;
+  half_day: boolean;
+  custom_attachment?: { url: string }[];
+  half_day_date?: string;
+  custom_second_half_day_date?: string;
 }
 
 export interface TeamLeaveRequest {
@@ -148,6 +153,7 @@ export interface LeaveReason {
   docstatus: number;
 }
 
+//Leave requestType
 export interface MyLeaveRequestType {
   reference_document: LeaveRequest;
   allocated_to: string;
@@ -156,3 +162,98 @@ export interface MyLeaveRequestType {
   username: string;
   reference_name: string;
 }
+
+// types/leaves.ts
+
+export interface LeaveApplication {
+  name: string;
+  owner: string;
+  creation: string; // ISO datetime
+  modified: string; // ISO datetime
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  naming_series: string;
+  employee: string;
+  employee_name: string;
+  leave_type: string;
+  company: string;
+  department: string;
+  custom_optional_holidays?: string | null;
+  custom_optionall_holidays?: string | null;
+  from_date: string;
+  to_date: string;
+  half_day: number;
+  half_day_date: string | null;
+  custom_second_half_day_date?: string | null;
+  custom_half_day_type?: string | null;
+  total_leave_days: number;
+  custom_reason?: string | null;
+  description?: string | undefined;
+  custom_attachment?: string | null;
+  leave_balance: number;
+  custom_compensatory_leave_request?: string | null;
+  custom_auto_created: number;
+  custom_auto_creation_type?: string | null;
+  custom_pay_rate: number;
+  leave_approver?: string | null;
+  leave_approver_name?: string | null;
+  follow_via_email: number;
+  posting_date: string;
+  status: string;
+  salary_slip?: string | null;
+  color?: string | null;
+  letter_head?: string | null;
+  amended_from?: string | null;
+  doctype: "Leave Application";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  comp_off_consumption?: any[];
+}
+
+// Optional: props for cards if you want LeaveCard similar to EmpAttendanceRequestCard
+export interface LeaveCardProps {
+  data: MyLeaveRequestType;
+  columns?: number;
+  buttonStatus?: ButtonStatusResponse;
+}
+
+//button status response
+export interface ButtonStatusResponse {
+  leave_applications: {
+    name: string;
+    employee: string;
+    leave_type: string;
+    from_date: string;
+    to_date: string;
+    status: "Open" | "Approved" | "Rejected" | "Cancelled"; // you can extend if API has more
+    docstatus: number;
+    custom_auto_created: number;
+
+    show_replace_button: boolean;
+    replace_reason: string;
+
+    show_edit_button: boolean;
+    edit_reason: string;
+
+    show_revoke_button: boolean;
+    revoke_reason: string;
+  }[];
+}
+
+export type EditApprovedLeavePayload = {
+  leave_application: string;
+  new_values: {
+    leave_type?: string;
+    from_date?: string;
+    to_date?: string;
+    half_day?: 0 | 1;
+    half_day_date?: string;
+    custom_half_day_type?: "First Half" | "Second Half";
+    custom_second_half_day_date?: string;
+    description?: string;
+    custom_reason?: string;
+    custom_attachment?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any;
+  };
+};
