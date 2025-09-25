@@ -83,7 +83,6 @@ const MyShiftItem: React.FC<{
   index?: number;
   doctype: string;
 }> = ({ item }) => {
-
   const getShiftStatus = (startDate: string, endDate: string): string => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -183,14 +182,21 @@ const TeamShiftItem: React.FC<{
           </h3>
         </div>
         <div className="text-xs text-gray-600">
-          <p>Shift: <span className="font-medium">{item.shift_type}</span></p>
-          <p>{formatToIndianDate(item.start_date)} - {formatToIndianDate(item.end_date)}</p>
+          <p>
+            Shift: <span className="font-medium">{item.shift_type}</span>
+          </p>
+          <p>
+            {formatToIndianDate(item.start_date)} -{" "}
+            {formatToIndianDate(item.end_date)}
+          </p>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
         <StatusBadge status={item.status} />
-        <span className="flex items-center justify-center">{getStatusIcon(item.status)}</span>
+        <span className="flex items-center justify-center">
+          {getStatusIcon(item.status)}
+        </span>
       </div>
     </div>
   );
@@ -212,7 +218,15 @@ const TeamShiftList = () => {
           pageSize={3}
           isSearch={false}
           defaultFields={[
-            "name", "employee", "employee_name", "shift_type", "start_date", "end_date", "status", "docstatus", "creation",
+            "name",
+            "employee",
+            "employee_name",
+            "shift_type",
+            "start_date",
+            "end_date",
+            "status",
+            "docstatus",
+            "creation",
           ]}
           searchFields={["employee", "employee_name", "shift_type", "status"]}
           showPagination={false}
@@ -245,22 +259,14 @@ const MyShiftChangesRequest = () => {
 
   return (
     <>
-      <div className="bg-white px-2 pb-4 rounded-lg mt-6">
+      <div className="bg-white p-6 rounded-lg mt-6">
         {/* Pending */}
-
-        <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800 pb-1">
-            My Shift Requests
-          </h2>
-          <button
-            onClick={() => {
-              navigate("/webapp/shift-request/shift-change-request");
-            }}
-            className="text-blue-600 hover:text-blue-800 font-medium"
-          >
-            View All
-          </button>
-        </div>
+        <CardHeader
+          title="My Shift Requests"
+          onSeeAll={() =>
+            navigate("/webapp/shift-request/shift-list")
+          }
+        />
         <CardTable
           titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
         >
@@ -309,7 +315,6 @@ const MyShiftChangesRequest = () => {
   );
 };
 
-
 export default function AllShiftsDashboard() {
   const navigate = useNavigate();
   return (
@@ -320,19 +325,35 @@ export default function AllShiftsDashboard() {
             <Card>
               <CardHeader
                 title="Shift Change Request"
-                onSeeAll={() => navigate("/webapp/shift-request/shift-change-request")}
+                onSeeAll={() =>
+                  navigate("/webapp/shift-request/shift-change-request")
+                }
               />
               <div className="border border-gray-200 rounded-lg">
                 <div className="overflow-x-auto bg-white shadow-sm">
                   {/* CHANGED: Using .table-header and .table-header-text */}
                   <div className="table-header grid grid-cols-7 gap-4 rounded-t-lg">
-                    <span className="table-header-text flex items-center">SELECT</span>
-                    <span className="table-header-text flex items-center">EMPLOYEE</span>
-                    <span className="table-header-text flex items-center">CREATION DATE</span>
-                    <span className="table-header-text flex items-center">STATUS</span>
-                    <span className="table-header-text flex items-center">PRIORITY</span>
-                    <span className="table-header-text flex items-center">DUE DATE</span>
-                    <span className="table-header-text flex items-center">ACTIONS</span>
+                    <span className="table-header-text flex items-center">
+                      SELECT
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      EMPLOYEE
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      CREATION DATE
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      STATUS
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      PRIORITY
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      DUE DATE
+                    </span>
+                    <span className="table-header-text flex items-center">
+                      ACTIONS
+                    </span>
                   </div>
                 </div>
                 <ApprovalList
