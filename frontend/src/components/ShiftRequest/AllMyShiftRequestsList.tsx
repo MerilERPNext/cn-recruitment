@@ -67,7 +67,6 @@ const AllMyShiftRequestsList = () => {
               refetchTrigger={refetchShift}
               isSearch={false}
               isFilter={false}
-              pageSize={10}
               showRefreshButton={false}
               orderBy="modified desc"
               infiniteScroll={false}

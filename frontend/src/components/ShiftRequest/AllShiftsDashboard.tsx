@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ApprovalList from "../shared/ApprovalList";
@@ -315,6 +315,8 @@ const AllMyShiftRequestsList = () => {
 
 export default function AllShiftsDashboard() {
   const navigate = useNavigate();
+  const [refetch, setRefetch] = useState(false);
+  const { refetchShift } = useGlobalStore();
   return (
     <div className="bg-gray-100 min-h-screen font-sans text-sm">
       <main className="p-4 sm:p-6 lg:p-8">
@@ -358,6 +360,8 @@ export default function AllShiftsDashboard() {
                   doctype={"Shift Request"}
                   pageSize={4}
                   showPagination={false}
+                  refetch={refetchShift || refetch}
+                  onApprovalRefetchComplete={() => setRefetch(false)}
                   renderCardContent={(item) => (
                     <ApprovalRejectionQueue
                       isSelected={item?.isSelected}

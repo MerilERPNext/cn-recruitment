@@ -9,7 +9,7 @@ import { useGlobalStore } from "../../hooks/useGlobalStore";
 const AllShiftChangeRequestsList: React.FC = () => {
   const navigate = useNavigate();
   const [refetch, setRefetch] = useState(false);
-  const { refetchAttendance } = useGlobalStore();
+  const { refetchShift } = useGlobalStore();
 
   return (
     <div className="w-full mx-auto ">
@@ -44,7 +44,8 @@ const AllShiftChangeRequestsList: React.FC = () => {
           <ApprovalList
             doctype={"Shift Request"}
             pageSize={10}
-            refetch={refetchAttendance || refetch}
+            showPagination={true}
+            refetch={refetchShift || refetch}
             onApprovalRefetchComplete={() => setRefetch(false)}
             renderCardContent={(item) => (
               <ApprovalRejectionQueue
