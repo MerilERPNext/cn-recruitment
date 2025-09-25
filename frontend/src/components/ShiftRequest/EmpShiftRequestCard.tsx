@@ -10,10 +10,8 @@ import { MyShiftRequest } from "../../types/shift";
 
 const EmpShiftRequestCard = ({
   data,
-  columns = 5,
 }: {
   data: MyShiftRequest;
-  columns?: number;
 }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
@@ -52,10 +50,15 @@ const EmpShiftRequestCard = ({
         label: "Approved",
         statusColor: "bg-green-100 text-green-800",
       };
-    } else {
+    } else if (status === "rejected") {
       return {
         label: "Rejected",
         statusColor: "bg-red-100 text-red-800",
+      };
+    } else {
+      return {
+        label: rawStatus || "Unknown",
+        statusColor: "bg-gray-100 text-gray-800",
       };
     }
   };
@@ -70,7 +73,7 @@ const EmpShiftRequestCard = ({
     <>
       {isDesktop ? (
         <div
-          className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
+          className={`grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
         >
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
@@ -101,7 +104,7 @@ const EmpShiftRequestCard = ({
           </div>
           {data?.custom_allow_revoke &&
           data?.reference_document?.status === "Draft" ? (
-            <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
+            <div className="text-sm text-gray-900 text-start flex gap-5 items-center">
               {/* ✨ ADD THE EDIT BUTTON HERE */}
               <Button
                 icon={<Pencil className="h-3 w-3" />}

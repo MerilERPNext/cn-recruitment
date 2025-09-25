@@ -87,12 +87,19 @@ export function ShiftDetailView({
         console.error("Action failed", error);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mutation, data, onAction],
+    [mutation, data, onAction]
   );
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
+
+  const actions = (() => {
+    try {
+      return data?.custom_doctype_actions
+        ? JSON.parse(data.custom_doctype_actions)
+        : [];
+    } catch (error) {
+      console.error("Failed to parse custom_doctype_actions:", error);
+      return [];
+    }
+  })();
 
   const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();

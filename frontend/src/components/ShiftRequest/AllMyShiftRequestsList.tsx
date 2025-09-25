@@ -8,11 +8,11 @@ import EmpShiftRequestCard from "./EmpShiftRequestCard";
 import { MyShiftRequest } from "../../types/shift";
 import HeaderBar from "../HeaderBar";
 
-const MyShiftChangesRequest = () => {
+const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name ?? ""
   );
   const { refetchShift, setRefetchShift } = useGlobalStore();
   const CardSkeleton = () => (
@@ -62,6 +62,7 @@ const MyShiftChangesRequest = () => {
               SkeletonComponent={CardSkeleton}
               onItemClick={(data) => {
                 console.log(data);
+                // TODO: Implement navigation or other action on item click
               }}
               onRefetchComplete={() => {
                 setRefetchShift(false);
@@ -85,4 +86,4 @@ const MyShiftChangesRequest = () => {
   );
 };
 
-export default MyShiftChangesRequest;
+export default AllMyShiftRequestsList;

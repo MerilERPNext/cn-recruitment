@@ -236,7 +236,7 @@ const TeamShiftList = () => {
   );
 };
 
-const MyShiftChangesRequest = () => {
+const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -371,7 +371,7 @@ export default function AllShiftsDashboard() {
                 />
               </div>
             </Card>
-            <MyShiftChangesRequest />
+            <AllMyShiftRequestsList />
           </div>
           <div className="grid grid-cols-2 gap-6 mb-14">
             <MyShifts />
