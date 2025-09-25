@@ -299,7 +299,7 @@ const MyShiftChangesRequest = () => {
               refetchTrigger={refetchShift}
               isSearch={false}
               isFilter={false}
-              pageSize={3}
+              pageSize={4}
               showRefreshButton={false}
               orderBy="modified desc"
               infiniteScroll={false}
@@ -358,7 +358,8 @@ export default function AllShiftsDashboard() {
                 </div>
                 <ApprovalList
                   doctype={"Shift Request"}
-                  pageSize={3}
+                  pageSize={4}
+                  showPagination={false}
                   renderCardContent={(item) => (
                     <ApprovalRejectionQueue
                       isSelected={item?.isSelected}
