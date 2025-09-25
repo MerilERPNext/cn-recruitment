@@ -88,7 +88,7 @@ export function ShiftDetailView({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [mutation, data, onAction],
   );
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
