@@ -59,7 +59,7 @@ const formioFieldTypeMap: Record<string, string> = {
   Rating: "number",
 };
 
-function mapFieldToFormio(field: any): any {
+function mapFieldToFormio(field: any, fieldValue: any): any {
   const type = formioFieldTypeMap[field.fieldtype] || "textfield";
 
   const schema: any = {
@@ -69,7 +69,7 @@ function mapFieldToFormio(field: any): any {
     input: type !== "content", // content type doesn't accept input
     tableView: true,
     validate: {},
-    defaultValue: field.value ?? "",
+    defaultValue: fieldValue ?? "",
   };
 
   // Handle validation
@@ -212,7 +212,7 @@ function mapFieldToFormio(field: any): any {
 
     case "Attach":
     case "Attach Image":
-      schema.storage = "base64"; // or 'url' depending on your setup
+      schema.storage = "customBase64"; // or 'url' depending on your setup
       schema.fileTypes =
         field.fieldtype === "Attach Image"
           ? [{ label: "Images", value: "image/*" }]
@@ -268,7 +268,10 @@ function mapFieldToFormio(field: any): any {
   return schema;
 }
 
-export function convertToFormioWithLayout(apiFields: any[]): any {
+export function convertToFormioWithLayout(
+  apiFields: any[],
+  employeeData: any
+): any {
   if (!apiFields || !Array.isArray(apiFields)) {
     console.warn(
       "Invalid apiFields provided to convertToFormioWithLayout:",
@@ -401,8 +404,9 @@ export function convertToFormioWithLayout(apiFields: any[]): any {
       });
       currentColumnIndex = currentColumns.columns.length - 1;
     } else {
+      const fieldValue = employeeData[field?.fieldname] || "";
       // Regular field - map it to FormIO
-      const mapped = mapFieldToFormio(field);
+      const mapped = mapFieldToFormio(field, fieldValue);
 
       if (!mapped) continue; // Skip if mapping failed
 

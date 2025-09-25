@@ -19,12 +19,32 @@ export const profileService = {
       throw error;
     }
   },
-  getAllEmployeeFields: async (employee_id: string): Promise<IField[]> => {
+
+  getEmployeeFieldPermissions: async ({
+    docname,
+    doctype,
+    include_breaks,
+    all_fields,
+    include_values,
+    detailed,
+  }: {
+    doctype: string;
+    docname?: string;
+    include_breaks?: number;
+    all_fields?: number;
+    detailed?: number;
+    include_values?: number;
+  }): Promise<IField[]> => {
     const response = await FrappeAPI.callMethod(
-      "cn_hrms_core.cn_hrms_core.apis.employee_hierarchy.get_meta",
+      "nextai.api.doctype_meta.get_fields",
       {
         fields: ["*"],
-        employee_id: employee_id,
+        doctype: doctype,
+        docname: docname,
+        include_breaks: include_breaks,
+        all_fields: all_fields,
+        detailed: detailed,
+        include_values: include_values,
         orderBy: "creation desc",
       }
     );
@@ -34,13 +54,10 @@ export const profileService = {
     employee_id: string
   ): Promise<Employee | null> => {
     try {
-      const result = await FrappeAPI.getDocumentList("Employee", {
-        fields: ["*"],
-        filters: [["employee", "=", employee_id]],
-      });
+      const result = await FrappeAPI.getDocument("Employee", employee_id);
       // Handle different response structures
 
-      return result?.data?.[0] as Employee;
+      return result as Employee;
     } catch (e) {
       throw new Error(
         `Some error occured while fetching employee details.- ${e}`

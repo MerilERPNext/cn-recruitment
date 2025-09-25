@@ -2,35 +2,53 @@ import { useRef, useEffect, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import ProfileGridSkeleton from "./ProfileSkeleton";
 import { useParams } from "react-router-dom";
-import { useGetAllEmployeeFields } from "../../hooks/useEmployee";
+import {
+  useGetEmployeeDetailsByEmpId,
+  useGetEmployeeFieldPermissions,
+} from "../../hooks/useEmployee";
 import { convertToFormioWithLayout } from "./FrappeToFormIoConverter";
+import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 
 const EmployeeProfileForm: React.FC = () => {
   const { id: employeeId } = useParams<{ id: string }>();
   const [schema, setSchema] = useState(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formInstance = useRef<any>(null);
-
-  const { data: employeeFields } = useGetAllEmployeeFields(employeeId || "");
+  const employee = useGetEmployeeDetailsByEmpId(employeeId || "");
+  const mutation = useUpdateFrappeDocument();
+  const { data: fieldPermissions } = useGetEmployeeFieldPermissions({
+    doctype: "Employee",
+    docname: employeeId,
+    all_fields: 0,
+    detailed: 1,
+    include_breaks: 1,
+  });
 
   useEffect(() => {
-    if (!employeeFields) return;
+    if (!fieldPermissions || !employee?.data) return;
 
-    const schema = convertToFormioWithLayout(employeeFields);
+    const schema = convertToFormioWithLayout(fieldPermissions, employee?.data);
     setSchema(schema);
-  }, [employeeFields]);
+  }, [fieldPermissions, employee?.data]);
 
   const handleSubmit = async () => {
     try {
       const submission = await formInstance.current?.submit();
       const submissionData = submission?.data || {};
+      if (employeeId) {
+        mutation.mutate({
+          doctype: "Employee",
+          name: employeeId,
+          data: submission?.data,
+        });
+      }
       console.log(submissionData);
     } catch (err) {
       console.warn("Form submission error -", err);
     }
   };
 
-  if (!schema) {
+  if (!schema || !employee?.data) {
     return <ProfileGridSkeleton />;
   }
 
@@ -38,6 +56,7 @@ const EmployeeProfileForm: React.FC = () => {
     <div className="py-8 px-4">
       <Form
         className={"profile-form"}
+        submission={employee?.data}
         form={schema}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onFormReady={(instance: any) => {

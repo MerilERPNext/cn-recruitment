@@ -205,12 +205,37 @@ export const useGenderTypes = () => {
   });
 };
 
-export const useGetAllEmployeeFields = (employee_id: string) => {
+export const useGetEmployeeFieldPermissions = ({
+  docname,
+  doctype,
+  include_breaks,
+  all_fields,
+  detailed,
+}: {
+  doctype: string;
+  docname?: string;
+  include_breaks?: number;
+  all_fields?: number;
+  detailed?: number;
+}) => {
   return useQuery({
-    queryKey: ["all-emp-fields", employee_id],
-    queryFn: () => profileService.getAllEmployeeFields(employee_id),
+    queryKey: [
+      "all-emp-field-permissions",
+      docname,
+      include_breaks,
+      all_fields,
+      detailed,
+    ],
+    queryFn: () =>
+      profileService.getEmployeeFieldPermissions({
+        docname,
+        doctype,
+        include_breaks,
+        all_fields,
+        detailed,
+      }),
     staleTime: 1000 * 60 * 5,
-    enabled: !!employee_id,
+    enabled: !!doctype,
   });
 };
 export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {

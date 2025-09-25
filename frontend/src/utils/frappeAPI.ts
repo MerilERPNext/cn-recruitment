@@ -123,7 +123,9 @@ export const FrappeAPI = {
     const response = await apiClient.get(
       `/api/resource/${doctype}/${name}?${fieldsQuery}`
     );
-    return response.data.data;
+    const data = await response.data.data;
+
+    return data;
   },
 
   getDocumentList: async (
