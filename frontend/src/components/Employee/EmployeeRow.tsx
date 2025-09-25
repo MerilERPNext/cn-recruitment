@@ -120,7 +120,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
                
                   <span className=" sm:inline min-w-0">
                     <Tooltip content={emp.designation} position="bottom">
-                      <span className="truncate inline-block max-w-[28ch] align-bottom">
+                      <span className=" inline-block max-w-[28ch] align-bottom">
                         {emp.designation.length > 30
                           ? emp.designation.slice(0, 30) + "..."
                           : emp.designation}
@@ -136,7 +136,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
                  
                   <span className=" sm:inline  min-w-0">
                     <Tooltip content={emp.department} position="bottom">
-                      <span className="truncate inline-block max-w-[28ch] align-bottom">
+                      <span className=" inline-block max-w-[28ch] align-bottom">
                         {emp.department.length > 30
                           ? emp.department.slice(0, 30) + "..."
                           : emp.department}

@@ -1,13 +1,14 @@
 import HeaderBar from "./HeaderBar";
 import SearchCard from "./Employee/SearchCard";
 import { useNavigate } from "react-router-dom";
-import { useGetAllEmployees } from "../hooks/useEmployee";
+import {  useEmployees } from "../hooks/useEmployee";
 import { useEffect, useState } from "react";
 import useDebounce from "../hooks/useDebounce";
 import { Employee } from "../types/employee";
 
 const SearchMembersApp = () => {
   const [recentSearches, setRecentSearches] = useState<Employee[]>([]);
+  
   const [searchQuery, setSearchQuery] = useState("");
   const query = useDebounce(searchQuery, 350);
 
@@ -15,7 +16,7 @@ const SearchMembersApp = () => {
     data: employees,
     isLoading,
     error,
-  } = useGetAllEmployees(
+  } = useEmployees(
     ["employee_name", "image", "status", "department", "designation", "name"],
     [],
     [
