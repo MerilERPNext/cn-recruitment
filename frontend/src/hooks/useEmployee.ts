@@ -16,6 +16,20 @@ import { AddressInfoData } from "../types/profile";
 import toast from "react-hot-toast";
 
 // Hook to get a single employee by ID
+export const useAllEmployee = (
+  fields?: string[],
+  filters?: FilterCondition[],
+  orFilters?: FilterCondition[]
+): UseQueryResult<Employee[], Error> => {
+  return useQuery<Employee[], Error>({
+    queryKey: ["employee", "all", filters, orFilters],
+    queryFn: () =>
+      getEmployeeServices.getAllEmployees(fields, filters, orFilters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
 export const useEmployee = (
   employeeId: string | null
 ): UseQueryResult<Employee, Error> => {
