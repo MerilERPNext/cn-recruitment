@@ -10,8 +10,8 @@ const SearchMembersApp = () => {
   const [getRecentSearch, setgetRecentSearch] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
-
   const query = useDebounce(searchQuery, 350);
+
   const {
     data: employees,
     isLoading,
@@ -19,6 +19,8 @@ const SearchMembersApp = () => {
   } = useGetAllEmployees(
     ["employee_name", "image", "status", "department", "designation", "name"],
     [],
+  
+    
     [
       ["name", "like", `%${query}%`],
       ["employee_name", "like", `%${query}%`],
@@ -80,7 +82,7 @@ const SearchMembersApp = () => {
     e: React.ChangeEvent<HTMLInputElement>
   ): void => {
     try {
-      const value = e.target.value; // do not trim while typing; keep spaces the user enters
+      const value = e.target.value;
       setSearchQuery(value);
     } catch (error) {
       console.error("Error handling search input:", error);

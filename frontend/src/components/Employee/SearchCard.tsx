@@ -2,9 +2,6 @@ import React from "react";
 import EmployeeRow from "./EmployeeRow";
 import { Employee } from "../../types/employee";
 
-
-
-
 interface SearchCardProps {
   employees?: Employee[];
   setSearchQuery: (value: string) => void;
@@ -17,10 +14,9 @@ const SearchCard: React.FC<SearchCardProps> = ({
   setSearchQuery,
   onRemove,
   showRemove = false,
-
 }) => {
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-3 sm:space-y-4 px-0 sm:px-0">
+    <div className="w-fit sm:w-full   max-w-3xl mx-auto space-y-3 sm:space-y-4 px-0 sm:px-0">
       {employees?.map((emp, idx) => (
         <EmployeeRow
           idx={idx}
