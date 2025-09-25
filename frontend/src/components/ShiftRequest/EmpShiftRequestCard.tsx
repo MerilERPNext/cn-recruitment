@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import Button from "../shared/atoms/Button";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Pencil } from "lucide-react";
 import Badge from "../shared/Badge";
 import Tooltip from "../shared/Tooltip";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -18,6 +18,10 @@ const EmpShiftRequestCard = ({
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchShift } = useGlobalStore();
+
+  const handleEditClick = () => {
+    window.location.href = `/app/shift-request/${data.reference_name}`;
+  };
 
   const handleRevokeClick = () => {
     if (data?.todo_id) {
@@ -37,7 +41,7 @@ const EmpShiftRequestCard = ({
 
   const getStatus = (rawStatus: string) => {
     const status = rawStatus?.toLowerCase().trim();
-    
+
     if (status === "draft") {
       return {
         label: "Draft",
@@ -95,8 +99,19 @@ const EmpShiftRequestCard = ({
               />
             </Tooltip>
           </div>
-          {data?.custom_allow_revoke && data?.reference_document?.status === "Draft" ? (
+          {data?.custom_allow_revoke &&
+          data?.reference_document?.status === "Draft" ? (
             <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
+              {/* ✨ ADD THE EDIT BUTTON HERE */}
+              <Button
+                icon={<Pencil className="h-3 w-3" />}
+                variant="outline"
+                size="sm"
+                onClick={handleEditClick}
+              >
+                Edit
+              </Button>
+              {/* REVOKE BUTTON */}
               <Button
                 icon={<RotateCcw className="h-3 w-3" />}
                 variant="contain"
@@ -141,16 +156,28 @@ const EmpShiftRequestCard = ({
                 {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
               <div className="text-sm text-gray-900 text-start flex gap-2">
-                {data?.custom_allow_revoke && data?.reference_document?.status === "Draft" ? (
-                  <Button
-                    icon={<RotateCcw className="h-3 w-3" />}
-                    variant="contain"
-                    size="sm"
-                    onClick={handleRevokeClick}
-                    disabled={revokeEventMutation.isPending}
-                  >
-                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                  </Button>
+                {data?.custom_allow_revoke &&
+                data?.reference_document?.status === "Draft" ? (
+                  <div className="flex gap-2">
+                    {/* ✨ ADD THE EDIT BUTTON HERE */}
+                    <Button
+                      icon={<Pencil className="h-3 w-3" />}
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEditClick}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      icon={<RotateCcw className="h-3 w-3" />}
+                      variant="contain"
+                      size="sm"
+                      onClick={handleRevokeClick}
+                      disabled={revokeEventMutation.isPending}
+                    >
+                      {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
+                    </Button>
+                  </div>
                 ) : (
                   <></>
                 )}
