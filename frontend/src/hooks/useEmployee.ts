@@ -14,8 +14,27 @@ import {
 import { profileService } from "../services/profileService";
 import { AddressInfoData } from "../types/profile";
 import toast from "react-hot-toast";
+import { FilterCondition } from "../types/frappe";
 
 // Hook to get a single employee by ID
+const defaultQueryOptions = {
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
+};
+export const useEmployees = (
+  fields?: string[],
+  filters?: FilterCondition[],
+  orFilters?: FilterCondition[]
+): UseQueryResult<Employee[], Error> => {
+  return useQuery<Employee[], Error>({
+    queryKey: ["employee", "all", filters, orFilters],
+    queryFn: () => EmployeeService.getAllEmployees(fields, filters, orFilters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
+
 export const useEmployee = (
   employeeId: string | null
 ): UseQueryResult<Employee, Error> => {
@@ -173,13 +192,19 @@ export const useEmployeeByUserId = (userId?: string) => {
     staleTime: 1000 * 60 * 5,
   });
 };
-export const useGetAllEmployees = () => {
-  return useQuery({
-    queryKey: ["all-employees-list"],
-    queryFn: () => EmployeeService.getAllEmployees(),
+export const useGetAllEmployees = (
+  fields?: string[],
+  filters?: FilterCondition[],
+ 
+  orFilters?: FilterCondition[]
+): UseQueryResult<Employee[], Error> => {
+  return useQuery<Employee[], Error>({
+    queryKey: ["all-employees-list", fields, filters, orFilters],
+    queryFn: () => EmployeeService.getAllEmployees(fields, filters, orFilters),
     // staleTime: 1000 * 60 * 5,
   });
 };
+
 export const useGetAllReasons = (requestType: string) => {
   return useQuery({
     queryKey: ["all-reasons-list", "Attendance Request"],
