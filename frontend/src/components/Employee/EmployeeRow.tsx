@@ -45,7 +45,7 @@ const Avatar: React.FC<AvatarProps> = ({ name, src }) => {
 
 interface EmployeeRowProps {
   emp: Employee;
-  setSearchQuery: (value: string) => void;
+ 
   onRemove: (id: number) => void;
   showRemove?: boolean;
   idx: number;
@@ -53,7 +53,7 @@ interface EmployeeRowProps {
 
 const EmployeeRow: React.FC<EmployeeRowProps> = ({
   emp,
-  setSearchQuery,
+  
   onRemove,
   showRemove,
   idx,
@@ -78,7 +78,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
   }
 
   const handleonClick = (emp: Employee) => () => {
-    setSearchQuery(emp.employee_name);
+    
     recentSearch(emp);
     navigate(`/webapp/id-card/${emp.name}`);
   };

@@ -4,14 +4,14 @@ import { Employee } from "../../types/employee";
 
 interface SearchCardProps {
   employees?: Employee[];
-  setSearchQuery: (value: string) => void;
+  
   onRemove: (idx: number) => void;
   showRemove?: boolean;
 }
 
 const SearchCard: React.FC<SearchCardProps> = ({
   employees,
-  setSearchQuery,
+  
   onRemove,
   showRemove = false,
 }) => {
@@ -22,7 +22,7 @@ const SearchCard: React.FC<SearchCardProps> = ({
           idx={idx}
           onRemove={onRemove}
           showRemove={showRemove}
-          setSearchQuery={setSearchQuery}
+         
           key={`${emp.name}-${idx}`}
           emp={emp}
         />
