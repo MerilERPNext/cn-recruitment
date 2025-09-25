@@ -8,6 +8,8 @@ import ShiftChangeRequest from "./ShiftChangeRequest";
 import TeamShift from "./TeamShift";
 import MyShiftAssignment from "./MyShiftAssignment";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
+import ShiftRequestList from "./MyShiftList";
+import AllMyShiftRequestsList from "./AllMyShiftRequestsList";
 
 export const AllShiftsDashboardRoute = () => {
   useShiftRouting(); // Add the routing hook
@@ -35,4 +37,10 @@ export const ShiftChangeRequestsRoute = () => {
   useShiftRouting(); // Add the routing hook
   const { isDesktop } = useScreenSize();
   return isDesktop ? <AllShiftChangeRequestsList /> : <ShiftChangeRequest />;
+};
+
+export const MyShiftRequestsRoute = () => {
+  useShiftRouting(); // Add the routing hook
+  const { isDesktop } = useScreenSize();
+  return isDesktop ? <AllMyShiftRequestsList /> : <ShiftRequestList />;
 };
