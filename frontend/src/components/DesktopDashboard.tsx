@@ -501,7 +501,10 @@ export default function DesktopDashboard() {
 
                     <button
                       onClick={() => {
-                        navigate("/webapp/my-profile");
+                        navigate(
+                          "/webapp/employee-profile/" +
+                            currentEmployee?.employee
+                        );
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"

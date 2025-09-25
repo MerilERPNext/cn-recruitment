@@ -213,3 +213,11 @@ export const useGetAllEmployeeFields = (employee_id: string) => {
     enabled: !!employee_id,
   });
 };
+export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {
+  return useQuery({
+    queryKey: ["all-emp-details-by-empid", employee_id],
+    queryFn: () => profileService.getEmployeeDetailsByEmpId(employee_id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
+  });
+};

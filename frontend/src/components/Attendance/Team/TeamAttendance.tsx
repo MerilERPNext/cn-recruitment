@@ -168,11 +168,16 @@ const TeamAttendance = () => {
         {/* ------------------------------------------------- Calendar End ---------------------------------------------- */}
 
         {/* <EmployeeStatusCard /> */}
-        <div className="bg-white pt-4 border-gray-200 p-4 ">
+        <div className="bg-white pt-4 border-gray-200 p-4 mb-10">
           <FrappeListView
             doctype="Attendance"
             ItemComponent={(props: { item: EmployeeStatus }) => {
-              return <EmployeeStatusCard data={props?.item} onRefetchData={refetchFn} />;
+              return (
+                <EmployeeStatusCard
+                  data={props?.item}
+                  onRefetchData={refetchFn}
+                />
+              );
             }}
             SkeletonComponent={CardSkeleton}
             onItemClick={() => {}}
@@ -185,6 +190,8 @@ const TeamAttendance = () => {
               attendance_date: new Date(selectedDate || "").toISOString(),
             }}
             defaultFields={[
+              "shift",
+              "working_hours",
               "employee_name",
               "status",
               "in_time",

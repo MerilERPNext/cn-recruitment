@@ -256,10 +256,7 @@ function mapFieldToFormio(field: any): any {
   }
 
   // Handle custom CSS classes
-  if (
-    field.fieldtype === "Section Break" ||
-    field.fieldtype === "Column Break"
-  ) {
+  if (field.fieldtype === "Column Break") {
     schema.customClass = "formio-layout-break";
   }
 

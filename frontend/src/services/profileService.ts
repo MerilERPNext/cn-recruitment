@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Employee } from "../types/employee";
 import { GenderResponse, IField } from "../types/profile";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -28,5 +29,22 @@ export const profileService = {
       }
     );
     return response as IField[];
+  },
+  getEmployeeDetailsByEmpId: async (
+    employee_id: string
+  ): Promise<Employee | null> => {
+    try {
+      const result = await FrappeAPI.getDocumentList("Employee", {
+        fields: ["*"],
+        filters: [["employee", "=", employee_id]],
+      });
+      // Handle different response structures
+
+      return result?.data?.[0] as Employee;
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee details.- ${e}`
+      );
+    }
   },
 };

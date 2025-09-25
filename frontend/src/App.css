@@ -127,6 +127,7 @@
   white-space: nowrap;
   gap: 32px !important;
   width: 100%;
+  border-radius: 6px !important;
 }
 
 .profile-form .nav-tabs .nav-link.active {
@@ -138,5 +139,11 @@
 }
 .profile-form .nav-tabs::-webkit-scrollbar {
   display: none;
+}
+.profile-form .formio-form .card {
+  border-radius: 6px;
+}
+.profile-form .formio-form .card-header {
+  border-radius: 6px;
 }
 /* Removes scrollbar from the profile form */

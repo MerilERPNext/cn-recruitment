@@ -8,11 +8,11 @@ const API_BASE =
   import.meta.env.VITE_API_BASE_URL ||
   (typeof window !== "undefined" ? window.location.origin : "");
 
-  if (!API_BASE) {
-    console.warn(
-      "⚠️ API_BASE is empty! Please set VITE_API_BASE_URL in your .env file"
-    );
-  }
+if (!API_BASE) {
+  console.warn(
+    "⚠️ API_BASE is empty! Please set VITE_API_BASE_URL in your .env file"
+  );
+}
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
 }
@@ -39,7 +39,6 @@ const apiClient = axios.create({
         : "",
   },
 });
-
 
 apiClient.interceptors.request.use(
   async (config) => {
