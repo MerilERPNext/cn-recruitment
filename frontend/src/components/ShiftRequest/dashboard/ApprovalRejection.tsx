@@ -89,7 +89,8 @@ const ApprovalRejectionQueue = ({
       <div className="text-gray-600 text-xs">
         {data.date ? format(new Date(data.date), "dd/MM/yyyy") : "--"}
       </div>
-      <div className="flex justify-start items-center gap-5">
+      <div className="flex justify-start items-center gap-2 whitespace-nowrap ml-[-50px]">
+        {" "}
         {actions.map((action) => (
           <button
             key={action}

@@ -329,10 +329,10 @@ export default function AllShiftsDashboard() {
                   navigate("/webapp/shift-request/shift-change-request")
                 }
               />
-              <div className="border border-gray-200 rounded-lg">
-                <div className="overflow-x-auto bg-white shadow-sm">
+              <div className="border border-gray-200 rounded-lg overflow-x-auto" >
+                <div className="overflow-x-auto bg-white shadow-sm w-full">
                   {/* CHANGED: Using .table-header and .table-header-text */}
-                  <div className="table-header grid grid-cols-7 gap-4 rounded-t-lg">
+                  <div className="table-header grid grid-cols-7 gap-4 rounded-t-lg w-full">
                     <span className="table-header-text flex items-center">
                       SELECT
                     </span>
@@ -373,6 +373,7 @@ export default function AllShiftsDashboard() {
                 />
               </div>
             </Card>
+            
             <AllMyShiftRequestsList />
           </div>
           <div className="grid grid-cols-2 gap-6 mb-14">

@@ -43,8 +43,6 @@ const AllShiftChangeRequestsList: React.FC = () => {
         <div className="divide-y divide-gray-200">
           <ApprovalList
             doctype={"Shift Request"}
-            pageSize={10}
-            showPagination={true}
             refetch={refetchShift || refetch}
             onApprovalRefetchComplete={() => setRefetch(false)}
             renderCardContent={(item) => (
