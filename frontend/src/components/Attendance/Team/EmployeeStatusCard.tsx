@@ -154,7 +154,7 @@ const EmployeeStatusCard = ({
               <p className="text-gray-500 text-xs font-medium">Working Hours</p>
               <h5 className="font-semibold text-gray-800">
                 {data?.working_hours
-                  ? `${data?.working_hours?.toFixed(2)} hrs`
+                  ? `${data.working_hours.toFixed(2)} hrs`
                   : "--:--"}
               </h5>
             </div>

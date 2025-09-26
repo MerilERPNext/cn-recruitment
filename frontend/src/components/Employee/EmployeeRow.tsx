@@ -32,7 +32,7 @@ const Avatar: React.FC<AvatarProps> = ({ name, src }) => {
         <img
           loading="lazy"
           src={src}
-          alt=""
+          alt={name}
           className="h-full w-full object-cover"
         />
       ) : (
@@ -59,7 +59,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  function recentSearch(emp: Employee): Employee[] {
+  function recentSearch(emp: Employee): void {
     const searches: Employee[] = JSON.parse(
       localStorage.getItem("recentSearches") || "[]"
     );
@@ -73,7 +73,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
     filterData = filterData.slice(0, 7);
 
     localStorage.setItem("recentSearches", JSON.stringify(filterData));
-    return filterData;
+    return;
   }
 
   const handleonClick = (emp: Employee) => () => {

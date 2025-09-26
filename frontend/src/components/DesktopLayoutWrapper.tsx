@@ -227,10 +227,10 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                   <div className="py-2">
                     <button
                       onClick={() => {
-                        navigate(
-                          "/webapp/employee-profile/" +
-                            currentEmployee?.employee
-                        );
+                        const employeeId = currentEmployee?.employee;
+                        if (employeeId) {
+                          navigate(`/webapp/employee-profile/${employeeId}`);
+                        }
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"

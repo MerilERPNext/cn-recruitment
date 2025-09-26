@@ -31,9 +31,9 @@ const ShowHolidays = () => {
   return (
     <div className="w-full bg-white rounded-lg p-4">
       <ul className="space-y-4 h-screen rounded-lg">
-        {holidays.map((holiday, index) => (
+        {holidays.map((holiday) => (
           <li
-            key={index}
+            key={`${holiday.date}-${holiday.holiday_name}`}
             className="flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 mb-2"
           >
             <div className="flex items-center justify-between">
