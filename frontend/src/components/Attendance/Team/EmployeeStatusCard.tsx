@@ -133,36 +133,32 @@ const EmployeeStatusCard = ({
         </div>
         <div className="flex justify-center w-full  max-w-[700px]  gap-4">
           {/* Middle Section - Time Info */}
-          {(data?.in_time || data?.out_time || data?.working_hours) && (
-            <div className="flex flex-wrap sm:flex-nowrap justify-between max-w-[700px] sm:justify-between gap-4 sm:gap-6 mt-2 sm:mt-0  w-full py-1 px-4">
-              <div className="text-center">
-                <p className="text-gray-500 text-xs font-medium">Check-in</p>
-                <h5 className="font-semibold text-gray-800">
-                  {data?.in_time
-                    ? format(new Date(data?.in_time), "HH:mm")
-                    : "--:--"}
-                </h5>
-              </div>
-              <div className="text-center">
-                <p className="text-gray-500 text-xs font-medium">Check-out</p>
-                <h5 className="font-semibold text-gray-800">
-                  {data?.out_time
-                    ? format(new Date(data?.out_time), "HH:mm")
-                    : "--:--"}
-                </h5>
-              </div>
-              <div className="text-center">
-                <p className="text-gray-500 text-xs font-medium">
-                  Working Hours
-                </p>
-                <h5 className="font-semibold text-gray-800">
-                  {data?.working_hours
-                    ? `${data?.working_hours?.toFixed(2)} hrs`
-                    : "--:--"}
-                </h5>
-              </div>
+          <div className="flex flex-wrap sm:flex-nowrap justify-between max-w-[700px] sm:justify-between gap-4 sm:gap-6 mt-2 sm:mt-0  w-full py-1 px-4">
+            <div className="text-center">
+              <p className="text-gray-500 text-xs font-medium">Check-in</p>
+              <h5 className="font-semibold text-gray-800">
+                {data?.in_time
+                  ? format(new Date(data?.in_time), "HH:mm")
+                  : "--:--"}
+              </h5>
             </div>
-          )}
+            <div className="text-center">
+              <p className="text-gray-500 text-xs font-medium">Check-out</p>
+              <h5 className="font-semibold text-gray-800">
+                {data?.out_time
+                  ? format(new Date(data?.out_time), "HH:mm")
+                  : "--:--"}
+              </h5>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-500 text-xs font-medium">Working Hours</p>
+              <h5 className="font-semibold text-gray-800">
+                {data?.working_hours
+                  ? `${data?.working_hours?.toFixed(2)} hrs`
+                  : "--:--"}
+              </h5>
+            </div>
+          </div>
 
           {/* Right Section - Menu */}
           <button

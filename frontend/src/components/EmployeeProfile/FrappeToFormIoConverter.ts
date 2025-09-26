@@ -69,7 +69,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
     input: type !== "content", // content type doesn't accept input
     tableView: true,
     validate: {},
-    defaultValue: fieldValue ?? "",
+    defaultValue: fieldValue ?? undefined,
   };
 
   // Handle validation
@@ -216,8 +216,10 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.fileTypes =
         field.fieldtype === "Attach Image"
           ? [{ label: "Images", value: "image/*" }]
-          : [];
+          : "";
       schema.multiple = false;
+
+      schema.defaultValue = fieldValue || "";
       break;
 
     case "Signature":
@@ -309,10 +311,15 @@ export function convertToFormioWithLayout(
     }
   };
 
+  let lastFieldType = "";
   for (const field of apiFields) {
     // Skip fields that shouldn't be rendered
     if (!field || !field.fieldtype) continue;
+    if (field.hidden === true) continue;
 
+    if (lastFieldType.endsWith(" Break") && field.fieldtype === lastFieldType)
+      continue;
+    lastFieldType = field.fieldtype;
     // Skip hidden system fields
     if (field.fieldtype === "Button" || field.hidden === 1) continue;
 
@@ -460,119 +467,13 @@ export function convertToFormioWithLayout(
               components: tabs,
             },
           ],
-    settings: {
-      pdf: {
-        id: "1ec0f8ee-6685-5d98-a847-26f67b67d6f0",
-        src: "https://files.form.io/pdf/5692b91fd1028f01000407e3/file/1ec0f8ee-6685-5d98-a847-26f67b67d6f0",
-      },
-    },
+    // settings: {
+    //   pdf: {
+    //     id: "1ec0f8ee-6685-5d98-a847-26f67b67d6f0",
+    //     src: "https://files.form.io/pdf/5692b91fd1028f01000407e3/file/1ec0f8ee-6685-5d98-a847-26f67b67d6f0",
+    //   },
+    // },
   };
 
   return schema;
-}
-
-// Utility function to convert FormIO submission back to Frappe format
-export function convertFromFormioSubmission(
-  submission: any,
-  originalFields: any[]
-): any {
-  if (!submission || !originalFields) {
-    return {};
-  }
-
-  const result: any = {};
-
-  // Create a map of fieldname to field definition for quick lookup
-  const fieldMap = new Map();
-  originalFields.forEach((field) => {
-    if (field.fieldname) {
-      fieldMap.set(field.fieldname, field);
-    }
-  });
-
-  // Convert each submitted value back to Frappe format
-  Object.keys(submission).forEach((key) => {
-    const field = fieldMap.get(key);
-    const value = submission[key];
-
-    if (!field || value === null || value === undefined) {
-      result[key] = value;
-      return;
-    }
-
-    switch (field.fieldtype) {
-      case "Check":
-        result[key] = value ? 1 : 0;
-        break;
-      case "Date":
-        result[key] = value
-          ? new Date(value).toISOString().split("T")[0]
-          : null;
-        break;
-      case "Datetime":
-        result[key] = value ? new Date(value).toISOString() : null;
-        break;
-      case "Time":
-        result[key] = value;
-        break;
-      case "Currency":
-      case "Float":
-        result[key] = parseFloat(value) || 0;
-        break;
-      case "Int":
-        result[key] = parseInt(value) || 0;
-        break;
-      case "Percent":
-        result[key] = parseFloat(value) || 0;
-        break;
-      default:
-        result[key] = value;
-    }
-  });
-
-  return result;
-}
-
-// Helper function to validate FormIO schema
-export function validateFormioSchema(schema: any): boolean {
-  if (!schema || typeof schema !== "object") {
-    console.error("Schema is not a valid object");
-    return false;
-  }
-
-  if (!Array.isArray(schema.components)) {
-    console.error("Schema must have a components array");
-    return false;
-  }
-
-  return true;
-}
-
-// Helper function to get all field keys from a FormIO schema
-export function getFormioFieldKeys(schema: any): string[] {
-  const keys: string[] = [];
-
-  function extractKeys(components: any[]) {
-    components.forEach((component) => {
-      if (component.key && component.input) {
-        keys.push(component.key);
-      }
-      if (component.components) {
-        extractKeys(component.components);
-      }
-      if (component.columns) {
-        component.columns.forEach((column: any) => {
-          if (column.components) {
-            extractKeys(column.components);
-          }
-        });
-      }
-    });
-  }
-
-  if (schema.components) {
-    extractKeys(schema.components);
-  }
-
-  return keys;
 }

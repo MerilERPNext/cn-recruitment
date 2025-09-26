@@ -25,7 +25,6 @@ export const profileService = {
     doctype,
     include_breaks,
     all_fields,
-    include_values,
     detailed,
   }: {
     doctype: string;
@@ -38,14 +37,11 @@ export const profileService = {
     const response = await FrappeAPI.callMethod(
       "nextai.api.doctype_meta.get_fields",
       {
-        fields: ["*"],
         doctype: doctype,
         docname: docname,
         include_breaks: include_breaks,
         all_fields: all_fields,
         detailed: detailed,
-        include_values: include_values,
-        orderBy: "creation desc",
       }
     );
     return response as IField[];

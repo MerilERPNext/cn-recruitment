@@ -29,8 +29,8 @@ const ShowHolidays = () => {
     );
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md ">
-      <ul className="space-y-4 h-screen bg-gray-50 p-2 rounded-lg">
+    <div className="w-full bg-white rounded-lg p-4">
+      <ul className="space-y-4 h-screen rounded-lg">
         {holidays.map((holiday, index) => (
           <li
             key={index}
