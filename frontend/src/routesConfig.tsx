@@ -10,6 +10,7 @@ import SearchMembers from "./components/SearchMembers";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
 import AllAttendanceRequest from "./components/Attendance/AttendanceRequest/AllAttendanceRequests";
+import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 
 // Lazy load heavy components with retry mechanism
@@ -469,6 +470,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/my-profile",
     element: <MyProfile />,
+  },
+  {
+    path: "/webapp/employee-profile/:id",
+    element: <EmployeeProfile />,
   },
 
   // Nested Expenses App Routes

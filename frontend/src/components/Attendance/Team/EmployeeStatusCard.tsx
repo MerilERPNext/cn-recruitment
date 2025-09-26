@@ -6,6 +6,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Edit, EllipsisVertical } from "lucide-react";
 import ContextualPopup from "../../shared/molecules/ContextualPopup";
 import { EditAttendance } from "./EditAttendance";
+import Badge from "../../shared/Badge";
 
 const EmployeeStatusCard = ({
   data,
@@ -104,23 +105,25 @@ const EmployeeStatusCard = ({
   );
 
   return (
-    <div
-      className={`w-full p-3 border shadow-sm rounded-xl transition-all duration-200 bg-white border border-gray-100 mt-2`}
-    >
-      <div className="flex gap-4 mb-2">
-        <Avatar
-          name={data?.employee_name}
-          avatarBgColor={isDesktop ? "bg-white" : "bg-indigo-100"}
-          avatarTextColor={isDesktop ? "text-gray-700" : "text-indigo-800"}
-          {...statusColors}
-        />
-        <div className="flex-1">
-          <h5 className="font-semibold line-clamp-2 text-gray-800">
-            {data?.employee_name}
-          </h5>
-          <div className="flex items-center gap-2 mt-1">
+    <div className="w-full p-3 border shadow-sm rounded-xl transition-all duration-200 bg-white border border-gray-100 mt-2">
+      <div className="flex flex-col sm:flex-row  gap-3 w-full">
+        {/* Left Section - Avatar + Info */}
+        <div className="flex items-start gap-3 flex-1 justify-center">
+          <Avatar
+            name={data?.employee_name}
+            avatarBgColor={isDesktop ? "bg-white" : "bg-indigo-100"}
+            avatarTextColor={isDesktop ? "text-gray-700" : "text-indigo-800"}
+            {...statusColors}
+          />
+          <div className="flex-1 min-w-10">
+            <div className="flex flex-wrap items-start gap-2">
+              <h5 className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none">
+                {data?.employee_name}
+              </h5>
+              <Badge size="sm" label={"Shift " + data?.shift} />
+            </div>
             <p
-              className={`font-medium text-sm capitalize ${
+              className={`font-medium text-sm capitalize mt-1 ${
                 isDesktop ? "text-gray-700" : "text-gray-600"
               }`}
             >
@@ -128,45 +131,47 @@ const EmployeeStatusCard = ({
             </p>
           </div>
         </div>
-        <button
-          ref={buttonRef}
-          onClick={() => setIsPopupOpen(true)}
-          className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
-        >
-          <EllipsisVertical size={18} />
-        </button>
-      </div>
-      {(data?.in_time || data?.out_time) && (
-        <div
-          className={`mb-2 w-full px-4 py-3 rounded-xl flex justify-between ${
-            isDesktop
-              ? "bg-gray-100 border border-white border-opacity-50"
-              : "bg-gray-100"
-          }`}
-        >
-          <div>
-            <p className="text-gray-500 text-xs text-center font-medium">
-              Check-in
-            </p>
-            <h5 className="font-semibold text-center text-gray-800">
-              {data?.in_time
-                ? format(new Date(data?.in_time), "HH:mm")
-                : "--:--"}
-            </h5>
+        <div className="flex justify-center w-full  max-w-[700px]  gap-4">
+          {/* Middle Section - Time Info */}
+          <div className="flex flex-wrap sm:flex-nowrap justify-between max-w-[700px] sm:justify-between gap-4 sm:gap-6 mt-2 sm:mt-0  w-full py-1 px-4">
+            <div className="text-center">
+              <p className="text-gray-500 text-xs font-medium">Check-in</p>
+              <h5 className="font-semibold text-gray-800">
+                {data?.in_time
+                  ? format(new Date(data?.in_time), "HH:mm")
+                  : "--:--"}
+              </h5>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-500 text-xs font-medium">Check-out</p>
+              <h5 className="font-semibold text-gray-800">
+                {data?.out_time
+                  ? format(new Date(data?.out_time), "HH:mm")
+                  : "--:--"}
+              </h5>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-500 text-xs font-medium">Working Hours</p>
+              <h5 className="font-semibold text-gray-800">
+                {data?.working_hours
+                  ? `${data?.working_hours?.toFixed(2)} hrs`
+                  : "--:--"}
+              </h5>
+            </div>
           </div>
-          <div className="w-px bg-gray-200 mx-2"></div>
-          <div>
-            <p className="text-gray-500 text-xs text-center font-medium">
-              Check-out
-            </p>
-            <h5 className="font-semibold text-center text-gray-800">
-              {data?.out_time
-                ? format(new Date(data?.out_time), "HH:mm")
-                : "--:--"}
-            </h5>
-          </div>
+
+          {/* Right Section - Menu */}
+          <button
+            ref={buttonRef}
+            onClick={() => setIsPopupOpen(true)}
+            className="text-gray-600 hover:text-gray-800 transition-colors self-center  h-full"
+          >
+            <EllipsisVertical size={18} />
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* Popups */}
       <EditAttendance
         employeeId={data?.employee}
         employeeName={data?.employee_name}
@@ -177,17 +182,13 @@ const EmployeeStatusCard = ({
       />
       <ContextualPopup
         isOpen={isPopupOpen}
-        onClose={() => {
-          setIsPopupOpen(false);
-        }}
+        onClose={() => setIsPopupOpen(false)}
         triggerRef={buttonRef}
       >
         <div className="p-1">
           <button
-            onClick={() => {
-              setEditAttendance(true);
-            }}
-            className="w-full text-left font-md px-4 py-2 text-sm hover:bg-gray-100 transition-colors flex gap-2 justify-start items-center"
+            onClick={() => setEditAttendance(true)}
+            className="w-full text-left font-md px-4 py-2 text-sm hover:bg-gray-100 transition-colors flex gap-2 items-center"
           >
             <Edit size={16} />
             <span>Edit</span>

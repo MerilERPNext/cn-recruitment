@@ -352,11 +352,11 @@ const MobileDashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           {/* Left: Logo/Profile button */}
           <button className="flex items-center hover:bg-black/5 transition-colors w-10 h-10 rounded-xl overflow-hidden ">
-             <img
-                src={typeof logoToShow === "string" ? logoToShow : ""}
-                alt="CompnayLogo"
-                className="w-12 h-12 p-1 rounded-full  flex-shrink-0"
-              />
+            <img
+              src={typeof logoToShow === "string" ? logoToShow : ""}
+              alt="CompnayLogo"
+              className="w-12 h-12 p-1 rounded-full  flex-shrink-0"
+            />
           </button>
 
           {/* Right: Notification + Avatar */}
@@ -377,7 +377,11 @@ const MobileDashboard: React.FC = () => {
             {/* Profile Avatar */}
             <div
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer border border-gray-400"
-              onClick={() => navigate("/webapp/my-profile")}
+              onClick={() =>
+                navigate(
+                  "/webapp/employee-profile/" + currentEmployee?.employee
+                )
+              }
             >
               <img
                 src={currentUser?.user_image || defaultProfile}

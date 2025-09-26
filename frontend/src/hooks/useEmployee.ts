@@ -229,3 +229,45 @@ export const useGenderTypes = () => {
     staleTime: 1000 * 60 * 5,
   });
 };
+
+export const useGetEmployeeFieldPermissions = ({
+  docname,
+  doctype,
+  include_breaks,
+  all_fields,
+  detailed,
+}: {
+  doctype: string;
+  docname?: string;
+  include_breaks?: number;
+  all_fields?: number;
+  detailed?: number;
+}) => {
+  return useQuery({
+    queryKey: [
+      "all-emp-field-permissions",
+      docname,
+      include_breaks,
+      all_fields,
+      detailed,
+    ],
+    queryFn: () =>
+      profileService.getEmployeeFieldPermissions({
+        docname,
+        doctype,
+        include_breaks,
+        all_fields,
+        detailed,
+      }),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!doctype,
+  });
+};
+export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {
+  return useQuery({
+    queryKey: ["all-emp-details-by-empid", employee_id],
+    queryFn: () => profileService.getEmployeeDetailsByEmpId(employee_id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
+  });
+};

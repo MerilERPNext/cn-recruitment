@@ -1,14 +1,14 @@
 import HeaderBar from "./HeaderBar";
 import SearchCard from "./Employee/SearchCard";
 import { useNavigate } from "react-router-dom";
-import {  useEmployees } from "../hooks/useEmployee";
+import { useEmployees } from "../hooks/useEmployee";
 import { useEffect, useState } from "react";
 import useDebounce from "../hooks/useDebounce";
 import { Employee } from "../types/employee";
 
 const SearchMembersApp = () => {
   const [recentSearches, setRecentSearches] = useState<Employee[]>([]);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const query = useDebounce(searchQuery, 350);
 
@@ -74,7 +74,6 @@ const SearchMembersApp = () => {
       return recentSearches.length > 0 ? (
         <SearchCard
           employees={recentSearches}
-          
           onRemove={removeItemsFromLocal}
           showRemove
         />
@@ -84,11 +83,7 @@ const SearchMembersApp = () => {
     }
 
     return employees && employees.length > 0 ? (
-      <SearchCard
-        employees={employees}
-        
-        onRemove={removeItemsFromLocal}
-      />
+      <SearchCard employees={employees} onRemove={removeItemsFromLocal} />
     ) : (
       <div className="text-center text-gray-500 py-6">No employees found</div>
     );

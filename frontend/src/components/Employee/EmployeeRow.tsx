@@ -1,4 +1,3 @@
-
 import React from "react";
 import { ChevronRightIcon } from "lucide-react";
 
@@ -45,7 +44,7 @@ const Avatar: React.FC<AvatarProps> = ({ name, src }) => {
 
 interface EmployeeRowProps {
   emp: Employee;
- 
+
   onRemove: (id: number) => void;
   showRemove?: boolean;
   idx: number;
@@ -53,7 +52,7 @@ interface EmployeeRowProps {
 
 const EmployeeRow: React.FC<EmployeeRowProps> = ({
   emp,
-  
+
   onRemove,
   showRemove,
   idx,
@@ -78,9 +77,8 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
   }
 
   const handleonClick = (emp: Employee) => () => {
-    
     recentSearch(emp);
-    navigate(`/webapp/id-card/${emp.name}`);
+    navigate(`/webapp/employee-profile/${emp.name}`);
   };
 
   const isActive = emp.status?.toLowerCase() === "active";
@@ -117,7 +115,6 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
               {/* Disable hover-only tooltips on mobile: show plain text under sm */}
               {emp.designation && (
                 <>
-               
                   <span className=" sm:inline min-w-0">
                     <Tooltip content={emp.designation} position="bottom">
                       <span className=" inline-block max-w-[28ch] align-bottom">
@@ -133,7 +130,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
               {emp.department && (
                 <>
                   <span className=" sm:inline text-gray-300">•</span>
-                 
+
                   <span className=" sm:inline  min-w-0">
                     <Tooltip content={emp.department} position="bottom">
                       <span className=" inline-block max-w-[28ch] align-bottom">

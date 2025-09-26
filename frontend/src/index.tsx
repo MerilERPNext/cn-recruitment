@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -5,6 +6,7 @@ import "./index.css";
 
 declare global {
   interface Window {
+    frappe: any;
     csrf_token: string;
     isApp: boolean;
     trigger_chatnext_assistant?: (enabled: boolean, session?: string) => void;
