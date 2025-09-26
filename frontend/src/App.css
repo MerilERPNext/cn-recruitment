@@ -21,7 +21,7 @@
 
   /* Table Header using your fonts and colors */
   .table-header {
-    @apply bg-gray-100 border-b border-gray-200;
+    @apply bg-gray-50 border-b border-gray-200;
   }
 
   .table-header-text {

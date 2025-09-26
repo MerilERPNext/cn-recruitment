@@ -134,8 +134,15 @@ const LeaveBalance: React.FC = () => {
     );
   }
 
-  const leaveBalance = data?.leave_balance ?? [];
-  const transactions = data?.leave_transactions ?? [];
+  const leaveBalance = (data?.leave_balance ?? []).filter(
+    (leave) => leave.dont_show_in_frontend !== 1
+  );
+
+  const visibleTypes = leaveBalance.map((l) => l.type);
+
+  const transactions = (data?.leave_transactions ?? []).filter((t) =>
+    visibleTypes.includes(t.type)
+  );
 
   return (
     <div className="pb-4 relative">
@@ -147,7 +154,7 @@ const LeaveBalance: React.FC = () => {
           />
           <main className="flex-1 overflow-y-auto p-4">
             <LeaveTransactionCard
-              data={transactions.filter((t) => t.dont_show_in_frontend !== 1)}
+              data={transactions}
               defaultOpenType={selectedType}
             />
           </main>
@@ -156,23 +163,24 @@ const LeaveBalance: React.FC = () => {
         <>
           <div className="md:pt-4 md:p-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 max-w-4xl mx-auto">
-              {leaveBalance
-                .filter((leave) => leave.dont_show_in_frontend !== 1)
-                .map((leave) => (
-                  <div
-                    key={leave.type}
-                    className="rounded-xl p-4 mb-4 md:mb-0 bg-white"
-                  >
-                    <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
-                      <span className="text-left text-black">{leave.type}</span>
+              {leaveBalance.map((leave) => (
+                <div
+                  key={leave.type}
+                  className="rounded-xl p-4 mb-4 md:mb-0 bg-white"
+                >
+                  <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
+                    <span className="text-left text-black">{leave.type}</span>
+                    {leave.visibility_flags.show_entitled && (
                       <span className="text-sm text-green-800">
                         {leave.carry_over} Carry Forwarded
                       </span>
-                    </div>
-                    <div
-                      className="flex justify-between mt-2 gap-2 cursor-pointer"
-                      onClick={() => toggleTransactions(leave.type)}
-                    >
+                    )}
+                  </div>
+                  <div
+                    className="flex justify-between mt-2 gap-2 cursor-pointer"
+                    onClick={() => toggleTransactions(leave.type)}
+                  >
+                    {leave.visibility_flags.show_entitled && (
                       <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-col items-center justify-center bg-blue-50">
                         <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mb-1" />
                         <p className="text-lg font-bold text-blue-800">
@@ -182,6 +190,8 @@ const LeaveBalance: React.FC = () => {
                           Entitled
                         </p>
                       </div>
+                    )}
+                    {leave.visibility_flags.show_availed && (
                       <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-col items-center justify-center bg-green-50">
                         <FaClockRotateLeft className="w-6 h-6 text-green-600 mb-1" />
                         <p className="text-lg font-bold text-green-800">
@@ -191,6 +201,8 @@ const LeaveBalance: React.FC = () => {
                           Availed
                         </p>
                       </div>
+                    )}
+                    {leave.visibility_flags.show_balance && (
                       <div className="flex-1 text-center border border-orange-100 rounded-lg py-2 flex flex-col items-center justify-center bg-orange-50">
                         <FiPieChart className="w-6 h-6 text-orange-600 mb-1" />
                         <p className="text-lg font-bold text-orange-800">
@@ -200,9 +212,10 @@ const LeaveBalance: React.FC = () => {
                           Balance
                         </p>
                       </div>
-                    </div>
+                    )}
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           </div>
 

@@ -182,10 +182,10 @@ const ShiftChangeForm = lazyWithRetry(
   () => import("./components/ShiftRequest/AddRequestForm"),
   "ShiftChangeForm"
 );
-const ShiftRequestList = lazyWithRetry(
-  () => import("./components/ShiftRequest/MyShiftList"),
-  "ShiftRequestList"
-);
+// const ShiftRequestList = lazyWithRetry(
+//   () => import("./components/ShiftRequest/MyShiftList"),
+//   "ShiftRequestList"
+// );
 const ShiftRequestApp = lazyWithRetry(
   () => import("./components/ShiftRequest/ShiftRequestApp"),
   "ShiftRequestApp"
@@ -287,6 +287,13 @@ const ShiftChangeRequestsRoute = lazyWithRetry(
       default: module.ShiftChangeRequestsRoute,
     })),
   "ShiftChangeRequestsRoute"
+);
+const MyShiftRequestsRoute = lazyWithRetry(
+  () =>
+    import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
+      default: module.MyShiftRequestsRoute,
+    })),
+  "MyShiftRequestsRoute"
 );
 const PendingTeamLeaves = lazyWithRetry(
   () => import("./components/Leaves/PendingTeamLeaves"),
@@ -440,7 +447,7 @@ export const routesConfig: AppRoute[] = [
       { path: "my-shift-assignment", element: <MyShiftsListRoute /> },
       { path: "team-shift", element: <TeamShiftsListRoute /> },
       { path: "shift-change-request", element: <ShiftChangeRequestsRoute /> },
-      { path: "shift-list", element: <ShiftRequestList /> },
+      { path: "shift-list", element: <MyShiftRequestsRoute /> },
     ],
   },
 

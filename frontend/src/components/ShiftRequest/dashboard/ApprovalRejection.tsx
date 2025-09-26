@@ -35,7 +35,6 @@ const ApprovalRejectionQueue = ({
 }: ApprovalRejectionQueueProps) => {
   if (!data) return null;
 
-
   let actions: string[] = ["Approve", "Reject"];
   try {
     if (data.custom_doctype_actions) {
@@ -66,16 +65,16 @@ const ApprovalRejectionQueue = ({
       onClick={() => onClick?.(data)}
     >
       <div className=" ">
-      <input
-              type="checkbox"
-              className="accent-blue-500"
-              checked={isSelected}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleSelect?.(data?.name)}
-              disabled={
-                isDisabled || data?.custom_doctype_actions_with_form?.length > 0
-              }
-            />
+        <input
+          type="checkbox"
+          className="accent-blue-500"
+          checked={isSelected}
+          onClick={(e) => e.stopPropagation()}
+          onChange={() => onToggleSelect?.(data?.name)}
+          disabled={
+            isDisabled || data?.custom_doctype_actions_with_form?.length > 0
+          }
+        />
       </div>
       <div className="font-medium  text-gray-900 text-xs truncate">
         {data.allocated_to || "--"}
@@ -86,15 +85,12 @@ const ApprovalRejectionQueue = ({
       <div>
         <StatusBadge status={data.status} />
       </div>
+      <div className="text-gray-600 text-xs">{data.priority}</div>
       <div className="text-gray-600 text-xs">
-        {data.priority}
+        {data.date ? format(new Date(data.date), "dd/MM/yyyy") : "--"}
       </div>
-      <div className="text-gray-600 text-xs">
-        {data.date
-          ? format(new Date(data.date), "dd/MM/yyyy")
-          : "--"}
-      </div>
-      <div className="flex flex-wrap justify-center  items-center ml-[-10px] gap-1">
+      <div className="flex justify-start items-center gap-2 whitespace-nowrap ml-[-50px]">
+        {" "}
         {actions.map((action) => (
           <button
             key={action}
@@ -114,4 +110,3 @@ const ApprovalRejectionQueue = ({
 };
 
 export default ApprovalRejectionQueue;
-
