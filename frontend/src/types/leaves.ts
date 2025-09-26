@@ -33,11 +33,19 @@ export interface TeamLeaveRequest {
 
 export interface LeaveBalance {
   type: string;
+  dont_show_in_frontend: number;
   entitled: number;
   availed: number;
   balance: number;
   carry_over: number;
-  dont_show_in_frontend: number;
+  carry_forward_expiry_date: string | null;
+  visibility_flags: {
+    show_entitled: boolean;
+    show_balance: boolean;
+    show_carry_over: boolean;
+    show_availed: boolean;
+    show_carry_forward_expiry_date: number;
+  };
 }
 
 export interface LeaveTransaction {
@@ -50,6 +58,14 @@ export interface LeaveTransaction {
 export interface LeaveDetailsResponse {
   leave_balance: LeaveBalance[];
   leave_transactions: LeaveTransaction[];
+  global_settings: {
+    show_carry_forward_validity_date: number;
+    show_leave_taken_count: number;
+    show_balance_excluding_future_transactions: number;
+    hide_accrued_so_far_this_year: number;
+    hide_credited_from_last_year: number;
+    hide_annual_allotment: number;
+  };
 }
 
 type LeaveStatus = "Open" | "Approved" | "Rejected" | "Cancelled";
