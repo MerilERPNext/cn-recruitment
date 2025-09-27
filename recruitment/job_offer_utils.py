@@ -10,9 +10,10 @@ from frappe.utils import cint
 def get_job_offer_status(appl):
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     if not jo_id:
-        return {"status": None}
+        return {"status": None, "discussion_disabled":False}
     status = frappe.db.get_value("Job Offer", jo_id, "status")
-    return {"status": status}
+    discussion_disabled=frappe.db.get_value("Job Offer",jo_id,"custom_discussion_requested")
+    return {"status": status, "discussion_disabled":discussion_disabled}
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl):
     frappe.set_user('Administrator')
@@ -41,12 +42,12 @@ def request_discussion(appl=None, origin=None):
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl}, "name", order_by="modified desc")
     current_status = frappe.db.get_value("Job Offer", jo_id, "status") if jo_id else None
     if current_status in ["Accepted", "Rejected", "Discussion Requested"]:
-        return {"status": current_status, "jo_id": jo_id, "already_processed": True, "recruiter_email_sent": False, "candidate_email_sent": False}
+        return {"status": current_status, "jo_id": jo_id, "already_processed": True}
 
-    applicant = frappe.get_doc("Job Applicant", appl)
     if jo_id:
         offer_doc=frappe.get_doc("Job Offer",jo_id)
         offer_doc.status="Discussion Requested"
+        offer_doc.custom_discussion_requested=1
         offer_doc.save()
         frappe.db.set_value("Job Applicant", appl, "status", "Hold", update_modified=True)
 

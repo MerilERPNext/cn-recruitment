@@ -26,6 +26,7 @@ def get_context(context):
             context.doc = job_offers[0]["name"]
             context.print = frappe.get_print('Job Offer', context.doc)
             context.expiry_date = frappe.db.get_value('Job Offer', context.doc, 'custom_jo_expiry_date')
+            context.custom_discussion_requested = frappe.db.get_value('Job Offer', context.doc, 'custom_discussion_requested')
         
         context.no_cache = 1 # don't allow any caching of data based on parameters.
     except frappe.DoesNotExistError:

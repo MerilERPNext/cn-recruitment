@@ -16,7 +16,9 @@
             <div id="operations" style="padding-top:20px">
                 <button type="button" class="btn btn-warning" id="reject" onclick="rejectoffer()">Reject</button>
                 <button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
-                <button type="button" class="btn btn-info" id="discuss" onclick="discussFurther()">Want to discuss further</button>
+                {% if not (doc and custom_discussion_requested) %}
+                    <button type="button" class="btn btn-info" id="discuss" onclick="discussFurther()">Want to discuss further</button>
+                {% endif %}
             </div><br>
         </center>
         <div id="result-msg"></div>
