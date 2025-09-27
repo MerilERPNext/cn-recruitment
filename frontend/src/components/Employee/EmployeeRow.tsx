@@ -117,9 +117,9 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
                 <>
                   <span className=" sm:inline min-w-0">
                     <Tooltip content={emp.designation} position="bottom">
-                      <span className=" inline-block max-w-[28ch] align-bottom">
-                        {emp.designation.length > 30
-                          ? emp.designation.slice(0, 30) + "..."
+                      <span className=" inline-block truncate max-w-[40ch]  align-bottom">
+                        {emp.designation.length > 38
+                          ? emp.designation.slice(0, 38) + "..."
                           : emp.designation}
                       </span>
                     </Tooltip>
@@ -129,17 +129,15 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
               {emp.department && (
                 <>
-                  <span className=" sm:inline text-gray-300">•</span>
+                  <span className="mx-4 sm:inline text-gray-300">•</span>
 
-                  <span className=" sm:inline  min-w-0">
-                    <Tooltip content={emp.department} position="bottom">
-                      <span className=" inline-block max-w-[28ch] align-bottom">
-                        {emp.department.length > 30
-                          ? emp.department.slice(0, 30) + "..."
-                          : emp.department}
-                      </span>
-                    </Tooltip>
-                  </span>
+                  <Tooltip content={emp.department} position="bottom">
+                    <span className="sm:inline  min-w-0 inline-block max-w-[40ch] align-bottom">
+                      {emp.department.length > 38
+                        ? emp.department.slice(0, 38) + "..."
+                        : emp.department}
+                    </span>
+                  </Tooltip>
                 </>
               )}
             </div>
