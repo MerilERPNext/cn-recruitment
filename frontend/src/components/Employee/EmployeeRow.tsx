@@ -113,33 +113,25 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600 min-w-0">
               {/* Disable hover-only tooltips on mobile: show plain text under sm */}
-              {emp.designation && (
-                <>
-                  <span className=" sm:inline min-w-0">
-                    <Tooltip content={emp.designation} position="bottom">
-                      <span className=" inline-block truncate max-w-[40ch]  align-bottom">
-                        {emp.designation.length > 38
-                          ? emp.designation.slice(0, 38) + "..."
-                          : emp.designation}
-                      </span>
-                    </Tooltip>
+              <span className="sm:inline min-w-0">
+                <Tooltip content={emp.designation || "—"} position="bottom">
+                  <span className="inline-block max-w-[60ch] truncate align-bottom">
+                    {emp.designation || "—"}
                   </span>
-                </>
+                </Tooltip>
+              </span>
+
+              {emp.designation && emp.department && (
+                <span className="mx-3 sm:inline text-md text-gray-300">•</span>
               )}
 
-              {emp.department && (
-                <>
-                  <span className="mx-4 sm:inline text-gray-300">•</span>
-
-                  <Tooltip content={emp.department} position="bottom">
-                    <span className="sm:inline  min-w-0 inline-block max-w-[40ch] align-bottom">
-                      {emp.department.length > 38
-                        ? emp.department.slice(0, 38) + "..."
-                        : emp.department}
-                    </span>
-                  </Tooltip>
-                </>
-              )}
+              <span className="sm:inline min-w-0">
+                <Tooltip content={emp.department || "—"} position="bottom">
+                  <span className="inline-block max-w-[60ch] truncate align-bottom">
+                    {emp.department || "—"}
+                  </span>
+                </Tooltip>
+              </span>
             </div>
           </div>
         </div>
