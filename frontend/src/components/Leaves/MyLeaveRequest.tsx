@@ -16,7 +16,7 @@ import ReplaceLeaveModal from "./ReplaceLeaveModal";
 
 const MyLeaveRequests = ({
   pageSize = 5,
-  showPagination = false,
+  showPagination = true,
 }: {
   pageSize?: number;
   showPagination?: boolean;
@@ -116,10 +116,11 @@ const MyLeaveRequests = ({
                 "From Date",
                 "To Date",
                 "Description",
+                "Leave Days",
                 "Status",
                 "Actions",
               ]}
-              columnWidths={["1fr 1fr 1fr 2.5fr 1fr 0.5fr"]}
+              columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr"]}
             >
               {currentEmployee?.employee && (
                 <DataListView
@@ -158,7 +159,7 @@ const MyLeaveRequests = ({
             </CardTable>
           </div>
         </div>
-        <div className="bg-white h-full md:px-4 pt-2 mb-18 mt-2">
+        <div className="bg-white pb-[5.5rem] h-full md:px-4 pt-2 mb-18 mt-2">
           <div className="bg-white px-2">
             <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
               <h2 className="text-lg font-semibold text-gray-800 pb-1">
@@ -177,10 +178,11 @@ const MyLeaveRequests = ({
                 "From Date",
                 "To Date",
                 "Description",
+                "Leave Days",
                 "Status",
                 "Actions",
               ]}
-              columnWidths={["1fr 1fr 1fr 2.5fr 1fr 0.5fr"]}
+              columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr"]}
             >
               {currentEmployee?.employee && (
                 <DataListView

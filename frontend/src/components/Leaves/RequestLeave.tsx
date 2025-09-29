@@ -21,6 +21,7 @@ import {
 import { LeaveFieldFlags } from "../../types/leaves";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -54,6 +55,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const queryClient = useQueryClient();
   const { defaults } = useRequestLeaveModal();
   const editLeaveMutation = useEditApprovedLeave();
+  const { triggerRefetch } = useLeaveRequestRefresh();
 
   const handleUpdate = useCallback(async () => {
     if (!currentEmployee?.name) {
@@ -106,6 +108,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       }, 2000);
       queryClient.invalidateQueries({ queryKey: ["comp-off-list"] });
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
+      triggerRefetch();
       onSuccess?.();
       onCancel?.();
     },

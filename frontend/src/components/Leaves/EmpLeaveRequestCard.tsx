@@ -83,7 +83,6 @@ const EmpLeaveRequestCard = ({
     });
   };
 
-  // Close menu if clicked outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -111,11 +110,10 @@ const EmpLeaveRequestCard = ({
     ? format(new Date(data?.reference_document.to_date), "dd/MM/yyyy")
     : "N/A";
 
-  // Menu component
   const ActionMenu = () => (
     <div
       ref={menuRef}
-      className="absolute right-0 md:-top-15 w-32 bg-white border border-gray-200 rounded-md shadow-md z-50"
+      className="absolute right-0  md:-top-15 w-32 bg-white border border-gray-200 rounded-md shadow-md z-50"
     >
       {data?.custom_allow_revoke &&
         data?.reference_document?.status === "Open" && (
@@ -163,7 +161,7 @@ const EmpLeaveRequestCard = ({
     <>
       {isDesktop ? (
         <div
-          style={{ gridTemplateColumns: "1fr 1fr 1fr 2.5fr 1fr 0.5fr" }}
+          style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr" }}
           className={`grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer relative`}
         >
           <div className="text-sm font-medium text-gray-700 text-start truncate">
@@ -173,6 +171,9 @@ const EmpLeaveRequestCard = ({
           <div className="text-sm text-gray-900">{formattedToDate}</div>
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.description || " - "}
+          </div>
+          <div className="text-sm font-medium text-gray-700 text-start truncate">
+            {data?.reference_document?.total_leave_days}
           </div>
           <div className="flex justify-start">
             <Tooltip
@@ -203,30 +204,35 @@ const EmpLeaveRequestCard = ({
         <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow relative">
           <div className="p-2 w-full flex justify-between">
             <div className="flex gap-1 flex-col">
-              <div className="flex gap-2">
-                {data?.reference_document?.leave_type}
-                <Badge
-                  size="sm"
-                  backgroundColor={status?.statusColor}
-                  label={status?.label || ""}
-                />
+              <div className="flex gap-2 items-center">
+                <span>{data?.reference_document?.leave_type}</span>
+
+                <span className="text-sm font-medium text-gray-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                  {data?.reference_document?.total_leave_days}
+                </span>
               </div>
+
               <div className="text-sm text-gray-500">
                 {formattedFromDate} - {formattedToDate}
               </div>
             </div>
+
             <div className="text-sm text-gray-900 text-start flex gap-2 items-center relative">
-              {data?.custom_allow_revoke && (
-                <div className="relative">
-                  <button
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    className="p-1 border border-gray-300 rounded-md hover:bg-gray-100 flex items-center justify-center"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                  {menuOpen && <ActionMenu />}
-                </div>
-              )}
+              <Badge
+                size="sm"
+                backgroundColor={status?.statusColor}
+                label={status?.label || ""}
+              />
+
+              <div className="relative ml-2">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="p-1 border border-gray-300 rounded-md hover:bg-gray-100 flex items-center justify-center"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+                {menuOpen && <ActionMenu />}
+              </div>
             </div>
           </div>
         </div>

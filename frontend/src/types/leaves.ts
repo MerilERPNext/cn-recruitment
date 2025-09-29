@@ -12,6 +12,7 @@ export interface LeaveRequest {
   custom_attachment?: { url: string }[];
   half_day_date?: string;
   custom_second_half_day_date?: string;
+  total_leave_days: number;
 }
 
 export interface TeamLeaveRequest {

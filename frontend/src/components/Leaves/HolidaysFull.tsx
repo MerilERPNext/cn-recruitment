@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { isBefore, startOfToday } from "date-fns";
 import { FaSortAmountDownAlt, FaSortAmountUp } from "react-icons/fa";
 import { HolidayCard } from "./Holidays";
 import { Holiday } from "../../types/leaves";
@@ -125,16 +124,11 @@ const HolidaysFull: React.FC = () => {
         ) : (
           <div className="divide-y divide-gray-200">
             {sortedHolidays.map((h) => {
-              const dateObj = new Date(h.date);
               return (
                 <HolidayCard
                   key={`${h.date}-${h.holiday_name}`}
                   holiday={h}
                   showApply={holidayType === "optional"}
-                  disabledApply={
-                    holidayType === "optional" &&
-                    isBefore(dateObj, startOfToday())
-                  }
                   statusLabel={
                     holidayType === "optional"
                       ? getHolidayStatus(h.date)
