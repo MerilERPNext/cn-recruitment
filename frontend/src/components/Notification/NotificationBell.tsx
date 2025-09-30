@@ -1,11 +1,12 @@
 import { FaBell } from "react-icons/fa";
 import { useNotifications } from "../../hooks/useNotificationLog";
+import { IMPERSONATION_TEXT } from "./Notification";
 
 export default function NotificationBell() {
   const { data: notifications = [] } = useNotifications();
 
   const unreadCount = notifications.filter(
-    (n) => n.read === 0 && !n.subject?.includes("impersonated as you")
+    (n) => n.read === 0 && !n.subject?.includes(IMPERSONATION_TEXT)
   ).length;
 
   return (

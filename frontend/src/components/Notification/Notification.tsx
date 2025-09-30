@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import {
@@ -13,6 +12,7 @@ import { useMarkAsRead } from "../../hooks/useNotificationLog";
 import HeaderBar from "../HeaderBar";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useNavigate } from "react-router";
+import { IMPERSONATION_TEXT } from "./Notification";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -92,14 +92,13 @@ const NotificationItem: React.FC<{
 }> = ({ item, activeTab }) => {
   const notification = item as NotificationLog;
 
-  if (notification.subject?.includes("impersonated as you")) {
-    return null;
-  }
-
   const [isRead, setIsRead] = useState(notification.read === 1);
   const [openDialog, setOpenDialog] = useState(false);
-
   const markAsRead = useMarkAsRead();
+
+  if (notification.subject?.includes(IMPERSONATION_TEXT)) {
+    return null;
+  }
 
   // Tab filter logic
   if (activeTab === "read" && !isRead) return null;
