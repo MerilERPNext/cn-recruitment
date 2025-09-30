@@ -60,4 +60,35 @@ export const profileService = {
       );
     }
   },
+
+  getShowAttendanceAssignmentButton: async (
+    empId: string,
+    currentUser: string
+  ): Promise<boolean> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.custom_apis.show_attedance_assignment_button",
+        {
+          employee: empId,
+          user: currentUser,
+        }
+      );
+      return res as boolean;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
+  },
+
+  uploadFile: async (
+    file: File
+  ): Promise<{ file_url: string; [key: string]: any }> => {
+    try {
+      const result = await FrappeAPI.uploadFile(file);
+      return result;
+    } catch (error) {
+      console.error("Failed to upload file:", error);
+      throw error;
+    }
+  },
 };

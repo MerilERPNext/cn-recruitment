@@ -112,12 +112,14 @@ const TeamAttendance = () => {
                 if (isDesktop) {
                   // Desktop styling
                   if (isSelected) {
-                    return `${baseClasses} !bg-blue-50 !text-blue-800 border border-blue-200 rounded-lg shadow-sm hover:shadow-md hover:scale-105`;
+                    return `${baseClasses} border-2 font-bold border-black text-black rounded-md`;
                   }
                   return `${baseClasses} hover:!bg-gray-50 !text-gray-700 border border-transparent rounded-lg hover:border-gray-200 hover:shadow-sm`;
                 } else {
                   // Mobile styling
-                  return isSelected ? "bg-blue-100" : "transparent";
+                  return isSelected
+                    ? "border-2 font-bold border-black text-black rounded-md"
+                    : "transparent";
                 }
               }}
               renderDayContents={(day, date) => {
@@ -127,11 +129,7 @@ const TeamAttendance = () => {
                 if (isDesktop) {
                   return (
                     <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
-                      <span
-                        className={`text-sm font-semibold ${
-                          isSelected ? "text-blue-800" : "text-gray-700"
-                        }`}
-                      >
+                      <span className={`text-sm text-black font-semibold`}>
                         {day}
                       </span>
                     </div>
@@ -141,10 +139,8 @@ const TeamAttendance = () => {
                 // Mobile rendering for selected day
                 return (
                   <div
-                    className={`relative w-full h-full flex justify-center items-center p-1 ${
-                      isSelected
-                        ? "bg-blue-50 border-1 border-blue-400 text-blue-700 rounded-md"
-                        : ""
+                    className={`relative  w-full h-full flex justify-center items-center p-1 ${
+                      isSelected ? "font-bold rounded-md text-black" : ""
                     }`}
                   >
                     {day}

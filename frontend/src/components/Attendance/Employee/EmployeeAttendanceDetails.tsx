@@ -8,7 +8,10 @@ import {
   useAllEmployeeCheckIns,
   useAllAttendanceRequests,
 } from "../../../hooks/useAttendance";
-import { EmployeeCheckInLog } from "../../../types/attendance";
+import {
+  AttendanceRecord,
+  EmployeeCheckInLog,
+} from "../../../types/attendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Plus, X } from "lucide-react";
@@ -18,11 +21,13 @@ interface EmployeeAttendanceDetailsProps {
   date?: Date;
   status?: string;
   onClose?: () => void;
+  data?: AttendanceRecord;
 }
 
 const EmployeeAttendanceDetails = ({
   date: propDate,
   status: propStatus,
+  data,
   onClose,
 }: EmployeeAttendanceDetailsProps = {}) => {
   const { search } = useLocation();
@@ -76,7 +81,7 @@ const EmployeeAttendanceDetails = ({
     <div className="bg-white flex flex-col h-full rounded-lg">
       <div className="flex justify-between items-center p-4 border-b">
         <h2 className="text-lg font-semibold text-gray-900">
-          Attendance Details
+          {`${status === "holiday" ? "Holiday" : "Attendance"} Details`}
         </h2>
         {onClose && (
           <button
@@ -110,6 +115,11 @@ const EmployeeAttendanceDetails = ({
             </p>
           )}
 
+          {status === "holiday" && data?.title && (
+            <p className="text-sm mt-4 text-gray-700 text-center">
+              {data?.title}
+            </p>
+          )}
           {status === "absent" && (
             <p className="text-sm mt-4 text-gray-700 text-center">
               To correct your attendance for this day, submit a request below.{" "}

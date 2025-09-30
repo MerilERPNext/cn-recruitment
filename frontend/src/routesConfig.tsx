@@ -22,10 +22,6 @@ const RecruitmentApp = lazyWithRetry(
   () => import("./components/RecruitmentApp"),
   "RecruitmentApp"
 );
-const MyProfile = lazyWithRetry(
-  () => import("./components/MyProfile/MyProfile"),
-  "MyProfile"
-);
 const InterviewPage = lazyWithRetry(
   () => import("./components/InterviewDetails"),
   "InterviewPage"
@@ -467,10 +463,7 @@ export const routesConfig: AppRoute[] = [
   },
 
   { path: "/webapp/notices/:id", element: <NoticeDetails /> },
-  {
-    path: "/webapp/my-profile",
-    element: <MyProfile />,
-  },
+
   {
     path: "/webapp/employee-profile/:id",
     element: <EmployeeProfile />,

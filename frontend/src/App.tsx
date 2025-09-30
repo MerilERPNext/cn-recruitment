@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import React, { useEffect } from "react";
-import { Navigate, Route, Routes, useNavigate, useLocation } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import { QueryProvider } from "./providers/QueryProvider";
 import "./App.css";
 import "./utils/FormioConfig";
@@ -15,10 +21,12 @@ import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModal
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
 import { X, CheckCircle2, CircleX } from "lucide-react";
 import { useFrappeAuth } from "frappe-react-sdk";
-import "./utils/FormioOverrides";
 import { GlobalStoreProvider } from "./context/GlobalStoreContext";
 import { Formio } from "formiojs";
-import { preloadCriticalRoutes, preloadAdjacentRoutes } from "./utils/routePreloader";
+import {
+  preloadCriticalRoutes,
+  preloadAdjacentRoutes,
+} from "./utils/routePreloader";
 
 Formio.setBaseUrl(window.location.origin);
 
@@ -42,7 +50,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isLoading || isValidating) return;
     if (!currentUser) {
-      window.location.href = "/login?redirect-to=%2Fwebapp"
+      window.location.href = "/login?redirect-to=%2Fwebapp";
     }
   }, [currentUser, isLoading, isValidating, navigate]);
 
