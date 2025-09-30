@@ -88,15 +88,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
 
-  // const handleTodoClick = () => {
-  //   window.location.href = "/app/task_manager";
-  // };
   const handleTodoClick = () => {
     window.open("/todoapp", "_blank");
   };
 
   const handleHelpDeskClick = () => {
-    window.location.href = "/helpdesk/my-tickets";
+    window.open("/helpdesk/my-tickets", "_blank");
   };
 
   const navigationItems: NavigationItem[] = [
