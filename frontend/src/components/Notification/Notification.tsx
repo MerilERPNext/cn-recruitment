@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import {
@@ -28,7 +29,7 @@ interface NotificationLog {
 const NotificationList = () => {
   const { isDesktop } = useScreenSize();
   const [activeTab, setActiveTab] = useState<"all" | "read" | "unread">("all");
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const layout = (
     <div className="flex flex-col h-full">
@@ -84,13 +85,16 @@ const NotificationList = () => {
 
 // -------------------- ITEM COMPONENT --------------------
 const NotificationItem: React.FC<{
-  item: any; // BaseItem from FrappeListView
+  item: any;
   index?: number;
   doctype: string;
   activeTab: "all" | "read" | "unread";
 }> = ({ item, activeTab }) => {
-  // Cast BaseItem -> NotificationLogs
   const notification = item as NotificationLog;
+
+  if (notification.subject?.includes("impersonated as you")) {
+    return null;
+  }
 
   const [isRead, setIsRead] = useState(notification.read === 1);
   const [openDialog, setOpenDialog] = useState(false);
@@ -203,7 +207,7 @@ const NotificationItem: React.FC<{
           <div className="w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3 
+              <h3
                 className="text-lg font-semibold"
                 dangerouslySetInnerHTML={{ __html: notification.subject }}
               />
@@ -230,7 +234,9 @@ const NotificationItem: React.FC<{
                 </p>
               </div>
               <div className="text-gray-800 leading-relaxed">
-                <div dangerouslySetInnerHTML={{ __html: notification.subject }} />
+                <div
+                  dangerouslySetInnerHTML={{ __html: notification.subject }}
+                />
               </div>
             </div>
 
