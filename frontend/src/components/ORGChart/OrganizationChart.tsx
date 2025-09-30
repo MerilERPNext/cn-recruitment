@@ -52,8 +52,7 @@ const buildHierarchy = (
       childrens: employee?.children,
       hasChildren,
       isExpanded: true,
-      onToggleExpand: () => { },
-      showExpand: false
+      onToggleExpand: () => {},
     },
   });
 

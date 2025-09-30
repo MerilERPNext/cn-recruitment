@@ -228,7 +228,6 @@ code {
 
 .react-datepicker__day--selected {
   background-color: transparent !important;
-  color: white !important;
   /* border-radius: 50% !important; */
 }
 

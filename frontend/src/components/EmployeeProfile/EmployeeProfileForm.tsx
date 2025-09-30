@@ -49,7 +49,8 @@ const EmployeeProfileForm: React.FC = () => {
             acc[key] = "";
           } else if (
             Array.isArray(value) &&
-            value[0]?.storage === "customBase64"
+            (value[0]?.storage === "customBase64" ||
+              value[0]?.storage === "url")
           ) {
             acc[key] = value[0]?.url;
           } else {
@@ -94,7 +95,6 @@ const EmployeeProfileForm: React.FC = () => {
     <div className="p-2">
       <Form
         className={"profile-form"}
-        submission={employee?.data}
         form={schema}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onFormReady={(instance: any) => {
@@ -122,7 +122,7 @@ const EmployeeProfileForm: React.FC = () => {
           disabled={mutation?.isPending}
           className="w-full rounded-lg py-3 bg-black text-white font-medium hover:bg-gray-800 transition-colors"
         >
-          {mutation?.isPending ? (
+          {mutation?.isPending || employee.isLoading ? (
             <CircularLoader size="sm" color="white" />
           ) : (
             "Update"

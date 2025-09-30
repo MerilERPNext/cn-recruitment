@@ -57,10 +57,23 @@ export const findParent = (
   root: EmployeeHierarchy,
   employeeId: unknown
 ): EmployeeHierarchy | null => {
+  const empId = normalizeId(employeeId); // Normalize here as well
+  if (!empId) {
+    console.log(`Invalid employeeId: ${employeeId}`);
+    return null;
+  }
+  console.log(`Looking for employee ${empId} in root ${root.id}`);
   for (const child of root.children || []) {
-    if (isMatch(child.id, employeeId)) return root;
-    const found = findParent(child, employeeId);
-    if (found) return found;
+    console.log(`Checking child ${child.id}`);
+    if (isMatch(child.id, empId)) {
+      console.log(`Found parent: ${root.id}`);
+      return root;
+    }
+    const found = findParent(child, empId);
+    if (found) {
+      console.log(`Found parent in child tree: ${found.id}`);
+      return found;
+    }
   }
   return null;
 };
@@ -86,8 +99,8 @@ const buildTwoLevelHierarchy = (
         title: parent.title || "",
         hasChildren: true,
         isExpanded: true,
-        onToggleExpand: () => { },
-        showExpand: false
+        onToggleExpand: () => {},
+        showExpand: false,
       },
     });
 

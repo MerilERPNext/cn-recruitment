@@ -17,6 +17,7 @@ import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Modal from "../../shared/Modal";
 import EmployeeAttendanceDetails from "../Employee/EmployeeAttendanceDetails";
+import { AttendanceRecord } from "../../../types/attendance";
 
 const formatTimeSafe = (timeStr: string | undefined) => {
   if (!timeStr) return "--:--";
@@ -41,6 +42,7 @@ const AllEmpAttendance = () => {
   const [showDetailsFor, setShowDetailsFor] = useState<{
     date: Date;
     status: string;
+    data: AttendanceRecord;
   } | null>(null);
 
   const selectedMonthStr =
@@ -151,11 +153,11 @@ const AllEmpAttendance = () => {
                   onClick={() => {
                     if (
                       item?.doctype !== "Attendance Request" &&
-                      item?.status !== "Holiday" &&
                       item?.status !== "Weekly Off"
                     ) {
                       setShowDetailsFor({
                         date: dateObj,
+                        data: item,
                         status: item?.status?.toLowerCase(),
                       });
                     }
@@ -252,6 +254,7 @@ const AllEmpAttendance = () => {
           size={isDesktop ? "lg" : "full"}
         >
           <EmployeeAttendanceDetails
+            data={showDetailsFor?.data}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
             onClose={() => setShowDetailsFor(null)}

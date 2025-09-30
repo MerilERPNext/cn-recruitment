@@ -42,6 +42,7 @@ const EmployeeAttendance = () => {
   const [showDetailsFor, setShowDetailsFor] = useState<{
     date: Date;
     status: string;
+    data: AttendanceRecord;
   } | null>(null);
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
@@ -196,6 +197,7 @@ const EmployeeAttendance = () => {
     firstHalf?: string;
     secondHalf?: string;
     events: AttendanceRecord[]; // all non-attendance-type records on the same day
+    record?: AttendanceRecord; // the attendance record whose status is being used
   };
 
   const parseLocalDate = (dateStr: string): Date =>
@@ -220,6 +222,7 @@ const EmployeeAttendance = () => {
       let firstHalf = "";
       let secondHalf = "";
       const events: AttendanceRecord[] = [];
+      let attendanceRecord: AttendanceRecord | undefined = undefined;
 
       records.forEach((record) => {
         const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
@@ -227,6 +230,7 @@ const EmployeeAttendance = () => {
         );
 
         if (isAttendanceType) {
+          attendanceRecord = record;
           const rawStatus = record.status?.toLowerCase().trim();
           switch (rawStatus) {
             case "present":
@@ -263,9 +267,15 @@ const EmployeeAttendance = () => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       if (status === "half-day") {
-        statusMap[dateKey] = { status, firstHalf, secondHalf, events };
+        statusMap[dateKey] = {
+          status,
+          firstHalf,
+          secondHalf,
+          events,
+          record: attendanceRecord,
+        };
       } else {
-        statusMap[dateKey] = { status, events };
+        statusMap[dateKey] = { status, events, record: attendanceRecord };
       }
     });
 
@@ -341,14 +351,15 @@ const EmployeeAttendance = () => {
               onChange={(date) => {
                 setSelectedDate(date);
                 const attendance = getAttendanceStatus(date as Date);
+
                 if (
                   attendance?.status !== "default" &&
-                  attendance?.status !== "week-off" &&
-                  attendance?.status !== "holiday"
+                  attendance?.status !== "week-off"
                 ) {
                   setShowDetailsFor({
                     date: date as Date,
                     status: attendance?.status,
+                    data: attendance?.record as AttendanceRecord,
                   });
                 } else {
                   setShowDetailsFor(null);
@@ -412,7 +423,7 @@ const EmployeeAttendance = () => {
                   }
                 })();
                 const selectedClass = isSelected
-                  ? "bg-gray-300 text-black border-none rounded-md"
+                  ? "border-2 font-bold border-black rounded-md"
                   : "";
 
                 const dayClasses = `${baseClasses} ${highlightClass} ${selectedClass}`;
@@ -639,6 +650,7 @@ const EmployeeAttendance = () => {
       {showDetailsFor && isDesktop && (
         <div className="w-1/3 h-screen sticky top-2">
           <EmployeeAttendanceDetails
+            data={showDetailsFor?.data}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
             onClose={() => setShowDetailsFor(null)}
@@ -654,6 +666,7 @@ const EmployeeAttendance = () => {
           size="full"
         >
           <EmployeeAttendanceDetails
+            data={showDetailsFor?.data}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
             onClose={() => setShowDetailsFor(null)}

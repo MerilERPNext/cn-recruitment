@@ -31,8 +31,8 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
       <div
         className="min-w-[160px] px-4 py-3 bg-white border border-gray-300 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg"
         onClick={() => {
-          const tabname = window.location.pathname.split("/").pop();
-          if (tabname === "my-profile") {
+          const tabname = window.location.pathname.split("/")[2];
+          if (tabname === "employee-profile") {
             navigate(`/webapp/organizational-chart?employee=${id}`);
           }
         }}

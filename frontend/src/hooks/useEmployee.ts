@@ -34,7 +34,6 @@ export const useEmployees = (
   });
 };
 
-
 export const useEmployee = (
   employeeId: string | null
 ): UseQueryResult<Employee, Error> => {
@@ -195,7 +194,7 @@ export const useEmployeeByUserId = (userId?: string) => {
 export const useGetAllEmployees = (
   fields?: string[],
   filters?: FilterCondition[],
- 
+
   orFilters?: FilterCondition[]
 ): UseQueryResult<Employee[], Error> => {
   return useQuery<Employee[], Error>({
@@ -269,5 +268,30 @@ export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {
     queryFn: () => profileService.getEmployeeDetailsByEmpId(employee_id),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee_id,
+  });
+};
+export const useShowAttendanaceAssignmentButton = (
+  employee_id: string,
+  currentUser: string
+) => {
+  return useQuery({
+    queryKey: ["attendance-assignment-button-visibility", employee_id],
+    queryFn: () =>
+      profileService.getShowAttendanceAssignmentButton(
+        employee_id,
+        currentUser
+      ),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
+  });
+};
+
+export const useFileUpload = () => {
+  return useMutation({
+    mutationKey: ["uploadFile"],
+    mutationFn: (file: File) => profileService.uploadFile(file),
+    onError: (error) => {
+      console.error("Error uploading file:", error);
+    },
   });
 };

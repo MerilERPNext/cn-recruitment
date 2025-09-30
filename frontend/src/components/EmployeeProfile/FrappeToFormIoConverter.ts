@@ -62,7 +62,7 @@ const formioFieldTypeMap: Record<string, string> = {
 function mapFieldToFormio(field: any, fieldValue: any): any {
   const type = formioFieldTypeMap[field.fieldtype] || "textfield";
 
-  const schema: any = {
+  let schema: any = {
     label: field.label || field.fieldname,
     key: field.fieldname,
     type,
@@ -212,14 +212,47 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
 
     case "Attach":
     case "Attach Image":
-      schema.storage = "customBase64"; // or 'url' depending on your setup
-      schema.fileTypes =
-        field.fieldtype === "Attach Image"
-          ? [{ label: "Images", value: "image/*" }]
-          : "";
-      schema.multiple = false;
+      schema = {
+        ...schema,
+        storage: "customBase64",
+        fileTypes:
+          field.fieldtype === "Attach Image"
+            ? [{ label: "Images", value: "image/*" }]
+            : [],
+        multiple: false,
+      };
 
-      schema.defaultValue = fieldValue || "";
+      if (Array.isArray(fieldValue) && fieldValue.length > 0) {
+        // Handle Formio file array (after submit, before reload)
+        const file = fieldValue[0];
+        const url = file.url || file.data?.file_url || null;
+        schema.defaultValue = url
+          ? [
+              {
+                storage: "url",
+                url,
+                name: url.split("/").pop(),
+                originalName: url.split("/").pop(),
+                size: file.size || 0,
+                type: file.type || "file",
+              },
+            ]
+          : "";
+      } else if (typeof fieldValue === "string" && fieldValue.trim() !== "") {
+        // Handle backend string (after reload)
+        schema.defaultValue = [
+          {
+            storage: "url",
+            url: fieldValue,
+            name: fieldValue.split("/").pop(),
+            originalName: fieldValue.split("/").pop(),
+            size: 0,
+            type: "file",
+          },
+        ];
+      } else {
+        schema.defaultValue = "";
+      }
       break;
 
     case "Signature":
@@ -467,12 +500,6 @@ export function convertToFormioWithLayout(
               components: tabs,
             },
           ],
-    // settings: {
-    //   pdf: {
-    //     id: "1ec0f8ee-6685-5d98-a847-26f67b67d6f0",
-    //     src: "https://files.form.io/pdf/5692b91fd1028f01000407e3/file/1ec0f8ee-6685-5d98-a847-26f67b67d6f0",
-    //   },
-    // },
   };
 
   return schema;
