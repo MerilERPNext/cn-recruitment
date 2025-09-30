@@ -80,9 +80,10 @@ export const profileService = {
     }
   },
 
-  uploadFile: async (file: File): Promise<any> => {
+  uploadFile: async (
+    file: File
+  ): Promise<{ file_url: string; [key: string]: any }> => {
     try {
-      console.log("Uploading file:", file.name);
       const result = await FrappeAPI.uploadFile(file);
       return result;
     } catch (error) {

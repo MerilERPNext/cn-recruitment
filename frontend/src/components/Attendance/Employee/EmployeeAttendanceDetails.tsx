@@ -8,7 +8,10 @@ import {
   useAllEmployeeCheckIns,
   useAllAttendanceRequests,
 } from "../../../hooks/useAttendance";
-import { EmployeeCheckInLog } from "../../../types/attendance";
+import {
+  AttendanceRecord,
+  EmployeeCheckInLog,
+} from "../../../types/attendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Plus, X } from "lucide-react";
@@ -18,8 +21,7 @@ interface EmployeeAttendanceDetailsProps {
   date?: Date;
   status?: string;
   onClose?: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data?: any;
+  data?: AttendanceRecord;
 }
 
 const EmployeeAttendanceDetails = ({

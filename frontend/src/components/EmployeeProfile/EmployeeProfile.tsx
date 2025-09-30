@@ -84,6 +84,11 @@ const EmployeeProfile: React.FC = () => {
             }
           );
         },
+        onError(e) {
+          setUploadedImage(null);
+          toast.error("File upload failed.");
+          console.error("File upload error -", e);
+        },
       });
     }
   };
@@ -127,7 +132,7 @@ const EmployeeProfile: React.FC = () => {
               <img
                 src={uploadedImage || user?.image || defaultProfile}
                 alt="User avatar"
-                className="w-24 h-24 rounded-xl object-cover"
+                className="w-24 h-24 rounded-xl object-contain"
               />
               <button
                 onClick={handleImageClick}
@@ -204,7 +209,7 @@ const EmployeeProfile: React.FC = () => {
                     <img
                       src={uploadedImage || user?.image || defaultProfile}
                       alt="User avatar"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </div>
 
