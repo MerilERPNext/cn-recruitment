@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { ROUTES } from "../../constants/routes";
 
 interface SubSubMenuItem {
   name: string;
@@ -88,15 +89,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
 
-  // const handleTodoClick = () => {
-  //   window.location.href = "/app/task_manager";
-  // };
   const handleTodoClick = () => {
-    window.open("/todoapp", "_blank");
+    window.open(ROUTES.TODO, "_blank");
   };
 
   const handleHelpDeskClick = () => {
-    window.location.href = "/helpdesk/my-tickets";
+    window.open(ROUTES.HELP_DESK, "_blank");
   };
 
   const navigationItems: NavigationItem[] = [
