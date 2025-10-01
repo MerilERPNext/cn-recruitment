@@ -179,7 +179,6 @@ export interface MyLeaveRequestType {
   todo_id: string;
   username: string;
   reference_name: string;
-  reference_type: string;
 }
 
 // types/leaves.ts
