@@ -12,6 +12,7 @@ import { useMarkAsRead } from "../../hooks/useNotificationLog";
 import HeaderBar from "../HeaderBar";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useNavigate } from "react-router";
+import { IMPERSONATION_TEXT } from "./Notification";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -28,7 +29,7 @@ interface NotificationLog {
 const NotificationList = () => {
   const { isDesktop } = useScreenSize();
   const [activeTab, setActiveTab] = useState<"all" | "read" | "unread">("all");
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const layout = (
     <div className="flex flex-col h-full">
@@ -84,18 +85,20 @@ const NotificationList = () => {
 
 // -------------------- ITEM COMPONENT --------------------
 const NotificationItem: React.FC<{
-  item: any; // BaseItem from FrappeListView
+  item: any;
   index?: number;
   doctype: string;
   activeTab: "all" | "read" | "unread";
 }> = ({ item, activeTab }) => {
-  // Cast BaseItem -> NotificationLogs
   const notification = item as NotificationLog;
 
   const [isRead, setIsRead] = useState(notification.read === 1);
   const [openDialog, setOpenDialog] = useState(false);
-
   const markAsRead = useMarkAsRead();
+
+  if (notification.subject?.includes(IMPERSONATION_TEXT)) {
+    return null;
+  }
 
   // Tab filter logic
   if (activeTab === "read" && !isRead) return null;
@@ -203,7 +206,7 @@ const NotificationItem: React.FC<{
           <div className="w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3 
+              <h3
                 className="text-lg font-semibold"
                 dangerouslySetInnerHTML={{ __html: notification.subject }}
               />
@@ -230,7 +233,9 @@ const NotificationItem: React.FC<{
                 </p>
               </div>
               <div className="text-gray-800 leading-relaxed">
-                <div dangerouslySetInnerHTML={{ __html: notification.subject }} />
+                <div
+                  dangerouslySetInnerHTML={{ __html: notification.subject }}
+                />
               </div>
             </div>
 
