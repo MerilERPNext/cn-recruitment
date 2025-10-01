@@ -130,9 +130,9 @@ export function usePayCompOff() {
 }
 
 export const useGetLeaveRequestFields = (
-  leaveType: string | undefined,
-  fromDate: string,
-  toDate: string
+  leaveType?: string | undefined,
+  fromDate?: string,
+  toDate?: string
 ) => {
   return useQuery<LeaveFieldResponse>({
     queryKey: ["leave-request-fields", leaveType, fromDate, toDate],
