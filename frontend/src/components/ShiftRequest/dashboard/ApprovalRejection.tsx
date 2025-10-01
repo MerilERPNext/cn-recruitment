@@ -9,6 +9,7 @@ type ApprovalRejectionQueueProps = {
   onToggleSelect?: (id: string) => void;
   data?: {
     allocated_to: string;
+    description: string;
     custom_doctype_actions_with_form: any;
     creation: string;
     date: string | number | Date;
@@ -77,7 +78,7 @@ const ApprovalRejectionQueue = ({
         />
       </div>
       <div className="font-medium  text-gray-900 text-xs truncate">
-        {data.allocated_to || "--"}
+        {data.description.split("Approval required for Shift Request ")[1] || "--"}
       </div>
       <div className="text-gray-700 text-xs truncate">
         {data.creation ? data.creation.split(" ")[0] : "--"}
