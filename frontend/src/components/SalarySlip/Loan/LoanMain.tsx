@@ -1,27 +1,24 @@
-"use client"
+"use client";
 
-import {  useMemo, useState } from "react"
-import { Search as SearchIcon } from "lucide-react"
-import { useScreenSize } from "../../../hooks/useScreenSize"
-import CreateLoanDialog from "./component/CreateLoanDailog"
-import LoanList from "./component/LoanListView"
-import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile"
-import { useLoan } from "../../../hooks/useLoan"
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee"
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser"
-
+import { useMemo, useState } from "react";
+import { Search as SearchIcon } from "lucide-react";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import CreateLoanDialog from "./component/CreateLoanDailog";
+import LoanList from "./component/LoanListView";
+import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile";
+import { useLoan } from "../../../hooks/useLoan";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 
 export default function LoansPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { isDesktop } = useScreenSize()
-  const { data: userId } = useLoggedInUser()
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "")
-  const employeeId = user?.employee ?? ""
-  const { data: loanData } = useLoan(employeeId || "")
-
- 
+  const { isDesktop } = useScreenSize();
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const employeeId = user?.employee ?? "";
+  const { data: loanData } = useLoan(employeeId || "");
 
   // const filteredLoans = (loanData || []).filter((loan: { status: string }) =>
   //   loan.status?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -41,22 +38,21 @@ export default function LoansPage() {
   // },[loanData, searchTerm]
   // )
 
-
   const filteredLoans = useMemo(() => {
-    if (!loanData) return []
-    const lower = searchTerm.toLowerCase()
+    if (!loanData) return [];
+    const lower = searchTerm.toLowerCase();
     return loanData.filter(
       (loan) =>
         loan.loan_name?.toLowerCase().includes(lower) ||
         loan.loan_type?.toLowerCase().includes(lower) ||
         loan.status?.toLowerCase().includes(lower)
-    )
-  }, [loanData, searchTerm])
-  
+    );
+  }, [loanData, searchTerm]);
+
   // Desktop Layout
-  const DesktopLayout = () => (
-    <div className="min-h-screen   overflow-x-hidden">
-      <div className="w-full  mx-auto py-8">
+  const DesktopLayout = (
+    <div className="min-h-screen overflow-x-hidden">
+      <div className="w-full mx-auto py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 px-4">
           <h1 className="text-2xl font-semibold text-gray-900">
@@ -78,14 +74,9 @@ export default function LoansPage() {
             </div>
             <input
               type="text"
-              key={loanData?.length}
               placeholder="Search loans..."
               value={searchTerm}
-              onChange={(e) => {
-                // Ye ensure karega state properly update ho
-                const val = e.target.value
-                setSearchTerm(val)
-              }}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md 
               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
@@ -106,21 +97,21 @@ export default function LoansPage() {
         )}
       </div>
     </div>
-  )
+  );
 
-  // Mobile Layout
   const MobileLayout = () => (
     <div className="min-h-screen w-full ">
-     <ListViewOfLoanForMobile />
+      <ListViewOfLoanForMobile />
     </div>
-  )
+  );
 
   return (
     <div>
-    <>
-    {isDesktop ? <DesktopLayout /> : <MobileLayout />}
-  </>
-  <CreateLoanDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
-  </div>
-  )
+      <>{isDesktop ? DesktopLayout : <MobileLayout />}</>
+      <CreateLoanDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+      />
+    </div>
+  );
 }
