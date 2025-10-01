@@ -135,12 +135,12 @@ const SalarySlipsList = () => {
             {/* Filters + Mask toggle */}
             <div className="mb-4 flex items-center justify-between gap-4">
               <div className="flex-1 max-w-xs">
-                {/* CHANGED: Using .form-input for consistent styling */}
+                {/* CHANGED: Using .my-form-input for consistent styling */}
                 <select
                   id="yearFilter"
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
-                  className="form-input"
+                  className="my-form-input"
                 >
                   <option value="">All Years</option>
                   {years.map((year) => (
@@ -150,10 +150,10 @@ const SalarySlipsList = () => {
                   ))}
                 </select>
               </div>
-              {/* CHANGED: Using .btn-secondary for consistent styling */}
+              {/* CHANGED: Using .my-btn-secondary for consistent styling */}
               <button
                 onClick={() => setMaskSalary((prev) => !prev)}
-                className="btn-secondary"
+                className="my-btn-secondary"
                 title={maskSalary ? "Show amounts" : "Hide amounts"}
               >
                 {maskSalary ? (
@@ -172,16 +172,16 @@ const SalarySlipsList = () => {
 
             {/* Desktop table header */}
             {isDesktop && (
-              // CHANGED: Using .table-header
-              <div className="table-header rounded-t-lg">
+              // CHANGED: Using .my-table-header
+              <div className="bg-gray-50 border border-gray-200 rounded-t-lg">
                 <div className="flex items-center justify-between">
-                  {/* CHANGED: Using .table-header-text */}
-                  <div className="table-header-text flex-1 min-w-0">Employee</div>
-                  <div className="table-header-text flex-1 min-w-0 text-center">Start Date</div>
-                  <div className="table-header-text flex-1 min-w-0 text-center">End Date</div>
-                  <div className="table-header-text flex-1 min-w-0 text-center">Posting Date</div>
-                  <div className="table-header-text flex-1 min-w-0 text-center">Gross Pay</div>
-                  <div className="table-header-text w-24 text-center">Actions</div>
+                  {/* CHANGED: Using .my-table-header-text */}
+                  <div className="my-table-header-text flex-1 min-w-0">Employee</div>
+                  <div className="my-table-header-text flex-1 min-w-0 text-center">Start Date</div>
+                  <div className="my-table-header-text flex-1 min-w-0 text-center">End Date</div>
+                  <div className="my-table-header-text flex-1 min-w-0 text-center">Posting Date</div>
+                  <div className="my-table-header-text flex-1 min-w-0 text-center">Gross Pay</div>
+                  <div className="my-table-header-text w-24 text-center">Actions</div>
                 </div>
               </div>
             )}
@@ -216,8 +216,8 @@ const SalarySlipItem: React.FC<{
   }
 
   return (
-    // CHANGED: Using .content-card for consistent card styling
-    <div key={item.name} className="content-card flex justify-between items-center gap-3 mt-1">
+    // CHANGED: Using .my-content-card for consistent card styling
+    <div key={item.name} className="my-content-card flex justify-between items-center gap-3 mt-1">
       <div className="flex-grow">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-gray-900 text-base font-semibold">{formatToIndianDate(item.start_date)}</h3>
@@ -230,19 +230,19 @@ const SalarySlipItem: React.FC<{
         </div>
       </div>
       <div className="flex items-center gap-2 ml-3">
-        {/* CHANGED: Using .btn-icon for consistent button styling */}
+        {/* CHANGED: Using .my-btn-icon for consistent button styling */}
         <button
           onClick={(e) => onDownload(e, item.name)}
           disabled={isDownloading}
-          className="btn-icon"
+          className="my-btn-icon"
           title="Download Salary Slip"
         >
           <Download className="w-4 h-4" />
         </button>
-        {/* CHANGED: Using .btn-icon for consistent button styling */}
+        {/* CHANGED: Using .my-btn-icon for consistent button styling */}
         <button
           onClick={() => onViewPDF(item.name, item.start_date)}
-          className="btn-icon"
+          className="my-btn-icon"
           title="View Salary Slip"
         >
           <FaRegEye className="w-4 h-4" />
@@ -276,31 +276,31 @@ const SalarySlipItemDesktop: React.FC<{
   }
 
   return (
-    // CHANGED: Using .data-row
-    <div className="data-row">
+    // CHANGED: Using .my-data-row
+    <div className="my-data-row">
       <div className="flex items-center justify-between">
-        {/* CHANGED: Using .data-cell for consistent cell styling */}
-        <div className="data-cell flex-1 min-w-0 font-medium truncate">{item.employee}</div>
-        <div className="data-cell flex-1 min-w-0 text-center">{formatToIndianDate(item.start_date)}</div>
-        <div className="data-cell flex-1 min-w-0 text-center"><span className="font-medium">{formatToIndianDate(item.end_date)}</span></div>
-        <div className="data-cell flex-1 min-w-0 text-center"><span className="font-medium">{formatToIndianDate(item.posting_date)}</span></div>
-        <div className="data-cell flex-1 min-w-0 text-center">
+        {/* CHANGED: Using .my-data-cell for consistent cell styling */}
+        <div className="my-data-cell flex-1 min-w-0 font-medium truncate">{item.employee}</div>
+        <div className="my-data-cell flex-1 min-w-0 text-center">{formatToIndianDate(item.start_date)}</div>
+        <div className="my-data-cell flex-1 min-w-0 text-center"><span className="font-medium">{formatToIndianDate(item.end_date)}</span></div>
+        <div className="my-data-cell flex-1 min-w-0 text-center"><span className="font-medium">{formatToIndianDate(item.posting_date)}</span></div>
+        <div className="my-data-cell flex-1 min-w-0 text-center">
           {maskSalary ? <span className="blur-sm select-none text-gray-400">₹XX,XXX</span> : <span className="font-medium">{formatCurrency(item.gross_pay)}</span>}
         </div>
-        <div className="data-cell w-24 flex items-center justify-center gap-2">
-          {/* CHANGED: Using .btn-icon */}
+        <div className="my-data-cell w-24 flex items-center justify-center gap-2">
+          {/* CHANGED: Using .my-btn-icon */}
           <button
             onClick={(e) => onDownload(e, item.name)}
             disabled={isDownloading}
-            className="btn-icon disabled:cursor-not-allowed"
+            className="my-btn-icon disabled:cursor-not-allowed"
             title="Download Salary Slip"
           >
             <Download className="w-4 h-4" />
           </button>
-          {/* CHANGED: Using .btn-icon */}
+          {/* CHANGED: Using .my-btn-icon */}
           <button
             onClick={() => onViewPDF(item.name, item.start_date)}
-            className="btn-icon"
+            className="my-btn-icon"
             title="View Salary Slip"
           >
             <FaRegEye className="w-4 h-4" />
