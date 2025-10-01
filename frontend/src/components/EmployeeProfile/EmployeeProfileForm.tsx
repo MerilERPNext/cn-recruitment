@@ -120,7 +120,7 @@ const EmployeeProfileForm: React.FC = () => {
         <button
           onClick={handleSubmit}
           disabled={mutation?.isPending}
-          className="w-full rounded-lg py-3 bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          className="w-full rounded-lg py-3 bg-black text-white font-medium hover:bg-gray-800 transition-colors hidden"
         >
           {mutation?.isPending || employee.isLoading ? (
             <CircularLoader size="sm" color="white" />
