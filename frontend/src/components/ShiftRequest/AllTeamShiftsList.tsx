@@ -3,7 +3,7 @@ import { StatusBadge } from "./AllShiftsDashboard";
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
-import formatToIndianDate from "../../utils/formatToIndianDate";
+import formatToIndianDate, { formatEndDate } from "../../utils/formatToIndianDate";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 
 const TeamShiftRowItem: React.FC<{
@@ -20,7 +20,7 @@ const TeamShiftRowItem: React.FC<{
       </div>
       <div className="my-data-cell truncate" title={`Shift Time: ${item.start_time} - ${item.end_time}`}>{item.shift_type}</div>
       <div className="my-data-cell">{formatToIndianDate(item.start_date)}</div>
-      <div className="my-data-cell">{formatToIndianDate(item.end_date)}</div>
+      <div className="my-data-cell">{formatEndDate(item.end_date)}</div>
       <div className="my-data-cell flex justify-center">
         <StatusBadge status={item.status} />
       </div>

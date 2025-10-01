@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ApprovalList from "../shared/ApprovalList";
 import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
-import formatToIndianDate from "../../utils/formatToIndianDate";
+import formatToIndianDate, { formatEndDate } from "../../utils/formatToIndianDate";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -40,15 +40,29 @@ export const StatusBadge = ({ status }: { status: string }) => {
 };
 
 // CHANGED: Using our new .dashboard-card class
-const Card = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={`my-dashboard-card ${className}`}>{children}</div>
-);
+const Card = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => <div className={`my-dashboard-card ${className}`}>{children}</div>;
 
 // CHANGED: Using .card-header-title and .card-header-action
-const CardHeader = ({ title, onSeeAll }: { title: string; onSeeAll: () => void }) => (
+const CardHeader = ({
+  title,
+  onSeeAll,
+}: {
+  title: string;
+  onSeeAll: () => void;
+}) => (
   <div className="flex justify-between items-center mb-4">
     <h2 className="my-card-header-title">{title}</h2>
-    <button onClick={onSeeAll} className="my-card-header-action" title="See All">
+    <button
+      onClick={onSeeAll}
+      className="my-card-header-action"
+      title="See All"
+    >
       <span>View All</span>
       <ExternalLink size={16} />
     </button>
@@ -60,23 +74,28 @@ const MyShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item }) => {
-  const getShiftStatus = (startDate: string, endDate: string): string => {
+  const getShiftStatus = (startDate: string, endDate?: string): string => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
 
-    const end = new Date(endDate);
-    end.setHours(0, 0, 0, 0);
-
-    if (today < start) {
-      return "Upcoming";
-    } else if (today > end) {
-      return "Previous";
-    } else {
-      return "Current";
+    let end: Date | null = null;
+    if (endDate) {
+      end = new Date(endDate);
+      end.setHours(0, 0, 0, 0);
     }
+
+    if (!end) {
+      // Missing end date → treat as ongoing
+      if (today >= start) return "Current";
+      return "Upcoming";
+    }
+
+    if (today < start) return "Upcoming";
+    if (today > end) return "Previous";
+    return "Current";
   };
 
   const shiftStatus = getShiftStatus(item.start_date, item.end_date);
@@ -85,17 +104,18 @@ const MyShiftItem: React.FC<{
   return (
     <li className="my-list-item-card">
       <div className="text-xs text-gray-600">
-          <p>
-            <span className="font-medium">{item.shift_type}</span>
-          </p>
-          <p>
-            <span className="font-medium">{item.start_time} - {item.end_time}</span>
-          </p>
-          <p>
-            {formatToIndianDate(item.start_date)} -{" "}
-            {formatToIndianDate(item.end_date)}
-          </p>
-        </div>
+        <p>
+          <span className="font-medium">{item.shift_type}</span>
+        </p>
+        <p>
+          <span className="font-medium">
+            {item.start_time} - {item.end_time}
+          </span>
+        </p>
+        <p>
+          {formatToIndianDate(item.start_date)} - {formatEndDate(item.end_date)}
+        </p>
+      </div>
       <StatusBadge status={shiftStatus} />
     </li>
   );
@@ -114,10 +134,10 @@ const MyShifts: React.FC = () => {
       />
       <div className="max-h-96 overflow-y-auto my-shifts-dashboard">
         <ul className="max-h-96 overflow-y-auto my-shifts-dashboard">
-        {myShifts.map((shift, idx) => (
-          <MyShiftItem key={shift.name} item={shift} index={idx} />
-        ))}
-      </ul>
+          {myShifts.map((shift, idx) => (
+            <MyShiftItem key={shift.name} item={shift} index={idx} />
+          ))}
+        </ul>
       </div>
     </Card>
   );
@@ -156,11 +176,13 @@ const TeamShiftItem: React.FC<{
             <span className="font-medium">{item.shift_type}</span>
           </p>
           <p>
-            <span className="font-medium">{item.start_time} - {item.end_time}</span>
+            <span className="font-medium">
+              {item.start_time} - {item.end_time}
+            </span>
           </p>
           <p>
             {formatToIndianDate(item.start_date)} -{" "}
-            {formatToIndianDate(item.end_date)}
+            {formatEndDate(item.end_date)}
           </p>
         </div>
       </div>
@@ -187,10 +209,10 @@ const TeamShiftList = () => {
       />
       <div className="max-h-96 overflow-y-auto team-shift-dashboard">
         <ul className="max-h-96 overflow-y-auto my-shifts-dashboard">
-        {teamShifts.map((shift, idx) => (
-          <TeamShiftItem key={shift.name} item={shift} index={idx} />
-        ))}
-      </ul>
+          {teamShifts.map((shift, idx) => (
+            <TeamShiftItem key={shift.name} item={shift} index={idx} />
+          ))}
+        </ul>
       </div>
     </Card>
   );
@@ -289,7 +311,7 @@ export default function AllShiftsDashboard() {
                   navigate("/webapp/shift-request/shift-change-request")
                 }
               />
-              <div className="border border-gray-200 rounded-lg overflow-x-auto" >
+              <div className="border border-gray-200 rounded-lg overflow-x-auto">
                 <div className="overflow-x-auto bg-white shadow-sm w-full">
                   {/* CHANGED: Using .my-table-header and .my-table-header-text */}
                   <div className="my-table-header grid grid-cols-7 gap-4 rounded-t-lg w-full">
@@ -333,7 +355,7 @@ export default function AllShiftsDashboard() {
                 />
               </div>
             </Card>
-            
+
             <AllMyShiftRequestsList />
           </div>
           <div className="grid grid-cols-2 gap-6 mb-14">
