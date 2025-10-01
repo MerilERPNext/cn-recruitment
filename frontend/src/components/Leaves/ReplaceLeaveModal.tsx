@@ -44,7 +44,6 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
     fromDate ?? today,
     toDate ?? today
   );
-  console.log("Leave request fields:", fields);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
@@ -150,7 +149,6 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
       components.push({
         type: "file",
         key: "attachment",
-        // label: "Attachment",
         label:
           fields?.mandatory?.custom_attachment === 1
             ? 'Attachment <span style="color:red">*</span>'
