@@ -2,8 +2,6 @@ import {
   Calendar,
   Clock,
   FileText,
-  Users,
-  Settings,
   User,
   HelpCircle,
   CheckCircle,
@@ -12,6 +10,8 @@ import {
   Search,
   ChevronDown,
   Headset,
+  Timer,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   useCanShowClockIn,
@@ -48,6 +48,13 @@ import EmployeeFallback from "./EmployeeFallback";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import toast from "react-hot-toast";
+import AttendanceRequestForm from "./Attendance/AttendanceRequest/AttendanceRequestForm";
+import { LeaveRequestRefreshProvider } from "./Leaves/LeaveRequestRefreshContext";
+import { RequestLeaveModalProvider } from "./Leaves/RequestLeaveModalContext";
+import LeaveRequest from "./Attendance/LeaveRequest";
+import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
+import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
+import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -58,6 +65,18 @@ export default function DesktopDashboard() {
   const { logout } = useFrappeAuth();
   const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
+  const [showLeaveRequest, setShowLeaveRequest] = useState(false);
+  const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
+  const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
+  const handleCloseShiftModal = () => {
+    setShowShiftRequestModal(false);
+  };
+
+  const handleShiftForm = () => {
+    setShowShiftRequestModal(true);
+  };
+
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee, isLoading: currentEmpIsLoading } =
     useCurrentEmployeeAllDetails(userId || "");
@@ -815,7 +834,12 @@ export default function DesktopDashboard() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                <div
+                  className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setShowLeaveRequest(true);
+                  }}
+                >
                   <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-blue-600" />
                   </div>
@@ -824,28 +848,43 @@ export default function DesktopDashboard() {
                   </p>
                 </div>
 
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                <div
+                  className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setShowAttendanceRequest(true);
+                  }}
+                >
                   <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <FileText className="w-6 h-6 text-blue-600" />
                   </div>
                   <p className="text-sm text-gray-600 font-medium">
-                    Request Letter
+                    Attendance Request
                   </p>
                 </div>
 
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                <div
+                  className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setShowOvertimeRequest(true);
+                  }}
+                >
                   <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-purple-600" />
+                    <Timer className="w-6 h-6 text-purple-600" />
                   </div>
                   <p className="text-sm text-gray-600 font-medium">
-                    Team Request
+                    Planned Overtime Request
                   </p>
                 </div>
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                <div
+                  className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={handleShiftForm}
+                >
                   <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <Settings className="w-6 h-6 text-green-600" />
+                    <ArrowUpDown className="w-6 h-6 text-green-600" />
                   </div>
-                  <p className="text-sm text-gray-600 font-medium">Settings</p>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Request Shift Change
+                  </p>
                 </div>
               </div>
             </div>
@@ -854,6 +893,46 @@ export default function DesktopDashboard() {
           <MicroAppInDashboard />
         </div>
       </div>
+      {showAttendanceRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AttendanceRequestForm
+              onClose={() => setShowAttendanceRequest(false)}
+            />
+          </div>
+        </div>
+      )}
+      {showLeaveRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Ensure LeaveRequest is inside its providers */}
+            <LeaveRequestRefreshProvider>
+              <RequestLeaveModalProvider>
+                <LeaveRequest
+                  onCancel={() => setShowLeaveRequest(false)}
+                  onSuccess={() => setShowLeaveRequest(false)}
+                />
+              </RequestLeaveModalProvider>
+            </LeaveRequestRefreshProvider>
+          </div>
+        </div>
+      )}
+      {showOvertimeRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CreateOvertimeRequest
+              onCancel={() => setShowOvertimeRequest(false)}
+            />
+          </div>
+        </div>
+      )}
+      <ExpenseFormModal
+        isOpen={showShiftRequestModal}
+        onClose={handleCloseShiftModal}
+        title="Request Shift Change"
+      >
+        <ShiftRequestFormModal onClose={handleCloseShiftModal} />
+      </ExpenseFormModal>
     </div>
   );
 }

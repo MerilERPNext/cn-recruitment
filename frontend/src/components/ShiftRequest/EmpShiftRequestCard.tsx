@@ -22,6 +22,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
       revokeEventMutation.mutate(
         {
           docname: data?.reference_name,
+          doctype: data?.reference_type,
           todo: data?.todo_id,
         },
         {
