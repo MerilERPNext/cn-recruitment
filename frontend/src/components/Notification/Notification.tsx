@@ -12,7 +12,7 @@ import { useMarkAsRead } from "../../hooks/useNotificationLog";
 import HeaderBar from "../HeaderBar";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useNavigate } from "react-router";
-import { IMPERSONATION_TEXT } from "./Notification";
+import { IMPERSONATION_TEXT } from "./types";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {

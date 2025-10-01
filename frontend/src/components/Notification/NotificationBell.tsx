@@ -1,6 +1,6 @@
 import { FaBell } from "react-icons/fa";
 import { useNotifications } from "../../hooks/useNotificationLog";
-import { IMPERSONATION_TEXT } from "./Notification";
+import { IMPERSONATION_TEXT } from "./types";
 
 export default function NotificationBell() {
   const { data: notifications = [] } = useNotifications();
@@ -20,6 +20,3 @@ export default function NotificationBell() {
     </div>
   );
 }
-
-
-
