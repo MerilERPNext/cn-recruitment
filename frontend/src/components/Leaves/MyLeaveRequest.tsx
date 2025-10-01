@@ -33,10 +33,16 @@ const MyLeaveRequests = ({
     isOpen: boolean;
     leaveType?: string;
     leaveData?: string;
+    LeaveDays?: number;
+    fromDate?: string;
+    toDate?: string;
   }>({
     isOpen: false,
     leaveType: undefined,
     leaveData: undefined,
+    LeaveDays: undefined,
+    fromDate: undefined,
+    toDate: undefined,
   });
   const navigate = useNavigate();
   const { mutate: revokeLeave } = useRevokeApprovedLeave();
@@ -49,6 +55,9 @@ const MyLeaveRequests = ({
       isOpen: true,
       leaveType: leaveData?.reference_document?.leave_type,
       leaveData: leaveData?.reference_document?.name,
+      LeaveDays: leaveData?.reference_document?.total_leave_days,
+      fromDate: leaveData?.reference_document?.from_date,
+      toDate: leaveData?.reference_document?.to_date,
     });
   };
 
@@ -57,6 +66,9 @@ const MyLeaveRequests = ({
       isOpen: false,
       leaveType: undefined,
       leaveData: undefined,
+      LeaveDays: undefined,
+      fromDate: undefined,
+      toDate: undefined,
     });
   };
 
@@ -227,14 +239,18 @@ const MyLeaveRequests = ({
           </div>
         </div>
       </div>
-
-      <ReplaceLeaveModal
-        isOpen={replaceModalData.isOpen}
-        onClose={handleCloseReplaceModal}
-        onReplace={handleReplace}
-        currentLeaveType={replaceModalData.leaveType}
-        currentLeaveName={replaceModalData.leaveData}
-      />
+      {replaceModalData.isOpen && (
+        <ReplaceLeaveModal
+          isOpen={replaceModalData.isOpen}
+          onClose={handleCloseReplaceModal}
+          onReplace={handleReplace}
+          currentLeaveType={replaceModalData.leaveType}
+          currentLeaveName={replaceModalData.leaveData}
+          currentLeaveDays={replaceModalData.LeaveDays}
+          fromDate={replaceModalData.fromDate}
+          toDate={replaceModalData.toDate}
+        />
+      )}
     </>
   );
 };

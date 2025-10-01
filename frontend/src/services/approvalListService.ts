@@ -24,14 +24,15 @@ export const approvalListServices = {
 
   revokeEvent: async (
     docname: string,
-    todo: string
+    todo: string,
+    doctype: string
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> => {
     try {
       const response = await FrappeAPI.callMethod(
         "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.revoke_event",
         {
-          doctype: "Funnel Task",
+          doctype,
           docname,
           data: { todo },
         }

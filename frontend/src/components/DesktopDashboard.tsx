@@ -2,8 +2,6 @@ import {
   Calendar,
   Clock,
   FileText,
-  Users,
-  Settings,
   User,
   HelpCircle,
   CheckCircle,
@@ -12,6 +10,8 @@ import {
   Search,
   ChevronDown,
   Headset,
+  Timer,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   useCanShowClockIn,
@@ -48,6 +48,13 @@ import EmployeeFallback from "./EmployeeFallback";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import toast from "react-hot-toast";
+import AttendanceRequestForm from "./Attendance/AttendanceRequest/AttendanceRequestForm";
+import { LeaveRequestRefreshProvider } from "./Leaves/LeaveRequestRefreshContext";
+import { RequestLeaveModalProvider } from "./Leaves/RequestLeaveModalContext";
+import LeaveRequest from "./Attendance/LeaveRequest";
+import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
+import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
+import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -58,8 +65,21 @@ export default function DesktopDashboard() {
   const { logout } = useFrappeAuth();
   const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
+  const [showLeaveRequest, setShowLeaveRequest] = useState(false);
+  const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
+  const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
+  const handleCloseShiftModal = () => {
+    setShowShiftRequestModal(false);
+  };
+
+  const handleShiftForm = () => {
+    setShowShiftRequestModal(true);
+  };
+
   const { data: userId } = useLoggedInUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: currentEmployee, isLoading: currentEmpIsLoading } =
+    useCurrentEmployeeAllDetails(userId || "");
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
@@ -403,31 +423,38 @@ export default function DesktopDashboard() {
             </button>
 
             <div className="relative" ref={profileDropdownRef}>
-              <button
-                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-900 text-right">
-                    {currentEmployee?.employee_name || "Temp User"}
-                  </p>
-                  <p className="text-xs text-gray-500 text-right">
-                    Employee ID: {currentEmployee?.employee || "N/A"}
-                  </p>
+              {currentEmpIsLoading || !currentEmployee ? (
+                <div className="flex w-30 animate-pulse gap-2 items-center">
+                  <div className="h-4 bg-gray-300 rounded w-20  flex-1"></div>
+                  <div className="h-6 w-6 bg-gray-300 rounded-full "></div>
                 </div>
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
-                  <img
-                    src={currentEmployee?.image || defaultProfile}
-                    alt="User avatar"
-                    className="w-full h-full object-cover"
+              ) : (
+                <button
+                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 text-right">
+                      {currentEmployee?.employee_name}
+                    </p>
+                    <p className="text-xs text-gray-500 text-right">
+                      Employee ID: {currentEmployee?.employee}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                    <img
+                      src={currentEmployee?.image || defaultProfile}
+                      alt="User avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
-                </div>
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
-                    showProfileDropdown ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+                </button>
+              )}
 
               {/* Profile Dropdown */}
               {showProfileDropdown && (
@@ -673,7 +700,7 @@ export default function DesktopDashboard() {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex w-full gap-4">
-                    {currentEmployee?.custom_allow_mobile_checkin && (
+                    {currentEmployee?.custom_allow_mobile_checkin ? (
                       <button
                         onClick={() =>
                           handleCheckInOut(
@@ -698,7 +725,7 @@ export default function DesktopDashboard() {
                           "Check In"
                         )}
                       </button>
-                    )}
+                    ) : null}
 
                     {canShowClockIn?.can_show && (
                       <button
@@ -775,10 +802,10 @@ export default function DesktopDashboard() {
                         onClick={handleHelpDeskClick}
                         className="flex items-center w-full justify-center gap-2 text-white px-4 py-2 rounded-lg  text-sm"
                       >
-                        <Headset className="w-4 h-4" />
+                        <Headset className="w-4 h-4 text-blue-800" />
                       </button>
                     </div>
-                    <div className="text-sm text-gray-600 font-medium text-center">
+                    <div className="text-sm text-gray-800 font-medium text-center">
                       Helpdesk
                     </div>
                   </div>
@@ -790,7 +817,7 @@ export default function DesktopDashboard() {
                         onClick={handleTodoClick}
                         className="flex items-center w-full justify-center gap-2 text-white px-4 py-2 rounded-lg  text-sm"
                       >
-                        <HelpCircle className="w-4 h-4" />
+                        <HelpCircle className="w-4 h-4 text-green-800" />
                       </button>
                     </div>
                     <div className="text-sm text-gray-600 font-medium text-center">
@@ -804,16 +831,15 @@ export default function DesktopDashboard() {
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-gray-900">Requests</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-blue-600 text-sm cursor-pointer">
-                    View All
-                  </span>
-                  <span className="text-gray-400">•••</span>
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                <div
+                  className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setShowLeaveRequest(true);
+                  }}
+                >
                   <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-blue-600" />
                   </div>
@@ -822,28 +848,43 @@ export default function DesktopDashboard() {
                   </p>
                 </div>
 
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                <div
+                  className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setShowAttendanceRequest(true);
+                  }}
+                >
                   <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <FileText className="w-6 h-6 text-blue-600" />
                   </div>
                   <p className="text-sm text-gray-600 font-medium">
-                    Request Letter
+                    Attendance Request
                   </p>
                 </div>
 
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                <div
+                  className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setShowOvertimeRequest(true);
+                  }}
+                >
                   <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-purple-600" />
+                    <Timer className="w-6 h-6 text-purple-600" />
                   </div>
                   <p className="text-sm text-gray-600 font-medium">
-                    Team Request
+                    Planned Overtime Request
                   </p>
                 </div>
-                <div className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors">
+                <div
+                  className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={handleShiftForm}
+                >
                   <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <Settings className="w-6 h-6 text-green-600" />
+                    <ArrowUpDown className="w-6 h-6 text-green-600" />
                   </div>
-                  <p className="text-sm text-gray-600 font-medium">Settings</p>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Request Shift Change
+                  </p>
                 </div>
               </div>
             </div>
@@ -852,6 +893,46 @@ export default function DesktopDashboard() {
           <MicroAppInDashboard />
         </div>
       </div>
+      {showAttendanceRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AttendanceRequestForm
+              onClose={() => setShowAttendanceRequest(false)}
+            />
+          </div>
+        </div>
+      )}
+      {showLeaveRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Ensure LeaveRequest is inside its providers */}
+            <LeaveRequestRefreshProvider>
+              <RequestLeaveModalProvider>
+                <LeaveRequest
+                  onCancel={() => setShowLeaveRequest(false)}
+                  onSuccess={() => setShowLeaveRequest(false)}
+                />
+              </RequestLeaveModalProvider>
+            </LeaveRequestRefreshProvider>
+          </div>
+        </div>
+      )}
+      {showOvertimeRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CreateOvertimeRequest
+              onCancel={() => setShowOvertimeRequest(false)}
+            />
+          </div>
+        </div>
+      )}
+      <ExpenseFormModal
+        isOpen={showShiftRequestModal}
+        onClose={handleCloseShiftModal}
+        title="Request Shift Change"
+      >
+        <ShiftRequestFormModal onClose={handleCloseShiftModal} />
+      </ExpenseFormModal>
     </div>
   );
 }

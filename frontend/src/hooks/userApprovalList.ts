@@ -21,8 +21,15 @@ export function useRevokeEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ docname, todo }: { docname: string; todo: string }) =>
-      approvalListServices.revokeEvent(docname, todo),
+    mutationFn: async ({
+      docname,
+      todo,
+      doctype,
+    }: {
+      docname: string;
+      todo: string;
+      doctype: string;
+    }) => approvalListServices.revokeEvent(docname, todo, doctype),
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });

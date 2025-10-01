@@ -38,7 +38,10 @@ export default defineConfig({
             },
             // Aggressive tree shaking configuration
             treeshake: {
-                moduleSideEffects: false,
+                moduleSideEffects: (id) => {
+                    // Preserve side effects for FormioConfig
+                    return id.includes('FormioConfig') || id.includes('formiojs');
+                },
                 propertyReadSideEffects: false,
                 tryCatchDeoptimization: false
             }

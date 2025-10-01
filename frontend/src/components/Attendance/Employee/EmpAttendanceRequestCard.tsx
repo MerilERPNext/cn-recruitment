@@ -26,6 +26,7 @@ const EmpAttendanceRequestCard = ({
       revokeEventMutation.mutate(
         {
           docname: data?.reference_name,
+          doctype: data?.reference_type,
           todo: data?.todo_id,
         },
         {
