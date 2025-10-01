@@ -64,6 +64,7 @@ export interface AttendanceRequest {
 
 export interface MyAttendanceRequest {
   reference_document: AttendanceRequest;
+  reference_type: string;
   allocated_to: string;
   custom_allow_revoke: boolean;
   todo_id: string;

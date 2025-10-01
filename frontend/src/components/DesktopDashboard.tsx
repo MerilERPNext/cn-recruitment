@@ -59,7 +59,8 @@ export default function DesktopDashboard() {
   const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const { data: userId } = useLoggedInUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: currentEmployee, isLoading: currentEmpIsLoading } =
+    useCurrentEmployeeAllDetails(userId || "");
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
@@ -403,31 +404,38 @@ export default function DesktopDashboard() {
             </button>
 
             <div className="relative" ref={profileDropdownRef}>
-              <button
-                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-900 text-right">
-                    {currentEmployee?.employee_name || "Temp User"}
-                  </p>
-                  <p className="text-xs text-gray-500 text-right">
-                    Employee ID: {currentEmployee?.employee || "N/A"}
-                  </p>
+              {currentEmpIsLoading || !currentEmployee ? (
+                <div className="flex w-30 animate-pulse gap-2 items-center">
+                  <div className="h-4 bg-gray-300 rounded w-20  flex-1"></div>
+                  <div className="h-6 w-6 bg-gray-300 rounded-full "></div>
                 </div>
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
-                  <img
-                    src={currentEmployee?.image || defaultProfile}
-                    alt="User avatar"
-                    className="w-full h-full object-cover"
+              ) : (
+                <button
+                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 text-right">
+                      {currentEmployee?.employee_name}
+                    </p>
+                    <p className="text-xs text-gray-500 text-right">
+                      Employee ID: {currentEmployee?.employee}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                    <img
+                      src={currentEmployee?.image || defaultProfile}
+                      alt="User avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
-                </div>
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
-                    showProfileDropdown ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+                </button>
+              )}
 
               {/* Profile Dropdown */}
               {showProfileDropdown && (
@@ -673,7 +681,7 @@ export default function DesktopDashboard() {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex w-full gap-4">
-                    {currentEmployee?.custom_allow_mobile_checkin && (
+                    {currentEmployee?.custom_allow_mobile_checkin ? (
                       <button
                         onClick={() =>
                           handleCheckInOut(
@@ -698,7 +706,7 @@ export default function DesktopDashboard() {
                           "Check In"
                         )}
                       </button>
-                    )}
+                    ) : null}
 
                     {canShowClockIn?.can_show && (
                       <button
@@ -775,10 +783,10 @@ export default function DesktopDashboard() {
                         onClick={handleHelpDeskClick}
                         className="flex items-center w-full justify-center gap-2 text-white px-4 py-2 rounded-lg  text-sm"
                       >
-                        <Headset className="w-4 h-4" />
+                        <Headset className="w-4 h-4 text-blue-800" />
                       </button>
                     </div>
-                    <div className="text-sm text-gray-600 font-medium text-center">
+                    <div className="text-sm text-gray-800 font-medium text-center">
                       Helpdesk
                     </div>
                   </div>
@@ -790,7 +798,7 @@ export default function DesktopDashboard() {
                         onClick={handleTodoClick}
                         className="flex items-center w-full justify-center gap-2 text-white px-4 py-2 rounded-lg  text-sm"
                       >
-                        <HelpCircle className="w-4 h-4" />
+                        <HelpCircle className="w-4 h-4 text-green-800" />
                       </button>
                     </div>
                     <div className="text-sm text-gray-600 font-medium text-center">
@@ -804,12 +812,6 @@ export default function DesktopDashboard() {
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-gray-900">Requests</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-blue-600 text-sm cursor-pointer">
-                    View All
-                  </span>
-                  <span className="text-gray-400">•••</span>
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
