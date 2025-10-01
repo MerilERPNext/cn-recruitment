@@ -112,6 +112,15 @@ export const useGetEmployeeSubordinateHierarchy = (employee: string) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+export const useEmployeeReportees = () => {
+  return useQuery<Employee[]>({
+    queryKey: ["Employee-reportess"],
+    queryFn: () => {
+      return EmployeeService.getEmployeeReportees();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
 
 export const useUpdateCurrentEmployeeProfile = () => {
   const queryClient = useQueryClient();

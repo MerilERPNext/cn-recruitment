@@ -10,7 +10,7 @@ import {
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import {
   useCurrentEmployeeAllDetails,
-  useGetAllEmployees,
+  useEmployeeReportees,
   useGetAllReasons,
 } from "../../../hooks/useEmployee";
 import { useShiftTypes } from "../../../hooks/useShift";
@@ -67,7 +67,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
-  const { data: employeeList } = useGetAllEmployees();
+  const { data: employeeReporteeList } = useEmployeeReportees();
   const { data: userRoles } = useGetUserRoles();
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
@@ -179,7 +179,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     if (formAddressInstance.current) {
       let company = "Not Assigned";
       if (isForOthers && selectedEmployee) {
-        const selectedEmp = employeeList?.find(
+        const selectedEmp = employeeReporteeList?.find(
           (emp) => emp.name == selectedEmployee
         );
         company = selectedEmp?.company || "Not Assigned";
@@ -219,7 +219,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     selectedEmployee,
     isForOthers,
     currentEmployee,
-    employeeList,
+    employeeReporteeList,
   ]);
 
   React.useEffect(() => {
@@ -250,8 +250,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                   validate: { required: true },
                   data: {
                     values:
-                      employeeList && employeeList?.length > 0
-                        ? employeeList?.map(
+                      employeeReporteeList && employeeReporteeList?.length > 0
+                        ? employeeReporteeList?.map(
                             (item: {
                               name: string;
                               employee_name: string;
@@ -576,7 +576,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     }),
     [
       isForOthers,
-      employeeList,
+      employeeReporteeList,
       currentEmployee,
       reasonList,
       selectedRequestType,
