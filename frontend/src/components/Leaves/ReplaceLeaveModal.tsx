@@ -1,8 +1,11 @@
-import React, { useRef, useMemo, useEffect } from "react";
+import React, { useRef, useMemo, useEffect, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
 import { X } from "lucide-react";
-import { useGetLeaveBalance } from "../../hooks/useLeaves";
+import {
+  useGetLeaveBalance,
+  useGetLeaveRequestFields,
+} from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 
@@ -13,13 +16,18 @@ interface ReplaceLeaveOverlayProps {
   onReplace: (data: any) => void;
   currentLeaveType?: string;
   currentLeaveName?: string;
+  currentLeaveDays?: number | undefined;
+  fromDate?: string;
+  toDate?: string;
 }
-
 const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
   isOpen,
   onClose,
   onReplace,
   currentLeaveType,
+  currentLeaveDays,
+  fromDate,
+  toDate,
 }) => {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useEmployeeByUserId(userId);
@@ -29,9 +37,17 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
     today
   );
 
+  const [activeLeaveType, setActiveLeaveType] = useState<string | undefined>();
+
+  const { data: fields } = useGetLeaveRequestFields(
+    activeLeaveType,
+    fromDate ?? today,
+    toDate ?? today
+  );
+  console.log("Leave request fields:", fields);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
-
   const leaveTypeOptions = useMemo(() => {
     if (!leaveBalanceData?.leave_balance)
       return [{ label: "Select Leave Type", value: "" }];
@@ -50,69 +66,112 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
     ];
   }, [leaveBalanceData, currentLeaveType]);
 
-  const leaveForm = useMemo(
-    () => ({
-      components: [
-        {
-          type: "checkbox",
-          key: "replaceBoth",
-          label: "Replace Both Halves Separately",
-          input: true,
-          labelPosition: "right",
-          customClass: "mb-4",
+  const leaveForm = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const components: any[] = [
+      ...(currentLeaveDays === 1
+        ? [
+            {
+              type: "checkbox",
+              key: "replaceBoth",
+              label: "Replace Both Halves Separately",
+              input: true,
+              labelPosition: "right",
+              customClass: "mb-4",
+            },
+          ]
+        : []),
+
+      {
+        type: "select",
+        key: "newLeaveType",
+        label: 'New Leave Type <span style="color:red">*</span>',
+        placeholder: "Select Leave Type",
+        input: true,
+        validate: {
+          required: true,
+          customMessage: "New Leave Type is required",
         },
-        {
-          type: "select",
-          key: "newLeaveType",
-          label: 'New Leave Type <span style="color:red">*</span>',
-          placeholder: "Select Leave Type",
-          input: true,
-          validate: {
-            required: true,
-            customMessage: "New Leave Type is required",
-          },
-          showRequiredIndicator: true,
-          data: { values: leaveTypeOptions },
-          conditional: { show: true, when: "replaceBoth", eq: false },
-          selectConfiguration: { appendToBody: true, dropdownParent: null },
-          html: true,
+        showRequiredIndicator: true,
+        data: { values: leaveTypeOptions },
+        conditional:
+          currentLeaveDays === 1
+            ? { show: true, when: "replaceBoth", eq: false }
+            : undefined,
+        selectConfiguration: { appendToBody: true, dropdownParent: null },
+        html: true,
+      },
+
+      ...(currentLeaveDays === 1
+        ? [
+            {
+              type: "select",
+              key: "firstHalfType",
+              label: 'First Half Leave Type <span style="color:red">*</span>',
+              placeholder: "Select Leave Type",
+              input: true,
+              validate: {
+                required: true,
+                customMessage: "First Half Type is required",
+              },
+              showRequiredIndicator: true,
+              data: { values: leaveTypeOptions },
+              conditional: { show: true, when: "replaceBoth", eq: true },
+              selectConfiguration: {
+                appendToBody: true,
+                dropdownParent: null,
+              },
+              html: true,
+            },
+            {
+              type: "select",
+              key: "secondHalfType",
+              label: 'Second Half Leave Type <span style="color:red">*</span>',
+              placeholder: "Select Leave Type",
+              input: true,
+              validate: {
+                required: true,
+                customMessage: "Second Half Type is required",
+              },
+              showRequiredIndicator: true,
+              data: { values: leaveTypeOptions },
+              conditional: { show: true, when: "replaceBoth", eq: true },
+              selectConfiguration: {
+                appendToBody: true,
+                dropdownParent: null,
+              },
+              html: true,
+            },
+          ]
+        : []),
+    ];
+
+    if (fields?.show?.custom_attachment === 1) {
+      components.push({
+        type: "file",
+        key: "attachment",
+        // label: "Attachment",
+        label:
+          fields?.mandatory?.custom_attachment === 1
+            ? 'Attachment <span style="color:red">*</span>'
+            : "Attachment",
+        input: true,
+        storage: "customBase64",
+        validate: {
+          required: fields?.mandatory?.custom_attachment === 1,
+          customMessage: "Attachment is required",
         },
-        {
-          type: "select",
-          key: "firstHalfType",
-          label: 'First Half Leave Type <span style="color:red">*</span>',
-          placeholder: "Select Leave Type",
-          input: true,
-          validate: {
-            required: true,
-            customMessage: "First Half Type is required",
-          },
-          showRequiredIndicator: true,
-          data: { values: leaveTypeOptions },
-          conditional: { show: true, when: "replaceBoth", eq: true },
-          selectConfiguration: { appendToBody: true, dropdownParent: null },
-          html: true,
-        },
-        {
-          type: "select",
-          key: "secondHalfType",
-          label: 'Second Half Leave Type <span style="color:red">*</span>',
-          placeholder: "Select Leave Type",
-          input: true,
-          validate: {
-            required: true,
-            customMessage: "Second Half Type is required",
-          },
-          showRequiredIndicator: true,
-          data: { values: leaveTypeOptions },
-          conditional: { show: true, when: "replaceBoth", eq: true },
-          selectConfiguration: { appendToBody: true, dropdownParent: null },
-          html: true,
-        },
-      ],
-    }),
-    [leaveTypeOptions]
-  );
+        fileTypes: [
+          { label: "Documents", value: ".pdf,.doc,.docx" },
+          { label: "Images", value: ".jpg,.jpeg,.png" },
+        ],
+        filePattern: "*/*",
+        customClass: "px-2 mb-4",
+      });
+    }
+
+    return { components };
+  }, [leaveTypeOptions, currentLeaveDays, fields]);
 
   useEffect(() => {
     if (formRef.current) {
@@ -130,6 +189,16 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
   const handleFormSubmit = (submission: any) => {
     onReplace(submission.data);
     onClose();
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleFormChange = (changed: any) => {
+    const data = changed.data;
+    if (currentLeaveDays === 1 && data.replaceBoth) {
+      if (data.firstHalfType) setActiveLeaveType(data.firstHalfType);
+    } else {
+      if (data.newLeaveType) setActiveLeaveType(data.newLeaveType);
+    }
   };
 
   if (!isOpen) return null;
@@ -157,6 +226,7 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
               formRef.current = instance;
             }}
             onSubmit={handleFormSubmit}
+            onChange={handleFormChange}
             options={{
               builder: { styles: false },
               submitButton: false,
