@@ -146,6 +146,8 @@ const ApprovalList = ({
           if (action.toLowerCase() !== "approve") {
             setRefetchListView((prev) => !prev);
           }
+        } else {
+          setRefetchListView((prev) => !prev);
         }
         // Query invalidation now handled by Frappe realtime events
       } catch (error: any) {

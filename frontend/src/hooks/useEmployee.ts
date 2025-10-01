@@ -98,6 +98,7 @@ export const useGetEmployeeHierarchy = (company: string) => {
     queryFn: () => {
       return EmployeeService.getEmployeeHierarchy(company);
     },
+    enabled: !!company,
     staleTime: 5 * 60 * 1000,
   });
 };
