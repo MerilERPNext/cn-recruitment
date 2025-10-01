@@ -15,8 +15,8 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
   }
 
   return (
-    // CHANGED: Using the reusable .info-card class for consistency.
-    <div className="info-card mb-6">
+    // CHANGED: Using the reusable .my-info-card class for consistency.
+    <div className="my-info-card mb-6">
       <h3 className="font-semibold mb-4 text-gray-900">Loans Details</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
         <div>
