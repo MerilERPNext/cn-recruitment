@@ -52,25 +52,15 @@ export const StatusBadge = ({ status }: { status: string }) => {
 };
 
 // CHANGED: Using our new .dashboard-card class
-const Card = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => <div className={`dashboard-card ${className}`}>{children}</div>;
+const Card = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <div className={`my-dashboard-card ${className}`}>{children}</div>
+);
 
 // CHANGED: Using .card-header-title and .card-header-action
-const CardHeader = ({
-  title,
-  onSeeAll,
-}: {
-  title: string;
-  onSeeAll: () => void;
-}) => (
+const CardHeader = ({ title, onSeeAll }: { title: string; onSeeAll: () => void }) => (
   <div className="flex justify-between items-center mb-4">
-    <h2 className="card-header-title">{title}</h2>
-    <button onClick={onSeeAll} className="card-header-action" title="See All">
+    <h2 className="my-card-header-title">{title}</h2>
+    <button onClick={onSeeAll} className="my-card-header-action" title="See All">
       <span>View All</span>
       <ExternalLink size={16} />
     </button>
@@ -104,9 +94,9 @@ const MyShiftItem: React.FC<{
 
   const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
-  // CHANGED: Using the reusable .list-item-card class
+  // CHANGED: Using the reusable .my-list-item-card class
   return (
-    <li className="list-item-card">
+    <li className="my-list-item-card">
       <div>
         <p className="text-gray-600 font-semibold text-xs">
           {formatToIndianDate(item.start_date)} -{" "}
@@ -172,9 +162,9 @@ const TeamShiftItem: React.FC<{
     }
   };
 
-  // CHANGED: Using the reusable .list-item-card class
+  // CHANGED: Using the reusable .my-list-item-card class
   return (
-    <div className="list-item-card">
+    <div className="my-list-item-card">
       <div className="flex-grow">
         <div className="flex items-center justify-between mb-1">
           <h3 className="text-gray-900 text-xs font-semibold">
@@ -331,27 +321,27 @@ export default function AllShiftsDashboard() {
               />
               <div className="border border-gray-200 rounded-lg overflow-x-auto" >
                 <div className="overflow-x-auto bg-white shadow-sm w-full">
-                  {/* CHANGED: Using .table-header and .table-header-text */}
-                  <div className="table-header grid grid-cols-7 gap-4 rounded-t-lg w-full">
-                    <span className="table-header-text flex items-center">
+                  {/* CHANGED: Using .my-table-header and .my-table-header-text */}
+                  <div className="my-table-header grid grid-cols-7 gap-4 rounded-t-lg w-full">
+                    <span className="my-table-header-text flex items-center">
                       SELECT
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       EMPLOYEE
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       CREATION DATE
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       STATUS
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       PRIORITY
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       DUE DATE
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       ACTIONS
                     </span>
                   </div>
