@@ -143,7 +143,7 @@ export const useGetLeaveRequestFields = (
       return leaveService.getLeaveRequestFields(leaveType, fromDate, toDate);
     },
     enabled: !!leaveType && !!fromDate && !!toDate,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 };
 
