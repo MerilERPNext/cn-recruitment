@@ -144,6 +144,7 @@ export const useGetLeaveRequestFields = (
     },
     enabled: !!leaveType && !!fromDate && !!toDate,
     staleTime: 0,
+    refetchOnMount: "always",
   });
 };
 
