@@ -35,30 +35,30 @@ export default function LoanList({ loans }: LoanListProps) {
   return (
     <div className="w-full">
       <div className="w-full max-h-full overflow-auto border border-gray-200 rounded-lg shadow-sm">
-        {/* CHANGED: Using .table-header and .table-header-text */}
-        <div className="table-header grid grid-cols-10 sticky top-0 z-10">
-          <div className="table-header-text flex items-center">
+        {/* CHANGED: Using .my-table-header and .my-table-header-text */}
+        <div className="my-table-header grid grid-cols-10 sticky top-0 z-10">
+          <div className="my-table-header-text flex items-center">
             <span className="px-2 rounded text-primary">
               <BsDashSquareFill />
             </span>
           </div>
-          <div className="table-header-text">Loan Type</div>
-          <div className="table-header-text">EMI Type</div>
-          <div className="table-header-text">Loan Amount</div>
-          <div className="table-header-text">Rate of Interest</div>
-          <div className="table-header-text">Standard Interest</div>
-          <div className="table-header-text">Installments</div>
-          <div className="table-header-text">Start Date</div>
-          <div className="table-header-text">End Month</div>
-          <div className="table-header-text">Status</div>
+          <div className="my-table-header-text">Loan Type</div>
+          <div className="my-table-header-text">EMI Type</div>
+          <div className="my-table-header-text">Loan Amount</div>
+          <div className="my-table-header-text">Rate of Interest</div>
+          <div className="my-table-header-text">Standard Interest</div>
+          <div className="my-table-header-text">Installments</div>
+          <div className="my-table-header-text">Start Date</div>
+          <div className="my-table-header-text">End Month</div>
+          <div className="my-table-header-text">Status</div>
         </div>
 
         <div className="text-sm bg-white divide-y divide-gray-200">
           {loans.map((loan) => (
             <div key={loan.loan_name} className="border-b border-gray-200">
-              {/* CHANGED: Using .data-row and .data-cell */}
-              <div className="data-row grid grid-cols-10">
-                <div className="data-cell flex items-center">
+              {/* CHANGED: Using .my-data-row and .my-data-cell */}
+              <div className="my-data-row grid grid-cols-10">
+                <div className="my-data-cell flex items-center">
                   <button
                     onClick={() => toggleLoanExpansion(loan.loan_name)}
                     className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded transition-colors text-gray-600 font-mono"
@@ -70,25 +70,25 @@ export default function LoanList({ loans }: LoanListProps) {
                     )}
                   </button>
                 </div>
-                <div className="data-cell">{loan.loan_type}</div>
-                <div className="data-cell">{loan.emi_type}</div>
-                <div className="data-cell font-medium">
+                <div className="my-data-cell">{loan.loan_type}</div>
+                <div className="my-data-cell">{loan.emi_type}</div>
+                <div className="my-data-cell font-medium">
                   {loan.status === "Open"
                     ? loan.loan_requested_amount
                     : formatCurrency(loan.loan_approved_amount)}
                 </div>
-                <div className="data-cell">{loan.rate_of_interest || "0"}%</div>
-                <div className="data-cell">
+                <div className="my-data-cell">{loan.rate_of_interest || "0"}%</div>
+                <div className="my-data-cell">
                   {loan.standard_interest || "0"}%
                 </div>
-                <div className="data-cell">{loan.loan_tenure || "0"}</div>
-                <div className="data-cell">{loan.loan_start_date || "-"}</div>
-                <div className="data-cell">
+                <div className="my-data-cell">{loan.loan_tenure || "0"}</div>
+                <div className="my-data-cell">{loan.loan_start_date || "-"}</div>
+                <div className="my-data-cell">
                   {loan.loan_start_date && loan.loan_tenure
                     ? calculateEndMonth(loan.loan_start_date, loan.loan_tenure)
                     : "-"}
                 </div>
-                <div className="data-cell">
+                <div className="my-data-cell">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ${
                       loan.status === "Open"
@@ -115,8 +115,8 @@ export default function LoanList({ loans }: LoanListProps) {
       </div>
 
       {loans.length === 0 && (
-        // CHANGED: Using new .empty-state-card class
-        <div className="empty-state-card">
+        // CHANGED: Using new .my-empty-state-card class
+        <div className="my-empty-state-card">
           <p className="text-gray-500">No loans available.</p>
         </div>
       )}

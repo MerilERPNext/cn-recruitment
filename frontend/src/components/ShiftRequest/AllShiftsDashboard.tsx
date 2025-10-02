@@ -3,9 +3,8 @@ import { ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ApprovalList from "../shared/ApprovalList";
 import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
-import FrappeListView from "../ListView";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
-import formatToIndianDate from "../../utils/formatToIndianDate";
+import formatToIndianDate, { formatEndDate } from "../../utils/formatToIndianDate";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -13,19 +12,8 @@ import { MyShiftRequest } from "../../types/shift";
 import EmpShiftRequestCard from "./EmpShiftRequestCard";
 import DataListView from "../DataListView";
 import CardTable from "../shared/CardTable";
-
-// Interface for Shift Assignment (Team Shifts from Frappe)
-export interface ShiftAssignment {
-  name: string;
-  employee: string;
-  employee_name: string;
-  shift_type: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-  docstatus: number;
-  creation: string;
-}
+import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
+import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 
 export const StatusBadge = ({ status }: { status: string }) => {
   const baseStyle = "px-2 py-1 rounded-2xl text-xs inline-block";
@@ -58,7 +46,7 @@ const Card = ({
 }: {
   children: React.ReactNode;
   className?: string;
-}) => <div className={`dashboard-card ${className}`}>{children}</div>;
+}) => <div className={`my-dashboard-card ${className}`}>{children}</div>;
 
 // CHANGED: Using .card-header-title and .card-header-action
 const CardHeader = ({
@@ -69,8 +57,12 @@ const CardHeader = ({
   onSeeAll: () => void;
 }) => (
   <div className="flex justify-between items-center mb-4">
-    <h2 className="card-header-title">{title}</h2>
-    <button onClick={onSeeAll} className="card-header-action" title="See All">
+    <h2 className="my-card-header-title">{title}</h2>
+    <button
+      onClick={onSeeAll}
+      className="my-card-header-action"
+      title="See All"
+    >
       <span>View All</span>
       <ExternalLink size={16} />
     </button>
@@ -79,38 +71,49 @@ const CardHeader = ({
 
 // My Shift Item Component
 const MyShiftItem: React.FC<{
-  item: ShiftAssignment;
+  item: ApiShiftAssignment;
   index?: number;
-  doctype: string;
 }> = ({ item }) => {
-  const getShiftStatus = (startDate: string, endDate: string): string => {
+  const getShiftStatus = (startDate: string, endDate?: string): string => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
 
-    const end = new Date(endDate);
-    end.setHours(0, 0, 0, 0);
-
-    if (today < start) {
-      return "Upcoming";
-    } else if (today > end) {
-      return "Previous";
-    } else {
-      return "Current";
+    let end: Date | null = null;
+    if (endDate) {
+      end = new Date(endDate);
+      end.setHours(0, 0, 0, 0);
     }
+
+    if (!end) {
+      // Missing end date → treat as ongoing
+      if (today >= start) return "Current";
+      return "Upcoming";
+    }
+
+    if (today < start) return "Upcoming";
+    if (today > end) return "Previous";
+    return "Current";
   };
 
   const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
-  // CHANGED: Using the reusable .list-item-card class
+  // CHANGED: Using the reusable .my-list-item-card class
   return (
-    <li className="list-item-card">
-      <div>
-        <p className="text-gray-600 font-semibold text-xs">
-          {formatToIndianDate(item.start_date)} -{" "}
-          {formatToIndianDate(item.end_date)}
+    <li className="my-list-item-card">
+      <div className="text-xs text-gray-600">
+        <p>
+          <span className="font-medium">{item.shift_type}</span>
+        </p>
+        <p>
+          <span className="font-medium">
+            {item.start_time} - {item.end_time}
+          </span>
+        </p>
+        <p>
+          {formatToIndianDate(item.start_date)} - {formatEndDate(item.end_date)}
         </p>
       </div>
       <StatusBadge status={shiftStatus} />
@@ -120,6 +123,9 @@ const MyShiftItem: React.FC<{
 
 const MyShifts: React.FC = () => {
   const navigate = useNavigate();
+  const { data } = useShiftAssignments();
+  const myShifts = data?.filter((s) => s.is_self === 1).slice(0, 4) ?? [];
+
   return (
     <Card>
       <CardHeader
@@ -127,35 +133,19 @@ const MyShifts: React.FC = () => {
         onSeeAll={() => navigate("/webapp/shift-request/my-shift-assignment")}
       />
       <div className="max-h-96 overflow-y-auto my-shifts-dashboard">
-        <FrappeListView
-          doctype="Shift Assignment"
-          ItemComponent={MyShiftItem}
-          isSearch={false}
-          orderBy="start_date"
-          pageSize={3}
-          defaultFields={[
-            "name",
-            "employee",
-            "employee_name",
-            "shift_type",
-            "start_date",
-            "end_date",
-            "status",
-            "docstatus",
-            "creation",
-          ]}
-          searchFields={["employee", "employee_name", "shift_type", "status"]}
-          showPagination={false}
-        />
+        <ul className="max-h-96 overflow-y-auto my-shifts-dashboard">
+          {myShifts.map((shift, idx) => (
+            <MyShiftItem key={shift.name} item={shift} index={idx} />
+          ))}
+        </ul>
       </div>
     </Card>
   );
 };
 
 const TeamShiftItem: React.FC<{
-  item: ShiftAssignment;
+  item: ApiShiftAssignment;
   index?: number;
-  doctype: string;
 }> = ({ item }) => {
   const getStatusIcon = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -172,9 +162,9 @@ const TeamShiftItem: React.FC<{
     }
   };
 
-  // CHANGED: Using the reusable .list-item-card class
+  // CHANGED: Using the reusable .my-list-item-card class
   return (
-    <div className="list-item-card">
+    <div className="my-list-item-card">
       <div className="flex-grow">
         <div className="flex items-center justify-between mb-1">
           <h3 className="text-gray-900 text-xs font-semibold">
@@ -183,11 +173,16 @@ const TeamShiftItem: React.FC<{
         </div>
         <div className="text-xs text-gray-600">
           <p>
-            Shift: <span className="font-medium">{item.shift_type}</span>
+            <span className="font-medium">{item.shift_type}</span>
+          </p>
+          <p>
+            <span className="font-medium">
+              {item.start_time} - {item.end_time}
+            </span>
           </p>
           <p>
             {formatToIndianDate(item.start_date)} -{" "}
-            {formatToIndianDate(item.end_date)}
+            {formatEndDate(item.end_date)}
           </p>
         </div>
       </div>
@@ -204,6 +199,8 @@ const TeamShiftItem: React.FC<{
 
 const TeamShiftList = () => {
   const navigate = useNavigate();
+  const { data } = useShiftAssignments();
+  const teamShifts = data?.filter((s) => s.is_self === 0).slice(0, 3) ?? [];
   return (
     <Card>
       <CardHeader
@@ -211,26 +208,11 @@ const TeamShiftList = () => {
         onSeeAll={() => navigate("/webapp/shift-request/team-shift")}
       />
       <div className="max-h-96 overflow-y-auto team-shift-dashboard">
-        <FrappeListView
-          doctype="Shift Assignment"
-          ItemComponent={TeamShiftItem}
-          orderBy="start_date"
-          pageSize={3}
-          isSearch={false}
-          defaultFields={[
-            "name",
-            "employee",
-            "employee_name",
-            "shift_type",
-            "start_date",
-            "end_date",
-            "status",
-            "docstatus",
-            "creation",
-          ]}
-          searchFields={["employee", "employee_name", "shift_type", "status"]}
-          showPagination={false}
-        />
+        <ul className="max-h-96 overflow-y-auto my-shifts-dashboard">
+          {teamShifts.map((shift, idx) => (
+            <TeamShiftItem key={shift.name} item={shift} index={idx} />
+          ))}
+        </ul>
       </div>
     </Card>
   );
@@ -329,29 +311,29 @@ export default function AllShiftsDashboard() {
                   navigate("/webapp/shift-request/shift-change-request")
                 }
               />
-              <div className="border border-gray-200 rounded-lg overflow-x-auto" >
+              <div className="border border-gray-200 rounded-lg overflow-x-auto">
                 <div className="overflow-x-auto bg-white shadow-sm w-full">
-                  {/* CHANGED: Using .table-header and .table-header-text */}
-                  <div className="table-header grid grid-cols-7 gap-4 rounded-t-lg w-full">
-                    <span className="table-header-text flex items-center">
+                  {/* CHANGED: Using .my-table-header and .my-table-header-text */}
+                  <div className="my-table-header grid grid-cols-7 gap-4 rounded-t-lg w-full">
+                    <span className="my-table-header-text flex items-center">
                       SELECT
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       EMPLOYEE
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       CREATION DATE
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       STATUS
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       PRIORITY
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       DUE DATE
                     </span>
-                    <span className="table-header-text flex items-center">
+                    <span className="my-table-header-text flex items-center">
                       ACTIONS
                     </span>
                   </div>
@@ -373,7 +355,7 @@ export default function AllShiftsDashboard() {
                 />
               </div>
             </Card>
-            
+
             <AllMyShiftRequestsList />
           </div>
           <div className="grid grid-cols-2 gap-6 mb-14">
