@@ -27,7 +27,7 @@ const AllPendingRequests = () => {
       <div className="p-2">
         <CardTable
           titles={["Select", "Description", "Date", "Status", "Actions"]}
-          columnWidths={["10%", "30%", "10%", "10%", "30%"]}
+          columnWidths={["15%", "30%", "10%", "10%", "30%"]}
         >
           <ApprovalList
             doctype={"Attendance Request"}

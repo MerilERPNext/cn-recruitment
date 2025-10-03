@@ -11,11 +11,13 @@ export function AttendanceDetailView({
   onClose,
   onAction,
   loadingAction,
+  label = "Attendance Request",
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   onClose: () => void;
   onAction?: () => void;
+  label?: string;
   loadingAction?: { id: string; action: string } | null;
 }) {
   const mutation = useApprovalListActions();
@@ -137,9 +139,7 @@ export function AttendanceDetailView({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Attendance Request
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
             <div className="font-semibold">
               ({format(new Date(data?.date), "dd/MM/yyyy")})
             </div>{" "}
