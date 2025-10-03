@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText } from "lucide-react";
+import { ExternalLink, FileText } from "lucide-react";
 import FrappeListView from "../ListView";
 import DOMPurify from "dompurify";
 
@@ -73,9 +73,23 @@ const MyToDoItem: React.FC<{
 };
 
 const TasksAwaiting: React.FC = () => {
+  const handleTodoClick = () => {
+    window.location.href = "/app/task_manager";
+  };
   return (
     <div className="bg-white rounded-lg p-6 mb-2 shadow-sm">
-      <h3 className="font-semibold text-gray-900 mb-4">Tasks Awaiting You</h3>
+
+<div className="flex justify-between items-center mb-4">
+    <h2 className="card-header-title">Tasks Awaiting You</h2>
+    <button
+    onClick={handleTodoClick}
+     className="card-header-action">
+      <span>Visit Todo</span>
+      <ExternalLink size={16} />
+    </button>
+  </div>
+      
+
       <div className="overflow-y-auto h-[25rem]">
     <FrappeListView
         doctype="ToDo"

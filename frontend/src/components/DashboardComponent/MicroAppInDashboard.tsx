@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom"; // router navigation
+import { useNavigate } from "react-router-dom"; 
 import FrappeListView from "../ListView";
 
 interface CNMicroapp {
@@ -70,7 +70,7 @@ const MicroAppInDashboard: React.FC = () => {
           isSearch={false}
           layout="column"
           orderBy="creation"
-          pageSize={8}
+          pageSize={50}
           defaultFields={["*"]}
           searchFields={["title", "status"]}
           showPagination={false}

@@ -36,7 +36,7 @@ export default function LoanList({ loans }: LoanListProps) {
     <div className="w-full">
       <div className="w-full max-h-full overflow-auto border border-gray-200 rounded-lg shadow-sm">
         {/* CHANGED: Using .table-header and .table-header-text */}
-        <div className="table-header grid grid-cols-10 sticky top-0 z-10">
+        <div className="table-header grid grid-cols-10 sticky top-0 z-1">
           <div className="table-header-text flex items-center">
             <span className="px-2 rounded text-primary">
               <BsDashSquareFill />
