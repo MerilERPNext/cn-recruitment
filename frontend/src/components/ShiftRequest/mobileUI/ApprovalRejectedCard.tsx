@@ -35,7 +35,6 @@ const ApprovalRejectedForMobile = ({
 }: ApprovalRejectionQueueProps) => {
   if (!data) return null;
 
-
   let actions: string[] = ["Approve", "Reject"];
   try {
     if (data.custom_doctype_actions) {
@@ -59,66 +58,68 @@ const ApprovalRejectedForMobile = ({
         return "px-2 py-1 text-xs font-medium rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition";
     }
   };
-
+  const actionsWithForm = data?.custom_doctype_actions_with_form
+    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
+    : [];
   return (
     <div
-    className="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer"
-    onClick={() => onClick?.(data)}
-  >
-    {/* Checkbox + Header */}
-    <div className="flex justify-between items-start mb-3">
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onClick={(e) => e.stopPropagation()}
-          onChange={() => onToggleSelect?.(data.name)}
-          disabled={
-            isDisabled || data?.custom_doctype_actions_with_form?.length > 0
-          }
-          
-        />
-        <span className="font-semibold text-gray-900 text-sm">
-          {data.name || "--"}
-        </span>
+      className="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer"
+      onClick={() => onClick?.(data)}
+    >
+      {/* Checkbox + Header */}
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => onToggleSelect?.(data.name)}
+            disabled={
+              isDisabled ||
+              actionsWithForm?.includes("Approve") ||
+              actionsWithForm?.includes("Reject")
+            }
+          />
+          <span className="font-semibold text-gray-900 text-sm">
+            {data.name || "--"}
+          </span>
+        </div>
+        <StatusBadge status={data.status} />
       </div>
-      <StatusBadge status={data.status} />
-    </div>
 
-    {/* Details */}
-    <div className="text-xs text-gray-600 space-y-1">
-      <p>
-        <span className="font-medium">Date:</span>{" "}
-        {data.date ? format(new Date(data.date), "yyyy-MM-dd") : "--"}
-      </p>
-      <p>
-        <span className="font-medium">Priority:</span> {data.priority || "--"}
-      </p>
-      <p>
-        <span className="font-medium">Request Date:</span>{" "}
-        {data.creation ? format(new Date(data.creation), "dd/MM/yyyy") : "--"}
-      </p>
-    </div>
+      {/* Details */}
+      <div className="text-xs text-gray-600 space-y-1">
+        <p>
+          <span className="font-medium">Date:</span>{" "}
+          {data.date ? format(new Date(data.date), "yyyy-MM-dd") : "--"}
+        </p>
+        <p>
+          <span className="font-medium">Priority:</span> {data.priority || "--"}
+        </p>
+        <p>
+          <span className="font-medium">Request Date:</span>{" "}
+          {data.creation ? format(new Date(data.creation), "dd/MM/yyyy") : "--"}
+        </p>
+      </div>
 
-    {/* Actions */}
-    <div className="flex justify-start gap-3 mt-3">
-      {actions.map((action) => (
-        <button
-          key={action}
-          className={getActionStyles(action)}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onAction(action, data);
-          }}
-        >
-          {action}
-        </button>
-      ))}
+      {/* Actions */}
+      <div className="flex justify-start gap-3 mt-3">
+        {actions.map((action) => (
+          <button
+            key={action}
+            className={getActionStyles(action)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAction(action, data);
+            }}
+          >
+            {action}
+          </button>
+        ))}
+      </div>
     </div>
-  </div>
   );
 };
 
 export default ApprovalRejectedForMobile;
-

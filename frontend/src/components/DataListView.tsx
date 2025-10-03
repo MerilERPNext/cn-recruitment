@@ -325,15 +325,15 @@ const DataListView = <T extends BaseItem>({
   const loadMoreQueryResult = customAPI ? customApiLoadMoreResult : fetchFunctionLoadMoreResult;
 
   // Refetch functionality
-  const refetch = useCallback(() => {
+  const refetch = useCallback(async () => {
     if (infiniteScroll) {
-      infiniteQueryResult.refetch();
+      await infiniteQueryResult.refetch();
     } else if (loadMorePagination) {
       setLoadMorePage(1);
       setAccumulatedData([]);
-      loadMoreQueryResult.refetch();
+      await loadMoreQueryResult.refetch();
     } else {
-      paginationQueryResult.refetch();
+      await paginationQueryResult.refetch();
     }
     if (onRefetchComplete) {
       onRefetchComplete();

@@ -114,46 +114,48 @@ const OvertimeRequests = () => {
               columnWidths={["15% 30%", "10%", "33%"]}
               titles={["Allocated To", "Description", "Due Date", "Status"]}
             >
-              <DataListView
-                queryKey="planned-overtime-request"
-                customAPI={{
-                  method:
-                    "cn_leave_shift_managment.api.get_open_approval_todos",
-                  params: {
-                    doctype: "Planned Overtime Request",
-                    employee: currentEmployee?.employee,
-                  },
-                }}
-                defaultFilters={defaultFilters}
-                ItemComponent={(props: {
-                  item: MyPlannedAttendanceRequest;
-                }) => {
-                  return (
-                    <MyRequestCard
-                      request={props?.item}
-                      onClick={(request: MyPlannedAttendanceRequest) =>
-                        setMySelectedRequest(request)
-                      }
-                    />
-                  );
-                }}
-                // SkeletonComponent={CardSkeleton}
-                onItemClick={() => {
-                  // Handle item click if needed
-                }}
-                onRefetchComplete={() => {
-                  setRefetchAttendance(false);
-                }}
-                refetchTrigger={refetchAttendance}
-                isSearch={false}
-                isFilter={false}
-                pageSize={5}
-                showRefreshButton={false}
-                orderBy="modified desc"
-                infiniteScroll={false}
-                loadMorePagination={true}
-                showPagination={false}
-              />
+              {currentEmployee?.employee ? (
+                <DataListView
+                  queryKey="planned-overtime-request"
+                  customAPI={{
+                    method:
+                      "cn_leave_shift_managment.api.get_open_approval_todos",
+                    params: {
+                      doctype: "Planned Overtime Request",
+                      employee: currentEmployee?.employee,
+                    },
+                  }}
+                  defaultFilters={defaultFilters}
+                  ItemComponent={(props: {
+                    item: MyPlannedAttendanceRequest;
+                  }) => {
+                    return (
+                      <MyRequestCard
+                        request={props?.item}
+                        onClick={(request: MyPlannedAttendanceRequest) =>
+                          setMySelectedRequest(request)
+                        }
+                      />
+                    );
+                  }}
+                  // SkeletonComponent={CardSkeleton}
+                  onItemClick={() => {
+                    // Handle item click if needed
+                  }}
+                  onRefetchComplete={() => {
+                    setRefetchAttendance(false);
+                  }}
+                  refetchTrigger={refetchAttendance}
+                  isSearch={false}
+                  isFilter={false}
+                  pageSize={5}
+                  showRefreshButton={false}
+                  orderBy="modified desc"
+                  infiniteScroll={false}
+                  loadMorePagination={true}
+                  showPagination={false}
+                />
+              ) : null}
             </CardTable>
           </div>
         </div>
@@ -167,6 +169,7 @@ const OvertimeRequests = () => {
           onAction={() => {
             setSelectedRequest(null);
             setRefetch(true);
+            setRefetchAttendance(true);
           }}
           loadingAction={selectedRequest?.loadingAction}
         />

@@ -98,7 +98,15 @@ const ApprovalList = ({
     } else {
       setSelectedIds(
         allRequests.map((req) => {
-          if (req?.custom_doctype_actions_with_form?.length > 0) {
+          const actionsWithForm = req?.custom_doctype_actions_with_form
+            ? JSON.parse(
+                req?.custom_doctype_actions_with_form.replace(/'/g, '"')
+              )
+            : [];
+          if (
+            actionsWithForm?.includes("Approve") ||
+            actionsWithForm?.includes("Reject")
+          ) {
             return null;
           } else {
             return req.name;

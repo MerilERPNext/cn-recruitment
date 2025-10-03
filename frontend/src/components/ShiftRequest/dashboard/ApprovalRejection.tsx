@@ -59,7 +59,9 @@ const ApprovalRejectionQueue = ({
         return "px-2 py-1 text-xs font-medium rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition";
     }
   };
-
+  const actionsWithForm = data?.custom_doctype_actions_with_form
+    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
+    : [];
   return (
     <div
       className="grid grid-cols-7 border-b border-gray-200 gap-4 w-full items-center px-4 h-14 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -73,11 +75,16 @@ const ApprovalRejectionQueue = ({
           onClick={(e) => e.stopPropagation()}
           onChange={() => onToggleSelect?.(data?.name)}
           disabled={
-            isDisabled || data?.custom_doctype_actions_with_form?.length > 0
+            isDisabled ||
+            actionsWithForm?.includes("Approve") ||
+            actionsWithForm?.includes("Reject")
           }
         />
       </div>
-      <div className="font-medium  text-gray-900 text-xs truncate whitespace-nowrap" title={data.description}>
+      <div
+        className="font-medium  text-gray-900 text-xs truncate whitespace-nowrap"
+        title={data.description}
+      >
         {data.description || "--"}
       </div>
       <div className="text-gray-700 text-xs truncate">
