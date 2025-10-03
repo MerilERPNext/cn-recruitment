@@ -77,8 +77,8 @@ const ApprovalRejectionQueue = ({
           }
         />
       </div>
-      <div className="font-medium  text-gray-900 text-xs truncate">
-        {data.description.split("Approval required for Shift Request ")[1] || "--"}
+      <div className="font-medium  text-gray-900 text-xs truncate whitespace-nowrap" title={data.description}>
+        {data.description || "--"}
       </div>
       <div className="text-gray-700 text-xs truncate">
         {data.creation ? data.creation.split(" ")[0] : "--"}

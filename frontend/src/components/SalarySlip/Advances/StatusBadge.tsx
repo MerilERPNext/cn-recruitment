@@ -2,7 +2,7 @@ export const StatusBadge = ({ status }: { status: string }) => {
   const baseStyle = "px-2 py-1 rounded-2xl text-xs inline-block"
   const statusStyles: { [key: string]: string } = {
     Open: "bg-blue-100 text-blue-800",
-    Pending: "bg-yellow-100 text-yellow-800",
+    Draft: "bg-yellow-100 text-yellow-800", // styling "Draft" ka use hoga
     Rejected: "bg-red-100 text-red-800",
     Completed: "bg-blue-100 text-blue-800",
     Current: "bg-emerald-100 text-emerald-700 border border-emerald-200",
@@ -14,5 +14,12 @@ export const StatusBadge = ({ status }: { status: string }) => {
     Approved: "bg-emerald-100 text-emerald-700 border border-emerald-200",
   }
 
-  return <span className={`${baseStyle} ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}>{status}</span>
+  const displayStatus = status === "Draft" ? "Pending" : status
+
+  return (
+    <span className={`${baseStyle} ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}>
+      {displayStatus}
+    </span>
+  )
 }
+

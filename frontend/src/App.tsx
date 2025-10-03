@@ -28,7 +28,16 @@ import {
   preloadAdjacentRoutes,
 } from "./utils/routePreloader";
 
-Formio.setBaseUrl(window.location.origin);
+try {
+  // Load the Form.io CSS
+  Formio.setBaseUrl(window.location.origin);
+}
+catch (error) {
+  console.error("Error setting Formio base URL:", error);
+}
+
+
+
 
 const App: React.FC = () => {
   const { currentUser, isLoading, isValidating } = useFrappeAuth();
@@ -157,6 +166,7 @@ export default App;
 const MandatoryPoliciesHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } =
     useCurrentEmployee();
+  const navigate = useNavigate();
   const {
     data: mandatoryPoliciesCount,
     isFetching: isMandatoryPoliciesCountFetching,
@@ -174,35 +184,52 @@ const MandatoryPoliciesHandler = () => {
     }
   );
 
+  console.log("mandatoryPoliciesCount", mandatoryPoliciesCount);
+
   useEffect(() => {
     if (
       isCurrentEmployeeFetching ||
       isMandatoryPoliciesCountFetching ||
-      mandatoryPoliciesCount === undefined ||
-      !window.isApp
+      mandatoryPoliciesCount === undefined
     )
+    {
       return;
+    }
 
     if (mandatoryPoliciesCount <= 0) {
+      if (window.isApp) {
       window.nativeInterface.logToNative("destroyNestedWebView");
       window.nativeInterface.execute("destroyNestedWebView");
-      console.log("destroyNestedWebView");
+      }
+      else {
+        navigate("/webapp");
+      }
     }
 
     if (mandatoryPoliciesCount > 0) {
+    console.log("openNestedWebView");
+
+      if (window.isApp) {
       window.nativeInterface.logToNative("openNestedWebView");
       window.nativeInterface.execute("openNestedWebView", {
         url: window.location.origin + "/webapp/policies-enforced",
         title: "HR Policies",
-        isCloseable: false,
-      });
-      console.log("openNestedWebView");
+          isCloseable: false,
+        });
+      }
+      else if (!window.location.pathname.includes("/webapp/policies-enforced")) {
+        navigate("/webapp/policies-enforced");
+      }
     }
   }, [
     mandatoryPoliciesCount,
     isCurrentEmployeeFetching,
     isMandatoryPoliciesCountFetching,
+    navigate,
   ]);
 
   return null;
 };
+
+
+

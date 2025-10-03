@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react()],
-    base: "/assets/recruitment/webapp/",
+    base: "/webapp/",
     server: {
         port: 8080,
         proxy: proxyOptions,

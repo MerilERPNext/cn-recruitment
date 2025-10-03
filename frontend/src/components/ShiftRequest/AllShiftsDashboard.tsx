@@ -319,7 +319,7 @@ export default function AllShiftsDashboard() {
                       SELECT
                     </span>
                     <span className="my-table-header-text flex items-center">
-                      EMPLOYEE
+                      DESCRIPTION
                     </span>
                     <span className="my-table-header-text flex items-center">
                       CREATION DATE
