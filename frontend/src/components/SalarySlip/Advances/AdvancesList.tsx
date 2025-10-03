@@ -85,10 +85,10 @@ const AdvancesList: React.FC = () => {
       <div className="w-full max-w-[100vw] mx-auto py-0">
         <div className="mb-6 w-full px-0">
           <div className="flex items-center justify-end gap-4">
-            {/* CHANGED: Using .btn-secondary */}
+            {/* CHANGED: Using .my-btn-secondary */}
             <button
               onClick={() => setMaskAmounts(!maskAmounts)}
-              className="btn-secondary"
+              className="my-btn-secondary"
               title={maskAmounts ? "Show amounts" : "Hide amounts"}
             >
               {maskAmounts ? (
@@ -103,10 +103,10 @@ const AdvancesList: React.FC = () => {
                 </>
               )}
             </button>
-            {/* CHANGED: Using .btn-primary */}
+            {/* CHANGED: Using .my-btn-primary */}
             <button
               onClick={handleCreateAdvance}
-              className="bg-blue-600 text-white px-4 py-2 border rounded-lg flex items-center gap-2 whitespace-nowrap"
+              className="my-btn-primary flex items-center gap-2 whitespace-nowrap"
             >
               Create Advance
             </button>
@@ -115,47 +115,47 @@ const AdvancesList: React.FC = () => {
 
         <div className="px-0">
           <div className="rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            {/* CHANGED: Using .table-header */}
-            <div className="table-header">
+            {/* CHANGED: Using .my-table-header */}
+            <div className="my-table-header">
               <div className="grid grid-cols-6 gap-4">
-                {/* CHANGED: Using .table-header-text on all header titles */}
-                <div className="table-header-text">Advance Name</div>
-                <div className="table-header-text text-center">Amount</div>
-                <div className="table-header-text text-center">Deductions</div>
-                <div className="table-header-text text-center">Start Date</div>
-                <div className="table-header-text text-center">End Date</div>
-                <div className="table-header-text text-center">Status</div>
+                {/* CHANGED: Using .my-table-header-text on all header titles */}
+                <div className="my-table-header-text">Advance Name</div>
+                <div className="my-table-header-text text-center">Amount</div>
+                <div className="my-table-header-text text-center">Deductions</div>
+                <div className="my-table-header-text text-center">Start Date</div>
+                <div className="my-table-header-text text-center">End Date</div>
+                <div className="my-table-header-text text-center">Status</div>
               </div>
             </div>
 
             <div className="divide-y divide-gray-200">
               {formattedData.map((advance, index) => (
-                // CHANGED: Using .table-row and grid layout. Children use .data-cell
+                // CHANGED: Using .table-row and grid layout. Children use .my-data-cell
                 <div
                   key={`${advance.name}-${index}`}
-                  className="data-row grid grid-cols-6 gap-4 cursor-pointer"
+                  className="my-data-row grid grid-cols-6 gap-4 cursor-pointer"
                   onClick={() => handleViewInstallments(advance)}
                 >
-                  <div className="data-cell font-medium">
+                  <div className="my-data-cell font-medium">
                     {advance.name}
                   </div>
-                  <div className="data-cell text-center">
+                  <div className="my-data-cell text-center">
                     {maskAmounts ? (
                       <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
                     ) : (
                       <span className="font-medium">{formatCurrency(advance.amount)}</span>
                     )}
                   </div>
-                  <div className="data-cell text-center">
+                  <div className="my-data-cell text-center">
                     {maskAmounts ? (
                       <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
                     ) : (
                       <span className="font-medium">{advance.numberOfDeductions}</span>
                     )}
                   </div>
-                  <div className="data-cell text-center">{formatToIndianDate(advance.startDate)}</div>
-                  <div className="data-cell text-center">{formatToIndianDate(advance.endDate)}</div>
-                  <div className="data-cell text-center">
+                  <div className="my-data-cell text-center">{formatToIndianDate(advance.startDate)}</div>
+                  <div className="my-data-cell text-center">{formatToIndianDate(advance.endDate)}</div>
+                  <div className="my-data-cell text-center">
                     <StatusBadge status={advance.advanceStatus} />
                   </div>
                 </div>
@@ -177,10 +177,10 @@ const AdvancesList: React.FC = () => {
     <div className="min-h-screen w-full bg-gray-50">
       <div className="p-0 space-y-3">
         <div className="flex items-center justify-between gap-4">
-          {/* CHANGED: Using .btn-secondary */}
+          {/* CHANGED: Using .my-btn-secondary */}
           <button
             onClick={() => setMaskAmounts(!maskAmounts)}
-            className="btn-secondary"
+            className="my-btn-secondary"
             title={maskAmounts ? "Show amounts" : "Hide amounts"}
           >
              {maskAmounts ? (
@@ -195,10 +195,10 @@ const AdvancesList: React.FC = () => {
                 </>
               )}
           </button>
-          {/* CHANGED: Using .btn-primary */}
+          {/* CHANGED: Using .my-btn-primary */}
           <button
             onClick={handleCreateAdvance}
-            className="btn-primary flex items-center gap-2 whitespace-nowrap"
+            className="my-btn-primary flex items-center gap-2 whitespace-nowrap"
           >
             Create Advance
           </button>

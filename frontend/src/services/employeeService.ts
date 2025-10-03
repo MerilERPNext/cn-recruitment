@@ -200,6 +200,12 @@ export class EmployeeService {
     );
     return result as EmployeeNode[];
   }
+  static async getEmployeeReportees(): Promise<Employee[]> {
+    const result = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_reportees"
+    );
+    return result as Employee[];
+  }
 
   // Get current user's employee record
   static async getCurrentEmployee(): Promise<Employee | null> {
@@ -475,12 +481,11 @@ export class EmployeeService {
   static async getAllEmployees(
     fields?: string[],
     filters?: FilterCondition[],
-    orFilters?: FilterCondition[],
-  
+    orFilters?: FilterCondition[]
   ): Promise<Employee[]> {
     const response = FrappeAPI.getDocumentList("Employee", {
       fields: fields && fields.length > 0 ? fields : ["*"],
-      
+
       filters: filters,
       orFilters: orFilters,
     });

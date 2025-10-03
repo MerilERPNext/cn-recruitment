@@ -98,6 +98,7 @@ export const useGetEmployeeHierarchy = (company: string) => {
     queryFn: () => {
       return EmployeeService.getEmployeeHierarchy(company);
     },
+    enabled: !!company,
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -108,6 +109,15 @@ export const useGetEmployeeSubordinateHierarchy = (employee: string) => {
       return EmployeeService.getEmployeeSubordinateHierarchy(employee);
     },
     enabled: !!employee,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+export const useEmployeeReportees = () => {
+  return useQuery<Employee[]>({
+    queryKey: ["Employee-reportess"],
+    queryFn: () => {
+      return EmployeeService.getEmployeeReportees();
+    },
     staleTime: 5 * 60 * 1000,
   });
 };

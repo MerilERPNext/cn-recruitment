@@ -9,6 +9,7 @@ type ApprovalRejectionQueueProps = {
   onToggleSelect?: (id: string) => void;
   data?: {
     allocated_to: string;
+    description: string;
     custom_doctype_actions_with_form: any;
     creation: string;
     date: string | number | Date;
@@ -76,8 +77,8 @@ const ApprovalRejectionQueue = ({
           }
         />
       </div>
-      <div className="font-medium  text-gray-900 text-xs truncate">
-        {data.allocated_to || "--"}
+      <div className="font-medium  text-gray-900 text-xs truncate whitespace-nowrap" title={data.description}>
+        {data.description || "--"}
       </div>
       <div className="text-gray-700 text-xs truncate">
         {data.creation ? data.creation.split(" ")[0] : "--"}

@@ -149,18 +149,43 @@ export default function TwoLevelOrgChart() {
       console.log("⏳ Waiting for data...", { employeeHierarchy, employeeId });
       return;
     }
-    const currentUser = findNode(
-      employeeHierarchy as unknown as EmployeeHierarchy,
-      employeeId
-    );
-    const parent = findParent(
-      employeeHierarchy as unknown as EmployeeHierarchy,
-      employeeId
-    );
+
+    // Normalize hierarchy data - handle both object and array
+    const hierarchyArray = Array.isArray(employeeHierarchy)
+      ? employeeHierarchy
+      : [employeeHierarchy];
+
+    if (!hierarchyArray.length) {
+      console.log("⏳ No hierarchy data available");
+      return;
+    }
+
+    // Search for the current user across all root nodes
+    let currentUser: EmployeeHierarchy | null = null;
+    let parent: EmployeeHierarchy | null = null;
+
+    for (const hierarchyData of hierarchyArray) {
+      currentUser = findNode(
+        hierarchyData as unknown as EmployeeHierarchy,
+        employeeId
+      );
+
+      if (currentUser) {
+        // Found the user, now find their parent
+        parent = findParent(
+          hierarchyData as unknown as EmployeeHierarchy,
+          employeeId
+        );
+        break;
+      }
+    }
+
     if (currentUser) {
       const { nodes, edges } = buildTwoLevelHierarchy(currentUser, parent);
       setNodes(nodes);
       setEdges(edges);
+    } else {
+      console.log("⚠️ Current user not found in hierarchy");
     }
   }, [employeeHierarchy, employeeId, setNodes, setEdges]);
 

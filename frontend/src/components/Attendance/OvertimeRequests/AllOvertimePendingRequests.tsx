@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { AttendanceRequest } from "../../../types/attendance";
+import { AttendanceRequest, LoadingAction } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
 import LayoutHeader from "../../shared/LayoutHeader";
 import { useNavigate } from "react-router";
 import ApprovalList from "../../shared/ApprovalList";
 import CardTable from "../../shared/CardTable";
 import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 const AllOvertimePendingRequests = () => {
-  const [selectedRequest, setSelectedRequest] =
-    useState<AttendanceRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<
+    (AttendanceRequest & { loadingAction?: LoadingAction }) | null
+  >(null);
+  const [refetch, setRefetch] = useState(false);
+  const { refetchAttendance } = useGlobalStore();
+
   const navigate = useNavigate();
   return (
     <div>
@@ -26,6 +31,10 @@ const AllOvertimePendingRequests = () => {
         >
           <ApprovalList
             doctype={"Planned Overtime Request"}
+            refetch={refetch || refetchAttendance}
+            onApprovalRefetchComplete={() => {
+              setRefetch(false);
+            }}
             renderCardContent={(item) => (
               <ApprovalCard
                 isSelected={item?.isSelected}
@@ -45,6 +54,11 @@ const AllOvertimePendingRequests = () => {
         <AttendanceDetailView
           data={selectedRequest}
           onClose={() => setSelectedRequest(null)}
+          onAction={() => {
+            setSelectedRequest(null);
+            setRefetch(true);
+          }}
+          loadingAction={selectedRequest?.loadingAction}
         />
       )}
     </div>

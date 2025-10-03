@@ -2,50 +2,50 @@ import React from "react";
 import { StatusBadge } from "./AllShiftsDashboard";
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
-import FrappeListView from "../ListView";
-import type { ShiftAssignment } from "./AllShiftsDashboard";
-import formatToIndianDate from "../../utils/formatToIndianDate";
+import { useShiftAssignments } from "../../hooks/useShiftAssignments";
+import formatToIndianDate, { formatEndDate } from "../../utils/formatToIndianDate";
+import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 
-const MyShiftRowItem: React.FC<{
-  item: ShiftAssignment;
-  index?: number;
-  doctype: string;
-}> = ({ item, index }) => {
-
-  const getShiftStatus = (startDate: string, endDate: string): string => {
+const MyShiftRowItem: React.FC<{ item: ApiShiftAssignment; index?: number }> = ({
+  item,
+  index,
+}) => {
+  const getShiftStatus = (startDate: string, endDate?: string): string => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
 
-    const end = new Date(endDate);
-    end.setHours(0, 0, 0, 0);
-
-    if (today < start) {
-      return "Upcoming";
-    } else if (today > end) {
-      return "Previous";
-    } else {
-      return "Current";
+    let end: Date | null = null;
+    if (endDate) {
+      end = new Date(endDate);
+      end.setHours(0, 0, 0, 0);
     }
+
+    if (!end) {
+      // Missing end date → treat as ongoing
+      if (today >= start) return "Current";
+      return "Upcoming";
+    }
+
+    if (today < start) return "Upcoming";
+    if (today > end) return "Previous";
+    return "Current";
   };
 
   const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
-  // CHANGED: Using .data-row for the container and .data-cell for children.
   return (
     <div
       key={`${item.name}-${index}`}
-      className="data-row grid grid-cols-5 gap-4 items-center text-center"
+      className="my-data-row grid grid-cols-5 gap-4 items-center text-center"
     >
-      <div className="data-cell font-medium truncate">{item.employee_name}</div>
-      <div className="data-cell truncate" title={item.creation}>
-        {item.shift_type}
-      </div>
-      <div className="data-cell">{formatToIndianDate(item.start_date)}</div>
-      <div className="data-cell">{formatToIndianDate(item.end_date)}</div>
-      <div className="data-cell flex justify-center">
+      <div className="my-data-cell font-medium truncate">{item.employee_name}</div>
+      <div className="my-data-cell truncate" title={`Shift Time: ${item.start_time} - ${item.end_time}`}>{item.shift_type}</div>
+      <div className="my-data-cell">{formatToIndianDate(item.start_date)}</div>
+      <div className="my-data-cell">{formatEndDate(item.end_date)}</div>
+      <div className="my-data-cell flex justify-center">
         <StatusBadge status={shiftStatus} />
       </div>
     </div>
@@ -54,54 +54,48 @@ const MyShiftRowItem: React.FC<{
 
 const AllMyShiftsList: React.FC = () => {
   const navigate = useNavigate();
+  const { data } = useShiftAssignments();
+
+  // ✅ Filter only self shifts
+  const myShifts = data?.filter((shift) => shift.is_self === 1) ?? [];
 
   return (
     <div className="w-full mx-auto pb-20">
       <HeaderBar title="All My Shifts" onBack={() => navigate(-1)} />
       <div className="overflow-x-auto mt-6 mx-6 rounded-lg border border-gray-200 bg-white shadow-sm">
-        {/* CHANGED: Using .table-header for consistent header styling. */}
-        <div className="table-header grid grid-cols-5 gap-4">
-          {/* CHANGED: Using .table-header-text for consistent column titles. */}
-          <span className="table-header-text flex items-center justify-center">
+        <div className="my-table-header grid grid-cols-5 gap-4">
+          <span className="my-table-header-text flex items-center justify-center">
             EMPLOYEE
           </span>
-          <span className="table-header-text flex items-center justify-center">
+          <span className="my-table-header-text flex items-center justify-center">
             SHIFT TYPE
           </span>
-          <span className="table-header-text flex items-center justify-center">
+          <span className="my-table-header-text flex items-center justify-center">
             START DATE
           </span>
-          <span className="table-header-text flex items-center justify-center">
+          <span className="my-table-header-text flex items-center justify-center">
             END DATE
           </span>
-          <span className="table-header-text flex items-center justify-center">
+          <span className="my-table-header-text flex items-center justify-center">
             STATUS
           </span>
         </div>
         <div>
-          <FrappeListView
-            doctype="Shift Assignment"
-            ItemComponent={MyShiftRowItem}
-            isSearch={false}
-            pageSize={50}
-            orderBy="start_date"
-            defaultFields={[
-              "name",
-              "employee",
-              "employee_name",
-              "shift_type",
-              "start_date",
-              "end_date",
-              "status",
-              "docstatus",
-              "creation",
-            ]}
-            searchFields={["employee", "employee_name", "shift_type", "status"]}
-            infiniteScroll={true}
-          />
+          {myShifts.length > 0 ? (
+            myShifts.map((shift, index) => (
+              <MyShiftRowItem key={shift.name} item={shift} index={index} />
+            ))
+          ) : (
+            <div className="p-4 text-center text-gray-500">
+              No shifts found for you.
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
+
+
 export default AllMyShiftsList;
+

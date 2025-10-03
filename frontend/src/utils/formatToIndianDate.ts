@@ -9,3 +9,10 @@ const formatToIndianDate = (dateString?: string): string => {
   };
   
   export default formatToIndianDate;
+
+const formatEndDate = (endDate: string | null | undefined) => {
+  if (!endDate) return "Present"; // ✅ Show Present if end date is missing
+  return formatToIndianDate(endDate);
+};
+
+export { formatEndDate };

@@ -21,11 +21,14 @@ export default defineConfig({
     },
     build: {
         outDir: path.resolve(__dirname, "../recruitment/public/webapp"),
+        modulePreload: {
+            polyfill: true,
+        },
         rollupOptions: {
             output: {
-                entryFileNames: "[name].js",
-                chunkFileNames: "[name]-[hash].js",
-                assetFileNames: "[name].[ext]",
+                entryFileNames: "[name].[hash].js",
+                chunkFileNames: "[name].[hash].js",
+                assetFileNames: "[name].[hash].[ext]",
                 // Vendor chunking configuration for better caching and optimization
                 manualChunks: {
                     'vendor-react': ['react', 'react-dom', 'react-router', 'react-router-dom'],

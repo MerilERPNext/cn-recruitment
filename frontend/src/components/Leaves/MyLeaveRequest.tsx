@@ -4,7 +4,7 @@ import DataListView from "../DataListView";
 import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import CardTable from "../shared/CardTable";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { MyLeaveRequestType } from "../../types/leaves";
 import {
@@ -24,9 +24,8 @@ const MyLeaveRequests = ({
 }) => {
   const replaceLeave = useReplaceLeave();
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
-  );
+  const { data: currentEmployee, isLoading: isEmployeeLoading } =
+    useEmployeeByUserId(currentUser?.name as string);
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const [replaceModalData, setReplaceModalData] = useState<{
@@ -47,7 +46,7 @@ const MyLeaveRequests = ({
   const navigate = useNavigate();
   const { mutate: revokeLeave } = useRevokeApprovedLeave();
   const { data: buttonStatus } = useGetButtonsStatus(
-    currentEmployee?.employee || ""
+    currentEmployee?.name || ""
   );
 
   const handleOpenReplaceModal = (leaveData: MyLeaveRequestType) => {
@@ -122,53 +121,57 @@ const MyLeaveRequests = ({
                 View All
               </button>
             </div>
-            <CardTable
-              titles={[
-                "Leave Type",
-                "From Date",
-                "To Date",
-                "Description",
-                "Leave Days",
-                "Status",
-                "Actions",
-              ]}
-              columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr"]}
-            >
-              {currentEmployee?.employee && (
-                <DataListView
-                  queryKey="leave-requests"
-                  customAPI={{
-                    method:
-                      "cn_leave_shift_managment.api.get_open_approval_todos",
-                    params: {
-                      doctype: "Leave Application",
-                      employee: currentEmployee?.employee,
-                    },
-                  }}
-                  defaultFilters={{ status: "Open" }}
-                  ItemComponent={(props: { item: MyLeaveRequestType }) => (
-                    <EmpLeaveRequestCard
-                      data={props.item}
-                      buttonStatus={buttonStatus}
-                      onOpenReplaceModal={() =>
-                        handleOpenReplaceModal(props.item)
-                      }
-                    />
-                  )}
-                  SkeletonComponent={CardSkeleton}
-                  onRefetchComplete={() => setRefetchAttendance(false)}
-                  refetchTrigger={refetchAttendance}
-                  isSearch={false}
-                  isFilter={false}
-                  pageSize={pageSize}
-                  showRefreshButton={false}
-                  orderBy="modified desc"
-                  infiniteScroll={false}
-                  loadMorePagination={true}
-                  showPagination={showPagination}
-                />
-              )}
-            </CardTable>
+            {isEmployeeLoading ? (
+              <CardSkeleton />
+            ) : (
+              <CardTable
+                titles={[
+                  "Leave Type",
+                  "From Date",
+                  "To Date",
+                  "Description",
+                  "Leave Days",
+                  "Status",
+                  "Actions",
+                ]}
+                columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr"]}
+              >
+                {currentEmployee?.name && (
+                  <DataListView
+                    queryKey="leave-requests"
+                    customAPI={{
+                      method:
+                        "cn_leave_shift_managment.api.get_open_approval_todos",
+                      params: {
+                        doctype: "Leave Application",
+                        employee: currentEmployee?.name,
+                      },
+                    }}
+                    defaultFilters={{ status: "Open" }}
+                    ItemComponent={(props: { item: MyLeaveRequestType }) => (
+                      <EmpLeaveRequestCard
+                        data={props.item}
+                        buttonStatus={buttonStatus}
+                        onOpenReplaceModal={() =>
+                          handleOpenReplaceModal(props.item)
+                        }
+                      />
+                    )}
+                    SkeletonComponent={CardSkeleton}
+                    onRefetchComplete={() => setRefetchAttendance(false)}
+                    refetchTrigger={refetchAttendance}
+                    isSearch={false}
+                    isFilter={false}
+                    pageSize={pageSize}
+                    showRefreshButton={false}
+                    orderBy="modified desc"
+                    infiniteScroll={false}
+                    loadMorePagination={true}
+                    showPagination={showPagination}
+                  />
+                )}
+              </CardTable>
+            )}
           </div>
         </div>
         <div className="bg-white pb-[5.5rem] h-full md:px-4 pt-2 mb-18 mt-2">
@@ -184,58 +187,62 @@ const MyLeaveRequests = ({
                 View All
               </button>
             </div>
-            <CardTable
-              titles={[
-                "Leave Type",
-                "From Date",
-                "To Date",
-                "Description",
-                "Leave Days",
-                "Status",
-                "Actions",
-              ]}
-              columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr"]}
-            >
-              {currentEmployee?.employee && (
-                <DataListView
-                  queryKey="leave-requests"
-                  customAPI={{
-                    method:
-                      "cn_leave_shift_managment.api.get_open_approval_todos",
-                    params: {
-                      doctype: "Leave Application",
-                      employee: currentEmployee?.employee,
-                    },
-                  }}
-                  defaultFilters={{
-                    status: ["in", ["Rejected", "Approved"]],
-                  }}
-                  ItemComponent={(props: { item: MyLeaveRequestType }) => (
-                    <EmpLeaveRequestCard
-                      data={props.item}
-                      buttonStatus={buttonStatus}
-                      onOpenReplaceModal={() =>
-                        handleOpenReplaceModal(props.item)
-                      }
-                      onRevokeApproved={() =>
-                        revokeLeave(props.item.reference_document?.name ?? "")
-                      }
-                    />
-                  )}
-                  SkeletonComponent={CardSkeleton}
-                  onRefetchComplete={() => setRefetchAttendance(false)}
-                  refetchTrigger={refetchAttendance}
-                  isSearch={false}
-                  isFilter={false}
-                  pageSize={pageSize}
-                  showRefreshButton={false}
-                  orderBy="modified desc"
-                  infiniteScroll={false}
-                  loadMorePagination
-                  showPagination={showPagination}
-                />
-              )}
-            </CardTable>
+            {isEmployeeLoading ? (
+              <CardSkeleton />
+            ) : (
+              <CardTable
+                titles={[
+                  "Leave Type",
+                  "From Date",
+                  "To Date",
+                  "Description",
+                  "Leave Days",
+                  "Status",
+                  "Actions",
+                ]}
+                columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr"]}
+              >
+                {currentEmployee?.name && (
+                  <DataListView
+                    queryKey="leave-requests"
+                    customAPI={{
+                      method:
+                        "cn_leave_shift_managment.api.get_open_approval_todos",
+                      params: {
+                        doctype: "Leave Application",
+                        employee: currentEmployee?.name,
+                      },
+                    }}
+                    defaultFilters={{
+                      status: ["in", ["Rejected", "Approved"]],
+                    }}
+                    ItemComponent={(props: { item: MyLeaveRequestType }) => (
+                      <EmpLeaveRequestCard
+                        data={props.item}
+                        buttonStatus={buttonStatus}
+                        onOpenReplaceModal={() =>
+                          handleOpenReplaceModal(props.item)
+                        }
+                        onRevokeApproved={() =>
+                          revokeLeave(props.item.reference_document?.name ?? "")
+                        }
+                      />
+                    )}
+                    SkeletonComponent={CardSkeleton}
+                    onRefetchComplete={() => setRefetchAttendance(false)}
+                    refetchTrigger={refetchAttendance}
+                    isSearch={false}
+                    isFilter={false}
+                    pageSize={pageSize}
+                    showRefreshButton={false}
+                    orderBy="modified desc"
+                    infiniteScroll={false}
+                    loadMorePagination
+                    showPagination={showPagination}
+                  />
+                )}
+              </CardTable>
+            )}
           </div>
         </div>
       </div>

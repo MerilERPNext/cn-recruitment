@@ -106,17 +106,51 @@ export default function OrganizationChart() {
       employeeSubordinateHierarchy &&
       !employeeSubordinateHierarchyIsLoading
     ) {
-      const { nodes, edges } = buildHierarchy(employeeSubordinateHierarchy);
-      setNodes(nodes);
-      setEdges(edges);
+      const hierarchyArray = Array.isArray(employeeSubordinateHierarchy)
+        ? employeeSubordinateHierarchy
+        : [employeeSubordinateHierarchy];
+
+      let allNodes: Node<NodeData>[] = [];
+      let allEdges: Edge[] = [];
+
+      hierarchyArray.forEach((hierarchyData, index) => {
+        const { nodes, edges } = buildHierarchy(
+          hierarchyData,
+          null,
+          0,
+          600 + index * 800
+        );
+        allNodes = [...allNodes, ...nodes];
+        allEdges = [...allEdges, ...edges];
+      });
+
+      setNodes(allNodes);
+      setEdges(allEdges);
       return;
     }
 
     // Otherwise, use the full company hierarchy
     if (employeeHierarchy) {
-      const { nodes, edges } = buildHierarchy(employeeHierarchy);
-      setNodes(nodes);
-      setEdges(edges);
+      const hierarchyArray = Array.isArray(employeeHierarchy)
+        ? employeeHierarchy
+        : [employeeHierarchy];
+
+      let allNodes: Node<NodeData>[] = [];
+      let allEdges: Edge[] = [];
+
+      hierarchyArray.forEach((hierarchyData, index) => {
+        const { nodes, edges } = buildHierarchy(
+          hierarchyData,
+          null,
+          0,
+          600 + index * 800
+        );
+        allNodes = [...allNodes, ...nodes];
+        allEdges = [...allEdges, ...edges];
+      });
+
+      setNodes(allNodes);
+      setEdges(allEdges);
     }
   }, [
     employeeId,

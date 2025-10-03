@@ -347,7 +347,7 @@ export function convertToFormioWithLayout(
   let lastFieldType = "";
   for (const field of apiFields) {
     // Skip fields that shouldn't be rendered
-    if (!field || !field.fieldtype) continue;
+    if (!field || !field.fieldtype || field?.label === "Connections") continue;
     if (field.hidden === true) continue;
 
     if (lastFieldType.endsWith(" Break") && field.fieldtype === lastFieldType)

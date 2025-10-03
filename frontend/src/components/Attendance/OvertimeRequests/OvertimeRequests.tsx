@@ -53,31 +53,33 @@ const OvertimeRequests = () => {
             titles={["Select", "Description", "Date", "Status", "Actions"]}
             columnWidths={["10%", "30%", "10%", "10%", "30%"]}
           >
-            <ApprovalList
-              doctype={"Planned Overtime Request"}
-              pageSize={3}
-              showPagination={false}
-              refetch={refetch || refetchAttendance}
-              onApprovalRefetchComplete={() => {
-                setRefetch(false);
-              }}
-              renderCardContent={(item) => (
-                <ApprovalCard
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  data={item?.data}
-                  onAction={item?.onAction}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onClick={(request: any) =>
-                    setSelectedRequest({
-                      ...request,
-                      loadingAction: item?.loadingAction,
-                    })
-                  }
-                  loadingAction={item?.loadingAction}
-                />
-              )}
-            />
+            {currentUser?.name ? (
+              <ApprovalList
+                doctype={"Planned Overtime Request"}
+                pageSize={3}
+                showPagination={false}
+                refetch={refetch || refetchAttendance}
+                onApprovalRefetchComplete={() => {
+                  setRefetch(false);
+                }}
+                renderCardContent={(item) => (
+                  <ApprovalCard
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    data={item?.data}
+                    onAction={item?.onAction}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick={(request: any) =>
+                      setSelectedRequest({
+                        ...request,
+                        loadingAction: item?.loadingAction,
+                      })
+                    }
+                    loadingAction={item?.loadingAction}
+                  />
+                )}
+              />
+            ) : null}
           </CardTable>
         </div>
         {/* Actioned */}
@@ -91,31 +93,35 @@ const OvertimeRequests = () => {
               titles={["Description", "Date", "Status"]}
             >
               <div>
-                <FrappeListView
-                  doctype="ToDo"
-                  isSearch={false}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  defaultFilters={defaultFilters as any}
-                  showRefereshButton={false}
-                  infiniteScroll={false}
-                  isFilter={false}
-                  defaultFields={["*"]}
-                  pageSize={3}
-                  refetchTrigger={refetch || refetchAttendance}
-                  onRefetchComplete={() => setRefetch(false)}
-                  showPagination={false}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  ItemComponent={(props: { item: any }) => {
-                    return (
-                      <RequestCard
-                        key={props?.item?.name}
-                        request={props?.item}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        onClick={(request: any) => setSelectedRequest(request)}
-                      />
-                    );
-                  }}
-                />
+                {currentUser?.name ? (
+                  <FrappeListView
+                    doctype="ToDo"
+                    isSearch={false}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    defaultFilters={defaultFilters as any}
+                    showRefereshButton={false}
+                    infiniteScroll={false}
+                    isFilter={false}
+                    defaultFields={["*"]}
+                    pageSize={3}
+                    refetchTrigger={refetch || refetchAttendance}
+                    onRefetchComplete={() => setRefetch(false)}
+                    showPagination={false}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ItemComponent={(props: { item: any }) => {
+                      return (
+                        <RequestCard
+                          key={props?.item?.name}
+                          request={props?.item}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          onClick={(request: any) =>
+                            setSelectedRequest(request)
+                          }
+                        />
+                      );
+                    }}
+                  />
+                ) : null}
               </div>
             </CardTable>
           </div>
