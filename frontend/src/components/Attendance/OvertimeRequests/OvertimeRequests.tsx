@@ -131,14 +131,15 @@ const OvertimeRequests = () => {
                   return (
                     <MyRequestCard
                       request={props?.item}
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      onClick={(request: any) => setMySelectedRequest(request)}
+                      onClick={(request: MyPlannedAttendanceRequest) =>
+                        setMySelectedRequest(request)
+                      }
                     />
                   );
                 }}
                 // SkeletonComponent={CardSkeleton}
-                onItemClick={(data) => {
-                  console.log(data);
+                onItemClick={() => {
+                  // Handle item click if needed
                 }}
                 onRefetchComplete={() => {
                   setRefetchAttendance(false);

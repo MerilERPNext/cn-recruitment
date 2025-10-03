@@ -1,4 +1,4 @@
-import { format, parse } from "date-fns";
+import { format, isValid, parse } from "date-fns";
 import { RequestCardProps } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -39,14 +39,15 @@ any & {
   };
 
   const status = getStatus(request?.status);
-  const formattedDate = request?.due_date
-    ? format(parse(request?.due_date, "dd-MM-yyyy", new Date()), "dd/MM/yyyy")
-    : "--/--/----";
+  const parsedDate = request?.due_date
+    ? parse(request.due_date, "dd-MM-yyyy", new Date())
+    : null;
+  const formattedDate =
+    parsedDate && isValid(parsedDate)
+      ? format(parsedDate, "dd/MM/yyyy")
+      : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(request?.description || "");
-  const gridTemplateColumns = request?.username
-    ? "15% 30% 10% 33%"
-    : "42% 10% 33%";
-
+  const gridTemplateColumns = "15% 30% 10% 33%";
   return (
     <>
       {isDesktop ? (
@@ -55,11 +56,9 @@ any & {
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
-          {request?.username ? (
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {request?.username}
-            </div>
-          ) : null}
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
+            {request?.username || ""}
+          </div>
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>

@@ -31,13 +31,9 @@ import {
 try {
   // Load the Form.io CSS
   Formio.setBaseUrl(window.location.origin);
-}
-catch (error) {
+} catch (error) {
   console.error("Error setting Formio base URL:", error);
 }
-
-
-
 
 const App: React.FC = () => {
   const { currentUser, isLoading, isValidating } = useFrappeAuth();
@@ -191,33 +187,32 @@ const MandatoryPoliciesHandler = () => {
       isCurrentEmployeeFetching ||
       isMandatoryPoliciesCountFetching ||
       mandatoryPoliciesCount === undefined
-    )
-    {
+    ) {
       return;
     }
 
     if (mandatoryPoliciesCount <= 0) {
       if (window.isApp) {
-      window.nativeInterface.logToNative("destroyNestedWebView");
-      window.nativeInterface.execute("destroyNestedWebView");
-      }
-      else {
-        navigate("/webapp");
+        window.nativeInterface.logToNative("destroyNestedWebView");
+        window.nativeInterface.execute("destroyNestedWebView");
+      } else {
+        // navigate("/webapp");
       }
     }
 
     if (mandatoryPoliciesCount > 0) {
-    console.log("openNestedWebView");
+      console.log("openNestedWebView");
 
       if (window.isApp) {
-      window.nativeInterface.logToNative("openNestedWebView");
-      window.nativeInterface.execute("openNestedWebView", {
-        url: window.location.origin + "/webapp/policies-enforced",
-        title: "HR Policies",
+        window.nativeInterface.logToNative("openNestedWebView");
+        window.nativeInterface.execute("openNestedWebView", {
+          url: window.location.origin + "/webapp/policies-enforced",
+          title: "HR Policies",
           isCloseable: false,
         });
-      }
-      else if (!window.location.pathname.includes("/webapp/policies-enforced")) {
+      } else if (
+        !window.location.pathname.includes("/webapp/policies-enforced")
+      ) {
         navigate("/webapp/policies-enforced");
       }
     }
@@ -230,6 +225,3 @@ const MandatoryPoliciesHandler = () => {
 
   return null;
 };
-
-
-

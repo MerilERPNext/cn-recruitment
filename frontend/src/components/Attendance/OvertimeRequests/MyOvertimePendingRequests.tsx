@@ -13,7 +13,7 @@ import LayoutHeader from "../../shared/LayoutHeader";
 import { useNavigate } from "react-router-dom";
 import { MyRequestCard } from "./MyRequestCard";
 
-const MyOvertimePendingRequets = () => {
+const MyOvertimePendingRequests = () => {
   const navigate = useNavigate();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
@@ -57,8 +57,9 @@ const MyOvertimePendingRequets = () => {
             return (
               <MyRequestCard
                 request={props?.item}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) => setSelectedRequest(request)}
+                onClick={(request: MyPlannedAttendanceRequest) =>
+                  setSelectedRequest(request)
+                }
               />
             );
           }}
@@ -90,4 +91,4 @@ const MyOvertimePendingRequets = () => {
   );
 };
 
-export default MyOvertimePendingRequets;
+export default MyOvertimePendingRequests;

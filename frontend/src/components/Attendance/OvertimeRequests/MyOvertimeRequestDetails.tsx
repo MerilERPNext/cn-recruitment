@@ -4,7 +4,7 @@ import {
   MyPlannedAttendanceRequest,
   OvertimeDetail,
 } from "../../../types/attendance";
-import { format, parse } from "date-fns";
+import { format, isValid, parse } from "date-fns";
 
 export function MyOvertimeDetails({
   data,
@@ -42,11 +42,9 @@ export function MyOvertimeDetails({
   const doc = data?.reference_document;
 
   const formatDate = (dateString: string) => {
-    const formattedDate = format(
-      parse(dateString, "yyyy-MM-dd", new Date()),
-      "dd/MM/yyyy"
-    );
-    return formattedDate || "--/--";
+    if (!dateString) return "--/--";
+    const date = parse(dateString, "yyyy-MM-dd", new Date());
+    return isValid(date) ? format(date, "dd/MM/yyyy") : "--/--";
   };
 
   return data?.allocated_to ? (
