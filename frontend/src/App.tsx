@@ -196,7 +196,7 @@ const MandatoryPoliciesHandler = () => {
         window.nativeInterface.logToNative("destroyNestedWebView");
         window.nativeInterface.execute("destroyNestedWebView");
       } else {
-        // navigate("/webapp");
+        navigate("/webapp");
       }
     }
 
