@@ -1,12 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import {
-  ArrowLeft,
-  ArrowUpRight,
+
   ChevronLeft,
   ChevronRight,
   Plus,
-  XCircle,
+ 
 } from "lucide-react";
 import {
   useGetAllEventsAndAttendance,
@@ -14,7 +13,7 @@ import {
 } from "../../../hooks/useAttendance";
 import {
   AttendanceRecord,
-  MyAttendanceRequest,
+  
 } from "../../../types/attendance";
 import { useNavigate } from "react-router";
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
@@ -29,10 +28,16 @@ import CreateOvertimeRequest from "../OvertimeRequests/CreateOvertimeRequest";
 import EmployeeAttendanceDetails from "./EmployeeAttendanceDetails";
 import Modal from "../../shared/Modal";
 import { useSidebar } from "../SidebarContext";
-import DataListView from "../../DataListView";
-import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard";
+
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
+import AttendanceLegend from "../../EmployeeAttendence/AttendanceLegend";
+import AttendanceError from "../../EmployeeAttendence/AttendanceError";
+import ListView from "../../EmployeeAttendence/ListView";
+
+import CardTablee from "../../EmployeeAttendence/CardTable";
+import AttendanceCalendar from "../../EmployeeAttendence/AttendanceCalendar";
+import BottomDrowerForAttendance from "../../EmployeeAttendence/BottomDrower";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -64,83 +69,6 @@ const EmployeeAttendance = () => {
     }
   };
 
-  const AttendanceLegend = ({ isCompact = false }: { isCompact?: boolean }) => {
-    const attendanceLegendItems = [
-      {
-        label: "Present",
-        bgColor: "bg-green-100",
-        textColor: "text-green-700",
-        borderColor: "border-green-200",
-      },
-      {
-        label: "Absent",
-        bgColor: "bg-red-100",
-        textColor: "text-red-700",
-        borderColor: "border-red-200",
-      },
-      {
-        label: "On Leave",
-        bgColor: "bg-yellow-100",
-        textColor: "text-orange-700",
-        borderColor: "border-yellow-200",
-      },
-      {
-        label: "WFH",
-        bgColor: "bg-purple-100",
-        textColor: "text-purple-700",
-        borderColor: "border-purple-200",
-      },
-      {
-        label: "Holiday",
-        bgColor: "bg-blue-100",
-        textColor: "text-blue-700",
-        borderColor: "border-blue-200",
-      },
-      {
-        label: "Week Off",
-        bgColor: "bg-gray-200",
-        textColor: "text-gray-700",
-        borderColor: "border-gray-300",
-      },
-    ];
-
-    const eventDotLegendItems = [
-      { label: "Attendance Request", dotColor: "bg-blue-500" },
-      { label: "Leave Request", dotColor: "bg-pink-500" },
-      { label: "Overtime Request", dotColor: "bg-orange-500" },
-    ];
-
-    const containerClass = isCompact
-      ? "flex flex-wrap gap-2 text-xs justify-between px-4"
-      : "flex flex-wrap gap-7 text-xs ml-5";
-
-    const itemClass = isCompact
-      ? "flex items-center gap-1 px-1 py-1 rounded-lg border"
-      : "flex items-center gap-1 px-2 py-1 rounded-lg border";
-
-    return (
-      <div className="space-y-3">
-        <div className={containerClass}>
-          {attendanceLegendItems.map((item, index) => (
-            <span
-              key={index}
-              className={`${itemClass} ${item.bgColor} ${item.textColor} ${item.borderColor}`}
-            >
-              {item.label}
-            </span>
-          ))}
-        </div>
-        <div className={containerClass}>
-          {eventDotLegendItems.map((item, index) => (
-            <span key={index} className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${item.dotColor}`}></div>
-              <span className="text-gray-700">{item.label}</span>
-            </span>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -152,7 +80,7 @@ const EmployeeAttendance = () => {
   const {
     data: allAttendance,
     isError,
-    error,
+    error, 
   } = useGetAllEventsAndAttendance({ start: start, end: end });
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
@@ -167,19 +95,11 @@ const EmployeeAttendance = () => {
 
   const [openDrawer, setOpenDrawer] = useState<boolean>(false);
 
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
-          </div>
-          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-        </div>
-      </div>
-    </div>
-  );
+  // const CardSkeleton = () => (
+  //   <CardSkeletons/>
+  // );
+
+  
   type Status =
     | "present"
     | "absent"
@@ -291,26 +211,7 @@ const EmployeeAttendance = () => {
   }, [allAttendance]);
 
   if (isError) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center space-y-4">
-          <XCircle className="w-12 h-12 text-black mx-auto" />
-          <h2 className="text-xl font-semibold text-black">
-            Error Loading Attendances
-          </h2>
-          <p className="text-gray-600">{error?.message}</p>
-          <button
-            onClick={() => {
-              navigate(-1);
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
+    return <AttendanceError error={error?.message}/>;
   }
 
   return (
@@ -323,26 +224,13 @@ const EmployeeAttendance = () => {
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
         <div className=" w-full pb-2 bg-white rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg">
-          <div className="w-full flex justify-end md:justify-between  items-center border-b-1 border-gray-200 pb-2">
-            {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
-            {isDesktop && (
-              <div className="flex flex-col gap-2 mt-4 mx-5">
-                <h4 className="text-sm font-semibold text-gray-700">
-                  Attendance Legend:
-                </h4>
-                <AttendanceLegend />
-              </div>
-            )}
-            <button
-              className="text-gray-500 px-2 mt-4 flex gap-1 justify-center items-center"
-              onClick={() => {
-                navigate("/webapp/attendance/emp-attendance/all");
-              }}
-            >
-              List View
-              <ArrowUpRight className="h-5 w-5" />
-            </button>
-          </div>
+          <ListView />
+          <AttendanceCalendar
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            getAttendanceStatus={getAttendanceStatus}
+            setShowDetailsFor={setShowDetailsFor}
+          />
           <div className="p-1 employee-datepicker-lg">
             <DatePicker
               selected={selectedDate}
@@ -535,50 +423,15 @@ const EmployeeAttendance = () => {
               "Actions",
             ]}
           >
-            {currentEmployee?.employee ? (
-              <DataListView
-                queryKey="attendance-requests"
-                customAPI={{
-                  method:
-                    "cn_leave_shift_managment.api.get_open_approval_todos",
-                  params: {
-                    doctype: "Attendance Request",
-                    employee: currentEmployee?.employee,
-                  },
-                }}
-                defaultFilters={{
-                  status: "Pending",
-                }}
-                ItemComponent={(props: { item: MyAttendanceRequest }) => {
-                  return (
-                    <EmpAttendanceRequestCard
-                      type="pending"
-                      data={{
-                        ...props?.item,
-                      }}
-                    />
-                  );
-                }}
-                SkeletonComponent={CardSkeleton}
-                onItemClick={(data) => {
-                  console.log(data);
-                }}
-                onRefetchComplete={() => {
-                  setRefetchAttendance(false);
-                }}
-                refetchTrigger={refetchAttendance}
-                isSearch={false}
-                isFilter={false}
-                pageSize={5}
-                showRefreshButton={false}
-                orderBy="modified desc"
-                infiniteScroll={false}
-                loadMorePagination={true}
-                showPagination={false}
-              />
-            ) : (
-              <></>
-            )}
+            <CardTablee
+              currentEmployee={
+                currentEmployee
+                  ? { employee: currentEmployee.employee }
+                  : undefined
+              }
+              refetchAttendance={refetchAttendance}
+              setRefetchAttendance={setRefetchAttendance}
+            />
           </CardTable>
         </div>
         {showReqAttendanceCorrection && (
@@ -602,47 +455,13 @@ const EmployeeAttendance = () => {
             }}
           />
         )}
-        <BottomDrawer
-          isOpen={openDrawer}
-          onClose={() => setOpenDrawer(false)}
-          children={
-            <div className="flex flex-col gap-3">
-              <h2 className="font-semibold text-lg">Raise Request</h2>
-
-              <button
-                onClick={() => {
-                  setShowLeaveRequest(true);
-                  setOpenDrawer(false);
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-lg transition-colors "
-              >
-                Leave Request
-              </button>
-              <div className="border-b border-gray-200 m-0 p-0"></div>
-              <button
-                onClick={() => {
-                  setShowReqAttendanceCorrection(true);
-                  setOpenDrawer(false);
-                }}
-                className="w-full text-left px-4 py-2  hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                Attendance Request
-              </button>
-              <div className="border-b border-gray-200 m-0 p-0"></div>
-
-              {plannedOvertimAllowed ? (
-                <button
-                  onClick={() => {
-                    setShowOvertimeRequest(true);
-                    setOpenDrawer(false);
-                  }}
-                  className="w-full text-left px-4 py-2  hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Planned Overtime Request
-                </button>
-              ) : null}
-            </div>
-          }
+        <BottomDrowerForAttendance
+          setShowLeaveRequest={setShowLeaveRequest}
+          setOpenDrawer={setOpenDrawer}
+          setShowReqAttendanceCorrection={setShowReqAttendanceCorrection}
+          setShowOvertimeRequest={setShowOvertimeRequest}
+          plannedOvertimAllowed={plannedOvertimAllowed}
+          openDrawer={openDrawer}
         />
       </div>
 
