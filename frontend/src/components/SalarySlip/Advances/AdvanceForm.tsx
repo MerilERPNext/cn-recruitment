@@ -56,11 +56,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
         formAdvanceInstance.current.getComponent("advance_amount");
       if (advanceAmountComponent) {
         advanceAmountComponent.setValue(advanceAmountData.amount);
-
-        if (formAdvanceInstance.current.data) {
-          formAdvanceInstance.current.data.advance_amount =
-            advanceAmountData.amount;
-        }
       }
     }
   }, [advanceAmountData, selectedAdvanceType]);
@@ -349,11 +344,12 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
 
   /** Cancel Handler */
   const handleCancel = useCallback(() => {
-    if (formAdvanceInstance.current) {
-      formAdvanceInstance.current.resetValue();
-    }
-    if (onClose) onClose();
-  }, [onClose]);
+  if (formAdvanceInstance.current) {
+    formAdvanceInstance.current.resetValue();
+  }
+  setSelectedAdvanceType(undefined); // ✅ Reset the React state
+  if (onClose) onClose();
+}, [onClose]); 
 
   return (
     <div className="advance-form-container flex flex-col h-full bg-gray-50">
