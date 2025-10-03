@@ -22,7 +22,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
         <div className="my-table-header grid grid-cols-7 gap-4">
           <span className="my-table-header-text flex items-center">SELECT</span>
           <span className="my-table-header-text flex items-center justify-start">
-            EMPLOYEE NAME
+            DESCRIPTION
           </span>
           <span className="my-table-header-text flex items-center justify-start">
             CREATION DATE
