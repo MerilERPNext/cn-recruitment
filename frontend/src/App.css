@@ -17,7 +17,7 @@
   /* A standard button using your PRIMARY color */
   .my-btn-primary {
     @apply bg-blue-600 border border-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md transition-colors;
-  } */
+  }
 
   /* Table Header using your fonts and colors */
   .my-table-header {
