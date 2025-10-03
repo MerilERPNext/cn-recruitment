@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Navigate,
   Route,
@@ -163,6 +163,10 @@ const MandatoryPoliciesHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } =
     useCurrentEmployee();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isAutoOpened, setInAutoOpened] = useState(false);
+  const [redirectTo, setRedirectTo] = useState<string>("/webapp");
+
   const {
     data: mandatoryPoliciesCount,
     isFetching: isMandatoryPoliciesCountFetching,
@@ -193,10 +197,12 @@ const MandatoryPoliciesHandler = () => {
 
     if (mandatoryPoliciesCount <= 0) {
       if (window.isApp) {
-        window.nativeInterface.logToNative("destroyNestedWebView");
-        window.nativeInterface.execute("destroyNestedWebView");
-      } else {
-        navigate("/webapp");
+      window.nativeInterface.logToNative("destroyNestedWebView");
+      window.nativeInterface.execute("destroyNestedWebView");
+      }
+      else if (window.location.pathname.includes("/webapp/policies-enforced") && isAutoOpened) {
+        setInAutoOpened(false);
+        navigate(redirectTo);
       }
     }
 
@@ -210,9 +216,10 @@ const MandatoryPoliciesHandler = () => {
           title: "HR Policies",
           isCloseable: false,
         });
-      } else if (
-        !window.location.pathname.includes("/webapp/policies-enforced")
-      ) {
+      }
+      else if (!window.location.pathname.includes("/webapp/policies-enforced")) {
+        setRedirectTo(location.pathname);
+        setInAutoOpened(true);
         navigate("/webapp/policies-enforced");
       }
     }
