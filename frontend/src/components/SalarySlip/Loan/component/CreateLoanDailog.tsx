@@ -167,14 +167,7 @@ export default function CreateLoanDialog({
             input: true,
             placeholder: "Enter reason",
           },
-          {
-            type: "textarea",
-            key: "custom_note_remark",
-            label: "Note (Remark)",
-            validate: { required: true },
-            input: true,
-            placeholder: "Enter reason",
-          },
+  
         ],
       },
     ],

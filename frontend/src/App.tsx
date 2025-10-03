@@ -28,7 +28,16 @@ import {
   preloadAdjacentRoutes,
 } from "./utils/routePreloader";
 
-Formio.setBaseUrl(window.location.origin);
+try {
+  // Load the Form.io CSS
+  Formio.setBaseUrl(window.location.origin);
+}
+catch (error) {
+  console.error("Error setting Formio base URL:", error);
+}
+
+
+
 
 const App: React.FC = () => {
   const { currentUser, isLoading, isValidating } = useFrappeAuth();
@@ -206,3 +215,6 @@ const MandatoryPoliciesHandler = () => {
 
   return null;
 };
+
+
+

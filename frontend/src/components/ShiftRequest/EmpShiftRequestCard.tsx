@@ -13,9 +13,9 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchShift } = useGlobalStore();
 
-  const handleEditClick = () => {
-    window.location.href = `/app/shift-request/${data.reference_name}`;
-  };
+  // const handleEditClick = () => {
+  //   window.location.href = `/app/shift-request/${data.reference_name}`;
+  // };
 
   const handleRevokeClick = () => {
     if (data?.todo_id) {
@@ -62,10 +62,10 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const status = getStatus(data?.reference_document?.status);
   const formattedFromDate = data?.reference_document?.from_date
     ? format(new Date(data?.reference_document.from_date), "dd/MM/yyyy")
-    : "N/A";
+    : "";
   const formattedToDate = data?.reference_document?.to_date
     ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
-    : "N/A";
+    : "";
   return (
     <>
       {isDesktop ? (
@@ -107,7 +107,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 icon={<Pencil className="h-3 w-3" />}
                 variant="outline"
                 size="sm"
-                onClick={handleEditClick}
+                
               >
                 Edit
               </Button>
@@ -164,7 +164,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                       icon={<Pencil className="h-3 w-3" />}
                       variant="outline"
                       size="sm"
-                      onClick={handleEditClick}
+                      
                     >
                       Edit
                     </Button>

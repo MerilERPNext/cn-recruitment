@@ -82,6 +82,9 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
         employee: user?.employee,
         advance_account: advanceAmountData?.advance_account,
         exchange_rate: 1.0,
+        custom_repayment_methods: formData.repayment_method || "",
+        custom_repayment_period_in_months: formData.repayment_periods || 0,
+        custom_monthly_repayment_amount: formData.repayment_amount || 0,
       };
 
       console.log("✅ Final Submitted Payload:", submissionData);
