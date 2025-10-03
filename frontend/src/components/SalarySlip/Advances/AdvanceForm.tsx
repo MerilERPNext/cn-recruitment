@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import HeaderBar from "../../HeaderBar";
@@ -24,7 +30,6 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const { data: advanceType } = useAdvancesType();
   const { setRefetchAttendance } = useGlobalStore();
 
-
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string>();
   const [postingDate] = useState<string>(
     new Date().toISOString().split("T")[0]
@@ -44,14 +49,21 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     if (
       advanceAmountData &&
       formAdvanceInstance.current &&
-      advanceAmountData?.amount
+      advanceAmountData?.amount &&
+      selectedAdvanceType
     ) {
-      // correct method
-      formAdvanceInstance.current.setValue({
-        advance_amount: advanceAmountData?.amount,
-      });
+      const advanceAmountComponent =
+        formAdvanceInstance.current.getComponent("advance_amount");
+      if (advanceAmountComponent) {
+        advanceAmountComponent.setValue(advanceAmountData.amount);
+
+        if (formAdvanceInstance.current.data) {
+          formAdvanceInstance.current.data.advance_amount =
+            advanceAmountData.amount;
+        }
+      }
     }
-  }, [advanceAmountData]);
+  }, [advanceAmountData, selectedAdvanceType]);
 
   /** ✅ Handle Submit */
   const handleSubmit = async () => {
@@ -75,10 +87,11 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
 
       const submissionData = {
         ...formData,
-        custom_advance_type: selectedAdvanceType,
+        custom_advance_type:
+          selectedAdvanceType || formData.custom_advance_type,
         advance_amount: formData.advance_amount,
         applicant_type: "Employee",
-        company: user?.company,  
+        company: user?.company,
         employee: user?.employee,
         advance_account: advanceAmountData?.advance_account,
         exchange_rate: 1.0,
@@ -99,11 +112,16 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
         },
         onError: (error: any) => {
           const errorMessage =
-            error?.response?.data?.exception?.split(":").slice(1).join(":").trim() ||
-            "Something went wrong!!";
+            error?.response?.data?.exception
+              ?.split(":")
+              .slice(1)
+              .join(":")
+              .trim() || "Something went wrong!!";
 
           const cleanString = DOMPurify.sanitize(errorMessage || "");
-          toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
+          toast.error(
+            <span dangerouslySetInnerHTML={{ __html: cleanString }} />
+          );
         },
       });
     } catch (err) {
@@ -142,20 +160,30 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                       validate: { required: true },
                       defaultValue: user?.employee || "",
                       placeholder: "Enter employee ID/name",
+                      disabled: true,
                     },
                   ],
                 },
                 {
                   width: 6,
                   components: [
-                    { type: "select",
-                      key: "custom_advance_type", 
-                      label: "Advance Type", 
-                      input: true, 
-                      validate: { required: true }, 
-                      placeholder: "Select advance type", 
+                    {
+                      type: "select",
+                      key: "custom_advance_type",
+                      label: "Advance Type",
+                      input: true,
+                      validate: { required: true },
+                      placeholder: "Select advance type",
+                      persistent: true,
+                      clearOnHide: false,
+                      redrawOn: "never",
                       data: {
-                         values: advanceType?.data?.map((item: { name: string }) => ({ label: item?.name, value: item?.name, })) || [], },
+                        values:
+                          advanceType?.data?.map((item: { name: string }) => ({
+                            label: item?.name,
+                            value: item?.name,
+                          })) || [],
+                      },
                     },
                   ],
                 },
@@ -361,15 +389,25 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
           <Form
             key="advance-form"
             form={advanceForm}
-            onFormReady={(instance: any) =>
-              (formAdvanceInstance.current = instance)
-            }
+            onFormReady={(instance: any) => {
+              formAdvanceInstance.current = instance;
+              console.log("Form instance ready", instance);
+            }}
             options={{
               submitButton: false,
+              noAlerts: true, // ✅ NEW
             }}
             onChange={(submission: any) => {
-              if (submission.data.custom_advance_type) {
+              console.log("Form changed:", submission.data);
+              if (
+                submission.data.custom_advance_type &&
+                submission.data.custom_advance_type !== selectedAdvanceType
+              ) {
                 setSelectedAdvanceType(submission.data.custom_advance_type);
+                console.log(
+                  "Advance type selected:",
+                  submission.data.custom_advance_type
+                );
               }
             }}
           />
@@ -398,4 +436,3 @@ export const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
 };
 
 export default AdvanceForm;
-
