@@ -63,7 +63,7 @@ const ApprovalCard = ({
     ? format(new Date(data.date), "dd/MM/yyyy")
     : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const gridTemplateColumns = "10% 30% 10% 10% 20%";
+  const gridTemplateColumns = "15% 30% 10% 10% 20%";
 
   const getStatus = (status: string) => {
     if (status === "Open") {
