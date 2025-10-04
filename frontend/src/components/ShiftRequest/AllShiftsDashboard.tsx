@@ -39,7 +39,6 @@ export const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-// CHANGED: Using our new .dashboard-card class
 const Card = ({
   children,
   className,
@@ -48,7 +47,6 @@ const Card = ({
   className?: string;
 }) => <div className={`my-dashboard-card ${className}`}>{children}</div>;
 
-// CHANGED: Using .card-header-title and .card-header-action
 const CardHeader = ({
   title,
   onSeeAll,
@@ -69,7 +67,7 @@ const CardHeader = ({
   </div>
 );
 
-// My Shift Item Component
+
 const MyShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
