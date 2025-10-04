@@ -82,11 +82,12 @@ const TasksAwaiting: React.FC = () => {
 <div className="flex justify-between items-center mb-4">
     <h2 className="card-header-title">Tasks Awaiting You</h2>
     <button
-    onClick={handleTodoClick}
-     className="card-header-action">
-      <span>Visit Todo</span>
-      <ExternalLink size={16} />
-    </button>
+  onClick={handleTodoClick}
+  className="card-header-action flex items-center gap-1 hover:text-blue-600 hover:underline"
+>
+  <span>Visit Todo</span>
+  <ExternalLink size={16} />
+</button>
   </div>
       
 
