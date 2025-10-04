@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Navigate,
   Route,
@@ -31,13 +31,9 @@ import {
 try {
   // Load the Form.io CSS
   Formio.setBaseUrl(window.location.origin);
-}
-catch (error) {
+} catch (error) {
   console.error("Error setting Formio base URL:", error);
 }
-
-
-
 
 const App: React.FC = () => {
   const { currentUser, isLoading, isValidating } = useFrappeAuth();
@@ -166,6 +162,11 @@ export default App;
 const MandatoryPoliciesHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } =
     useCurrentEmployee();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isAutoOpened, setInAutoOpened] = useState(false);
+  const [redirectTo, setRedirectTo] = useState<string>("/webapp");
+
   const {
     data: mandatoryPoliciesCount,
     isFetching: isMandatoryPoliciesCountFetching,
@@ -183,38 +184,51 @@ const MandatoryPoliciesHandler = () => {
     }
   );
 
+  console.log("mandatoryPoliciesCount", mandatoryPoliciesCount);
+
   useEffect(() => {
     if (
       isCurrentEmployeeFetching ||
       isMandatoryPoliciesCountFetching ||
-      mandatoryPoliciesCount === undefined ||
-      !window.isApp
-    )
+      mandatoryPoliciesCount === undefined
+    ) {
       return;
+    }
 
     if (mandatoryPoliciesCount <= 0) {
+      if (window.isApp) {
       window.nativeInterface.logToNative("destroyNestedWebView");
       window.nativeInterface.execute("destroyNestedWebView");
-      console.log("destroyNestedWebView");
+      }
+      else if (window.location.pathname.includes("/webapp/policies-enforced") && isAutoOpened) {
+        setInAutoOpened(false);
+        navigate(redirectTo);
+      }
     }
 
     if (mandatoryPoliciesCount > 0) {
-      window.nativeInterface.logToNative("openNestedWebView");
-      window.nativeInterface.execute("openNestedWebView", {
-        url: window.location.origin + "/webapp/policies-enforced",
-        title: "HR Policies",
-        isCloseable: false,
-      });
       console.log("openNestedWebView");
+
+      if (window.isApp) {
+        window.nativeInterface.logToNative("openNestedWebView");
+        window.nativeInterface.execute("openNestedWebView", {
+          url: window.location.origin + "/webapp/policies-enforced",
+          title: "HR Policies",
+          isCloseable: false,
+        });
+      }
+      else if (!window.location.pathname.includes("/webapp/policies-enforced")) {
+        setRedirectTo(location.pathname);
+        setInAutoOpened(true);
+        navigate("/webapp/policies-enforced");
+      }
     }
   }, [
     mandatoryPoliciesCount,
     isCurrentEmployeeFetching,
     isMandatoryPoliciesCountFetching,
+    navigate,
   ]);
 
   return null;
 };
-
-
-

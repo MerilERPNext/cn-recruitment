@@ -70,6 +70,55 @@ export interface MyAttendanceRequest {
   todo_id: string;
   username: string;
   reference_name: string;
+  status: string;
+}
+
+export type OvertimeDetail = {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  shift_date: string;
+  start_date: string;
+  start_time: string;
+  end_date: string;
+  end_time: string;
+  message: string;
+  parent: string;
+  parentfield: string;
+  parenttype: string;
+  doctype: string;
+};
+
+export type PlannedOvertimeRequest = {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  employee: string;
+  status: string;
+  attachment: string;
+  amended_from: string | null;
+  reason: string | null;
+  doctype: string;
+  overtime_details: OvertimeDetail[];
+};
+
+export interface MyPlannedAttendanceRequest {
+  reference_document: PlannedOvertimeRequest;
+  reference_type: string;
+  allocated_to: string;
+  custom_allow_revoke: boolean;
+  todo_id: string;
+  username: string;
+  reference_name: string;
+  status: string;
 }
 export interface AttendanceRequestValidations {
   attendance_adjustment_requests: number;

@@ -12,6 +12,7 @@ import NotificationList from "./components/Notification/Notification";
 import AllAttendanceRequest from "./components/Attendance/AttendanceRequest/AllAttendanceRequests";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
+import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -536,6 +537,10 @@ export const routesConfig: AppRoute[] = [
       {
         path: "planned-overtime-requests/pendings",
         element: <AllOvertimePendingRequests />,
+      },
+      {
+        path: "planned-overtime-requests/my-overtime-requests",
+        element: <MyOvertimePendingRequests />,
       },
       {
         path: "attendance-policies",

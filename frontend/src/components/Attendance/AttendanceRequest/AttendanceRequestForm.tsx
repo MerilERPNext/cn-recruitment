@@ -315,12 +315,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                       value: "Attendance Adjustment",
                     }
                   : "",
-                reqValidationmutation?.data?.shift_change_requests
-                  ? {
-                      label: "Shift Change Request",
-                      value: "Shift Change",
-                    }
-                  : "",
               ],
             },
           },

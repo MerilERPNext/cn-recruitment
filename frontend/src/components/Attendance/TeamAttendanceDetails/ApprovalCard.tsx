@@ -29,6 +29,9 @@ const ApprovalCard = ({
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
+  const actionsWithForm = data?.custom_doctype_actions_with_form
+    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
+    : [];
 
   const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();
@@ -63,7 +66,7 @@ const ApprovalCard = ({
     ? format(new Date(data.date), "dd/MM/yyyy")
     : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const gridTemplateColumns = "10% 30% 10% 10% 20%";
+  const gridTemplateColumns = "15% 30% 10% 10% 20%";
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -88,7 +91,6 @@ const ApprovalCard = ({
     };
   };
   const status = getStatus(data?.status);
-
   return (
     <>
       {isDesktop ? (
@@ -106,7 +108,9 @@ const ApprovalCard = ({
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggleSelect?.(data?.name)}
               disabled={
-                isDisabled || data?.custom_doctype_actions_with_form?.length > 0
+                isDisabled ||
+                actionsWithForm?.includes("Approve") ||
+                actionsWithForm?.includes("Reject")
               }
             />
           </div>
@@ -177,7 +181,9 @@ const ApprovalCard = ({
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggleSelect?.(data?.name)}
               disabled={
-                isDisabled || data?.custom_doctype_actions_with_form?.length > 0
+                isDisabled ||
+                actionsWithForm?.includes("Approve") ||
+                actionsWithForm?.includes("Reject")
               }
             />
             <div className="w-full">

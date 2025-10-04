@@ -1,6 +1,6 @@
 "use client";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import InstallmentsList from "./InstallmentsList";
 import { StatusBadge } from "./StatusBadge";
@@ -13,6 +13,7 @@ import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import Modal from "./commonModal"
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 
 const AdvancesList: React.FC = () => {
@@ -27,7 +28,15 @@ const AdvancesList: React.FC = () => {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const employeeId = user?.employee ?? "";
-  const { data: advancesData } = useEmployeeAdvances(employeeId || "");
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const { data: advancesData, refetch } = useEmployeeAdvances(employeeId || "");
+
+  useEffect(() => {
+  if (refetchAttendance) {
+    refetch();                          // trigger a fresh fetch
+    setRefetchAttendance(false);        // reset the flag
+  }
+}, [refetchAttendance, refetch, setRefetchAttendance]);
 
   const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
     return apiData.map((a) => ({
