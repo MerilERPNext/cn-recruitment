@@ -31,7 +31,9 @@ const EmpAttendanceRequestCard = ({
         },
         {
           onSuccess: () => {
-            setRefetchAttendance(true);
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 2000);
           },
         }
       );

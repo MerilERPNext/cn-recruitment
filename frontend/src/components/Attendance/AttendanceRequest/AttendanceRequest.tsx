@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import DataListView from "../../DataListView";
 import AttndanceRequestForm from "./AttendanceRequestForm";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -29,6 +29,12 @@ const AttendanceRequest = ({
 
   const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
+
+  // Use useCallback to memoize the onRefetchComplete handler
+  const handleRefetchComplete = useCallback(() => {
+    setRefetchAttendance(false);
+  }, [setRefetchAttendance]);
+
   const CardSkeleton = () => (
     <div className="rounded-xl bg-gray-100 animate-pulse my-4">
       <div className="px-4 py-2">
@@ -83,7 +89,7 @@ const AttendanceRequest = ({
                 >
                   {currentEmployee?.employee ? (
                     <DataListView
-                      queryKey="attendance-requests"
+                      queryKey={["attendance-requests", "pending"]}
                       customAPI={{
                         method:
                           "cn_leave_shift_managment.api.get_open_approval_todos",
@@ -109,9 +115,7 @@ const AttendanceRequest = ({
                       onItemClick={(data) => {
                         console.log(data);
                       }}
-                      onRefetchComplete={() => {
-                        setRefetchAttendance(false);
-                      }}
+                      onRefetchComplete={handleRefetchComplete}
                       refetchTrigger={refetchAttendance}
                       isSearch={false}
                       isFilter={false}
@@ -150,7 +154,7 @@ const AttendanceRequest = ({
               >
                 {currentEmployee?.employee ? (
                   <DataListView
-                    queryKey="attendance-requests"
+                    queryKey={["attendance-requests", "actioned"]}
                     customAPI={{
                       method:
                         "cn_leave_shift_managment.api.get_open_approval_todos",
@@ -177,9 +181,7 @@ const AttendanceRequest = ({
                     onItemClick={(data) => {
                       console.log(data);
                     }}
-                    onRefetchComplete={() => {
-                      setRefetchAttendance(false);
-                    }}
+                    onRefetchComplete={handleRefetchComplete}
                     refetchTrigger={refetchAttendance}
                     isSearch={false}
                     isFilter={false}

@@ -37,6 +37,7 @@ interface AttendanceFormData {
   overnight_out_duty?: boolean;
   attachments?: { url: string }[];
   custom_attachment?: string;
+  custom_location?: string;
 }
 
 interface FormioFormInstance {
@@ -291,12 +292,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             data: {
               values: [
-                reqValidationmutation?.data?.clockin_requests
-                  ? {
-                      label: "Clockin Request",
-                      value: "Clockin",
-                    }
-                  : "",
+                {
+                  label: "Clockin Request",
+                  value: "Clockin",
+                },
                 reqValidationmutation?.data?.out_duty_requests
                   ? {
                       label: "Out Duty Request",
@@ -424,6 +423,12 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             format: "HH:mm:ss",
             placeholder: "hh:mm",
             customClass: "mb-4",
+            validate: {
+              required: true,
+              customMessage: "From Time is required",
+              custom:
+                "valid = ['Clockin', 'Short Attendance Request', 'On Duty'].includes(data.request_type) ? !!input : true;",
+            },
             customConditional:
               "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(data.request_type || '');",
             widget: {
@@ -447,6 +452,12 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customConditional:
               "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
             time_24hr: true,
+            validate: {
+              required: true,
+              customMessage: "To Time is required",
+              custom:
+                "valid = ['Short Attendance Request', 'On Duty'].includes(data.request_type) ? !!input : true;",
+            },
             widget: {
               type: "calendar",
               time_24hr: true,
@@ -531,6 +542,38 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             },
           },
           {
+            label: "Location",
+            key: "custom_location",
+            type: "select",
+            input: true,
+            placeholder: "Select a location",
+            customClass: "mb-4",
+            customConditional:
+              "show = ['Clockin', 'Attendance Adjustment'].includes(data.request_type || '');",
+            validate: {
+              required: true,
+              customMessage: "Location is required",
+              custom:
+                "valid = ['Clockin', 'Attendance Adjustment'].includes(data.request_type) ? !!input : true;",
+            },
+            data: {
+              values: [
+                {
+                  label: "Office",
+                  value: "Office",
+                },
+                {
+                  label: "Home",
+                  value: "Home",
+                },
+                {
+                  label: "Field Duty",
+                  value: "Field Duty",
+                },
+              ],
+            },
+          },
+          {
             label: "Message",
             key: "message",
             type: "textarea",
@@ -610,6 +653,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           to_date: baseBody.from_date,
           custom_from_time: formatTime(submission.data.custom_from_time),
           custom__request_reason: submission.data.custom__request_reason,
+          custom_location: submission?.data?.custom_location,
         };
         break;
       case "Out Duty":
@@ -649,6 +693,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           custom_from_time: formatTime(submission.data.custom_from_time),
           custom_to_time: formatTime(submission.data.custom_to_time),
           custom__request_reason: submission.data.custom__request_reason,
+          custom_location: submission?.data?.custom_location,
         };
         break;
 

@@ -228,6 +228,9 @@ export const EditAttendance = ({
             }
             onClose();
           },
+          onError() {
+            toast.success("Failed while updating attendance.");
+          },
         }
       );
     } catch (err) {

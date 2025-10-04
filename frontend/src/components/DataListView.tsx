@@ -357,7 +357,8 @@ const DataListView = <T extends BaseItem>({
     if (refetchTrigger) {
       refetch();
     }
-  }, [refetchTrigger, refetch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refetchTrigger]);
 
   // Determine which query result to use
   const queryResult = infiniteScroll
