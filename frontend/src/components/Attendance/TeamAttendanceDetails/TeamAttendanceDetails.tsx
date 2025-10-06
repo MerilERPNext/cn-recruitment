@@ -1,15 +1,16 @@
-import { useMemo, useState } from "react";
+import { useState, useCallback } from "react";
 import { RequestCard } from "./RequestCard";
-import { AttendanceRequest } from "../../../types/attendance";
+import { MyAttendanceRequest } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
 import { useNavigate } from "react-router";
 
 import ApprovalList from "../../shared/ApprovalList";
-import FrappeListView from "../../ListView";
 import ApprovalCard from "./ApprovalCard";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import DataListView from "../../DataListView";
 
 type LoadingAction = {
   id: string;
@@ -17,21 +18,21 @@ type LoadingAction = {
 };
 const TeamAttendanceDetails = () => {
   const { data: currentUser } = useCurrentUser();
-
-  const defaultFilters = useMemo(
-    () => ({
-      reference_type: "Attendance Request",
-      allocated_to: currentUser?.name,
-      status: ["in", ["Closed", "Cancelled"]],
-    }),
-    [currentUser]
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name as string
   );
-  const { refetchAttendance } = useGlobalStore();
+
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [refetch, setRefetch] = useState(false);
   const navigate = useNavigate();
 
+  const handleRefetchComplete = useCallback(() => {
+    setRefetch(false);
+    setRefetchAttendance(false);
+  }, [setRefetchAttendance]);
+
   const [selectedRequest, setSelectedRequest] = useState<
-    (AttendanceRequest & { loadingAction?: LoadingAction }) | null
+    (MyAttendanceRequest & { loadingAction?: LoadingAction }) | null
   >(null);
 
   return (
@@ -56,8 +57,17 @@ const TeamAttendanceDetails = () => {
             </button>
           </div>
           <CardTable
-            titles={["Select", "Description", "Due Date", "Status", "Actions"]}
-            columnWidths={["15%", "30%", "10%", "10%", "30%"]}
+            titles={[
+              "Select",
+              "Name",
+              "Employeee",
+              "From Date",
+              "To Date",
+              "Due Date",
+              "Status",
+              "Actions",
+            ]}
+            columnWidths={["5%", "15%", "10%", "8%", "8%", "8%", "10%", "20%"]}
           >
             {currentUser?.name ? (
               <ApprovalList
@@ -97,40 +107,52 @@ const TeamAttendanceDetails = () => {
               Actioned Team Attendance Requests
             </h2>
             <CardTable
-              titles={["Description", "Due Date", "Status"]}
-              columnWidths={["42%", "10%", "33%"]}
+              columnWidths={["15%", "15%", "8%", "8%", "8%", "20%"]}
+              titles={[
+                "Name",
+                "Employee",
+                "From Date",
+                "To Date",
+                "Due Date",
+                "Status",
+              ]}
             >
-              <div>
-                {currentUser?.name ? (
-                  <FrappeListView
-                    doctype="ToDo"
-                    isSearch={false}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    defaultFilters={defaultFilters as any}
-                    showRefereshButton={false}
-                    infiniteScroll={false}
-                    isFilter={false}
-                    defaultFields={["*"]}
-                    pageSize={3}
-                    refetchTrigger={refetch || refetchAttendance}
-                    onRefetchComplete={() => setRefetch(false)}
-                    showPagination={false}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    ItemComponent={(props: { item: any }) => {
-                      return (
-                        <RequestCard
-                          key={props?.item?.name}
-                          request={props?.item}
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          onClick={(request: any) =>
-                            setSelectedRequest(request)
-                          }
-                        />
-                      );
-                    }}
-                  />
-                ) : null}
-              </div>
+              {currentEmployee?.employee ? (
+                <DataListView
+                  queryKey="attendance-request"
+                  customAPI={{
+                    method:
+                      "cn_leave_shift_managment.api.get_open_approval_todos",
+                    params: {
+                      doctype: "Attendance Request",
+                      is_allocated_todo: true,
+
+                      fields: ["*"],
+                    },
+                  }}
+                  defaultFilters={{ status: ["!=", "Pending"] }}
+                  ItemComponent={(props: { item: MyAttendanceRequest }) => {
+                    return (
+                      <RequestCard
+                        request={props?.item}
+                        onClick={(request: MyAttendanceRequest) =>
+                          setSelectedRequest(request)
+                        }
+                      />
+                    );
+                  }}
+                  onRefetchComplete={handleRefetchComplete}
+                  refetchTrigger={refetchAttendance}
+                  isSearch={false}
+                  isFilter={false}
+                  pageSize={5}
+                  showRefreshButton={false}
+                  orderBy="modified desc"
+                  infiniteScroll={false}
+                  loadMorePagination={true}
+                  showPagination={false}
+                />
+              ) : null}
             </CardTable>
           </div>
         </div>
@@ -142,9 +164,7 @@ const TeamAttendanceDetails = () => {
           onClose={() => setSelectedRequest(null)}
           onAction={() => {
             setSelectedRequest(null);
-            setRefetch(true);
           }}
-          loadingAction={selectedRequest?.loadingAction}
         />
       )}
     </>

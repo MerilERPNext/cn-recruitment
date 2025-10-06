@@ -3,18 +3,16 @@ import CardTable from "../../shared/CardTable";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router";
 import {
-  AttendanceRequest,
   LoadingAction,
   MyPlannedAttendanceRequest,
 } from "../../../types/attendance";
-import { AttendanceDetailView } from "../AttendanceDetails";
 import ApprovalList from "../../shared/ApprovalList";
-import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
+import OvertimeApprovalCard from "./OvertimeApprovalCard";
 
 const OvertimeRequests = () => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
@@ -31,9 +29,7 @@ const OvertimeRequests = () => {
     }),
     [currentEmployee]
   );
-  const [selectedRequest, setSelectedRequest] = useState<
-    (AttendanceRequest & { loadingAction?: LoadingAction }) | null
-  >(null);
+
   const [mySelectedRequest, setMySelectedRequest] = useState<
     (MyPlannedAttendanceRequest & { loadingAction?: LoadingAction }) | null
   >(null);
@@ -60,8 +56,16 @@ const OvertimeRequests = () => {
           </div>
 
           <CardTable
-            titles={["Select", "Description", "Due Date", "Status", "Actions"]}
-            columnWidths={["15%", "30%", "10%", "10%", "30%"]}
+            titles={[
+              "Select",
+              "Name",
+              "Employee",
+              "Description",
+              "Due Date",
+              "Status",
+              "Actions",
+            ]}
+            columnWidths={["5%", "10%", "10%", "30%", "6%", "6%", "20%"]}
           >
             {currentUser?.name ? (
               <ApprovalList
@@ -69,21 +73,18 @@ const OvertimeRequests = () => {
                 pageSize={3}
                 showPagination={false}
                 refetch={refetch || refetchAttendance}
+                status="Open"
                 onApprovalRefetchComplete={() => {
                   setRefetch(false);
                 }}
                 renderCardContent={(item) => (
-                  <ApprovalCard
+                  <OvertimeApprovalCard
                     isSelected={item?.isSelected}
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}
                     onAction={item?.onAction}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick={(request: any) =>
-                      setSelectedRequest({
-                        ...request,
-                        loadingAction: item?.loadingAction,
-                      })
+                    onClick={(request: MyPlannedAttendanceRequest) =>
+                      setMySelectedRequest(request)
                     }
                     loadingAction={item?.loadingAction}
                   />
@@ -111,8 +112,14 @@ const OvertimeRequests = () => {
               </button>
             </div>
             <CardTable
-              columnWidths={["15% 30%", "10%", "33%"]}
-              titles={["Allocated To", "Description", "Due Date", "Status"]}
+              columnWidths={["10%", "10%", "30%", "10%", "33%"]}
+              titles={[
+                "Allocated To",
+                "Name",
+                "Description",
+                "Due Date",
+                "Status",
+              ]}
             >
               {currentEmployee?.employee ? (
                 <DataListView
@@ -138,10 +145,6 @@ const OvertimeRequests = () => {
                       />
                     );
                   }}
-                  // SkeletonComponent={CardSkeleton}
-                  onItemClick={() => {
-                    // Handle item click if needed
-                  }}
                   onRefetchComplete={() => {
                     setRefetchAttendance(false);
                   }}
@@ -161,24 +164,13 @@ const OvertimeRequests = () => {
         </div>
       </div>
 
-      {selectedRequest && (
-        <AttendanceDetailView
-          label="Planned Overtime Request"
-          data={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
-          onAction={() => {
-            setSelectedRequest(null);
-            setRefetch(true);
-            setRefetchAttendance(true);
-          }}
-          loadingAction={selectedRequest?.loadingAction}
-        />
-      )}
-
       {mySelectedRequest && (
         <MyOvertimeDetails
           data={mySelectedRequest as MyPlannedAttendanceRequest}
           onClose={() => setMySelectedRequest(null)}
+          onAction={() => {
+            setMySelectedRequest(null);
+          }}
         />
       )}
     </div>

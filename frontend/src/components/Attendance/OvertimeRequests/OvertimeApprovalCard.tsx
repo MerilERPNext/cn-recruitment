@@ -1,6 +1,7 @@
 import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import DOMPurify from "dompurify";
 import Button from "../../shared/atoms/Button";
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -15,7 +16,7 @@ type ApprovalCardProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
 };
-const ApprovalCard = ({
+const OvertimeApprovalCard = ({
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -77,13 +78,13 @@ const ApprovalCard = ({
     return "--/--/----";
   };
 
-  // const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const gridTemplateColumns = "5% 15% 10% 8% 8% 8% 10% 20%";
+  const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  const gridTemplateColumns = "5% 10% 10% 30% 6% 6% 20%";
 
   const getStatus = (status: string) => {
-    if (status === "Pending") {
+    if (status === "Open") {
       return {
-        label: "Pending",
+        label: "Open",
         statusColor: "bg-yellow-100 text-yellow-600",
       };
     } else if (status === "Closed") {
@@ -91,9 +92,9 @@ const ApprovalCard = ({
         label: "Closed",
         statusColor: "bg-green-100 text-green-600",
       };
-    } else if (status === "Rejected") {
+    } else if (status === "Cancelled") {
       return {
-        label: "Rejected",
+        label: "Cancelled",
         statusColor: "bg-red-100 text-red-600",
       };
     }
@@ -129,19 +130,18 @@ const ApprovalCard = ({
 
           {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_name}
+            {data?.reference_document?.name}
           </div>
+          {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_document?.employee_name}
+            {data?.reference_document?.employee}
           </div>
 
-          {/* Date */}
-          <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.reference_document?.from_date)}
+          {/* Description */}
+          <div className="text-gray-600 text-sm truncate text-start">
+            <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>
-          <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.reference_document?.to_date)}
-          </div>
+
           <div className="text-gray-700 text-sm text-start">
             {formatDate(data?.due_date)}
           </div>
@@ -206,12 +206,26 @@ const ApprovalCard = ({
 
             <div className="w-full">
               <div className="flex items-start justify-between">
-                <div className="w-full">
-                  <p className="text-md font-bold">
-                    {data?.reference_document?.employee_name}
+                <div>
+                  <p className="text-sm text-gray-500 font-bold">
+                    {data?.reference_document?.name}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {data?.reference_name}
+
+                  <div className="flex gap-2">
+                    {/* Display From Date */}
+                    {data?.due_date && (
+                      <p className="text-sm text-gray-500">
+                        Due Date - {formatDate(data?.due_date)}
+                      </p>
+                    )}
+
+                    {/* Display To Date */}
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                    <span className="font-semibold">Description:</span>{" "}
+                    <div
+                      dangerouslySetInnerHTML={{ __html: cleanDescription }}
+                    />
                   </p>
                 </div>
 
@@ -220,37 +234,6 @@ const ApprovalCard = ({
                   label={data?.status}
                   backgroundColor="bg-yellow-100 text-yellow-600"
                 />
-              </div>
-              <div className="my-2 py-2">
-                <div className="flex justify-between w-full ">
-                  {/* Display From Date */}
-                  {data?.reference_document?.from_date && (
-                    <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
-                      <span>From</span>
-                      <span className="text-black font-semibold">
-                        {formatDate(data?.reference_document?.from_date)}
-                      </span>
-                    </p>
-                  )}
-
-                  {/* Display To Date */}
-                  {data?.reference_document?.to_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-center">
-                      <span>To</span>
-                      <span className="text-black font-semibold">
-                        {formatDate(data?.reference_document?.to_date)}
-                      </span>
-                    </p>
-                  )}
-                  {data?.due_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-end">
-                      <span>Due</span>
-                      <span className="text-black font-semibold">
-                        {formatDate(data?.due_date)}
-                      </span>
-                    </p>
-                  )}
-                </div>
               </div>
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
@@ -263,7 +246,6 @@ const ApprovalCard = ({
                         e.stopPropagation();
                         onAction(action, data);
                       }}
-                      fullWidth
                       bgColor={getActionStyles(action).bg}
                       textColor={getActionStyles(action).text}
                       disabled={
@@ -288,4 +270,4 @@ const ApprovalCard = ({
   );
 };
 
-export default ApprovalCard;
+export default OvertimeApprovalCard;

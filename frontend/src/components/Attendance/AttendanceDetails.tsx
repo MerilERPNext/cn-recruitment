@@ -1,16 +1,17 @@
 import { X } from "lucide-react";
-import { format } from "date-fns";
-import { useCallback } from "react";
+import { format, isValid, parse } from "date-fns";
+import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
 import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import FileRenderer from "../shared/molecules/FileRenderer";
 
 export function AttendanceDetailView({
   data,
   onClose,
   onAction,
-  loadingAction,
   label = "Attendance Request",
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,19 +19,20 @@ export function AttendanceDetailView({
   onClose: () => void;
   onAction?: () => void;
   label?: string;
-  loadingAction?: { id: string; action: string } | null;
 }) {
   const mutation = useApprovalListActions();
+  const { setRefetchAttendance } = useGlobalStore();
+
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const getStatus = (status: string) => {
-    if (status === "Open") {
+    if (status === "Pending") {
       return {
-        label: "Open",
+        label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-600",
       };
-    } else if (status === "Closed") {
+    } else if (status === "Approved") {
       return {
-        label: "Closed",
+        label: "Approved",
         statusColor: "bg-green-100 text-green-600",
       };
     } else if (status === "Cancelled") {
@@ -46,14 +48,17 @@ export function AttendanceDetailView({
   };
 
   const status = getStatus(data?.status);
+  const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const handleAction = useCallback(
     async (action: string) => {
+      setCurrentAction(action);
+
       try {
         if (mutation?.isPending) return;
         const response = await mutation?.mutateAsync({
           action,
-          name: data?.name || "",
+          name: data?.todo_id || "",
         });
 
         console.log("Action response:", response);
@@ -81,11 +86,18 @@ export function AttendanceDetailView({
               responseWithSession?.session
             );
           }
+        } else {
+          setTimeout(() => {
+            setRefetchAttendance(true);
+          }, 2000);
         }
         if (onAction) {
           onAction();
         }
+        setCurrentAction(null);
       } catch (error) {
+        setCurrentAction(null);
+
         console.error("Action failed", error);
       }
     },
@@ -125,7 +137,23 @@ export function AttendanceDetailView({
     }
     return styles;
   };
-  return data?.name ? (
+
+  const formatDate = (date: string): string => {
+    if (!date) return "--/--/----";
+
+    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
+
+    for (const dateFormat of possibleFormats) {
+      const parsedDate = parse(date, dateFormat, new Date());
+      if (isValid(parsedDate)) {
+        return format(parsedDate, "dd/MM/yyyy");
+      }
+    }
+
+    return "--/--/----";
+  };
+
+  return data?.todo_id ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
@@ -139,10 +167,10 @@ export function AttendanceDetailView({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
-            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
-            <div className="font-semibold">
-              ({format(new Date(data?.date), "dd/MM/yyyy")})
-            </div>{" "}
+            <h2 className="text-lg font-semibold text-gray-800">
+              {label} -
+              <span className="font=md"> {data?.reference_document?.name}</span>
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -157,35 +185,76 @@ export function AttendanceDetailView({
         <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
           {/* Employee Info */}
           <div className="py-4">
-            <p className="text-sm text-gray-500 mb-2">Status</p>
             <Badge
               label={status?.label as string}
               backgroundColor={status?.statusColor}
             />{" "}
           </div>
+          <div className="py-4">
+            <div className="flex gap-2 justify-between">
+              {/* Display From Date */}
+              {data?.reference_document?.from_date && (
+                <p className="text-sm flex flex-col font-bold">
+                  <span>From Date</span>
+                  <span className="text-gray-500">
+                    {formatDate(data?.reference_document?.from_date)}
+                  </span>
+                </p>
+              )}
 
+              {/* Display To Date */}
+              {data?.reference_document?.to_date && (
+                <p className="text-sm flex flex-col font-bold">
+                  <span>To Date</span>
+                  <span className="text-gray-500">
+                    {formatDate(data?.reference_document?.to_date)}
+                  </span>
+                </p>
+              )}
+            </div>
+          </div>
+          {data?.due_date && (
+            <p className="text-sm flex flex-col font-bold">
+              <span>Due Date</span>
+              <span className="text-gray-500">
+                {formatDate(data?.due_date)}
+              </span>
+            </p>
+          )}
+          <div className="py-4">
+            <p className="text-sm  mb-2 font-bold">Reason</p>
+
+            {data?.reference_document?.reason}
+          </div>
           {/* explanation */}
           <div className="py-4">
-            <p className="text-sm text-gray-500 mb-2">Description</p>
+            <p className="text-sm  mb-2 font-bold">Description</p>
             <div className="bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </div>
           </div>
-          {/* Date */}
+          {data?.reference_document?.custom_attachment ? (
+            <div className="py-4">
+              <p className="text-sm  mb-2 font-bold">Attachment</p>
+              <FileRenderer
+                filePath={data?.reference_document?.custom_attachment || ""}
+              />
+            </div>
+          ) : null}
         </div>
 
         {/* Actions */}
-        {actions?.length > 0 && data?.status === "Open" && (
+        {actions?.length > 0 && data?.status === "Pending" && (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
             <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
               {actions?.length &&
                 actions?.map((action: string) => {
                   const isLoading =
-                    loadingAction?.id === data?.name &&
-                    loadingAction?.action === action;
+                    currentAction === action && mutation.isPending;
                   return (
                     <Button
                       key={action}
+                      fullWidth
                       disabled={isLoading}
                       onClick={() => {
                         handleAction(action);

@@ -163,8 +163,8 @@ const EmployeeStatusCard = ({
           {/* Right Section - Menu */}
           <button
             ref={buttonRef}
-            onClick={() => setIsPopupOpen(true)}
-            className="text-gray-600 hover:text-gray-800 transition-colors self-center  h-full"
+            onClick={() => setIsPopupOpen(!isPopupOpen)}
+            className="text-gray-600 hover:text-gray-800 transition-colors self-center h-full"
           >
             <EllipsisVertical size={18} />
           </button>
@@ -185,10 +185,10 @@ const EmployeeStatusCard = ({
         onClose={() => setIsPopupOpen(false)}
         triggerRef={buttonRef}
       >
-        <div className="p-1">
+        <div className="">
           <button
             onClick={() => setEditAttendance(true)}
-            className="w-full text-left font-md px-4 py-2 text-sm hover:bg-gray-100 transition-colors flex gap-2 items-center"
+            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
           >
             <Edit size={16} />
             <span>Edit</span>

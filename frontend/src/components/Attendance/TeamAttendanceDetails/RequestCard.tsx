@@ -1,8 +1,7 @@
-import { format } from "date-fns";
+import { format, isValid, parse } from "date-fns";
 import { RequestCardProps } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import DOMPurify from "dompurify";
 
 export function RequestCard({
   request,
@@ -15,30 +14,45 @@ any & {
 }) {
   const { isDesktop } = useScreenSize();
   const getStatus = (status: string) => {
-    if (status === "Open") {
+    if (status === "Pending") {
       return {
-        label: "Open",
+        label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-600",
       };
-    } else if (status === "Closed") {
+    } else if (status === "Approved") {
       return {
-        label: "Closed",
+        label: "Approved",
         statusColor: "bg-green-100 text-green-600",
       };
-    } else if (status === "Cancelled") {
+    } else if (status === "Rejected") {
       return {
-        label: "Cancelled",
+        label: "Rejected",
         statusColor: "bg-red-100 text-red-600",
       };
     }
+    return {
+      label: status || "Unknown",
+      statusColor: "bg-gray-100 text-gray-600",
+    };
   };
 
+  const formatDate = (date: string): string => {
+    if (!date) return "--/--/----";
+
+    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
+
+    for (const dateFormat of possibleFormats) {
+      const parsedDate = parse(date, dateFormat, new Date());
+      if (isValid(parsedDate)) {
+        return format(parsedDate, "dd/MM/yyyy");
+      }
+    }
+
+    return "--/--/----";
+  };
   const status = getStatus(request?.status);
-  const formattedDate = request?.date
-    ? format(new Date(request.date), "dd/MM/yyyy")
-    : "--/--/----";
-  const cleanDescription = DOMPurify.sanitize(request?.description || "");
-  const gridTemplateColumns = "42% 10% 33%";
+
+  const gridTemplateColumns = "15% 15% 8% 8% 8% 20%";
 
   return (
     <>
@@ -48,14 +62,23 @@ any & {
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
-          {/* <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {request?.allocated_to}
-          </div> */}
-          <div className="text-gray-600 text-sm truncate text-start">
-            <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
+            {request?.reference_name}
+          </div>
+
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
+            {request?.reference_document?.employee_name}
+          </div>
+
+          {/* Date */}
+          <div className="text-gray-700 text-sm text-start">
+            {formatDate(request?.reference_document?.from_date)}
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formattedDate}
+            {formatDate(request?.reference_document?.to_date)}
+          </div>
+          <div className="text-gray-700 text-sm text-start">
+            {formatDate(request?.due_date)}
           </div>
           <div className="w-full flex justify-start">
             <Badge
@@ -75,10 +98,12 @@ any & {
               <div className="w-full">
                 <div className="flex items-start justify-between">
                   <div>
-                    {/* <h3 className="font-semibold text-sm text-gray-800">
-                      {request?.allocated_to}
-                    </h3> */}
-                    <p className="text-sm text-gray-500">{formattedDate}</p>
+                    <p className="text-md font-bold">
+                      {request?.reference_document?.employee_name}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {request?.reference_document?.name}
+                    </p>
                   </div>
                   <Badge
                     size="sm"
@@ -87,10 +112,35 @@ any & {
                   />
                 </div>
 
-                <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                  <span className="font-semibold">Description:</span>{" "}
-                  <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
-                </p>
+                <div className="flex justify-between w-full ">
+                  {/* Display From Date */}
+                  {request?.reference_document?.from_date && (
+                    <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
+                      <span>From</span>
+                      <span className="text-black font-semibold">
+                        {formatDate(request?.reference_document?.from_date)}
+                      </span>
+                    </p>
+                  )}
+
+                  {/* Display To Date */}
+                  {request?.reference_document?.to_date && (
+                    <p className="text-sm text-gray-500 flex flex-col items-center">
+                      <span>To</span>
+                      <span className="text-black font-semibold">
+                        {formatDate(request?.reference_document?.to_date)}
+                      </span>
+                    </p>
+                  )}
+                  {request?.due_date && (
+                    <p className="text-sm text-gray-500 flex flex-col items-end">
+                      <span>Due</span>
+                      <span className="text-black font-semibold">
+                        {formatDate(request?.due_date)}
+                      </span>
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -5,16 +5,117 @@ import {
   OvertimeDetail,
 } from "../../../types/attendance";
 import { format, isValid, parse } from "date-fns";
+import Button from "../../shared/atoms/Button";
+import { useCallback, useState } from "react";
+import { useApprovalListActions } from "../../../hooks/userApprovalList";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import FileRenderer from "../../shared/molecules/FileRenderer";
 
 export function MyOvertimeDetails({
   data,
   onClose,
+  onAction,
   label = "Planned Overtime Request",
 }: {
   data: MyPlannedAttendanceRequest;
   onClose: () => void;
   label?: string;
+  onAction?: () => void;
+  loadingAction?: { id: string; action: string } | null;
 }) {
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name as string
+  );
+  const { setRefetchAttendance } = useGlobalStore();
+  const mutation = useApprovalListActions();
+  const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const handleAction = useCallback(
+    async (action: string) => {
+      setCurrentAction(action);
+      try {
+        if (mutation?.isPending) return;
+        const response = await mutation?.mutateAsync({
+          action,
+          name: data?.todo_id || "",
+        });
+
+        console.log("Action response:", response);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const responseWithSession = response as unknown as { session?: any };
+        console.log("Session data:", responseWithSession?.session);
+        console.log(
+          "Assistant trigger enabled:",
+          data?.custom_open_chatnext_assistant_on_action
+        );
+
+        if (
+          (data?.custom_approval_type === "Approval Matrix" &&
+            responseWithSession?.session) ||
+          (data?.custom_approval_type === "Multi Actions" &&
+            data?.custom_open_chatnext_assistant_on_action)
+        ) {
+          console.log(
+            "Opening assistant with session:",
+            responseWithSession?.session
+          );
+          if (window.trigger_chatnext_assistant) {
+            window.trigger_chatnext_assistant(
+              true,
+              responseWithSession?.session
+            );
+          }
+        } else {
+          setRefetchAttendance(true);
+        }
+        if (onAction) {
+          onAction();
+        }
+        setCurrentAction(null);
+      } catch (error) {
+        setCurrentAction(null);
+
+        console.error("Action failed", error);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const actions = data?.custom_doctype_actions
+    ? JSON.parse(data?.custom_doctype_actions)
+    : [];
+  const getActionStyles = (action: string): { bg: string; text: string } => {
+    const parsedAction = action.toLowerCase().trim();
+    let styles = {
+      bg: "gray-100",
+      text: "gray-600",
+    };
+    switch (parsedAction) {
+      case "approve":
+        styles = {
+          bg: "green-100",
+          text: "green-600",
+        };
+        break;
+      case "reject":
+        styles = {
+          bg: "red-100",
+          text: "red-600",
+        };
+
+        break;
+      default:
+        styles = {
+          bg: "gray-200",
+          text: "gray-600",
+        };
+        break;
+    }
+    return styles;
+  };
   const getStatus = (status: string) => {
     if (status === "Open") {
       return {
@@ -58,7 +159,9 @@ export function MyOvertimeDetails({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
+          <h2 className="text-lg font-semibold text-gray-800">
+            {label} {data?.reference_document?.name}
+          </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -158,9 +261,49 @@ export function MyOvertimeDetails({
                   )
                 )}
               </div>
+              {data?.reference_document?.attachment ? (
+                <div className="py-4">
+                  <p className="text-sm  mb-2 font-bold">Attachment</p>
+                  <FileRenderer
+                    filePath={data?.reference_document?.attachment || ""}
+                  />
+                </div>
+              ) : null}
             </div>
           )}
         </div>
+        {/* Actions */}
+        {actions?.length > 0 &&
+          data?.status === "Open" &&
+          data?.allocated_to === currentEmployee?.user_id && (
+            <div className=" w-full bg-white border-t shadow-md p-4 z-20">
+              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+                {actions?.length &&
+                  actions?.map((action: string) => {
+                    const isLoading =
+                      currentAction === action && mutation.isPending;
+                    return (
+                      <Button
+                        key={action}
+                        disabled={isLoading}
+                        onClick={() => {
+                          handleAction(action);
+                        }}
+                        size="md"
+                        bgColor={getActionStyles(action).bg}
+                        textColor={getActionStyles(action).text}
+                      >
+                        {isLoading ? (
+                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          action
+                        )}
+                      </Button>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
       </div>
     </div>
   ) : null;

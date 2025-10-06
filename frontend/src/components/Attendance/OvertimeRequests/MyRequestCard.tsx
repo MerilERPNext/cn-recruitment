@@ -47,7 +47,7 @@ any & {
       ? format(parsedDate, "dd/MM/yyyy")
       : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(request?.description || "");
-  const gridTemplateColumns = "15% 30% 10% 33%";
+  const gridTemplateColumns = "10% 10% 30% 10% 33%";
   return (
     <>
       {isDesktop ? (
@@ -58,6 +58,9 @@ any & {
         >
           <div className="truncate text-gray-900 font-medium text-sm text-start">
             {request?.username || ""}
+          </div>
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
+            {request?.reference_document?.name || ""}
           </div>
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
@@ -86,6 +89,9 @@ any & {
                     <h3 className="font-semibold text-sm text-gray-800">
                       {request?.username}
                     </h3>
+                    <p className="text-sm text-gray-500">
+                      {request?.reference_document?.name}
+                    </p>
                     <p className="text-sm text-gray-500">{formattedDate}</p>
                   </div>
                   <Badge

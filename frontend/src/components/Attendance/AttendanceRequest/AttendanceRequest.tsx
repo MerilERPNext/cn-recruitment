@@ -80,6 +80,8 @@ const AttendanceRequest = ({
                 </div>
                 <CardTable
                   titles={[
+                    "Id",
+                    "Allocated To",
                     "Request Type",
                     "From Date",
                     "To Date",
@@ -150,7 +152,14 @@ const AttendanceRequest = ({
               </div>
 
               <CardTable
-                titles={["Request Type", "From Date", "To Date", "Status"]}
+                titles={[
+                  "Id",
+                  "Allocated To",
+                  "Request Type",
+                  "From Date",
+                  "To Date",
+                  "Status",
+                ]}
               >
                 {currentEmployee?.employee ? (
                   <DataListView
@@ -170,7 +179,7 @@ const AttendanceRequest = ({
                       return (
                         <EmpAttendanceRequestCard
                           type="actioned"
-                          columns={4}
+                          columns={6}
                           data={{
                             ...props?.item,
                           }}

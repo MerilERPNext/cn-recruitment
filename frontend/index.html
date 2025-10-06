@@ -17,6 +17,10 @@
     <chatnext-app />
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // Initialize FormIO baseUrl before any modules load
+      window.__FORMIO_BASE_URL__ = window.location.origin;
+    </script>
+    <script>
       if (!window.csrf_token) {
         window.csrf_token = "{{ csrf_token }}";
       }

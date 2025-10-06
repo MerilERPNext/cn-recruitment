@@ -21,6 +21,7 @@ import {
 } from "../hooks/useFrappeQuery";
 import { useLocation } from "react-router";
 import { FilterCondition, FrappePageResponse } from "../types/frappe";
+import { mapFiltersToConditions } from "../utils/helperUtils";
 
 interface BaseItem {
   name: string;
@@ -209,14 +210,10 @@ const FrappeListView = <T extends BaseItem>({
       enabled: !infiniteScroll && !isLoading,
     }
   );
-
-  const combinedFilters = [
-    ...Object.entries(filters || {}).map(([key, value]) => [key, "=", value]),
-    ...Object.entries(queryParamsFilters || {}).map(([key, value]) => [
-      key,
-      "=",
-      value,
-    ]),
+  // Usage
+  const combinedFilters: FilterCondition[] = [
+    ...mapFiltersToConditions(filters || {}),
+    ...mapFiltersToConditions(queryParamsFilters || {}),
   ];
   // Count query for traditional pagination
   const { data: countData } = useFrappeDocumentCount(
@@ -734,11 +731,11 @@ const FrappeListView = <T extends BaseItem>({
           </div>
         ) : (
           <div
-          className={
-            layout === "column"
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
-              : "flex flex-col"
-          }
+            className={
+              layout === "column"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
+                : "flex flex-col"
+            }
           >
             {processedData.map((item, index) => {
               if (index < 3) {
