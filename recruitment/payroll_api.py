@@ -22,6 +22,7 @@ def process_components(components, ctc_component_names, comp_type):
 def generate_salary_slip(employee):
     component_part_of_ctc = []
     monthly_ctc = 0
+    annual_ctc=0
 
     try:
         if not employee:
@@ -68,6 +69,7 @@ def generate_salary_slip(employee):
         earnings_ctc, earnings_total = process_components(slip.earnings, ctc_component_names, "Earning")
         component_part_of_ctc.extend(earnings_ctc)
         monthly_ctc += earnings_total
+        annual_ctc+=earnings_total*12
 
         # Process deductions
         # deductions_ctc, _ = process_components(slip.deductions, ctc_component_names, "Deduction")
@@ -77,6 +79,7 @@ def generate_salary_slip(employee):
         deductions_ctc, deductions_total = process_components(slip.deductions, ctc_component_names, "Deduction")
         component_part_of_ctc.extend(deductions_ctc)
         monthly_ctc += deductions_total
+        annual_ctc+=deductions_total*12
         
         # Note: Not adding deductions to monthly CTC
 
@@ -101,7 +104,7 @@ def generate_salary_slip(employee):
             "component_part_of_ctc": component_part_of_ctc,
             "total_reimbursement_amount": assignment_doc.custom_total_reimbursement_amount,
             "monthly_ctc": monthly_ctc,
-            "annual_ctc": monthly_ctc * 12,
+            "annual_ctc": annual_ctc,
             "net_pay": net_pay,
             "gross_pay": gross_pay,
             "total_deduction": total_deduction
