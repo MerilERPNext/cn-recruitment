@@ -1,41 +1,41 @@
-import React from 'react'
+import React from "react";
 
-import {  ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import DatePicker from 'react-datepicker';
-import { AttendanceRecord } from '../../types/attendance';
-import { gradientClassMap } from '../../utils/helperUtils';
-  type Status =
-    | "present"
-    | "absent"
-    | "on-leave"
-    | "half-day"
-    | "half-day-first-half"
-    | "half-day-second-half"
-    | "work-from-home"
-    | "default"
-    | "holiday"
-    | "week-off";
-  type AttendanceStatusInfo = {
-    status: Status;
-    firstHalf?: string;
-    secondHalf?: string;
-    events: AttendanceRecord[]; // all non-attendance-type records on the same day
-    record?: AttendanceRecord; // the attendance record whose status is being used
-  };
+import DatePicker from "react-datepicker";
+import { AttendanceRecord } from "../../../../types/attendance";
+import { gradientClassMap } from "../../../../utils/helperUtils";
+type Status =
+  | "present"
+  | "absent"
+  | "on-leave"
+  | "half-day"
+  | "half-day-first-half"
+  | "half-day-second-half"
+  | "work-from-home"
+  | "default"
+  | "holiday"
+  | "week-off";
+type AttendanceStatusInfo = {
+  status: Status;
+  firstHalf?: string;
+  secondHalf?: string;
+  events: AttendanceRecord[]; // all non-attendance-type records on the same day
+  record?: AttendanceRecord; // the attendance record whose status is being used
+};
 
-  const getEventDotColor = (doctype: string): string => {
-    switch (doctype) {
-      case "Attendance Request":
-        return "bg-blue-500";
-      case "Leave Request":
-        return "bg-pink-500";
-      case "Overtime Request":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-400";
-    }
-  };
+const getEventDotColor = (doctype: string): string => {
+  switch (doctype) {
+    case "Attendance Request":
+      return "bg-blue-500";
+    case "Leave Request":
+      return "bg-pink-500";
+    case "Overtime Request":
+      return "bg-orange-500";
+    default:
+      return "bg-gray-400";
+  }
+};
 
 type ShowDetailsType = {
   date: Date;
@@ -45,7 +45,7 @@ type ShowDetailsType = {
 type attendanceProps = {
   selectedDate: Date | null;
   setSelectedDate: (date: Date | null) => void;
-  getAttendanceStatus: (date: Date ) => AttendanceStatusInfo;
+  getAttendanceStatus: (date: Date) => AttendanceStatusInfo;
   setShowDetailsFor: (val: ShowDetailsType | null) => void;
 };
 const AttendanceCalendar: React.FC<attendanceProps> = ({
@@ -54,16 +54,14 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
   getAttendanceStatus,
   setShowDetailsFor,
 }) => {
-  
   return (
- 
     <div className="p-1 employee-datepicker-lg">
       <DatePicker
         selected={selectedDate}
         showPopperArrow={false}
         showMonthDropdown={false}
         onChange={(date) => {
-          if (!date) return; 
+          if (!date) return;
           setSelectedDate(date);
           const attendance = getAttendanceStatus(date as Date);
 
@@ -191,7 +189,6 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
                   </div>
                 )}
               </div>
-         
             </div>
           );
         }}
@@ -200,4 +197,4 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
   );
 };
 
-export default AttendanceCalendar
+export default AttendanceCalendar;

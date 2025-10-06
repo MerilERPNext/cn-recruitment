@@ -1,5 +1,5 @@
-import React from 'react'
-import BottomDrawer from '../shared/BottomDrawer';
+import React from "react";
+import BottomDrawer from "../../../shared/BottomDrawer";
 
 type reactProp = {
   setShowLeaveRequest: (val: boolean) => void;
@@ -7,7 +7,7 @@ type reactProp = {
   setShowReqAttendanceCorrection: (val: boolean) => void;
   setShowOvertimeRequest: (val: boolean) => void;
   plannedOvertimAllowed: boolean | undefined;
-  openDrawer:boolean
+  openDrawer: boolean;
 };
 const BottomDrowerForAttendance: React.FC<reactProp> = ({
   setShowLeaveRequest,

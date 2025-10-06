@@ -21,13 +21,13 @@ import { useSidebar } from "../SidebarContext";
 
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
-import AttendanceLegend from "../../EmployeeAttendence/AttendanceLegend";
-import AttendanceError from "../../EmployeeAttendence/AttendanceError";
-import ListView from "../../EmployeeAttendence/ListView";
+import AttendanceLegend from "./EmployeeAttendence/AttendanceLegend";
+import AttendanceError from "./EmployeeAttendence/AttendanceError";
+import ListView from "./EmployeeAttendence/ListView";
 
-import CardTablee from "../../EmployeeAttendence/CardTable";
-import AttendanceCalendar from "../../EmployeeAttendence/AttendanceCalendar";
-import BottomDrowerForAttendance from "../../EmployeeAttendence/BottomDrower";
+import CardTablee from "./EmployeeAttendence/CardTable";
+import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
+import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
 import { Plus } from "lucide-react";
 
 const EmployeeAttendance = () => {
@@ -227,7 +227,7 @@ const EmployeeAttendance = () => {
           {!isDesktop && <AttendanceLegend isCompact={true} />}
         </div>
 
-        {/* Legend */} 
+        {/* Legend */}
 
         {/* ------------------------------------------------- Calendar End---------------------------------------------- */}
 

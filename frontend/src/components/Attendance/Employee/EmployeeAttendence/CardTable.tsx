@@ -1,12 +1,14 @@
-import { MyAttendanceRequest } from "../../types/attendance";
-import EmpAttendanceRequestCard from "../Attendance/Employee/EmpAttendanceRequestCard";
-import DataListView from "../DataListView";
+import { MyAttendanceRequest } from "../../../../types/attendance";
+import EmpAttendanceRequestCard from "../EmpAttendanceRequestCard";
+import DataListView from "../../../DataListView";
 import CardSkeletons from "./CardSkeletons";
 
 type prop = {
-  currentEmployee?: {
-    employee?: string;
-  } | undefined;
+  currentEmployee?:
+    | {
+        employee?: string;
+      }
+    | undefined;
   refetchAttendance?: boolean;
   setRefetchAttendance: (val: boolean) => void;
 };
@@ -15,8 +17,7 @@ const CardTablee: React.FC<prop> = ({
   refetchAttendance,
   setRefetchAttendance,
 }) => {
-
-    const CardSkeleton = () => <CardSkeletons />;
+  const CardSkeleton = () => <CardSkeletons />;
 
   return (
     <>
@@ -60,7 +61,6 @@ const CardTablee: React.FC<prop> = ({
           loadMorePagination={true}
           showPagination={false}
         />
-        
       ) : (
         <></>
       )}
