@@ -48,6 +48,7 @@ frappe.ui.form.on("Employee Separation", {
                         frm.set_value("custom_number_days_served", r.message.days_served);
                         frm.set_value("custom_exceeding_noof_days", r.message.days_exceeded === 0 ? "" : r.message.days_exceeded);
                         frm.set_value("custom_notice_period_served_", r.message.custom_notice_period_served);
+                        frm.set_value("custom_number_of_days_remaining", r.message.days_remaining === 0 ? "" : r.message.days_remaining);
                     }
                 }
             })
@@ -56,6 +57,7 @@ frappe.ui.form.on("Employee Separation", {
             frm.set_value("custom_number_days_served", "");
             frm.set_value("custom_exceeding_noof_days", "");
             frm.set_value("custom_notice_period_served_","");
+            frm.set_value("custom_number_of_days_remaining", "");
         }
     }
 });
