@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import { PolicyCardSkeleton } from "./PolicySkeletons";
@@ -70,17 +70,11 @@ const PoliciesList: React.FC = () => {
   const location = useLocation();
   const categoryName = (location.state as PolicyState | undefined)?.name;
   const [selectedStatus, setSelectedStatus] = useState("Acknowledged");
-  const [filtersKey, setFiltersKey] = useState(0);
-
-  useEffect(() => {
-    setFiltersKey((prev) => prev + 1);
-  }, [selectedStatus]);
+  const statusOptions = ["Pending", "Acknowledged", "Declined", "Archived"];
 
   if (!categoryName) {
     return <Navigate to="/webapp/policies-app/policies-categories" replace />;
   }
-
-  const statusOptions = ["Pending", "Acknowledged", "Declined", "Archived"];
 
   const filterDropdown = () => {
   return (
@@ -108,7 +102,7 @@ const PoliciesList: React.FC = () => {
       {/* The original filter dropdown has been removed from here */}
 
       <FrappeListView<PolicyDoc>
-        key={filtersKey}
+        // key={filtersKey}
         doctype="Policy Details"
         defaultFilters={{
           policy_category: categoryName,
