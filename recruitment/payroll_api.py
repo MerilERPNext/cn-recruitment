@@ -104,6 +104,7 @@ def generate_salary_slip(employee):
         return {
             "component_part_of_ctc": component_part_of_ctc,
             "total_reimbursement_amount": assignment_doc.custom_total_reimbursement_amount,
+            "fixed_gross":assignment_doc.custom_fixed_gross_annual,
             "monthly_ctc": monthly_ctc,
             "annual_ctc": annual_ctc,
             "net_pay": net_pay,
