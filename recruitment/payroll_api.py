@@ -70,8 +70,14 @@ def generate_salary_slip(employee):
         monthly_ctc += earnings_total
 
         # Process deductions
-        deductions_ctc, _ = process_components(slip.deductions, ctc_component_names, "Deduction")
+        # deductions_ctc, _ = process_components(slip.deductions, ctc_component_names, "Deduction")
+        # component_part_of_ctc.extend(deductions_ctc)
+        # monthly_ctc+=
+
+        deductions_ctc, deductions_total = process_components(slip.deductions, ctc_component_names, "Deduction")
         component_part_of_ctc.extend(deductions_ctc)
+        monthly_ctc += deductions_total
+        
         # Note: Not adding deductions to monthly CTC
 
         # Process reimbursements
@@ -128,6 +134,7 @@ def address_details(user_id):
             }
 
         addresses = frappe.get_all(
+
             "Address",
             filters={"custom_employee": employee_name},
             fields=[
@@ -137,7 +144,7 @@ def address_details(user_id):
         )
 
         # Default empty structure
-        default_address = {
+        default_address = { 
             "name": "",
             "address_title": "",
             "address_line1": "",
