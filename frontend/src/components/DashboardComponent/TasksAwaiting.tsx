@@ -74,7 +74,7 @@ const MyToDoItem: React.FC<{
 
 const TasksAwaiting: React.FC = () => {
   const handleTodoClick = () => {
-    window.location.href = "/app/task_manager";
+    window.open(`/app/task_manager`);
   };
   return (
     <div className="bg-white rounded-lg p-6 mb-2 shadow-sm">
