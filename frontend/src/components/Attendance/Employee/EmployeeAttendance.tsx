@@ -47,18 +47,6 @@ const EmployeeAttendance = () => {
     setSidebarOpen(!!showDetailsFor && isDesktop);
   }, [showDetailsFor, isDesktop, setSidebarOpen]);
 
-  // const getEventDotColor = (doctype: string): string => {
-  //   switch (doctype) {
-  //     case "Attendance Request":
-  //       return "bg-blue-500";
-  //     case "Leave Request":
-  //       return "bg-pink-500";
-  //     case "Overtime Request":
-  //       return "bg-orange-500";
-  //     default:
-  //       return "bg-gray-400";
-  //   }
-  // };
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -85,9 +73,7 @@ const EmployeeAttendance = () => {
 
   const [openDrawer, setOpenDrawer] = useState<boolean>(false);
 
-  // const CardSkeleton = () => (
-  //   <CardSkeletons/>
-  // );
+  
 
   type Status =
     | "present"
@@ -221,7 +207,7 @@ const EmployeeAttendance = () => {
             setShowDetailsFor={setShowDetailsFor}
           />
 
-          {/* <AttendanceCalendar /> */}
+        
 
           {/* Legends - Only show for mobile since desktop shows at top */}
           {!isDesktop && <AttendanceLegend isCompact={true} />}
