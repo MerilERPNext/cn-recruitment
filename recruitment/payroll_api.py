@@ -89,6 +89,7 @@ def generate_salary_slip(employee):
             for reimbursement in assignment_doc.custom_employee_reimbursements:
                 amount = round(reimbursement.monthly_total_amount)
                 monthly_ctc += amount
+                annual_ctc+=amount*12
                 component_part_of_ctc.append({
                     "component": reimbursement.reimbursements,
                     "amount": amount,
