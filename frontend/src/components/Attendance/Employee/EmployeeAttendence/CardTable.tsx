@@ -12,7 +12,7 @@ type prop = {
   refetchAttendance?: boolean;
   setRefetchAttendance: (val: boolean) => void;
 };
-const CardTablee: React.FC<prop> = ({
+const Cardtable: React.FC<prop> = ({
   currentEmployee,
   refetchAttendance,
   setRefetchAttendance,
@@ -68,4 +68,4 @@ const CardTablee: React.FC<prop> = ({
   );
 };
 
-export default CardTablee;
+export default Cardtable;

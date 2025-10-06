@@ -25,7 +25,7 @@ import AttendanceLegend from "./EmployeeAttendence/AttendanceLegend";
 import AttendanceError from "./EmployeeAttendence/AttendanceError";
 import ListView from "./EmployeeAttendence/ListView";
 
-import CardTablee from "./EmployeeAttendence/CardTable";
+import Cardtable from "./EmployeeAttendence/CardTable";
 import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
 import { Plus } from "lucide-react";
@@ -207,8 +207,6 @@ const EmployeeAttendance = () => {
             setShowDetailsFor={setShowDetailsFor}
           />
 
-        
-
           {/* Legends - Only show for mobile since desktop shows at top */}
           {!isDesktop && <AttendanceLegend isCompact={true} />}
         </div>
@@ -259,7 +257,7 @@ const EmployeeAttendance = () => {
               "Actions",
             ]}
           >
-            <CardTablee
+            <Cardtable
               currentEmployee={
                 currentEmployee
                   ? { employee: currentEmployee.employee }
