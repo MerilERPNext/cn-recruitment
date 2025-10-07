@@ -23,6 +23,7 @@ def generate_salary_slip(employee):
     component_part_of_ctc = []
     monthly_ctc = 0
     annual_ctc=0
+    total_deduction=0
 
     try:
         if not employee:
@@ -80,6 +81,7 @@ def generate_salary_slip(employee):
         component_part_of_ctc.extend(deductions_ctc)
         monthly_ctc += deductions_total
         annual_ctc+=deductions_total*12
+        total_deduction+=deductions_total*12
         
         # Note: Not adding deductions to monthly CTC
 
@@ -99,7 +101,7 @@ def generate_salary_slip(employee):
 
         net_pay = slip.rounded_total or 0
         gross_pay = slip.gross_pay or 0
-        total_deduction = slip.total_deduction or 0
+        # total_deduction = slip.total_deduction or 0
 
         return {
             "component_part_of_ctc": component_part_of_ctc,
