@@ -277,13 +277,13 @@ const BenefitsList: React.FC = () => {
               <div>
                 <div>
                   <div className="text-xs text-gray-500">Claimed</div>
-                  <div className="font-medium text-gray-800">
+                  <div className="font-medium text-sm text-gray-800">
                     {renderAmount(benefit.claimAmount)}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">Approved</div>
-                  <div className="font-medium text-gray-800">
+                  <div className="font-medium text-sm text-gray-800">
                     {renderAmount(benefit.approvedAmount)}
                   </div>
                 </div>
@@ -292,13 +292,13 @@ const BenefitsList: React.FC = () => {
               <div>
                 <div>
                   <div className="text-xs text-gray-500">Requested</div>
-                  <div className="font-medium text-gray-800">
+                  <div className="font-medium text-sm text-gray-800">
                     {renderDate(benefit.requestDate)}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500">Finalized</div>
-                  <div className="font-medium text-gray-800">
+                  <div className="font-medium text-sm text-gray-800">
                     {renderDate(benefit.approvalDate)}
                   </div>
                 </div>
