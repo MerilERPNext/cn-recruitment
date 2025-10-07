@@ -14,7 +14,10 @@ const Modal: React.FC<ModalProps> = ({ children, onClose }) => {
   return (
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" />
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+      />
 
       {/* Container */}
       <div

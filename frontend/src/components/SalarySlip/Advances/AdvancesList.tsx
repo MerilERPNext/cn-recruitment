@@ -214,10 +214,10 @@ const AdvancesList: React.FC = () => {
         </div>
 
         {formattedData.map((advance, index) => (
-          // CHANGED: Using .content-card for a consistent card style
+          // CHANGED: Using .my-content-card for a consistent card style
           <div
             key={`${advance.name}-${index}`}
-            className="content-card cursor-pointer"
+            className="my-content-card cursor-pointer"
             onClick={() => handleViewInstallments(advance)}
           >
             <div className="flex justify-between items-start">

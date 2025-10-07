@@ -16,7 +16,7 @@ const ViewSalarySlipModal = () => {
 
   const pdfUrl = `/api/method/frappe.utils.print_format.download_pdf?doctype=Salary%20Slip&name=${encodeURIComponent(
     salaryId
-  )}&format=Salary%20Slip&no_letterhead=0`;
+  )}&format=Regular%20Payslip&no_letterhead=0`;
 
   const handleBack = () => {
     navigate(-1);

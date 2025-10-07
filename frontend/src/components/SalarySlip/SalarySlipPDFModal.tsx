@@ -26,7 +26,7 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
 
   const pdfUrl = `/api/method/frappe.utils.print_format.download_pdf?doctype=Salary%20Slip&name=${encodeURIComponent(
     salarySlipName
-  )}&format=Salary%20Slip&no_letterhead=0`;
+  )}&format=Regular%20Payslip&no_letterhead=0`;
 
   const handleDownload = () => {
     downloadPDF(salarySlipName);
