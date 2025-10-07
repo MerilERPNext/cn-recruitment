@@ -22,6 +22,7 @@ export const leaveService = {
         "status",
         "employee_name",
         "description",
+        "docstatus",
       ],
       orderBy: "creation desc",
       limit: 50,
