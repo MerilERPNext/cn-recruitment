@@ -187,6 +187,25 @@ export const useGetAllEventsAndAttendance = (
   });
 };
 
+//this is an reusable hook for getting mandatory details for emloyee id
+export function useCheckAttachmentMandatory(
+  empId: string,
+
+  request_type: string
+) {
+  return useQuery({
+    queryKey: [
+      "attendance-request-form-attachment-validations",
+      empId,
+      
+      request_type,
+    ],
+    queryFn: () =>
+      attendanceService.checkAttachmentMandatory(empId, request_type),
+    enabled: !!empId   && !!request_type,
+  });
+}
+
 export const useGetPolicyForDate = (
   filters: any
 ): UseQueryResult<string, Error> => {

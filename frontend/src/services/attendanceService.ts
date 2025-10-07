@@ -171,6 +171,29 @@ export const attendanceService = {
     }
   },
 
+  //for checking attachment is mandatory or not
+  checkAttachmentMandatory: async (
+    empId: string,
+   
+    request_type: string
+    
+  ): Promise<AttendanceRequestValidations> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.check_attachment_mandatory",
+        {
+          employee: empId,
+    
+          request_type,
+        }
+      );
+      return response as AttendanceRequestValidations;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
+  },
+
   setEmployeeDeviceId: async (
     body: Record<string, unknown>
   ): Promise<boolean> => {

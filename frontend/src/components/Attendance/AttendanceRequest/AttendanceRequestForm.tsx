@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import {
+  useCheckAttachmentMandatory,
   useCreateNewAttendanceRequest,
   useGetEmployeeShift,
   useGetUserRoles,
@@ -20,6 +21,7 @@ import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import DOMPurify from "dompurify";
+
 
 interface AttendanceFormData {
   request_type?: string;
@@ -60,20 +62,28 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
 }) => {
+
+  const [requestType, setRequestType] = useState<string | null >(null);
+  const [selected_Date, setSelected_Date] = useState("");
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [formData, setFormData] = useState<AttendanceFormData>();
+
   const [isForOthers, setIsForOthers] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
+   
   );
+
+  console.log(currentUser?.name);
+
   const { data: employeeReporteeList } = useEmployeeReportees();
   const { data: userRoles } = useGetUserRoles();
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedRequestType, setSelectedRequestType] = useState<string>("");
-
+  
   const { data: reasonList } = useGetAllReasons(selectedRequestType);
   const employeeIdToShow = isForOthers
     ? selectedEmployee
@@ -109,13 +119,28 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     setSelectedEmployee(employeeId);
   };
 
+  
   const handleRequestTypeChange = useCallback(
     (event: { data: { request_type: string } }) => {
       const requestType = event?.data?.request_type || "";
+      
       setSelectedRequestType(requestType);
     },
     []
   );
+
+  const {
+    data: attendanceDetails,
+    isLoading,
+    error,
+  } = useCheckAttachmentMandatory(
+    currentEmployee?.employee || "",
+    
+    selectedRequestType
+  );
+  console.log();
+
+  console.log(attendanceDetails, isLoading, error);
 
   const mutation = useCreateNewAttendanceRequest();
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
@@ -786,6 +811,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onChange={(submission: any) => {
               setFormData(submission?.data);
+              
             }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onFormReady={(instance: any) => {
