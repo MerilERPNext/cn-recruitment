@@ -6,7 +6,6 @@ import { useNavigate } from "react-router";
 
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "./ApprovalCard";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -22,14 +21,19 @@ const TeamAttendanceDetails = () => {
     currentUser?.name as string
   );
 
-  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const [refetch, setRefetch] = useState(false);
+  const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+  const [refetchActionedList, setRefetchActionedList] = useState(false);
   const navigate = useNavigate();
 
-  const handleRefetchComplete = useCallback(() => {
-    setRefetch(false);
-    setRefetchAttendance(false);
-  }, [setRefetchAttendance]);
+  const handleApprovalRefetchComplete = useCallback(() => {
+    setRefetchApprovalList(false);
+    // Also trigger actioned list refetch when approval list completes
+    setRefetchActionedList(true);
+  }, []);
+
+  const handleActionedRefetchComplete = useCallback(() => {
+    setRefetchActionedList(false);
+  }, []);
 
   const [selectedRequest, setSelectedRequest] = useState<
     (MyAttendanceRequest & { loadingAction?: LoadingAction }) | null
@@ -59,7 +63,7 @@ const TeamAttendanceDetails = () => {
           <CardTable
             titles={[
               "Select",
-              "Name",
+              "Id",
               "Employeee",
               "From Date",
               "To Date",
@@ -72,11 +76,9 @@ const TeamAttendanceDetails = () => {
             {currentUser?.name ? (
               <ApprovalList
                 doctype={"Attendance Request"}
-                // pageSize={3}
-                refetch={refetch || refetchAttendance}
-                onApprovalRefetchComplete={() => {
-                  setRefetch(false);
-                }}
+                refetch={refetchApprovalList}
+                setRefetch={setRefetchApprovalList}
+                onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={3}
                 showPagination={false}
                 renderCardContent={(item) => (
@@ -109,7 +111,7 @@ const TeamAttendanceDetails = () => {
             <CardTable
               columnWidths={["15%", "15%", "8%", "8%", "8%", "20%"]}
               titles={[
-                "Name",
+                "Id",
                 "Employee",
                 "From Date",
                 "To Date",
@@ -125,7 +127,7 @@ const TeamAttendanceDetails = () => {
                       "cn_leave_shift_managment.api.get_open_approval_todos",
                     params: {
                       doctype: "Attendance Request",
-                      is_allocated_todo: true,
+                      include_allocated_todos: true,
 
                       fields: ["*"],
                     },
@@ -141,8 +143,8 @@ const TeamAttendanceDetails = () => {
                       />
                     );
                   }}
-                  onRefetchComplete={handleRefetchComplete}
-                  refetchTrigger={refetchAttendance}
+                  onRefetchComplete={handleActionedRefetchComplete}
+                  refetchTrigger={refetchActionedList}
                   isSearch={false}
                   isFilter={false}
                   pageSize={5}

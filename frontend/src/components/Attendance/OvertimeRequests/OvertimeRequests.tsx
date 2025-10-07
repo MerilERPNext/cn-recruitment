@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import CardTable from "../../shared/CardTable";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router";
 import {
   LoadingAction,
@@ -15,8 +14,8 @@ import { MyRequestCard } from "./MyRequestCard";
 import OvertimeApprovalCard from "./OvertimeApprovalCard";
 
 const OvertimeRequests = () => {
-  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const [refetch, setRefetch] = useState(false);
+  const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+  const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -26,9 +25,20 @@ const OvertimeRequests = () => {
     () => ({
       reference_type: "Planned Overtime Request",
       employee: currentEmployee?.employee,
+      status: ["!=", "Open"],
     }),
     [currentEmployee]
   );
+
+  const handleApprovalRefetchComplete = useCallback(() => {
+    setRefetchApprovalList(false);
+    // Also trigger my requests list refetch when approval list completes
+    setRefetchMyRequestsList(true);
+  }, []);
+
+  const handleMyRequestsRefetchComplete = useCallback(() => {
+    setRefetchMyRequestsList(false);
+  }, []);
 
   const [mySelectedRequest, setMySelectedRequest] = useState<
     (MyPlannedAttendanceRequest & { loadingAction?: LoadingAction }) | null
@@ -58,7 +68,7 @@ const OvertimeRequests = () => {
           <CardTable
             titles={[
               "Select",
-              "Name",
+              "Id",
               "Employee",
               "Description",
               "Due Date",
@@ -72,11 +82,10 @@ const OvertimeRequests = () => {
                 doctype={"Planned Overtime Request"}
                 pageSize={3}
                 showPagination={false}
-                refetch={refetch || refetchAttendance}
+                refetch={refetchApprovalList}
+                setRefetch={setRefetchApprovalList}
                 status="Open"
-                onApprovalRefetchComplete={() => {
-                  setRefetch(false);
-                }}
+                onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 renderCardContent={(item) => (
                   <OvertimeApprovalCard
                     isSelected={item?.isSelected}
@@ -114,8 +123,8 @@ const OvertimeRequests = () => {
             <CardTable
               columnWidths={["10%", "10%", "30%", "10%", "33%"]}
               titles={[
+                "Id",
                 "Allocated To",
-                "Name",
                 "Description",
                 "Due Date",
                 "Status",
@@ -145,13 +154,11 @@ const OvertimeRequests = () => {
                       />
                     );
                   }}
-                  onRefetchComplete={() => {
-                    setRefetchAttendance(false);
-                  }}
-                  refetchTrigger={refetchAttendance}
+                  onRefetchComplete={handleMyRequestsRefetchComplete}
+                  refetchTrigger={refetchMyRequestsList}
                   isSearch={false}
                   isFilter={false}
-                  pageSize={5}
+                  // pageSize={5}
                   showRefreshButton={false}
                   orderBy="modified desc"
                   infiniteScroll={false}

@@ -86,9 +86,9 @@ const ApprovalCard = ({
         label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-600",
       };
-    } else if (status === "Closed") {
+    } else if (status === "Approved") {
       return {
-        label: "Closed",
+        label: "Approved",
         statusColor: "bg-green-100 text-green-600",
       };
     } else if (status === "Rejected") {
@@ -129,7 +129,7 @@ const ApprovalCard = ({
 
           {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_name}
+            {data?.todo_id}
           </div>
           <div className="truncate text-gray-900 font-medium text-sm text-start">
             {data?.reference_document?.employee_name}
@@ -210,9 +210,7 @@ const ApprovalCard = ({
                   <p className="text-md font-bold">
                     {data?.reference_document?.employee_name}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {data?.reference_name}
-                  </p>
+                  <p className="text-sm text-gray-500">{data?.todo_id} </p>
                 </div>
 
                 <Badge

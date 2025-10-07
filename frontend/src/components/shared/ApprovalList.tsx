@@ -25,6 +25,7 @@ type ApprovalListProps = {
     loadingAction: { id: string; action: string } | null;
   }) => ReactNode;
   refetch?: boolean;
+  setRefetch?: (value: boolean) => void;
   status?: string;
   pageSize?: number;
   showPagination?: boolean;
@@ -37,13 +38,13 @@ const ApprovalList = ({
   renderCardContent,
   pageSize,
   refetch,
+  setRefetch,
   onApprovalRefetchComplete,
   showPagination = true,
 }: ApprovalListProps) => {
-  const { setRefetchAttendance } = useGlobalStore();
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const mutation = useApprovalListActions();
-  const [refetchListView, setRefetchListView] = useState(false);
   const [loadingAction, setLoadingAction] = useState<{
     id: string;
     action: string;
@@ -56,27 +57,28 @@ const ApprovalList = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
 
+  const triggerRefetch = () => {
+    if (setRefetch) {
+      setRefetch(true);
+    }
+    setRefetchAttendance(true);
+  };
+
   useEffect(() => {
     const handleChatClose = () => {
-      setRefetchListView((prev) => !prev);
+      triggerRefetch();
     };
 
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
 
-    // Cleanup function to remove the event listener
     return () => {
       document.removeEventListener(
         "chatnext:modal:chat:close",
         handleChatClose
       );
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (refetch) {
-      setRefetchListView(true);
-    }
-  }, [refetch]);
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -145,12 +147,10 @@ const ApprovalList = ({
             );
           }
           if (action.toLowerCase() !== "approve") {
-            setRefetchListView((prev) => !prev);
-            setRefetchAttendance(true);
+            triggerRefetch();
           }
         } else {
-          setRefetchListView((prev) => !prev);
-          setRefetchAttendance(true);
+          triggerRefetch();
         }
         // Query invalidation now handled by Frappe realtime events
       } catch (error: any) {
@@ -180,14 +180,12 @@ const ApprovalList = ({
         },
         {
           onSuccess: () => {
-            // refetch();
             toast.success(
               `Requests ${
-                action === "Reject" ? "rejecte" : action.toLowerCase()
+                action === "Reject" ? "rejected" : action.toLowerCase()
               }d successfully!`
             );
-            setRefetchListView((prev) => !prev);
-            setRefetchAttendance(true);
+            triggerRefetch();
           },
           onError: (error) => {
             toast.error(error?.message);
@@ -213,7 +211,7 @@ const ApprovalList = ({
           params: {
             doctype: doctype,
             status: status,
-            is_allocated_todo: true,
+            include_allocated_todos: true,
             fields: ["*"],
           },
         }}
@@ -246,9 +244,14 @@ const ApprovalList = ({
             loadingAction: loadingAction,
           });
         }}
-        refetchTrigger={refetchListView}
+        refetchTrigger={refetch || refetchAttendance}
         onRefetchComplete={() => {
-          setRefetchListView(false);
+          setRefetchAttendance(false);
+
+          if (setRefetch) {
+            setRefetch(false);
+          }
+
           if (onApprovalRefetchComplete) {
             onApprovalRefetchComplete();
           }

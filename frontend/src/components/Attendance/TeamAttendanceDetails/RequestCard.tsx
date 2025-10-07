@@ -63,7 +63,7 @@ any & {
           onClick={() => onClick?.(request)}
         >
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {request?.reference_name}
+            {request?.todo_id}
           </div>
 
           <div className="truncate text-gray-900 font-medium text-sm text-start">
@@ -101,9 +101,7 @@ any & {
                     <p className="text-md font-bold">
                       {request?.reference_document?.employee_name}
                     </p>
-                    <p className="text-sm text-gray-500">
-                      {request?.reference_document?.name}
-                    </p>
+                    <p className="text-sm text-gray-500">{request?.todo_id}</p>
                   </div>
                   <Badge
                     size="sm"

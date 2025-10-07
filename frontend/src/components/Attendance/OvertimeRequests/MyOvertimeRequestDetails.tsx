@@ -160,7 +160,7 @@ export function MyOvertimeDetails({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
-            {label} {data?.reference_document?.name}
+            {label} {data?.todo_id}
           </h2>
           <button
             onClick={onClose}

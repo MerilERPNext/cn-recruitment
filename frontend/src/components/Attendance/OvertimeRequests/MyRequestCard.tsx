@@ -57,10 +57,10 @@ any & {
           onClick={() => onClick?.(request)}
         >
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {request?.username || ""}
+            {request?.todo_id || ""}
           </div>
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {request?.reference_document?.name || ""}
+            {request?.username || ""}
           </div>
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
@@ -89,9 +89,7 @@ any & {
                     <h3 className="font-semibold text-sm text-gray-800">
                       {request?.username}
                     </h3>
-                    <p className="text-sm text-gray-500">
-                      {request?.reference_document?.name}
-                    </p>
+                    <p className="text-sm text-gray-500">{request?.todo_id}</p>
                     <p className="text-sm text-gray-500">{formattedDate}</p>
                   </div>
                   <Badge

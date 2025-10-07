@@ -130,7 +130,7 @@ const OvertimeApprovalCard = ({
 
           {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_document?.name}
+            {data?.todo_id}
           </div>
           {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
@@ -208,7 +208,7 @@ const OvertimeApprovalCard = ({
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-gray-500 font-bold">
-                    {data?.reference_document?.name}
+                    {data?.todo_id}
                   </p>
 
                   <div className="flex gap-2">

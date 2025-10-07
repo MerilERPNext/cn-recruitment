@@ -294,7 +294,7 @@ export const usePlannedOvertimeAllowed = (employee: string) => {
     enabled: !!employee,
     staleTime: 5 * 60 * 1000,
   });
-}; 
+};
 
 export function useAddAttendanceAssignment() {
   const queryClient = useQueryClient();
