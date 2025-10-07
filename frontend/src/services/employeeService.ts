@@ -296,7 +296,7 @@ export class EmployeeService {
         fields: ["*"],
         filters: [["user_id", "=", user_id]],
       });
-
+      
       // Debug the API response
       debugEmployeeData(
         result,

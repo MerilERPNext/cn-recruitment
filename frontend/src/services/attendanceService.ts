@@ -173,8 +173,8 @@ export const attendanceService = {
 
   //for checking attachment is mandatory or not
   checkAttachmentMandatory: async (
-    empId: string,
-   
+    empId: string | null | undefined,
+   date:string,
     request_type: string
     
   ): Promise<AttendanceRequestValidations> => {
@@ -183,7 +183,7 @@ export const attendanceService = {
         "cn_leave_shift_managment.api.check_attachment_mandatory",
         {
           employee: empId,
-    
+    date,
           request_type,
         }
       );

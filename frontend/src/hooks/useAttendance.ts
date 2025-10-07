@@ -189,19 +189,19 @@ export const useGetAllEventsAndAttendance = (
 
 //this is an reusable hook for getting mandatory details for emloyee id
 export function useCheckAttachmentMandatory(
-  empId: string,
-
+  empId: string | null | undefined,
+date:string,
   request_type: string
 ) {
   return useQuery({
     queryKey: [
       "attendance-request-form-attachment-validations",
       empId,
-      
+      date,
       request_type,
     ],
     queryFn: () =>
-      attendanceService.checkAttachmentMandatory(empId, request_type),
+      attendanceService.checkAttachmentMandatory(empId, date,request_type),
     enabled: !!empId   && !!request_type,
   });
 }

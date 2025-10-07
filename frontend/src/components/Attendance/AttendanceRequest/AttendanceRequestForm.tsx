@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import {
@@ -63,8 +63,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   selectedDate = new Date(),
 }) => {
 
-  const [requestType, setRequestType] = useState<string | null >(null);
-  const [selected_Date, setSelected_Date] = useState("");
+  
+  const [is_required,setIs_required ] = useState<boolean>(true);
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [formData, setFormData] = useState<AttendanceFormData>();
@@ -134,13 +134,23 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     isLoading,
     error,
   } = useCheckAttachmentMandatory(
-    currentEmployee?.employee || "",
-    
+    "1111111",
+    "2025-07-10",
     selectedRequestType
   );
-  console.log();
 
-  console.log(attendanceDetails, isLoading, error);
+  useEffect(() => {
+    if (attendanceDetails) {
+      setIs_required(attendanceDetails?.is_mandatory);
+    }
+  }, [attendanceDetails]);
+  console.log(
+    attendanceDetails?.is_mandatory,
+    currentEmployee?.name,
+    is_required,
+    isLoading,
+    error
+  );
 
   const mutation = useCreateNewAttendanceRequest();
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
@@ -317,23 +327,22 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             data: {
               values: [
-                 {
-                      label: "Clockin Request",
-                      value: "Clockin",
-                    },
                 {
-                      label: "Out Duty Request",
-                      value: "Out Duty",
-                    },
-                   {
-                      label: "Short Attendance Request",
-                      value: "Short Attendance Request",
-                    },
-                   {
-                      label: "Attendance Adjustment",
-                      value: "Attendance Adjustment",
-                    }
-                 
+                  label: "Clockin Request",
+                  value: "Clockin",
+                },
+                {
+                  label: "Out Duty Request",
+                  value: "Out Duty",
+                },
+                {
+                  label: "Short Attendance Request",
+                  value: "Short Attendance Request",
+                },
+                {
+                  label: "Attendance Adjustment",
+                  value: "Attendance Adjustment",
+                },
               ],
             },
           },
@@ -613,6 +622,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             type: "file",
             input: true,
             multiple: false,
+            validate: {
+              required: is_required,
+            },
             tooltip: "Upload receipts or supporting documents.",
           },
         ],
