@@ -65,6 +65,7 @@ export const useCurrentEmployeeAllDetails = (user_id: string) => {
   return useQuery<Employee | null, Error>({
     queryKey: ["currentEmployeeAllDetails", user_id],
     queryFn: async () => {
+      console.log("------------------------------------------",user_id)
       if (!user_id || typeof user_id !== "string" || user_id.trim() === "") {
         console.warn(
           "useCurrentEmployeeAllDetails: Invalid user_id provided:",
@@ -72,6 +73,7 @@ export const useCurrentEmployeeAllDetails = (user_id: string) => {
         );
         return null;
       }
+
       return EmployeeService.getCurrentEmployeeAllDetails(user_id);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

@@ -295,7 +295,16 @@ export class EmployeeService {
       const result = await FrappeAPI.getDocumentList("Employee", {
         fields: ["*"],
         filters: [["user_id", "=", user_id]],
+
       });
+      console.log(
+        "-----1111111111111111111111111111111111111111111111111111",
+        result,
+        {
+          fields: ["*"],
+          filters: [["user_id", "=", user_id]],
+        }
+      );
 
       // Debug the API response
       debugEmployeeData(

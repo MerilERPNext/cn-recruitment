@@ -171,28 +171,29 @@ export const attendanceService = {
     }
   },
 
-  //for checking attachment is mandatory or not
-  checkAttachmentMandatory: async (
-    empId: string,
-   
-    request_type: string
-    
-  ): Promise<AttendanceRequestValidations> => {
-    try {
-      const response = await FrappeAPI.callMethod(
-        "cn_leave_shift_managment.api.check_attachment_mandatory",
-        {
-          employee: empId,
-    
-          request_type,
-        }
-      );
-      return response as AttendanceRequestValidations;
-    } catch (error) {
-      console.error("📡 Error while checking in:", error);
-      throw error;
-    }
-  },
+  // //for checking attachment is mandatory or not
+  // checkAttachmentMandatory: async (
+  //   empId: string,
+  //   date: string,
+  //   request_type: string
+
+  // ): Promise<AttendanceRequestValidations> => {
+  //   try {
+  //     console.log(empId,date,request_type)
+  //     const response = await FrappeAPI.callMethod(
+  //       "cn_leave_shift_managment.api.check_attachment_mandatory",
+  //       {
+  //         employee: empId,
+  //         date,
+  //         request_type,
+  //       }
+  //     );
+  //     return response as AttendanceRequestValidations;
+  //   } catch (error) {
+  //     console.error("📡 Error while checking in:", error);
+  //     throw error;
+  //   }
+  // },
 
   setEmployeeDeviceId: async (
     body: Record<string, unknown>
@@ -419,6 +420,28 @@ export const attendanceService = {
         "cn_leave_shift_managment.cn_leave_shift_managment.overrides.attendace_request.get_active_attendance_policy",
         {
           employee: empId,
+        }
+      );
+      return response as AttendanceRequestValidations;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
+  },
+
+  checkAttachmentMandatory: async (
+    empId: string | null,
+    date: string,
+    request_type: string
+    // type needs to be updated here
+  ): Promise<AttendanceRequestValidations> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.check_attachment_mandatory",
+        {
+          employee: empId,
+          date,
+          request_type,
         }
       );
       return response as AttendanceRequestValidations;

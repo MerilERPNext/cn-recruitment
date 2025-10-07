@@ -63,8 +63,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   selectedDate = new Date(),
 }) => {
 
-  const [requestType, setRequestType] = useState<string | null >(null);
-  const [selected_Date, setSelected_Date] = useState("");
+  // const [requestType, setRequestType] = useState<string | null >(null);
+  // const [selected_Date, setSelected_Date] = useState("");
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [formData, setFormData] = useState<AttendanceFormData>();
@@ -128,19 +128,16 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     },
     []
   );
+  // const employeeId = currentEmployee?.employee || null;
+  
 
   const {
     data: attendanceDetails,
     isLoading,
     error,
-  } = useCheckAttachmentMandatory(
-    currentEmployee?.employee || "",
-    
-    selectedRequestType
-  );
-  console.log();
-
-  console.log(attendanceDetails, isLoading, error);
+  } = useCheckAttachmentMandatory("1111111", "2025-07-10", "Out Duty Request");
+ 
+console.log(currentEmployee,currentUser, isLoading, error);
 
   const mutation = useCreateNewAttendanceRequest();
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
