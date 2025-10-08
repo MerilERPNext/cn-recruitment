@@ -13,6 +13,7 @@ export type CompensatoryRequestItem = {
   work_end_date: string;
   reason?: string;
   pay_button_required: boolean;
+  docstatus: number;
 };
 
 type CompensatoryRequestCardProps = {
@@ -45,7 +46,23 @@ const CompensatoryRequestCard = ({
     });
   };
 
-  const getStatus = (status: string) => {
+  const getStatus = (status: string, docstatus: number) => {
+    const key = status?.toLowerCase().trim();
+
+    if (key === "issued" && (docstatus === 0 || docstatus === 1)) {
+      return {
+        label: "Pending",
+        statusColor: "bg-yellow-100 text-yellow-800",
+      };
+    }
+
+    if (key === "allocated" && docstatus === 1) {
+      return {
+        label: "Allocated",
+        statusColor: "bg-green-100 text-green-800",
+      };
+    }
+
     const statusMap: { [key: string]: { label: string; statusColor: string } } =
       {
         issued: {
@@ -61,7 +78,7 @@ const CompensatoryRequestCard = ({
           statusColor: "bg-red-100 text-red-800",
         },
       };
-    const key = status?.toLowerCase().trim();
+
     return (
       statusMap[key] || {
         label: "Unknown",
@@ -70,7 +87,7 @@ const CompensatoryRequestCard = ({
     );
   };
 
-  const status = getStatus(item?.custom_status);
+  const status = getStatus(item?.custom_status, item?.docstatus);
 
   const formattedFromDate = item?.work_from_date
     ? format(new Date(item.work_from_date), "d MMM yyyy")

@@ -170,7 +170,7 @@ const LeaveBalance: React.FC = () => {
                 >
                   <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
                     <span className="text-left text-black">{leave?.type}</span>
-                    {leave?.visibility_flags?.show_entitled && (
+                    {leave?.visibility_flags?.show_carry_over && (
                       <span className="text-sm text-green-800">
                         {leave.carry_over} Carry Forwarded
                       </span>
