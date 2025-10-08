@@ -1,5 +1,5 @@
-import React from "react";
-import { useLocation, useNavigate, Navigate } from "react-router-dom"; // ✅ use react-router-dom
+import React, { useState } from "react";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import { PolicyCardSkeleton } from "./PolicySkeletons";
 import { Download } from "lucide-react";
@@ -24,7 +24,6 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
       `/webapp/policies-app/view-policy/${encodeURIComponent(item.name)}`,
       {
         state: {
-          // build an absolute URL the viewer can fetch
           pdfUrl: `${window.location.origin}${item.policy_document}`,
         },
       }
@@ -38,7 +37,6 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
         </h2>
         <p className="text-sm text-gray-500 truncate">{item.status ?? "—"}</p>
       </div>
-
       <div className="flex items-center gap-2 ml-3">
         <button
           onClick={() => {
@@ -59,7 +57,7 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
         </button>
         <button
           onClick={handleView}
-          className="flex items-center justify-center p-2  border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
         >
           <FaRegEye className="w-4 h-4" />
         </button>
@@ -70,20 +68,47 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
 
 const PoliciesList: React.FC = () => {
   const location = useLocation();
-
   const categoryName = (location.state as PolicyState | undefined)?.name;
+  const [selectedStatus, setSelectedStatus] = useState("Acknowledged");
+  const statusOptions = ["Pending", "Acknowledged", "Declined", "Archived"];
 
   if (!categoryName) {
     return <Navigate to="/webapp/policies-app/policies-categories" replace />;
   }
 
+  const filterDropdown = () => {
   return (
-    <div className="w-full  bg-white rounded-xl md:p-4 p-2">
+    <div className="my-2 flex items-center justify-start gap-4">
+      <div className="flex-1 max-w-sm">
+        <select
+          id="statusFilter"
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="my-form-input"
+        >
+          {statusOptions.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+};
+
+  return (
+    <div className="w-full bg-white rounded-xl md:p-4 p-2">
+      {/* The original filter dropdown has been removed from here */}
+
       <FrappeListView<PolicyDoc>
+        // key={filtersKey}
         doctype="Policy Details"
         defaultFilters={{
           policy_category: categoryName,
+          status: selectedStatus,
         }}
+        pageSize={20}
         isSearch={true}
         showRefereshButton={true}
         searchFields={["name"]}
@@ -91,6 +116,7 @@ const PoliciesList: React.FC = () => {
         ItemComponent={PolicyItem}
         infiniteScroll={true}
         SkeletonComponent={PolicyCardSkeleton}
+        PreListComponent={filterDropdown}
       />
     </div>
   );

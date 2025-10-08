@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Download, Eye, EyeOff } from "lucide-react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
-import PDFViewer from "../PDFViewer";
 import { useDownloadSalarySlipPDF } from "../../hooks/useSalaryDetails";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
@@ -20,13 +19,50 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
 }) => {
   const { isDesktop } = useScreenSize();
   const [isMasked, setIsMasked] = useState(true);
+  const [htmlContent, setHtmlContent] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string>("");
   const { mutate: downloadPDF, isPending: isDownloading } = useDownloadSalarySlipPDF();
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen || !salarySlipName) return;
 
-  const pdfUrl = `/api/method/frappe.utils.print_format.download_pdf?doctype=Salary%20Slip&name=${encodeURIComponent(
-    salarySlipName
-  )}&format=Salary%20Slip&no_letterhead=0`;
+    const fetchPayslip = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+
+        const response = await fetch(
+          `/api/method/cn_indian_payroll.cn_indian_payroll.overrides.tds_printer.get_payslip_pdf_html?id=${salarySlipName}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Extract HTML from the response
+        if (data.message?.response) {
+          setHtmlContent(data.message.response);
+        } else if (data.response) {
+          setHtmlContent(data.response);
+        } else {
+          throw new Error("Invalid response format");
+        }
+
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Error loading payslip:", err);
+        setError(err instanceof Error ? err.message : "Failed to load payslip");
+        setIsLoading(false);
+      }
+    };
+
+    fetchPayslip();
+  }, [isOpen, salarySlipName]);
+
+  if (!isOpen) return null;
 
   const handleDownload = () => {
     downloadPDF(salarySlipName);
@@ -36,6 +72,55 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-sm text-gray-600">Loading Salary Slip...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="w-8 h-8 text-red-600" />
+            </div>
+            <p className="text-red-600 font-semibold mb-2">Failed to Load Salary Slip</p>
+            <p className="text-sm text-gray-600">{error}</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className={`w-full h-full overflow-auto transition-all duration-300 ${isMasked ? "filter blur-xl" : ""}`}>
+          <iframe
+            srcDoc={htmlContent}
+            className="w-full h-full border-0"
+            title={`Salary Slip - ${salarySlipName}`}
+            sandbox="allow-same-origin allow-scripts"
+          />
+        </div>
+        {isMasked && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-10 pointer-events-none">
+            <div className="text-center text-gray-600">
+              <EyeOff className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <p className="text-xl font-semibold mb-2">Salary Slip Hidden</p>
+              <p className="text-sm">Toggle the visibility switch to reveal</p>
+            </div>
+          </div>
+        )}
+      </>
+    );
   };
 
   // Mobile version - full screen
@@ -62,14 +147,15 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsMasked(!isMasked)}
-                className="p-2 rounded-full hover:bg-gray-100"
-                title={isMasked ? 'Show PDF' : 'Hide PDF'}
+                className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50"
+                title={isMasked ? 'Show' : 'Hide'}
+                disabled={isLoading || !!error}
               >
                 {isMasked ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
               <button
                 onClick={handleDownload}
-                disabled={isDownloading}
+                disabled={isDownloading || isLoading || !!error}
                 className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50"
                 title="Download PDF"
               >
@@ -79,25 +165,9 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
           </div>
         </div>
 
-        {/* Mobile PDF Content */}
+        {/* Mobile Content */}
         <div className="h-[calc(100vh-64px)] relative">
-          <div className={`w-full h-full ${isMasked ? "filter blur-lg" : ""}`}>
-            <PDFViewer
-              pdfUrl={pdfUrl}
-              mode="react-pdf"
-              className="w-full h-full"
-              title={`Salary Slip - ${salarySlipName}`}
-            />
-          </div>
-          {isMasked && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
-              <div className="text-center text-gray-700">
-                <EyeOff className="w-12 h-12 mx-auto mb-2" />
-                <p className="text-lg font-semibold">PDF Hidden</p>
-                <p className="text-sm">Tap the eye icon to reveal</p>
-              </div>
-            </div>
-          )}
+          {renderContent()}
         </div>
       </div>
     );
@@ -120,7 +190,7 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
               <Eye className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Salary Slip PDF</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Salary Slip</h3>
               {salarySlipDate && (
                 <p className="text-sm text-gray-600">{salarySlipDate}</p>
               )}
@@ -135,8 +205,9 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
               </span>
               <button
                 onClick={() => setIsMasked(!isMasked)}
-                className="flex items-center gap-1"
-                title={isMasked ? 'Show PDF' : 'Hide PDF'}
+                className="flex items-center gap-1 disabled:opacity-50"
+                title={isMasked ? 'Show' : 'Hide'}
+                disabled={isLoading || !!error}
               >
                 {isMasked ? (
                   <BsToggleOff className="w-6 h-6 text-gray-400" />
@@ -149,8 +220,8 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
             {/* Download Button */}
             <button
               onClick={handleDownload}
-              disabled={isDownloading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              disabled={isDownloading || isLoading || !!error}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Download PDF"
             >
               <Download className="w-4 h-4" />
@@ -170,25 +241,9 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
           </div>
         </div>
 
-        {/* Desktop PDF Content */}
+        {/* Desktop Content */}
         <div className="flex-1 relative overflow-hidden">
-          <div className={`w-full h-full transition-all duration-300 ${isMasked ? "filter blur-xl" : ""}`}>
-            <PDFViewer
-              pdfUrl={pdfUrl}
-              mode="react-pdf"
-              className="w-full h-full"
-              title={`Salary Slip - ${salarySlipName}`}
-            />
-          </div>
-          {isMasked && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-10">
-              <div className="text-center text-gray-600">
-                <EyeOff className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-xl font-semibold mb-2">PDF Content Hidden</p>
-                <p className="text-sm">Toggle the visibility switch to reveal the salary slip</p>
-              </div>
-            </div>
-          )}
+          {renderContent()}
         </div>
       </div>
     </div>

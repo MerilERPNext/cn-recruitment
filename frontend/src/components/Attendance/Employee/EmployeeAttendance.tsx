@@ -1,38 +1,34 @@
 import { useMemo, useState, useEffect } from "react";
-import DatePicker from "react-datepicker";
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  XCircle,
-} from "lucide-react";
+
 import {
   useGetAllEventsAndAttendance,
   usePlannedOvertimeAllowed,
 } from "../../../hooks/useAttendance";
-import {
-  AttendanceRecord,
-  MyAttendanceRequest,
-} from "../../../types/attendance";
+import { AttendanceRecord } from "../../../types/attendance";
 import { useNavigate } from "react-router";
 import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import { endOfMonth, format, startOfMonth, parse } from "date-fns";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import BottomDrawer from "../../shared/BottomDrawer";
+
 import LeaveRequest from "../LeaveRequest";
-import { gradientClassMap } from "../../../utils/helperUtils";
+
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CreateOvertimeRequest from "../OvertimeRequests/CreateOvertimeRequest";
 import EmployeeAttendanceDetails from "./EmployeeAttendanceDetails";
 import Modal from "../../shared/Modal";
 import { useSidebar } from "../SidebarContext";
-import DataListView from "../../DataListView";
-import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard";
+
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
+import AttendanceLegend from "./EmployeeAttendence/AttendanceLegend";
+import AttendanceError from "./EmployeeAttendence/AttendanceError";
+import ListView from "./EmployeeAttendence/ListView";
+
+import Cardtable from "./EmployeeAttendence/CardTable";
+import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
+import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
+import { Plus } from "lucide-react";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -51,96 +47,6 @@ const EmployeeAttendance = () => {
     setSidebarOpen(!!showDetailsFor && isDesktop);
   }, [showDetailsFor, isDesktop, setSidebarOpen]);
 
-  const getEventDotColor = (doctype: string): string => {
-    switch (doctype) {
-      case "Attendance Request":
-        return "bg-blue-500";
-      case "Leave Request":
-        return "bg-pink-500";
-      case "Overtime Request":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-400";
-    }
-  };
-
-  const AttendanceLegend = ({ isCompact = false }: { isCompact?: boolean }) => {
-    const attendanceLegendItems = [
-      {
-        label: "Present",
-        bgColor: "bg-green-100",
-        textColor: "text-green-700",
-        borderColor: "border-green-200",
-      },
-      {
-        label: "Absent",
-        bgColor: "bg-red-100",
-        textColor: "text-red-700",
-        borderColor: "border-red-200",
-      },
-      {
-        label: "On Leave",
-        bgColor: "bg-yellow-100",
-        textColor: "text-orange-700",
-        borderColor: "border-yellow-200",
-      },
-      {
-        label: "WFH",
-        bgColor: "bg-purple-100",
-        textColor: "text-purple-700",
-        borderColor: "border-purple-200",
-      },
-      {
-        label: "Holiday",
-        bgColor: "bg-blue-100",
-        textColor: "text-blue-700",
-        borderColor: "border-blue-200",
-      },
-      {
-        label: "Week Off",
-        bgColor: "bg-gray-200",
-        textColor: "text-gray-700",
-        borderColor: "border-gray-300",
-      },
-    ];
-
-    const eventDotLegendItems = [
-      { label: "Attendance Request", dotColor: "bg-blue-500" },
-      { label: "Leave Request", dotColor: "bg-pink-500" },
-      { label: "Overtime Request", dotColor: "bg-orange-500" },
-    ];
-
-    const containerClass = isCompact
-      ? "flex flex-wrap gap-2 text-xs justify-between px-4"
-      : "flex flex-wrap gap-7 text-xs ml-5";
-
-    const itemClass = isCompact
-      ? "flex items-center gap-1 px-1 py-1 rounded-lg border"
-      : "flex items-center gap-1 px-2 py-1 rounded-lg border";
-
-    return (
-      <div className="space-y-3">
-        <div className={containerClass}>
-          {attendanceLegendItems.map((item, index) => (
-            <span
-              key={index}
-              className={`${itemClass} ${item.bgColor} ${item.textColor} ${item.borderColor}`}
-            >
-              {item.label}
-            </span>
-          ))}
-        </div>
-        <div className={containerClass}>
-          {eventDotLegendItems.map((item, index) => (
-            <span key={index} className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${item.dotColor}`}></div>
-              <span className="text-gray-700">{item.label}</span>
-            </span>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -167,19 +73,8 @@ const EmployeeAttendance = () => {
 
   const [openDrawer, setOpenDrawer] = useState<boolean>(false);
 
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
-          </div>
-          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-        </div>
-      </div>
-    </div>
-  );
+  
+
   type Status =
     | "present"
     | "absent"
@@ -291,26 +186,7 @@ const EmployeeAttendance = () => {
   }, [allAttendance]);
 
   if (isError) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center space-y-4">
-          <XCircle className="w-12 h-12 text-black mx-auto" />
-          <h2 className="text-xl font-semibold text-black">
-            Error Loading Attendances
-          </h2>
-          <p className="text-gray-600">{error?.message}</p>
-          <button
-            onClick={() => {
-              navigate(-1);
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
+    return <AttendanceError error={error?.message} />;
   }
 
   return (
@@ -323,172 +199,18 @@ const EmployeeAttendance = () => {
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
         <div className=" w-full pb-2 bg-white rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg">
-          <div className="w-full flex justify-end md:justify-between  items-center border-b-1 border-gray-200 pb-2">
-            {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
-            {isDesktop && (
-              <div className="flex flex-col gap-2 mt-4 mx-5">
-                <h4 className="text-sm font-semibold text-gray-700">
-                  Attendance Legend:
-                </h4>
-                <AttendanceLegend />
-              </div>
-            )}
-            <button
-              className="text-gray-500 px-2 mt-4 flex gap-1 justify-center items-center"
-              onClick={() => {
-                navigate("/webapp/attendance/emp-attendance/all");
-              }}
-            >
-              List View
-              <ArrowUpRight className="h-5 w-5" />
-            </button>
-          </div>
-          <div className="p-1 employee-datepicker-lg">
-            <DatePicker
-              selected={selectedDate}
-              showPopperArrow={false}
-              showMonthDropdown={false}
-              onChange={(date) => {
-                setSelectedDate(date);
-                const attendance = getAttendanceStatus(date as Date);
-
-                if (
-                  attendance?.status !== "default" &&
-                  attendance?.status !== "week-off"
-                ) {
-                  setShowDetailsFor({
-                    date: date as Date,
-                    status: attendance?.status,
-                    data: attendance?.record as AttendanceRecord,
-                  });
-                } else {
-                  setShowDetailsFor(null);
-                }
-              }}
-              onMonthChange={(date) => {
-                setSelectedDate(date);
-              }}
-              openToDate={selectedDate as Date}
-              inline
-              renderCustomHeader={({
-                date,
-                decreaseMonth,
-                increaseMonth,
-                prevMonthButtonDisabled,
-                nextMonthButtonDisabled,
-              }) => (
-                <div className="flex items-center justify-between px-2 py-2">
-                  <button
-                    onClick={decreaseMonth}
-                    disabled={prevMonthButtonDisabled}
-                    className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <span className="font-semibold">
-                    {date.toLocaleString("default", { month: "long" })}{" "}
-                    {date.getFullYear()}
-                  </span>
-                  <button
-                    onClick={increaseMonth}
-                    disabled={nextMonthButtonDisabled}
-                    className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </div>
-              )}
-              renderDayContents={(day, date) => {
-                const attendance = getAttendanceStatus(date);
-
-                const isSelected =
-                  selectedDate?.toDateString() === date.toDateString();
-                const baseClasses = "transition-all duration-200";
-                const highlightClass = (() => {
-                  switch (attendance?.status) {
-                    case "present":
-                      return "!bg-green-100 !text-green-700 rounded-md";
-                    case "absent":
-                      return "!bg-red-100 !text-red-700 rounded-md";
-                    case "on-leave":
-                      return "!bg-yellow-100 !text-yellow-700 rounded-md";
-                    case "holiday":
-                      return "!bg-blue-100 !text-blue-700 rounded-md";
-                    case "week-off":
-                      return "!bg-gray-200 !text-gray-700 rounded-md";
-                    case "work-from-home":
-                      return "!bg-purple-100 !text-purple-800 rounded-md";
-                    default:
-                      return "hover:!bg-gray-100 !text-gray-700 rounded-md";
-                  }
-                })();
-                const selectedClass = isSelected
-                  ? "border-2 font-bold border-black rounded-md"
-                  : "";
-
-                const dayClasses = `${baseClasses} ${highlightClass} ${selectedClass}`;
-                const dayBoxStyles = `w-full h-full flex items-center justify-center text-base ${dayClasses}`;
-
-                if (attendance?.status === "half-day") {
-                  const firstColor =
-                    gradientClassMap[
-                      attendance?.firstHalf?.toLowerCase() || ""
-                    ];
-                  const secondColor =
-                    gradientClassMap[
-                      attendance?.secondHalf?.toLowerCase() || ""
-                    ];
-                  const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
-
-                  return (
-                    <div
-                      className={dayBoxStyles}
-                      style={{
-                        backgroundImage: gradient,
-                        borderRadius: "0.375rem",
-                        color: "black",
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      {day}
-                    </div>
-                  );
-                }
-                return (
-                  <div className={dayBoxStyles}>
-                    <div className="flex flex-col items-center gap-1">
-                      <span>{day}</span>
-                      {attendance?.events?.length > 0 && (
-                        <div className="flex gap-1">
-                          {Array.from(
-                            new Set(
-                              attendance?.events?.map((event) => event.doctype)
-                            )
-                          ).map((doctype, index) => (
-                            <div
-                              key={index}
-                              className={`w-[6px] h-[6px] rounded-full ${getEventDotColor(
-                                doctype
-                              )}`}
-                              title={doctype}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              }}
-            />
-          </div>
+          <ListView />
+          <AttendanceCalendar
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            getAttendanceStatus={getAttendanceStatus}
+            setShowDetailsFor={setShowDetailsFor}
+          />
 
           {/* Legends - Only show for mobile since desktop shows at top */}
           {!isDesktop && <AttendanceLegend isCompact={true} />}
         </div>
+
         {/* Legend */}
 
         {/* ------------------------------------------------- Calendar End---------------------------------------------- */}
@@ -535,50 +257,15 @@ const EmployeeAttendance = () => {
               "Actions",
             ]}
           >
-            {currentEmployee?.employee ? (
-              <DataListView
-                queryKey="attendance-requests"
-                customAPI={{
-                  method:
-                    "cn_leave_shift_managment.api.get_open_approval_todos",
-                  params: {
-                    doctype: "Attendance Request",
-                    employee: currentEmployee?.employee,
-                  },
-                }}
-                defaultFilters={{
-                  status: "Pending",
-                }}
-                ItemComponent={(props: { item: MyAttendanceRequest }) => {
-                  return (
-                    <EmpAttendanceRequestCard
-                      type="pending"
-                      data={{
-                        ...props?.item,
-                      }}
-                    />
-                  );
-                }}
-                SkeletonComponent={CardSkeleton}
-                onItemClick={(data) => {
-                  console.log(data);
-                }}
-                onRefetchComplete={() => {
-                  setRefetchAttendance(false);
-                }}
-                refetchTrigger={refetchAttendance}
-                isSearch={false}
-                isFilter={false}
-                pageSize={5}
-                showRefreshButton={false}
-                orderBy="modified desc"
-                infiniteScroll={false}
-                loadMorePagination={true}
-                showPagination={false}
-              />
-            ) : (
-              <></>
-            )}
+            <Cardtable
+              currentEmployee={
+                currentEmployee
+                  ? { employee: currentEmployee.employee }
+                  : undefined
+              }
+              refetchAttendance={refetchAttendance}
+              setRefetchAttendance={setRefetchAttendance}
+            />
           </CardTable>
         </div>
         {showReqAttendanceCorrection && (
@@ -602,47 +289,13 @@ const EmployeeAttendance = () => {
             }}
           />
         )}
-        <BottomDrawer
-          isOpen={openDrawer}
-          onClose={() => setOpenDrawer(false)}
-          children={
-            <div className="flex flex-col gap-3">
-              <h2 className="font-semibold text-lg">Raise Request</h2>
-
-              <button
-                onClick={() => {
-                  setShowLeaveRequest(true);
-                  setOpenDrawer(false);
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-lg transition-colors "
-              >
-                Leave Request
-              </button>
-              <div className="border-b border-gray-200 m-0 p-0"></div>
-              <button
-                onClick={() => {
-                  setShowReqAttendanceCorrection(true);
-                  setOpenDrawer(false);
-                }}
-                className="w-full text-left px-4 py-2  hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                Attendance Request
-              </button>
-              <div className="border-b border-gray-200 m-0 p-0"></div>
-
-              {plannedOvertimAllowed ? (
-                <button
-                  onClick={() => {
-                    setShowOvertimeRequest(true);
-                    setOpenDrawer(false);
-                  }}
-                  className="w-full text-left px-4 py-2  hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Planned Overtime Request
-                </button>
-              ) : null}
-            </div>
-          }
+        <BottomDrowerForAttendance
+          setShowLeaveRequest={setShowLeaveRequest}
+          setOpenDrawer={setOpenDrawer}
+          setShowReqAttendanceCorrection={setShowReqAttendanceCorrection}
+          setShowOvertimeRequest={setShowOvertimeRequest}
+          plannedOvertimAllowed={plannedOvertimAllowed}
+          openDrawer={openDrawer}
         />
       </div>
 

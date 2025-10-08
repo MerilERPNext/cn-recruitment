@@ -9,7 +9,7 @@ export const usePolicyCountsByCategory = () => {
         console.log("🔍 Fetching Policy Details for category counts...");
         const result = await frappeService.getDocumentsPage({
           doctype: "Policy Details", // Using correct doctype name
-          filters: {}, // Remove archive filter as it might not exist
+          filters: { status: ["!=", ""] },
           pageSize: 1000,
           pageParam: 0,
           searchTerm: "",

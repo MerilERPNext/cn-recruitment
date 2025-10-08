@@ -13,7 +13,7 @@ export interface SalaryComponent {
     net_pay: number;
     gross_pay: number;
     total_deduction: number;
-  
+    fixed_gross: number;
     gratuity?: number;
     medical_insurance?: number;
     bonus?: number;

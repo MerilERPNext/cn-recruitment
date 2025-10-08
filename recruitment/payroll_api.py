@@ -22,6 +22,8 @@ def process_components(components, ctc_component_names, comp_type):
 def generate_salary_slip(employee):
     component_part_of_ctc = []
     monthly_ctc = 0
+    annual_ctc=0
+    total_deduction=0
 
     try:
         if not employee:
@@ -68,10 +70,19 @@ def generate_salary_slip(employee):
         earnings_ctc, earnings_total = process_components(slip.earnings, ctc_component_names, "Earning")
         component_part_of_ctc.extend(earnings_ctc)
         monthly_ctc += earnings_total
+        annual_ctc+=earnings_total*12
 
         # Process deductions
-        deductions_ctc, _ = process_components(slip.deductions, ctc_component_names, "Deduction")
+        # deductions_ctc, _ = process_components(slip.deductions, ctc_component_names, "Deduction")
+        # component_part_of_ctc.extend(deductions_ctc)
+        # monthly_ctc+=
+
+        deductions_ctc, deductions_total = process_components(slip.deductions, ctc_component_names, "Deduction")
         component_part_of_ctc.extend(deductions_ctc)
+        monthly_ctc += deductions_total
+        annual_ctc+=deductions_total*12
+        total_deduction+=deductions_total*12
+        
         # Note: Not adding deductions to monthly CTC
 
         # Process reimbursements
@@ -80,6 +91,7 @@ def generate_salary_slip(employee):
             for reimbursement in assignment_doc.custom_employee_reimbursements:
                 amount = round(reimbursement.monthly_total_amount)
                 monthly_ctc += amount
+                annual_ctc+=amount*12
                 component_part_of_ctc.append({
                     "component": reimbursement.reimbursements,
                     "amount": amount,
@@ -89,13 +101,14 @@ def generate_salary_slip(employee):
 
         net_pay = slip.rounded_total or 0
         gross_pay = slip.gross_pay or 0
-        total_deduction = slip.total_deduction or 0
+        # total_deduction = slip.total_deduction or 0
 
         return {
             "component_part_of_ctc": component_part_of_ctc,
             "total_reimbursement_amount": assignment_doc.custom_total_reimbursement_amount,
+            "fixed_gross":assignment_doc.custom_fixed_gross_annual,
             "monthly_ctc": monthly_ctc,
-            "annual_ctc": monthly_ctc * 12,
+            "annual_ctc": annual_ctc,
             "net_pay": net_pay,
             "gross_pay": gross_pay,
             "total_deduction": total_deduction
@@ -128,6 +141,7 @@ def address_details(user_id):
             }
 
         addresses = frappe.get_all(
+
             "Address",
             filters={"custom_employee": employee_name},
             fields=[
@@ -137,7 +151,7 @@ def address_details(user_id):
         )
 
         # Default empty structure
-        default_address = {
+        default_address = { 
             "name": "",
             "address_title": "",
             "address_line1": "",

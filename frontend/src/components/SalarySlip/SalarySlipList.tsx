@@ -179,8 +179,8 @@ const SalarySlipsList = () => {
                   <div className="my-table-header-text flex-1 min-w-0">Employee</div>
                   <div className="my-table-header-text flex-1 min-w-0 text-center">Start Date</div>
                   <div className="my-table-header-text flex-1 min-w-0 text-center">End Date</div>
-                  <div className="my-table-header-text flex-1 min-w-0 text-center">Posting Date</div>
                   <div className="my-table-header-text flex-1 min-w-0 text-center">Gross Pay</div>
+                  <div className="my-table-header-text flex-1 min-w-0 text-center">Net Pay</div>
                   <div className="my-table-header-text w-24 text-center">Actions</div>
                 </div>
               </div>
@@ -224,8 +224,8 @@ const SalarySlipItem: React.FC<{
         </div>
         <div className="text-sm text-gray-600 space-y-1">
           <p className="font-medium">
-            Gross Pay:{" "}
-            {maskSalary ? <span className="blur-sm select-none">XXXXXXXXX</span> : <span>{formatCurrency(item.gross_pay)}</span>}
+            Net Pay:{" "}
+            {maskSalary ? <span className="blur-sm select-none">XXXXXXXXX</span> : <span>{formatCurrency(item.net_pay)}</span>}
           </p>
         </div>
       </div>
@@ -283,9 +283,11 @@ const SalarySlipItemDesktop: React.FC<{
         <div className="my-data-cell flex-1 min-w-0 font-medium truncate">{item.employee}</div>
         <div className="my-data-cell flex-1 min-w-0 text-center">{formatToIndianDate(item.start_date)}</div>
         <div className="my-data-cell flex-1 min-w-0 text-center"><span className="font-medium">{formatToIndianDate(item.end_date)}</span></div>
-        <div className="my-data-cell flex-1 min-w-0 text-center"><span className="font-medium">{formatToIndianDate(item.posting_date)}</span></div>
         <div className="my-data-cell flex-1 min-w-0 text-center">
-          {maskSalary ? <span className="blur-sm select-none text-gray-400">₹XX,XXX</span> : <span className="font-medium">{formatCurrency(item.gross_pay)}</span>}
+        {maskSalary ? <span className="blur-sm select-none text-gray-400">₹XX,XXX</span> : <span className="font-medium">{formatCurrency(item.gross_pay)}</span>}
+        </div>
+        <div className="my-data-cell flex-1 min-w-0 text-center">
+          {maskSalary ? <span className="blur-sm select-none text-gray-400">₹XX,XXX</span> : <span className="font-medium">{formatCurrency(item.net_pay)}</span>}
         </div>
         <div className="my-data-cell w-24 flex items-center justify-center gap-2">
           {/* CHANGED: Using .my-btn-icon */}

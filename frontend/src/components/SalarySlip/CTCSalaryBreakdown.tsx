@@ -16,6 +16,10 @@ const CTCSalaryUI = () => {
     isLoading: isSalaryLoading,
     isError,
   } = useGenerateSalarySlip(employeeId);
+  const annual_reimbursement_amount = (salarySlip?.total_reimbursement_amount || 0) * 12;
+
+  console.log(salarySlip?.total_reimbursement_amount,"jkshadfasjkdfhkajhjs")
+
 
   const { viewMode } = useViewMode();
   const activeTab = viewMode;
@@ -23,31 +27,7 @@ const CTCSalaryUI = () => {
   const [isMoneyMasked, setIsMoneyMasked] = useState(true);
 
   const isLoading = isEmpLoading || isSalaryLoading;
-
-  const earnings = useMemo(() => {
-    if (!salarySlip?.component_part_of_ctc) return [];
-    return salarySlip.component_part_of_ctc.filter(
-      (comp) => comp.type === 'Earning' || comp.type === 'Reimbursement'
-    );
-  }, [salarySlip]);
-
-  const ctcData = useMemo(() => {
-    return earnings.reduce((acc, curr) => {
-      acc[curr.component] = curr.annual_amount;
-      return acc;
-    }, {} as Record<string, number>);
-  }, [earnings]);
-
-  const pf = salarySlip?.total_deduction || 0;
-  const totalCTC = useMemo(
-    () => Object.values(ctcData).reduce((sum, value) => sum + value, 0),
-    [ctcData]
-  );
-
-  const takeHome = totalCTC - (pf * 12);
-  const monthlyTakeHome = takeHome / 12;
-  const grossMonthly = totalCTC / 12;
-
+  
   const formatCurrency = (amount: number | bigint) => {
     const formattedAmount = new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -56,7 +36,6 @@ const CTCSalaryUI = () => {
     }).format(amount);
 
     if (isMoneyMasked) {
-      // Generate masked string with proper length
       const maskedText = '₹ ' + 'X'.repeat(Math.max(4, formattedAmount.length - 2));
       return (
         <span className="relative inline-block">
@@ -81,21 +60,11 @@ const CTCSalaryUI = () => {
 
   const monthlyComponents = useMemo(() => {
     if (!salarySlip?.component_part_of_ctc) return [];
-    const baseComponents = salarySlip.component_part_of_ctc.map((comp) => ({
+    return salarySlip.component_part_of_ctc.map((comp) => ({
       label: comp.component,
       value: comp.amount,
       type: comp.type === 'Deduction' ? 'deduction' : 'income',
     }));
-
-    if (salarySlip.total_deduction) {
-      baseComponents.push({
-        label: 'PF Deduction',
-        value: salarySlip.total_deduction,
-        type: 'deduction',
-      });
-    }
-
-    return baseComponents;
   }, [salarySlip]);
 
   if (isLoading) {
@@ -150,7 +119,7 @@ const CTCSalaryUI = () => {
                 </h2>
               </div>
               <p className={`text-2xl font-bold text-blue-600 mb-2 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
-                {formatCurrency(totalCTC)}
+                {formatCurrency(salarySlip?.annual_ctc || 0)}
               </p>
               <p className="text-gray-500">
                 Cost to Company (Per Annum)
@@ -163,9 +132,9 @@ const CTCSalaryUI = () => {
                 Annual CTC Breakdown
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {salaryComponents.map((component) => (
+                {salaryComponents.map((component, index) => (
                   <div
-                  key={`${component.label}-${component.value}`}
+                    key={`${component.label}-${index}`}
                     className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                   >
                     <h4 className="font-medium text-gray-800">
@@ -192,7 +161,7 @@ const CTCSalaryUI = () => {
                 </h2>
               </div>
               <p className={`text-2xl font-bold text-green-600 mb-2 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
-                {formatCurrency(monthlyTakeHome)}
+                {formatCurrency(salarySlip?.net_pay || 0)}
               </p>
               <p className="text-gray-500">In-hand Salary (Per Month)</p>
             </div>
@@ -204,22 +173,29 @@ const CTCSalaryUI = () => {
               </h3>
 
               <div className="space-y-4 mb-6">
-                {monthlyComponents.map((component) => (
+                {monthlyComponents.map((component, index) => (
                   <div
-                    key={`${component.label}`}
-                    className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg"
+                    key={`${component.label}-${index}`}
+                    className="flex justify-between items-center py-3 px-4 bg-green-50 rounded-lg"
                   >
                     <span className="font-medium text-gray-800">
                       {component.label}
                     </span>
-                    <span
-                      className={`font-bold ${component.type === 'deduction' ? 'text-red-600' : 'text-green-500'} ${isMoneyMasked ? 'transition-all duration-300' : ''}`}
-                    >
-                      {component.type === 'deduction' ? '-' : ''}
+                    <span className={`font-bold text-green-500 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
                       {formatCurrency(component.value)}
                     </span>
                   </div>
                 ))}
+                {(salarySlip?.total_deduction ?? 0) > 0 || (
+                  <div className="flex justify-between items-center py-3 px-4 bg-red-50 rounded-lg">
+                    <span className="font-medium text-gray-800">
+                      PF Deduction
+                    </span>
+                    <span className={`font-bold text-red-600 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
+                      -{formatCurrency(salarySlip?.total_deduction ?? 0)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -228,7 +204,7 @@ const CTCSalaryUI = () => {
                     Gross Monthly
                   </p>
                   <p className="text-xl font-bold text-blue-600">
-                    {formatCurrency(grossMonthly)}
+                    {formatCurrency(salarySlip?.gross_pay || 0)}
                   </p>
                   <p className="text-xs text-gray-500">Before deductions</p>
                 </div>
@@ -237,7 +213,7 @@ const CTCSalaryUI = () => {
                     Total Deductions
                   </p>
                   <p className="text-xl font-bold text-red-600">
-                    {formatCurrency(pf)}
+                    {formatCurrency(salarySlip?.total_deduction || 0)}
                   </p>
                   <p className="text-xs text-gray-500">PF contribution</p>
                 </div>
@@ -293,12 +269,12 @@ const CTCSalaryUI = () => {
           <div className="space-y-8">
             {/* Hero Card */}
             <div className="bg-emerald-50 rounded-xl z-1 shadow-lg p-6 text-gray-800 relative overflow-hidden border border-emerald-200">
-              <div className="absolute top-0 right-0 w-24 h-24  bg-opacity-30 rounded-full -translate-y-12 translate-x-12"></div>
+              <div className="absolute top-0 right-0 w-24 h-24 bg-opacity-30 rounded-full -translate-y-12 translate-x-12"></div>
               <div className="absolute bottom-0 left-0 w-16 h-16 bg-opacity-30 rounded-full translate-y-8 -translate-x-8"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12  bg-opacity-50 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-opacity-50 rounded-lg flex items-center justify-center">
                       <TrendingUp className="w-6 h-6 text-emerald-700" />
                     </div>
                     <div>
@@ -308,7 +284,7 @@ const CTCSalaryUI = () => {
                   </div>
                   <div className="text-right">
                     <p className={`text-3xl font-bold mb-2 text-emerald-700 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
-                      {formatCurrency(totalCTC)}
+                      {formatCurrency(salarySlip?.annual_ctc || 0)}
                     </p>
                     <div className="flex items-center gap-2 text-emerald-600">
                       <Target className="w-4 h-4" />
@@ -329,9 +305,9 @@ const CTCSalaryUI = () => {
                   <h3 className="text-xl font-bold text-gray-800">Component Breakdown</h3>
                 </div>
                 <div className="space-y-4">
-                  {salaryComponents.map((component) => (
+                  {salaryComponents.map((component, index) => (
                     <div
-                      key={`${component.label}-${component.value}`}
+                      key={`${component.label}-${index}`}
                       className="group flex justify-between items-center p-3 bg-gray-50 hover:bg-blue-50 rounded-lg transition-all duration-300 hover:shadow-sm"
                     >
                       <div className="flex items-center space-x-3">
@@ -355,20 +331,20 @@ const CTCSalaryUI = () => {
                     <Award className="w-8 h-8 text-purple-600" />
                     <span className="text-purple-600 text-xs font-medium">YEARLY</span>
                   </div>
-                  <h4 className="text-base font-semibold mb-2">Total Package Value</h4>
+                  <h4 className="text-base font-semibold mb-2">Fixed Gross (Annual)</h4>
                   <p className={`text-2xl font-bold text-purple-700 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
-                    {formatCurrency(totalCTC)}
+                    {formatCurrency(salarySlip?.fixed_gross || 0)}
                   </p>
                 </div>
 
                 <div className="bg-orange-50 rounded-xl shadow-lg p-4 text-orange-800 border border-orange-200">
                   <div className="flex items-center justify-between mb-3">
                     <Briefcase className="w-8 h-8 text-orange-600" />
-                    <span className="text-orange-600 text-xs font-medium">MONTHLY</span>
+                    <span className="text-orange-600 text-xs font-medium">YEARLY</span>
                   </div>
-                  <h4 className="text-base font-semibold mb-2">Monthly Equivalent</h4>
+                  <h4 className="text-base font-semibold mb-2">Total Reimbursement Aamount</h4>
                   <p className={`text-2xl font-bold text-orange-700 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
-                    {formatCurrency(totalCTC / 12)}
+                    {formatCurrency(annual_reimbursement_amount || 0)}
                   </p>
                 </div>
               </div>
@@ -381,12 +357,12 @@ const CTCSalaryUI = () => {
           <div className="space-y-8">
             {/* Hero Card */}
             <div className="bg-green-50 rounded-xl shadow-lg p-6 text-gray-800 relative overflow-hidden border border-green-200">
-              <div className="absolute top-0 right-0 w-24 h-24  bg-opacity-30 rounded-full -translate-y-12 translate-x-12"></div>
-              <div className="absolute bottom-0 left-0 w-16 h-16  bg-opacity-30 rounded-full translate-y-8 -translate-x-8"></div>
+              <div className="absolute top-0 right-0 w-24 h-24 bg-opacity-30 rounded-full -translate-y-12 translate-x-12"></div>
+              <div className="absolute bottom-0 left-0 w-16 h-16 bg-opacity-30 rounded-full translate-y-8 -translate-x-8"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12  bg-opacity-50 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-opacity-50 rounded-lg flex items-center justify-center">
                       <Wallet className="w-6 h-6 text-green-700" />
                     </div>
                     <div>
@@ -396,7 +372,7 @@ const CTCSalaryUI = () => {
                   </div>
                   <div className="text-right">
                     <p className={`text-3xl font-bold mb-2 text-green-700 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
-                      {formatCurrency(monthlyTakeHome)}
+                      {formatCurrency(salarySlip?.net_pay || 0)}
                     </p>
                     <div className="flex items-center gap-2 text-green-600">
                       <Target className="w-4 h-4" />
@@ -415,40 +391,38 @@ const CTCSalaryUI = () => {
                   <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center mr-3">
                     <Calculator className="w-5 h-5 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800"> Monthly Breakdown</h3>
+                  <h3 className="text-xl font-bold text-gray-800">Monthly Breakdown</h3>
                 </div>
                 <div className="space-y-4">
-                  {monthlyComponents.map((component,) => (
+                  {monthlyComponents.map((component, index) => (
                     <div
-                      key={`${component.label}`}
-                      className={`group flex justify-between items-center p-3 rounded-lg transition-all duration-300 hover:shadow-sm ${
-                        component.type === 'deduction'
-                          ? 'bg-red-50 hover:bg-red-100'
-                          : 'bg-green-50 hover:bg-green-100'
-                      }`}
+                      key={`${component.label}-${index}`}
+                      className="group flex justify-between items-center p-3 rounded-lg transition-all duration-300 hover:shadow-sm bg-green-50 hover:bg-green-100"
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`w-2 h-2 rounded-full transition-colors ${
-                          component.type === 'deduction'
-                            ? 'bg-red-500 group-hover:bg-red-600'
-                            : 'bg-green-500 group-hover:bg-green-600'
-                        }`}></div>
+                        <div className="w-2 h-2 rounded-full transition-colors bg-green-500 group-hover:bg-green-600"></div>
                         <span className="font-semibold text-gray-800">
-                          {component.type === 'deduction' ? '➖' : '➕'} {component.label}
+                          ➕ {component.label}
                         </span>
                       </div>
-                      <span
-                        className={`font-bold transition-colors ${
-                          component.type === 'deduction'
-                            ? 'text-red-600 group-hover:text-red-700'
-                            : 'text-green-600 group-hover:text-green-700'
-                        } ${isMoneyMasked ? 'transition-all duration-300' : ''}`}
-                      >
-                        {component.type === 'deduction' ? '-' : ''}
+                      <span className={`font-bold transition-colors text-green-600 group-hover:text-green-700 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
                         {formatCurrency(component.value)}
                       </span>
                     </div>
                   ))}
+                  {(salarySlip?.total_deduction ?? 0) < 0 && (
+                    <div className="group flex justify-between items-center p-3 rounded-lg transition-all duration-300 hover:shadow-sm bg-red-50 hover:bg-red-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-2 h-2 rounded-full transition-colors bg-red-500 group-hover:bg-red-600"></div>
+                        <span className="font-semibold text-gray-800">
+                          ➖ PF Deduction
+                        </span>
+                      </div>
+                      <span className={`font-bold transition-colors text-red-600 group-hover:text-red-700 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
+                        -{formatCurrency(salarySlip?.total_deduction ?? 0)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -461,7 +435,7 @@ const CTCSalaryUI = () => {
                   </div>
                   <h4 className="text-base font-semibold mb-2">💵 Gross Monthly</h4>
                   <p className={`text-xl font-bold text-blue-700 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
-                    {formatCurrency(grossMonthly)}
+                    {formatCurrency(salarySlip?.gross_pay || 0)}
                   </p>
                   <p className="text-blue-600 text-xs mt-2">Before deductions</p>
                 </div>
@@ -473,7 +447,7 @@ const CTCSalaryUI = () => {
                   </div>
                   <h4 className="text-base font-semibold mb-2">➖ Total Deductions</h4>
                   <p className={`text-xl font-bold text-red-700 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
-                    {formatCurrency(pf)}
+                    {formatCurrency(salarySlip?.total_deduction || 0)}
                   </p>
                   <p className="text-red-600 text-xs mt-2">PF contribution</p>
                 </div>
@@ -485,7 +459,7 @@ const CTCSalaryUI = () => {
                   </div>
                   <h4 className="text-base font-semibold mb-2">💰 Take Home</h4>
                   <p className={`text-xl font-bold text-emerald-700 ${isMoneyMasked ? 'transition-all duration-300' : ''}`}>
-                    {formatCurrency(monthlyTakeHome)}
+                    {formatCurrency(salarySlip?.net_pay || 0)}
                   </p>
                   <p className="text-emerald-600 text-xs mt-2">In your account</p>
                 </div>
@@ -497,7 +471,7 @@ const CTCSalaryUI = () => {
     </div>
   );
 
-  return isDesktop ? <DesktopLayout /> : <MobileLayout />
+  return isDesktop ? <DesktopLayout /> : <MobileLayout />;
 };
 
 export default CTCSalaryUI;
