@@ -1,159 +1,92 @@
-import { useState } from "react";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import FrappeListView from "../ListView";
+import React from "react";
+import { useShiftAssignments } from "../../hooks/useShiftAssignments";
+import formatToIndianDate, {
+  formatEndDate,
+} from "../../utils/formatToIndianDate";
+import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
+import { StatusBadge } from "./AllShiftsDashboard";
 
-interface ShiftAssignmentItem {
-  name: string;
-  employee: string;
-  shift_type: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-  modified: string;
-}
-
-const formatToIndianDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}-${month}-${year}`;
-};
-
-const getShiftStatusLabel = (startDate: string, endDate: string): string => {
+const getShiftStatus = (startDate: string, endDate?: string): string => {
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const start = new Date(startDate);
-  const end = new Date(endDate);
+  start.setHours(0, 0, 0, 0);
 
-  const todayDate = today.toISOString().split("T")[0];
-  const startDateOnly = start.toISOString().split("T")[0];
-  const endDateOnly = end.toISOString().split("T")[0];
-
-  if (todayDate < startDateOnly) {
-    return "Upcoming Shift";
-  } else if (todayDate > endDateOnly) {
-    return "Previous Shift";
-  } else {
-    return "Current Shift";
+  let end: Date | null = null;
+  if (endDate) {
+    end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
   }
+
+  if (!end) {
+    if (today >= start) return "Current";
+    return "Upcoming";
+  }
+
+  if (today < start) return "Upcoming";
+  if (today > end) return "Previous";
+  return "Current";
 };
 
-const ShiftAssignmentItem = ({ item }: { item: ShiftAssignmentItem }) => {
-  const shiftLabel = getShiftStatusLabel(item.start_date, item.end_date);
+const ShiftAssignmentItem: React.FC<{ item: ApiShiftAssignment }> = ({
+  item,
+}) => {
+  const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-3">
-      <div>
-        <h3
-          className={`text-xs font-semibold tracking-wide uppercase ${
-            shiftLabel === "Current Shift"
-              ? "text-green-600"
-              : shiftLabel === "Upcoming Shift"
-              ? "text-blue-600"
-              : "text-gray-500"
-          }`}
-        >
-          {shiftLabel}
-        </h3>
-
-        <div className="flex justify-between items-center mt-1">
-          <h2 className="text-base font-semibold text-black">
+    <div className="w-full px-1">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
+        <div className="flex justify-between items-start mb-2">
+          <h2 className="text-base font-semibold text-gray-900 mb-1">
             {item.shift_type}
           </h2>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-        <div className="flex gap-1">
-          <span className="text-gray-500">From:</span>
-          <span className="font-medium text-black">
-            {formatToIndianDate(item.start_date)}
+          <span className="text-xs text-gray-500">
+            <StatusBadge status={shiftStatus} />
           </span>
         </div>
-        <div className="flex gap-1">
-          <span className="text-gray-500">To:</span>
-          {shiftLabel === "Current Shift" ? (
-            <span className="font-medium text-black">Present</span>
-          ) : (
-            <span className="font-medium text-black">
-              {formatToIndianDate(item.end_date)}
+        <div className="flex justify-between text-sm">
+          <div className="flex flex-col">
+            <span className="text-gray-500 font-bold">Date</span>
+            <span className="font-medium text-gray-900">
+              {`${formatToIndianDate(item.start_date)} - ${formatEndDate(
+                item.end_date
+              )}`}
             </span>
-          )}
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-gray-500 font-bold">Time</span>
+            <span className="font-medium text-gray-900">
+              {`${item.start_time} - ${item.end_time}`}
+            </span>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default function MyShiftAssignment() {
-  const { data: user_id } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(user_id || "");
-  const employee_id = user?.employee;
+const MyShiftAssignment: React.FC = () => {
+  const { data } = useShiftAssignments();
 
-  const [shiftFilter, setShiftFilter] = useState("All");
-
-  if (!employee_id) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600">Loading employee data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Apply filter logic
-  const filters: Record<string, unknown> = { employee: employee_id };
-  const today = new Date().toISOString().split("T")[0];
-
-  if (shiftFilter === "Current Shift") {
-    filters.start_date = ["<=", today];
-    filters.end_date = [">=", today];
-  } else if (shiftFilter === "Previous Shift") {
-    filters.end_date = ["<", today];
-  } else if (shiftFilter === "Upcoming Shift") {
-    filters.start_date = [">", today];
-  }
+  // ✅ Only show self shifts
+  const myShifts = data?.filter((shift) => shift.is_self === 1) ?? [];
 
   return (
-    <div className="flex flex-col mb-24 gap-4">
-      <FrappeListView<ShiftAssignmentItem>
-        doctype="Shift Assignment"
-        ItemComponent={ShiftAssignmentItem}
-        isSearch={true}
-        searchFields={["employee_name", "shift_type"]}
-        isFilter={false}
-        showRefereshButton={true}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        defaultFilters={filters as any}
-        infiniteScroll={true}
-        PreListComponent={() => (
-          <div className="flex justify-start mb-3">
-            <select
-              className="border border-gray-300 rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={shiftFilter}
-              onChange={(e) => setShiftFilter(e.target.value)}
-            >
-              <option value="All">All Shifts</option>
-              <option value="Current Shift">Current Shift</option>
-              <option value="Previous Shift">Previous Shift</option>
-              <option value="Upcoming Shift">Upcoming Shift</option>
-            </select>
+    <div className="w-full mx-auto pb-20">
+      <div className="mt-4">
+        {myShifts.length > 0 ? (
+          myShifts.map((shift) => (
+            <ShiftAssignmentItem key={shift.name} item={shift} />
+          ))
+        ) : (
+          <div className="p-6 text-center text-gray-500">
+            No shifts found for you.
           </div>
         )}
-        defaultFields={[
-          "name",
-          "employee",
-          "shift_type",
-          "start_date",
-          "end_date",
-          "status",
-          "modified",
-        ]}
-        permissionErrorMessage="You don't have permission to view shift assignments"
-      />
+      </div>
     </div>
   );
-}
+};
+
+export default MyShiftAssignment;
