@@ -67,7 +67,7 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
           onClose?.();
           setTimeout(() => {
             setRefetchAttendance(true);
-          }, 2000);
+          }, 1000);
           navigate("/webapp/shift-request/shift-list");
         },
         onError: () => {
