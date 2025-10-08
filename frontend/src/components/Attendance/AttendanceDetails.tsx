@@ -25,7 +25,7 @@ export function AttendanceDetailView({
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const getStatus = (status: string) => {
-    if (status === "Pending") {
+    if (status === "Pending" || status === "Open") {
       return {
         label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-600",
@@ -223,8 +223,9 @@ export function AttendanceDetailView({
           )}
           <div className="py-4">
             <p className="text-sm  mb-2 font-bold">Reason</p>
-
-            {data?.reference_document?.reason}
+            {label === "Leave Application"
+              ? data?.reference_document?.custom_reason
+              : data?.reference_document?.reason}
           </div>
           {/* explanation */}
           <div className="py-4">
@@ -244,36 +245,37 @@ export function AttendanceDetailView({
         </div>
 
         {/* Actions */}
-        {actions?.length > 0 && data?.status === "Pending" && (
-          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-            <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-              {actions?.length &&
-                actions?.map((action: string) => {
-                  const isLoading =
-                    currentAction === action && mutation.isPending;
-                  return (
-                    <Button
-                      key={action}
-                      fullWidth
-                      disabled={isLoading}
-                      onClick={() => {
-                        handleAction(action);
-                      }}
-                      size="md"
-                      bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
-                    >
-                      {isLoading ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  );
-                })}
+        {actions?.length > 0 &&
+          (data?.status === "Pending" || data?.status === "Open") && (
+            <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+                {actions?.length &&
+                  actions?.map((action: string) => {
+                    const isLoading =
+                      currentAction === action && mutation.isPending;
+                    return (
+                      <Button
+                        key={action}
+                        fullWidth
+                        disabled={isLoading}
+                        onClick={() => {
+                          handleAction(action);
+                        }}
+                        size="md"
+                        bgColor={getActionStyles(action).bg}
+                        textColor={getActionStyles(action).text}
+                      >
+                        {isLoading ? (
+                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          action
+                        )}
+                      </Button>
+                    );
+                  })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </div>
   ) : null;

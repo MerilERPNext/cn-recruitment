@@ -81,7 +81,7 @@ const ApprovalCard = ({
   const gridTemplateColumns = "5% 15% 10% 8% 8% 8% 10% 20%";
 
   const getStatus = (status: string) => {
-    if (status === "Pending") {
+    if (status === "Pending" || status === "Open") {
       return {
         label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-600",
