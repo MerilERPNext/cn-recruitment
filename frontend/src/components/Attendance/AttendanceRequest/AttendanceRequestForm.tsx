@@ -1,7 +1,14 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import {
+  useCheckAttachmentMandatory,
   useCreateNewAttendanceRequest,
   useGetEmployeeShift,
   useGetUserRoles,
@@ -20,6 +27,7 @@ import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import DOMPurify from "dompurify";
+import { format } from "date-fns";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -60,14 +68,18 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
 }) => {
+  const [isAttachmentRequired, setIsAttachmentRequired] = useState(false);
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
+
   const [formData, setFormData] = useState<AttendanceFormData>();
+
   const [isForOthers, setIsForOthers] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+
   const { data: employeeReporteeList } = useEmployeeReportees();
   const { data: userRoles } = useGetUserRoles();
   const { data: shiftList } = useShiftTypes();
@@ -112,15 +124,36 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const handleRequestTypeChange = useCallback(
     (event: { data: { request_type: string } }) => {
       const requestType = event?.data?.request_type || "";
-      setSelectedRequestType(requestType);
+      if (
+        requestType === "Short Attendance Request" ||
+        requestType === "Out Duty"
+      ) {
+         setSelectedRequestType(
+           requestType === "Out Duty" ? "Out Duty Request" : requestType
+         );
+          
+      }
     },
     []
   );
+
+  const { data: attachmentRequirement } = useCheckAttachmentMandatory(
+    currentEmployee?.employee,
+    format(new Date(), "yyyy-dd-MM"),
+    selectedRequestType
+  );
+
+  useEffect(() => {
+    if (attachmentRequirement) {
+      setIsAttachmentRequired(attachmentRequirement?.is_mandatory);
+    }
+  }, [attachmentRequirement]);
 
   const mutation = useCreateNewAttendanceRequest();
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
     currentEmployee?.employee as string
   );
+
 
   const handleFromDateChange = (event: { data: AttendanceFormData }) => {
     const formInstance = formAddressInstance.current;
@@ -595,6 +628,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             type: "file",
             input: true,
             multiple: false,
+            validate: {
+              required: isAttachmentRequired,
+            },
             tooltip: "Upload receipts or supporting documents.",
           },
         ],
@@ -621,6 +657,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       selectedRequestType,
       reqValidationmutation,
       employeeShift,
+      isAttachmentRequired,
     ]
   );
 
