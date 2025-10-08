@@ -25,6 +25,7 @@ import {
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { ROUTES } from "../../constants/routes";
+import useCurrentUser from "../../hooks/useCurrentUser";
 
 interface SubSubMenuItem {
   name: string;
@@ -93,9 +94,34 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     window.open(ROUTES.TODO, "_blank");
   };
 
+  // const handleHelpDeskClick = () => {
+  //   window.open(ROUTES.HELP_DESK, "_blank");
+  // };
+
   const handleHelpDeskClick = () => {
-    window.open(ROUTES.HELP_DESK, "_blank");
+    if (!currentUser?.roles) {
+      window.open(ROUTES.HELP_DESK, "_blank");
+      return;
+    }
+
+    const rolesArray =
+      Array.isArray(currentUser.roles) &&
+      typeof currentUser.roles[0] === "object"
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          currentUser.roles.map((r: any) => r.role)
+        : currentUser.roles;
+
+    const isAgentOrManager =
+      rolesArray.includes("Agent") || rolesArray.includes("Agent Manager");
+
+    const routeToOpen = isAgentOrManager
+      ? ROUTES.HELP_DESK_ADMIN
+      : ROUTES.HELP_DESK;
+    window.open(routeToOpen, "_blank");
   };
+
+  const { data: currentUser } = useCurrentUser();
+  console.log("Current User in Sidebar:", currentUser?.roles);
 
   const navigationItems: NavigationItem[] = [
     {
