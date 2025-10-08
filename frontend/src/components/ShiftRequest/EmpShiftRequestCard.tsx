@@ -11,7 +11,7 @@ import { MyShiftRequest } from "../../types/shift";
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
-  const { setRefetchShift } = useGlobalStore();
+  const { setRefetchAttendance } = useGlobalStore();
 
   const handleEditClick = () => {
     window.location.href = `/app/shift-request/${data.reference_name}`;
@@ -27,7 +27,9 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
         },
         {
           onSuccess: () => {
-            setRefetchShift(true);
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 2000);
           },
         }
       );
@@ -90,7 +92,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           {/* Status */}
           <div className="flex justify-start">
             <Tooltip
-              content={status?.label === "Pending" ? data?.allocated_to : ""}
+              content={status?.label === "Draft" ? data?.allocated_to : ""}
             >
               <Badge
                 size="sm"
