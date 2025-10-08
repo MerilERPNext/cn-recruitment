@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { RequestCard } from "../Attendance/TeamAttendanceDetails/RequestCard";
 import { MyAttendanceRequest } from "../../types/attendance";
-import { AttendanceDetailView } from "../Attendance/AttendanceDetails";
+//import { AttendanceDetailView } from "../Attendance/AttendanceDetails";
 import { useNavigate } from "react-router";
 import ApprovalList from "../shared/ApprovalList";
 import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
@@ -9,6 +9,7 @@ import CardTable from "../shared/CardTable";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import DataListView from "../DataListView";
+import { LeaveDetailView } from "./LeaveDetails";
 
 type LoadingAction = {
   id: string;
@@ -158,7 +159,7 @@ const TeamLeaveRequest = () => {
       </div>
 
       {selectedRequest && (
-        <AttendanceDetailView
+        <LeaveDetailView
           label="Leave Application"
           data={selectedRequest}
           onClose={() => setSelectedRequest(null)}

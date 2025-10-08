@@ -8,7 +8,7 @@ import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
 
-export function AttendanceDetailView({
+export function LeaveDetailView({
   data,
   onClose,
   onAction,
@@ -61,14 +61,8 @@ export function AttendanceDetailView({
           name: data?.todo_id || "",
         });
 
-        console.log("Action response:", response);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
-        console.log(
-          "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action
-        );
 
         if (
           (data?.custom_approval_type === "Approval Matrix" &&
@@ -76,10 +70,6 @@ export function AttendanceDetailView({
           (data?.custom_approval_type === "Multi Actions" &&
             data?.custom_open_chatnext_assistant_on_action)
         ) {
-          console.log(
-            "Opening assistant with session:",
-            responseWithSession?.session
-          );
           if (window.trigger_chatnext_assistant) {
             window.trigger_chatnext_assistant(
               true,
@@ -169,7 +159,7 @@ export function AttendanceDetailView({
           <div className="flex gap-2 justify-center items-center">
             <h2 className="text-lg font-semibold text-gray-800">
               {label} -
-              <span className="font=md"> {data?.reference_document?.name}</span>
+              <span className="font-md"> {data?.reference_document?.name}</span>
             </h2>
           </div>
           <button
