@@ -13,9 +13,9 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchShift } = useGlobalStore();
 
-  // const handleEditClick = () => {
-  //   window.location.href = `/app/shift-request/${data.reference_name}`;
-  // };
+  const handleEditClick = () => {
+    window.location.href = `/app/shift-request/${data.reference_name}`;
+  };
 
   const handleRevokeClick = () => {
     if (data?.todo_id) {
@@ -107,7 +107,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 icon={<Pencil className="h-3 w-3" />}
                 variant="outline"
                 size="sm"
-                
+                onClick={handleEditClick}
               >
                 Edit
               </Button>
@@ -127,63 +127,77 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           )}
         </div>
       ) : (
-        <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
-          <div className="p-2 w-full ">
-            <div className=" flex items-start justify-between gap-4">
-              <div className="flex gap-1 flex-col">
-                <div className="flex gap-2">
-                  {data?.reference_document?.shift_type}
-                  <Badge
-                    size="sm"
-                    backgroundColor={status?.statusColor}
-                    label={status?.label || ""}
-                  />
+        <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer">
+          {/* Top Section: Shift Type + Status */}
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="text-base font-semibold text-gray-900 truncate">
+              {data?.reference_document?.shift_type || "--"}
+            </h3>
+            <Badge
+              size="sm"
+              backgroundColor={status?.statusColor}
+              label={status?.label || ""}
+            />
+          </div>
+
+          {/* Two-column Info Layout */}
+          <div className="flex justify-between gap-6">
+            {/* Left Column */}
+            <div>
+              <div>
+                <div className="text-xs text-gray-500">Employee</div>
+                <div className="font-medium text-sm text-gray-800">
+                  {data?.reference_document?.employee_name || "--"}
                 </div>
-                <div className="text-sm text-gray-500">
-                  {data?.reference_document?.from_date
-                    ? format(
-                        new Date(data?.reference_document?.from_date),
-                        "dd/MM/yyyy"
-                      )
-                    : "N/A"}
-                  {data?.reference_document?.to_date
-                    ? ` - ${format(
-                        new Date(data?.reference_document?.to_date),
-                        "dd/MM/yyyy"
-                      )}`
-                    : "N/A"}
-                </div>
-                {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
-              <div className="text-sm text-gray-900 text-start flex gap-2">
-                {data?.custom_allow_revoke &&
-                data?.reference_document?.status === "Draft" ? (
-                  <div className="flex gap-2">
-                    {/* ✨ ADD THE EDIT BUTTON HERE */}
-                    <Button
-                      icon={<Pencil className="h-3 w-3" />}
-                      variant="outline"
-                      size="sm"
-                      
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      icon={<RotateCcw className="h-3 w-3" />}
-                      variant="contain"
-                      size="sm"
-                      onClick={handleRevokeClick}
-                      disabled={revokeEventMutation.isPending}
-                    >
-                      {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                    </Button>
-                  </div>
-                ) : (
-                  <></>
-                )}
+              <div className="mt-2">
+                <div className="text-xs text-gray-500">Shift Type</div>
+                <div className="font-medium text-sm text-gray-800">
+                  {data?.reference_document?.shift_type || "--"}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="text-right">
+              <div>
+                <div className="text-xs text-gray-500">From</div>
+                <div className="font-medium text-sm text-gray-800">
+                  {formattedFromDate}
+                </div>
+              </div>
+              <div className="mt-2">
+                <div className="text-xs text-gray-500">To</div>
+                <div className="font-medium text-sm text-gray-800">
+                  {formattedToDate}
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Action Buttons */}
+          {data?.custom_allow_revoke &&
+          data?.reference_document?.status === "Draft" ? (
+            <div className="flex flex-wrap justify-start gap-2 mt-4">
+              <Button
+                icon={<Pencil className="h-3 w-3" />}
+                variant="outline"
+                size="sm"
+                onClick={handleEditClick}
+              >
+                Edit
+              </Button>
+              <Button
+                icon={<RotateCcw className="h-3 w-3" />}
+                variant="contain"
+                size="sm"
+                onClick={handleRevokeClick}
+                disabled={revokeEventMutation.isPending}
+              >
+                {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
+              </Button>
+            </div>
+          ) : null}
         </div>
       )}
     </>
