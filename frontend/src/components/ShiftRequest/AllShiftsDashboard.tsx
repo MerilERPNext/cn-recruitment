@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ApprovalList from "../shared/ApprovalList";
 import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
-import formatToIndianDate, { formatEndDate } from "../../utils/formatToIndianDate";
+import formatToIndianDate, {
+  formatEndDate,
+} from "../../utils/formatToIndianDate";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -14,12 +16,19 @@ import DataListView from "../DataListView";
 import CardTable from "../shared/CardTable";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
+import { ShiftDetailView } from "./ShiftDetailView";
+
+type LoadingAction = {
+  id: string;
+  action: string;
+};
 
 export const StatusBadge = ({ status }: { status: string }) => {
   const baseStyle = "px-2 py-1 rounded-2xl text-xs inline-block";
   const statusStyles: { [key: string]: string } = {
     Open: "bg-blue-100 text-blue-800",
     Pending: "bg-yellow-100 text-yellow-800",
+    Draft: "bg-yellow-100 text-yellow-800",
     Rejected: "bg-red-100 text-red-800",
     Completed: "bg-blue-100 text-blue-800",
     Current: "bg-emerald-100 text-emerald-700 border border-emerald-200",
@@ -67,7 +76,6 @@ const CardHeader = ({
   </div>
 );
 
-
 const MyShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
@@ -86,7 +94,6 @@ const MyShiftItem: React.FC<{
     }
 
     if (!end) {
-      // Missing end date → treat as ongoing
       if (today >= start) return "Current";
       return "Upcoming";
     }
@@ -98,7 +105,6 @@ const MyShiftItem: React.FC<{
 
   const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
-  // CHANGED: Using the reusable .my-list-item-card class
   return (
     <li className="my-list-item-card">
       <div className="text-xs text-gray-600">
@@ -160,7 +166,6 @@ const TeamShiftItem: React.FC<{
     }
   };
 
-  // CHANGED: Using the reusable .my-list-item-card class
   return (
     <div className="my-list-item-card">
       <div className="flex-grow">
@@ -222,7 +227,11 @@ const AllMyShiftRequestsList = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name ?? ""
   );
-  const { refetchShift, setRefetchShift } = useGlobalStore();
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+
+  const handleRefetchComplete = useCallback(() => {
+    setRefetchAttendance(false);
+  }, [setRefetchAttendance]);
   const CardSkeleton = () => (
     <div className="rounded-xl bg-gray-100 animate-pulse my-4">
       <div className="px-4 py-2">
@@ -240,7 +249,6 @@ const AllMyShiftRequestsList = () => {
   return (
     <>
       <div className="bg-white p-6 rounded-lg mt-6">
-        {/* Pending */}
         <CardHeader
           title="My Shift Requests"
           onSeeAll={() => navigate("/webapp/shift-request/shift-list")}
@@ -271,10 +279,8 @@ const AllMyShiftRequestsList = () => {
               onItemClick={(data) => {
                 console.log(data);
               }}
-              onRefetchComplete={() => {
-                setRefetchShift(false);
-              }}
-              refetchTrigger={refetchShift}
+              onRefetchComplete={handleRefetchComplete}
+              refetchTrigger={refetchAttendance}
               isSearch={false}
               isFilter={false}
               pageSize={4}
@@ -295,8 +301,16 @@ const AllMyShiftRequestsList = () => {
 
 export default function AllShiftsDashboard() {
   const navigate = useNavigate();
-  const [refetch, setRefetch] = useState(false);
-  const { refetchShift } = useGlobalStore();
+  const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+
+  const handleApprovalRefetchComplete = useCallback(() => {
+    setRefetchApprovalList(false);
+  }, []);
+
+  const [selectedRequest, setSelectedRequest] = useState<
+    (MyShiftRequest & { loadingAction?: LoadingAction }) | null
+  >(null);
+
   return (
     <div className="bg-gray-100 min-h-screen font-sans text-sm">
       <main className="p-4 sm:p-6 lg:p-8">
@@ -310,49 +324,65 @@ export default function AllShiftsDashboard() {
                 }
               />
               <div className="border border-gray-200 rounded-lg overflow-x-auto">
-                <div className="overflow-x-auto bg-white shadow-sm w-full">
-                  {/* CHANGED: Using .my-table-header and .my-table-header-text */}
-                  <div className="my-table-header grid grid-cols-7 gap-4 rounded-t-lg w-full">
-                    <span className="my-table-header-text flex items-center">
-                      SELECT
-                    </span>
-                    <span className="my-table-header-text flex items-center">
-                      DESCRIPTION
-                    </span>
-                    <span className="my-table-header-text flex items-center">
-                      CREATION DATE
-                    </span>
-                    <span className="my-table-header-text flex items-center">
-                      STATUS
-                    </span>
-                    <span className="my-table-header-text flex items-center">
-                      PRIORITY
-                    </span>
-                    <span className="my-table-header-text flex items-center">
-                      DUE DATE
-                    </span>
-                    <span className="my-table-header-text flex items-center">
-                      ACTIONS
-                    </span>
-                  </div>
-                </div>
-                <ApprovalList
-                  doctype={"Shift Request"}
-                  pageSize={4}
-                  showPagination={false}
-                  refetch={refetchShift || refetch}
-                  onApprovalRefetchComplete={() => setRefetch(false)}
-                  renderCardContent={(item) => (
-                    <ApprovalRejectionQueue
-                      isSelected={item?.isSelected}
-                      onToggleSelect={item?.onToggleSelect}
-                      data={item?.data}
-                      onAction={item?.onAction}
-                    />
-                  )}
-                />
+                <CardTable
+                  titles={[
+                    "Select",
+                    "Id",
+                    "Employeee",
+                    "Shift Type",
+                    "From Date",
+                    "To Date",
+                    "Status",
+                    "Actions",
+                  ]}
+                  columnWidths={[
+                    "5%",
+                    "15%",
+                    "10%",
+                    "8%",
+                    "8%",
+                    "8%",
+                    "10%",
+                    "20%",
+                  ]}
+                >
+                  <ApprovalList
+                    status="Draft"
+                    doctype={"Shift Request"}
+                    pageSize={4}
+                    showPagination={false}
+                    refetch={refetchApprovalList}
+                    setRefetch={setRefetchApprovalList}
+                    onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                    renderCardContent={(item) => (
+                      <ApprovalRejectionQueue
+                        isSelected={item?.isSelected}
+                        onToggleSelect={item?.onToggleSelect}
+                        data={item?.data}
+                        onAction={item?.onAction}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        onClick={(request: any) =>
+                          setSelectedRequest({
+                            ...request,
+                            loadingAction: item?.loadingAction,
+                          })
+                        }
+                        loadingAction={item?.loadingAction}
+                      />
+                    )}
+                  />
+                </CardTable>
               </div>
             </Card>
+            {selectedRequest && (
+              <ShiftDetailView
+                data={selectedRequest}
+                onClose={() => setSelectedRequest(null)}
+                onAction={() => {
+                  setSelectedRequest(null);
+                }}
+              />
+            )}
 
             <AllMyShiftRequestsList />
           </div>
