@@ -2350,7 +2350,7 @@
    "field_name": "boarding_status",
    "idx": 0,
    "is_system_generated": 0,
-   "modified": "2025-10-06 14:41:52.732859",
+   "modified": "2025-10-08 15:04:29.628211",
    "modified_by": "Administrator",
    "module": null,
    "name": "Employee Separation-boarding_status-options",
@@ -2358,7 +2358,7 @@
    "property": "options",
    "property_type": "Select",
    "row_name": null,
-   "value": "\nPending\nReporting Manager Approved\nReporting Manager Rejected\nSr. Reporting Manager Approved\nSr. Reporting Manager Rejected\nExit Interview Completed\nNDC In-Progress\nCompleted"
+   "value": "Resignation Submitted\nReporting Manager Approved\nReporting Manager Rejected\nSr. Reporting Manager Approved\nSr. Reporting Manager Rejected\nExit Interview Sent\nExit Interview Completed\nNDC Sent\nNDC In-Progress\nNDC Completed"
   },
   {
    "_assign": null,
