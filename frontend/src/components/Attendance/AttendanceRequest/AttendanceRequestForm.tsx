@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import {
@@ -21,7 +27,7 @@ import { useAllEmployeeCheckIns } from "../../../hooks/useAttendance";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import DOMPurify from "dompurify";
-
+import { format } from "date-fns";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -62,28 +68,37 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
 }) => {
-
-  
-  const [is_required,setIs_required ] = useState<boolean>(true);
+  const [isRequired, setIsRequired] = useState(true);
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
+
   const [formData, setFormData] = useState<AttendanceFormData>();
+  const [selecteDate, setSelectedDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (formData?.from_date) {
+      const dateObj =
+        typeof formData.from_date === "string"
+          ? new Date(formData.from_date)
+          : formData.from_date;
+
+      const formattedDate = format(dateObj, "yyyy-dd-MM");
+      setSelectedDate(formattedDate);
+    }
+  }, [formData?.from_date]);
 
   const [isForOthers, setIsForOthers] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
-   
+    currentUser?.name as string
   );
-
-  console.log(currentUser?.name);
 
   const { data: employeeReporteeList } = useEmployeeReportees();
   const { data: userRoles } = useGetUserRoles();
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedRequestType, setSelectedRequestType] = useState<string>("");
-  
+
   const { data: reasonList } = useGetAllReasons(selectedRequestType);
   const employeeIdToShow = isForOthers
     ? selectedEmployee
@@ -119,38 +134,26 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     setSelectedEmployee(employeeId);
   };
 
-  
   const handleRequestTypeChange = useCallback(
     (event: { data: { request_type: string } }) => {
       const requestType = event?.data?.request_type || "";
-      
+
       setSelectedRequestType(requestType);
     },
     []
   );
 
-  const {
-    data: attendanceDetails,
-    isLoading,
-    error,
-  } = useCheckAttachmentMandatory(
-    "1111111",
-    "2025-07-10",
+  const { data: attendanceDetails } = useCheckAttachmentMandatory(
+    currentEmployee?.employee,
+    selecteDate,
     selectedRequestType
   );
 
   useEffect(() => {
     if (attendanceDetails) {
-      setIs_required(attendanceDetails?.is_mandatory);
+      setIsRequired(attendanceDetails?.is_mandatory);
     }
   }, [attendanceDetails]);
-  console.log(
-    attendanceDetails?.is_mandatory,
-    currentEmployee?.name,
-    is_required,
-    isLoading,
-    error
-  );
 
   const mutation = useCreateNewAttendanceRequest();
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
@@ -631,7 +634,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             input: true,
             multiple: false,
             validate: {
-              required: is_required,
+              required: isRequired,
             },
             tooltip: "Upload receipts or supporting documents.",
           },
@@ -659,6 +662,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       selectedRequestType,
       reqValidationmutation,
       employeeShift,
+      isRequired,
     ]
   );
 
@@ -831,7 +835,6 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onChange={(submission: any) => {
               setFormData(submission?.data);
-              
             }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onFormReady={(instance: any) => {

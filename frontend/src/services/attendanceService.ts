@@ -174,7 +174,7 @@ export const attendanceService = {
   //for checking attachment is mandatory or not
   checkAttachmentMandatory: async (
     empId: string | null | undefined,
-   date:string,
+   date:string | null,
     request_type: string
     
   ): Promise<AttendanceRequestValidations> => {

@@ -190,7 +190,7 @@ export const useGetAllEventsAndAttendance = (
 //this is an reusable hook for getting mandatory details for emloyee id
 export function useCheckAttachmentMandatory(
   empId: string | null | undefined,
-date:string,
+date:string | null,
   request_type: string
 ) {
   return useQuery({
