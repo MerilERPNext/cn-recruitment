@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { format } from "date-fns";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import Button from "../../shared/atoms/Button";
 import { StatusBadge } from "../AllShiftsDashboard";
 
 // Props type
@@ -7,22 +8,10 @@ type ApprovalRejectionQueueProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
-  data?: {
-    custom_doctype_actions_with_form: any;
-    creation: string;
-    date: string | number | Date;
-    priority: string;
-    name: string;
-    employee_name: string;
-    shift_type: string;
-    status: string;
-    from_date: string | null;
-    to_date: string | null;
-    custom_doctype_actions?: string;
-  } | null;
+  data?: any;
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
-  maxdatas?: number;
+  loadingAction?: { id: string; action: string } | null;
 };
 
 const ApprovalRejectedForMobile = ({
@@ -32,21 +21,19 @@ const ApprovalRejectedForMobile = ({
   data,
   onAction,
   onClick,
+  loadingAction,
 }: ApprovalRejectionQueueProps) => {
   if (!data) return null;
 
-  let actions: string[] = ["Approve", "Reject"];
-  try {
-    if (data.custom_doctype_actions) {
-      const parsed = JSON.parse(data.custom_doctype_actions);
-      if (Array.isArray(parsed)) {
-        actions = parsed;
-      }
-    }
-  } catch {
-    // fallback remains ["Approve", "Reject"]
-  }
+  // ✅ Parsing consistent with desktop version
+  const actions = data?.custom_doctype_actions
+    ? JSON.parse(data?.custom_doctype_actions)
+    : [];
+  const actionsWithForm = data?.custom_doctype_actions_with_form
+    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
+    : [];
 
+  // ✅ Common action styles (same as desktop)
   const getActionStyles = (action: string) => {
     const parsedAction = action.toLowerCase().trim();
     switch (parsedAction) {
@@ -58,65 +45,94 @@ const ApprovalRejectedForMobile = ({
         return "px-2 py-1 text-xs font-medium rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition";
     }
   };
-  const actionsWithForm = data?.custom_doctype_actions_with_form
-    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
-    : [];
+
   return (
     <div
-      className="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer"
+      className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer"
       onClick={() => onClick?.(data)}
     >
-      {/* Checkbox + Header */}
-      <div className="flex justify-between items-start mb-3">
+      {/* Top Section: Title (Employee Name) and Status */}
+      <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={isSelected}
             onClick={(e) => e.stopPropagation()}
-            onChange={() => onToggleSelect?.(data.name)}
+            onChange={() => onToggleSelect?.(data.todo_id)}
             disabled={
               isDisabled ||
               actionsWithForm?.includes("Approve") ||
               actionsWithForm?.includes("Reject")
             }
           />
-          <span className="font-semibold text-gray-900 text-sm">
-            {data.name || "--"}
-          </span>
+          <h3 className="text-base font-semibold text-gray-900 truncate">
+            {data?.todo_id || "--"}
+          </h3>
         </div>
-        <StatusBadge status={data.status} />
+        <StatusBadge status={data?.reference_document?.status} />
       </div>
 
-      {/* Details */}
-      <div className="text-xs text-gray-600 space-y-1">
-        <p>
-          <span className="font-medium">Date:</span>{" "}
-          {data.date ? format(new Date(data.date), "yyyy-MM-dd") : "--"}
-        </p>
-        <p>
-          <span className="font-medium">Priority:</span> {data.priority || "--"}
-        </p>
-        <p>
-          <span className="font-medium">Request Date:</span>{" "}
-          {data.creation ? format(new Date(data.creation), "dd/MM/yyyy") : "--"}
-        </p>
+      {/* 2-Column Grid for Shift & Date Info */}
+      <div className="flex justify-between gap-6">
+        {/* Left Column */}
+        <div>
+          <div className="mt-2">
+            <div className="text-xs text-gray-500">Employee</div>
+            <div className="font-medium text-sm text-gray-800">
+              {data?.reference_document?.employee_name || "--"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500">Shift Type</div>
+            <div className="font-medium text-sm text-gray-800">
+              {data?.reference_document?.shift_type || "--"}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="text-right">
+          <div>
+            <div className="text-xs text-gray-500">From</div>
+            <div className="font-medium text-sm text-gray-800">
+              {formatToIndianDate(data?.reference_document?.from_date)}
+            </div>
+          </div>
+          <div className="mt-2">
+            <div className="text-xs text-gray-500">To</div>
+            <div className="font-medium text-sm text-gray-800">
+              {formatToIndianDate(data?.reference_document?.to_date)}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex justify-start gap-3 mt-3">
-        {actions.map((action) => (
-          <button
-            key={action}
-            className={getActionStyles(action)}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onAction(action, data);
-            }}
-          >
-            {action}
-          </button>
-        ))}
+      {/* Action Buttons */}
+      <div className="flex flex-wrap justify-start gap-2 mt-4">
+        {actions?.length > 0 &&
+          actions.map((action: string) => (
+            <Button
+              key={action}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAction(action, data);
+              }}
+              bgColor={getActionStyles(action)}
+              textColor={getActionStyles(action)}
+              disabled={
+                loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action
+              }
+            >
+              {loadingAction?.id === data?.todo_id &&
+              loadingAction?.action === action ? (
+                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                action
+              )}
+            </Button>
+          ))}
       </div>
     </div>
   );
