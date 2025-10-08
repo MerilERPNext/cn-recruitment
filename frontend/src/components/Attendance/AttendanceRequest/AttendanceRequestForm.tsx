@@ -68,15 +68,11 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
 }) => {
-  
   const [isAttachmentRequired, setIsAttachmentRequired] = useState(false);
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
 
   const [formData, setFormData] = useState<AttendanceFormData>();
- 
-
-
 
   const [isForOthers, setIsForOthers] = useState(false);
   const { data: currentUser } = useCurrentUser();
@@ -128,23 +124,27 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const handleRequestTypeChange = useCallback(
     (event: { data: { request_type: string } }) => {
       const requestType = event?.data?.request_type || "";
-
-      setSelectedRequestType(requestType);
+      if (
+        requestType === "Short Attendance Request" ||
+        requestType === "Out Duty Request"
+      ) {
+        setSelectedRequestType(requestType);
+      }
     },
     []
   );
 
-  const { data: attachmentRequirement  } = useCheckAttachmentMandatory(
+  const { data: attachmentRequirement } = useCheckAttachmentMandatory(
     currentEmployee?.employee,
     format(new Date(), "yyyy-dd-MM"),
     selectedRequestType
   );
 
   useEffect(() => {
-    if (attachmentRequirement ) {
-      setIsAttachmentRequired(attachmentRequirement ?.is_mandatory);
+    if (attachmentRequirement) {
+      setIsAttachmentRequired(attachmentRequirement?.is_mandatory);
     }
-  }, [attachmentRequirement ]);
+  }, [attachmentRequirement]);
 
   const mutation = useCreateNewAttendanceRequest();
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
@@ -321,30 +321,22 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             data: {
               values: [
-                reqValidationmutation?.data?.clockin_requests
-                  ? {
-                      label: "Clockin Request",
-                      value: "Clockin",
-                    }
-                  : "",
-                reqValidationmutation?.data?.out_duty_requests
-                  ? {
-                      label: "Out Duty Request",
-                      value: "Out Duty",
-                    }
-                  : "",
-                reqValidationmutation?.data?.short_leave_requests
-                  ? {
-                      label: "Short Attendance Request",
-                      value: "Short Attendance Request",
-                    }
-                  : "",
-                reqValidationmutation?.data?.attendance_adjustment_requests
-                  ? {
-                      label: "Attendance Adjustment",
-                      value: "Attendance Adjustment",
-                    }
-                  : "",
+                {
+                  label: "Clockin Request",
+                  value: "Clockin",
+                },
+                {
+                  label: "Out Duty Request",
+                  value: "Out Duty Request",
+                },
+                {
+                  label: "Short Attendance Request",
+                  value: "Short Attendance Request",
+                },
+                {
+                  label: "Attendance Adjustment",
+                  value: "Attendance Adjustment",
+                },
               ],
             },
           },
