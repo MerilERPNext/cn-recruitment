@@ -135,6 +135,7 @@ export interface CompOffResponse {
   reason: string;
   custom_status: string;
   pay_button_required: boolean;
+  docstatus: number;
 }
 
 export interface LeaveFieldFlags {
