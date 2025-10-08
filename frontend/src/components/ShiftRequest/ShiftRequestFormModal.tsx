@@ -74,7 +74,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
           onClose?.();
           setTimeout(() => {
             setRefetchAttendance(true);
-          }, 2000);
+          }, 1000);
         },
         onError: (error: any) => {
           console.error("Error creating shift request:", error);

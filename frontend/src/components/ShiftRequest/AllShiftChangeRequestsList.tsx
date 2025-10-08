@@ -37,7 +37,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
           titles={[
             "Select",
             "Id",
-            "Employeee",
+            "Employee",
             "Shift Type",
             "From Date",
             "To Date",

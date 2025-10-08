@@ -9,7 +9,7 @@ type ApprovalRejectionQueueProps = {
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data?: any;
+  data: any;
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
   refetch?: () => void;

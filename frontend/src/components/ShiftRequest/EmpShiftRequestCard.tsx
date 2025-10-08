@@ -29,7 +29,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           onSuccess: () => {
             setTimeout(() => {
               setRefetchAttendance(true);
-            }, 2000);
+            }, 1000);
           },
         }
       );

@@ -17,6 +17,7 @@ import CardTable from "../shared/CardTable";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import { ShiftDetailView } from "./ShiftDetailView";
+import getShiftStatus from "../../utils/getShiftStatus";
 
 type LoadingAction = {
   id: string;
@@ -80,28 +81,6 @@ const MyShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item }) => {
-  const getShiftStatus = (startDate: string, endDate?: string): string => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-
-    let end: Date | null = null;
-    if (endDate) {
-      end = new Date(endDate);
-      end.setHours(0, 0, 0, 0);
-    }
-
-    if (!end) {
-      if (today >= start) return "Current";
-      return "Upcoming";
-    }
-
-    if (today < start) return "Upcoming";
-    if (today > end) return "Previous";
-    return "Current";
-  };
 
   const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
@@ -328,7 +307,7 @@ export default function AllShiftsDashboard() {
                   titles={[
                     "Select",
                     "Id",
-                    "Employeee",
+                    "Employee",
                     "Shift Type",
                     "From Date",
                     "To Date",

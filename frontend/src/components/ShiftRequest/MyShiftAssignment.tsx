@@ -5,29 +5,7 @@ import formatToIndianDate, {
 } from "../../utils/formatToIndianDate";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import { StatusBadge } from "./AllShiftsDashboard";
-
-const getShiftStatus = (startDate: string, endDate?: string): string => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const start = new Date(startDate);
-  start.setHours(0, 0, 0, 0);
-
-  let end: Date | null = null;
-  if (endDate) {
-    end = new Date(endDate);
-    end.setHours(0, 0, 0, 0);
-  }
-
-  if (!end) {
-    if (today >= start) return "Current";
-    return "Upcoming";
-  }
-
-  if (today < start) return "Upcoming";
-  if (today > end) return "Previous";
-  return "Current";
-};
+import getShiftStatus from "../../utils/getShiftStatus";
 
 const ShiftAssignmentItem: React.FC<{ item: ApiShiftAssignment }> = ({
   item,
