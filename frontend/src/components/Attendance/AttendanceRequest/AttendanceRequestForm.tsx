@@ -126,9 +126,12 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       const requestType = event?.data?.request_type || "";
       if (
         requestType === "Short Attendance Request" ||
-        requestType === "Out Duty Request"
+        requestType === "Out Duty"
       ) {
-        setSelectedRequestType(requestType);
+         setSelectedRequestType(
+           requestType === "Out Duty" ? "Out Duty Request" : requestType
+         );
+          
       }
     },
     []
@@ -150,6 +153,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
     currentEmployee?.employee as string
   );
+
 
   const handleFromDateChange = (event: { data: AttendanceFormData }) => {
     const formInstance = formAddressInstance.current;
@@ -321,22 +325,30 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             data: {
               values: [
-                {
-                  label: "Clockin Request",
-                  value: "Clockin",
-                },
-                {
-                  label: "Out Duty Request",
-                  value: "Out Duty Request",
-                },
-                {
-                  label: "Short Attendance Request",
-                  value: "Short Attendance Request",
-                },
-                {
-                  label: "Attendance Adjustment",
-                  value: "Attendance Adjustment",
-                },
+                reqValidationmutation?.data?.clockin_requests
+                  ? {
+                      label: "Clockin Request",
+                      value: "Clockin",
+                    }
+                  : "",
+                reqValidationmutation?.data?.out_duty_requests
+                  ? {
+                      label: "Out Duty Request",
+                      value: "Out Duty",
+                    }
+                  : "",
+                reqValidationmutation?.data?.short_leave_requests
+                  ? {
+                      label: "Short Attendance Request",
+                      value: "Short Attendance Request",
+                    }
+                  : "",
+                reqValidationmutation?.data?.attendance_adjustment_requests
+                  ? {
+                      label: "Attendance Adjustment",
+                      value: "Attendance Adjustment",
+                    }
+                  : "",
               ],
             },
           },

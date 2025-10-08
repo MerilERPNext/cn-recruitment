@@ -1,34 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>physics wallah</title>
-    <style>
-      /* Do Not Add In Any CSS file/ */
-      body > chatnext-app > div:first-child {
-        display: none !important;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <chatnext-app />
-    <script type="module" src="/src/main.tsx"></script>
-    <script>
-      if (!window.csrf_token) {
-        window.csrf_token = "{{ csrf_token }}";
-      }
-    </script>
-    <script>
-      fetch("/assets/assets.json")
-        .then((response) => response.json())
-        .then((data) => {
-          const script = document.createElement("script");
-          script.src = data["cn-app.bundle.js"];
-          document.body.appendChild(script);
-        });
-    </script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Page with Tailwind CSS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4">
+
+        <header class="bg-blue-500 text-white p-4 rounded-lg mb-4">
+            <h1 class="text-2xl font-bold">My Responsive Page</h1>
+        </header>
+
+        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-2">Card 1</h2>
+                <p>This is the first card. On small screens, cards will stack. On medium screens, there will be two columns, and on large screens, three columns.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-2">Card 2</h2>
+                <p>This is the second card. The layout adjusts based on the screen size, thanks to Tailwind's responsive utility classes.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-2">Card 3</h2>
+                <p>This is the third card. Resize your browser window to see the responsive design in action.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md md:col-span-2 lg:col-span-1">
+                <h2 class="text-xl font-bold mb-2">Card 4</h2>
+                <p>This is the fourth card. It might span multiple columns on medium screens.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-2">Card 5</h2>
+                <p>This is the fifth card.</p>
+            </div>
+        </main>
+
+        <footer class="bg-gray-800 text-white p-4 rounded-lg mt-4 text-center">
+            <p>&copy; 2025 My Company</p>
+        </footer>
+
+    </div>
+
+</body>
 </html>
