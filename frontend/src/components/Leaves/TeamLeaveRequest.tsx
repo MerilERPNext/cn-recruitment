@@ -74,7 +74,7 @@ const TeamLeaveRequest = () => {
                 doctype={"Leave Application"}
                 status="Open"
                 refetch={refetchApprovalList}
-                setRefetch={setRefetchApprovalList}
+                //setRefetch={setRefetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={3}
                 showPagination={false}
