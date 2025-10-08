@@ -89,6 +89,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
+  const { data: currentUser } = useCurrentUser();
 
   const handleTodoClick = () => {
     window.open(ROUTES.TODO, "_blank");
@@ -104,12 +105,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       return;
     }
 
-    const rolesArray =
-      Array.isArray(currentUser.roles) &&
-      typeof currentUser.roles[0] === "object"
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          currentUser.roles.map((r: any) => r.role)
-        : currentUser.roles;
+    const rolesArray = currentUser.roles?.map((r) => r.role) ?? [];
 
     const isAgentOrManager =
       rolesArray.includes("Agent") || rolesArray.includes("Agent Manager");
@@ -119,9 +115,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       : ROUTES.HELP_DESK;
     window.open(routeToOpen, "_blank");
   };
-
-  const { data: currentUser } = useCurrentUser();
-  console.log("Current User in Sidebar:", currentUser?.roles);
 
   const navigationItems: NavigationItem[] = [
     {

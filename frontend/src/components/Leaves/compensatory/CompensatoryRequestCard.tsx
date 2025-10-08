@@ -56,13 +56,6 @@ const CompensatoryRequestCard = ({
       };
     }
 
-    if (key === "allocated" && docstatus === 1) {
-      return {
-        label: "Allocated",
-        statusColor: "bg-green-100 text-green-800",
-      };
-    }
-
     const statusMap: { [key: string]: { label: string; statusColor: string } } =
       {
         issued: {
