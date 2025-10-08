@@ -68,24 +68,15 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
 }) => {
-  const [isRequired, setIsRequired] = useState(true);
+  
+  const [isAttachmentRequired, setIsAttachmentRequired] = useState(false);
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
 
   const [formData, setFormData] = useState<AttendanceFormData>();
-  const [selecteDate, setSelectedDate] = useState<string | null>(null);
+ 
 
-  useEffect(() => {
-    if (formData?.from_date) {
-      const dateObj =
-        typeof formData.from_date === "string"
-          ? new Date(formData.from_date)
-          : formData.from_date;
 
-      const formattedDate = format(dateObj, "yyyy-dd-MM");
-      setSelectedDate(formattedDate);
-    }
-  }, [formData?.from_date]);
 
   const [isForOthers, setIsForOthers] = useState(false);
   const { data: currentUser } = useCurrentUser();
@@ -143,17 +134,17 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     []
   );
 
-  const { data: attendanceDetails } = useCheckAttachmentMandatory(
+  const { data: attachmentRequirement  } = useCheckAttachmentMandatory(
     currentEmployee?.employee,
-    selecteDate,
+    format(new Date(), "yyyy-dd-MM"),
     selectedRequestType
   );
 
   useEffect(() => {
-    if (attendanceDetails) {
-      setIsRequired(attendanceDetails?.is_mandatory);
+    if (attachmentRequirement ) {
+      setIsAttachmentRequired(attachmentRequirement ?.is_mandatory);
     }
-  }, [attendanceDetails]);
+  }, [attachmentRequirement ]);
 
   const mutation = useCreateNewAttendanceRequest();
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
@@ -634,7 +625,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             input: true,
             multiple: false,
             validate: {
-              required: isRequired,
+              required: isAttachmentRequired,
             },
             tooltip: "Upload receipts or supporting documents.",
           },
@@ -662,7 +653,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       selectedRequestType,
       reqValidationmutation,
       employeeShift,
-      isRequired,
+      isAttachmentRequired,
     ]
   );
 
