@@ -34,16 +34,34 @@ const ApprovalRejectionQueue = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string) => {
+  const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();
+    let styles = {
+      bg: "gray-100",
+      text: "gray-600",
+    };
     switch (parsedAction) {
       case "approve":
-        return "px-2 py-1 text-xs font-medium rounded-lg text-green-600 bg-green-100 hover:bg-green-200 transition";
+        styles = {
+          bg: "green-100",
+          text: "green-600",
+        };
+        break;
       case "reject":
-        return "px-2 py-1 text-xs font-medium rounded-lg text-red-600 bg-red-100 hover:bg-red-200 transition";
+        styles = {
+          bg: "red-100",
+          text: "red-600",
+        };
+
+        break;
       default:
-        return "px-2 py-1 text-xs font-medium rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition";
+        styles = {
+          bg: "gray-200",
+          text: "gray-600",
+        };
+        break;
     }
+    return styles;
   };
 
   const gridTemplateColumns = "5% 15% 10% 8% 8% 8% 10% 20%";
@@ -88,29 +106,31 @@ const ApprovalRejectionQueue = ({
       </div>
       <div className="flex w-full justify-start gap-2 whitespace-nowrap">
         {actions?.length &&
-          actions.map((action: string) => (
-            <Button
-              key={action}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onAction(action, data);
-              }}
-              bgColor={getActionStyles(action)}
-              textColor={getActionStyles(action)}
-              disabled={
-                loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action
-              }
-            >
-              {loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action ? (
-                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                action
-              )}
-            </Button>
-          ))}
+          actions.map((action: string) => {
+            return (
+              <Button
+                key={action}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onAction(action, data);
+                }}
+                bgColor={getActionStyles(action).bg}
+                textColor={getActionStyles(action).text}
+                disabled={
+                  loadingAction?.id === data?.todo_id &&
+                  loadingAction?.action === action
+                }
+              >
+                {loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action ? (
+                  <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  action
+                )}
+              </Button>
+            );
+          })}
       </div>
     </div>
   );
