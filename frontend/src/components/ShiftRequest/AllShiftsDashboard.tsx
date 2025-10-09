@@ -309,9 +309,9 @@ export default function AllShiftsDashboard() {
                     "Id",
                     "Employee",
                     "Shift Type",
+                    "Status",
                     "From Date",
                     "To Date",
-                    "Status",
                     "Actions",
                   ]}
                   columnWidths={[

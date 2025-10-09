@@ -4,6 +4,10 @@ import FrappeListView from "../ListView";
 import { PolicyCardSkeleton } from "./PolicySkeletons";
 import { Download } from "lucide-react";
 import { FaRegEye } from "react-icons/fa";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import HeaderBar from "../HeaderBar";
 
 type PolicyDoc = {
   name: string;
@@ -68,6 +72,11 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
 
 const PoliciesList: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const employeeId = user?.employee ?? "";
   const categoryName = (location.state as PolicyState | undefined)?.name;
   const [selectedStatus, setSelectedStatus] = useState("Acknowledged");
   const statusOptions = ["Pending", "Acknowledged", "Declined", "Archived"];
@@ -76,37 +85,36 @@ const PoliciesList: React.FC = () => {
     return <Navigate to="/webapp/policies-app/policies-categories" replace />;
   }
 
-  const filterDropdown = () => {
-  return (
-    <div className="my-2 flex items-center justify-start gap-4">
-      <div className="flex-1 max-w-sm">
-        <select
-          id="statusFilter"
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-          className="my-form-input"
-        >
-          {statusOptions.map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
+  const FilterDropdown: React.FC = () => {
+    return (
+      <div className="my-2 flex items-center justify-start gap-4">
+        <div className="flex-1">
+          <select
+            id="statusFilter"
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="my-form-input w-full md:w-32"
+          >
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   return (
     <div className="w-full bg-white rounded-xl md:p-4 p-2">
-      {/* The original filter dropdown has been removed from here */}
-
+      {isDesktop ? (<HeaderBar title="Policies List" onBack={() => navigate(-1)} rightSlot={<FilterDropdown/>} />) : <FilterDropdown />}
       <FrappeListView<PolicyDoc>
-        // key={filtersKey}
         doctype="Policy Details"
         defaultFilters={{
           policy_category: categoryName,
           status: selectedStatus,
+          employee_id: employeeId,
         }}
         pageSize={20}
         isSearch={true}
@@ -116,7 +124,6 @@ const PoliciesList: React.FC = () => {
         ItemComponent={PolicyItem}
         infiniteScroll={true}
         SkeletonComponent={PolicyCardSkeleton}
-        PreListComponent={filterDropdown}
       />
     </div>
   );
