@@ -1,0 +1,111 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "DCS.#####",
+ "creation": "2025-10-09 17:59:28.303462",
+ "default_view": "List",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "duplicity_check_setting_name",
+  "duplicity_check_fields_below_section",
+  "duplicity_check_fields",
+  "no_of_days_before_reapplication_by_candidate",
+  "no_of_days_before_reapplication_by_employee_in_ijp",
+  "applicable_to",
+  "column_break_xtrm",
+  "allow_candidate_for_other_sources",
+  "allow_candidate_for_external_recruiter",
+  "allow_employee_to_apply_for_ijp",
+  "allow_duplicity_check_settings_for_all_sources"
+ ],
+ "fields": [
+  {
+   "fieldname": "duplicity_check_setting_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Duplicity Check Setting Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "duplicity_check_fields_below_section",
+   "fieldtype": "Section Break",
+   "label": "Duplicity Check Fields Below"
+  },
+  {
+   "fieldname": "duplicity_check_fields",
+   "fieldtype": "Table MultiSelect",
+   "label": "Duplicity Check Fields",
+   "options": "Duplicity Check Field List"
+  },
+  {
+   "fieldname": "no_of_days_before_reapplication_by_candidate",
+   "fieldtype": "Data",
+   "label": "No of days before reapplication by candidate"
+  },
+  {
+   "fieldname": "no_of_days_before_reapplication_by_employee_in_ijp",
+   "fieldtype": "Data",
+   "label": "No of days before reapplication by Employee in IJP"
+  },
+  {
+   "fieldname": "applicable_to",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable To",
+   "options": "User Assignment Table"
+  },
+  {
+   "fieldname": "column_break_xtrm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_candidate_for_other_sources",
+   "fieldtype": "Check",
+   "label": "Allow candidate to apply for multiple positions - Other Sources"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_candidate_for_external_recruiter",
+   "fieldtype": "Check",
+   "label": "Allow candidate to apply for multiple positions - External Recruiter"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_employee_to_apply_for_ijp",
+   "fieldtype": "Check",
+   "label": "Allow Employee to apply for multiple positions via IJP"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_duplicity_check_settings_for_all_sources",
+   "fieldtype": "Check",
+   "label": "Allow super admins, Hiring Leads and permission role holders to override duplicity check settings for all sources"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-10-09 18:05:38.280108",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Duplicity Check Setting",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
