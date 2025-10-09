@@ -6,7 +6,6 @@ import { useNavigate } from "react-router";
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "./ApprovalCard";
 import CardTable from "../../shared/CardTable";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 const AllPendingRequests = () => {
   const [selectedRequest, setSelectedRequest] =
@@ -14,7 +13,6 @@ const AllPendingRequests = () => {
   const [refetch, setRefetch] = useState(false);
 
   const navigate = useNavigate();
-  const { refetchAttendance } = useGlobalStore();
 
   return (
     <div>
@@ -26,13 +24,22 @@ const AllPendingRequests = () => {
       />
       <div className="p-2">
         <CardTable
-          titles={["Select", "Description", "Date", "Status", "Actions"]}
-          columnWidths={["15%", "30%", "10%", "10%", "30%"]}
+          titles={[
+            "Select",
+            "Name",
+            "Employeee",
+            "From Date",
+            "To Date",
+            "Due Date",
+            "Status",
+            "Actions",
+          ]}
+          columnWidths={["5%", "15%", "10%", "8%", "8%", "8%", "10%", "20%"]}
         >
           <ApprovalList
             doctype={"Attendance Request"}
             pageSize={13}
-            refetch={refetchAttendance || refetch}
+            refetch={refetch}
             onApprovalRefetchComplete={() => {
               setRefetch(false);
             }}

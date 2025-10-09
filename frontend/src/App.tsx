@@ -22,18 +22,10 @@ import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
 import { X, CheckCircle2, CircleX } from "lucide-react";
 import { useFrappeAuth } from "frappe-react-sdk";
 import { GlobalStoreProvider } from "./context/GlobalStoreContext";
-import { Formio } from "formiojs";
 import {
   preloadCriticalRoutes,
   preloadAdjacentRoutes,
 } from "./utils/routePreloader";
-
-try {
-  // Load the Form.io CSS
-  Formio.setBaseUrl(window.location.origin);
-} catch (error) {
-  console.error("Error setting Formio base URL:", error);
-}
 
 const App: React.FC = () => {
   const { currentUser, isLoading, isValidating } = useFrappeAuth();
@@ -197,10 +189,12 @@ const MandatoryPoliciesHandler = () => {
 
     if (mandatoryPoliciesCount <= 0) {
       if (window.isApp) {
-      window.nativeInterface.logToNative("destroyNestedWebView");
-      window.nativeInterface.execute("destroyNestedWebView");
-      }
-      else if (window.location.pathname.includes("/webapp/policies-enforced") && isAutoOpened) {
+        window.nativeInterface.logToNative("destroyNestedWebView");
+        window.nativeInterface.execute("destroyNestedWebView");
+      } else if (
+        window.location.pathname.includes("/webapp/policies-enforced") &&
+        isAutoOpened
+      ) {
         setInAutoOpened(false);
         navigate(redirectTo);
       }
@@ -216,8 +210,9 @@ const MandatoryPoliciesHandler = () => {
           title: "HR Policies",
           isCloseable: false,
         });
-      }
-      else if (!window.location.pathname.includes("/webapp/policies-enforced")) {
+      } else if (
+        !window.location.pathname.includes("/webapp/policies-enforced")
+      ) {
         setRedirectTo(location.pathname);
         setInAutoOpened(true);
         navigate("/webapp/policies-enforced");

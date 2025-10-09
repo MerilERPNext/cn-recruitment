@@ -1,16 +1,19 @@
 import { useState } from "react";
-import { AttendanceRequest, LoadingAction } from "../../../types/attendance";
-import { AttendanceDetailView } from "../AttendanceDetails";
+import {
+  LoadingAction,
+  MyPlannedAttendanceRequest,
+} from "../../../types/attendance";
 import LayoutHeader from "../../shared/LayoutHeader";
 import { useNavigate } from "react-router";
 import ApprovalList from "../../shared/ApprovalList";
 import CardTable from "../../shared/CardTable";
-import ApprovalCard from "../TeamAttendanceDetails/ApprovalCard";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import OvertimeApprovalCard from "./OvertimeApprovalCard";
+import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 
 const AllOvertimePendingRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState<
-    (AttendanceRequest & { loadingAction?: LoadingAction }) | null
+    (MyPlannedAttendanceRequest & { loadingAction?: LoadingAction }) | null
   >(null);
   const [refetch, setRefetch] = useState(false);
   const { refetchAttendance } = useGlobalStore();
@@ -35,13 +38,14 @@ const AllOvertimePendingRequests = () => {
             onApprovalRefetchComplete={() => {
               setRefetch(false);
             }}
+            status="Open"
             renderCardContent={(item) => (
-              <ApprovalCard
+              <OvertimeApprovalCard
                 isSelected={item?.isSelected}
                 onToggleSelect={item?.onToggleSelect}
                 data={item?.data}
                 onAction={item?.onAction}
-                onClick={(request: AttendanceRequest) =>
+                onClick={(request: MyPlannedAttendanceRequest) =>
                   setSelectedRequest(request)
                 }
                 loadingAction={item?.loadingAction}
@@ -51,14 +55,12 @@ const AllOvertimePendingRequests = () => {
         </CardTable>
       </div>
       {selectedRequest && (
-        <AttendanceDetailView
-          data={selectedRequest}
+        <MyOvertimeDetails
+          data={selectedRequest as MyPlannedAttendanceRequest}
           onClose={() => setSelectedRequest(null)}
           onAction={() => {
             setSelectedRequest(null);
-            setRefetch(true);
           }}
-          loadingAction={selectedRequest?.loadingAction}
         />
       )}
     </div>

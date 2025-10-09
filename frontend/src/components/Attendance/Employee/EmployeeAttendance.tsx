@@ -47,7 +47,6 @@ const EmployeeAttendance = () => {
     setSidebarOpen(!!showDetailsFor && isDesktop);
   }, [showDetailsFor, isDesktop, setSidebarOpen]);
 
-
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
@@ -72,8 +71,6 @@ const EmployeeAttendance = () => {
   const [showLeaveRequest, setShowLeaveRequest] = useState<boolean>(false);
 
   const [openDrawer, setOpenDrawer] = useState<boolean>(false);
-
-  
 
   type Status =
     | "present"
@@ -250,6 +247,8 @@ const EmployeeAttendance = () => {
           </div>
           <CardTable
             titles={[
+              "Id",
+              "Allocated To",
               "Request Type",
               "From Date",
               "To Date",

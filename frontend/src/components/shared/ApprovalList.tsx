@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState, ReactNode, useCallback, useEffect } from "react";
-import FrappeListView from "../ListView";
+import { useState, ReactNode, useCallback, useEffect } from "react";
+import DataListView from "../DataListView";
 import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
-import useCurrentUser from "../../hooks/useCurrentUser";
 
 type ApprovalListProps = {
   doctype: string;
@@ -26,6 +25,8 @@ type ApprovalListProps = {
     loadingAction: { id: string; action: string } | null;
   }) => ReactNode;
   refetch?: boolean;
+  setRefetch?: (value: boolean) => void;
+  status?: string;
   pageSize?: number;
   showPagination?: boolean;
   onApprovalRefetchComplete?: () => void;
@@ -33,17 +34,17 @@ type ApprovalListProps = {
 
 const ApprovalList = ({
   doctype,
+  status = "Pending",
   renderCardContent,
   pageSize,
   refetch,
+  setRefetch,
   onApprovalRefetchComplete,
   showPagination = true,
 }: ApprovalListProps) => {
-  const { data: currentUser } = useCurrentUser();
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
-  const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
-  const [refetchListView, setRefetchListView] = useState(false);
   const [loadingAction, setLoadingAction] = useState<{
     id: string;
     action: string;
@@ -55,35 +56,29 @@ const ApprovalList = ({
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
-  const defaultFilters = useMemo(
-    () => ({
-      allocated_to: currentUser?.name,
-      reference_type: doctype,
-      status: "open",
-    }),
-    [doctype, currentUser?.name]
-  );
+
+  const triggerRefetch = () => {
+    if (setRefetch) {
+      setRefetch(true);
+    }
+    setRefetchAttendance(true);
+  };
+
   useEffect(() => {
     const handleChatClose = () => {
-      setRefetchListView((prev) => !prev);
+      triggerRefetch();
     };
 
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
 
-    // Cleanup function to remove the event listener
     return () => {
       document.removeEventListener(
         "chatnext:modal:chat:close",
         handleChatClose
       );
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (refetch) {
-      setRefetchListView(true);
-    }
-  }, [refetch]);
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -109,7 +104,7 @@ const ApprovalList = ({
           ) {
             return null;
           } else {
-            return req.name;
+            return req.todo_id;
           }
         })
       );
@@ -120,10 +115,10 @@ const ApprovalList = ({
     async (action: string, data: any) => {
       try {
         if (mutation?.isPending) return;
-        setLoadingAction({ id: data?.name, action });
+        setLoadingAction({ id: data?.todo_id, action });
         const response = await mutation?.mutateAsync({
           action,
-          name: data?.name || "",
+          name: data?.todo_id || "",
         });
 
         console.log("Action response:", response);
@@ -152,10 +147,10 @@ const ApprovalList = ({
             );
           }
           if (action.toLowerCase() !== "approve") {
-            setRefetchListView((prev) => !prev);
+            triggerRefetch();
           }
         } else {
-          setRefetchListView((prev) => !prev);
+          triggerRefetch();
         }
         // Query invalidation now handled by Frappe realtime events
       } catch (error: any) {
@@ -185,13 +180,12 @@ const ApprovalList = ({
         },
         {
           onSuccess: () => {
-            // refetch();
             toast.success(
               `Requests ${
-                action === "Reject" ? "rejecte" : action.toLowerCase()
+                action === "Reject" ? "rejected" : action.toLowerCase()
               }d successfully!`
             );
-            setRefetchListView((prev) => !prev);
+            triggerRefetch();
           },
           onError: (error) => {
             toast.error(error?.message);
@@ -210,16 +204,23 @@ const ApprovalList = ({
 
   return (
     <div className="bg-white">
-      <FrappeListView
-        doctype="ToDo"
+      <DataListView
+        queryKey={["todo-approvals", doctype]}
+        customAPI={{
+          method: "cn_leave_shift_managment.api.get_open_approval_todos",
+          params: {
+            doctype: doctype,
+            status: status,
+            include_allocated_todos: true,
+            fields: ["*"],
+          },
+        }}
         isSearch={false}
-        defaultFilters={defaultFilters as any}
-        showRefereshButton={false}
-        infiniteScroll
         isFilter={false}
-        defaultFields={["*"]}
         pageSize={pageSize}
         showPagination={showPagination}
+        showRefreshButton={false}
+        infiniteScroll={true}
         onDataLoad={(data) => setAllRequests(data)}
         PreListComponent={() => (
           <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
@@ -233,7 +234,7 @@ const ApprovalList = ({
           </div>
         )}
         ItemComponent={(props: { item: any }) => {
-          const todoId = props.item?.name;
+          const todoId = props.item?.todo_id;
           return renderCardContent({
             todoId: todoId,
             isSelected: selectedIds.includes(todoId),
@@ -243,10 +244,14 @@ const ApprovalList = ({
             loadingAction: loadingAction,
           });
         }}
-        refetchTrigger={refetchListView}
+        refetchTrigger={refetch || refetchAttendance}
         onRefetchComplete={() => {
-          setRefetchListView(false);
           setRefetchAttendance(false);
+
+          if (setRefetch) {
+            setRefetch(false);
+          }
+
           if (onApprovalRefetchComplete) {
             onApprovalRefetchComplete();
           }

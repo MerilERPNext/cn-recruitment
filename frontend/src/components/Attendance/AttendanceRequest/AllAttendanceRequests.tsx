@@ -85,8 +85,23 @@ const AllAttendanceRequest = ({
           <CardTable
             titles={
               statusType === "pending"
-                ? ["Request Type", "From Date", "To Date", "Status", "Actions"]
-                : ["Request Type", "From Date", "To Date", "Status"]
+                ? [
+                    "Id",
+                    "Allocated To",
+                    "Request Type",
+                    "From Date",
+                    "To Date",
+                    "Status",
+                    "Actions",
+                  ]
+                : [
+                    "Id",
+                    "Allocated To",
+                    "Request Type",
+                    "From Date",
+                    "To Date",
+                    "Status",
+                  ]
             }
           >
             <DataListView
@@ -102,7 +117,7 @@ const AllAttendanceRequest = ({
               ItemComponent={(props: { item: MyAttendanceRequest }) => {
                 return (
                   <EmpAttendanceRequestCard
-                    columns={statusType === "actioned" ? 4 : 5}
+                    columns={statusType === "actioned" ? 6 : 7}
                     type={statusType}
                     data={{
                       ...props?.item,

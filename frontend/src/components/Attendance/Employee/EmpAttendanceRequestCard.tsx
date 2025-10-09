@@ -11,7 +11,7 @@ import Button from "../../shared/atoms/Button";
 const EmpAttendanceRequestCard = ({
   data,
   type,
-  columns = 5,
+  columns = 7,
 }: {
   data: MyAttendanceRequest;
   columns?: number;
@@ -73,6 +73,12 @@ const EmpAttendanceRequestCard = ({
         <div
           className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
         >
+          <div className="text-sm font-medium text-gray-700 text-start truncate">
+            {data?.todo_id}
+          </div>
+          <div className="text-sm font-medium text-gray-700 text-start truncate">
+            {data?.allocated_to}
+          </div>
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.custom_request_type}

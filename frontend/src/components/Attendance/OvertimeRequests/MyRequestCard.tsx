@@ -47,7 +47,7 @@ any & {
       ? format(parsedDate, "dd/MM/yyyy")
       : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(request?.description || "");
-  const gridTemplateColumns = "15% 30% 10% 33%";
+  const gridTemplateColumns = "10% 10% 30% 10% 33%";
   return (
     <>
       {isDesktop ? (
@@ -56,6 +56,9 @@ any & {
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
+            {request?.todo_id || ""}
+          </div>
           <div className="truncate text-gray-900 font-medium text-sm text-start">
             {request?.username || ""}
           </div>
@@ -86,6 +89,7 @@ any & {
                     <h3 className="font-semibold text-sm text-gray-800">
                       {request?.username}
                     </h3>
+                    <p className="text-sm text-gray-500">{request?.todo_id}</p>
                     <p className="text-sm text-gray-500">{formattedDate}</p>
                   </div>
                   <Badge

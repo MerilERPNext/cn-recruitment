@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import { format, isValid, parse } from "date-fns";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
@@ -7,12 +6,13 @@ import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
+import { formatDate } from "../../utils/qrCodeUtils";
 
-export function AttendanceDetailView({
+export function ShiftDetailView({
   data,
   onClose,
   onAction,
-  label = "Attendance Request",
+  label = "Shift Request",
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
@@ -22,12 +22,12 @@ export function AttendanceDetailView({
 }) {
   const mutation = useApprovalListActions();
   const { setRefetchAttendance } = useGlobalStore();
-
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
+
   const getStatus = (status: string) => {
-    if (status === "Pending" || status === "Open") {
+    if (status === "Draft") {
       return {
-        label: "Pending",
+        label: "Draft",
         statusColor: "bg-yellow-100 text-yellow-600",
       };
     } else if (status === "Approved") {
@@ -137,22 +137,6 @@ export function AttendanceDetailView({
     }
     return styles;
   };
-
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
-
   return data?.todo_id ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -191,12 +175,34 @@ export function AttendanceDetailView({
           </div>
           <div className="py-4">
             <div className="flex gap-2 justify-between">
+              {/* Display Employee Name */}
+              {data?.reference_document?.employee_name && (
+                <p className="text-sm flex flex-col font-bold">
+                  <span>Employee Name</span>
+                  <span className="text-gray-500">
+                    {data?.reference_document?.employee_name}
+                  </span>
+                </p>
+              )}
               {/* Display From Date */}
               {data?.reference_document?.from_date && (
                 <p className="text-sm flex flex-col font-bold">
                   <span>From Date</span>
                   <span className="text-gray-500">
                     {formatDate(data?.reference_document?.from_date)}
+                  </span>
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="py-4">
+            <div className="flex gap-2 justify-between">
+              {/* Display Shift Type */}
+              {data?.reference_document?.shift_type && (
+                <p className="text-sm flex flex-col font-bold">
+                  <span>Shift Type</span>
+                  <span className="text-gray-500">
+                    {data?.reference_document?.shift_type}
                   </span>
                 </p>
               )}
@@ -211,20 +217,6 @@ export function AttendanceDetailView({
                 </p>
               )}
             </div>
-          </div>
-          {data?.due_date && (
-            <p className="text-sm flex flex-col font-bold">
-              <span>Due Date</span>
-              <span className="text-gray-500">
-                {formatDate(data?.due_date)}
-              </span>
-            </p>
-          )}
-          <div className="py-4">
-            <p className="text-sm  mb-2 font-bold">Reason</p>
-            {label === "Leave Application"
-              ? data?.reference_document?.custom_reason
-              : data?.reference_document?.reason}
           </div>
           {/* explanation */}
           <div className="py-4">
@@ -244,37 +236,36 @@ export function AttendanceDetailView({
         </div>
 
         {/* Actions */}
-        {actions?.length > 0 &&
-          (data?.status === "Pending" || data?.status === "Open") && (
-            <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-                {actions?.length &&
-                  actions?.map((action: string) => {
-                    const isLoading =
-                      currentAction === action && mutation.isPending;
-                    return (
-                      <Button
-                        key={action}
-                        fullWidth
-                        disabled={isLoading}
-                        onClick={() => {
-                          handleAction(action);
-                        }}
-                        size="md"
-                        bgColor={getActionStyles(action).bg}
-                        textColor={getActionStyles(action).text}
-                      >
-                        {isLoading ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          action
-                        )}
-                      </Button>
-                    );
-                  })}
-              </div>
+        {actions?.length > 0 && data?.status === "Draft" && (
+          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+            <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+              {actions?.length &&
+                actions?.map((action: string) => {
+                  const isLoading =
+                    currentAction === action && mutation.isPending;
+                  return (
+                    <Button
+                      key={action}
+                      fullWidth
+                      disabled={isLoading}
+                      onClick={() => {
+                        handleAction(action);
+                      }}
+                      size="md"
+                      bgColor={getActionStyles(action).bg}
+                      textColor={getActionStyles(action).text}
+                    >
+                      {isLoading ? (
+                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        action
+                      )}
+                    </Button>
+                  );
+                })}
             </div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   ) : null;

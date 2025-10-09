@@ -1,51 +1,73 @@
-import { useNavigate } from "react-router-dom";
-import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
+import { useState } from "react";
+import { AttendanceRequest } from "../../types/attendance";
+import { AttendanceDetailView } from "../Attendance/AttendanceDetails";
+import LayoutHeader from "../shared/LayoutHeader";
 import ApprovalList from "../shared/ApprovalList";
+import { useNavigate } from "react-router";
+import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
 import CardTable from "../shared/CardTable";
-import HeaderBar from "../HeaderBar";
-import { useScreenSize } from "../../hooks/useScreenSize";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 
 const PendingTeamLeaves = () => {
+  const [selectedRequest, setSelectedRequest] =
+    useState<AttendanceRequest | null>(null);
+  const [refetch, setRefetch] = useState(false);
+
   const navigate = useNavigate();
-  const { isDesktop } = useScreenSize();
+  const { refetchAttendance } = useGlobalStore();
 
-  const content = (
-    <div className="flex flex-col min-h-screen md:min-h-full bg-white absolute inset-0 z-[150]">
-      {!isDesktop && (
-        <header className="sticky top-0 z-50 bg-white shadow-sm">
-          <HeaderBar title="Pending Requests" onBack={() => navigate(-1)} />
-        </header>
-      )}
-
-      <main className="flex-1 overflow-y-auto px-4 md:px-2 pt-2">
+  return (
+    <div>
+      <LayoutHeader
+        tab={"Pending Team Attendance Requests"}
+        onBack={() => {
+          navigate(-1);
+        }}
+      />
+      <div className="p-2">
         <CardTable
           titles={[
             "Select",
-            "Allocated To",
-            "Description",
-            "Date",
+            "Name",
+            "Employeee",
+            "From Date",
+            "To Date",
+            "Due Date",
             "Status",
             "Actions",
           ]}
+          columnWidths={["5%", "15%", "10%", "8%", "8%", "8%", "10%", "20%"]}
         >
           <ApprovalList
-            doctype="Leave Application"
-            pageSize={20}
+            doctype={"Leave Application"}
+            status="Open"
+            pageSize={13}
+            refetch={refetchAttendance || refetch}
+            onApprovalRefetchComplete={() => {
+              setRefetch(false);
+            }}
             renderCardContent={(item) => (
               <ApprovalCard
                 isSelected={item?.isSelected}
                 onToggleSelect={item?.onToggleSelect}
                 data={item?.data}
                 onAction={item?.onAction}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onClick={(request: any) => setSelectedRequest(request)}
+                loadingAction={item?.loadingAction}
               />
             )}
           />
         </CardTable>
-      </main>
+      </div>
+      {selectedRequest && (
+        <AttendanceDetailView
+          data={selectedRequest}
+          onClose={() => setSelectedRequest(null)}
+        />
+      )}
     </div>
   );
-
-  return content;
 };
 
 export default PendingTeamLeaves;

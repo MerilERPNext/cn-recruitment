@@ -112,6 +112,9 @@ export type PlannedOvertimeRequest = {
 
 export interface MyPlannedAttendanceRequest {
   reference_document: PlannedOvertimeRequest;
+  custom_doctype_actions: string;
+  custom_open_chatnext_assistant_on_action: boolean;
+  custom_approval_type: string;
   reference_type: string;
   allocated_to: string;
   custom_allow_revoke: boolean;

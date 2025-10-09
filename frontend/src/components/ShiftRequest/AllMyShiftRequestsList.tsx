@@ -7,6 +7,7 @@ import DataListView from "../DataListView";
 import EmpShiftRequestCard from "./EmpShiftRequestCard";
 import { MyShiftRequest } from "../../types/shift";
 import HeaderBar from "../HeaderBar";
+import { useCallback } from "react";
 
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
@@ -14,7 +15,11 @@ const AllMyShiftRequestsList = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name ?? ""
   );
-  const { refetchShift, setRefetchShift } = useGlobalStore();
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+
+  const handleRefetchComplete = useCallback(() => {
+    setRefetchAttendance(false);
+  }, [setRefetchAttendance]);
 
   const CardSkeleton = () => (
     <div className="my-content-card rounded-xl bg-gray-100 animate-pulse my-4">
@@ -58,12 +63,9 @@ const AllMyShiftRequestsList = () => {
             SkeletonComponent={CardSkeleton}
             onItemClick={(data) => {
               console.log(data);
-              // TODO: Implement navigation or other action on item click
             }}
-            onRefetchComplete={() => {
-              setRefetchShift(false);
-            }}
-            refetchTrigger={refetchShift}
+            onRefetchComplete={handleRefetchComplete}
+            refetchTrigger={refetchAttendance}
             isSearch={false}
             isFilter={false}
             showRefreshButton={false}

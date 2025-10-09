@@ -6,6 +6,7 @@ import {
   parse,
   parseISO,
 } from "date-fns";
+import { FilterCondition, FilterOperator } from "../types/frappe";
 
 export const gradientClassMap: Record<string, string> = {
   present: "#dcfce7", // green-100
@@ -183,4 +184,44 @@ export const formatTimeSafe = (timeStr: string | undefined) => {
   } catch {
     return "--:--";
   }
+};
+
+type FiltersObject = Record<string, unknown>;
+type FilterTuple = [FilterOperator, unknown];
+
+const validOperators: Set<FilterOperator> = new Set([
+  "=",
+  "!=",
+  ">",
+  "<",
+  ">=",
+  "<=",
+  "like",
+  "not like",
+  "in",
+  "not in",
+  "is",
+  "is not",
+  "between",
+]);
+
+const isFilterTuple = (val: unknown): val is FilterTuple => {
+  return (
+    Array.isArray(val) &&
+    val.length === 2 &&
+    typeof val[0] === "string" &&
+    validOperators.has(val[0] as FilterOperator)
+  );
+};
+
+export const mapFiltersToConditions = (
+  filtersObj: FiltersObject
+): FilterCondition[] => {
+  return Object.entries(filtersObj).map(([key, value]) => {
+    if (isFilterTuple(value)) {
+      const [operator, val] = value;
+      return [key, operator, val];
+    }
+    return [key, "=", value];
+  });
 };

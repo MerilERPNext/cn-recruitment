@@ -23,7 +23,7 @@ const Cardtable: React.FC<prop> = ({
     <>
       {currentEmployee?.employee ? (
         <DataListView
-          queryKey="attendance-requests"
+          queryKey={["attendance-requests", "pending", "calendar-page"]}
           customAPI={{
             method: "cn_leave_shift_managment.api.get_open_approval_todos",
             params: {

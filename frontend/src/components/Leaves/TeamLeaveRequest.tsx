@@ -1,43 +1,52 @@
-import { useMemo, useState } from "react";
-import FrappeListView from "../ListView";
-import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
+import { useState, useCallback } from "react";
 import { RequestCard } from "../Attendance/TeamAttendanceDetails/RequestCard";
+import { MyAttendanceRequest } from "../../types/attendance";
+//import { AttendanceDetailView } from "../Attendance/AttendanceDetails";
 import { useNavigate } from "react-router";
 import ApprovalList from "../shared/ApprovalList";
+import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
 import CardTable from "../shared/CardTable";
-import { LeaveDetailView } from "./LeaveDetails";
 import useCurrentUser from "../../hooks/useCurrentUser";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import DataListView from "../DataListView";
+import { LeaveDetailView } from "./LeaveDetails";
 
 type LoadingAction = {
   id: string;
   action: string;
 };
-
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
-  const defaultFilters = useMemo(
-    () => ({
-      reference_type: "Leave Application",
-      allocated_to: currentUser?.name,
-      status: ["in", ["Closed", "Cancelled"]],
-    }),
-    [currentUser]
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name as string
   );
-  const { refetchAttendance } = useGlobalStore();
-  const [refetch, setRefetch] = useState(false);
+
+  const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+  const [refetchActionedList, setRefetchActionedList] = useState(false);
   const navigate = useNavigate();
+
+  const handleApprovalRefetchComplete = useCallback(() => {
+    setRefetchApprovalList(false);
+    setRefetchActionedList(true);
+  }, []);
+
+  const handleActionedRefetchComplete = useCallback(() => {
+    setRefetchActionedList(false);
+  }, []);
+
   const [selectedRequest, setSelectedRequest] = useState<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (any & { loadingAction?: LoadingAction }) | null
+    (MyAttendanceRequest & { loadingAction?: LoadingAction }) | null
   >(null);
+
   return (
     <>
-      <div className="bg-white min-h-full w-full">
-        <div className="bg-white w-full px-2">
-          <div className="flex justify-between pt-4 mb-2 border-b border-gray-200">
+      <div className="bg-white min-h-screen">
+        <div className="bg-white px-2">
+          {/* Pending */}
+
+          <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
             <h2 className="text-lg font-semibold text-gray-800 pb-1">
-              Pending Requests
+              Pending Team Leave Requests
             </h2>
             <button
               onClick={() => {
@@ -48,85 +57,115 @@ const TeamLeaveRequest = () => {
               View All
             </button>
           </div>
-
           <CardTable
-            titles={["Select", "Description", "Due Date", "Status", "Actions"]}
-            columnWidths={["10%", "30%", "10%", "10%", "30%"]}
+            titles={[
+              "Select",
+              "Name",
+              "Employee",
+              "From Date",
+              "To Date",
+              "Due Date",
+              "Status",
+              "Actions",
+            ]}
+            columnWidths={["5%", "15%", "10%", "8%", "8%", "8%", "10%", "20%"]}
           >
-            <ApprovalList
-              doctype="Leave Application"
-              refetch={refetch || refetchAttendance}
-              onApprovalRefetchComplete={() => setRefetch(false)}
-              showPagination={false}
-              renderCardContent={(item) => (
-                <ApprovalCard
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  data={item?.data}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onAction={async (action: string, data: any) => {
-                    await item?.onAction?.(action, data);
-                    setSelectedRequest(null);
-                    setRefetch(true);
-                  }}
-                  loadingAction={item?.loadingAction}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onClick={(request: any) =>
-                    setSelectedRequest({
-                      ...request,
-                      loadingAction: item?.loadingAction,
-                    })
-                  }
-                />
-              )}
-            />
+            {currentUser?.name ? (
+              <ApprovalList
+                doctype={"Leave Application"}
+                status="Open"
+                refetch={refetchApprovalList}
+                //setRefetch={setRefetchApprovalList}
+                onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                pageSize={3}
+                showPagination={false}
+                renderCardContent={(item) => (
+                  <ApprovalCard
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    data={item?.data}
+                    onAction={item?.onAction}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick={(request: any) =>
+                      setSelectedRequest({
+                        ...request,
+                        loadingAction: item?.loadingAction,
+                      })
+                    }
+                    loadingAction={item?.loadingAction}
+                  />
+                )}
+              />
+            ) : null}
           </CardTable>
         </div>
 
-        <div className="bg-white mt-4 md:px-2">
-          <h2 className="text-lg px-2 md:px-0 font-semibold text-gray-800 mb-2 border-b border-gray-200 pb-1">
-            Actioned Requests
-          </h2>
+        {/* Actioned */}
+        <div className="bg-white px-2 mt-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 pb-1">
+              Actioned Team Leave Requests
+            </h2>
+            <CardTable
+              columnWidths={["15%", "15%", "8%", "8%", "8%", "20%"]}
+              titles={[
+                "Name",
+                "Employee",
+                "From Date",
+                "To Date",
+                "Due Date",
+                "Status",
+              ]}
+            >
+              {currentEmployee?.employee ? (
+                <DataListView
+                  queryKey="attendance-request"
+                  customAPI={{
+                    method:
+                      "cn_leave_shift_managment.api.get_open_approval_todos",
+                    params: {
+                      doctype: "Leave Application",
+                      is_allocated_todos: true,
 
-          <CardTable
-            titles={["Description", "Due Date", "Status"]}
-            columnWidths={["42%", "10%", "33%"]}
-          >
-            <FrappeListView
-              doctype="ToDo"
-              isSearch={false}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              defaultFilters={defaultFilters as any}
-              showRefereshButton={false}
-              infiniteScroll={false}
-              isFilter={false}
-              defaultFields={["*"]}
-              pageSize={3}
-              showPagination={false}
-              refetchTrigger={refetch}
-              onRefetchComplete={() => setRefetch(false)}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ItemComponent={({ item }: { item: any }) => (
-                <RequestCard
-                  key={item?.name}
-                  request={item}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onClick={(request: any) => setSelectedRequest(request)}
+                      fields: ["*"],
+                    },
+                  }}
+                  defaultFilters={{ status: ["!=", "Open"] }}
+                  ItemComponent={(props: { item: MyAttendanceRequest }) => {
+                    return (
+                      <RequestCard
+                        request={props?.item}
+                        onClick={(request: MyAttendanceRequest) =>
+                          setSelectedRequest(request)
+                        }
+                      />
+                    );
+                  }}
+                  onRefetchComplete={handleActionedRefetchComplete}
+                  refetchTrigger={refetchActionedList}
+                  isSearch={false}
+                  isFilter={false}
+                  pageSize={5}
+                  showRefreshButton={false}
+                  orderBy="modified desc"
+                  infiniteScroll={false}
+                  loadMorePagination={true}
+                  showPagination={false}
                 />
-              )}
-            />
-          </CardTable>
+              ) : null}
+            </CardTable>
+          </div>
         </div>
       </div>
+
       {selectedRequest && (
         <LeaveDetailView
+          label="Leave Application"
           data={selectedRequest}
           onClose={() => setSelectedRequest(null)}
           onAction={() => {
             setSelectedRequest(null);
-            setRefetch(true);
           }}
-          loadingAction={selectedRequest?.loadingAction}
         />
       )}
     </>

@@ -3,60 +3,84 @@ import { useNavigate } from "react-router-dom";
 
 import ApprovalList from "../shared/ApprovalList";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
-import { useState } from "react";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { useCallback, useState } from "react";
+import CardTable from "../shared/CardTable";
+import { MyShiftRequest } from "../../types/shift";
+import { ShiftDetailView } from "./ShiftDetailView";
+
+type LoadingAction = {
+  id: string;
+  action: string;
+};
 
 const AllShiftChangeRequestsList: React.FC = () => {
   const navigate = useNavigate();
-  const [refetch, setRefetch] = useState(false);
-  const { refetchShift } = useGlobalStore();
+
+  const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+
+  const handleApprovalRefetchComplete = useCallback(() => {
+    setRefetchApprovalList(false);
+  }, []);
+
+  const [selectedRequest, setSelectedRequest] = useState<
+    (MyShiftRequest & { loadingAction?: LoadingAction }) | null
+  >(null);
 
   return (
-    <div className="w-full mx-auto">
-      <HeaderBar
-        title="All Shift Change Requests"
-        onBack={() => navigate(-1)}
-      />
-      <div className="overflow-x-auto mt-6 mx-6 rounded-lg border border-gray-200 bg-white shadow-sm">
-        {/* UPDATED: Use prefixed table-header class */}
-        <div className="my-table-header grid grid-cols-7 gap-4">
-          <span className="my-table-header-text flex items-center">SELECT</span>
-          <span className="my-table-header-text flex items-center justify-start">
-            DESCRIPTION
-          </span>
-          <span className="my-table-header-text flex items-center justify-start">
-            CREATION DATE
-          </span>
-          <span className="my-table-header-text flex items-center justify-start">
-            STATUS
-          </span>
-          <span className="my-table-header-text flex items-center justify-start">
-            START DATE
-          </span>
-          <span className="my-table-header-text flex items-center justify-start">
-            END DATE
-          </span>
-          <span className="my-table-header-text flex items-center justify-start">
-            ACTIONS
-          </span>
-        </div>
-
-        <div className="divide-y divide-gray-200">
+    <div className="w-full mx-auto pt-2 px-6">
+      <div>
+        <HeaderBar
+          title="All Shift Change Requests"
+          onBack={() => navigate(-1)}
+        />
+        <CardTable
+          titles={[
+            "Select",
+            "Id",
+            "Employee",
+            "Shift Type",
+            "From Date",
+            "To Date",
+            "Status",
+            "Actions",
+          ]}
+          columnWidths={["5%", "15%", "10%", "8%", "8%", "8%", "10%", "20%"]}
+        >
           <ApprovalList
+            status="Draft"
             doctype={"Shift Request"}
-            refetch={refetchShift || refetch}
-            onApprovalRefetchComplete={() => setRefetch(false)}
+            refetch={refetchApprovalList}
+            setRefetch={setRefetchApprovalList}
+            onApprovalRefetchComplete={handleApprovalRefetchComplete}
             renderCardContent={(item) => (
               <ApprovalRejectionQueue
                 isSelected={item?.isSelected}
                 onToggleSelect={item?.onToggleSelect}
                 data={item?.data}
                 onAction={item?.onAction}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onClick={(request: any) =>
+                  setSelectedRequest({
+                    ...request,
+                    loadingAction: item?.loadingAction,
+                  })
+                }
+                loadingAction={item?.loadingAction}
               />
             )}
           />
-        </div>
+        </CardTable>
       </div>
+
+      {selectedRequest && (
+        <ShiftDetailView
+          data={selectedRequest}
+          onClose={() => setSelectedRequest(null)}
+          onAction={() => {
+            setSelectedRequest(null);
+          }}
+        />
+      )}
     </div>
   );
 };

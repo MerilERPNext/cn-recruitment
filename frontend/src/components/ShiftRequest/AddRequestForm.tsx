@@ -1,22 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import  { useRef } from "react";
+import { useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { useNavigate } from "react-router";
 import { toast } from "react-hot-toast";
 
 import { useShiftTypes, useCreateShiftRequest } from "../../hooks/useShift";
-import { useCurrentEmployee } from "../../hooks/useEmployee"; 
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 import HeaderBar from "../HeaderBar";
 
 import type { ShiftRequestFormData, FormioSubmission } from "../../types/shift";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 
-const ShiftChangeForm: React.FC = () => {
+interface ShiftRequestFormModalProps {
+  onClose?: () => void;
+}
+
+const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
+  const { setRefetchAttendance } = useGlobalStore();
+
   const navigate = useNavigate();
   const formRef = useRef<any>(null);
 
   const { data: shiftTypes, isLoading, error } = useShiftTypes();
   const { mutate: createShiftRequest } = useCreateShiftRequest();
-  const { data: employeeDetails } = useCurrentEmployee(); 
+  const { data: employeeDetails } = useCurrentEmployee();
 
   const handleBack = () => navigate(-1);
 
@@ -51,13 +58,17 @@ const ShiftChangeForm: React.FC = () => {
         to_date: formatDate(toDate),
         reason,
         status: "Draft",
-        employee: employeeDetails.name, 
-        shift_request_approver: employeeDetails.shift_request_approver, 
+        employee: employeeDetails.name,
+        shift_request_approver: employeeDetails.shift_request_approver,
       };
 
       createShiftRequest(payload, {
         onSuccess: () => {
-          navigate("/webapp/shift-request/shift-change-request");
+          onClose?.();
+          setTimeout(() => {
+            setRefetchAttendance(true);
+          }, 1000);
+          navigate("/webapp/shift-request/shift-list");
         },
         onError: () => {
           console.error("Failed to submit shift request.");
@@ -75,7 +86,10 @@ const ShiftChangeForm: React.FC = () => {
   };
 
   if (isLoading) return <div>Loading shifts…</div>;
-  if (error) return <div className="text-red-600">Error loading shifts: {error.message}</div>;
+  if (error)
+    return (
+      <div className="text-red-600">Error loading shifts: {error.message}</div>
+    );
 
   const formSchema = {
     title: "Request Shift Change",
