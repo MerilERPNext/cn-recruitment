@@ -172,9 +172,7 @@ const AttendanceRequest = ({
                         employee: currentEmployee?.employee,
                       },
                     }}
-                    defaultFilters={{
-                      status: ["in", ["Rejected", "Approved"]],
-                    }}
+                    defaultFilters={{ status: ["!=", "Pending"] }}
                     ItemComponent={(props: { item: MyAttendanceRequest }) => {
                       return (
                         <EmpAttendanceRequestCard

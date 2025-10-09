@@ -4,11 +4,22 @@ const primary = "hsla(208, 100%, 43%, 1)";
 const secondary = "hsla(190, 81%, 42%, 1)";
 
 export default {
-  content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx,css}",
-    "./index.html"
+  content: ["./src/**/*.{js,ts,jsx,tsx,mdx,css}", "./index.html"],
+  safelist: [
+    "grid-cols-1",
+    "grid-cols-2",
+    "grid-cols-3",
+    "grid-cols-4",
+    "grid-cols-5",
+    "grid-cols-6",
+    "grid-cols-7",
+    "grid-cols-8",
+    "grid-cols-9",
+    "grid-cols-10",
+    "grid-cols-11",
+    "grid-cols-12",
   ],
-  darkMode: 'media', // Changed from false to 'media'
+  darkMode: "media", // Changed from false to 'media'
   theme: {
     extend: {
       colors: {
@@ -23,7 +34,7 @@ export default {
           600: primary,
           700: "hsla(208, 100%, 35%, 1)",
           800: "hsla(208, 100%, 27%, 1)",
-          900: "hsla(208, 100%, 19%, 1)"
+          900: "hsla(208, 100%, 19%, 1)",
         },
         secondary: {
           DEFAULT: secondary,
@@ -36,9 +47,9 @@ export default {
           600: secondary,
           700: "hsla(190, 81%, 34%, 1)",
           800: "hsla(190, 81%, 28%, 1)",
-          900: "hsla(190, 81%, 20%, 1)"
+          900: "hsla(190, 81%, 20%, 1)",
         },
-        "gray-darker": "#504747"
+        "gray-darker": "#504747",
       },
       spacing: {
         7.5: "1.875rem", // 30px
@@ -48,31 +59,38 @@ export default {
         26: "6.5rem", // 104px
         30: "8.5rem", // 136px
         32: "9rem", // 144px
-        68: "17rem" // 272px
+        68: "17rem", // 272px
       },
       padding: {
-        px: "1px"
+        px: "1px",
       },
       margin: {
         px: "1px",
         "-px": "-1px",
         "-2px": "-2px",
-        auto: "auto"
+        auto: "auto",
       },
       fontSize: {
         micro: ".5rem", // 8px
         xxs: ".625rem", // 10px
-        md: "1.125rem" // 18px
+        md: "1.125rem", // 18px
       },
       fontWeight: {
-        hairline: 100
+        hairline: 100,
       },
       fontFamily: {
         brand: ["Source Sans Pro", "sans-serif"],
         sans: ["Source Sans Pro", "sans-serif"],
         serif: ["Source Sans Pro", "sans-serif"],
         inconsolata: ["Inconsolata"],
-        source: ["source-code-pro", "Menlo", "Monaco", "Consolas", "Courier New", "monospace"]
+        source: [
+          "source-code-pro",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          "Courier New",
+          "monospace",
+        ],
       },
       minWidth: {
         site: "18.75rem",
@@ -83,14 +101,14 @@ export default {
         "button-mini": "5.5rem",
         "button-small": "7rem",
         "button-medium": "9.875rem",
-        "button-large": "10rem"
+        "button-large": "10rem",
       },
       width: {
         arrow: ".8rem",
         "3/10": "30%",
         "7/10": "70%",
         "9/10": "90%",
-        "12/25": "48%"
+        "12/25": "48%",
       },
       maxWidth: {
         sm: "30rem",
@@ -111,7 +129,7 @@ export default {
         "site-medium": "43.75rem",
         "site-large": "56.25rem",
         site: "73.75rem",
-        screen: "100vw"
+        screen: "100vw",
       },
       height: {
         arrow: ".4rem",
@@ -125,15 +143,15 @@ export default {
         12: "3rem",
         16: "4rem",
         24: "6rem",
-        32: "8rem"
+        32: "8rem",
       },
       borderWidth: {
         1: "1px",
-        5: "5px"
+        5: "5px",
       },
       borderRadius: {
         half: "50%",
-        full: "100%"
+        full: "100%",
       },
       zIndex: {
         1: 1,
@@ -141,27 +159,27 @@ export default {
         3: 3,
         4: 4,
         5: 5,
-        6: 6
+        6: 6,
       },
       fill: {
-        transparent: "transparent"
+        transparent: "transparent",
       },
       flex: {
         2: "2 2 0%",
-        3: "3 3 0%"
-      }
+        3: "3 3 0%",
+      },
     },
     outline: {
       none: ["2px solid transparent", "2px"],
       white: ["2px dotted white", "2px"],
-      black: ["2px dotted black", "2px"]
-    }
+      black: ["2px dotted black", "2px"],
+    },
   },
   variants: {
-    extend: {}
+    extend: {},
   },
   corePlugins: {
-    borderCollapse: true
+    borderCollapse: true,
   },
-  plugins: []
-}
+  plugins: [],
+};

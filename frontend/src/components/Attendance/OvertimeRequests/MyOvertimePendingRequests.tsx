@@ -28,6 +28,7 @@ const MyOvertimePendingRequests = () => {
     () => ({
       reference_type: "Planned Overtime Request",
       employee: currentEmployee?.employee,
+      status: ["!=", "Open"],
     }),
     [currentEmployee]
   );

@@ -43,7 +43,7 @@ const AllAttendanceRequest = ({
     if (statusType === "pending") {
       return { ...baseFilters, status: "Pending" };
     } else if (statusType === "actioned") {
-      return { ...baseFilters, status: ["in", ["Rejected", "Approved"]] };
+      return { ...baseFilters, status: ["!=", "Pending"] };
     }
 
     return baseFilters;
