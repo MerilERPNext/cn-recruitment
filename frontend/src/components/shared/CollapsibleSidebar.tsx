@@ -25,6 +25,7 @@ import {
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { ROUTES } from "../../constants/routes";
+import useCurrentUser from "../../hooks/useCurrentUser";
 
 interface SubSubMenuItem {
   name: string;
@@ -88,13 +89,31 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
+  const { data: currentUser } = useCurrentUser();
 
   const handleTodoClick = () => {
     window.open(ROUTES.TODO, "_blank");
   };
 
+  // const handleHelpDeskClick = () => {
+  //   window.open(ROUTES.HELP_DESK, "_blank");
+  // };
+
   const handleHelpDeskClick = () => {
-    window.open(ROUTES.HELP_DESK, "_blank");
+    if (!currentUser?.roles) {
+      window.open(ROUTES.HELP_DESK, "_blank");
+      return;
+    }
+
+    const rolesArray = currentUser.roles?.map((r) => r.role) ?? [];
+
+    const isAgentOrManager =
+      rolesArray.includes("Agent") || rolesArray.includes("Agent Manager");
+
+    const routeToOpen = isAgentOrManager
+      ? ROUTES.HELP_DESK_ADMIN
+      : ROUTES.HELP_DESK;
+    window.open(routeToOpen, "_blank");
   };
 
   const navigationItems: NavigationItem[] = [

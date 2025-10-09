@@ -129,6 +129,7 @@ export interface AttendanceRequestValidations {
   shift_change_requests: number;
   out_duty_requests: number;
   short_leave_requests: number;
+  is_mandatory:boolean
 }
 
 export interface RequestCardProps {
