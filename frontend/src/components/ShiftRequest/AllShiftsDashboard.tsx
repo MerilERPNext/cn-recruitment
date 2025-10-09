@@ -81,7 +81,6 @@ const MyShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item }) => {
-
   const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
   return (

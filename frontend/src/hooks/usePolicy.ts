@@ -11,7 +11,7 @@ export const usePolicyCountsByCategory = (employeeId?: string) => {
         // ✅ Build filters dynamically
         const filters: Record<string, any> = { status: ["!=", ""] };
         if (employeeId) {
-          filters.employee_id = employeeId; // replace with correct field name
+          filters.employee_id = employeeId;
         }
 
         const result = await frappeService.getDocumentsPage({

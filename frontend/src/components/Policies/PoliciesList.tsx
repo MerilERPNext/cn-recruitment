@@ -108,7 +108,15 @@ const PoliciesList: React.FC = () => {
 
   return (
     <div className="w-full bg-white rounded-xl md:p-4 p-2">
-      {isDesktop ? (<HeaderBar title="Policies List" onBack={() => navigate(-1)} rightSlot={<FilterDropdown/>} />) : <FilterDropdown />}
+      {isDesktop ? (
+        <HeaderBar
+          title="Policies List"
+          onBack={() => navigate(-1)}
+          rightSlot={<FilterDropdown />}
+        />
+      ) : (
+        <FilterDropdown />
+      )}
       <FrappeListView<PolicyDoc>
         doctype="Policy Details"
         defaultFilters={{
