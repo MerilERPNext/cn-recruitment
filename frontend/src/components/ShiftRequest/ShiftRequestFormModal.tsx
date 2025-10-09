@@ -18,7 +18,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   onClose,
 }) => {
   const formRef = useRef<any>(null);
-  const { setRefetchShift } = useGlobalStore();
+  const { setRefetchAttendance } = useGlobalStore();
   const {
     data: shiftTypes,
     isLoading: shiftTypesLoading,
@@ -71,13 +71,13 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
       createShiftRequest(payload, {
         onSuccess: () => {
-          setRefetchShift(true);
-          if (onClose) onClose();
-          // Let the mutation's built-in success toast handle the message
+          onClose?.();
+          setTimeout(() => {
+            setRefetchAttendance(true);
+          }, 1000);
         },
         onError: (error: any) => {
           console.error("Error creating shift request:", error);
-          // Let the mutation's built-in error toast handle the message
         },
       });
     } catch (formError) {

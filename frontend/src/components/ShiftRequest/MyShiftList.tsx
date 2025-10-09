@@ -1,126 +1,69 @@
-// import { useNavigate } from "react-router-dom";
-import { IoIosArrowForward } from "react-icons/io";
-import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
-import FrappeListView from "../ListView";
-
-interface ShiftRequest {
-  name: string;
-  employee: string;
-  department: string;
-  from_date: string;
-  to_date: string;
-  shift_type: string;
-  status: string;
-  creation: string;
-}
+import useCurrentUser from "../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { useCallback } from "react";
+import DataListView from "../DataListView";
+import { MyShiftRequest } from "../../types/shift";
+import EmpShiftRequestCard from "./EmpShiftRequestCard";
 
 const ShiftRequestList = () => {
-//   const navigate = useNavigate();
-
-//   const handleGoToShiftRequest = (shiftId: string) => {
-//     const encodedId = encodeURIComponent(shiftId);
-//     navigate(`/webapp/shift-request/${encodedId}`);
-//   };
-
-  return (
-    <FrappeListView
-      doctype="Shift Request"
-      ItemComponent={ShiftRequestItem}
-    //   onItemClick={(item: ShiftRequest) => {
-    //     handleGoToShiftRequest(item.name);
-    //   }}
-      isSearch={true}
-      pageSize={10}
-      defaultFields={[
-        "name",
-        "employee",
-        "department",
-        "from_date",
-        "to_date",
-        "shift_type",
-        "status",
-        "creation",
-      ]}
-      searchFields={["employee", "status", "shift_type"]}
-      infiniteScroll={true}
-    />
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name ?? ""
   );
-};
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
-const ShiftRequestItem: React.FC<{
-  item: ShiftRequest;
-  index?: number;
-  doctype: string;
-}> = ({ item }) => {
+  const handleRefetchComplete = useCallback(() => {
+    setRefetchAttendance(false);
+  }, [setRefetchAttendance]);
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  const CardSkeleton = () => (
+    <div className="my-content-card rounded-xl bg-gray-100 animate-pulse my-4">
+      <div className="px-4 py-3">
+        <div className="flex items-center justify-between mb-3">
+          <div className="h-4 w-32 bg-gray-300 rounded"></div>
+          <div className="h-5 w-16 bg-gray-300 rounded-md"></div>
+        </div>
+        <div className="h-3 w-48 bg-gray-300 rounded"></div>
+      </div>
+    </div>
+  );
 
-  const getStatusIcon = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return <FaCheck className="ml-1 text-green-600 w-3 h-3" />;
-      case "draft":
-        return <FaInfoCircle className="ml-1 text-yellow-600 w-3 h-3" />;
-      case "rejected":
-        return <FaMinusCircle className="ml-1 text-red-600 w-3 h-3" />;
-      default:
-        return null;
-    }
-  };
-
-  const formatToIndianDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
 
   return (
-    <div
-      key={item.name}
-      className="flex justify-between items-center gap-3 bg-white p-4 mt-1 rounded-xl border cursor-pointer hover:shadow-sm transition-shadow"
-    >
-      <div className="flex-grow">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-[var(--text-primary)] text-base font-semibold">
-            {item.employee} ({item.department})
-          </h3>
-        </div>
-        <div className="text-sm text-[var(--secondary-color)]">
-          <p>
-            Shift Type: <span className="font-medium">{item.shift_type}</span>
-          </p>
-          <p>
-            From: {formatToIndianDate (item.from_date)} <br /> To:{" "}
-            {formatToIndianDate (item.to_date)}
-          </p>
-        </div>
-      </div>
-      <span
-        className={`flex items-center text-xs font-medium px-3 py-1 rounded-lg ${getStatusColor(item.status)}`}
-      >
-        {item.status}
-      </span>
-      <span
-        className={`flex items-center justify-center text-xs font-medium px-1 py-1 rounded-full`}
-      >
-        {getStatusIcon(item.status)}
-      </span>
-      <button className="text-lg text-[var(--secondary-color)] ">
-        <IoIosArrowForward />
-      </button>
+    <div className="w-full mx-auto pt-2 px-1">
+
+      {currentEmployee?.employee && (
+        <DataListView
+          queryKey="shift-requests"
+          customAPI={{
+            method: "cn_leave_shift_managment.api.get_open_approval_todos",
+            params: {
+              doctype: "Shift Request",
+              employee: currentEmployee?.employee,
+            },
+          }}
+          ItemComponent={(props: { item: MyShiftRequest }) => {
+              return (
+                <EmpShiftRequestCard
+                  data={{
+                    ...props?.item,
+                  }}
+                />
+              );
+            }}
+          SkeletonComponent={CardSkeleton}
+          onRefetchComplete={handleRefetchComplete}
+          refetchTrigger={refetchAttendance}
+          isSearch={false}
+          isFilter={false}
+          showRefreshButton={false}
+          orderBy="modified desc"
+          infiniteScroll={true}
+          loadMorePagination={true}
+          showPagination={false}
+        />
+      )}
     </div>
   );
 };
