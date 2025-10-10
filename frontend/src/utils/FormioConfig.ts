@@ -1,32 +1,21 @@
 import { Formio } from "formiojs";
 import { FrappeAPI } from "./frappeAPI";
 
-const getBaseUrl = () => {
-  return (
-    // @ts-expect-error - Global variable set by Vite plugin
-    window.__FORMIO_BASE_URL__ ||
-    window.location?.origin ||
-    "http://localhost:3000"
-  );
-};
-
 // Initialize FormIO with proper error handling
 try {
-  const baseUrl = getBaseUrl();
-  Formio.setBaseUrl(baseUrl);
-  console.log("FormIO initialized with base URL:", baseUrl);
+  Formio.setBaseUrl(window.location?.origin);
+  console.log("FormIO initialized with base URL");
 } catch (error) {
   console.error("Error initializing FormIO:", error);
   // Retry once after a short delay
   setTimeout(() => {
     try {
-      const baseUrl = getBaseUrl();
-      Formio.setBaseUrl(baseUrl);
-      console.log("FormIO initialized (retry) with base URL:", baseUrl);
+      Formio.setBaseUrl(window.location?.origin);
+      console.log("FormIO initialized (retry) with base URL");
     } catch (retryError) {
       console.error("Failed to initialize FormIO on retry:", retryError);
     }
-  }, 100);
+  }, 200);
 }
 
 const customProvider = {
