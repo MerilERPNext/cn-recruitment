@@ -9,6 +9,7 @@
     "postinstall": "cd frontend && yarn install --check-files"
   },
   "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
     "typescript": "^5.8.3"
   },
   "dependencies": {
