@@ -1,0 +1,46 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "RUA.#####",
+ "creation": "2025-10-09 19:14:18.562607",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user_assignment"
+ ],
+ "fields": [
+  {
+   "fieldname": "user_assignment",
+   "fieldtype": "Table MultiSelect",
+   "label": "User Assignment",
+   "options": "User Assignment Table"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-10-10 11:55:12.348035",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Referee User Assignment",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

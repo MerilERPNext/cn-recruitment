@@ -1,0 +1,127 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "RPC.#####",
+ "creation": "2025-10-09 18:50:45.344603",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "configuration_name",
+  "description",
+  "column_break_ekjw",
+  "assign_referral_policy_by",
+  "user_assignment_applicable_to",
+  "job_opening_applicable_to",
+  "section_break_mfpy",
+  "effective_from",
+  "effective_to",
+  "column_break_gprx",
+  "date_of_reference",
+  "section_break_aajb",
+  "configure_role_specific_limits"
+ ],
+ "fields": [
+  {
+   "fieldname": "configuration_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Configuration Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "assign_referral_policy_by",
+   "fieldtype": "Select",
+   "label": "Assign Referral Policy By",
+   "options": "\nUser Assignment\nJob Opening",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.assign_referral_policy_by == \"User Assignment\"",
+   "fieldname": "user_assignment_applicable_to",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable To",
+   "mandatory_depends_on": "eval:doc.assign_referral_policy_by == \"User Assignment\"",
+   "options": "User Assignment Table"
+  },
+  {
+   "depends_on": "eval:doc.assign_referral_policy_by == \"Job Opening\"",
+   "fieldname": "job_opening_applicable_to",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable To",
+   "mandatory_depends_on": "eval:doc.assign_referral_policy_by == \"Job Opening\"",
+   "options": "Job Opening Table"
+  },
+  {
+   "fieldname": "section_break_mfpy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "label": "Effective From",
+   "reqd": 1
+  },
+  {
+   "fieldname": "effective_to",
+   "fieldtype": "Date",
+   "label": "Effective To"
+  },
+  {
+   "fieldname": "column_break_gprx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "date_of_reference",
+   "fieldtype": "Select",
+   "label": "Date Of Reference",
+   "options": "\nDate of Application\nDate of Offer Acceptance\nDate of Joining",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ekjw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_aajb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "configure_role_specific_limits",
+   "fieldtype": "Table",
+   "label": "Configure Role Specific Limits",
+   "options": "Referral Configuration Role Specific"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-10-09 20:02:22.275204",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Referral Policy Configuration",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
