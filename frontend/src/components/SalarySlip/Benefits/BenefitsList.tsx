@@ -322,7 +322,10 @@ const BenefitsList: React.FC = () => {
 
       {showBenefitForm && (
         <Modal onClose={handleCloseModal}>
-          <BenefitRequestForm onClose={handleCloseModal} />
+          <BenefitRequestForm
+            isOpen={showBenefitForm}
+            onClose={handleCloseModal}
+          />
         </Modal>
       )}
     </div>
