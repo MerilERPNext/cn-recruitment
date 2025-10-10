@@ -8,6 +8,10 @@
  "engine": "InnoDB",
  "field_order": [
   "duplicity_check_setting_name",
+  "section_break_zxtv",
+  "applicable_to",
+  "column_break_ktgx",
+  "allow_duplicity_check_settings_for_all_sources",
   "duplicity_check_fields_below_section",
   "duplicity_check_fields",
   "no_of_days_before_reapplication_by_candidate",
@@ -15,11 +19,7 @@
   "allow_candidate_for_external_recruiter",
   "column_break_xtrm",
   "no_of_days_before_reapplication_by_employee_in_ijp",
-  "allow_employee_to_apply_for_ijp",
-  "section_break_zxtv",
-  "applicable_to",
-  "column_break_ktgx",
-  "allow_duplicity_check_settings_for_all_sources"
+  "allow_employee_to_apply_for_ijp"
  ],
  "fields": [
   {
@@ -42,19 +42,21 @@
   },
   {
    "fieldname": "no_of_days_before_reapplication_by_candidate",
-   "fieldtype": "Data",
-   "label": "No of days before reapplication by candidate"
+   "fieldtype": "Int",
+   "label": "No of days before reapplication by candidate",
+   "non_negative": 1
   },
   {
    "fieldname": "no_of_days_before_reapplication_by_employee_in_ijp",
-   "fieldtype": "Data",
-   "label": "No of days before reapplication by Employee in IJP"
+   "fieldtype": "Int",
+   "label": "No of days before reapplication by Employee in IJP",
+   "non_negative": 1
   },
   {
    "fieldname": "applicable_to",
    "fieldtype": "Table MultiSelect",
    "label": "Applicable To",
-   "options": "User Assignment Table"
+   "options": "Company List"
   },
   {
    "fieldname": "column_break_xtrm",
@@ -96,7 +98,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-10 12:23:27.840707",
+ "modified": "2025-10-10 18:25:02.468266",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Duplicity Check Setting",

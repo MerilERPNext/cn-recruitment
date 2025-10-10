@@ -202,7 +202,8 @@ doc_events = {
         "after_insert": "recruitment.auto_fetch_fields.link_employee_to_onboarding",
     },
     "Job Applicant": {
-        "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
+        "before_save": "recruitment.customizations.job_applicant.validate_job_applicant",
+        
     },
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
