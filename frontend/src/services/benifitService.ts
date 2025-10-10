@@ -5,7 +5,7 @@ export type PayrollData = {
   payroll_period: string;
 };
 
-export const getClaimBenifitFor = async (
+export const getClaimBenefitFor = async (
   empId: string | null | undefined,
   date: string | null
 ): Promise<PayrollData> => {
@@ -26,7 +26,7 @@ export const getClaimBenifitFor = async (
 export const getClaimBenifitMaxAmount = async (
   empId: string | null | undefined,
   earning_component: string | null
-): Promise<PayrollData> => {
+): Promise<number> => {
   try {
     const response = await FrappeAPI.callMethod(
       "cn_indian_payroll.cn_indian_payroll.overrides.benefit_claim.get_max_amount",
@@ -35,7 +35,7 @@ export const getClaimBenifitMaxAmount = async (
         earning_component,
       }
     );
-    return response as PayrollData;
+    return response as number;
   } catch (error) {
     console.error(
       "📡 Error while getting claim benifit for max amount:",

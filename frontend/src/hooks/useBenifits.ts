@@ -1,17 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createBenifitRequest,
-  getClaimBenifitFor,
+  getClaimBenefitFor,
   getClaimBenifitMaxAmount,
 } from "../services/benifitService";
 
-export function useGetClaimBenifitFor(
+export function useGetClaimBenefitFor(
   empId: string | null | undefined,
   date: string | null
 ) {
   return useQuery({
     queryKey: ["claim-benifits-for", empId, date],
-    queryFn: () => getClaimBenifitFor(empId, date),
+    queryFn: () => getClaimBenefitFor(empId, date),
     enabled: !!empId && !!date,
   });
 }
@@ -20,7 +20,7 @@ export function useGetClaimBenifitMaxAmount(
   earning_component: string | null
 ) {
   return useQuery({
-    queryKey: ["claim-benifits-for-max-amount", empId],
+    queryKey: ["claim-benifits-for-max-amount", empId, earning_component],
     queryFn: () => getClaimBenifitMaxAmount(empId, earning_component),
     enabled: !!earning_component,
   });

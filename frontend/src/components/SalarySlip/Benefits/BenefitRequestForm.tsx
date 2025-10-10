@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import {
-  useGetClaimBenifitFor,
+  useGetClaimBenefitFor,
   useGetClaimBenifitMaxAmount,
   useNewBenifitRequest,
 } from "../../../hooks/useBenifits";
@@ -13,7 +13,7 @@ import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
 import DOMPurify from "dompurify";
 
-interface BenefitRequestForm {
+interface BenefitRequestFormProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -21,15 +21,15 @@ interface BenefitRequestForm {
 export default function BenefitRequestForm({
   isOpen,
   onClose,
-}: BenefitRequestForm) {
+}: BenefitRequestFormProps) {
   const [claimBenifitFor, setClaimBenifitFor] = useState("");
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name || ""
   );
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
-  const { data: claimBenifitForData } = useGetClaimBenifitFor(
+  const { data: claimBenifitForData } = useGetClaimBenefitFor(
     currentEmployee?.employee,
     format(new Date(), "yyyy-MM-dd")
   );
@@ -42,8 +42,8 @@ export default function BenefitRequestForm({
   const handleClaimBenifitChange = (event: {
     data: { earning_component: string };
   }) => {
-    const claimBenift = event?.data?.earning_component || "";
-    setClaimBenifitFor(claimBenift);
+    const claimBenefit = event?.data?.earning_component || "";
+    setClaimBenifitFor(claimBenefit);
   };
   const createLoanFormSchema = {
     type: "form",
@@ -68,10 +68,9 @@ export default function BenefitRequestForm({
         label: "Claimed Amount",
         input: true,
         validate: {
-          min: 1,
           required: true,
           customMessage:
-            "Claimed amount cannot be greater than Max amout eligible",
+            "Claimed amount cannot be greater than Max amount eligible",
           custom:
             "valid = Number(data.custom_max_amount) < input ? false : true;",
         },
@@ -82,7 +81,7 @@ export default function BenefitRequestForm({
         key: "custom_max_amount",
         label: "Max Amount Eligible",
         defaultValue: claimBenifitForMaxAmount,
-        validate: { required: true, min: 1 },
+        validate: { required: true },
         input: true,
       },
       {
@@ -111,8 +110,12 @@ export default function BenefitRequestForm({
   };
   const handleSubmit = async () => {
     const submission = await formRef.current?.submit();
+
+    if (!submission?.data) {
+      toast.error("Failed to submit form. Please try again.");
+      return;
+    }
     const submissionData = {
-      ...submission?.data,
       employee: currentEmployee?.employee,
       claim_date: format(new Date(), "yyyy-MM-dd"),
       earning_component: submission?.data?.earning_component,
