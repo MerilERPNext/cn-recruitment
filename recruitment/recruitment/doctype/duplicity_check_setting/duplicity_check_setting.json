@@ -11,12 +11,14 @@
   "duplicity_check_fields_below_section",
   "duplicity_check_fields",
   "no_of_days_before_reapplication_by_candidate",
-  "no_of_days_before_reapplication_by_employee_in_ijp",
-  "applicable_to",
-  "column_break_xtrm",
   "allow_candidate_for_other_sources",
   "allow_candidate_for_external_recruiter",
+  "column_break_xtrm",
+  "no_of_days_before_reapplication_by_employee_in_ijp",
   "allow_employee_to_apply_for_ijp",
+  "section_break_zxtv",
+  "applicable_to",
+  "column_break_ktgx",
   "allow_duplicity_check_settings_for_all_sources"
  ],
  "fields": [
@@ -81,12 +83,20 @@
    "fieldname": "allow_duplicity_check_settings_for_all_sources",
    "fieldtype": "Check",
    "label": "Allow super admins, Hiring Leads and permission role holders to override duplicity check settings for all sources"
+  },
+  {
+   "fieldname": "section_break_zxtv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_ktgx",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-09 18:05:38.280108",
+ "modified": "2025-10-10 12:23:27.840707",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Duplicity Check Setting",
