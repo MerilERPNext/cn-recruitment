@@ -1,4 +1,4 @@
-import React, {  useState } from "react";
+import React from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { formatCurrency } from "../../utils/currencyFormatter";
@@ -35,7 +35,7 @@ const mockAdvances = [
 const AdvanceExpenseList: React.FC = () => {
   
   const { isDesktop } = useScreenSize();
-  const [advances, setAdvances] = React.useState(mockAdvances);
+  const advancesData = mockAdvances;
 
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
@@ -54,7 +54,7 @@ const AdvanceExpenseList: React.FC = () => {
             </div>
 
             <div className="divide-y divide-gray-200">
-              {advances.map((adv, index) => (
+              {advancesData.map((adv, index) => (
                 <div
                   key={`${adv.name}-${index}`}
                   className="my-data-row grid grid-cols-6 gap-4 cursor-pointer py-2"
@@ -73,7 +73,7 @@ const AdvanceExpenseList: React.FC = () => {
           </div>
         </div>
 
-        {advances.length === 0 && (
+        {advancesData.length === 0 && (
           <div className="text-center py-12 px-4">
             <p className="text-gray-500">No advances found.</p>
           </div>
@@ -84,7 +84,7 @@ const AdvanceExpenseList: React.FC = () => {
 
   const MobileLayout = () => (
     <div className="min-h-screen w-full bg-gray-50 space-y-3">
-      {advances.map((adv, index) => (
+      {advancesData.map((adv, index) => (
         <div
           key={`${adv.name}-${index}`}
           className="my-content-card bg-white shadow rounded-lg p-4"
@@ -99,7 +99,7 @@ const AdvanceExpenseList: React.FC = () => {
         </div>
       ))}
 
-      {advances.length === 0 && (
+      {advancesData.length === 0 && (
         <div className="text-center py-12 px-4">
           <p className="text-gray-500">No advances found.</p>
         </div>

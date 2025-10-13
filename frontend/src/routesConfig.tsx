@@ -107,6 +107,10 @@ const NewExpenseType = lazyWithRetry(
   () => import("./components/Expenses-App/NewExpenseType"),
   "NewExpenseType"
 );
+const ExpenseAdvanceForm = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpenseAdvanceForm"),
+  "ExpenseAdvanceForm"
+);
 const Holidays = lazyWithRetry(
   () => import("./components/Leaves/Holidays"),
   "Holidays"
@@ -615,6 +619,7 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "expenses-list", element: <ExpensesList /> },
       { path: "advance-expense-list", element: <AdvanceExpenseList /> },
+      { path: "new-expense-advance", element: <ExpenseAdvanceForm /> },
     ],
   },
 

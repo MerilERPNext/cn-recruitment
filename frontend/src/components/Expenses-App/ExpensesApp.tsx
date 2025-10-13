@@ -9,6 +9,7 @@ import GeneralExpenseClaimModal from "./GeneralExpenseClaimModal";
 import MileageExpenseClaimModal from "./MileageExpenseClaimModal";
 import DailyAllowanceClaimModal from "./DailyAllowanceClaimModal";
 import NavigationTabs, { Tab } from "../NavigationTab";
+import ExpenseAdvanceForm from "./ExpenseAdvanceForm";
 
 type TabName = "Expenses" | "Advances";
 
@@ -46,9 +47,6 @@ const ExpensesApp: React.FC = () => {
   useEffect(() => {
     if (location.pathname === "/webapp/expenses-app") {
       const fallback = "Expenses";
-      // const savedTab = sessionStorage.getItem("activeTab") as TabName | null;
-      // const redirectTab = savedTab && tabRoutes[savedTab] ? savedTab : fallback;
-      // navigate(tabRoutes[redirectTab], { replace: true });
       setActiveTab(fallback);
       navigate(tabRoutes[fallback], { replace: true });
     }
@@ -61,10 +59,14 @@ const ExpensesApp: React.FC = () => {
   };
 
   const handleAddNew = () => {
-    if (isDesktop) {
-      setShowExpenseTypeSelection(true);
-    } else {
-      navigate("/webapp/expenses-app/expenses-list/new-expense-type");
+    if (activeTab === "Expenses") {
+      if (isDesktop) {
+        setShowExpenseTypeSelection(true);
+      } else {
+        navigate("/webapp/expenses-app/expenses-list/new-expense-type");
+      }
+    } else if (activeTab === "Advances") {
+      navigate("/webapp/expenses-app/new-expense-advance");
     }
   };
 
@@ -111,6 +113,10 @@ const ExpensesApp: React.FC = () => {
       case "Daily Allowance":
         title = "Daily Allowance Claim";
         FormComponent = DailyAllowanceClaimModal;
+        break;
+      case "Advance":
+        title = "New Expense Advance";
+        FormComponent = ExpenseAdvanceForm;
         break;
       default:
         return null;
@@ -166,7 +172,7 @@ const ExpensesApp: React.FC = () => {
             onClick={handleAddNew}
             className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
-            + Add Expense
+            {activeTab === "Expenses" ? "+ Add Expense" : "+ Add Advance"}
           </button>
         </div>
       </div>
@@ -179,7 +185,7 @@ const ExpensesApp: React.FC = () => {
       onClick={handleAddNew}
       className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
     >
-      + Add Expense
+      {activeTab === "Expenses" ? "+ Add Expense" : "+ Add Advance"}
     </button>
   ) : null;
 
