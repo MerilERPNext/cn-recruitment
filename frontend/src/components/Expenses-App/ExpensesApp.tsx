@@ -8,29 +8,57 @@ import ExpenseFormModal from "./ExpenseFormModal";
 import GeneralExpenseClaimModal from "./GeneralExpenseClaimModal";
 import MileageExpenseClaimModal from "./MileageExpenseClaimModal";
 import DailyAllowanceClaimModal from "./DailyAllowanceClaimModal";
+import NavigationTabs, { Tab } from "../NavigationTab";
 
-type TabName = "Expenses";
+type TabName = "Expenses" | "Advances";
 
 const tabRoutes: Record<TabName, string> = {
   Expenses: "/webapp/expenses-app/expenses-list",
+  Advances: "/webapp/expenses-app/advance-expense-list",
 };
 
 const ExpensesApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showExpenseTypeSelection, setShowExpenseTypeSelection] = useState(false);
-  const [currentExpenseForm, setCurrentExpenseForm] = useState<string | null>(null);
+  const [showExpenseTypeSelection, setShowExpenseTypeSelection] =
+    useState(false);
+  const [currentExpenseForm, setCurrentExpenseForm] = useState<string | null>(
+    null
+  );
+
+  const [activeTab, setActiveTab] = useState<TabName>("Expenses");
+  const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
+    key,
+    label: key,
+  }));
+
+  useEffect(() => {
+    const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
+      location.pathname.startsWith(tabRoutes[tab])
+    );
+
+    if (matchedTab) {
+      setActiveTab(matchedTab);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (location.pathname === "/webapp/expenses-app") {
-      const savedTab = sessionStorage.getItem("activeTab") as TabName | null;
       const fallback = "Expenses";
-
-      const redirectTab = savedTab && tabRoutes[savedTab] ? savedTab : fallback;
-      navigate(tabRoutes[redirectTab], { replace: true });
+      // const savedTab = sessionStorage.getItem("activeTab") as TabName | null;
+      // const redirectTab = savedTab && tabRoutes[savedTab] ? savedTab : fallback;
+      // navigate(tabRoutes[redirectTab], { replace: true });
+      setActiveTab(fallback);
+      navigate(tabRoutes[fallback], { replace: true });
     }
   }, [location.pathname, navigate]);
+
+  const handleTabChange = (tabKey: string) => {
+    const tab = tabKey as TabName;
+    setActiveTab(tab);
+    navigate(tabRoutes[tab]);
+  };
 
   const handleAddNew = () => {
     if (isDesktop) {
@@ -120,7 +148,12 @@ const ExpensesApp: React.FC = () => {
         }
       `}</style>
 
-      <HeaderBar title="Expenses" onBack={() => navigate(-1)} />
+      <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
+      <NavigationTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      />
 
       {/* Tab Content */}
       <main className="p-4 z-100 flex-grow overflow-y-auto">
