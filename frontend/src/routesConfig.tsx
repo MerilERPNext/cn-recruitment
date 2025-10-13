@@ -91,6 +91,10 @@ const ExpensesList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpensesList"),
   "ExpensesList"
 );
+const AdvanceExpenseList = lazyWithRetry(
+  () => import("./components/Expenses-App/AdvanceExpenseList"),
+  "AdvanceExpenseList"
+);
 const GeneralExpenseClaim = lazyWithRetry(
   () => import("./components/Expenses-App/GeneralExpenseClaim"),
   "GeneralExpenseClaim"
@@ -476,13 +480,6 @@ export const routesConfig: AppRoute[] = [
     element: <EmployeeProfile />,
   },
 
-  // Nested Expenses App Routes
-  {
-    path: "/webapp/expenses-app",
-    element: <ExpensesApp />,
-    children: [{ path: "expenses-list", element: <ExpensesList /> }],
-  },
-
   // Flat Recruitment Routes
   {
     path: "/webapp/recruitment-app/referrals/add-new-referral",
@@ -609,6 +606,16 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/expenses-app/mileage-expense-claim",
     element: <MileageExpenseClaim />,
+  },
+
+  // Nested Expenses App Routes
+  {
+    path: "/webapp/expenses-app",
+    element: <ExpensesApp />,
+    children: [
+      { path: "expenses-list", element: <ExpensesList /> },
+      { path: "advance-expense-list", element: <AdvanceExpenseList /> },
+    ],
   },
 
   //Policies routes
