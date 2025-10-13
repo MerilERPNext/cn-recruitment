@@ -39,9 +39,9 @@ const AllShiftChangeRequestsList: React.FC = () => {
             "Id",
             "Employee",
             "Shift Type",
+            "Status",
             "From Date",
             "To Date",
-            "Status",
             "Actions",
           ]}
           columnWidths={["5%", "15%", "10%", "8%", "8%", "8%", "10%", "20%"]}

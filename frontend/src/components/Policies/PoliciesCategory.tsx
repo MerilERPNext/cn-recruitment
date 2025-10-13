@@ -2,6 +2,10 @@ import React from "react";
 import { useNavigate } from "react-router";
 import { CategoryCardSkeleton } from "./PolicySkeletons";
 import { usePolicyCountsByCategory } from "../../hooks/usePolicy";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import HeaderBar from "../HeaderBar";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 type CategoryCardProps = {
   name: string;
@@ -32,12 +36,16 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
 };
 
 const PoliciesCategory: React.FC = () => {
-  const { data: counts, isLoading: isCountsLoading, error: countsError } =
-    usePolicyCountsByCategory();
-
-  console.log("🏷️ PoliciesCategory - counts:", counts);
-  console.log("🏷️ PoliciesCategory - loading:", isCountsLoading);
-  console.log("🏷️ PoliciesCategory - error:", countsError);
+  const { data: userId } = useLoggedInUser();
+  const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const employeeId = user?.employee ?? "";
+  const {
+    data: counts,
+    isLoading: isCountsLoading,
+    error: countsError,
+  } = usePolicyCountsByCategory(employeeId);
 
   if (isCountsLoading) {
     return (
@@ -55,11 +63,16 @@ const PoliciesCategory: React.FC = () => {
   }
 
   // Create categories from the counts data
-  const categories = counts ? Object.keys(counts).map(name => ({ name })) : [];
+  const categories = counts
+    ? Object.keys(counts).map((name) => ({ name }))
+    : [];
   console.log("🏷️ Generated categories:", categories);
 
   return (
     <div className="bg-white h-full w-full p-2 md:p-4">
+      {isDesktop && (
+        <HeaderBar title="Policy Categories" onBack={() => navigate(-1)} />
+      )}
       {categories.length === 0 ? (
         <p className="text-gray-500 text-center mt-4">No categories found.</p>
       ) : (

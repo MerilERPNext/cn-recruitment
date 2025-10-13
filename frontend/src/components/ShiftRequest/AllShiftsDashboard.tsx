@@ -81,7 +81,6 @@ const MyShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item }) => {
-
   const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
   return (
@@ -309,9 +308,9 @@ export default function AllShiftsDashboard() {
                     "Id",
                     "Employee",
                     "Shift Type",
+                    "Status",
                     "From Date",
                     "To Date",
-                    "Status",
                     "Actions",
                   ]}
                   columnWidths={[
