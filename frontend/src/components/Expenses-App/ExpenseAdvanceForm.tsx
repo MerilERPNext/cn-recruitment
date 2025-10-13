@@ -1,11 +1,23 @@
-import React from 'react'
+import { useScreenSize } from "../../hooks/useScreenSize";
+import HeaderBar from "../HeaderBar";
 
-type Props = {}
+const ExpenseAdvanceForm = () => {
+  const { isDesktop } = useScreenSize();
+  const desktopLayout = (
+    <div>
+      <div>Desktop Layout</div>
+    </div>
+  );
+  const mobileLayout = (
+    <div>
+      <HeaderBar
+        title="New Expense Advance"
+        onBack={() => window.history.back()}
+      />
+      Mobile Layout
+    </div>
+  );
+  return isDesktop ? desktopLayout : mobileLayout;
+};
 
-const ExpenseAdvanceForm = (props: Props) => {
-  return (
-    <div>ExpenseAdvanceForm</div>
-  )
-}
-
-export default ExpenseAdvanceForm
+export default ExpenseAdvanceForm;

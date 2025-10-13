@@ -66,7 +66,13 @@ const ExpensesApp: React.FC = () => {
         navigate("/webapp/expenses-app/expenses-list/new-expense-type");
       }
     } else if (activeTab === "Advances") {
-      navigate("/webapp/expenses-app/new-expense-advance");
+      if (isDesktop) {
+        setCurrentExpenseForm("Advance");
+      } else {
+        navigate(
+          "/webapp/expenses-app/advance-expense-list/new-expense-advance"
+        );
+      }
     }
   };
 
@@ -154,12 +160,14 @@ const ExpensesApp: React.FC = () => {
         }
       `}</style>
 
-      <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
-      <NavigationTabs
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-      />
+      <div className="sticky top-0 z-50 bg-white border-b">
+        <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
+        <NavigationTabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        />
+      </div>
 
       {/* Tab Content */}
       <main className="p-4 z-100 flex-grow overflow-y-auto">
