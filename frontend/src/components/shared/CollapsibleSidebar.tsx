@@ -252,7 +252,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Advance Expenses",
           icon: ArrowUpDown,
           href: "/webapp/expenses-app/advance-expense-list",
-        }
+        },
       ],
     },
     {

@@ -2,8 +2,7 @@ import React from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { formatCurrency } from "../../utils/currencyFormatter";
-import { StatusBadge } from "../ShiftRequest/AllShiftsDashboard";
-
+import { StatusBadge } from "../SalarySlip/Advances/StatusBadge";
 
 // Mock Data (replace later with API)
 const mockAdvances = [
@@ -15,7 +14,7 @@ const mockAdvances = [
     department: "Operations",
     advance_amount: 100000,
     paid_amount: 0,
-    pending_amount: 7999,
+    pending_amount: 100000,
     status: "Draft",
   },
   {
@@ -31,9 +30,7 @@ const mockAdvances = [
   },
 ];
 
-
 const AdvanceExpenseList: React.FC = () => {
-  
   const { isDesktop } = useScreenSize();
   const advancesData = mockAdvances;
 
@@ -60,10 +57,14 @@ const AdvanceExpenseList: React.FC = () => {
                   className="my-data-row grid grid-cols-6 gap-4 cursor-pointer py-2"
                 >
                   <div className="my-data-cell">{adv.employee_name}</div>
-                  <div className="my-data-cell">{formatToIndianDate(adv.posting_date)}</div>
+                  <div className="my-data-cell">
+                    {formatToIndianDate(adv.posting_date)}
+                  </div>
                   <div className="my-data-cell">{adv.company}</div>
                   <div className="my-data-cell">{adv.department}</div>
-                  <div className="my-data-cell">{formatCurrency(adv.advance_amount)}</div>
+                  <div className="my-data-cell">
+                    {formatCurrency(adv.advance_amount)}
+                  </div>
                   <div className="my-data-cell">
                     <StatusBadge status={adv.status} />
                   </div>
@@ -90,12 +91,21 @@ const AdvanceExpenseList: React.FC = () => {
           className="my-content-card bg-white shadow rounded-lg p-4"
         >
           <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">Advance Amount: {formatCurrency(adv.advance_amount)}</div>            <StatusBadge status={adv.status} />
+            <div className="text-sm text-gray-600">
+              Advance Amount: {formatCurrency(adv.advance_amount)}
+            </div>{" "}
+            <StatusBadge status={adv.status} />
           </div>
-          <div className="text-sm text-gray-600">Employee: {adv.employee_name}</div>
-          <div className="text-sm text-gray-600">Posting Date: {formatToIndianDate(adv.posting_date)}</div>
+          <div className="text-sm text-gray-600">
+            Employee: {adv.employee_name}
+          </div>
+          <div className="text-sm text-gray-600">
+            Posting Date: {formatToIndianDate(adv.posting_date)}
+          </div>
           <div className="text-sm text-gray-600">Company: {adv.company}</div>
-          <div className="text-sm text-gray-600">Department: {adv.department}</div>
+          <div className="text-sm text-gray-600">
+            Department: {adv.department}
+          </div>
         </div>
       ))}
 
