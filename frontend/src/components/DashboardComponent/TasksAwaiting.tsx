@@ -96,6 +96,7 @@ const TasksAwaiting: React.FC = () => {
         doctype="ToDo"
         ItemComponent={MyToDoItem}
         isSearch={false}
+        pageSize={15}
         orderBy="date"
         defaultFilters={{ status: "Open" }} 
         defaultFields={[

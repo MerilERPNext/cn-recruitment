@@ -12,7 +12,7 @@ interface NewExpenseTypeProps {
 const NewExpenseType: React.FC<NewExpenseTypeProps> = ({
   onClose,
   onSelectExpenseType,
-  isModal = false
+  isModal = false,
 }) => {
   const navigate = useNavigate();
 

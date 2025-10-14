@@ -13,6 +13,7 @@ import AllAttendanceRequest from "./components/Attendance/AttendanceRequest/AllA
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
+import AddExpenseForm from "./components/Expenses-App/AddExpenseForm";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -484,6 +485,17 @@ export const routesConfig: AppRoute[] = [
     element: <EmployeeProfile />,
   },
 
+  // Nested Expenses App Routes
+  {
+    path: "/webapp/expenses-app",
+    element: <ExpensesApp />,
+    children: [
+      { path: "expenses-list", element: <ExpensesList /> },
+      { path: "add-expense", element: <AddExpenseForm /> },
+      { path: "advance-expense-list", element: <AdvanceExpenseList /> },
+    ],
+  },
+
   // Flat Recruitment Routes
   {
     path: "/webapp/recruitment-app/referrals/add-new-referral",
@@ -612,15 +624,6 @@ export const routesConfig: AppRoute[] = [
     element: <MileageExpenseClaim />,
   },
 
-  // Nested Expenses App Routes
-  {
-    path: "/webapp/expenses-app",
-    element: <ExpensesApp />,
-    children: [
-      { path: "expenses-list", element: <ExpensesList /> },
-      { path: "advance-expense-list", element: <AdvanceExpenseList /> },
-    ],
-  },
   // New route for Expense Advance Form
   {
     path: "/webapp/expenses-app/new-expense-advance",
