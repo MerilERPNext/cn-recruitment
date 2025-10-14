@@ -16,11 +16,13 @@ import DOMPurify from "dompurify";
 interface BenefitRequestFormProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess: () => void;
 }
 
 export default function BenefitRequestForm({
   isOpen,
   onClose,
+  onSuccess,
 }: BenefitRequestFormProps) {
   const [claimBenifitFor, setClaimBenifitFor] = useState("");
   const { data: currentUser } = useCurrentUser();
@@ -80,6 +82,7 @@ export default function BenefitRequestForm({
         disabled: true,
         key: "custom_max_amount",
         label: "Max Amount Eligible",
+        placeholder: "0.00",
         defaultValue: claimBenifitForMaxAmount,
         validate: { required: true },
         input: true,
@@ -126,6 +129,7 @@ export default function BenefitRequestForm({
     mutation.mutate(submissionData as Record<string, unknown>, {
       onSuccess: () => {
         onClose();
+        onSuccess();
         toast.success("Added Benifit Request successfully!");
       },
       onError: (error: CustomError) => {

@@ -78,8 +78,8 @@ export const findParent = (
   return null;
 };
 
-// ✅ Build nodes/edges for only parent + current user + children
-const buildTwoLevelHierarchy = (
+// ✅ Build nodes/edges for parent + current user + children (three levels)
+const buildThreeLevelHierarchy = (
   user: EmployeeHierarchy,
   parent: EmployeeHierarchy | null
 ): { nodes: Node<NodeData>[]; edges: Edge[] } => {
@@ -125,10 +125,47 @@ const buildTwoLevelHierarchy = (
       hasChildren: (user.children || []).length > 0,
       childrens: user?.children || [],
       showExpand: false,
-      isExpanded: false,
+      isExpanded: true,
       onToggleExpand: () => {},
     },
   });
+
+  // Children nodes
+  const children = user.children || [];
+  if (children.length > 0) {
+    const childSpacing = 250;
+    const totalWidth = (children.length - 1) * childSpacing;
+    const startX = 400 - totalWidth / 2;
+
+    children.forEach((child, index) => {
+      const childX = startX + index * childSpacing;
+      const childY = baseY + 300;
+
+      nodes.push({
+        id: child.id,
+        type: "person",
+        position: { x: childX, y: childY },
+        data: {
+          id: child.id,
+          name: child.name,
+          title: child.title || "",
+          hasChildren: (child.children || []).length > 0,
+          childrens: child?.children || [],
+          showExpand: false,
+          isExpanded: false,
+          onToggleExpand: () => {},
+        },
+      });
+
+      edges.push({
+        id: `e${user.id}-${child.id}`,
+        source: user.id,
+        target: child.id,
+        type: "step",
+        style: { stroke: "#d1d5db", strokeWidth: 2 },
+      });
+    });
+  }
 
   return { nodes, edges };
 };
@@ -181,7 +218,7 @@ export default function TwoLevelOrgChart() {
     }
 
     if (currentUser) {
-      const { nodes, edges } = buildTwoLevelHierarchy(currentUser, parent);
+      const { nodes, edges } = buildThreeLevelHierarchy(currentUser, parent);
       setNodes(nodes);
       setEdges(edges);
     } else {
