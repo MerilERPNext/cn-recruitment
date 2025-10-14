@@ -7,6 +7,7 @@ import { useCreateNewAdvance } from "../../hooks/useEmployeeAdvances";
 import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
 import { useNavigate } from "react-router-dom";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 
 interface ExpenseAdvanceFormProps {
   onClose: () => void;
@@ -16,6 +17,7 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
   const { isDesktop } = useScreenSize();
   const formRef = useRef<any>(null);
   const navigate = useNavigate();
+  const { setRefetchAttendance } = useGlobalStore();
 
   const { data: currentEmployee } = useCurrentEmployee();
 
@@ -43,6 +45,7 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
         posting_date: formData.postingDate,
         purpose: formData.purpose,
         advance_amount: formData.advance_amount,
+        exchange_rate: 1,
       };
 
       console.log("🚀 Final Submitted Payload:", payload);
@@ -51,7 +54,12 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
       mutation.mutate(payload, {
         onSuccess: () => {
           toast.success("Expense Advance submitted successfully!");
-          isDesktop ? onClose() : navigate("/webapp/expenses-app/advance-expense-list");
+          isDesktop
+            ? onClose()
+            : navigate("/webapp/expenses-app/advance-expense-list");
+          setTimeout(() => {
+            setRefetchAttendance(true);
+          }, 1000);
         },
         onError: (error: any) => {
           const errorMessage =
@@ -109,7 +117,6 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
                     enableTime: false,
                     format: "dd-MM-yyyy",
                     defaultValue: postingDate,
-                    disabled: true,
                   },
                 ],
               },
@@ -175,7 +182,12 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
         isDesktop ? "h-full bg-gray-50" : "h-screen bg-white"
       }`}
     >
-      {!isDesktop && <HeaderBar title="New Expense Advance" onBack={() => navigate("/webapp/expenses-app/advance-expense-list")} />}
+      {!isDesktop && (
+        <HeaderBar
+          title="New Expense Advance"
+          onBack={() => navigate("/webapp/expenses-app/advance-expense-list")}
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto p-4">
         <Form
@@ -187,7 +199,11 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
 
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
         <button
-          onClick={isDesktop ? onClose : () => navigate("/webapp/expenses-app/advance-expense-list")}
+          onClick={
+            isDesktop
+              ? onClose
+              : () => navigate("/webapp/expenses-app/advance-expense-list")
+          }
           className="flex-1 py-3 px-6 rounded-lg font-medium border border-gray-300 text-gray-700"
         >
           Cancel

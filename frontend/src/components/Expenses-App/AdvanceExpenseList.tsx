@@ -1,45 +1,26 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { formatCurrency } from "../../utils/currencyFormatter";
 import { StatusBadge } from "../SalarySlip/Advances/StatusBadge";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useExpenseAdvances } from "../../hooks/useEmployeeAdvances";
-
-// Mock Data (replace later with API)
-const mockAdvances = [
-  {
-    name: "HR-EAD-2025-00011",
-    employee_name: "Vishal R",
-    posting_date: "2025-10-13",
-    company: "Hybrowlabs Technologies",
-    department: "Operations",
-    advance_amount: 100000,
-    paid_amount: 0,
-    pending_amount: 100000,
-    status: "Draft",
-  },
-  {
-    name: "HR-EAD-2025-00012",
-    employee_name: "Anjali S",
-    posting_date: "2025-10-10",
-    company: "Hybrowlabs Technologies",
-    department: "Finance",
-    advance_amount: 50000,
-    paid_amount: 20000,
-    pending_amount: 30000,
-    status: "Approved",
-  },
-];
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 
 const AdvanceExpenseList: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployee();
-  const { data: advancesApiData } = useExpenseAdvances(currentEmployee?.name || "");
-  console.log("advancesApiData", advancesApiData);
-  
+  const { data: advancesApiData, refetch } = useExpenseAdvances(currentEmployee?.name || "");
 
-  const advancesData = advancesApiData?.data || mockAdvances;
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  useEffect(() => {
+    if (refetchAttendance) {
+      refetch();
+      setRefetchAttendance(false);
+    }
+  }, [refetchAttendance, refetch, setRefetchAttendance]);
+
+  const advancesData = advancesApiData?.data || [];
 
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
