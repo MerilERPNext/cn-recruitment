@@ -18,6 +18,7 @@ export const getAllAdvancesTypes = async (): Promise<{
   const res = await FrappeAPI.getDocumentList("Advance Type", {
     fields: ["name"],
     orderBy: "creation desc",
+    filters: [["policy_based_type", "=", 1]],
   });
   return {
     data: res.data as [{ name: string }],

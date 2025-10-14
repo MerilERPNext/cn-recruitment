@@ -168,6 +168,7 @@ export const FrappeAPI = {
     const response = await apiClient.get(`/api/method/${method}`, { params });
     return response.data.message;
   },
+  
   callMethod: async (
     method: string,
     args: Record<string, unknown> = {}

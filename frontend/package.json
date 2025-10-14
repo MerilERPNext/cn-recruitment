@@ -34,6 +34,7 @@
     "formio": "^4.5.0",
     "formiojs": "^4.21.7",
     "frappe-react-sdk": "^1.12.0",
+    "html2pdf.js": "^0.12.1",
     "lucide-react": "^0.502.0",
     "path": "^0.12.7",
     "quill": "^2.0.3",

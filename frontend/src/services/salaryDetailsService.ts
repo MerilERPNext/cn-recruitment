@@ -1,44 +1,90 @@
-import FrappeAPI from "../utils/frappeAPI";
-import type { SalaryComponent, SalarySlipDetail } from "../types/salary";
+import axios from "axios"
+import html2pdf from "html2pdf.js"
 
-export const SalarySlipDetails = {
-  getSalarySlipDetails: async ({
-    name,
-  }: SalaryComponent): Promise<SalarySlipDetail> => {
-    try {
-      const result = await FrappeAPI.getDocument("Salary Slip", name);
+/**
+ * Generate PDF from HTML string
+ */
+const generatePDFfromHTML = (html: string, fileName: string) => {
+  const element = document.createElement("div")
+  element.innerHTML = html
+  html2pdf().set({ filename: fileName }).from(element).save()
+}
 
-      if (!result) {
-        throw new Error("Salary Slip data not found");
-      }
+const fetchHTML = async (method: string, salarySlipName: string) => {
+  const response = await axios.get(`/api/method/${method}`, {
+    params: { id: salarySlipName },
+  })
+  const data = response.data.message || response.data
+  return data.response || data
+}
 
-      console.log(`✅ Salary Slip response:`, result);
+/** Generic function to download PDF from HTML-based API*/
+const downloadPDFfromHTMLMethod = async (method: string, salarySlipName: string, fileName: string) => {
+  const html = await fetchHTML(method, salarySlipName)
+  if (!html) throw new Error("No data returned from API")
+  generatePDFfromHTML(html, fileName)
+}
 
-      return result as SalarySlipDetail;
-    } catch (error) {
-      console.error(`❌ Failed to fetch salary slip for ID ${name}:`, error);
-      throw error;
-    }
-  },
-};
-
+/**Download Salary Slip (HTML → PDF)*/
 export const downloadSalarySlipPDF = async (salarySlipName: string) => {
-  const formatName = encodeURIComponent("Regular Payslip"); 
-  const response = await fetch(
-    `/api/method/frappe.utils.print_format.download_pdf?doctype=Salary%20Slip&name=${salarySlipName}&format=${formatName}&no_letterhead=0`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/pdf",
-      },
-    }
-  );
+  await downloadPDFfromHTMLMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.tds_printer.get_payslip_pdf_html",
+    salarySlipName,
+    "SalarySlip.pdf",
+  )
+}
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch PDF");
-  }
+/** Download TDS Payslip PDF*/
+export const TDSPRintViewPDF = async (salarySlipName: string) => {
+  await downloadPDFfromHTMLMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.tds_printer.get_payslip_tds_pdf_html",
+    salarySlipName,
+    "TDSPayslip.pdf",
+  )
+}
 
-  return response.blob();
-};
+/** Download Benefit Claim PDF*/
+export const BenefitClaimPDF = async (salarySlipName: string) => {
+  await downloadPDFfromHTMLMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.tds_printer.get_benefit_payslip_pdf_html",
+    salarySlipName,
+    "BenefitClaim.pdf",
+  )
+}
 
+/** Download Off-Cycle Payslip PDF*/
+export const offCyclePaySlipPDF = async (salarySlipName: string) => {
+  await downloadPDFfromHTMLMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.tds_printer.get_offcycle_payslip_pdf_html",
+    salarySlipName,
+    "OffCyclePayslip.pdf",
+  )
+}
 
+export const getSalarySlipHTML = async (salarySlipName: string) => {
+  return await fetchHTML(
+    "cn_indian_payroll.cn_indian_payroll.overrides.tds_printer.get_payslip_pdf_html",
+    salarySlipName,
+  )
+}
+
+export const getTDSPayslipHTML = async (salarySlipName: string) => {
+  return await fetchHTML(
+    "cn_indian_payroll.cn_indian_payroll.overrides.tds_printer.get_payslip_tds_pdf_html",
+    salarySlipName,
+  )
+}
+
+export const getBenefitPayslipHTML = async (salarySlipName: string) => {
+  return await fetchHTML(
+    "cn_indian_payroll.cn_indian_payroll.overrides.tds_printer.get_benefit_payslip_pdf_html",
+    salarySlipName,
+  )
+}
+
+export const getOffCyclePayslipHTML = async (salarySlipName: string) => {
+  return await fetchHTML(
+    "cn_indian_payroll.cn_indian_payroll.overrides.tds_printer.get_offcycle_payslip_pdf_html",
+    salarySlipName,
+  )
+}
