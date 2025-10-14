@@ -20,7 +20,15 @@ export interface ShiftRequest {
   amended_from: string | null;
   custom_status: string;
   custom_request_type: string;
+  doctype?: String;
 }
+
+export interface UpdateShiftRequestPayload {
+  doctype: ShiftRequest['doctype'];
+  name: ShiftRequest['name'];
+  data: Partial<ShiftRequest>;
+}
+
 export interface ShiftType {
   status: string;
   shift_type: ReactNode;
@@ -71,6 +79,7 @@ export interface MyShiftRequest {
   todo_id: string;
   username: string;
   reference_name: string;
+  can_edit: String;
 }
 export interface RequestCardProps {
   request: ShiftRequest;

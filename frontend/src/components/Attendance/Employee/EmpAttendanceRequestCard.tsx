@@ -7,20 +7,24 @@ import Tooltip from "../../shared/Tooltip";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import Button from "../../shared/atoms/Button";
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 
 const EmpAttendanceRequestCard = ({
   data,
   type,
-  columns = 7,
+  columns = 6,
 }: {
   data: MyAttendanceRequest;
   columns?: number;
   type: "actioned" | "pending";
 }) => {
-  const { isDesktop } = useScreenSize();
+  console.log("data in emp card", data, type);
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
-
+  const [edit, setEdit] = useState(false);
+  const { isDesktop } = useScreenSize();
   const handleRevokeClick = () => {
     if (data?.todo_id) {
       revokeEventMutation.mutate(
@@ -55,8 +59,8 @@ const EmpAttendanceRequestCard = ({
       };
     } else {
       return {
-        label: "Rejected",
         statusColor: "bg-red-100 text-red-800",
+        label: "Rejected",
       };
     }
   };
@@ -73,9 +77,6 @@ const EmpAttendanceRequestCard = ({
         <div
           className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
         >
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.todo_id}
-          </div>
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.allocated_to}
           </div>
@@ -106,8 +107,8 @@ const EmpAttendanceRequestCard = ({
               />
             </Tooltip>
           </div>
+          <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
           {data?.custom_allow_revoke && type === "pending" ? (
-            <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
               <Button
                 icon={<RotateCcw className="h-3 w-3" />}
                 variant="contain"
@@ -117,18 +118,19 @@ const EmpAttendanceRequestCard = ({
               >
                 {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
               </Button>
-            </div>
-          ) : (
-            <></>
-          )}
+                ) : (
+                  <></>
+                )}
+                {type=="pending" && data?.can_edit && <Button onClick={()=>{ setEdit(true);}}>edit</Button>}
+                </div>
         </div>
       ) : (
         <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
-          <div className="p-2 w-full ">
             <div className=" flex items-start justify-between gap-4">
               <div className="flex gap-1 flex-col">
                 <div className="flex gap-2">
                   {data?.reference_document?.custom_request_type}
+          <div className="p-2 w-full ">
                   <Badge
                     size="sm"
                     backgroundColor={status?.statusColor}
@@ -165,11 +167,22 @@ const EmpAttendanceRequestCard = ({
                 ) : (
                   <></>
                 )}
+                {type=="pending" && data?.can_edit && <Button onClick={()=>{ setEdit(true);}}>edit</Button>}
               </div>
             </div>
           </div>
+            
         </div>
       )}
+       {edit &&
+          createPortal(
+            <AttendanceRequestForm
+              onClose={() => setEdit(false)}
+              defaultAttendanceData={data?.reference_document}
+              forActionType="edit"
+            />,
+            document.body
+        )}
     </>
   );
 };

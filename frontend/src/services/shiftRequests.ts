@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
-import { ShiftRequest,ShiftType } from "../types/shift";
+import { ShiftRequest,ShiftType, UpdateShiftRequestPayload } from "../types/shift";
 
 export const ShiftRequestService = {
   getDraftShiftRequests: async (): Promise<ShiftRequest[]> => {
@@ -18,12 +18,18 @@ export const ShiftRequestService = {
     return response as ShiftRequest;
   },
  
+  updateShiftRequest: async (payload: UpdateShiftRequestPayload): Promise<ShiftRequest> => {
+    const response = await FrappeAPI.updateDocument("Shift Request", payload.name ,payload.data );
+    return response as ShiftRequest;
+  },
+
   approveShiftRequest: async (shiftRequestName: string): Promise<any> => {
     return await FrappeAPI.callMethod("recruitment.api.shift_submit.process_shift_request", {
       docname: shiftRequestName,
       action: "Approved",
     });
   },
+  
   
 
  

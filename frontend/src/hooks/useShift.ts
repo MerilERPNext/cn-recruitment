@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAllShiftTypes, ShiftRequestService } from "../services/shiftRequests";
-import { ShiftRequest } from "../types/shift";
+import { ShiftRequest, UpdateShiftRequestPayload } from "../types/shift";
 import { toast } from "react-hot-toast"; // Optional: for notifications
 
 export const useShiftRequests = () => {
@@ -64,6 +64,23 @@ export const useCreateShiftRequest = () => {
     onError: (error: Error) => {
       console.error("Error submitting shift request:", error);
       toast.error("Failed to submit shift request. Please try again.");
+    },
+  });
+};
+
+export const useUpdateShiftRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateShiftRequestPayload) =>
+      ShiftRequestService.updateShiftRequest(payload),
+    onSuccess: () => {
+      toast.success("Shift request updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["shift-requests"] });
+    },
+    onError: (error: Error) => {
+      console.error("Error updating shift request:", error);
+      toast.error("Failed to update shift request. Please try again.");
     },
   });
 };

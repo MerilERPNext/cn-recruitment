@@ -80,7 +80,6 @@ const AttendanceRequest = ({
                 </div>
                 <CardTable
                   titles={[
-                    "Id",
                     "Allocated To",
                     "Request Type",
                     "From Date",
@@ -153,7 +152,6 @@ const AttendanceRequest = ({
 
               <CardTable
                 titles={[
-                  "Id",
                   "Allocated To",
                   "Request Type",
                   "From Date",
@@ -177,7 +175,7 @@ const AttendanceRequest = ({
                       return (
                         <EmpAttendanceRequestCard
                           type="actioned"
-                          columns={6}
+                          columns={5}
                           data={{
                             ...props?.item,
                           }}

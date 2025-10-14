@@ -3,19 +3,23 @@ import React, { useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { toast } from "react-hot-toast";
 
-import { useShiftTypes, useCreateShiftRequest } from "../../hooks/useShift";
+import { useShiftTypes, useCreateShiftRequest, useUpdateShiftRequest } from "../../hooks/useShift";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 
-import type { ShiftRequestFormData, FormioSubmission } from "../../types/shift";
+import type { ShiftRequestFormData, FormioSubmission, ShiftRequest } from "../../types/shift";
 import { Formio } from "formiojs";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
+  defaultShiftRequestData?: ShiftRequest;
+  forActionType?: "create" | "edit"; 
 }
 
 const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   onClose,
+  defaultShiftRequestData,
+  forActionType
 }) => {
   const formRef = useRef<any>(null);
   const { setRefetchAttendance } = useGlobalStore();
@@ -25,6 +29,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     error: shiftTypesError,
   } = useShiftTypes();
   const { mutate: createShiftRequest } = useCreateShiftRequest();
+  const { mutate: updateShiftRequest } = useUpdateShiftRequest();
   const {
     data: employeeDetails,
     isLoading: employeeLoading,
@@ -69,17 +74,31 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
         shift_request_approver: employeeDetails.shift_request_approver,
       };
 
-      createShiftRequest(payload, {
-        onSuccess: () => {
-          onClose?.();
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 1000);
-        },
-        onError: (error: any) => {
-          console.error("Error creating shift request:", error);
-        },
-      });
+      if (forActionType === "edit" && defaultShiftRequestData?.name) {
+          updateShiftRequest( {doctype: defaultShiftRequestData.doctype, name: defaultShiftRequestData.name, data: payload } , {
+            onSuccess: () => {
+              onClose?.();
+              setTimeout(() => {
+                setRefetchAttendance(true);
+              }, 1000);
+            },
+            onError: (error: any) => {
+              console.error("Error updating shift request:", error);
+            },
+        });
+      }else{
+        createShiftRequest(payload, {
+          onSuccess: () => {
+            onClose?.();
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 1000);
+          },
+          onError: (error: any) => {
+            console.error("Error creating shift request:", error);
+          },
+        });
+    }
     } catch (formError) {
       console.error("Form submission error:", formError);
       toast.error("Please check your form inputs and try again.");
@@ -107,7 +126,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
                 format: "dd/MM/yyyy",
                 enableDate: true,
                 enableTime: false,
-                defaultValue: new Date().toISOString(),
+                defaultValue: defaultShiftRequestData?.from_date || new Date().toISOString(),
                 validate: { required: true },
               },
             ],
@@ -122,7 +141,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
                 format: "dd/MM/yyyy",
                 enableDate: true,
                 enableTime: false,
-                defaultValue: new Date().toISOString(),
+                defaultValue: defaultShiftRequestData?.to_date ||  new Date().toISOString(),
                 validate: { required: true },
               },
             ],
@@ -143,6 +162,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             })) || [],
         },
         validate: { required: true },
+        defaultValue: defaultShiftRequestData?.shift_type || ""
       },
       {
         type: "textarea",

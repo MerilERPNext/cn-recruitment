@@ -411,6 +411,32 @@ export const attendanceService = {
     }
   },
 
+  updateAttendanceRequest: async (
+    body: Record<string, unknown>
+  ): Promise<boolean> => {
+    try {
+       await FrappeAPI.updateDocument(
+        "Attendance Request",
+        body.name as string,
+        body.data as Record<string, unknown>
+      );
+
+      const response =  await FrappeAPI.callMethod(
+        "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+        {
+          doctype: body.doctype,
+          docname: body.name,
+          data: [body.data],
+        }
+      );
+
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while Updating attendance request in:", error);
+      throw error;
+    }
+  },
+ 
   reqValidationsForAttendanceRequest: async (
     empId: string
   ): Promise<AttendanceRequestValidations> => {

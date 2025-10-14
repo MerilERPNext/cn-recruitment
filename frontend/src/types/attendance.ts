@@ -55,11 +55,13 @@ export interface AttendanceRequest {
   custom_out_time: string;
   custom_checkin_type: string;
   custom_checkout_time: string;
-  custom_to_time?: string;
-  custom_from_time?: string;
   todo_id: string;
   custom_status: string;
   custom_request_type: string;
+  custom_to_time?: string;
+  custom_from_time?: string;
+  custom_attachment?: string;
+  custom_location?: string;
 }
 
 export interface MyAttendanceRequest {
@@ -71,6 +73,7 @@ export interface MyAttendanceRequest {
   username: string;
   reference_name: string;
   status: string;
+  can_edit?: boolean;
 }
 
 export type OvertimeDetail = {

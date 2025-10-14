@@ -7,11 +7,18 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { MyShiftRequest } from "../../types/shift";
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import ShiftRequestFormModal from "./ShiftRequestFormModal";
+import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
+  
+  console.log("Shift Request Data:", data);
+  const [edit, setEdit] = useState(false);
 
   const handleEditClick = () => {
     window.location.href = `/app/shift-request/${data.reference_name}`;
@@ -127,6 +134,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           ) : (
             <></>
           )}
+           { data?.can_edit && <Button onClick={() => setEdit(true)}>edit</Button> }
         </div>
       ) : (
         <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer">
@@ -176,7 +184,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               </div>
             </div>
           </div>
-
+   
           {/* Action Buttons */}
           {data?.custom_allow_revoke &&
           data?.reference_document?.status === "Draft" ? (
@@ -200,8 +208,29 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               </Button>
             </div>
           ) : null}
+          { data?.can_edit && 
+              <div className="flex flex-wrap justify-start gap-2 mt-4">
+                <Button onClick={() => setEdit(true)}>edit</Button> 
+                </div>
+                }
+
         </div>
       )}
+        {edit &&
+            createPortal(    
+               <ExpenseFormModal
+                    isOpen={edit}
+                    onClose={() => setEdit(false)}
+                    title="Update Request Shift Change"
+                  >
+                <ShiftRequestFormModal
+                  onClose={() => setEdit(false)}
+                  defaultShiftRequestData={data?.reference_document}
+                  forActionType="edit"
+              />
+        </ExpenseFormModal>,
+          document.body
+        )}
     </>
   );
 };

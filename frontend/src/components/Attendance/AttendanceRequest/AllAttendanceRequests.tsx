@@ -86,7 +86,6 @@ const AllAttendanceRequest = ({
             titles={
               statusType === "pending"
                 ? [
-                    "Id",
                     "Allocated To",
                     "Request Type",
                     "From Date",
@@ -95,7 +94,6 @@ const AllAttendanceRequest = ({
                     "Actions",
                   ]
                 : [
-                    "Id",
                     "Allocated To",
                     "Request Type",
                     "From Date",
@@ -117,7 +115,7 @@ const AllAttendanceRequest = ({
               ItemComponent={(props: { item: MyAttendanceRequest }) => {
                 return (
                   <EmpAttendanceRequestCard
-                    columns={statusType === "actioned" ? 6 : 7}
+                    columns={statusType === "actioned" ? 5 : 6}
                     type={statusType}
                     data={{
                       ...props?.item,
