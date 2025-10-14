@@ -8,12 +8,9 @@ import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
 import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 
-interface ExpenseAdvanceFormProps {
-  onClose: () => void;
-}
-
-const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
+const ExpenseAdvanceForm: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const formRef = useRef<any>(null);
   const navigate = useNavigate();
@@ -54,9 +51,7 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
       mutation.mutate(payload, {
         onSuccess: () => {
           toast.success("Expense Advance submitted successfully!");
-          isDesktop
-            ? onClose()
-            : navigate("/webapp/expenses-app/advance-expense-list");
+          navigate("/webapp/expenses-app/advance-expense-list");
           setTimeout(() => {
             setRefetchAttendance(true);
           }, 1000);
@@ -155,6 +150,14 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
             ],
           },
           {
+            type: "number",
+            key: "advance_amount",
+            label: "Advance Amount (INR)",
+            input: true,
+            placeholder: "Enter amount",
+            validate: { required: true, min: 1 },
+          },
+          {
             type: "textarea",
             key: "purpose",
             label: "Purpose",
@@ -163,31 +166,17 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
             validate: { required: true },
             rows: 3,
           },
-          {
-            type: "number",
-            key: "advance_amount",
-            label: "Advance Amount (INR)",
-            input: true,
-            placeholder: "Enter amount",
-            validate: { required: true, min: 1 },
-          },
         ],
       },
     ],
   };
 
-  return (
-    <div
-      className={`flex flex-col ${
-        isDesktop ? "h-full bg-gray-50" : "h-screen bg-white"
-      }`}
-    >
-      {!isDesktop && (
-        <HeaderBar
-          title="New Expense Advance"
-          onBack={() => navigate("/webapp/expenses-app/advance-expense-list")}
-        />
-      )}
+  const mobileLayout = (
+    <div className="flex flex-col h-screen bg-white">
+      <HeaderBar
+        title="New Expense Advance"
+        onBack={() => navigate("/webapp/expenses-app/advance-expense-list")}
+      />
 
       <div className="flex-1 overflow-y-auto p-4">
         <Form
@@ -199,11 +188,7 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
 
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
         <button
-          onClick={
-            isDesktop
-              ? onClose
-              : () => navigate("/webapp/expenses-app/advance-expense-list")
-          }
+          onClick={() => navigate("/webapp/expenses-app/advance-expense-list")}
           className="flex-1 py-3 px-6 rounded-lg font-medium border border-gray-300 text-gray-700"
         >
           Cancel
@@ -218,6 +203,45 @@ const ExpenseAdvanceForm: React.FC<ExpenseAdvanceFormProps> = ({ onClose }) => {
       </div>
     </div>
   );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="New Expense Advance">
+      <div className="flex flex-col h-screen bg-white">
+        <HeaderBar
+          title="New Expense Advance"
+          onBack={() => navigate("/webapp/expenses-app/advance-expense-list")}
+        />
+
+        <div className="flex-1 overflow-y-auto p-4">
+          <Form
+            form={expenseAdvanceSchema}
+            onFormReady={(instance: any) => (formRef.current = instance)}
+            options={{ submitButton: false, noAlerts: true }}
+          />
+        </div>
+
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
+          <button
+            onClick={() =>
+              navigate("/webapp/expenses-app/advance-expense-list")
+            }
+            className="flex-1 py-3 px-6 rounded-lg font-medium border border-gray-300 text-gray-700"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="flex-1 py-3 px-6 rounded-lg font-medium bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+          >
+            {submitting ? "Submitting..." : "Submit"}
+          </button>
+        </div>
+      </div>
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 export default ExpenseAdvanceForm;

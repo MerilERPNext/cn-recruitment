@@ -66,13 +66,7 @@ const ExpensesApp: React.FC = () => {
         navigate("/webapp/expenses-app/expenses-list/new-expense-type");
       }
     } else if (activeTab === "Advances") {
-      if (isDesktop) {
-        setCurrentExpenseForm("Advance");
-      } else {
-        navigate(
-          "/webapp/expenses-app/advance-expense-list/new-expense-advance"
-        );
-      }
+      navigate("/webapp/expenses-app/new-expense-advance");
     }
   };
 

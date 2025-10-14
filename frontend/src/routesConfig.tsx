@@ -596,10 +596,6 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/expenses-app/expenses-list/new-expense-type",
     element: <NewExpenseType />,
   },
-  {
-    path: "/webapp/expenses-app/advance-expense-list/new-expense-advance",
-    element: <ExpenseAdvanceForm />,
-  },
   // New route for General Expense Claim
   {
     path: "/webapp/expenses-app/general-expense-claim",
@@ -624,6 +620,11 @@ export const routesConfig: AppRoute[] = [
       { path: "expenses-list", element: <ExpensesList /> },
       { path: "advance-expense-list", element: <AdvanceExpenseList /> },
     ],
+  },
+  // New route for Expense Advance Form
+  {
+    path: "/webapp/expenses-app/new-expense-advance",
+    element: <ExpenseAdvanceForm />,
   },
 
   //Policies routes
