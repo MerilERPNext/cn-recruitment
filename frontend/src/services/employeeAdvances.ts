@@ -42,7 +42,7 @@ export const getExpenseAdvanceList = async (employeeId: string): Promise<Expense
       ["employee", "=", employeeId],
       ["custom_type", "in", ["Reimbursement / Expense Advance"]],
     ],
-    orderBy: "posting_date desc",
+    orderBy: "creation desc",
   });
   return {
     data: res.data as {
