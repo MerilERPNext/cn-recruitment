@@ -19,8 +19,11 @@ const ExpensesApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showExpenseTypeSelection, setShowExpenseTypeSelection] = useState(false);
-  const [currentExpenseForm, setCurrentExpenseForm] = useState<string | null>(null);
+  const [showExpenseTypeSelection, setShowExpenseTypeSelection] =
+    useState(false);
+  const [currentExpenseForm, setCurrentExpenseForm] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     if (location.pathname === "/webapp/expenses-app") {
@@ -32,12 +35,10 @@ const ExpensesApp: React.FC = () => {
     }
   }, [location.pathname, navigate]);
 
+  const isFormActive = location.pathname === "/webapp/expenses-app/add-expense";
+
   const handleAddNew = () => {
-    if (isDesktop) {
-      setShowExpenseTypeSelection(true);
-    } else {
-      navigate("/webapp/expenses-app/expenses-list/new-expense-type");
-    }
+    navigate("/webapp/expenses-app/add-expense");
   };
 
   const handleClose = () => {
@@ -127,28 +128,31 @@ const ExpensesApp: React.FC = () => {
         <Outlet />
       </main>
 
-      <div className="sticky mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
-        <div className="max-w-4xl mx-auto flex space-x-4">
-          <button
-            onClick={handleAddNew}
-            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-          >
-            + Add Expense
-          </button>
+      {!isFormActive && (
+        <div className="sticky mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
+          <div className="max-w-4xl mx-auto flex space-x-4">
+            <button
+              onClick={handleAddNew}
+              className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            >
+              + Add Expense
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
   // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
-  const actionButton = !showExpenseTypeSelection ? (
-    <button
-      onClick={handleAddNew}
-      className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
-    >
-      + Add Expense
-    </button>
-  ) : null;
+  const actionButton =
+    !isFormActive && !showExpenseTypeSelection ? (
+      <button
+        onClick={handleAddNew}
+        className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
+      >
+        + Add Expense
+      </button>
+    ) : null;
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Expenses" actionButton={actionButton}>
