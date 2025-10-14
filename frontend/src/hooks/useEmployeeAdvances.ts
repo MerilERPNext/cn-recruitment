@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createAdvance, getAdvances, getAdvancesAmount, getAllAdvancesTypes } from "../services/employeeAdvances";
+import { createAdvance, getAdvances, getAdvancesAmount, getAllAdvancesTypes, getExpenseAdvanceList } from "../services/employeeAdvances";
 import { ApiAdvance } from "../types/employeeAttendance";
 
 export const useEmployeeAdvances = (employeeId?: string) => {
@@ -16,8 +16,16 @@ export const useAdvancesType = () => {
     queryFn: getAllAdvancesTypes,
   });
 };
-//this hook for create employee advance application
 
+export const useExpenseAdvances = (employeeId: string) => {
+  return useQuery({
+    queryKey: ["employee-advance", employeeId],
+    queryFn: () => getExpenseAdvanceList(employeeId),
+    enabled: !!employeeId,
+  });
+};
+
+//this hook for create employee advance application
 export function useCreateNewAdvance() {
   const queryClient = useQueryClient();
 
