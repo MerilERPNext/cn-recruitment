@@ -39,14 +39,16 @@ const ExpensesItem: React.FC<{
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
+    <div className="rounded-xl my-1 border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
       <div className="flex justify-between items-start">
         <div className="flex flex-col">
           <p className="text-xl font-bold text-gray-900">{formattedAmount}</p>
         </div>
         {item.approval_status && (
           <span
-            className={`px-3 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(item.approval_status)}`}
+            className={`px-3 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(
+              item.approval_status
+            )}`}
           >
             {item.approval_status}
           </span>
@@ -83,6 +85,7 @@ const ExpensesList: React.FC = () => {
           "creation",
         ]}
         infiniteScroll={true}
+        showRefereshButton={true}
       />
     </div>
   );

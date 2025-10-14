@@ -13,6 +13,7 @@ import AllAttendanceRequest from "./components/Attendance/AttendanceRequest/AllA
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
+import AddExpenseForm from "./components/Expenses-App/AddExpenseForm";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -480,7 +481,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/expenses-app",
     element: <ExpensesApp />,
-    children: [{ path: "expenses-list", element: <ExpensesList /> }],
+    children: [
+      { path: "expenses-list", element: <ExpensesList /> },
+      { path: "add-expense", element: <AddExpenseForm /> },
+    ],
   },
 
   // Flat Recruitment Routes
