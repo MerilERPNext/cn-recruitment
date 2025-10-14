@@ -9,8 +9,12 @@ import DOMPurify from "dompurify";
 import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import ExpenseFormModal from "./ExpenseFormModal";
 
-const ExpenseAdvanceForm: React.FC = () => {
+const ExpenseAdvanceForm: React.FC<{
+  isOpen?: boolean;
+  onClose?: () => void;
+}> = ({ isOpen = true, onClose }) => {
   const { isDesktop } = useScreenSize();
   const formRef = useRef<any>(null);
   const navigate = useNavigate();
@@ -171,12 +175,18 @@ const ExpenseAdvanceForm: React.FC = () => {
     ],
   };
 
-  const mobileLayout = (
-    <div className="flex flex-col h-screen bg-white">
-      <HeaderBar
-        title="New Expense Advance"
-        onBack={() => navigate("/webapp/expenses-app/advance-expense-list")}
-      />
+  const FormContent = (
+    <div className="flex flex-col h-full bg-white">
+      {!isDesktop && (
+        <HeaderBar
+          title="New Expense Advance"
+          onBack={
+            onClose
+              ? onClose
+              : () => navigate("/webapp/expenses-app/advance-expense-list")
+          }
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto p-4">
         <Form
@@ -188,7 +198,11 @@ const ExpenseAdvanceForm: React.FC = () => {
 
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
         <button
-          onClick={() => navigate("/webapp/expenses-app/advance-expense-list")}
+          onClick={
+            onClose
+              ? onClose
+              : () => navigate("/webapp/expenses-app/advance-expense-list")
+          }
           className="flex-1 py-3 px-6 rounded-lg font-medium border border-gray-300 text-gray-700"
         >
           Cancel
@@ -204,44 +218,27 @@ const ExpenseAdvanceForm: React.FC = () => {
     </div>
   );
 
-  const desktopLayout = (
-    <DesktopLayoutWrapper title="New Expense Advance">
-      <div className="flex flex-col h-screen bg-white">
-        <HeaderBar
+  // ✅ Render modal only for desktop
+  if (isDesktop) {
+    return (
+      <DesktopLayoutWrapper title="New Expense Advance">
+        <ExpenseFormModal
+          isOpen={isOpen}
+          onClose={
+            onClose
+              ? onClose
+              : () => navigate("/webapp/expenses-app/advance-expense-list")
+          }
           title="New Expense Advance"
-          onBack={() => navigate("/webapp/expenses-app/advance-expense-list")}
-        />
+        >
+          {FormContent}
+        </ExpenseFormModal>
+      </DesktopLayoutWrapper>
+    );
+  }
 
-        <div className="flex-1 overflow-y-auto p-4 pb-20">
-          <Form
-            form={expenseAdvanceSchema}
-            onFormReady={(instance: any) => (formRef.current = instance)}
-            options={{ submitButton: false, noAlerts: true }}
-          />
-        </div>
-
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
-          <button
-            onClick={() =>
-              navigate("/webapp/expenses-app/advance-expense-list")
-            }
-            className="flex-1 py-3 px-6 rounded-lg font-medium border border-gray-300 text-gray-700"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex-1 py-3 px-6 rounded-lg font-medium bg-black text-white hover:bg-gray-800 disabled:opacity-50"
-          >
-            {submitting ? "Submitting..." : "Submit"}
-          </button>
-        </div>
-      </div>
-    </DesktopLayoutWrapper>
-  );
-
-  return isDesktop ? desktopLayout : mobileLayout;
+  // ✅ Mobile: Normal view
+  return <div className="h-screen bg-white">{FormContent}</div>;
 };
 
 export default ExpenseAdvanceForm;
