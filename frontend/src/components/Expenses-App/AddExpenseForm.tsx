@@ -5,6 +5,7 @@ import "formiojs/dist/formio.form.css";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { usePostExpenseClaim } from "../../hooks/useExpense";
 import { format } from "date-fns";
+import toast from "react-hot-toast";
 
 interface Expense {
   id: string;
@@ -303,7 +304,7 @@ const AddExpenseForm: React.FC = () => {
               };
 
               if (!combinedData.expenseCategory || !combinedData.expenseType) {
-                alert("Please select Expense Category and Expense Type!");
+                toast.error("Please select Expense Category and Expense Type!");
                 return;
               }
 
@@ -394,7 +395,7 @@ const AddExpenseForm: React.FC = () => {
                     <td className="px-4 py-2">{expense.expenseType}</td>
                     <td className="px-4 py-2">
                       {expense.expense_date
-                        ? new Date(expense.expense_date).toLocaleDateString()
+                        ? format(new Date(expense.expense_date), "dd-MM-yyyy")
                         : "-"}
                     </td>
                     <td className="px-4 py-2">{expense.merchant || "-"}</td>
@@ -451,8 +452,6 @@ const AddExpenseForm: React.FC = () => {
               className="bg-green-600 text-white font-bold px-6 py-2 rounded hover:bg-green-700"
               disabled={expenses.length === 0 || isPending}
               onClick={() => {
-                console.log(expenses);
-
                 const payload = {
                   employee: currentEmployee?.employee_number,
                   employee_name: currentEmployee?.employee_name,
@@ -466,11 +465,6 @@ const AddExpenseForm: React.FC = () => {
                       expenseCategory,
                       ...rest
                     }) => {
-                      console.log(
-                        "expense id with status button:",
-                        id,
-                        submitButton
-                      );
                       const filteredRest = Object.fromEntries(
                         Object.entries(rest).filter(
                           ([, value]) =>
@@ -498,6 +492,11 @@ const AddExpenseForm: React.FC = () => {
                           "yyyy-MM-dd HH:mm:ss"
                         );
                       }
+                      console.log(
+                        "expense id with status button:",
+                        id,
+                        submitButton
+                      );
 
                       return {
                         ...filteredRest,

@@ -56,7 +56,7 @@ export const useExpensePolicies = (
 
 export const useExpenseClaim = (filters?: FilterCondition[]) => {
   return useQuery({
-    queryKey: ["employee-expense-claim"],
+    queryKey: ["employee-expense-claim", filters],
     queryFn: () => expenseService.getExpenseClaims(filters),
     staleTime: 5 * 60 * 1000,
   });
@@ -98,7 +98,7 @@ export function usePostExpenseClaim() {
     onSuccess: () => {
       toast.success("Expense claim submitted successfully!");
       navigate("/webapp/expenses-app/expenses-list");
-      queryClient.invalidateQueries({ queryKey: ["expenseClaims"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-expense-claim"] });
     },
     onError: handleError,
   });

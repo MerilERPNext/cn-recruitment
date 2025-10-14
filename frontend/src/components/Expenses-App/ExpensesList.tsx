@@ -72,6 +72,7 @@ const ExpensesList: React.FC = () => {
         ItemComponent={ExpensesItem}
         isSearch={true}
         pageSize={10}
+        showRefereshButton={true}
         defaultFields={[
           "name",
           "approval_status",
@@ -85,7 +86,6 @@ const ExpensesList: React.FC = () => {
           "creation",
         ]}
         infiniteScroll={true}
-        showRefereshButton={true}
       />
     </div>
   );
