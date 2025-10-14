@@ -3,6 +3,8 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { formatCurrency } from "../../utils/currencyFormatter";
 import { StatusBadge } from "../SalarySlip/Advances/StatusBadge";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useExpenseAdvances } from "../../hooks/useEmployeeAdvances";
 
 // Mock Data (replace later with API)
 const mockAdvances = [
@@ -32,7 +34,12 @@ const mockAdvances = [
 
 const AdvanceExpenseList: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const advancesData = mockAdvances;
+  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: advancesApiData } = useExpenseAdvances(currentEmployee?.name || "");
+  console.log("advancesApiData", advancesApiData);
+  
+
+  const advancesData = advancesApiData?.data || mockAdvances;
 
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
