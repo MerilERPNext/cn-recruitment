@@ -1,5 +1,6 @@
 import FrappeAPI from "../utils/frappeAPI";
 import { ApiAdvance } from "../types/employeeAttendance";
+import { ExpenseAdvance } from "../types/expenseAdvance";
 
 export const getAdvances = async (employeeId: string): Promise<ApiAdvance[]> => {
   if (!employeeId) throw new Error("Employee ID is required");
@@ -22,6 +23,40 @@ export const getAllAdvancesTypes = async (): Promise<{
   });
   return {
     data: res.data as [{ name: string }],
+  };
+};
+
+export const getExpenseAdvanceList = async (employeeId: string): Promise<ExpenseAdvance> => {
+  const res = await FrappeAPI.getDocumentList("Employee Advance", {
+    fields: [
+      "name",
+      "employee_name",
+      "posting_date",
+      "company",
+      "department",
+      "advance_amount",
+      "paid_amount",
+      "pending_amount",
+      "status",
+    ],
+    filters: [
+      ["employee", "=", employeeId],
+      ["custom_type", "in", ["Reimbursement / Expense Advance"]],
+    ],
+    orderBy: "creation desc",
+  });
+  return {
+    data: res.data as {
+      name: string;
+      employee_name: string;
+      posting_date: string;
+      company: string;
+      department: string;
+      advance_amount: number;
+      paid_amount: number;
+      pending_amount: number;
+      status: string;
+    }[],
   };
 };
 
