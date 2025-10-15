@@ -62,6 +62,7 @@ export interface AttendanceRequest {
   custom_from_time?: string;
   custom_attachment?: string;
   custom_location?: string;
+  custom__request_reason: string;
 }
 
 export interface MyAttendanceRequest {

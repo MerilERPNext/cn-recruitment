@@ -84,3 +84,11 @@ export const useUpdateShiftRequest = () => {
     },
   });
 };
+
+export const useShiftRequestById = (id: string) => {
+  return useQuery({
+    queryKey: ["shift-request", id],
+    queryFn: () => ShiftRequestService.getShiftRequestById(id),
+    enabled: !!id, // Only run the query if id is provided
+  });
+}

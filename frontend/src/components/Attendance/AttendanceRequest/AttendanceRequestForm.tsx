@@ -90,7 +90,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const { data: userRoles } = useGetUserRoles();
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [selectedRequestType, setSelectedRequestType] = useState<string>("");
+  const [selectedRequestType, setSelectedRequestType] = useState<string>(defaultAttendanceData?.custom_request_type ||"");
 
   const { data: reasonList } = useGetAllReasons(selectedRequestType);
   const employeeIdToShow = isForOthers
@@ -601,7 +601,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "Select a reason",
             customClass: "mb-4",
             customConditional: "show = data.request_type !== 'Shift Change';",
-            defaultValue: defaultAttendanceData?.reason || "",
+            defaultValue: defaultAttendanceData?.custom__request_reason || "",
             data: {
               values:
                 reasonList?.map((item: { reason: string; name: string }) => ({

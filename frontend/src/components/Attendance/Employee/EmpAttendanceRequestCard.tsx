@@ -121,15 +121,15 @@ const EmpAttendanceRequestCard = ({
                 ) : (
                   <></>
                 )}
-                {type=="pending" && data?.can_edit && <Button onClick={()=>{ setEdit(true);}}>edit</Button>}
+                {type=="pending" && data?.can_edit && <Button onClick={()=>{ setEdit(true);}}>Edit</Button>}
                 </div>
         </div>
       ) : (
         <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
-            <div className=" flex items-start justify-between gap-4">
-              <div className="flex gap-1 flex-col">
-                <div className="flex gap-2">
-                  {data?.reference_document?.custom_request_type}
+            <div className=" flex items-start justify-between gap-4 w-full">
+              <div className="flex gap-1 flex-col justify-around w-full">
+                <div className="flex items-center gap-2">
+                 <p className="whitespace-nowrap"> {data?.reference_document?.custom_request_type}</p>
           <div className="p-2 w-full ">
                   <Badge
                     size="sm"
@@ -137,6 +137,24 @@ const EmpAttendanceRequestCard = ({
                     label={status?.label || ""}
                   />
                 </div>
+              <div className="text-sm text-gray-900 text-start flex gap-2">
+                {data?.custom_allow_revoke && type === "pending" ? (
+                  <Button
+                  icon={<RotateCcw className="h-3 w-3" />}
+                  variant="contain"
+                    size="sm"
+                    onClick={handleRevokeClick}
+                    disabled={revokeEventMutation.isPending}
+                  >
+                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
+                  </Button>
+                ) : (
+                  <></>
+                )}
+                {type=="pending" && data?.can_edit && <Button onClick={()=>{ setEdit(true);}}>Edit</Button>}
+              </div>
+                {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
+              </div>
                 <div className="text-sm text-gray-500">
                   {data?.reference_document?.from_date
                     ? format(
@@ -151,24 +169,6 @@ const EmpAttendanceRequestCard = ({
                       )}`
                     : "N/A"}
                 </div>
-                {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
-              </div>
-              <div className="text-sm text-gray-900 text-start flex gap-2">
-                {data?.custom_allow_revoke && type === "pending" ? (
-                  <Button
-                    icon={<RotateCcw className="h-3 w-3" />}
-                    variant="contain"
-                    size="sm"
-                    onClick={handleRevokeClick}
-                    disabled={revokeEventMutation.isPending}
-                  >
-                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                  </Button>
-                ) : (
-                  <></>
-                )}
-                {type=="pending" && data?.can_edit && <Button onClick={()=>{ setEdit(true);}}>edit</Button>}
-              </div>
             </div>
           </div>
             

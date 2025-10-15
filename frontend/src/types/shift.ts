@@ -23,6 +23,11 @@ export interface ShiftRequest {
   doctype?: String;
 }
 
+export interface ShiftRequestResponse {
+  data: ShiftRequest;
+}
+
+
 export interface UpdateShiftRequestPayload {
   doctype: ShiftRequest['doctype'];
   name: ShiftRequest['name'];

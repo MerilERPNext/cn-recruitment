@@ -18,8 +18,15 @@ export const ShiftRequestService = {
     return response as ShiftRequest;
   },
  
-  updateShiftRequest: async (payload: UpdateShiftRequestPayload): Promise<ShiftRequest> => {
-    const response = await FrappeAPI.updateDocument("Shift Request", payload.name ,payload.data );
+  updateShiftRequest: async (payload: Partial<UpdateShiftRequestPayload>): Promise<ShiftRequest> => {
+    const response = await FrappeAPI.updateDocument("Shift Request", payload?.name as string,payload?.data as Record<string, any>);
+    
+    await FrappeAPI.callMethod("nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",{
+      docname: payload?.name,
+      doctype: "Shift Request",
+      data: [payload?.data],
+    })
+    
     return response as ShiftRequest;
   },
 
@@ -30,8 +37,10 @@ export const ShiftRequestService = {
     });
   },
   
-  
-
+  getShiftRequestById: async (id: string): Promise<ShiftRequest> => {
+    const response = await FrappeAPI.getDocument("Shift Request", id) as Promise<ShiftRequest>;
+    return response;
+  },
  
   rejectShiftRequest: async (shiftRequestName: string): Promise<any> => {
     return await FrappeAPI.callMethod("recruitment.api.shift_submit.process_shift_request", {

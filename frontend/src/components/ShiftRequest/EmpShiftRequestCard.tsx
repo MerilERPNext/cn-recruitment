@@ -11,17 +11,19 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
 import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
+import { useNavigate } from "react-router-dom";
 
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
   
+  const navigate = useNavigate();
   console.log("Shift Request Data:", data);
   const [edit, setEdit] = useState(false);
 
   const handleEditClick = () => {
-    window.location.href = `/app/shift-request/${data.reference_name}`;
+      navigate(`/webapp/shift-request/shift-change-form/${data?.reference_document?.name}`);
   };
 
   const handleRevokeClick = () => {
@@ -108,7 +110,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               />
             </Tooltip>
           </div>
-          {data?.custom_allow_revoke &&
+          {data?.custom_allow_revoke && data?.can_edit && 
           data?.reference_document?.status === "Draft" ? (
             <div className="text-sm text-gray-900 text-start flex gap-5 items-center">
               {/* ✨ ADD THE EDIT BUTTON HERE */}
@@ -116,16 +118,16 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 icon={<Pencil className="h-3 w-3" />}
                 variant="outline"
                 size="sm"
-                onClick={handleEditClick}
+                onClick={()=> setEdit(true)}
               >
-                Edit
+                Edit 
               </Button>
               {/* REVOKE BUTTON */}
               <Button
                 icon={<RotateCcw className="h-3 w-3" />}
                 variant="contain"
                 size="sm"
-                onClick={handleRevokeClick}
+                onClick={()=> setEdit(true)}
                 disabled={revokeEventMutation.isPending}
               >
                 {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
@@ -134,7 +136,6 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           ) : (
             <></>
           )}
-           { data?.can_edit && <Button onClick={() => setEdit(true)}>edit</Button> }
         </div>
       ) : (
         <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer">
@@ -186,7 +187,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           </div>
    
           {/* Action Buttons */}
-          {data?.custom_allow_revoke &&
+          {data?.custom_allow_revoke && data?.can_edit &&
           data?.reference_document?.status === "Draft" ? (
             <div className="flex flex-wrap justify-start gap-2 mt-4">
               <Button
@@ -208,20 +209,15 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               </Button>
             </div>
           ) : null}
-          { data?.can_edit && 
-              <div className="flex flex-wrap justify-start gap-2 mt-4">
-                <Button onClick={() => setEdit(true)}>edit</Button> 
-                </div>
-                }
 
         </div>
       )}
-        {edit &&
+        {edit && isDesktop &&
             createPortal(    
                <ExpenseFormModal
                     isOpen={edit}
                     onClose={() => setEdit(false)}
-                    title="Update Request Shift Change"
+                    title="Request Shift Change"
                   >
                 <ShiftRequestFormModal
                   onClose={() => setEdit(false)}
