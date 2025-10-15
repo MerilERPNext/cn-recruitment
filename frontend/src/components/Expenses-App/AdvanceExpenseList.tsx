@@ -10,7 +10,9 @@ import { useGlobalStore } from "../../hooks/useGlobalStore";
 const AdvanceExpenseList: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployee();
-  const { data: advancesApiData, refetch } = useExpenseAdvances(currentEmployee?.name || "");
+  const { data: advancesApiData, refetch } = useExpenseAdvances(
+    currentEmployee?.name || ""
+  );
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   useEffect(() => {
@@ -39,9 +41,9 @@ const AdvanceExpenseList: React.FC = () => {
             </div>
 
             <div className="divide-y divide-gray-200">
-              {advancesData.map((adv, index) => (
+              {advancesData.map((adv) => (
                 <div
-                  key={`${adv.name}-${index}`}
+                  key={adv.name}
                   className="my-data-row grid grid-cols-6 gap-4 cursor-pointer py-2"
                 >
                   <div className="my-data-cell">{adv.employee_name}</div>
@@ -73,15 +75,15 @@ const AdvanceExpenseList: React.FC = () => {
 
   const MobileLayout = () => (
     <div className="min-h-screen w-full bg-gray-50 space-y-3">
-      {advancesData.map((adv, index) => (
+      {advancesData.map((adv) => (
         <div
-          key={`${adv.name}-${index}`}
+          key={adv.name}
           className="my-content-card bg-white shadow rounded-lg p-4"
         >
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
               Advance Amount: {formatCurrency(adv.advance_amount)}
-            </div>{" "}
+            </div>
             <StatusBadge status={adv.status} />
           </div>
           <div className="text-sm text-gray-600">
