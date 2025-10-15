@@ -29,3 +29,15 @@ export interface CostCenterType {
   cost_center_name: string;
   company?: string;
 }
+
+
+export interface ExpenseType {
+  name: string;
+}
+
+export interface ExpenseTypeField {
+  field_name: string;
+  field_label: string;
+  field_type: string;
+  required: boolean;
+}

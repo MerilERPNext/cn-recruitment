@@ -7,6 +7,8 @@ import {
   getCostCenters,
   getCurrencies,
   getExpenseAdvanceList,
+  getExpenseTypeFields,
+  getExpenseTypes,
   getProjects,
 } from "../services/employeeAdvances";
 import { ApiAdvance } from "../types/employeeAttendance";
@@ -84,3 +86,20 @@ export const useCostCenters = () => {
     queryFn: getCostCenters,
   });
 };
+
+export const useExpenseTypeFields = (expenseType: string | null) => {
+  return useQuery({
+    queryKey: ["expenseTypeFields", expenseType],
+    queryFn: () => getExpenseTypeFields(expenseType!),
+    enabled: !!expenseType,
+  });
+};
+
+export const useExpenseTypes = () => {
+  return useQuery({
+    queryKey: ["expenseTypes"],
+    queryFn: getExpenseTypes,
+  });
+};
+
+

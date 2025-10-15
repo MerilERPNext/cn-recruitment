@@ -4,6 +4,8 @@ import {
   CostCenterType,
   CurrencyType,
   ExpenseAdvance,
+  ExpenseType,
+  ExpenseTypeField,
   ProjectType,
 } from "../types/expenseAdvance";
 
@@ -138,3 +140,29 @@ export const getCostCenters = async (): Promise<{ data: CostCenterType[] }> => {
     data: res.data as CostCenterType[],
   };
 };
+
+export const getExpenseTypes = async (): Promise<{ data: ExpenseType[] } | null> => {
+  const res = await FrappeAPI.getDocumentList("Expense Claim Type", {
+    fields: ["name"],
+    orderBy: "creation desc",
+  });
+
+  return {
+    data: res.data as ExpenseType[],
+  };
+}
+
+export const getExpenseTypeFields = async (
+  expenseType: string
+): Promise<{ data: ExpenseTypeField[] } | null> => {
+  if (!expenseType) return null;
+
+  const result = await FrappeAPI.callMethod(
+    "chatnext_expense_trips.expense_claim.get_expense_type_fields",
+    {
+      expense_type: expenseType,
+    }
+  );
+
+  return result as { data: ExpenseTypeField[] } | null;
+}
