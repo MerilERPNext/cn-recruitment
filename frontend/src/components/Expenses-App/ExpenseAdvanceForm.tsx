@@ -1,9 +1,14 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import HeaderBar from "../HeaderBar";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
-import { useCreateNewAdvance } from "../../hooks/useEmployeeAdvances";
+import {
+  useCostCenters,
+  useCreateNewAdvance,
+  useCurrencies,
+  useProjects,
+} from "../../hooks/useEmployeeAdvances";
 import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +20,10 @@ const ExpenseAdvanceForm: React.FC<{
   isOpen?: boolean;
   onClose?: () => void;
 }> = ({ isOpen = true, onClose }) => {
+  const { data: currencies } = useCurrencies();
+  const { data: projects } = useProjects();
+  const { data: costCenters } = useCostCenters();
+
   const { isDesktop } = useScreenSize();
   const formRef = useRef<any>(null);
   const navigate = useNavigate();
@@ -39,14 +48,16 @@ const ExpenseAdvanceForm: React.FC<{
       }
 
       const payload = {
-        doctype: "Employee Advance",
         custom_type: advanceType,
         employee: currentEmployee?.name,
         company: currentEmployee?.company,
-        posting_date: formData.postingDate,
+        posting_date: formData.postingDate || postingDate,
         purpose: formData.purpose,
         advance_amount: formData.advance_amount,
-        exchange_rate: 1,
+        currency: formData.currency,
+        exchange_rate: formData.exchange_rate,
+        project: formData.project,
+        cost_center: formData.cost_center,
       };
 
       console.log("🚀 Final Submitted Payload:", payload);
@@ -82,98 +93,190 @@ const ExpenseAdvanceForm: React.FC<{
     }
   };
 
-  const expenseAdvanceSchema = {
-    type: "form",
-    display: "form",
-    components: [
-      {
-        components: [
-          {
-            type: "columns",
-            key: "row1",
-            columns: [
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "textfield",
-                    key: "custom_type",
-                    label: "Advance Type",
-                    input: true,
-                    defaultValue: advanceType,
-                    disabled: true,
-                  },
-                ],
-              },
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "datetime",
-                    key: "posting_date",
-                    label: "Posting Date",
-                    input: true,
-                    enableTime: false,
-                    format: "dd-MM-yyyy",
-                    defaultValue: postingDate,
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            type: "columns",
-            key: "row2",
-            columns: [
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "textfield",
-                    key: "employee",
-                    label: "Employee ID",
-                    input: true,
-                    defaultValue: currentEmployee?.name || "",
-                    disabled: true,
-                  },
-                ],
-              },
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "textfield",
-                    key: "company",
-                    label: "Company",
-                    input: true,
-                    defaultValue: currentEmployee?.company || "",
-                    disabled: true,
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            type: "number",
-            key: "advance_amount",
-            label: "Advance Amount (INR)",
-            input: true,
-            placeholder: "Enter amount",
-            validate: { required: true, min: 1 },
-          },
-          {
-            type: "textarea",
-            key: "purpose",
-            label: "Purpose",
-            input: true,
-            placeholder: "Describe the purpose of advance",
-            validate: { required: true },
-            rows: 3,
-          },
-        ],
-      },
-    ],
-  };
+  const expenseAdvanceSchema = useMemo(() => {
+    return {
+      type: "form",
+      display: "form",
+      components: [
+        {
+          components: [
+            // 🔹 Row 1: Advance Type + Posting Date
+            {
+              type: "columns",
+              key: "row1",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "textfield",
+                      key: "custom_type",
+                      label: "Advance Type",
+                      input: true,
+                      defaultValue: advanceType,
+                      disabled: true,
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "datetime",
+                      key: "posting_date",
+                      label: "Posting Date",
+                      input: true,
+                      enableTime: false,
+                      format: "yyyy-MM-dd",
+                      defaultValue: postingDate,
+                    },
+                  ],
+                },
+              ],
+            },
+
+            // 🔹 Row 2: Employee + Company
+            {
+              type: "columns",
+              key: "row2",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "textfield",
+                      key: "employee",
+                      label: "Employee",
+                      input: true,
+                      defaultValue: currentEmployee?.name || "",
+                      disabled: true,
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "textfield",
+                      key: "company",
+                      label: "Company",
+                      input: true,
+                      defaultValue: currentEmployee?.company || "",
+                      disabled: true,
+                    },
+                  ],
+                },
+              ],
+            },
+
+            // 🔹 Row 3: Currency + Exchange Rate
+            {
+              type: "columns",
+              key: "row3",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "select",
+                      key: "currency",
+                      label: "Currency",
+                      input: true,
+                      data: {
+                        values:
+                          currencies?.data.map((cur) => ({
+                            label: cur.name,
+                            value: cur.name,
+                          })) || [],
+                      },
+                      defaultValue: "INR",
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "number",
+                      key: "exchange_rate",
+                      label: "Exchange Rate",
+                      input: true,
+                      defaultValue: 1,
+                    },
+                  ],
+                },
+              ],
+            },
+
+            // 🔹 Row 4: Project + Cost Center
+            {
+              type: "columns",
+              key: "row4",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "select",
+                      key: "project",
+                      label: "Project",
+                      input: true,
+                      placeholder: "Select project",
+                      data: {
+                        values:
+                          projects?.data.map((pro) => ({
+                            label: pro.project_name,
+                            value: pro.project_name,
+                          })) || [],
+                      },
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "select",
+                      key: "cost_center",
+                      label: "Cost Center",
+                      input: true,
+                      placeholder: "Select cost center",
+                      data: {
+                        values:
+                          costCenters?.data.map((cc) => ({
+                            label: cc.name,
+                            value: cc.name,
+                          })) || [],
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+
+            // 🔹 Advance Amount + Purpose
+            {
+              type: "number",
+              key: "advance_amount",
+              label: "Advance Amount",
+              input: true,
+              placeholder: "Enter amount",
+              validate: { required: true, min: 1 },
+            },
+            {
+              type: "textarea",
+              key: "purpose",
+              label: "Purpose",
+              input: true,
+              placeholder: "Describe the purpose of advance",
+              validate: { required: true },
+              rows: 3,
+            },
+          ],
+        },
+      ],
+    };
+  }, [currencies, projects, costCenters]);
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">

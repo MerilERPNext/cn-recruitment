@@ -1,13 +1,23 @@
 import FrappeAPI from "../utils/frappeAPI";
 import { ApiAdvance } from "../types/employeeAttendance";
-import { ExpenseAdvance } from "../types/expenseAdvance";
+import {
+  CostCenterType,
+  CurrencyType,
+  ExpenseAdvance,
+  ProjectType,
+} from "../types/expenseAdvance";
 
-export const getAdvances = async (employeeId: string): Promise<ApiAdvance[]> => {
+export const getAdvances = async (
+  employeeId: string
+): Promise<ApiAdvance[]> => {
   if (!employeeId) throw new Error("Employee ID is required");
 
-  const result = await FrappeAPI.callMethod("cn_indian_payroll.cn_indian_payroll.overrides.employee_advance.get_advance_dashboard", {
-    employee: employeeId,
-  });
+  const result = await FrappeAPI.callMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.employee_advance.get_advance_dashboard",
+    {
+      employee: employeeId,
+    }
+  );
   return result as ApiAdvance[];
 };
 
@@ -26,7 +36,9 @@ export const getAllAdvancesTypes = async (): Promise<{
   };
 };
 
-export const getExpenseAdvanceList = async (employeeId: string): Promise<ExpenseAdvance> => {
+export const getExpenseAdvanceList = async (
+  employeeId: string
+): Promise<ExpenseAdvance> => {
   const res = await FrappeAPI.getDocumentList("Employee Advance", {
     fields: [
       "name",
@@ -61,7 +73,11 @@ export const getExpenseAdvanceList = async (employeeId: string): Promise<Expense
 };
 
 export const getAdvancesAmount = async (
-employeeId: string, advanceType?: string, postingDate?: string, company?: string,): Promise<ApiAdvance> => {
+  employeeId: string,
+  advanceType?: string,
+  postingDate?: string,
+  company?: string
+): Promise<ApiAdvance> => {
   if (!employeeId) throw new Error("Employee ID is required");
 
   const result = await FrappeAPI.callMethod(
@@ -77,16 +93,48 @@ employeeId: string, advanceType?: string, postingDate?: string, company?: string
   return result as ApiAdvance;
 };
 
-
-
 export const createAdvance = async (
   body: Record<string, unknown>
 ): Promise<boolean> => {
-    try {
+  try {
     const response = await FrappeAPI.createDocument("Employee Advance", body);
     return response as boolean;
   } catch (error) {
     console.error("📡 Error while Adding Loan Application in:", error);
     throw error;
   }
+};
+
+export const getCurrencies = async (): Promise<{ data: CurrencyType[] }> => {
+  const res = await FrappeAPI.getDocumentList("Currency", {
+    fields: ["name", "symbol", "fraction", "fraction_units"],
+    orderBy: "creation desc",
+  });
+
+  // Frappe returns { data: [...] }, so just cast properly
+  return {
+    data: res.data as CurrencyType[],
+  };
+};
+
+export const getProjects = async (): Promise<{ data: ProjectType[] }> => {
+  const res = await FrappeAPI.getDocumentList("Project", {
+    fields: ["name", "project_name"],
+    orderBy: "creation desc",
+  });
+
+  return {
+    data: res.data as ProjectType[],
+  };
+};
+
+export const getCostCenters = async (): Promise<{ data: CostCenterType[] }> => {
+  const res = await FrappeAPI.getDocumentList("Cost Center", {
+    fields: ["name", "cost_center_name", "company"],
+    orderBy: "creation desc",
+  });
+
+  return {
+    data: res.data as CostCenterType[],
+  };
 };
