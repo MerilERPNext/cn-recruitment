@@ -202,7 +202,8 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 if (file) combinedData.attach_receipt = file;
               }
               const mappedExpense = {
-                id: Date.now().toString(),
+                // id: Date.now().toString(),
+                id: crypto.randomUUID(),
                 expense_type: combinedData.expense_type,
                 expense_date: combinedData.expense_date,
                 amount: combinedData.amount,

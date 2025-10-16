@@ -25,7 +25,6 @@ interface ExpenseClaim {
 }
 
 const ExpenseAdvanceForm: React.FC<{
-  isOpen?: boolean;
   onClose?: () => void;
 }> = ({ onClose }) => {
   const { data: currencies } = useCurrencies();
