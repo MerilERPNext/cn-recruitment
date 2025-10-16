@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from "react";
 import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
+import { useExpenseTypes } from "../../hooks/useExpense";
 
 interface ExpenseClaimModalProps {
   isOpen: boolean;
@@ -21,6 +22,9 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   const [mainFormData, setMainFormData] = useState<any>({});
   const [dynamicFormData, setDynamicFormData] = useState<any>({});
   const [formKey, setFormKey] = useState(0);
+  const { data: getExpenseTypes } = useExpenseTypes();
+  console.log("getExpenseTypes", getExpenseTypes);
+  
 
   const getBaseUrl = () =>
     // @ts-ignore
@@ -99,8 +103,12 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               type: "file",
               key: field.fieldname,
               label: field.label,
-              storage: "base64",
+              storage: "customBase64",
               input: true,
+              fileTypes: [
+                { label: "Documents", value: ".pdf,.doc,.docx" },
+                { label: "Images", value: ".jpg,.jpeg,.png" },
+              ],
               filePattern: "*/*",
               validate: { required: field.reqd === 1 },
             };
@@ -168,7 +176,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
       amount: combinedData.amount,
       custom_mercent: combinedData.merchant || "",
       custom_invoice_number: combinedData.invoice_number || "",
-      custom_attach_receipt: combinedData.attach_receipt || "",
+      custom_attach_receipt: combinedData.attach_receipt?.file_url || null,
       description: combinedData.description || "",
     };
 
