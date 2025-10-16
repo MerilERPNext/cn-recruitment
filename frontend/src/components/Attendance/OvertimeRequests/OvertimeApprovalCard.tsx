@@ -79,7 +79,7 @@ const OvertimeApprovalCard = ({
   };
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const gridTemplateColumns = "5% 10% 10% 30% 6% 6% 20%";
+  const gridTemplateColumns = "5% 10% 35% 8% 8% 25%";
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -128,10 +128,6 @@ const OvertimeApprovalCard = ({
             />
           </div>
 
-          {/* Allocated To */}
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.todo_id}
-          </div>
           {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
             {data?.reference_document?.employee}
@@ -208,7 +204,7 @@ const OvertimeApprovalCard = ({
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-gray-500 font-bold">
-                    {data?.todo_id}
+                    {data?.reference_document?.employee}
                   </p>
 
                   <div className="flex gap-2">

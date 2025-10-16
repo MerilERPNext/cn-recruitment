@@ -2,6 +2,7 @@ import { format, isValid, parse } from "date-fns";
 import { RequestCardProps } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import DOMPurify from "dompurify";
 
 export function RequestCard({
   request,
@@ -52,8 +53,10 @@ any & {
   };
   const status = getStatus(request?.status);
 
-  const gridTemplateColumns = "15% 15% 8% 8% 8% 20%";
-
+  const gridTemplateColumns = "16% 20% 10% 10% 10% 20%";
+  const cleanExplaination = DOMPurify.sanitize(
+    request?.reference_document?.explanation || ""
+  );
   return (
     <>
       {isDesktop ? (
@@ -63,11 +66,10 @@ any & {
           onClick={() => onClick?.(request)}
         >
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {request?.todo_id}
-          </div>
-
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
             {request?.reference_document?.employee_name}
+          </div>
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
+            {cleanExplaination}
           </div>
 
           {/* Date */}

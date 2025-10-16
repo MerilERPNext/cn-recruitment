@@ -247,11 +247,11 @@ const EmployeeAttendance = () => {
           </div>
           <CardTable
             titles={[
-              "Id",
               "Allocated To",
               "Request Type",
               "From Date",
               "To Date",
+              "Due Date",
               "Status",
               "Actions",
             ]}

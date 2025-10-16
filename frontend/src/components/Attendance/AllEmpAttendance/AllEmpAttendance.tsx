@@ -10,6 +10,7 @@ import {
   parse,
   startOfMonth,
   isValid as isValidDate,
+  eachDayOfInterval,
 } from "date-fns";
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
 import { getStatusGradient } from "../../../utils/helperUtils";
@@ -18,6 +19,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import Modal from "../../shared/Modal";
 import EmployeeAttendanceDetails from "../Employee/EmployeeAttendanceDetails";
 import { AttendanceRecord } from "../../../types/attendance";
+import { useMemo } from "react";
 
 const formatTimeSafe = (timeStr: string | undefined) => {
   if (!timeStr) return "--:--";
@@ -59,6 +61,70 @@ const AllEmpAttendance = () => {
     start: start,
     end: end,
   });
+
+  // Generate complete month data with all dates filled in
+  const completeMonthData = useMemo(() => {
+    if (!allEventsAndAttendance) return [];
+
+    // Generate all dates in the selected month
+    const allDatesInMonth = eachDayOfInterval({
+      start: startOfMonth(parsedDate),
+      end: endOfMonth(parsedDate),
+    });
+
+    // Create a map of API data by date for quick lookup
+    const dataByDate = new Map<string, AttendanceRecord[]>();
+    allEventsAndAttendance.forEach((item) => {
+      const dateKey = format(new Date(item.start), "yyyy-MM-dd");
+      if (!dataByDate.has(dateKey)) {
+        dataByDate.set(dateKey, []);
+      }
+      dataByDate.get(dateKey)?.push(item);
+    });
+
+    // Generate complete data for all dates
+    const completeData: AttendanceRecord[] = [];
+
+    allDatesInMonth.forEach((date) => {
+      const dateKey = format(date, "yyyy-MM-dd");
+      const itemsForDate = dataByDate.get(dateKey);
+
+      if (itemsForDate && itemsForDate.length > 0) {
+        // If we have data for this date, add ALL items (could be multiple: attendance + requests + holidays)
+        // Sort by priority: Holiday/Weekly Off -> Attendance Request -> Attendance
+        const sortedItems = itemsForDate.sort((a, b) => {
+          const priority: Record<string, number> = {
+            Holiday: 1,
+            "Attendance Request": 2,
+            Attendance: 3,
+          };
+          return (priority[a.doctype] || 99) - (priority[b.doctype] || 99);
+        });
+
+        // Add ALL items for this date
+        completeData.push(...sortedItems);
+      } else {
+        // No data for this date, create a placeholder
+        completeData.push({
+          name: `placeholder-${dateKey}`,
+          doctype: "Attendance",
+          start: dateKey,
+          end: dateKey,
+          title: "No Data",
+          status: "Not Marked",
+          docstatus: "",
+          employee: "",
+          half_day_status_first_half: undefined,
+          half_day_status_second_half: undefined,
+          in_time: undefined,
+          out_time: undefined,
+          shift: undefined,
+        } as AttendanceRecord);
+      }
+    });
+
+    return completeData;
+  }, [allEventsAndAttendance, parsedDate]);
 
   // Handle error state
   if (isError) {
@@ -110,6 +176,8 @@ const AllEmpAttendance = () => {
         return "!bg-blue-100 !text-blue-700";
       case "weekly off":
         return "!bg-gray-200 !text-gray-700";
+      case "not marked":
+        return "bg-gray-100 text-gray-500";
       default:
         return "bg-gray-50 text-gray-700";
     }
@@ -127,27 +195,35 @@ const AllEmpAttendance = () => {
       />
 
       <div className="mx-auto bg-white h-screen px-4">
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-2 items-center">
           <h2 className="font-semibold text-lg text-center py-2">
             {selectedMonth?.label}
           </h2>
           {isDesktop && (
-            <button onClick={() => setShowSelectByMonth(true)}>
-              <CalendarDays key={"desktop-calendar-filter-icon"} />
+            <button
+              className="bg-gray-200 p-1 rounded-md h-fit"
+              onClick={() => setShowSelectByMonth(true)}
+            >
+              <CalendarDays
+                className="h-4 w-4"
+                key={"desktop-calendar-filter-icon"}
+              />
             </button>
           )}
         </div>
 
         <div className="flex flex-col gap-2 pb-4">
-          {allEventsAndAttendance &&
-            allEventsAndAttendance?.length > 0 &&
-            allEventsAndAttendance?.map((item, index) => {
+          {completeMonthData &&
+            completeMonthData?.length > 0 &&
+            completeMonthData?.map((item, index) => {
               const dateObj = new Date(item?.start);
               const date = dateObj.getDate();
               const day = dateObj.toLocaleString("default", {
                 weekday: "short",
               });
-
+              if (item?.doctype === "Attendance Request") {
+                return;
+              }
               return (
                 <div
                   onClick={() => {

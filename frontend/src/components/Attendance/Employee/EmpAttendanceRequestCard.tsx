@@ -67,6 +67,9 @@ const EmpAttendanceRequestCard = ({
   const formattedToDate = data?.reference_document?.to_date
     ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
     : "N/A";
+  const formattedDueDate = data?.due_date
+    ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
+    : "N/A";
   return (
     <>
       {isDesktop ? (
@@ -74,10 +77,7 @@ const EmpAttendanceRequestCard = ({
           className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
         >
           <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.todo_id}
-          </div>
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.allocated_to}
+            {data?.username}
           </div>
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
@@ -92,6 +92,10 @@ const EmpAttendanceRequestCard = ({
           {/* To Date */}
           <div className="text-sm text-gray-900 text-start">
             {formattedToDate}
+          </div>
+          {/* To Date */}
+          <div className="text-sm text-gray-900 text-start">
+            {formattedDueDate}
           </div>
 
           {/* Status */}
@@ -128,12 +132,17 @@ const EmpAttendanceRequestCard = ({
             <div className=" flex items-start justify-between gap-4">
               <div className="flex gap-1 flex-col">
                 <div className="flex gap-2">
-                  {data?.reference_document?.custom_request_type}
-                  <Badge
-                    size="sm"
-                    backgroundColor={status?.statusColor}
-                    label={status?.label || ""}
-                  />
+                  <div className="flex flex-col">
+                    <span className="font-semibold">{data?.username}</span>
+                    <span>{data?.reference_document?.custom_request_type}</span>
+                  </div>
+                  <div>
+                    <Badge
+                      size="sm"
+                      backgroundColor={status?.statusColor}
+                      label={status?.label || ""}
+                    />
+                  </div>
                 </div>
                 <div className="text-sm text-gray-500">
                   {data?.reference_document?.from_date

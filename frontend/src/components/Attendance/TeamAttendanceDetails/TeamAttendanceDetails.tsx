@@ -63,15 +63,15 @@ const TeamAttendanceDetails = () => {
           <CardTable
             titles={[
               "Select",
-              "Id",
               "Employeee",
+              "Explanation",
               "From Date",
               "To Date",
               "Due Date",
               "Status",
               "Actions",
             ]}
-            columnWidths={["5%", "15%", "10%", "8%", "8%", "8%", "10%", "20%"]}
+            columnWidths={["5%", "10%", "15%", "8%", "8%", "8%", "10%", "20%"]}
           >
             {currentUser?.name ? (
               <ApprovalList
@@ -109,10 +109,10 @@ const TeamAttendanceDetails = () => {
               Actioned Team Attendance Requests
             </h2>
             <CardTable
-              columnWidths={["15%", "15%", "8%", "8%", "8%", "20%"]}
+              columnWidths={["16%", "20%", "10%", "10%", "10%", "20%"]}
               titles={[
-                "Id",
                 "Employee",
+                "Explanation",
                 "From Date",
                 "To Date",
                 "Due Date",
