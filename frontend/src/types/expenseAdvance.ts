@@ -30,7 +30,6 @@ export interface CostCenterType {
   company?: string;
 }
 
-
 export interface ExpenseType {
   name: string;
 }
