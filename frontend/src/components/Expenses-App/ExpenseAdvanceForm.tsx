@@ -469,7 +469,8 @@ const ExpenseAdvanceForm: React.FC<{
                           {expense.amount || "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {expense.merchant || "-"}
+                            {expense.custom_mercent || "-"}
+
                         </td>
                         <td className="px-4 py-3">
                           <button
