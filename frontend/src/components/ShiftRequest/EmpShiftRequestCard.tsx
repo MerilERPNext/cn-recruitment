@@ -20,7 +20,6 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { setRefetchAttendance } = useGlobalStore();
   
   const navigate = useNavigate();
-  console.log("Shift Request Data:", data);
   const [edit, setEdit] = useState(false);
   const {
       data: shiftTypes,
@@ -149,7 +148,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 icon={<RotateCcw className="h-3 w-3" />}
                 variant="contain"
                 size="sm"
-                onClick={()=> setEdit(true)}
+                onClick={handleRevokeClick}
                 disabled={revokeEventMutation.isPending}
               >
                 {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}

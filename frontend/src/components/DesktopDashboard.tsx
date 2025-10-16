@@ -139,7 +139,7 @@ export default function DesktopDashboard() {
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
   const { data: currentUser } = useCurrentUser();
-  console.log("currentUser", currentUser);
+
   // Get device location on component mount
   useEffect(() => {
     async function fetchLocation() {
