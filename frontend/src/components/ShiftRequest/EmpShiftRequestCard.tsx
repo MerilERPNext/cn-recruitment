@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
 import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import { useNavigate } from "react-router-dom";
+import { useShiftTypes } from "../../hooks/useShift";
 
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
@@ -21,6 +22,11 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const navigate = useNavigate();
   console.log("Shift Request Data:", data);
   const [edit, setEdit] = useState(false);
+  const {
+      data: shiftTypes,
+      isLoading: shiftTypesLoading,
+      error: shiftTypesError,
+    } = useShiftTypes();
 
   const handleEditClick = () => {
       navigate(`/webapp/shift-request/shift-change-form/${data?.reference_document?.name}`);
@@ -77,6 +83,21 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const formattedToDate = data?.reference_document?.to_date
     ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
     : "";
+
+ const getShiftTimeline = (shiftTypeName: string) => {
+  if (shiftTypes && !shiftTypesLoading && !shiftTypesError) {
+    const shiftType = shiftTypes.data.find(
+      (type) => type.name === shiftTypeName
+    );
+
+    if (shiftType) {
+      return `${shiftType.start_time || "--"} - ${shiftType.end_time || "--"}`;
+    }
+  }
+
+  return "";
+};
+
   return (
     <>
       {isDesktop ? (
@@ -84,8 +105,9 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           className={`grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
         >
           {/* Request Type */}
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.reference_document?.shift_type}
+          <div className="text-sm font-medium text-gray-700 text-start truncate flex flex-col">
+            <div>{data?.reference_document?.shift_type}</div>
+            <div className="text-xs">{getShiftTimeline(data?.reference_document?.shift_type || "")}</div>
           </div>
 
           {/* From Date */}

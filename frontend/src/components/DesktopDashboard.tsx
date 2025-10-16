@@ -12,6 +12,8 @@ import {
   Headset,
   Timer,
   ArrowUpDown,
+  Dock,
+  Settings
 } from "lucide-react";
 import {
   useCanShowClockIn,
@@ -55,6 +57,7 @@ import LeaveRequest from "./Attendance/LeaveRequest";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
+import useCurrentUser from "../hooks/useCurrentUser";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -135,7 +138,8 @@ export default function DesktopDashboard() {
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
-
+  const { data: currentUser } = useCurrentUser();
+  console.log("currentUser", currentUser);
   // Get device location on component mount
   useEffect(() => {
     async function fetchLocation() {
@@ -382,6 +386,10 @@ export default function DesktopDashboard() {
 
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
+  console.log("currentUser",currentUser)
+
+  const canRedirectToDesk = currentUser?.roles?.some(role => ['System User', 'Payroll Manager'].includes(role.role));
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Collapsible Sidebar */}
@@ -539,7 +547,24 @@ export default function DesktopDashboard() {
                       <User className="w-4 h-4" />
                       View Full Profile
                     </button>
-                    <hr className="my-2 border-gray-100" />
+                      
+                      {canRedirectToDesk &&
+                        <button
+                          onClick={()=>{navigate('/desk')}}
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        >
+                          <Dock className="w-4 h-4" />
+                          Switch to Desk
+                        </button>
+                    } 
+                     <button
+                      onClick={ void(0) }
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </button>
+                     <hr className="my-2 border-gray-100" />
                     <button
                       onClick={async () => {
                         await logoutHandler();

@@ -305,7 +305,6 @@ export default function AllShiftsDashboard() {
                 <CardTable
                   titles={[
                     "Select",
-                    "Id",
                     "Employee",
                     "Shift Type",
                     "Status",

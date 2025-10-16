@@ -87,9 +87,6 @@ const ApprovalRejectionQueue = ({
         />
       </div>
       <div className="truncate text-gray-900 font-medium text-sm text-start">
-        {data.todo_id}
-      </div>
-      <div className="truncate text-gray-900 font-medium text-sm text-start">
         {data.reference_document.employee_name}
       </div>
       <div className="flex items-center text-gray-700 text-xs">
