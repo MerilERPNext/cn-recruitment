@@ -206,11 +206,10 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 expense_type: combinedData.expense_type,
                 expense_date: combinedData.expense_date,
                 amount: combinedData.amount,
-                custom_mercent: combinedData.merchant || "",
-                custom_invoice_number: combinedData.invoice_number || "",
-                custom_attach_receipt:
-                  combinedData.attach_receipt?.file_url || null,
-                description: combinedData.description || "",
+                custom_mercent: combinedData.merchant,
+                custom_invoice_number: combinedData.invoice_number,
+                custom_attach_receipt: combinedData.attach_receipt?.file_url,
+                description: combinedData.description,
               };
               onSave(mappedExpense);
               handleClose();
