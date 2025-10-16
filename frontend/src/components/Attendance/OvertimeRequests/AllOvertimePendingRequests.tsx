@@ -29,8 +29,15 @@ const AllOvertimePendingRequests = () => {
       />
       <div className="p-2">
         <CardTable
-          titles={["Select", "Description", "Date", "Status", "Actions"]}
-          columnWidths={["15%", "30%", "10%", "10%", "30%"]}
+          titles={[
+            "Select",
+            "Employee",
+            "Description",
+            "Due Date",
+            "Status",
+            "Actions",
+          ]}
+          columnWidths={["5%", "10%", "35%", "8%", "8%", "20%"]}
         >
           <ApprovalList
             doctype={"Planned Overtime Request"}

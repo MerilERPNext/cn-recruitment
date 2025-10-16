@@ -41,8 +41,14 @@ const MyOvertimePendingRequests = () => {
         }}
       />
       <CardTable
-        columnWidths={["10%", "10%", "30%", "10%", "33%"]}
-        titles={["Allocated To", "Name", "Description", "Due Date", "Status"]}
+        columnWidths={["10%", "30%", "10%", "10%", "33%"]}
+        titles={[
+          "Allocated To",
+          "Description",
+          "Creation",
+          "Due Date",
+          "Status",
+        ]}
       >
         <DataListView
           queryKey="planned-overtime-request"

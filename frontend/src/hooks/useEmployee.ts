@@ -92,9 +92,9 @@ export const useCurrentEmployeeAddress = (user_id: string) => {
   });
 };
 
-export const useGetEmployeeHierarchy = (company: string) => {
+export const useGetEmployeeHierarchy = (company: string, empid: string) => {
   return useQuery<EmployeeNode[]>({
-    queryKey: ["Employee-hierarchy", company],
+    queryKey: ["Employee-hierarchy", company, empid],
     queryFn: () => {
       return EmployeeService.getEmployeeHierarchy(company);
     },

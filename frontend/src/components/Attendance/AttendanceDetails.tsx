@@ -24,6 +24,9 @@ export function AttendanceDetailView({
   const { setRefetchAttendance } = useGlobalStore();
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  const cleanExplaination = DOMPurify.sanitize(
+    data?.reference_document?.explanation || ""
+  );
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
       return {
@@ -226,11 +229,18 @@ export function AttendanceDetailView({
               ? data?.reference_document?.custom_reason
               : data?.reference_document?.reason}
           </div>
-          {/* explanation */}
+          {/* description */}
           <div className="py-4">
             <p className="text-sm  mb-2 font-bold">Description</p>
             <div className="bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
+            </div>
+          </div>
+          {/* explanation */}
+          <div className="py-4">
+            <p className="text-sm  mb-2 font-bold">Explanation</p>
+            <div className="bg-gray-100 p-3 rounded-lg">
+              <div dangerouslySetInnerHTML={{ __html: cleanExplaination }} />
             </div>
           </div>
           {data?.reference_document?.custom_attachment ? (

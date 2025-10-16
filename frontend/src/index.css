@@ -163,7 +163,7 @@ code {
   justify-content: center !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
-  aspect-ratio: 1 !important;
+  /* aspect-ratio: 1 !important; */
 }
 .react-datepicker__day-names {
   display: flex !important;

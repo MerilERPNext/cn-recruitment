@@ -13,12 +13,8 @@ import {
 import "@xyflow/react/dist/style.css";
 import PersonNode from "./PersonNode";
 import { EmployeeHierarchy, NodeData } from "./type/type";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import {
-  useCurrentEmployeeAllDetails,
-  useGetEmployeeHierarchy,
-} from "../../hooks/useEmployee";
-import { useNavigate } from "react-router";
+import { useGetEmployeeSubordinateHierarchy } from "../../hooks/useEmployee";
+import { useNavigate, useParams } from "react-router";
 import { IoChevronForwardOutline } from "react-icons/io5";
 
 // ✅ Normalize IDs to string for reliable comparison
@@ -174,13 +170,10 @@ export default function TwoLevelOrgChart() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const navigatorate = useNavigate();
-
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: employeeHierarchy } = useGetEmployeeHierarchy(
-    user?.company ?? ""
+  const { id: employeeId } = useParams<{ id: string }>();
+  const { data: employeeHierarchy } = useGetEmployeeSubordinateHierarchy(
+    employeeId || ""
   );
-  const employeeId = user?.employee ?? "";
   useEffect(() => {
     if (!employeeHierarchy || !employeeId) {
       console.log("⏳ Waiting for data...", { employeeHierarchy, employeeId });

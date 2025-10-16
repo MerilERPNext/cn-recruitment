@@ -86,20 +86,20 @@ const AllAttendanceRequest = ({
             titles={
               statusType === "pending"
                 ? [
-                    "Id",
                     "Allocated To",
                     "Request Type",
                     "From Date",
                     "To Date",
+                    "Due Date",
                     "Status",
                     "Actions",
                   ]
                 : [
-                    "Id",
                     "Allocated To",
                     "Request Type",
                     "From Date",
                     "To Date",
+                    "Due Date",
                     "Status",
                   ]
             }

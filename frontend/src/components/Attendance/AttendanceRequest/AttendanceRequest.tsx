@@ -80,11 +80,11 @@ const AttendanceRequest = ({
                 </div>
                 <CardTable
                   titles={[
-                    "Id",
                     "Allocated To",
                     "Request Type",
                     "From Date",
                     "To Date",
+                    "Due Date",
                     "Status",
                     "Actions",
                   ]}
@@ -153,11 +153,11 @@ const AttendanceRequest = ({
 
               <CardTable
                 titles={[
-                  "Id",
                   "Allocated To",
                   "Request Type",
                   "From Date",
                   "To Date",
+                  "Due Date",
                   "Status",
                 ]}
               >

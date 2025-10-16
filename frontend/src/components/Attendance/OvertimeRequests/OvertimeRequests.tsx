@@ -68,14 +68,13 @@ const OvertimeRequests = () => {
           <CardTable
             titles={[
               "Select",
-              "Id",
               "Employee",
               "Description",
               "Due Date",
               "Status",
               "Actions",
             ]}
-            columnWidths={["5%", "10%", "10%", "30%", "6%", "6%", "20%"]}
+            columnWidths={["5%", "10%", "35%", "8%", "8%", "20%"]}
           >
             {currentUser?.name ? (
               <ApprovalList
@@ -121,11 +120,11 @@ const OvertimeRequests = () => {
               </button>
             </div>
             <CardTable
-              columnWidths={["10%", "10%", "30%", "10%", "33%"]}
+              columnWidths={["10%", "30%", "10%", "10%", "33%"]}
               titles={[
-                "Id",
                 "Allocated To",
                 "Description",
+                "Creation",
                 "Due Date",
                 "Status",
               ]}
