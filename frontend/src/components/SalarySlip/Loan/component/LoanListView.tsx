@@ -36,17 +36,18 @@ export default function LoanList({ loans }: LoanListProps) {
     <div className="w-full">
       <div className="w-full max-h-full overflow-auto border border-gray-200 rounded-lg shadow-sm">
         {/* CHANGED: Using .my-table-header and .my-table-header-text */}
-        <div className="my-table-header grid grid-cols-10 sticky top-0 z-10">
+        <div className="my-table-header grid grid-cols-11 sticky top-0 z-10">
           <div className="my-table-header-text flex items-center">
             <span className="px-2 rounded text-primary">
               <BsDashSquareFill />
             </span>
           </div>
+          <div className="my-table-header-text">Loan Name</div>
           <div className="my-table-header-text">Loan Type</div>
-          <div className="my-table-header-text">EMI Type</div>
           <div className="my-table-header-text">Loan Amount</div>
           <div className="my-table-header-text">Rate of Interest</div>
           <div className="my-table-header-text">Standard Interest</div>
+          <div className="my-table-header-text">EMI Type</div>
           <div className="my-table-header-text">Installments</div>
           <div className="my-table-header-text">Start Date</div>
           <div className="my-table-header-text">End Month</div>
@@ -57,7 +58,7 @@ export default function LoanList({ loans }: LoanListProps) {
           {loans.map((loan) => (
             <div key={loan.loan_name} className="border-b border-gray-200">
               {/* CHANGED: Using .my-data-row and .my-data-cell */}
-              <div className="my-data-row grid grid-cols-10">
+              <div className="my-data-row grid grid-cols-11">
                 <div className="my-data-cell flex items-center">
                   <button
                     onClick={() => toggleLoanExpansion(loan.loan_name)}
@@ -70,19 +71,25 @@ export default function LoanList({ loans }: LoanListProps) {
                     )}
                   </button>
                 </div>
+                <div className="my-data-cell">{loan.loan_name}</div>
                 <div className="my-data-cell">{loan.loan_type}</div>
-                <div className="my-data-cell">{loan.emi_type}</div>
                 <div className="my-data-cell font-medium">
                   {loan.status === "Open"
                     ? loan.loan_requested_amount
                     : formatCurrency(loan.loan_approved_amount)}
                 </div>
-                <div className="my-data-cell">{loan.rate_of_interest || "0"}%</div>
+                <div className="my-data-cell">
+                  {loan.rate_of_interest || "0"}%
+                </div>
                 <div className="my-data-cell">
                   {loan.standard_interest || "0"}%
                 </div>
+                <div className="my-data-cell">{loan.emi_type}</div>
+                
                 <div className="my-data-cell">{loan.loan_tenure || "0"}</div>
-                <div className="my-data-cell">{loan.loan_start_date || "-"}</div>
+                <div className="my-data-cell">
+                  {loan.loan_start_date || "-"}
+                </div>
                 <div className="my-data-cell">
                   {loan.loan_start_date && loan.loan_tenure
                     ? calculateEndMonth(loan.loan_start_date, loan.loan_tenure)
