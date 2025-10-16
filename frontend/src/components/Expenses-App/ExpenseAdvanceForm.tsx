@@ -14,7 +14,7 @@ import DOMPurify from "dompurify";
 import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import ExpenseClaimModal from "./ExpenseClaimModal"; 
+import ExpenseClaimModal from "./ExpenseClaimModal";
 import { Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 
@@ -347,20 +347,25 @@ const ExpenseAdvanceForm: React.FC<{
         },
       ],
     };
-  }, [currencies, projects, costCenters, currentEmployee, advanceType, postingDate]);
+  }, [
+    currencies,
+    projects,
+    costCenters,
+    currentEmployee,
+    advanceType,
+    postingDate,
+  ]);
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">
-      {!isDesktop && (
-        <HeaderBar
-          title="New Expense Advance"
-          onBack={
-            onClose
-              ? onClose
-              : () => navigate("/webapp/expenses-app/advance-expense-list")
-          }
-        />
-      )}
+      <HeaderBar
+        title="New Expense Advance"
+        onBack={
+          onClose
+            ? onClose
+            : () => navigate("/webapp/expenses-app/advance-expense-list")
+        }
+      />
 
       <div className="flex-1 overflow-y-auto p-4">
         <Form
@@ -469,8 +474,7 @@ const ExpenseAdvanceForm: React.FC<{
                           {expense.amount || "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                            {expense.custom_mercent || "-"}
-
+                          {expense.custom_mercent || "-"}
                         </td>
                         <td className="px-4 py-3">
                           <button
