@@ -211,7 +211,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
           </button>
         </div>
 
-        <div className="p-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 max-h-[70vh] min-h-[50vh] overflow-y-auto">
           <Form
             key={`main-${formKey}`}
             ref={formRef}
