@@ -26,7 +26,7 @@ const AllPendingRequests = () => {
         <CardTable
           titles={[
             "Select",
-            "Employeee",
+            "Employee",
             "Explanation",
             "From Date",
             "To Date",

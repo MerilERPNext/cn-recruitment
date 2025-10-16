@@ -68,7 +68,7 @@ const EmpAttendanceRequestCard = ({
     ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
     : "N/A";
   const formattedDueDate = data?.due_date
-    ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
+    ? format(new Date(data?.due_date), "dd/MM/yyyy")
     : "N/A";
   return (
     <>

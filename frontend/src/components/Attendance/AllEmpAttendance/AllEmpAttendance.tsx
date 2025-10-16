@@ -92,12 +92,12 @@ const AllEmpAttendance = () => {
       if (itemsForDate && itemsForDate.length > 0) {
         // If we have data for this date, add ALL items (could be multiple: attendance + requests + holidays)
         // Sort by priority: Holiday/Weekly Off -> Attendance Request -> Attendance
+        const priority: Record<string, number> = {
+          Holiday: 1,
+          "Attendance Request": 2,
+          Attendance: 3,
+        };
         const sortedItems = itemsForDate.sort((a, b) => {
-          const priority: Record<string, number> = {
-            Holiday: 1,
-            "Attendance Request": 2,
-            Attendance: 3,
-          };
           return (priority[a.doctype] || 99) - (priority[b.doctype] || 99);
         });
 
