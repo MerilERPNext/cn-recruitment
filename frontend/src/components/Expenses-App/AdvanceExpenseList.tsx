@@ -25,7 +25,7 @@ const AdvanceExpenseList: React.FC = () => {
   const advancesData = advancesApiData?.data || [];
 
   const DesktopLayout = () => (
-    <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
+    <div className="min-h-screen max-w-[100vw] overflow-x-hidden md:p-6">
       <div className="w-full max-w-[100vw] mx-auto py-0">
         <div className="px-0">
           <div className="rounded-lg shadow-sm border border-gray-200 overflow-hidden">

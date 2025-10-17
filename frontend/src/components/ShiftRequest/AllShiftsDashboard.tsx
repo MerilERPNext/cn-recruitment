@@ -305,21 +305,21 @@ export default function AllShiftsDashboard() {
                 <CardTable
                   titles={[
                     "Select",
-                    "Id",
                     "Employee",
                     "Shift Type",
-                    "Status",
                     "From Date",
                     "To Date",
+                    "Due Date",
+                    "Status",
                     "Actions",
                   ]}
                   columnWidths={[
-                    "5%",
-                    "15%",
+                    "8%",
                     "10%",
-                    "8%",
-                    "8%",
-                    "8%",
+                    "10%",
+                    "10%",
+                    "10%",
+                    "10%",
                     "10%",
                     "20%",
                   ]}

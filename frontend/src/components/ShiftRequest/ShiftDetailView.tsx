@@ -152,7 +152,7 @@ export function ShiftDetailView({
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
             <h2 className="text-lg font-semibold text-gray-800">
-              {label} -<span className="font=md"> {data?.todo_id}</span>
+              {label}
             </h2>
           </div>
           <button

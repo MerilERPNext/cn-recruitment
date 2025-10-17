@@ -1,5 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createAdvance, getAdvances, getAdvancesAmount, getAllAdvancesTypes, getExpenseAdvanceList } from "../services/employeeAdvances";
+import {
+  createAdvance,
+  getAdvances,
+  getAdvancesAmount,
+  getAllAdvancesTypes,
+  getCostCenters,
+  getCurrencies,
+  getExpenseAdvanceList,
+  getExpenseTypeFields,
+  getExpenseTypes,
+  getProjects,
+} from "../services/employeeAdvances";
 import { ApiAdvance } from "../types/employeeAttendance";
 
 export const useEmployeeAdvances = (employeeId?: string) => {
@@ -49,8 +60,46 @@ export const useEmployeeAdvancesAmount = (
 ) => {
   return useQuery<ApiAdvance>({
     queryKey: ["advances", employeeId, advanceType, postingDate, company],
-    queryFn: () => getAdvancesAmount(employeeId!, advanceType, postingDate, company),
+    queryFn: () =>
+      getAdvancesAmount(employeeId!, advanceType, postingDate, company),
     enabled: !!employeeId && !!advanceType && !!postingDate && !!company,
   });
 };
+
+export const useCurrencies = () => {
+  return useQuery({
+    queryKey: ["currencies"],
+    queryFn: getCurrencies,
+  });
+};
+
+export const useProjects = () => {
+  return useQuery({
+    queryKey: ["projects"],
+    queryFn: getProjects,
+  });
+};
+
+export const useCostCenters = () => {
+  return useQuery({
+    queryKey: ["cost-centers"],
+    queryFn: getCostCenters,
+  });
+};
+
+export const useExpenseTypeFields = (expenseType: string | null) => {
+  return useQuery({
+    queryKey: ["expenseTypeFields", expenseType],
+    queryFn: () => getExpenseTypeFields(expenseType!),
+    enabled: !!expenseType,
+  });
+};
+
+export const useExpenseTypes = () => {
+  return useQuery({
+    queryKey: ["expenseTypes"],
+    queryFn: getExpenseTypes,
+  });
+};
+
 
