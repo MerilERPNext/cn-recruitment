@@ -27,11 +27,6 @@
   "show_hold_days_only_to_admin",
   "show_employees_as_probation_when_recommended_for_separation",
   "process_details_tab",
-  "task_configuration_section",
-  "show_previous_step_action_in_taskbox",
-  "confirmreassign_step_if_no_assignee",
-  "column_break_tjby",
-  "skip_steps_if_assignee_is_any_earlier_respondent",
   "section_break_acgw",
   "workflow_configuration",
   "notification_and_advanced_settings_tab",
@@ -155,33 +150,6 @@
    "label": "Process Details"
   },
   {
-   "fieldname": "task_configuration_section",
-   "fieldtype": "Section Break",
-   "label": "Task Configuration"
-  },
-  {
-   "default": "0",
-   "fieldname": "show_previous_step_action_in_taskbox",
-   "fieldtype": "Check",
-   "label": "Show previous step action in taskbox"
-  },
-  {
-   "default": "0",
-   "fieldname": "confirmreassign_step_if_no_assignee",
-   "fieldtype": "Check",
-   "label": "Confirm/Reassign step if no assignee"
-  },
-  {
-   "fieldname": "column_break_tjby",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "skip_steps_if_assignee_is_any_earlier_respondent",
-   "fieldtype": "Check",
-   "label": "Skip steps if assignee is any earlier respondent"
-  },
-  {
    "fieldname": "section_break_acgw",
    "fieldtype": "Section Break"
   },
@@ -216,7 +184,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-16 16:38:16.528210",
+ "modified": "2025-10-17 12:30:14.466145",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Confirmation Policy",
