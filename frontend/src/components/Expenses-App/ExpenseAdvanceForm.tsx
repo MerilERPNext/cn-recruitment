@@ -101,7 +101,7 @@ const ExpenseAdvanceForm: React.FC<{
         exchange_rate: formData.exchange_rate,
         project: formData.project,
         cost_center: formData.cost_center,
-        custom_expense_claim: preparedExpenseClaims,
+        expenses: preparedExpenseClaims,
       };
 
       console.log("🚀 Final Submitted Payload:", payload);
