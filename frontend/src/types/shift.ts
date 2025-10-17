@@ -20,7 +20,7 @@ export interface ShiftRequest {
   amended_from: string | null;
   custom_status: string;
   custom_request_type: string;
-  doctype?: String;
+  doctype?: string;
 }
 
 export interface ShiftRequestResponse {
