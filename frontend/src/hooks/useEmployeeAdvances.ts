@@ -7,6 +7,7 @@ import {
   getCostCenters,
   getCurrencies,
   getExpenseAdvanceList,
+  getExpenseTableFieldSettings,
   getExpenseTypeFields,
   getExpenseTypes,
   getProjects,
@@ -101,5 +102,14 @@ export const useExpenseTypes = () => {
     queryFn: getExpenseTypes,
   });
 };
+
+export const useExpenseTableFieldSettings = (employeeId: string | null) => {
+  return useQuery({
+    queryKey: ["expense-table-field-settings", employeeId],
+    queryFn: () => getExpenseTableFieldSettings(employeeId!),
+    enabled: !!employeeId,
+  });
+};
+
 
 
