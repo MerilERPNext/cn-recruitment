@@ -90,8 +90,8 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
         {
           type: "select",
           key: "expense_type",
-          label: "Expense Claim Type",
-          placeholder: "Select Expense Claim Type",
+          label: "Expense Advance Type",
+          placeholder: "Select Expense Advance Type",
           dataSrc: "url",
           data: {
             url: `${getBaseUrl()}/api/resource/Expense%20Claim%20Type?fields=["name"]&limit_page_length=100`,
@@ -138,7 +138,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               {
                 type: "button",
                 action: "submit",
-                label: "Save Expense",
+                label: "Save Advance",
                 theme: "primary",
                 key: "submit",
               },
@@ -165,7 +165,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-2xl rounded-lg shadow-xl overflow-visible p-4">
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="font-semibold text-lg">Add Expense Claim</h2>
+          <h2 className="font-semibold text-lg">Add Expense Advance</h2>
           <button
             type="button"
             onClick={handleClose}
@@ -212,6 +212,8 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 description: combinedData.description,
               };
               onSave(mappedExpense);
+              console.log("🚀 Expense BreakUp Payload:", mappedExpense);
+
               handleClose();
             }}
             options={{ noAlerts: true }}
