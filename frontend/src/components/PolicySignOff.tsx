@@ -169,8 +169,7 @@ const PolicySignOff: React.FC = () => {
 
         <a
           href={policyData.policy_document}
-          target="_blank"
-          rel="noopener noreferrer"
+          download
           className="flex items-center text-primary hover:text-primary-700 transition-colors"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
