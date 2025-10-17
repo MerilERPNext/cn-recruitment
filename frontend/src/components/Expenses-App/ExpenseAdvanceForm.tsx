@@ -113,7 +113,6 @@ const ExpenseAdvanceForm: React.FC<{
         toast.error("Please add at least one expense claim before submitting.");
         return;
       }
-      console.log("🚀 Final Submitted Payload:", payload);
 
       setSubmitting(true);
       mutation.mutate(payload, {

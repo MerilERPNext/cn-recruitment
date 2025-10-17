@@ -212,7 +212,6 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 description: combinedData.description,
               };
               onSave(mappedExpense);
-              console.log("🚀 Expense BreakUp Payload:", mappedExpense);
 
               handleClose();
             }}
