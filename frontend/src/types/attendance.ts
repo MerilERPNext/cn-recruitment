@@ -218,6 +218,12 @@ export type AttendanceRecord = {
   in_time?: string;
   out_time?: string;
   shift?: string;
+  custom_auto_created?: number;
+  leave_type?: string;
+  leave_application_name?: string;
+  applied_on?: string;
+  working_hours?: string;
+  message?: string;
 };
 
 export type PolicyQuestion = {
