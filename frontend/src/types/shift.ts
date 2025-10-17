@@ -84,7 +84,7 @@ export interface MyShiftRequest {
   todo_id: string;
   username: string;
   reference_name: string;
-  can_edit: String;
+  can_edit: boolean;
 }
 export interface RequestCardProps {
   request: ShiftRequest;
