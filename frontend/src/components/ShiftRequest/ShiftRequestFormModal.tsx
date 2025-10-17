@@ -39,6 +39,18 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const isLoading = shiftTypesLoading || employeeLoading;
   const error = shiftTypesError || employeeError;
 
+
+  const handleSubmitonSuccess = ()=>{
+    onClose?.();
+    setTimeout(() => {
+      setRefetchAttendance(true);
+    }, 1000);
+  }
+
+  const handleSubmitionError = (message: string, error: any) => {
+    console.error(message, error);
+  }
+
   const handleSubmit = async () => {
     if (!formRef.current) {
       toast.error("Form not ready yet.");
@@ -76,26 +88,16 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
       if (forActionType === "edit" && defaultShiftRequestData?.name) {
           updateShiftRequest( {doctype: defaultShiftRequestData.doctype, name: defaultShiftRequestData.name, data: payload } , {
-            onSuccess: () => {
-              onClose?.();
-              setTimeout(() => {
-                setRefetchAttendance(true);
-              }, 1000);
-            },
+            onSuccess: handleSubmitonSuccess,
             onError: (error: any) => {
-              console.error("Error updating shift request:", error);
+              handleSubmitionError("Error updating shift request:", error);
             },
         });
       }else{
         createShiftRequest(payload, {
-          onSuccess: () => {
-            onClose?.();
-            setTimeout(() => {
-              setRefetchAttendance(true);
-            }, 1000);
-          },
+          onSuccess: handleSubmitonSuccess,
           onError: (error: any) => {
-            console.error("Error creating shift request:", error);
+            handleSubmitionError("Error creating shift request:", error);
           },
         });
     }
