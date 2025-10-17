@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestApprovalFlowMatrix(FrappeTestCase):
+class TestSeparationCategory(FrappeTestCase):
 	pass

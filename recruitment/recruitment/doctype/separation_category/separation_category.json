@@ -1,19 +1,19 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:action_name",
- "creation": "2025-10-16 17:39:21.374057",
+ "autoname": "field:category_name",
+ "creation": "2025-10-17 13:48:27.714050",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "action_name"
+  "category_name"
  ],
  "fields": [
   {
-   "fieldname": "action_name",
+   "fieldname": "category_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Action Name",
+   "label": "Category Name",
    "reqd": 1,
    "unique": 1
   }
@@ -21,10 +21,10 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-16 17:39:56.499729",
+ "modified": "2025-10-17 13:49:07.822990",
  "modified_by": "Administrator",
  "module": "Recruitment",
- "name": "Approval Flow Actions",
+ "name": "Separation Category",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

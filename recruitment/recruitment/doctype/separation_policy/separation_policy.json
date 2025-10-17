@@ -29,18 +29,12 @@
   "approval_flow_configuration_section",
   "capture_date_of_resignation",
   "approval_flow_configuration",
-  "workflow_configuration_section",
-  "enable_custom_flow_based_workflow",
-  "workflow_trigger_condition",
-  "workflow_configuration",
-  "workflow_configuration_data",
+  "section_break_xfth",
+  "separation_workflow_configuration",
   "notification_and_advanced_settings_tab",
   "notification_configuration",
-  "section_break_sldo",
-  "advanced_configurations",
-  "banner_tab",
-  "banner_and_preview_section",
-  "welcome_message"
+  "advanced_configurations_section",
+  "permission_manager_link"
  ],
  "fields": [
   {
@@ -85,11 +79,6 @@
    "fieldname": "notification_and_advanced_settings_tab",
    "fieldtype": "Tab Break",
    "label": "Notification and Advanced Settings"
-  },
-  {
-   "fieldname": "banner_tab",
-   "fieldtype": "Tab Break",
-   "label": "Banner"
   },
   {
    "default": "0",
@@ -178,64 +167,37 @@
    "options": "Approval Flow Configuration Table"
   },
   {
-   "fieldname": "workflow_configuration_section",
-   "fieldtype": "Section Break",
-   "label": "Workflow Configuration"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_custom_flow_based_workflow",
-   "fieldtype": "Check",
-   "label": "Enable Custom Flow Based Workflow"
-  },
-  {
-   "fieldname": "workflow_trigger_condition",
-   "fieldtype": "Select",
-   "label": "Workflow Trigger Condition",
-   "options": "Workflow in Parallel\nWorkflow in Series\nWorkflow In Conditional"
-  },
-  {
-   "fieldname": "workflow_configuration",
-   "fieldtype": "HTML"
-  },
-  {
-   "fieldname": "workflow_configuration_data",
-   "fieldtype": "JSON",
-   "hidden": 1,
-   "label": "workflow_configuration_data"
-  },
-  {
-   "fieldname": "banner_and_preview_section",
-   "fieldtype": "Section Break",
-   "label": "Banner and Preview"
-  },
-  {
-   "fieldname": "welcome_message",
-   "fieldtype": "Text Editor",
-   "label": "Welcome Message"
-  },
-  {
    "fieldname": "notification_configuration",
    "fieldtype": "Table",
    "label": "Notification Configuration",
    "options": "Separation Notification Configuration Table"
   },
   {
-   "collapsible": 1,
-   "fieldname": "section_break_sldo",
+   "fieldname": "section_break_xfth",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "separation_workflow_configuration",
+   "fieldtype": "Table",
+   "label": "Separation Workflow Configuration",
+   "options": "Separation Workflow Configuration"
+  },
+  {
+   "fieldname": "advanced_configurations_section",
    "fieldtype": "Section Break",
    "label": "Advanced Configurations"
   },
   {
-   "fieldname": "advanced_configurations",
-   "fieldtype": "Table",
-   "options": "Separation Policy Advanced Configurations"
+   "fieldname": "permission_manager_link",
+   "fieldtype": "HTML",
+   "label": "Permission Manager",
+   "options": "<a href=\"/app/permission-manager\" target=\"_blank\" style=\"color:#0b5ed7; font-weight:500;\">\n    Open Permission Manager\n</a>"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-16 23:57:49.627954",
+ "modified": "2025-10-17 14:17:52.782336",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Separation Policy",

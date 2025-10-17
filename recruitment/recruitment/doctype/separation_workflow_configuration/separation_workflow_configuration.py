@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class SeparationPolicyAdvancedConfigurations(Document):
+class SeparationWorkflowConfiguration(Document):
 	pass
