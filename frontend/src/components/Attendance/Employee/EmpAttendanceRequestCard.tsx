@@ -71,6 +71,9 @@ const EmpAttendanceRequestCard = ({
   const formattedToDate = data?.reference_document?.to_date
     ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
     : "N/A";
+  const formattedDueDate = data?.due_date
+    ? format(new Date(data?.due_date), "dd/MM/yyyy")
+    : "N/A";
   return (
     <>
       {isDesktop ? (
@@ -78,7 +81,7 @@ const EmpAttendanceRequestCard = ({
           className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
         >
           <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.allocated_to}
+            {data?.username}
           </div>
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
@@ -93,6 +96,10 @@ const EmpAttendanceRequestCard = ({
           {/* To Date */}
           <div className="text-sm text-gray-900 text-start">
             {formattedToDate}
+          </div>
+          {/* To Date */}
+          <div className="text-sm text-gray-900 text-start">
+            {formattedDueDate}
           </div>
 
           {/* Status */}

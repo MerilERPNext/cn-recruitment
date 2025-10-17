@@ -84,6 +84,7 @@ const AttendanceRequest = ({
                     "Request Type",
                     "From Date",
                     "To Date",
+                    "Due Date",
                     "Status",
                     "Actions",
                   ]}
@@ -156,6 +157,7 @@ const AttendanceRequest = ({
                   "Request Type",
                   "From Date",
                   "To Date",
+                  "Due Date",
                   "Status",
                 ]}
               >

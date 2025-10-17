@@ -2,6 +2,8 @@ import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
+import DOMPurify from "dompurify";
+
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -78,7 +80,7 @@ const ApprovalCard = ({
   };
 
   // const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const gridTemplateColumns = "5% 15% 10% 8% 8% 8% 10% 20%";
+  const gridTemplateColumns = "5% 10% 15% 8% 8% 8% 10% 20%";
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
@@ -102,6 +104,9 @@ const ApprovalCard = ({
       statusColor: "bg-gray-100 text-gray-600",
     };
   };
+  const cleanExplaination = DOMPurify.sanitize(
+    data?.reference_document?.explanation || ""
+  );
   const status = getStatus(data?.status);
   return (
     <>
@@ -129,10 +134,10 @@ const ApprovalCard = ({
 
           {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.todo_id}
-          </div>
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
             {data?.reference_document?.employee_name}
+          </div>
+          <div className="truncate text-gray-900 font-medium text-sm text-start line-clamp-1">
+            {cleanExplaination}
           </div>
 
           {/* Date */}

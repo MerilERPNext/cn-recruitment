@@ -66,6 +66,7 @@ export interface AttendanceRequest {
 }
 
 export interface MyAttendanceRequest {
+  due_date: string;
   reference_document: AttendanceRequest;
   reference_type: string;
   allocated_to: string;
@@ -115,6 +116,7 @@ export type PlannedOvertimeRequest = {
 };
 
 export interface MyPlannedAttendanceRequest {
+  due_date: string | number | Date;
   reference_document: PlannedOvertimeRequest;
   custom_doctype_actions: string;
   custom_open_chatnext_assistant_on_action: boolean;
@@ -133,7 +135,7 @@ export interface AttendanceRequestValidations {
   shift_change_requests: number;
   out_duty_requests: number;
   short_leave_requests: number;
-  is_mandatory:boolean
+  is_mandatory: boolean;
 }
 
 export interface RequestCardProps {

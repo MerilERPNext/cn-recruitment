@@ -64,7 +64,7 @@ const ApprovalRejectionQueue = ({
     return styles;
   };
 
-  const gridTemplateColumns = "5% 15% 10% 8% 8% 8% 10% 20%";
+  const gridTemplateColumns = "8% 10% 10% 10% 10% 10% 10% 20%";
 
   return (
     <div
@@ -89,17 +89,20 @@ const ApprovalRejectionQueue = ({
       <div className="truncate text-gray-900 font-medium text-sm text-start">
         {data.reference_document.employee_name}
       </div>
-      <div className="flex items-center text-gray-700 text-xs">
+      <div className="flex items-center text-gray-900 text-sm">
         {data.reference_document.shift_type}
       </div>
-      <div className="flex items-center">
-        <StatusBadge status={data.reference_document.status} />
-      </div>
-      <div className="flex items-center text-gray-600 text-xs">
+      <div className="flex items-center text-gray-900 text-sm">
         {formatToIndianDate(data.reference_document.from_date)}
       </div>
-      <div className="flex items-center text-gray-600 text-xs">
+      <div className="flex items-center text-gray-900 text-sm">
         {formatToIndianDate(data.reference_document.to_date)}
+      </div>
+      <div className="flex items-center text-gray-900 text-sm">
+        {data.due_date.replace(/-/g, "/")}
+      </div>
+      <div className="flex items-center text-sm">
+        <StatusBadge status={data.reference_document.status} />
       </div>
       <div className="flex w-full justify-start gap-2 whitespace-nowrap">
         {actions?.length &&

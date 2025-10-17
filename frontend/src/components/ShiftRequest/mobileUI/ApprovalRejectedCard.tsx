@@ -52,7 +52,7 @@ const ApprovalRejectedForMobile = ({
       onClick={() => onClick?.(data)}
     >
       {/* Top Section: Title (Employee Name) and Status */}
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -65,9 +65,6 @@ const ApprovalRejectedForMobile = ({
               actionsWithForm?.includes("Reject")
             }
           />
-          <h3 className="text-base font-semibold text-gray-900 truncate">
-            {data?.todo_id || "--"}
-          </h3>
         </div>
         <StatusBadge status={data?.reference_document?.status} />
       </div>

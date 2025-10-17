@@ -90,6 +90,7 @@ const AllAttendanceRequest = ({
                     "Request Type",
                     "From Date",
                     "To Date",
+                    "Due Date",
                     "Status",
                     "Actions",
                   ]
@@ -98,6 +99,7 @@ const AllAttendanceRequest = ({
                     "Request Type",
                     "From Date",
                     "To Date",
+                    "Due Date",
                     "Status",
                   ]
             }

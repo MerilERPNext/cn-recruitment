@@ -85,14 +85,15 @@ export default function OrganizationChart() {
   const [collapsedNodes, setCollapsedNodes] = useState<CollapsedState>({});
   const navigate = useNavigate();
 
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: employeeHierarchy } = useGetEmployeeHierarchy(
-    user?.company ?? ""
-  );
   const { search } = useLocation();
   const query = new URLSearchParams(search);
   const employeeId = query.get("employee");
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: employeeHierarchy } = useGetEmployeeHierarchy(
+    user?.company ?? "",
+    employeeId || ""
+  );
 
   const {
     data: employeeSubordinateHierarchy,

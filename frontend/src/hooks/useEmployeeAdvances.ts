@@ -1,5 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createAdvance, getAdvances, getAdvancesAmount, getAllAdvancesTypes } from "../services/employeeAdvances";
+import {
+  createAdvance,
+  getAdvances,
+  getAdvancesAmount,
+  getAllAdvancesTypes,
+  getCostCenters,
+  getCurrencies,
+  getExpenseAdvanceList,
+  getExpenseTypeFields,
+  getExpenseTypes,
+  getProjects,
+} from "../services/employeeAdvances";
 import { ApiAdvance } from "../types/employeeAttendance";
 
 export const useEmployeeAdvances = (employeeId?: string) => {
@@ -16,8 +27,16 @@ export const useAdvancesType = () => {
     queryFn: getAllAdvancesTypes,
   });
 };
-//this hook for create employee advance application
 
+export const useExpenseAdvances = (employeeId: string) => {
+  return useQuery({
+    queryKey: ["employee-advance", employeeId],
+    queryFn: () => getExpenseAdvanceList(employeeId),
+    enabled: !!employeeId,
+  });
+};
+
+//this hook for create employee advance application
 export function useCreateNewAdvance() {
   const queryClient = useQueryClient();
 
@@ -41,8 +60,46 @@ export const useEmployeeAdvancesAmount = (
 ) => {
   return useQuery<ApiAdvance>({
     queryKey: ["advances", employeeId, advanceType, postingDate, company],
-    queryFn: () => getAdvancesAmount(employeeId!, advanceType, postingDate, company),
+    queryFn: () =>
+      getAdvancesAmount(employeeId!, advanceType, postingDate, company),
     enabled: !!employeeId && !!advanceType && !!postingDate && !!company,
   });
 };
+
+export const useCurrencies = () => {
+  return useQuery({
+    queryKey: ["currencies"],
+    queryFn: getCurrencies,
+  });
+};
+
+export const useProjects = () => {
+  return useQuery({
+    queryKey: ["projects"],
+    queryFn: getProjects,
+  });
+};
+
+export const useCostCenters = () => {
+  return useQuery({
+    queryKey: ["cost-centers"],
+    queryFn: getCostCenters,
+  });
+};
+
+export const useExpenseTypeFields = (expenseType: string | null) => {
+  return useQuery({
+    queryKey: ["expenseTypeFields", expenseType],
+    queryFn: () => getExpenseTypeFields(expenseType!),
+    enabled: !!expenseType,
+  });
+};
+
+export const useExpenseTypes = () => {
+  return useQuery({
+    queryKey: ["expenseTypes"],
+    queryFn: getExpenseTypes,
+  });
+};
+
 

@@ -92,6 +92,10 @@ const ExpensesList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpensesList"),
   "ExpensesList"
 );
+const AdvanceExpenseList = lazyWithRetry(
+  () => import("./components/Expenses-App/AdvanceExpenseList"),
+  "AdvanceExpenseList"
+);
 const GeneralExpenseClaim = lazyWithRetry(
   () => import("./components/Expenses-App/GeneralExpenseClaim"),
   "GeneralExpenseClaim"
@@ -103,6 +107,10 @@ const MileageExpenseClaim = lazyWithRetry(
 const NewExpenseType = lazyWithRetry(
   () => import("./components/Expenses-App/NewExpenseType"),
   "NewExpenseType"
+);
+const ExpenseAdvanceForm = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpenseAdvanceForm"),
+  "ExpenseAdvanceForm"
 );
 const Holidays = lazyWithRetry(
   () => import("./components/Leaves/Holidays"),
@@ -492,6 +500,7 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "expenses-list", element: <ExpensesList /> },
       { path: "add-expense", element: <AddExpenseForm /> },
+      { path: "advance-expense-list", element: <AdvanceExpenseList /> },
     ],
   },
 
@@ -621,6 +630,12 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/expenses-app/mileage-expense-claim",
     element: <MileageExpenseClaim />,
+  },
+
+  // New route for Expense Advance Form
+  {
+    path: "/webapp/expenses-app/new-expense-advance",
+    element: <ExpenseAdvanceForm />,
   },
 
   //Policies routes
