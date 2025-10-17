@@ -711,6 +711,23 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     return d.toLocaleTimeString("en-GB");
   };
 
+  const handleSuccess = (message: string) => {
+    onClose();
+    setTimeout(() => setRefetchAttendance(true), 2000);
+    toast.success(message);
+  };
+
+  const handleError = (error: CustomError) => {
+        const errorMessage =
+          error?.response?.data?.exception
+            ?.split(":")
+            .slice(1)
+            .join(":")
+            .trim() || "Something went wrong!!";
+        const cleanString = DOMPurify.sanitize(errorMessage || "");
+        toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
+        console.error(error);
+     }
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     const baseBody = {
       custom_request_type: submission.data.request_type,
@@ -802,48 +819,22 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           data: requestBody as Record<string, unknown>,
         }, {
           onSuccess: () => {
-            onClose();
-            setTimeout(() => {
-              setRefetchAttendance(true);
-            }, 2000);
-            toast.success("Updated Attendance Request successfully!");
+             handleSuccess("Updated Attendance Request successfully!")
           },
-          onError: (error: CustomError) => {
-            const errorMessage =
-              error?.response?.data?.exception
-                ?.split(":")
-                .slice(1)
-                .join(":")
-                .trim() || "Something went wrong!!";
-            const cleanString = DOMPurify.sanitize(errorMessage || "");
-            toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
-            console.error(error);
-          },
+         
+          onError: handleError,
         });
     }
     else{
       mutation.mutate(requestBody as Record<string, unknown>, {
         onSuccess: () => {
-          onClose();
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 2000);
-          toast.success("Added Attendance Request successfully!");
+            handleSuccess("Added Attendance Request successfully!")
         },
-        onError: (error: CustomError) => {
-          const errorMessage =
-            error?.response?.data?.exception
-              ?.split(":")
-              .slice(1)
-              .join(":")
-              .trim() || "Something went wrong!!";
-          const cleanString = DOMPurify.sanitize(errorMessage || "");
-          toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
-          console.error(error);
-        },
+        onError: handleError,
       });
   }
   };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
