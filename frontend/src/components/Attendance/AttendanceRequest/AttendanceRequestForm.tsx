@@ -512,7 +512,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             format: "HH:mm:ss",
             placeholder: "hh:mm",
             customClass: "mb-4",
-            defaultValue: defaultAttendanceData?.custom_from_time
+            defaultValue: defaultAttendanceData?.custom_to_time
                               ? new Date(`1970-01-01T${normalizeTime(defaultAttendanceData.custom_to_time)}`)
                               : "",
             customConditional:
