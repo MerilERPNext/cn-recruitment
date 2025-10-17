@@ -15,6 +15,7 @@ type Status =
   | "work-from-home"
   | "default"
   | "holiday"
+  | "unpaid"
   | "week-off";
 type AttendanceStatusInfo = {
   status: Status;
@@ -125,6 +126,8 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
                 return "!bg-red-100 !text-red-700 rounded-md";
               case "on-leave":
                 return "!bg-yellow-100 !text-yellow-700 rounded-md";
+              case "unpaid":
+                return "!bg-orange-100 !text-orange-700 rounded-md";
               case "holiday":
                 return "!bg-blue-100 !text-blue-700 rounded-md";
               case "week-off":

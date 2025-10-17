@@ -1,9 +1,8 @@
-import LayoutHeader from "../../shared/LayoutHeader";
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-// import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import { useLocation } from "react-router";
 import { endOfDay, format, startOfDay, isValid } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useAllEmployeeCheckIns,
   useAllAttendanceRequests,
@@ -12,10 +11,23 @@ import {
   AttendanceRecord,
   EmployeeCheckInLog,
 } from "../../../types/attendance";
+import { LeaveApplication } from "../../../types/leaves";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Plus, X } from "lucide-react";
 import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
+import Badge from "../../shared/Badge";
+import {
+  useGetButtonsStatus,
+  useReplaceLeave,
+  useRevokeApprovedLeave,
+} from "../../../hooks/useLeaves";
+import Button from "../../shared/atoms/Button";
+import ReplaceLeaveModal from "../../Leaves/ReplaceLeaveModal";
+import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
+import CircularLoader from "../../shared/atoms/CircularLoader";
+import RequestLeave from "../../Leaves/RequestLeave";
+import { useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
 
 interface EmployeeAttendanceDetailsProps {
   date?: Date;
@@ -36,15 +48,39 @@ const EmployeeAttendanceDetails = ({
   const status = propStatus || query.get("status");
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState(false);
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const queryClient = useQueryClient();
+  const replaceLeave = useReplaceLeave();
+  const { mutate: revokeLeave, isPending: revokePending } =
+    useRevokeApprovedLeave();
+  const { openModal: openLeaveModal } = useRequestLeaveModal();
 
   const validDate = useMemo(() => {
     if (propDate) return propDate;
     const d = new Date(dateParam || "");
     return isValid(d) ? d : null;
   }, [propDate, dateParam]);
+
+  // If this is a leave record (custom_auto_created === 1), fetch leave details
+  const isLeaveRecord = data?.custom_auto_created === 1;
+
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
+  );
+
+  // Only fetch leave details if it's a leave record
+  const { data: leaveDetails } = useFrappeDocument(
+    "Leave Application",
+    isLeaveRecord && data?.leave_application_name
+      ? data.leave_application_name
+      : null!
+  ) as { data: LeaveApplication | undefined };
+
+  const { data: buttonStatus } = useGetButtonsStatus(
+    currentEmployee?.employee || ""
   );
   const { start, end } = useMemo(() => {
     if (!validDate) return { start: "", end: "" };
@@ -77,12 +113,91 @@ const EmployeeAttendanceDetails = ({
   const hasExistingRequest =
     attendanceRequests && attendanceRequests.length > 0;
 
-  return (
-    <div className="bg-white flex flex-col h-full rounded-lg">
+  // Handler for revoking leave
+  const handleRevoke = () => {
+    if (!leaveDetails?.name) return;
+
+    revokeLeave(leaveDetails.name, {
+      onSuccess: () => {
+        // Invalidate the attendance calendar query to refetch data
+        queryClient.invalidateQueries({
+          queryKey: ["get-All-Events-And-Attendance"],
+        });
+        if (onClose) {
+          onClose();
+        }
+      },
+    });
+  };
+
+  // Handler for replacing leave
+  const handleReplace = (formData: {
+    newLeaveType?: string;
+    firstHalfType?: string;
+    secondHalfType?: string;
+  }) => {
+    if (!data?.leave_application_name) return;
+
+    replaceLeave.mutate(
+      {
+        leave_application: data.leave_application_name,
+        new_leave_type: formData.newLeaveType,
+        first_half_leave_type: formData.firstHalfType,
+        second_half_leave_type: formData.secondHalfType,
+      },
+      {
+        onSuccess: () => {
+          setShowReplaceModal(false);
+          // Invalidate the attendance calendar query to refetch data
+          queryClient.invalidateQueries({
+            queryKey: ["get-All-Events-And-Attendance"],
+          });
+          if (onClose) {
+            onClose();
+          }
+        },
+      }
+    );
+  };
+
+  // Handler for editing leave
+  const handleEdit = () => {
+    if (!leaveDetails) return;
+
+    openLeaveModal({
+      leaveType: leaveDetails.leave_type,
+      fromDate: leaveDetails.from_date,
+      toDate: leaveDetails.to_date,
+      halfDay: leaveDetails.half_day === 1,
+      halfDayOption: leaveDetails.custom_half_day_type as
+        | "First Half"
+        | "Second Half"
+        | undefined,
+      half_day_date: leaveDetails.half_day_date || "",
+      custom_second_half_day_date:
+        leaveDetails.custom_second_half_day_date || "",
+      description: leaveDetails.description,
+      custom_reason: leaveDetails.custom_reason || "",
+      custom_attachment: leaveDetails.custom_attachment
+        ? [{ url: leaveDetails.custom_attachment }]
+        : undefined,
+      isEdit: true,
+      leave_application: leaveDetails.name,
+    });
+    setShowEditModal(true);
+  };
+
+  const renderHeader = () => {
+    let headerTitle = "Attendance Details";
+
+    if (status === "holiday") {
+      headerTitle = "Holiday Details";
+    } else if (data?.custom_auto_created === 1) {
+      headerTitle = "Leave Details";
+    }
+    return (
       <div className="flex justify-between items-center p-4 border-b">
-        <h2 className="text-lg font-semibold text-gray-900">
-          {`${status === "holiday" ? "Holiday" : "Attendance"} Details`}
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900">{headerTitle}</h2>
         {onClose && (
           <button
             onClick={onClose}
@@ -92,71 +207,147 @@ const EmployeeAttendanceDetails = ({
           </button>
         )}
       </div>
-      {!onClose && <LayoutHeader tab="Attendance Details" />}
+    );
+  };
 
-      {isLoading ? (
-        <div className="flex-grow flex items-center justify-center">
-          <div className="animate-spin border-2 border-black border-t-transparent rounded-full w-5 h-5"></div>
-        </div>
-      ) : (
+  const renderLeaveDetailsActions = () => {
+    const showButton = buttonStatus?.leave_applications?.find(
+      (item) => item?.name === data?.leave_application_name
+    );
+
+    return (
+      <div className="mt-10 flex gap-2">
+        {showButton?.show_revoke_button && (
+          <Button size="md" fullWidth onClick={handleRevoke}>
+            {revokePending ? <CircularLoader color="white" /> : "Revoke"}
+          </Button>
+        )}
+        {showButton?.show_replace_button && (
+          <Button size="md" fullWidth onClick={() => setShowReplaceModal(true)}>
+            Replace
+          </Button>
+        )}
+        {showButton?.show_edit_button && (
+          <Button size="md" fullWidth onClick={handleEdit}>
+            Edit
+          </Button>
+        )}
+      </div>
+    );
+  };
+
+  const renderLoadingState = () => (
+    <div className="flex-grow flex items-center justify-center">
+      <div className="animate-spin border-2 border-black border-t-transparent rounded-full w-5 h-5"></div>
+    </div>
+  );
+
+  const renderCheckInsList = () => (
+    <div className="flex flex-col gap-3">
+      {empCheckIns?.map((record) => (
+        <AttendanceCard key={record?.name} record={record} />
+      ))}
+    </div>
+  );
+
+  const renderEmptyState = () => (
+    <p className="text-center text-gray-600">
+      No check-ins available for{" "}
+      <span className="font-semibold">
+        {validDate ? format(validDate, "dd/MM/yyyy") : "Unknown Date"}
+      </span>
+    </p>
+  );
+
+  const renderAbsentMessage = () => {
+    if (status !== "absent") return null;
+
+    return (
+      <p className="text-sm mt-4 text-gray-700 text-center">
+        To correct your attendance for this day, submit a request below.
+      </p>
+    );
+  };
+
+  const renderLeaveDetails = () => {
+    if (!leaveDetails) return null;
+    return (
+      <div>
+        <LeaveDetailsCard data={leaveDetails} />
+        {renderLeaveDetailsActions()}
+      </div>
+    );
+  };
+
+  const renderRegularContent = () => (
+    <>
+      {empCheckIns && empCheckIns.length > 0
+        ? renderCheckInsList()
+        : renderEmptyState()}
+      {renderAbsentMessage()}
+    </>
+  );
+
+  const renderMainContent = () => {
+    if (isLoading) {
+      return renderLoadingState();
+    }
+
+    if (isLeaveRecord) {
+      return (
         <div className="flex-grow overflow-y-auto p-4">
-          {empCheckIns && empCheckIns.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {empCheckIns.map((record) => (
-                <AttendanceCard key={record?.name} record={record} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-gray-600">
-              No check-ins available for{" "}
-              <span className="font-semibold">
-                {validDate ? format(validDate, "dd/MM/yyyy") : "Unknown Date"}
-              </span>
-            </p>
-          )}
-
-          {status === "holiday" && data?.title && (
-            <p className="text-sm mt-4 text-gray-700 text-center">
-              {data?.title}
-            </p>
-          )}
-          {status === "absent" && (
-            <p className="text-sm mt-4 text-gray-700 text-center">
-              To correct your attendance for this day, submit a request below.{" "}
-            </p>
-          )}
+          {renderLeaveDetails()}
         </div>
-      )}
+      );
+    }
+
+    return (
+      <div className="flex-grow overflow-y-auto p-4">
+        {renderRegularContent()}
+      </div>
+    );
+  };
+
+  const renderFooterButton = () => {
+    if (isLeaveRecord) return null;
+
+    const isButtonDisabled =
+      status !== "absent" && status !== "half-day" && status !== "half day";
+
+    if (hasExistingRequest) {
+      return (
+        <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-blue-800 text-sm font-medium">
+            Attendance Request is already submitted for this date.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        disabled={isButtonDisabled}
+        className={`w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${
+          isButtonDisabled
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-black hover:bg-gray-800"
+        } text-white`}
+        onClick={() => setShowReqAttendanceCorrection(true)}
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        Attendance Request
+      </button>
+    );
+  };
+
+  return (
+    <div className="bg-white flex flex-col h-full rounded-lg">
+      {renderHeader()}
+
+      {renderMainContent()}
 
       <div className="p-3 border-t bg-white sticky bottom-0 w-full z-40 mt-auto rounded-bl-lg rounded-br-lg">
-        {hasExistingRequest ? (
-          <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-blue-800 text-sm font-medium">
-              Attendance Request is already submitted for this date.
-            </p>
-          </div>
-        ) : (
-          <button
-            disabled={
-              status !== "absent" &&
-              status !== "half-day" &&
-              status !== "half day"
-            }
-            className={` w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${
-              status !== "absent" &&
-              status !== "half-day" &&
-              status !== "half day"
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-black hover:bg-gray-800"
-            } text-white`}
-            onClick={() =>
-              setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
-            }
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Attendance Request
-          </button>
-        )}
+        {renderFooterButton()}
       </div>
 
       {showReqAttendanceCorrection &&
@@ -165,6 +356,56 @@ const EmployeeAttendanceDetails = ({
             onClose={() => setShowReqAttendanceCorrection(false)}
             selectedDate={validDate || new Date()}
           />,
+          document.body
+        )}
+
+      {showReplaceModal &&
+        data &&
+        createPortal(
+          <ReplaceLeaveModal
+            isOpen={showReplaceModal}
+            onClose={() => setShowReplaceModal(false)}
+            onReplace={handleReplace}
+            currentLeaveType={leaveDetails?.leave_type}
+            currentLeaveName={leaveDetails?.name}
+            currentLeaveDays={leaveDetails?.total_leave_days}
+            fromDate={leaveDetails?.from_date}
+            toDate={leaveDetails?.to_date}
+          />,
+          document.body
+        )}
+
+      {showEditModal &&
+        createPortal(
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full max-w-2xl h-[90vh] flex flex-col overflow-hidden shadow-xl">
+              <div className="flex justify-between items-center p-4 border-b flex-shrink-0">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Edit Leave Application
+                </h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0">
+                <RequestLeave
+                  onSuccess={() => {
+                    setShowEditModal(false);
+                    queryClient.invalidateQueries({
+                      queryKey: ["get-All-Events-And-Attendance"],
+                    });
+                    if (onClose) {
+                      onClose();
+                    }
+                  }}
+                  onCancel={() => setShowEditModal(false)}
+                />
+              </div>
+            </div>
+          </div>,
           document.body
         )}
     </div>
@@ -194,6 +435,147 @@ const AttendanceCard = ({ record }: { record: EmployeeCheckInLog }) => {
 
       <div className="text-sm text-gray-600 space-y-1">
         <p>{format(new Date(record.time), "hh:mm a, dd/MM/yyyy")}</p>
+      </div>
+    </div>
+  );
+};
+
+const LeaveDetailsCard = ({ data }: { data: LeaveApplication }) => {
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd MMM yyyy");
+    } catch {
+      return dateString;
+    }
+  };
+
+  const isHalfDay = data.half_day === 1;
+
+  return (
+    <div>
+      {/* Status Badge */}
+      {data.status && (
+        <div className="flex justify-end mb-4">
+          <Badge label={data.status} />
+        </div>
+      )}
+
+      {/* Main Info Grid */}
+      <div className="space-y-4">
+        {/* Leave Type */}
+        {data.leave_type && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">
+              Leave Type
+            </span>
+            <span className="text-sm text-gray-900 font-semibold">
+              {data.leave_type}
+            </span>
+          </div>
+        )}
+
+        {/* Date Range */}
+        <div className="flex items-start justify-between py-2 border-b border-gray-100">
+          <span className="text-sm text-gray-500 font-medium">Duration</span>
+          <span className="text-sm text-gray-900 text-right">
+            {formatDate(data.from_date)} - {formatDate(data.to_date)}
+          </span>
+        </div>
+
+        {/* Total Leave Days */}
+        {data.total_leave_days && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">
+              Total Days
+            </span>
+            <span className="text-sm text-gray-900 font-semibold">
+              {data.total_leave_days}{" "}
+              {data.total_leave_days === 1 ? "day" : "days"}
+            </span>
+          </div>
+        )}
+
+        {/* Half Day Info */}
+        {isHalfDay && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-xs font-semibold text-blue-900 uppercase tracking-wide">
+                Half Day Details
+              </span>
+            </div>
+            {data.half_day_date && (
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-blue-700">Half Day Date</span>
+                <span className="text-xs font-medium text-blue-900 bg-white px-2 py-1 rounded">
+                  {formatDate(data.half_day_date)}
+                </span>
+              </div>
+            )}
+            {data.custom_half_day_type && (
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-blue-700">Type</span>
+                <span className="text-xs font-medium text-blue-900 bg-white px-2 py-1 rounded">
+                  {data.custom_half_day_type}
+                </span>
+              </div>
+            )}
+            {data.custom_second_half_day_date && (
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-blue-700">Second Half Date</span>
+                <span className="text-xs font-medium text-blue-900 bg-white px-2 py-1 rounded">
+                  {formatDate(data.custom_second_half_day_date)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Application Details */}
+        {data.name && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">
+              Application ID
+            </span>
+            <span className="text-sm text-gray-900 font-mono text-xs">
+              {data.name}
+            </span>
+          </div>
+        )}
+
+        {/* Posted On */}
+        {data.posting_date && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">Posted On</span>
+            <span className="text-sm text-gray-900">
+              {formatDate(data.posting_date)}
+            </span>
+          </div>
+        )}
+
+        {/* Leave Balance */}
+        {data.leave_balance !== undefined && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">
+              Leave Balance
+            </span>
+            <span className="text-sm text-gray-900 font-semibold">
+              {data.leave_balance} {data.leave_balance === 1 ? "day" : "days"}
+            </span>
+          </div>
+        )}
+
+        {/* Description */}
+        {data.description && data.description.trim() && (
+          <div className="pt-3 mt-2 border-t border-gray-200">
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide block mb-2">
+              Description
+            </span>
+            <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+              {data.description.trim()}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
