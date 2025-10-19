@@ -3,6 +3,7 @@ import { RequestCardProps } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 export function MyRequestCard({
   request,
@@ -47,7 +48,7 @@ any & {
       ? format(parsedDate, "dd/MM/yyyy")
       : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(request?.description || "");
-  const gridTemplateColumns = "10% 10% 30% 10% 33%";
+  const gridTemplateColumns = "10% 30% 10% 10% 33%";
   return (
     <>
       {isDesktop ? (
@@ -57,13 +58,14 @@ any & {
           onClick={() => onClick?.(request)}
         >
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {request?.todo_id || ""}
-          </div>
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
             {request?.username || ""}
           </div>
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
+          </div>
+          <div className="text-gray-700 text-sm text-start">
+            {formatToIndianDate(request?.reference_document?.creation) ||
+              "--/--/--"}
           </div>
           <div className="text-gray-700 text-sm text-start">
             {formattedDate}

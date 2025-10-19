@@ -13,6 +13,35 @@ export interface ExpenseAdvance {
   }[];
 }
 
+export interface CurrencyType {
+  name: string;
+  symbol: string;
+  fraction: string;
+  fraction_units: number;
+}
+
+export interface ProjectType {
+  name: string;
+  project_name: string;
+}
+
+export interface CostCenterType {
+  name: string;
+  cost_center_name: string;
+  company?: string;
+}
+
+export interface ExpenseType {
+  name: string;
+}
+
+export interface ExpenseTypeField {
+  fieldname: string;
+  label: string;
+  fieldtype: string;
+  required: boolean;
+}
+
 export interface ExpenseTypeFieldsResponse {
   fields?: any[];
   claim_type_based_on?: string;

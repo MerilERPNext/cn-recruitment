@@ -40,7 +40,7 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
           <div className="font-medium">{formatCurrency(loan.total_loan_amount)}</div>
         </div>
         <div>
-          <div className="text-gray-600 mb-1">Total Paid</div>
+          <div className="text-gray-600 mb-1">Total Paid Amount</div>
           <div className="font-medium">{formatCurrency(loan.total_paid_amount)}</div>
         </div>
         <div>

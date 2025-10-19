@@ -12,6 +12,7 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import FileRenderer from "../../shared/molecules/FileRenderer";
+import { formatDashedDate } from "../../../utils/formatToIndianDate";
 
 export function MyOvertimeDetails({
   data,
@@ -178,7 +179,7 @@ export function MyOvertimeDetails({
             <div>
               <div className="text-sm text-gray-500">Allocated To</div>
               <div className="text-base font-medium text-gray-800">
-                {data.allocated_to}
+                {data?.username} ({data.allocated_to})
               </div>
             </div>
             <div>
@@ -194,6 +195,12 @@ export function MyOvertimeDetails({
             <div className="text-sm text-gray-500">Created On</div>
             <div className="text-base text-gray-800">
               {new Date(doc?.creation).toLocaleString()}
+            </div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-500">Due Date</div>
+            <div className="text-base text-gray-800">
+              {formatDashedDate(data?.due_date as string)}
             </div>
           </div>
 

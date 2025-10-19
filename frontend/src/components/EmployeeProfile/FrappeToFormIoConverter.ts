@@ -323,7 +323,27 @@ export function convertToFormioWithLayout(
 
   // Helper function to close current structures
   const closeCurrentStructures = () => {
+    // If there are buffered fields and no columns were created,
+    // add them directly to the section
+    if (fieldsBuffer.length > 0 && currentSection && !currentColumns) {
+      currentSection.components.push(...fieldsBuffer);
+      fieldsBuffer = [];
+    }
+
     if (currentColumns && currentSection) {
+      // Calculate equal width for all columns based on total count
+      const totalColumns = currentColumns.columns.length;
+      const columnWidth = Math.floor(12 / totalColumns);
+
+      // Update all column widths to be equal
+      currentColumns.columns.forEach((col: any, index: number) => {
+        col.width = columnWidth;
+        // If there's a remainder, distribute it to the last column
+        if (index === totalColumns - 1) {
+          col.width = 12 - columnWidth * (totalColumns - 1);
+        }
+      });
+
       currentSection.components.push(currentColumns);
       currentColumns = null;
     }
@@ -345,19 +365,27 @@ export function convertToFormioWithLayout(
   };
 
   let lastFieldType = "";
+  let fieldsBuffer: any[] = [];
+
   for (const field of apiFields) {
     // Skip fields that shouldn't be rendered
     if (!field || !field.fieldtype || field?.label === "Connections") continue;
     if (field.hidden === true) continue;
 
-    if (lastFieldType.endsWith(" Break") && field.fieldtype === lastFieldType)
+    // Only skip consecutive breaks if they're the same type AND consecutive
+    if (lastFieldType.endsWith(" Break") && field.fieldtype === lastFieldType) {
       continue;
+    }
     lastFieldType = field.fieldtype;
     // Skip hidden system fields
     if (field.fieldtype === "Button" || field.hidden === 1) continue;
 
     if (field.fieldtype === "Tab Break") {
-      // Close existing structures
+      if (fieldsBuffer.length > 0 && currentSection && !currentColumns) {
+        currentSection.components.push(...fieldsBuffer);
+        fieldsBuffer = [];
+      }
+
       closeCurrentStructures();
       if (currentTab) {
         tabs.push(currentTab);
@@ -371,7 +399,13 @@ export function convertToFormioWithLayout(
         input: false,
         tableView: false,
       };
+      fieldsBuffer = [];
     } else if (field.fieldtype === "Section Break") {
+      if (fieldsBuffer.length > 0 && currentSection && !currentColumns) {
+        currentSection.components.push(...fieldsBuffer);
+        fieldsBuffer = [];
+      }
+
       // Close previous structures
       if (currentColumns && currentSection) {
         currentSection.components.push(currentColumns);
@@ -390,7 +424,7 @@ export function convertToFormioWithLayout(
         title: field.label || "",
         key:
           field.fieldname ||
-          `section_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          `section_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         components: [],
         input: false,
         tableView: false,
@@ -404,6 +438,7 @@ export function convertToFormioWithLayout(
       }
 
       currentColumns = null;
+      fieldsBuffer = [];
     } else if (field.fieldtype === "Column Break") {
       // Ensure we have structures to work with
       ensureCurrentTab();
@@ -414,7 +449,7 @@ export function convertToFormioWithLayout(
           title: "",
           key: `auto_section_${Date.now()}_${Math.random()
             .toString(36)
-            .substr(2, 9)}`,
+            .slice(2, 11)}`,
           components: [],
           input: false,
           tableView: false,
@@ -426,17 +461,29 @@ export function convertToFormioWithLayout(
           type: "columns",
           key: `columns_${Date.now()}_${Math.random()
             .toString(36)
-            .substr(2, 9)}`,
+            .slice(2, 11)}`,
           columns: [],
           input: false,
           tableView: false,
         };
+
+        // Create first column and move buffered fields into it
+        const firstColumn = {
+          components: [...fieldsBuffer],
+          width: 6,
+          offset: 0,
+          push: 0,
+          pull: 0,
+          size: "md",
+        };
+        currentColumns.columns.push(firstColumn);
+        fieldsBuffer = []; // Clear buffer
       }
 
-      // Add new column
+      // Add new column for fields after this Column Break
       currentColumns.columns.push({
         components: [],
-        width: 6, // Default to half width, can be customized
+        width: 6,
         offset: 0,
         push: 0,
         pull: 0,
@@ -457,8 +504,7 @@ export function convertToFormioWithLayout(
         // Put field inside current column
         currentColumns.columns[currentColumnIndex].components.push(mapped);
       } else if (currentSection) {
-        // Put field inside current section
-        currentSection.components.push(mapped);
+        fieldsBuffer.push(mapped);
       } else {
         // Put field directly in tab
         currentTab.components.push(mapped);

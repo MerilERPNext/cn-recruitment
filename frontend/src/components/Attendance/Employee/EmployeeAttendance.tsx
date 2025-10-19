@@ -82,6 +82,7 @@ const EmployeeAttendance = () => {
     | "work-from-home"
     | "default"
     | "holiday"
+    | "unpaid"
     | "week-off";
 
   type AttendanceStatusInfo = {
@@ -124,6 +125,7 @@ const EmployeeAttendance = () => {
         if (isAttendanceType) {
           attendanceRecord = record;
           const rawStatus = record.status?.toLowerCase().trim();
+
           switch (rawStatus) {
             case "present":
               status = "present";
@@ -151,6 +153,9 @@ const EmployeeAttendance = () => {
               break;
             default:
               status = "default";
+          }
+          if (record?.custom_auto_created === 1) {
+            status = "unpaid";
           }
         } else {
           events.push(record);
@@ -247,11 +252,11 @@ const EmployeeAttendance = () => {
           </div>
           <CardTable
             titles={[
-              "Id",
               "Allocated To",
               "Request Type",
               "From Date",
               "To Date",
+              "Due Date",
               "Status",
               "Actions",
             ]}

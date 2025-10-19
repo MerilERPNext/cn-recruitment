@@ -1,20 +1,36 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import HeaderBar from "../HeaderBar";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
-import { useCreateNewAdvance } from "../../hooks/useEmployeeAdvances";
+import {
+  useCostCenters,
+  useCreateNewAdvance,
+  useCurrencies,
+  useProjects,
+} from "../../hooks/useEmployeeAdvances";
 import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
 import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import ExpenseFormModal from "./ExpenseFormModal";
+import ExpenseClaimModal from "./ExpenseClaimModal";
+import { Trash2, Plus } from "lucide-react";
+import { format } from "date-fns";
+
+interface ExpenseClaim {
+  id: string;
+  expense_type: string;
+  [key: string]: any;
+}
 
 const ExpenseAdvanceForm: React.FC<{
-  isOpen?: boolean;
   onClose?: () => void;
-}> = ({ isOpen = true, onClose }) => {
+}> = ({ onClose }) => {
+  const { data: currencies } = useCurrencies();
+  const { data: projects } = useProjects();
+  const { data: costCenters } = useCostCenters();
+
   const { isDesktop } = useScreenSize();
   const formRef = useRef<any>(null);
   const navigate = useNavigate();
@@ -28,6 +44,11 @@ const ExpenseAdvanceForm: React.FC<{
   const mutation = useCreateNewAdvance();
   const [submitting, setSubmitting] = useState(false);
 
+  // Expense Claims State
+  const [expenseClaims, setExpenseClaims] = useState<ExpenseClaim[]>([]);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
+
   const handleSubmit = async () => {
     try {
       const submission = await formRef.current?.submit();
@@ -38,15 +59,49 @@ const ExpenseAdvanceForm: React.FC<{
         return;
       }
 
+      // Prepare expense claims for submission
+      const preparedExpenseClaims = expenseClaims.map(({ id, ...claim }) => {
+        const filteredClaim = Object.fromEntries(
+          Object.entries(claim).filter(
+            ([, value]) => value !== null && value !== undefined && value !== ""
+          )
+        );
+
+        // Format dates
+        if (filteredClaim.expense_date) {
+          filteredClaim.expense_date = format(
+            new Date(filteredClaim.expense_date),
+            "yyyy-MM-dd"
+          );
+        }
+        if (filteredClaim.start_datetime) {
+          filteredClaim.start_datetime = format(
+            new Date(filteredClaim.start_datetime),
+            "yyyy-MM-dd HH:mm:ss"
+          );
+        }
+        if (filteredClaim.end_datetime) {
+          filteredClaim.end_datetime = format(
+            new Date(filteredClaim.end_datetime),
+            "yyyy-MM-dd HH:mm:ss"
+          );
+        }
+
+        return filteredClaim;
+      });
+
       const payload = {
-        doctype: "Employee Advance",
         custom_type: advanceType,
         employee: currentEmployee?.name,
         company: currentEmployee?.company,
-        posting_date: formData.postingDate,
+        posting_date: formData.posting_date || postingDate,
         purpose: formData.purpose,
         advance_amount: formData.advance_amount,
-        exchange_rate: 1,
+        currency: formData.currency,
+        exchange_rate: formData.exchange_rate,
+        project: formData.project,
+        cost_center: formData.cost_center,
+        custom_expense_claim: preparedExpenseClaims,
       };
 
       console.log("🚀 Final Submitted Payload:", payload);
@@ -82,111 +137,234 @@ const ExpenseAdvanceForm: React.FC<{
     }
   };
 
-  const expenseAdvanceSchema = {
-    type: "form",
-    display: "form",
-    components: [
-      {
-        components: [
-          {
-            type: "columns",
-            key: "row1",
-            columns: [
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "textfield",
-                    key: "custom_type",
-                    label: "Advance Type",
-                    input: true,
-                    defaultValue: advanceType,
-                    disabled: true,
-                  },
-                ],
-              },
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "datetime",
-                    key: "posting_date",
-                    label: "Posting Date",
-                    input: true,
-                    enableTime: false,
-                    format: "dd-MM-yyyy",
-                    defaultValue: postingDate,
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            type: "columns",
-            key: "row2",
-            columns: [
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "textfield",
-                    key: "employee",
-                    label: "Employee ID",
-                    input: true,
-                    defaultValue: currentEmployee?.name || "",
-                    disabled: true,
-                  },
-                ],
-              },
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "textfield",
-                    key: "company",
-                    label: "Company",
-                    input: true,
-                    defaultValue: currentEmployee?.company || "",
-                    disabled: true,
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            type: "number",
-            key: "advance_amount",
-            label: "Advance Amount (INR)",
-            input: true,
-            placeholder: "Enter amount",
-            validate: { required: true, min: 1 },
-          },
-          {
-            type: "textarea",
-            key: "purpose",
-            label: "Purpose",
-            input: true,
-            placeholder: "Describe the purpose of advance",
-            validate: { required: true },
-            rows: 3,
-          },
-        ],
-      },
-    ],
+  const handleAddExpense = (expense: ExpenseClaim) => {
+    setExpenseClaims((prev) => [...prev, expense]);
+    toast.success("Expense claim added successfully!");
   };
+
+  const handleDeleteExpense = (id: string) => {
+    setExpenseClaims((prev) => prev.filter((exp) => exp.id !== id));
+    setSelectedExpenses((prev) => prev.filter((expId) => expId !== id));
+    toast.success("Expense claim deleted!");
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedExpenses.length === 0) return;
+    setExpenseClaims((prev) =>
+      prev.filter((exp) => !selectedExpenses.includes(exp.id))
+    );
+    toast.success(`${selectedExpenses.length} expense(s) deleted!`);
+    setSelectedExpenses([]);
+  };
+
+  const handleCheckboxChange = (id: string) => {
+    setSelectedExpenses((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const expenseAdvanceSchema = useMemo(() => {
+    return {
+      type: "form",
+      display: "form",
+      components: [
+        {
+          components: [
+            // 🔹 Row 1: Advance Type + Posting Date
+            {
+              type: "columns",
+              key: "row1",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "textfield",
+                      key: "custom_type",
+                      label: "Advance Type",
+                      input: true,
+                      defaultValue: advanceType,
+                      disabled: true,
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "datetime",
+                      key: "posting_date",
+                      label: "Posting Date",
+                      input: true,
+                      enableTime: false,
+                      format: "yyyy-MM-dd",
+                      defaultValue: postingDate,
+                    },
+                  ],
+                },
+              ],
+            },
+
+            // 🔹 Row 2: Employee + Company
+            {
+              type: "columns",
+              key: "row2",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "textfield",
+                      key: "employee",
+                      label: "Employee",
+                      input: true,
+                      defaultValue: currentEmployee?.name || "",
+                      disabled: true,
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "textfield",
+                      key: "company",
+                      label: "Company",
+                      input: true,
+                      defaultValue: currentEmployee?.company || "",
+                      disabled: true,
+                    },
+                  ],
+                },
+              ],
+            },
+
+            // 🔹 Row 3: Currency + Exchange Rate
+            {
+              type: "columns",
+              key: "row3",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "select",
+                      key: "currency",
+                      label: "Currency",
+                      input: true,
+                      data: {
+                        values:
+                          currencies?.data.map((cur) => ({
+                            label: cur.name,
+                            value: cur.name,
+                          })) || [],
+                      },
+                      defaultValue: "INR",
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "number",
+                      key: "exchange_rate",
+                      label: "Exchange Rate",
+                      input: true,
+                      defaultValue: 1,
+                    },
+                  ],
+                },
+              ],
+            },
+
+            // 🔹 Row 4: Project + Cost Center
+            {
+              type: "columns",
+              key: "row4",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "select",
+                      key: "project",
+                      label: "Project",
+                      input: true,
+                      placeholder: "Select project",
+                      data: {
+                        values:
+                          projects?.data.map((pro) => ({
+                            label: pro.project_name,
+                            value: pro.project_name,
+                          })) || [],
+                      },
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "select",
+                      key: "cost_center",
+                      label: "Cost Center",
+                      input: true,
+                      placeholder: "Select cost center",
+                      data: {
+                        values:
+                          costCenters?.data.map((cc) => ({
+                            label: cc.name,
+                            value: cc.name,
+                          })) || [],
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+
+            // 🔹 Advance Amount + Purpose
+            {
+              type: "number",
+              key: "advance_amount",
+              label: "Advance Amount",
+              input: true,
+              placeholder: "Enter amount",
+              validate: { required: true, min: 1 },
+            },
+            {
+              type: "textarea",
+              key: "purpose",
+              label: "Purpose",
+              input: true,
+              placeholder: "Describe the purpose of advance",
+              validate: { required: true },
+              rows: 3,
+            },
+          ],
+        },
+      ],
+    };
+  }, [
+    currencies,
+    projects,
+    costCenters,
+    currentEmployee,
+    advanceType,
+    postingDate,
+  ]);
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">
-      {!isDesktop && (
-        <HeaderBar
-          title="New Expense Advance"
-          onBack={
-            onClose
-              ? onClose
-              : () => navigate("/webapp/expenses-app/advance-expense-list")
-          }
-        />
-      )}
+      <HeaderBar
+        title="New Expense Advance"
+        onBack={
+          onClose
+            ? onClose
+            : () => navigate("/webapp/expenses-app/advance-expense-list")
+        }
+      />
 
       <div className="flex-1 overflow-y-auto p-4">
         <Form
@@ -194,6 +372,135 @@ const ExpenseAdvanceForm: React.FC<{
           onFormReady={(instance: any) => (formRef.current = instance)}
           options={{ submitButton: false, noAlerts: true }}
         />
+
+        {/* Add Expense Claims Section */}
+        <div className="mt-8 border-t pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Expense Claims
+            </h3>
+            <button
+              onClick={() => setIsExpenseModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus size={20} />
+              Add New Expense
+            </button>
+          </div>
+
+          {/* Expense Claims Table */}
+          {expenseClaims.length > 0 && (
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-3">
+                <p className="text-sm text-gray-600">
+                  {expenseClaims.length} expense claim(s) added
+                </p>
+                {selectedExpenses.length > 0 && (
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                    Delete Selected ({selectedExpenses.length})
+                  </button>
+                )}
+              </div>
+
+              <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="w-12 px-4 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          onChange={(e) =>
+                            setSelectedExpenses(
+                              e.target.checked
+                                ? expenseClaims.map((e) => e.id)
+                                : []
+                            )
+                          }
+                          checked={
+                            selectedExpenses.length === expenseClaims.length &&
+                            expenseClaims.length > 0
+                          }
+                          className="rounded border-gray-300"
+                        />
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expense Type
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Merchant
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {expenseClaims.map((expense) => (
+                      <tr
+                        key={expense.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedExpenses.includes(expense.id)}
+                            onChange={() => handleCheckboxChange(expense.id)}
+                            className="rounded border-gray-300"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.expense_type}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.expense_date
+                            ? format(
+                                new Date(expense.expense_date),
+                                "dd-MM-yyyy"
+                              )
+                            : "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.amount || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.custom_mercent || "-"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleDeleteExpense(expense.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                            title="Delete expense"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {expenseClaims.length === 0 && (
+            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+              <p className="text-gray-500">No expense claims added yet</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Click "Add New Expense" to add your first expense claim
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
@@ -203,7 +510,7 @@ const ExpenseAdvanceForm: React.FC<{
               ? onClose
               : () => navigate("/webapp/expenses-app/advance-expense-list")
           }
-          className="flex-1 py-3 px-6 rounded-lg font-medium border border-gray-300 text-gray-700"
+          className="flex-1 py-3 px-6 rounded-lg font-medium border border-gray-300 text-gray-700 hover:bg-gray-100"
         >
           Cancel
         </button>
@@ -215,6 +522,13 @@ const ExpenseAdvanceForm: React.FC<{
           {submitting ? "Submitting..." : "Submit"}
         </button>
       </div>
+
+      {/* Expense Claim Modal */}
+      <ExpenseClaimModal
+        isOpen={isExpenseModalOpen}
+        onClose={() => setIsExpenseModalOpen(false)}
+        onSave={handleAddExpense}
+      />
     </div>
   );
 
@@ -222,17 +536,7 @@ const ExpenseAdvanceForm: React.FC<{
   if (isDesktop) {
     return (
       <DesktopLayoutWrapper title="New Expense Advance">
-        <ExpenseFormModal
-          isOpen={isOpen}
-          onClose={
-            onClose
-              ? onClose
-              : () => navigate("/webapp/expenses-app/advance-expense-list")
-          }
-          title="New Expense Advance"
-        >
-          {FormContent}
-        </ExpenseFormModal>
+        {FormContent}
       </DesktopLayoutWrapper>
     );
   }
