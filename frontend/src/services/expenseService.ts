@@ -1,4 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  CalculateExpenseParams,
+  CalculateExpenseResponse,
+  ExpenseTypeFieldsResponse,
+} from "../types/expenseAdvance";
 import { FilterCondition } from "../types/frappe";
 import { FrappeAPI } from "../utils/frappeAPI";
 
@@ -57,5 +62,45 @@ export const expenseService = {
       "chatnext_expense_trips.expense_claim.create_expense_claims_by_category",
       { expenses_data }
     );
+  },
+
+  getExpenseTypeFields: async (
+    expenseType: string
+  ): Promise<ExpenseTypeFieldsResponse> => {
+    if (!expenseType) throw new Error("expenseType is required");
+    const response = await FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.get_expense_type_fields",
+      { expense_type: expenseType }
+    );
+    return response as ExpenseTypeFieldsResponse;
+  },
+
+  calculateExpenseAmount: async (
+    params: CalculateExpenseParams
+  ): Promise<CalculateExpenseResponse> => {
+    if (!params) throw new Error("params are required");
+    const { expense_type, units, vehicle_type } = params;
+    if (!expense_type) throw new Error("expense_type is required");
+    if (units == null || Number.isNaN(Number(units)))
+      throw new Error("units is required and must be a number");
+
+    const payload: Record<string, unknown> = {
+      expense_type,
+      units,
+    };
+
+    if (
+      vehicle_type !== undefined &&
+      vehicle_type !== null &&
+      vehicle_type !== ""
+    ) {
+      payload.vehicle_type = vehicle_type;
+    }
+    const response = await FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.calculate_expense_amount",
+      payload
+    );
+
+    return response as CalculateExpenseResponse;
   },
 };

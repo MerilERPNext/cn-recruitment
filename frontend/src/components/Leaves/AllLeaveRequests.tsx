@@ -8,10 +8,12 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import CardTable from "../shared/CardTable";
 import { MyLeaveRequestType } from "../../types/leaves";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { IoChevronBackOutline } from "react-icons/io5";
 import {
   useGetButtonsStatus,
   useReplaceLeave,
   useRevokeApprovedLeave,
+  useGetLeaveBalance,
 } from "../../hooks/useLeaves";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
 import HeaderBar from "../HeaderBar";
@@ -46,6 +48,8 @@ const AllLeaveRequest = ({
     leaveType: undefined,
     leaveData: undefined,
   });
+
+  const [selectedLeaveType, setSelectedLeaveType] = useState<string>("");
 
   const handleOpenReplaceModal = (leaveData: MyLeaveRequestType) => {
     setReplaceModalData({
@@ -90,19 +94,36 @@ const AllLeaveRequest = ({
     ? "Actioned Requests"
     : "Pending Requests";
 
+  const today = new Date().toISOString().split("T")[0];
+  const { data: leaveBalanceData } = useGetLeaveBalance(
+    currentEmployee?.employee || "",
+    today
+  );
+
+  const leaveTypeOptions = useMemo(() => {
+    if (!leaveBalanceData?.leave_balance) return [];
+    return leaveBalanceData.leave_balance
+      .filter((entry: any) => entry.dont_show_in_frontend === 0)
+      .map((entry: any) => entry.type);
+  }, [leaveBalanceData]);
+
   const defaultFilters = useMemo(() => {
     if (!currentEmployee?.employee) return undefined;
 
-    const baseFilters = { employee: currentEmployee?.employee };
+    const baseFilters: any = { employee: currentEmployee?.employee };
 
     if (statusType === "pending") {
-      return { ...baseFilters, status: "Open" };
+      baseFilters.status = "Open";
     } else if (statusType === "actioned") {
-      return { ...baseFilters, status: ["in", ["Rejected", "Approved"]] };
+      baseFilters.status = ["in", ["Rejected", "Approved"]];
+    }
+
+    if (selectedLeaveType && selectedLeaveType.length > 0) {
+      baseFilters.leave_type = selectedLeaveType;
     }
 
     return baseFilters;
-  }, [currentEmployee?.employee, statusType]);
+  }, [currentEmployee?.employee, statusType, selectedLeaveType]);
 
   const CardSkeleton = () => (
     <div className="rounded-xl bg-gray-100 animate-pulse my-4">
@@ -125,7 +146,32 @@ const AllLeaveRequest = ({
           <HeaderBar title={title} onBack={() => navigate(-1)} />
         </header>
       )}
-      <div className=" bg-white h-full px-4 pt-2 mb-32 flex-1 overflow-y-auto">
+      <div className=" bg-white min-h-full px-4 pt-2 mb-32 flex-1 overflow-y-auto">
+        <div className="flex items-center mb-3 justify-end">
+          {isDesktop && (
+            <button onClick={() => navigate(-1)}>
+              <IoChevronBackOutline />
+            </button>
+          )}
+
+          <h4 className="ml-auto font-semibold">{title}</h4>
+
+          <label className="text-sm text-gray-600 mr-2 md:ml-auto">
+            Filter by type:
+          </label>
+          <select
+            value={selectedLeaveType}
+            onChange={(e) => setSelectedLeaveType(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm"
+          >
+            <option value="">All types</option>
+            {leaveTypeOptions.map((lt) => (
+              <option key={lt} value={lt}>
+                {lt}
+              </option>
+            ))}
+          </select>
+        </div>
         <CardTable
           titles={[
             "Leave Type",
@@ -138,7 +184,7 @@ const AllLeaveRequest = ({
           columnWidths={["1fr 1fr 1fr 2.5fr 1fr 0.5fr"]}
         >
           <DataListView
-            queryKey={["leave-requests", statusType]}
+            queryKey={["leave-requests", statusType, selectedLeaveType]}
             customAPI={{
               method: "cn_leave_shift_managment.api.get_open_approval_todos",
               params: {
