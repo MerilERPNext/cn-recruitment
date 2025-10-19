@@ -9,6 +9,11 @@ import { expenseService } from "../services/expenseService";
 import { FilterCondition } from "../types/frappe";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import {
+  ExpenseTypeFieldsResponse,
+  CalculateExpenseParams,
+  CalculateExpenseResponse,
+} from "../types/expenseAdvance";
 
 export const useExpenseTypes = (
   filters?: FilterCondition[]
@@ -68,7 +73,6 @@ export function usePostExpenseClaim() {
 
   const handleError = (err: any) => {
     let errorMsg = "Submission failed. Please try again.";
-
     try {
       const raw = err?.response?.data?._server_messages;
       if (raw) {
@@ -80,7 +84,6 @@ export function usePostExpenseClaim() {
           }
         }
       } else if (err?.response?.data?.message) {
-        // Fallback for non-_server_messages errors
         errorMsg = err.response.data.message;
       } else if (err?.message) {
         errorMsg = err.message;
@@ -97,9 +100,50 @@ export function usePostExpenseClaim() {
       expenseService.postExpenseClaim(expenses_data),
     onSuccess: () => {
       toast.success("Expense claim submitted successfully!");
-      navigate("/webapp/expenses-app/expenses-list");
+      navigate("/webapp/expenses-app/expenses-list", {
+        state: { refresh: true },
+      });
+
       queryClient.invalidateQueries({ queryKey: ["employee-expense-claim"] });
     },
     onError: handleError,
   });
 }
+
+export const useGetExpenseTypeFields = (expenseType?: string) => {
+  return useQuery<ExpenseTypeFieldsResponse>({
+    queryKey: ["expense-type-fields", expenseType],
+    queryFn: () => {
+      if (!expenseType) throw new Error("Expense type is required");
+      return expenseService.getExpenseTypeFields(expenseType);
+    },
+    enabled: !!expenseType,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+export const useCalculateExpenseAmount = (params?: CalculateExpenseParams) => {
+  const queryKey = [
+    "expense-calc",
+    params?.expense_type,
+    params?.units,
+    params?.vehicle_type,
+  ];
+
+  return useQuery<CalculateExpenseResponse, Error>({
+    queryKey,
+    queryFn: () => {
+      if (!params) throw new Error("params are required");
+      return expenseService.calculateExpenseAmount(params);
+    },
+    enabled: !!(
+      params &&
+      params.expense_type &&
+      params.units !== undefined &&
+      params.units !== null
+    ),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};

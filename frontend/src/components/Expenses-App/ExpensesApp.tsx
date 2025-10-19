@@ -199,8 +199,8 @@ const ExpensesApp: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Expenses" actionButton={actionButton}>
-      <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex flex-col h-full bg-white">
+        <div className="flex-1 overflow-y-auto">
           {showExpenseTypeSelection ? (
             <NewExpenseType
               onClose={handleClose}
