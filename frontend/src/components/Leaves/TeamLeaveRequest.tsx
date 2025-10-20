@@ -101,7 +101,7 @@ const TeamLeaveRequest = () => {
         </div>
 
         {/* Actioned */}
-        <div className="bg-white px-2 mt-4">
+        <div className="bg-white px-2 mt-4 md:pb-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 pb-1">
               Actioned Team Leave Requests

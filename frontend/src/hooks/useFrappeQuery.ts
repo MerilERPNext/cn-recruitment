@@ -165,6 +165,7 @@ export const useFrappeDocument = (
   return useQuery({
     queryKey: ["document", doctype, name, fields],
     queryFn: () => frappeService.getDocument(doctype, name, fields),
+    enabled: !!name,
   });
 };
 

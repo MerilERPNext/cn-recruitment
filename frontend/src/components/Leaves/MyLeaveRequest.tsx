@@ -4,8 +4,7 @@ import DataListView from "../DataListView";
 import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import CardTable from "../shared/CardTable";
-import { useEmployeeByUserId } from "../../hooks/useEmployee";
-import useCurrentUser from "../../hooks/useCurrentUser";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { MyLeaveRequestType } from "../../types/leaves";
 import {
   useGetButtonsStatus,
@@ -23,10 +22,10 @@ const MyLeaveRequests = ({
   showLeaveRequest?: boolean;
 }) => {
   const replaceLeave = useReplaceLeave();
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee, isLoading: isEmployeeLoading } =
-    useEmployeeByUserId(currentUser?.name as string);
+
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const { data: currentEmployee, isLoading: isEmployeeLoading } =
+    useCurrentEmployee();
 
   const [replaceModalData, setReplaceModalData] = useState<{
     isOpen: boolean;

@@ -7,6 +7,8 @@ import { useNavigate } from "react-router";
 import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
 import CardTable from "../shared/CardTable";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { IoChevronBackOutline } from "react-icons/io5";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const PendingTeamLeaves = () => {
   const [selectedRequest, setSelectedRequest] =
@@ -15,6 +17,7 @@ const PendingTeamLeaves = () => {
 
   const navigate = useNavigate();
   const { refetchAttendance } = useGlobalStore();
+  const { isDesktop } = useScreenSize();
 
   return (
     <div>
@@ -24,7 +27,17 @@ const PendingTeamLeaves = () => {
           navigate(-1);
         }}
       />
-      <div className="p-2">
+      {isDesktop && (
+        <div className="flex justify-between items-center p-4">
+          <button onClick={() => navigate(-1)}>
+            <IoChevronBackOutline />
+          </button>
+          <h4 className="font-semibold">Pending Requests</h4>
+          <div></div>
+        </div>
+      )}
+
+      <div className="p-4 pt-0">
         <CardTable
           titles={[
             "Select",
