@@ -103,17 +103,19 @@
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval:doc.enable_custom_escalation == 1",
    "fieldname": "escalation_after_number_of_days",
    "fieldtype": "Int",
    "label": "Escalation after number of days",
-   "non_negative": 1,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.enable_custom_escalation == 1",
+   "non_negative": 1
   },
   {
    "fieldname": "column_break_qjfk",
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.enable_custom_escalation == 1 ",
    "fieldname": "escalation_context",
    "fieldtype": "Select",
    "label": "Escalation Context",
@@ -124,6 +126,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.enable_custom_escalation ==1 ",
    "fieldname": "escalate_to_role",
    "fieldtype": "Link",
    "label": "Escalate to Role",
@@ -197,7 +200,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-17 14:17:52.782336",
+ "modified": "2025-10-20 14:22:33.328719",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Separation Policy",
