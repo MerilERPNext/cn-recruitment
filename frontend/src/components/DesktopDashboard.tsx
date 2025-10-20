@@ -42,7 +42,6 @@ import { useNavigate } from "react-router-dom";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
 import defaultProfile from "../assets/face-rec.png";
-import { useFrappeAuth } from "frappe-react-sdk";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
@@ -55,6 +54,7 @@ import LeaveRequest from "./Attendance/LeaveRequest";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
+import useLogout from "../hooks/useLogout";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -62,7 +62,7 @@ export default function DesktopDashboard() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [location, setLocation] = useState<Coordinates | null>(null);
   const navigate = useNavigate();
-  const { logout } = useFrappeAuth();
+  const { mutateAsync: logout } = useLogout();
   const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
@@ -153,7 +153,6 @@ export default function DesktopDashboard() {
   const logoutHandler = async () => {
     try {
       await logout();
-      window.location.href = "/login";
     } catch (error) {
       console.error("Logout failed:", error);
     }

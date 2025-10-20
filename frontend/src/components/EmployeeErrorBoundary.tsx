@@ -77,6 +77,7 @@ class EmployeeErrorBoundary extends Component<Props, State> {
                     <div className="mt-2 p-3 bg-gray-100 rounded text-xs font-mono">
                       <strong>Error:</strong> {this.state.error?.message}<br/>
                       <strong>Type:</strong> {this.state.error?.name}
+                      <strong>Stack Trace:</strong> {this.state.error?.stack} 
                     </div>
                   </details>
                   
