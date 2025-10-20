@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { RequestCard } from "./RequestCard";
 import { MyAttendanceRequest } from "../../../types/attendance";
+import { useNavigate, useSearchParams } from "react-router";
 import { AttendanceDetailView } from "../AttendanceDetails";
-import { useNavigate } from "react-router";
 
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "./ApprovalCard";
@@ -11,10 +11,6 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 
-type LoadingAction = {
-  id: string;
-  action: string;
-};
 const TeamAttendanceDetails = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -24,6 +20,11 @@ const TeamAttendanceDetails = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [refetchActionedList, setRefetchActionedList] = useState(false);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const requestId = searchParams.get("requestId");
+
+  console.log("TeamAttendanceDetails - requestId from URL:", requestId);
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -35,9 +36,24 @@ const TeamAttendanceDetails = () => {
     setRefetchActionedList(false);
   }, []);
 
-  const [selectedRequest, setSelectedRequest] = useState<
-    (MyAttendanceRequest & { loadingAction?: LoadingAction }) | null
-  >(null);
+  const handleRequestClick = useCallback(
+    (request: MyAttendanceRequest) => {
+      if (request?.todo_id) {
+        setSearchParams({ requestId: request.todo_id });
+      }
+    },
+    [setSearchParams]
+  );
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    // Trigger refetch of both lists after action
+    setRefetchApprovalList(true);
+  }, [setSearchParams]);
 
   return (
     <>
@@ -88,12 +104,7 @@ const TeamAttendanceDetails = () => {
                     data={item?.data}
                     onAction={item?.onAction}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick={(request: any) =>
-                      setSelectedRequest({
-                        ...request,
-                        loadingAction: item?.loadingAction,
-                      })
-                    }
+                    onClick={(request: any) => handleRequestClick(request)}
                     loadingAction={item?.loadingAction}
                   />
                 )}
@@ -138,7 +149,7 @@ const TeamAttendanceDetails = () => {
                       <RequestCard
                         request={props?.item}
                         onClick={(request: MyAttendanceRequest) =>
-                          setSelectedRequest(request)
+                          handleRequestClick(request)
                         }
                       />
                     );
@@ -160,13 +171,11 @@ const TeamAttendanceDetails = () => {
         </div>
       </div>
 
-      {selectedRequest && (
+      {requestId && (
         <AttendanceDetailView
-          data={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
-          onAction={() => {
-            setSelectedRequest(null);
-          }}
+          documentName={requestId}
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
         />
       )}
     </>

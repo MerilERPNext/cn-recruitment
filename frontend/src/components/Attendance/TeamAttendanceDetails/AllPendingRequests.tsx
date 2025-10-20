@@ -1,18 +1,38 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { AttendanceRequest } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
 import LayoutHeader from "../../shared/LayoutHeader";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "./ApprovalCard";
 import CardTable from "../../shared/CardTable";
 
 const AllPendingRequests = () => {
-  const [selectedRequest, setSelectedRequest] =
-    useState<AttendanceRequest | null>(null);
   const [refetch, setRefetch] = useState(false);
 
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const requestId = searchParams.get("requestId");
+
+  const handleRequestClick = useCallback(
+    (request: AttendanceRequest) => {
+      if (request?.todo_id) {
+        setSearchParams({ requestId: request.todo_id });
+      }
+    },
+    [setSearchParams]
+  );
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    // Trigger refetch after action
+    setRefetch(true);
+  }, [setSearchParams]);
 
   return (
     <div>
@@ -50,17 +70,19 @@ const AllPendingRequests = () => {
                 data={item?.data}
                 onAction={item?.onAction}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) => setSelectedRequest(request)}
+                onClick={(request: any) => handleRequestClick(request)}
                 loadingAction={item?.loadingAction}
               />
             )}
           />
         </CardTable>
       </div>
-      {selectedRequest && (
+
+      {requestId && (
         <AttendanceDetailView
-          data={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
+          documentName={requestId}
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
         />
       )}
     </div>

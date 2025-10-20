@@ -174,16 +174,15 @@ export const attendanceService = {
   //for checking attachment is mandatory or not
   checkAttachmentMandatory: async (
     empId: string | null | undefined,
-   date:string | null,
+    date: string | null,
     request_type: string
-    
   ): Promise<AttendanceRequestValidations> => {
     try {
       const response = await FrappeAPI.callMethod(
         "cn_leave_shift_managment.api.check_attachment_mandatory",
         {
           employee: empId,
-    date,
+          date,
           request_type,
         }
       );
@@ -376,6 +375,15 @@ export const attendanceService = {
         fields: ["*"],
         filters: filters,
         orderBy: "creation desc",
+      }
+    );
+    return response as UserRoles;
+  },
+  getToDoWithReferenceDoc: async (todo_id?: string): Promise<UserRoles> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_hrms_core.api.get_reference_doc",
+      {
+        todo_id: todo_id,
       }
     );
     return response as UserRoles;

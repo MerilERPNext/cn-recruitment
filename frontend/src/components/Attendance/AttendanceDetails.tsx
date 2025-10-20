@@ -7,21 +7,45 @@ import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
+import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
 
 export function AttendanceDetailView({
-  data,
+  data: propData,
+  documentName,
   onClose,
   onAction,
   label = "Attendance Request",
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
+  data?: any;
+  documentName?: string;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
 }) {
+  // Fetch data if documentName is provided
+  const {
+    data: fetchedData,
+    isLoading,
+    error,
+  } = useGetToDoWithReferenceDoc(documentName || "");
+
+  console.log("AttendanceDetailView rendered:", {
+    documentName,
+    isLoading,
+    hasError: !!error,
+    hasFetchedData: !!fetchedData,
+    hasPropData: !!propData,
+  });
+
+  // Use fetched data if documentName is provided, otherwise use prop data
+  const data = documentName ? fetchedData : propData;
   const mutation = useApprovalListActions();
   const { setRefetchAttendance } = useGlobalStore();
+
+  // Don't render anything if neither documentName nor data is provided
+  // When documentName is provided, we should render even if data isn't loaded yet
+  const shouldRender = !!documentName || !!data?.todo_id;
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const cleanExplaination = DOMPurify.sanitize(
@@ -156,7 +180,91 @@ export function AttendanceDetailView({
     return "--/--/----";
   };
 
-  return data?.todo_id ? (
+  // Loading state
+  if (isLoading && documentName) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+        onMouseDown={onClose}
+      >
+        <div
+          className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white">
+            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading request details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && documentName) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+        onMouseDown={onClose}
+      >
+        <div
+          className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white">
+            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="text-red-500 mb-4">
+                <svg
+                  className="h-12 w-12 mx-auto"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <p className="text-gray-600">Failed to load request details</p>
+              <p className="text-gray-500 text-sm mt-2">
+                {error instanceof Error ? error.message : "Unknown error"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Only render if we have documentName or data
+  if (!shouldRender) return null;
+  console.log(data);
+  return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
@@ -287,5 +395,5 @@ export function AttendanceDetailView({
           )}
       </div>
     </div>
-  ) : null;
+  );
 }
