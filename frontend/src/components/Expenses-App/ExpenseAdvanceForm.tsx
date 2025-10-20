@@ -399,11 +399,18 @@ const ExpenseAdvanceForm: React.FC<{
       />
 
       <div className="flex-1 overflow-y-auto p-4">
-        <Form
-          form={expenseAdvanceSchema}
-          onFormReady={(instance: any) => (formRef.current = instance)}
-          options={{ submitButton: false, noAlerts: true }}
-        />
+        {expenseAdvanceSchema ? (
+          <Form
+            form={expenseAdvanceSchema}
+            onFormReady={(instance: any) => (formRef.current = instance)}
+            options={{ submitButton: false, noAlerts: true }}
+          />
+        ) : (
+          // You can put any loading spinner or message here
+          <div className="flex items-center justify-center p-10 border border-dashed rounded-lg">
+            <p className="text-gray-500">Loading form settings...</p>
+          </div>
+        )}
 
         {/* Add Expense Claims Section */}
         <div className="mt-8 border-t pt-6">

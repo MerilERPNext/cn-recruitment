@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
+import { useCalculateExpenseAmount } from "../../hooks/useExpense";
 
 interface ExpenseClaimModalProps {
   isOpen: boolean;
@@ -16,7 +17,42 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
 }) => {
   const [formKey, setFormKey] = useState(0);
   const [formData, setFormData] = useState<any>({});
+  const [calcParams, setCalcParams] = useState<any>();
+  const formioInstanceRef = useRef<any>(null);
+  const { data: calcData } = useCalculateExpenseAmount(calcParams);
+
   const lastExpenseType = useRef<string | null>(null);
+  const lastCalculatedUnits = useRef<number | null>(null);
+  const [isAmountReadonly, setIsAmountReadonly] = useState(false);
+
+  useEffect(() => {
+    // Only run if we have new data AND the amount field is readonly
+    if (calcData && isAmountReadonly) {
+      const amount =
+        (calcData as any)?.amount ??
+        (calcData as any)?.message?.amount ??
+        (calcData as any)?.data?.amount ??
+        null;
+
+      if (amount !== null && !isNaN(amount)) {
+        if (formioInstanceRef.current) {
+          const amountComponent =
+            formioInstanceRef.current.getComponent("amount");
+
+          if (amountComponent) {
+            if (amountComponent.getValue() !== amount) {
+              amountComponent.setValue(amount, {
+                noValidate: true,
+              });
+              toast.success("Amount calculated Succesfully.");
+            }
+          }
+        }
+      } else if (calcParams?.units) {
+        toast.error("Failed to calculate amount.");
+      }
+    }
+  }, [calcData, isAmountReadonly, calcParams]);
 
   const getBaseUrl = () =>
     // @ts-ignore
@@ -126,11 +162,24 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
       const fields = data.message?.fields || [];
       const dynamicComponents = mapFieldsToFormio(fields);
 
+      const isReadonly = data.message?.is_amount_readonly ?? false;
+      setIsAmountReadonly(isReadonly);
+
+      const dynamicComponentsWithReadonly = dynamicComponents.map(
+        (comp: any) => {
+          if (comp.key === "amount" && isReadonly) {
+            return { ...comp, disabled: true };
+          }
+          return comp;
+        }
+      );
+
       setFormSchema({
         display: "form",
         components: [
           ...initialSchema.components,
-          ...dynamicComponents,
+          ...dynamicComponentsWithReadonly,
+
           {
             type: "container",
             key: "buttonContainer",
@@ -182,9 +231,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             key={formKey}
             form={formSchema}
             submission={{ data: formData }}
+            onFormReady={(formio: any) => {
+              formioInstanceRef.current = formio;
+            }}
             onChange={(change: any) => {
               const newExpenseType = change.data?.expense_type;
-
               setFormData(change.data);
 
               if (
@@ -192,7 +243,25 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 newExpenseType !== lastExpenseType.current
               ) {
                 lastExpenseType.current = newExpenseType;
+                lastCalculatedUnits.current = null;
                 fetchExpenseTypeFields(newExpenseType);
+              }
+
+              const units = change.data?.units;
+              const numericUnits = Number(units);
+
+              if (isAmountReadonly && units && newExpenseType) {
+                // Delay a bit
+                clearTimeout((window as any)._calcTimer);
+                (window as any)._calcTimer = setTimeout(() => {
+                  if (numericUnits !== lastCalculatedUnits.current) {
+                    lastCalculatedUnits.current = numericUnits;
+                    setCalcParams({
+                      expense_type: newExpenseType,
+                      units: numericUnits,
+                    });
+                  }
+                }, 700);
               }
             }}
             onSubmit={(submission: any) => {
@@ -217,6 +286,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 custom_invoice_number: combinedData.invoice_number,
                 custom_attach_receipt: combinedData.attach_receipt?.file_url,
                 description: combinedData.description,
+                custom_units: combinedData.units,
               };
               onSave(mappedExpense);
 
