@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -16,6 +16,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
 }) => {
   const [formKey, setFormKey] = useState(0);
   const [formData, setFormData] = useState<any>({});
+  const lastExpenseType = useRef<string | null>(null);
 
   const getBaseUrl = () =>
     // @ts-ignore
@@ -153,6 +154,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   };
 
   const handleClose = () => {
+    lastExpenseType.current = null;
     setFormSchema(initialSchema);
     setFormData({});
     setFormKey((prev) => prev + 1);
@@ -181,10 +183,15 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             form={formSchema}
             submission={{ data: formData }}
             onChange={(change: any) => {
-              const currentExpenseType = formData.expense_type;
               const newExpenseType = change.data?.expense_type;
+
               setFormData(change.data);
-              if (newExpenseType && newExpenseType !== currentExpenseType) {
+
+              if (
+                newExpenseType &&
+                newExpenseType !== lastExpenseType.current
+              ) {
+                lastExpenseType.current = newExpenseType;
                 fetchExpenseTypeFields(newExpenseType);
               }
             }}
