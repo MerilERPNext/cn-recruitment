@@ -1,35 +1,28 @@
 import { Formio } from "formiojs";
 import { FrappeAPI } from "./frappeAPI";
 
+// Initialize FormIO with proper error handling and retry logic
 if (typeof window !== "undefined") {
-  const baseUrl = window.location.origin;
-  try {
-    // Ensure Form.io always initializes with our host origin and has a CDN object defined.
-    Formio.setBaseUrl(baseUrl);
-
-    const formioAny = Formio as unknown as {
-      GlobalFormio?: typeof Formio;
-      cdn?: { baseUrl?: string; setBaseUrl?: (url: string) => void };
-    };
-
-    const globalFormio =
-      (formioAny.GlobalFormio as typeof Formio | undefined) ?? Formio;
-    const globalFormioAny = globalFormio as unknown as {
-      cdn?: { baseUrl?: string; setBaseUrl?: (url: string) => void };
-    };
-    const cdnInstance = globalFormioAny.cdn ?? formioAny.cdn;
-
-    if (!globalFormioAny.cdn && cdnInstance) {
-      globalFormioAny.cdn = cdnInstance;
+  const initializeFormio = () => {
+    try {
+      const baseUrl = window.location.origin;
+      Formio.setBaseUrl(baseUrl);
+      console.log("FormIO initialized with base URL:", baseUrl);
+      return true;
+    } catch (error) {
+      console.error("Error initializing FormIO:", error);
+      return false;
     }
+  };
 
-    if (cdnInstance?.setBaseUrl) {
-      cdnInstance.setBaseUrl(baseUrl);
-    } else if (cdnInstance) {
-      cdnInstance.baseUrl = baseUrl;
-    }
-  } catch (error) {
-    console.error("Error configuring Formio CDN base URL:", error);
+  // Try initial initialization
+  const initialized = initializeFormio();
+
+  // Retry once if failed
+  if (!initialized) {
+    setTimeout(() => {
+      initializeFormio();
+    }, 200);
   }
 }
 
