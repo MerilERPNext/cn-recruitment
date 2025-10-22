@@ -6,7 +6,7 @@ import { useCurrentEmployee } from "../../hooks/useEmployee";
 import {
   useCostCenters,
   useCreateNewAdvance,
-  useCurrencies,
+  useExpenseTableFieldSettings,
   useProjects,
 } from "../../hooks/useEmployeeAdvances";
 import toast from "react-hot-toast";
@@ -27,7 +27,6 @@ interface ExpenseClaim {
 const ExpenseAdvanceForm: React.FC<{
   onClose?: () => void;
 }> = ({ onClose }) => {
-  const { data: currencies } = useCurrencies();
   const { data: projects } = useProjects();
   const { data: costCenters } = useCostCenters();
 
@@ -37,6 +36,9 @@ const ExpenseAdvanceForm: React.FC<{
   const { setRefetchAttendance } = useGlobalStore();
 
   const { data: currentEmployee } = useCurrentEmployee();
+  const { data: fieldSettings } = useExpenseTableFieldSettings(
+    currentEmployee?.name || ""
+  );
 
   const postingDate = new Date().toISOString().split("T")[0];
   const advanceType = "Reimbursement / Expense Advance";
@@ -101,10 +103,16 @@ const ExpenseAdvanceForm: React.FC<{
         exchange_rate: formData.exchange_rate,
         project: formData.project,
         cost_center: formData.cost_center,
-        custom_expense_claim: preparedExpenseClaims,
+        expenses: preparedExpenseClaims,
       };
 
-      console.log("🚀 Final Submitted Payload:", payload);
+      if (
+        fieldSettings?.expense_table_mandatory &&
+        expenseClaims.length === 0
+      ) {
+        toast.error("Please add at least one expense claim before submitting.");
+        return;
+      }
 
       setSubmitting(true);
       mutation.mutate(payload, {
@@ -164,6 +172,20 @@ const ExpenseAdvanceForm: React.FC<{
   };
 
   const expenseAdvanceSchema = useMemo(() => {
+    if (!fieldSettings) return null;
+
+    const showProject = fieldSettings.show_project;
+    const projectMandatory = fieldSettings.project_mandatory;
+
+    const showCostCenter = fieldSettings.show_cost_center;
+    const costCenterMandatory = fieldSettings.cost_center_mandatory;
+
+    const allowedCurrencies =
+      fieldSettings.allowed_currencies?.map((cur) => ({
+        label: cur,
+        value: cur,
+      })) || [];
+
     return {
       type: "form",
       display: "form",
@@ -252,13 +274,8 @@ const ExpenseAdvanceForm: React.FC<{
                       key: "currency",
                       label: "Currency",
                       input: true,
-                      data: {
-                        values:
-                          currencies?.data.map((cur) => ({
-                            label: cur.name,
-                            value: cur.name,
-                          })) || [],
-                      },
+                      validate: { required: true },
+                      data: { values: allowedCurrencies },
                       defaultValue: "INR",
                     },
                   ],
@@ -272,57 +289,72 @@ const ExpenseAdvanceForm: React.FC<{
                       label: "Exchange Rate",
                       input: true,
                       defaultValue: 1,
+                      validate: { required: true, min: 1 },
                     },
                   ],
                 },
               ],
             },
+            // 🔹 Row 4: Project + Cost Center (conditionally show)
+            ...(showProject || showCostCenter
+              ? [
+                  {
+                    type: "columns",
+                    key: "row4",
+                    columns: [
+                      ...(showProject
+                        ? [
+                            {
+                              width: 6,
+                              components: [
+                                {
+                                  type: "select",
+                                  key: "project",
+                                  label: "Project",
+                                  input: true,
+                                  placeholder: "Select project",
+                                  data: {
+                                    values:
+                                      projects?.data.map((pro) => ({
+                                        label: pro.project_name,
+                                        value: pro.project_name,
+                                      })) || [],
+                                  },
+                                  validate: { required: projectMandatory },
+                                },
+                              ],
+                            },
+                          ]
+                        : []),
 
-            // 🔹 Row 4: Project + Cost Center
-            {
-              type: "columns",
-              key: "row4",
-              columns: [
-                {
-                  width: 6,
-                  components: [
-                    {
-                      type: "select",
-                      key: "project",
-                      label: "Project",
-                      input: true,
-                      placeholder: "Select project",
-                      data: {
-                        values:
-                          projects?.data.map((pro) => ({
-                            label: pro.project_name,
-                            value: pro.project_name,
-                          })) || [],
-                      },
-                    },
-                  ],
-                },
-                {
-                  width: 6,
-                  components: [
-                    {
-                      type: "select",
-                      key: "cost_center",
-                      label: "Cost Center",
-                      input: true,
-                      placeholder: "Select cost center",
-                      data: {
-                        values:
-                          costCenters?.data.map((cc) => ({
-                            label: cc.name,
-                            value: cc.name,
-                          })) || [],
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
+                      ...(showCostCenter
+                        ? [
+                            {
+                              width: 6,
+                              components: [
+                                {
+                                  type: "select",
+                                  key: "cost_center",
+                                  label: "Cost Center",
+                                  input: true,
+                                  placeholder: "Select cost center",
+                                  data: {
+                                    values:
+                                      costCenters?.data.map((cc) => ({
+                                        label: cc.name,
+                                        value: cc.name,
+                                      })) || [],
+                                  },
+                                  validate: { required: costCenterMandatory },
+                                },
+                              ],
+                            },
+                          ]
+                        : []),
+                    ],
+                  },
+                ]
+              : []),
 
             // 🔹 Advance Amount + Purpose
             {
@@ -347,7 +379,7 @@ const ExpenseAdvanceForm: React.FC<{
       ],
     };
   }, [
-    currencies,
+    fieldSettings,
     projects,
     costCenters,
     currentEmployee,
@@ -367,24 +399,31 @@ const ExpenseAdvanceForm: React.FC<{
       />
 
       <div className="flex-1 overflow-y-auto p-4">
-        <Form
-          form={expenseAdvanceSchema}
-          onFormReady={(instance: any) => (formRef.current = instance)}
-          options={{ submitButton: false, noAlerts: true }}
-        />
+        {expenseAdvanceSchema ? (
+          <Form
+            form={expenseAdvanceSchema}
+            onFormReady={(instance: any) => (formRef.current = instance)}
+            options={{ submitButton: false, noAlerts: true }}
+          />
+        ) : (
+          // You can put any loading spinner or message here
+          <div className="flex items-center justify-center p-10 border border-dashed rounded-lg">
+            <p className="text-gray-500">Loading form settings...</p>
+          </div>
+        )}
 
         {/* Add Expense Claims Section */}
         <div className="mt-8 border-t pt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-800">
-              Expense Claims
+              Advance Break Up
             </h3>
             <button
               onClick={() => setIsExpenseModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
-              Add New Expense
+              Add New Advance
             </button>
           </div>
 
@@ -393,7 +432,7 @@ const ExpenseAdvanceForm: React.FC<{
             <div className="mt-4">
               <div className="flex justify-between items-center mb-3">
                 <p className="text-sm text-gray-600">
-                  {expenseClaims.length} expense claim(s) added
+                  {expenseClaims.length} expense advance breakup(s) added
                 </p>
                 {selectedExpenses.length > 0 && (
                   <button
@@ -494,9 +533,9 @@ const ExpenseAdvanceForm: React.FC<{
 
           {expenseClaims.length === 0 && (
             <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-              <p className="text-gray-500">No expense claims added yet</p>
+              <p className="text-gray-500">No advance break up added yet</p>
               <p className="text-sm text-gray-400 mt-1">
-                Click "Add New Expense" to add your first expense claim
+                Click "Add New Advance" to add your first advance break up
               </p>
             </div>
           )}

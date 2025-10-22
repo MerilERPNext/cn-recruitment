@@ -4,6 +4,7 @@ import {
   CostCenterType,
   CurrencyType,
   ExpenseAdvance,
+  ExpenseTableFieldSettings,
   ExpenseType,
   ExpenseTypeField,
   ProjectType,
@@ -166,3 +167,18 @@ export const getExpenseTypeFields = async (
 
   return result as { data: ExpenseTypeField[] } | null;
 }
+
+export const getExpenseTableFieldSettings = async (
+  employeeId: string
+): Promise<ExpenseTableFieldSettings> => {
+  if (!employeeId) throw new Error("Employee ID is required");
+
+  const result = await FrappeAPI.callMethod(
+    "chatnext_expense_trips.employee_advance.get_expense_table_field_settings",
+    {
+      employee: employeeId,
+    }
+  );
+
+  return result as ExpenseTableFieldSettings;
+};
