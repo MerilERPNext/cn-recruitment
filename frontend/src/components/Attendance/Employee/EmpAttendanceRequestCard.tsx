@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -65,15 +65,16 @@ const EmpAttendanceRequestCard = ({
     }
   };
   const status = getStatus(data?.reference_document?.custom_status);
-  const formattedFromDate = data?.reference_document?.from_date
-    ? format(new Date(data?.reference_document.from_date), "dd/MM/yyyy")
-    : "N/A";
-  const formattedToDate = data?.reference_document?.to_date
-    ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
-    : "N/A";
-  const formattedDueDate = data?.due_date
-    ? format(new Date(data?.due_date), "dd/MM/yyyy")
-    : "N/A";
+
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return isValid(date) ? format(date, "dd/MM/yyyy") : "N/A";
+  };
+
+  const formattedFromDate = formatDate(data?.reference_document?.from_date);
+  const formattedToDate = formatDate(data?.reference_document?.to_date);
+  const formattedDueDate = formatDate(data?.due_date);
   return (
     <>
       {isDesktop ? (
@@ -163,18 +164,10 @@ const EmpAttendanceRequestCard = ({
                 {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
                 <div className="text-sm text-gray-500">
-                  {data?.reference_document?.from_date
-                    ? format(
-                        new Date(data?.reference_document?.from_date),
-                        "dd/MM/yyyy"
-                      )
-                    : "N/A"}
-                  {data?.reference_document?.to_date
-                    ? ` - ${format(
-                        new Date(data?.reference_document?.to_date),
-                        "dd/MM/yyyy"
-                      )}`
-                    : "N/A"}
+                  {formattedFromDate}
+                  {data?.reference_document?.to_date && formattedToDate !== "N/A"
+                    ? ` - ${formattedToDate}`
+                    : ""}
                 </div>
             </div>
           </div>
