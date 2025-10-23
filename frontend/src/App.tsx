@@ -7,7 +7,6 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
-import { QueryProvider } from "./providers/QueryProvider";
 import "./App.css";
 import "./utils/FormioConfig";
 
@@ -20,15 +19,15 @@ import ModalWrapper from "./components/ModalWrapper";
 import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModalContext";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
 import { X, CheckCircle2, CircleX } from "lucide-react";
-import { useFrappeAuth } from "frappe-react-sdk";
 import { GlobalStoreProvider } from "./context/GlobalStoreContext";
 import {
   preloadCriticalRoutes,
   preloadAdjacentRoutes,
 } from "./utils/routePreloader";
+import { useCurrentUser } from "./hooks/useCurrentUser";
 
 const App: React.FC = () => {
-  const { currentUser, isLoading, isValidating } = useFrappeAuth();
+  const { data: currentUser, isLoading, } = useCurrentUser();
   const location = useLocation();
 
   const renderRoutes = (routes: AppRoute[]) =>
@@ -45,11 +44,11 @@ const App: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isLoading || isValidating) return;
+    if (isLoading) return;
     if (!currentUser) {
       window.location.href = "/login?redirect-to=%2Fwebapp";
     }
-  }, [currentUser, isLoading, isValidating, navigate]);
+  }, [currentUser, isLoading, navigate]);
 
   // Preload critical routes after initial load
   useEffect(() => {
@@ -72,80 +71,74 @@ const App: React.FC = () => {
   }, [location.pathname, currentUser, isLoading]);
 
   return (
-    <QueryProvider>
-      <EmployeeErrorBoundary>
-        <GlobalStoreProvider>
-          <RequestLeaveModalProvider>
-            <Toaster position="top-center" containerClassName="z-50">
-              {(t) => (
-                <ToastBar
-                  toast={t}
-                  style={{
-                    ...t.style,
-                    background: "white",
-                    borderLeft:
-                      t.type === "success"
-                        ? "4px solid #34D399"
-                        : "4px solid #EF4444",
-                    boxShadow:
-                      "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                    minWidth: "250px",
-                    padding: "1rem",
-                    borderRadius: "0.5rem",
-                    transition:
-                      "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                  }}
-                >
-                  {({ message }) => (
-                    <>
-                      {t.type === "success" ? (
-                        <CheckCircle2
-                          className="h-6 w-6 text-green-500 mr-2"
-                          strokeWidth={2}
-                        />
-                      ) : (
-                        <CircleX
-                          className="h-6 w-6 text-red-500 mr-2"
-                          strokeWidth={2}
-                        />
-                      )}
-                      {message}
-                      {t.type !== "loading" && (
-                        <button
-                          className="ml-4 p-1 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 focus:outline-none transition-colors duration-200"
-                          onClick={() => toast.dismiss(t.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
-                    </>
-                  )}
-                </ToastBar>
-              )}
-            </Toaster>
+    <EmployeeErrorBoundary>
+      <GlobalStoreProvider>
+        <RequestLeaveModalProvider>
+          <Toaster position="top-center" containerClassName="z-50">
+            {(t) => (
+              <ToastBar
+                toast={t}
+                style={{
+                  ...t.style,
+                  background: "white",
+                  borderLeft:
+                    t.type === "success"
+                      ? "4px solid #34D399"
+                      : "4px solid #EF4444",
+                  boxShadow:
+                    "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                  minWidth: "250px",
+                  padding: "1rem",
+                  borderRadius: "0.5rem",
+                  transition:
+                    "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                }}
+              >
+                {({ message }) => (
+                  <>
+                    {t.type === "success" ? (
+                      <CheckCircle2
+                        className="h-6 w-6 text-green-500 mr-2"
+                        strokeWidth={2}
+                      />
+                    ) : (
+                      <CircleX
+                        className="h-6 w-6 text-red-500 mr-2"
+                        strokeWidth={2}
+                      />
+                    )}
+                    {message}
+                    {t.type !== "loading" && (
+                      <button
+                        className="ml-4 p-1 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 focus:outline-none transition-colors duration-200"
+                        onClick={() => toast.dismiss(t.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </>
+                )}
+              </ToastBar>
+            )}
+          </Toaster>
 
-            <MandatoryPoliciesHandler />
+          <MandatoryPoliciesHandler />
 
-            <div
-              className="min-h-screen"
-              style={{ backgroundColor: "var(--background-medium)" }}
-            >
-              <Routes>
-                <Route element={<ModalWrapper />}>
-                  <Route path="/webapp/" element={<ResponsiveDashboard />} />
-                  {renderRoutes(routesConfig)}
-                  <Route
-                    path="*"
-                    element={<Navigate to="/webapp/" replace />}
-                  />
-                </Route>
-              </Routes>
-            </div>
-          </RequestLeaveModalProvider>
-        </GlobalStoreProvider>
-      </EmployeeErrorBoundary>
-      {/* @ts-ignore */}
-    </QueryProvider>
+          <div
+            className="min-h-screen"
+            style={{ backgroundColor: "var(--background-medium)" }}
+          >
+            <Routes>
+              <Route element={<ModalWrapper />}>
+                <Route path="/webapp/" element={<ResponsiveDashboard />} />
+                {renderRoutes(routesConfig)}
+                <Route path="*" element={<Navigate to="/webapp/" replace />} />
+              </Route>
+            </Routes>
+          </div>
+        </RequestLeaveModalProvider>
+      </GlobalStoreProvider>
+    </EmployeeErrorBoundary>
   );
 };
 

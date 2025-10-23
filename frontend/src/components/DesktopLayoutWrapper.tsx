@@ -4,12 +4,12 @@ import { useScreenSize } from "../hooks/useScreenSize";
 import { LogOut, ChevronDown, User, Search, Dock, Settings } from "lucide-react";
 import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
-import { useFrappeAuth } from "frappe-react-sdk";
 import NotificationBell from "./Notification/NotificationBell";
 import { useLoggedInUser } from "../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { ROUTES } from "../constants/routes";
 import useCurrentUser from "../hooks/useCurrentUser";
+import useLogout from "../hooks/useLogout";
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -25,7 +25,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const { isDesktop } = useScreenSize();
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useFrappeAuth();
+  const { mutateAsync: logout } = useLogout();
   // Force static badge count for UI demo
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -40,10 +40,6 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const logoutHandler = async () => {
     try {
       await logout();
-      // Full reload karne ke liye
-      window.location.href = "/login";
-      // ya
-      // window.location.replace("/login#login");
     } catch (error) {
       console.error("Logout failed:", error);
     }

@@ -107,7 +107,7 @@ const PoliciesList: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-white rounded-xl md:p-4 p-2">
+    <div className="w-full bg-white rounded-xl p-2">
       {isDesktop ? (
         <HeaderBar
           title="Policies List"

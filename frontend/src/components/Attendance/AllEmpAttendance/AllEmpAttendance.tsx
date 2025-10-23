@@ -162,7 +162,10 @@ const AllEmpAttendance = () => {
     );
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, isUnpaid: boolean) => {
+    if (isUnpaid) {
+      return "bg-orange-100 text-orange-600";
+    }
     switch (status) {
       case "present":
         return "bg-green-100 text-green-700";
@@ -170,6 +173,7 @@ const AllEmpAttendance = () => {
         return "bg-red-100 text-red-700";
       case "on leave":
         return "bg-yellow-100 text-yellow-600";
+
       case "work from home":
         return "bg-purple-100 text-purple-700";
       case "holiday":
@@ -244,7 +248,8 @@ const AllEmpAttendance = () => {
                   {/* Date Box */}
                   <div
                     className={`flex flex-col items-center justify-center rounded-md p-4 w-14 ${getStatusColor(
-                      item?.status?.toLocaleLowerCase()
+                      item?.status?.toLocaleLowerCase(),
+                      item?.custom_auto_created === 1
                     )}`}
                     style={
                       item?.status?.toLocaleLowerCase() === "half day"
