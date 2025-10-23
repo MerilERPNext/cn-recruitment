@@ -201,7 +201,7 @@ export class EmployeeService {
     return result as EmployeeNode[];
   }
   static async getEmployeeReportees(): Promise<Employee[]> {
-    const result = await FrappeAPI.callMethod(
+    const result = await FrappeAPI.getMethod(
       "cn_leave_shift_managment.api.get_reportees"
     );
     return result as Employee[];
@@ -296,7 +296,7 @@ export class EmployeeService {
         fields: ["*"],
         filters: [["user_id", "=", user_id]],
       });
-      
+
       // Debug the API response
       debugEmployeeData(
         result,

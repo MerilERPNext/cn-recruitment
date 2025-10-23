@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useScreenSize } from "../hooks/useScreenSize";
-import { LogOut, ChevronDown, User, Search } from "lucide-react";
+import { LogOut, ChevronDown, User, Search, Dock, Settings } from "lucide-react";
 import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
 import { useLoggedInUser } from "../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { ROUTES } from "../constants/routes";
+import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
 
 interface DesktopLayoutWrapperProps {
@@ -32,7 +33,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee, isLoading: currentEmpIsLoading } =
     useCurrentEmployeeAllDetails(userId || "");
-
+  
+  const { data: currentUser } = useCurrentUser();
+  const canRedirectToDesk = currentUser?.roles?.some(role => ['System Manager', 'Payroll Manager'].includes(role.role));
   // logout logic
   const logoutHandler = async () => {
     try {
@@ -116,8 +119,11 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
     navigate("/webapp/notification-log");
   };
 
+
+
   // Calculate dynamic margin based on sidebar width
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
+  
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -241,6 +247,22 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     >
                       <User className="w-4 h-4" />
                       My Profile
+                    </button>
+                   {canRedirectToDesk && 
+                      <button
+                      onClick={()=>{navigate('/desk') }}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      <Dock className="w-4 h-4" />
+                      Switch to Desk
+                    </button>
+                    }
+                     <button
+                      onClick={ void(0) }
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Settings
                     </button>
 
                     <hr className="my-2 border-gray-100" />

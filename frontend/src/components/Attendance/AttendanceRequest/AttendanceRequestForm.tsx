@@ -13,6 +13,7 @@ import {
   useGetEmployeeShift,
   useGetUserRoles,
   useReqValidationsForAttendanceRequest,
+  useUpdateAttendanceRequest,
 } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import {
@@ -28,6 +29,7 @@ import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import DOMPurify from "dompurify";
 import { format } from "date-fns";
+import { AttendanceRequest } from "../../../types/attendance";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -62,11 +64,15 @@ interface FormioFormInstance {
 interface AttndanceRequestFormProps {
   onClose: () => void;
   selectedDate?: Date | string;
+  defaultAttendanceData?: AttendanceRequest | null;
+  forActionType?: "create" | "edit";
 }
 
 const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   onClose,
   selectedDate = new Date(),
+  defaultAttendanceData,
+  forActionType = "create",
 }) => {
   const [isAttachmentRequired, setIsAttachmentRequired] = useState(false);
   const { setRefetchAttendance } = useGlobalStore();
@@ -84,7 +90,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const { data: userRoles } = useGetUserRoles();
   const { data: shiftList } = useShiftTypes();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [selectedRequestType, setSelectedRequestType] = useState<string>("");
+  const [selectedRequestType, setSelectedRequestType] = useState<string>(
+    defaultAttendanceData?.custom_request_type || ""
+  );
 
   const { data: reasonList } = useGetAllReasons(selectedRequestType);
   const employeeIdToShow = isForOthers
@@ -101,6 +109,18 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
   const sortedLogs = filteredLogs?.sort(
     (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
   );
+
+  const normalizeTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+    try {
+      // Parse and format to HH:mm:ss
+      const [h, m, s] = timeStr.split(":");
+      const seconds = s ? s.split(".")[0].padStart(2, "0") : "00";
+      return `${h.padStart(2, "0")}:${m.padStart(2, "0")}:${seconds}`;
+    } catch {
+      return null;
+    }
+  };
 
   const latestCheckIn = sortedLogs?.find((log) => log.log_type === "IN");
   const latestCheckOut = sortedLogs?.find((log) => log.log_type === "OUT");
@@ -128,10 +148,9 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         requestType === "Short Attendance Request" ||
         requestType === "Out Duty"
       ) {
-         setSelectedRequestType(
-           requestType === "Out Duty" ? "Out Duty Request" : requestType
-         );
-          
+        setSelectedRequestType(
+          requestType === "Out Duty" ? "Out Duty Request" : requestType
+        );
       }
     },
     []
@@ -139,7 +158,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
   const { data: attachmentRequirement } = useCheckAttachmentMandatory(
     currentEmployee?.employee,
-    format(new Date(), "yyyy-dd-MM"),
+    format(new Date(), "dd/MM/YYY"),
     selectedRequestType
   );
 
@@ -154,6 +173,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     currentEmployee?.employee as string
   );
 
+  const { mutate: updateAttendanceReuqest } = useUpdateAttendanceRequest();
 
   const handleFromDateChange = (event: { data: AttendanceFormData }) => {
     const formInstance = formAddressInstance.current;
@@ -279,6 +299,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                   type: "select",
                   input: true,
                   placeholder: "Select Employee",
+                  defaultValue: defaultAttendanceData?.employee,
                   customClass: "mb-4",
                   onChange: handleEmployeeChange,
                   validate: { required: true },
@@ -308,7 +329,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                       : "Loading company information...",
                   customClass: "mb-4",
                   disabled: true,
-                  defaultValue: currentEmployee?.company || "Not Assigned",
+                  defaultValue:
+                    defaultAttendanceData?.company ||
+                    currentEmployee?.company ||
+                    "Not Assigned",
                   value: currentEmployee?.company || "Not Assigned",
                   clearOnHide: false,
                 },
@@ -322,6 +346,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             input: true,
             onChange: handleRequestTypeChange,
             placeholder: "Select a Request Type",
+            defaultValue: defaultAttendanceData?.custom_request_type,
             customClass: "mb-4",
             data: {
               values: [
@@ -366,6 +391,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             defaultValue: employeeShift?.shift || "Not Assigned",
             value: employeeShift?.shift || "Not Assigned",
             clearOnHide: false,
+            hidden: true,
           },
 
           {
@@ -390,6 +416,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                     value: employeeShift?.start_time || "Not Assigned",
                     customClass: "mb-4",
                     disabled: true,
+                    hidden: true,
                   },
                 ],
               },
@@ -411,6 +438,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
                     input: true,
                     customClass: "mb-4",
                     disabled: true,
+                    hidden: true,
                   },
                 ],
               },
@@ -427,7 +455,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "dd-mm-yyyy",
             customClass: "mb-4",
             enableTime: false,
-            defaultValue: selectedDate,
+            defaultValue: defaultAttendanceData?.from_date || selectedDate,
             onChange: handleFromDateChange,
             disabled: selectedRequestType === "Clockin",
             redrawOn: "request_type",
@@ -444,7 +472,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             enableTime: false,
             disabled: selectedRequestType === "Short Attendance Request",
             validate: { required: true },
-            defaultValue: selectedDate,
+            defaultValue: defaultAttendanceData?.to_date || selectedDate,
             customConditional:
               "show = !['Clockin'].includes(data.request_type || '');",
           },
@@ -458,6 +486,13 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             format: "HH:mm:ss",
             placeholder: "hh:mm",
             customClass: "mb-4",
+            defaultValue: defaultAttendanceData?.custom_from_time
+              ? new Date(
+                  `1970-01-01T${normalizeTime(
+                    defaultAttendanceData.custom_from_time
+                  )}`
+                )
+              : "",
             validate: {
               required: true,
               customMessage: "From Time is required",
@@ -484,6 +519,13 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             format: "HH:mm:ss",
             placeholder: "hh:mm",
             customClass: "mb-4",
+            defaultValue: defaultAttendanceData?.custom_to_time
+              ? new Date(
+                  `1970-01-01T${normalizeTime(
+                    defaultAttendanceData.custom_to_time
+                  )}`
+                )
+              : "",
             customConditional:
               "show = ['Out Duty', 'Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
             time_24hr: true,
@@ -514,9 +556,10 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             key: "overnight_out_duty",
             type: "checkbox",
             input: true,
-            customClass: "mb-4",
+            customClass: "mb-4 hidden",
             customConditional: "show = data.request_type === 'Out Duty';",
             defaultValue: false,
+            hidden: true,
           },
           {
             label: "Latest Check-In Time",
@@ -552,6 +595,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "Select shift",
             customClass: "mb-4",
             customConditional: "show = data.request_type === 'Shift Change';",
+            defaultValue: defaultAttendanceData?.shift || "",
             data: {
               values:
                 shiftList?.data?.map((item) => ({
@@ -568,6 +612,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "Select a reason",
             customClass: "mb-4",
             customConditional: "show = data.request_type !== 'Shift Change';",
+            defaultValue: defaultAttendanceData?.custom__request_reason || "",
             data: {
               values:
                 reasonList?.map((item: { reason: string; name: string }) => ({
@@ -583,6 +628,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             input: true,
             placeholder: "Select a location",
             customClass: "mb-4",
+            defaultValue: defaultAttendanceData?.custom_location || "",
             customConditional:
               "show = ['Clockin', 'Attendance Adjustment'].includes(data.request_type || '');",
             validate: {
@@ -616,6 +662,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             placeholder: "Provide additional details...",
             rows: 4,
             customClass: "mb-4",
+            defaultValue: defaultAttendanceData?.explanation || "",
           },
           {
             label: "Attachments",
@@ -632,6 +679,16 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               required: isAttachmentRequired,
             },
             tooltip: "Upload receipts or supporting documents.",
+            defaultValue: defaultAttendanceData?.custom_attachment
+              ? [
+                  {
+                    name: defaultAttendanceData.custom_attachment
+                      .split("/")
+                      .pop(),
+                    url: defaultAttendanceData.custom_attachment,
+                  },
+                ]
+              : [],
           },
         ],
       },
@@ -667,6 +724,20 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
     return d.toLocaleTimeString("en-GB");
   };
 
+  const handleSuccess = (message: string) => {
+    onClose();
+    setTimeout(() => setRefetchAttendance(true), 2000);
+    toast.success(message);
+  };
+
+  const handleError = (error: CustomError) => {
+    const errorMessage =
+      error?.response?.data?.exception?.split(":").slice(1).join(":").trim() ||
+      "Something went wrong!!";
+    const cleanString = DOMPurify.sanitize(errorMessage || "");
+    toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
+    console.error(error);
+  };
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     const baseBody = {
       custom_request_type: submission.data.request_type,
@@ -751,27 +822,31 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
       requestBody.custom_attachment = submission.data?.attachments?.[0]?.url;
     }
 
-    mutation.mutate(requestBody as Record<string, unknown>, {
-      onSuccess: () => {
-        onClose();
-        setTimeout(() => {
-          setRefetchAttendance(true);
-        }, 2000);
-        toast.success("Added Attendance Request successfully!");
-      },
-      onError: (error: CustomError) => {
-        const errorMessage =
-          error?.response?.data?.exception
-            ?.split(":")
-            .slice(1)
-            .join(":")
-            .trim() || "Something went wrong!!";
-        const cleanString = DOMPurify.sanitize(errorMessage || "");
-        toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
-        console.error(error);
-      },
-    });
+    if (forActionType && forActionType === "edit" && defaultAttendanceData) {
+      updateAttendanceReuqest(
+        {
+          doctype: "Attendance Request",
+          name: defaultAttendanceData.name,
+          data: requestBody as Record<string, unknown>,
+        },
+        {
+          onSuccess: () => {
+            handleSuccess("Updated Attendance Request successfully!");
+          },
+
+          onError: handleError,
+        }
+      );
+    } else {
+      mutation.mutate(requestBody as Record<string, unknown>, {
+        onSuccess: () => {
+          handleSuccess("Added Attendance Request successfully!");
+        },
+        onError: handleError,
+      });
+    }
   };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -786,7 +861,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
-            Create Attendance Request
+            {forActionType === "edit" ? "Edit" : "Create"} Attendance Request
           </h2>
           <button
             onClick={onClose}
