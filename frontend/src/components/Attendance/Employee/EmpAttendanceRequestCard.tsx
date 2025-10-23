@@ -1,4 +1,4 @@
-import { format, parse } from "date-fns";
+import { format, parse , isValid } from "date-fns";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -7,6 +7,9 @@ import Tooltip from "../../shared/Tooltip";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import Button from "../../shared/atoms/Button";
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -17,10 +20,11 @@ const EmpAttendanceRequestCard = ({
   columns?: number;
   type: "actioned" | "pending";
 }) => {
-  const { isDesktop } = useScreenSize();
+  console.log("data in emp card", data, type);
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
-
+  const [edit, setEdit] = useState(false);
+  const { isDesktop } = useScreenSize();
   const handleRevokeClick = () => {
     if (data?.todo_id) {
       revokeEventMutation.mutate(
@@ -55,22 +59,23 @@ const EmpAttendanceRequestCard = ({
       };
     } else {
       return {
-        label: "Rejected",
         statusColor: "bg-red-100 text-red-800",
+        label: "Rejected",
       };
     }
   };
 
   const status = getStatus(data?.reference_document?.custom_status);
-  const formattedFromDate = data?.reference_document?.from_date
-    ? format(new Date(data?.reference_document.from_date), "dd/MM/yyyy")
-    : "N/A";
-  const formattedToDate = data?.reference_document?.to_date
-    ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
-    : "N/A";
-const formattedDueDate = data?.due_date
-  ? format(parse(data.due_date, "dd-MM-yyyy", new Date()), "dd/MM/yyyy")
-  : "N/A";
+
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return isValid(date) ? format(date, "dd/MM/yyyy") : "N/A";
+  };
+
+  const formattedFromDate = formatDate(data?.reference_document?.from_date);
+  const formattedToDate = formatDate(data?.reference_document?.to_date);
+  const formattedDueDate = formatDate(data?.due_date);
   return (
     <>
       {isDesktop ? (
@@ -111,8 +116,8 @@ const formattedDueDate = data?.due_date
               />
             </Tooltip>
           </div>
-          {data?.custom_allow_revoke && type === "pending" ? (
-            <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
+          <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
+            {data?.custom_allow_revoke && type === "pending" ? (
               <Button
                 icon={<RotateCcw className="h-3 w-3" />}
                 variant="contain"
@@ -122,64 +127,81 @@ const formattedDueDate = data?.due_date
               >
                 {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
               </Button>
-            </div>
-          ) : (
-            <></>
-          )}
+            ) : (
+              <></>
+            )}
+            {type == "pending" && data?.can_edit && (
+              <Button
+                onClick={() => {
+                  setEdit(true);
+                }}
+              >
+                Edit
+              </Button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
-          <div className="p-2 w-full ">
-            <div className=" flex items-start justify-between gap-4">
-              <div className="flex gap-1 flex-col">
-                <div className="flex gap-2">
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{data?.username}</span>
-                    <span>{data?.reference_document?.custom_request_type}</span>
-                  </div>
-                  <div>
-                    <Badge
-                      size="sm"
-                      backgroundColor={status?.statusColor}
-                      label={status?.label || ""}
-                    />
-                  </div>
+          <div className=" flex items-start justify-between gap-4 w-full">
+            <div className="flex gap-1 flex-col justify-around w-full">
+              <div className="flex items-center gap-2">
+                <p className="whitespace-nowrap">
+                  {" "}
+                  {data?.reference_document?.custom_request_type}
+                </p>
+                <div className="p-2 w-full ">
+                  <Badge
+                    size="sm"
+                    backgroundColor={status?.statusColor}
+                    label={status?.label || ""}
+                  />
                 </div>
-                <div className="text-sm text-gray-500">
-                  {data?.reference_document?.from_date
-                    ? format(
-                        new Date(data?.reference_document?.from_date),
-                        "dd/MM/yyyy"
-                      )
-                    : "N/A"}
-                  {data?.reference_document?.to_date
-                    ? ` - ${format(
-                        new Date(data?.reference_document?.to_date),
-                        "dd/MM/yyyy"
-                      )}`
-                    : "N/A"}
+                <div className="text-sm text-gray-900 text-start flex gap-2">
+                  {data?.custom_allow_revoke && type === "pending" ? (
+                    <Button
+                      icon={<RotateCcw className="h-3 w-3" />}
+                      variant="contain"
+                      size="sm"
+                      onClick={handleRevokeClick}
+                      disabled={revokeEventMutation.isPending}
+                    >
+                      {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
+                    </Button>
+                  ) : (
+                    <></>
+                  )}
+                  {type == "pending" && data?.can_edit && (
+                    <Button
+                      onClick={() => {
+                        setEdit(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  )}
                 </div>
                 {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
-              <div className="text-sm text-gray-900 text-start flex gap-2">
-                {data?.custom_allow_revoke && type === "pending" ? (
-                  <Button
-                    icon={<RotateCcw className="h-3 w-3" />}
-                    variant="contain"
-                    size="sm"
-                    onClick={handleRevokeClick}
-                    disabled={revokeEventMutation.isPending}
-                  >
-                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                  </Button>
-                ) : (
-                  <></>
-                )}
+              <div className="text-sm text-gray-500">
+                {formattedFromDate}
+                {data?.reference_document?.to_date && formattedToDate !== "N/A"
+                  ? ` - ${formattedToDate}`
+                  : ""}
               </div>
             </div>
           </div>
         </div>
       )}
+      {edit &&
+        createPortal(
+          <AttendanceRequestForm
+            onClose={() => setEdit(false)}
+            defaultAttendanceData={data?.reference_document}
+            forActionType="edit"
+          />,
+          document.body
+        )}
     </>
   );
 };

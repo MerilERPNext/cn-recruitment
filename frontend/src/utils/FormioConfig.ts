@@ -1,21 +1,29 @@
 import { Formio } from "formiojs";
 import { FrappeAPI } from "./frappeAPI";
 
-// Initialize FormIO with proper error handling
-try {
-  Formio.setBaseUrl(window.location?.origin);
-  console.log("FormIO initialized with base URL");
-} catch (error) {
-  console.error("Error initializing FormIO:", error);
-  // Retry once after a short delay
-  setTimeout(() => {
+// Initialize FormIO with proper error handling and retry logic
+if (typeof window !== "undefined") {
+  const initializeFormio = () => {
     try {
-      Formio.setBaseUrl(window.location?.origin);
-      console.log("FormIO initialized (retry) with base URL");
-    } catch (retryError) {
-      console.error("Failed to initialize FormIO on retry:", retryError);
+      const baseUrl = window.location.origin;
+      Formio.setBaseUrl(baseUrl);
+      console.log("FormIO initialized with base URL:", baseUrl);
+      return true;
+    } catch (error) {
+      console.error("Error initializing FormIO:", error);
+      return false;
     }
-  }, 200);
+  };
+
+  // Try initial initialization
+  const initialized = initializeFormio();
+
+  // Retry once if failed
+  if (!initialized) {
+    setTimeout(() => {
+      initializeFormio();
+    }, 200);
+  }
 }
 
 const customProvider = {

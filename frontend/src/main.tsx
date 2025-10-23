@@ -2,9 +2,9 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
-import { FrappeProvider } from "frappe-react-sdk";
 import { BrowserRouter } from "react-router-dom";
 import { installChunkErrorHandler } from "./utils/chunkErrorHandler";
+import QueryProvider from "./providers/QueryProvider";
 
 // Install chunk error handler before anything else
 installChunkErrorHandler();
@@ -15,10 +15,10 @@ link.rel = "stylesheet";
 document.head.append(link);
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <FrappeProvider>
+    <QueryProvider>
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </FrappeProvider>
+    </QueryProvider>
   </React.StrictMode>
 );

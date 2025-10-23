@@ -178,7 +178,7 @@ export const attendanceService = {
     request_type: string
   ): Promise<AttendanceRequestValidations> => {
     try {
-      const response = await FrappeAPI.callMethod(
+      const response = await FrappeAPI.getMethod(
         "cn_leave_shift_managment.api.check_attachment_mandatory",
         {
           employee: empId,
@@ -369,7 +369,7 @@ export const attendanceService = {
     return response.data as Attendance[];
   },
   getUserRoles: async (filters?: FilterCondition[]): Promise<UserRoles> => {
-    const response = await FrappeAPI.callMethod(
+    const response = await FrappeAPI.getMethod(
       "cn_leave_shift_managment.api.get_user_roles",
       {
         fields: ["*"],
@@ -419,11 +419,37 @@ export const attendanceService = {
     }
   },
 
+  updateAttendanceRequest: async (
+    body: Record<string, unknown>
+  ): Promise<boolean> => {
+    try {
+       await FrappeAPI.updateDocument(
+        "Attendance Request",
+        body.name as string,
+        body.data as Record<string, unknown>
+      );
+
+      const response =  await FrappeAPI.callMethod(
+        "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+        {
+          doctype: body.doctype,
+          docname: body.name,
+          data: [body.data],
+        }
+      );
+
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while Updating attendance request in:", error);
+      throw error;
+    }
+  },
+ 
   reqValidationsForAttendanceRequest: async (
     empId: string
   ): Promise<AttendanceRequestValidations> => {
     try {
-      const response = await FrappeAPI.callMethod(
+      const response = await FrappeAPI.getMethod(
         "cn_leave_shift_managment.cn_leave_shift_managment.overrides.attendace_request.get_active_attendance_policy",
         {
           employee: empId,
