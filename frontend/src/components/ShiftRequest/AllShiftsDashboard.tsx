@@ -358,8 +358,7 @@ export default function AllShiftsDashboard() {
                         data={item?.data}
                         onAction={item?.onAction}
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        onClick={(request: any) =>{handleRequestClick(request);}
-                        }
+                        onClick={handleRequestClick}
                         loadingAction={item?.loadingAction}
                       />
                     )}
