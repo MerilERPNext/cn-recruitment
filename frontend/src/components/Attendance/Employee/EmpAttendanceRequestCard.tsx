@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -60,6 +60,7 @@ const EmpAttendanceRequestCard = ({
       };
     }
   };
+
   const status = getStatus(data?.reference_document?.custom_status);
   const formattedFromDate = data?.reference_document?.from_date
     ? format(new Date(data?.reference_document.from_date), "dd/MM/yyyy")
@@ -67,9 +68,9 @@ const EmpAttendanceRequestCard = ({
   const formattedToDate = data?.reference_document?.to_date
     ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
     : "N/A";
-  const formattedDueDate = data?.due_date
-    ? format(new Date(data?.due_date), "dd/MM/yyyy")
-    : "N/A";
+const formattedDueDate = data?.due_date
+  ? format(parse(data.due_date, "dd-MM-yyyy", new Date()), "dd/MM/yyyy")
+  : "N/A";
   return (
     <>
       {isDesktop ? (

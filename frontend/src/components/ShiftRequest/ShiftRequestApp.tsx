@@ -46,6 +46,14 @@ const ShiftRequestApp: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
+    console.log("Location pathname:", location);
+    if(location.pathname === "/webapp/shift-request/all-shifts-dashboard"){
+      const queryParams = new URLSearchParams(location.search);
+        const requestId = queryParams.get("requestId");
+       if(requestId){
+        navigate(`/webapp/shift-request/shift-change-request?requestId=${requestId}`, { replace: true });
+       }
+    }
     if (location.pathname === "/webapp/shift-request") {
       const savedTab = localStorage.getItem("activeTab") as TabName | null;
       const fallback = "My Shift Assignment";

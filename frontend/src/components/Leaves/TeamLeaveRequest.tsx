@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { RequestCard } from "../Attendance/TeamAttendanceDetails/RequestCard";
 import { MyAttendanceRequest } from "../../types/attendance";
 //import { AttendanceDetailView } from "../Attendance/AttendanceDetails";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import ApprovalList from "../shared/ApprovalList";
 import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
 import CardTable from "../shared/CardTable";
@@ -11,10 +11,6 @@ import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import DataListView from "../DataListView";
 import { LeaveDetailView } from "./LeaveDetails";
 
-type LoadingAction = {
-  id: string;
-  action: string;
-};
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -34,9 +30,29 @@ const TeamLeaveRequest = () => {
     setRefetchActionedList(false);
   }, []);
 
-  const [selectedRequest, setSelectedRequest] = useState<
-    (MyAttendanceRequest & { loadingAction?: LoadingAction }) | null
-  >(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const requestId = searchParams.get("requestId");
+
+  const handleRequestClick = useCallback(
+    (request : any) => {
+      if (request?.todo_id) {
+        setSearchParams({ requestId: request.todo_id });
+      }
+    },
+    [setSearchParams]
+  );
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    // Trigger refetch after action
+    setRefetchApprovalList(true);
+  }, [setSearchParams]);
+
 
   return (
     <>
@@ -86,12 +102,7 @@ const TeamLeaveRequest = () => {
                     data={item?.data}
                     onAction={item?.onAction}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick={(request: any) =>
-                      setSelectedRequest({
-                        ...request,
-                        loadingAction: item?.loadingAction,
-                      })
-                    }
+                    onClick={(request: any) =>handleRequestClick(request)}
                     loadingAction={item?.loadingAction}
                   />
                 )}
@@ -135,9 +146,7 @@ const TeamLeaveRequest = () => {
                     return (
                       <RequestCard
                         request={props?.item}
-                        onClick={(request: MyAttendanceRequest) =>
-                          setSelectedRequest(request)
-                        }
+                        onClick={(request: MyAttendanceRequest) => handleRequestClick(request)}
                       />
                     );
                   }}
@@ -158,14 +167,12 @@ const TeamLeaveRequest = () => {
         </div>
       </div>
 
-      {selectedRequest && (
+      {requestId && (
         <LeaveDetailView
+          documentName={requestId}
           label="Leave Application"
-          data={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
-          onAction={() => {
-            setSelectedRequest(null);
-          }}
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
         />
       )}
     </>

@@ -70,7 +70,7 @@ const AllPendingRequests = () => {
                 data={item?.data}
                 onAction={item?.onAction}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) => handleRequestClick(request)}
+                onClick={(request: any) => handleRequestClick(request)} 
                 loadingAction={item?.loadingAction}
               />
             )}

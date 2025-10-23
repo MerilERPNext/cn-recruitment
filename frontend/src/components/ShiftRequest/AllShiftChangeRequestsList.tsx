@@ -1,5 +1,5 @@
 import HeaderBar from "../HeaderBar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import ApprovalList from "../shared/ApprovalList";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
@@ -17,6 +17,29 @@ const AllShiftChangeRequestsList: React.FC = () => {
   const navigate = useNavigate();
 
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const requestId = searchParams.get("requestId");
+
+  const handleRequestClick = useCallback(
+    (request: any) => {
+      if (request?.todo_id) {
+        setSearchParams({ requestId: request.todo_id });
+      }
+    },
+    [setSearchParams]
+  );
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    // Trigger refetch after action
+    setRefetchApprovalList(true);
+  }, [setSearchParams]);
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -68,12 +91,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
                 data={item?.data}
                 onAction={item?.onAction}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) =>
-                  setSelectedRequest({
-                    ...request,
-                    loadingAction: item?.loadingAction,
-                  })
-                }
+                onClick={(request: any) =>handleRequestClick(request)}
                 loadingAction={item?.loadingAction}
               />
             )}
@@ -81,13 +99,11 @@ const AllShiftChangeRequestsList: React.FC = () => {
         </CardTable>
       </div>
 
-      {selectedRequest && (
+      {requestId && (
         <ShiftDetailView
-          data={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
-          onAction={() => {
-            setSelectedRequest(null);
-          }}
+          documentName={requestId}
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
         />
       )}
     </div>

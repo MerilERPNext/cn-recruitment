@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   LoadingAction,
   MyPlannedAttendanceRequest,
 } from "../../../types/attendance";
 import LayoutHeader from "../../shared/LayoutHeader";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import ApprovalList from "../../shared/ApprovalList";
 import CardTable from "../../shared/CardTable";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -15,10 +15,36 @@ const AllOvertimePendingRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState<
     (MyPlannedAttendanceRequest & { loadingAction?: LoadingAction }) | null
   >(null);
+
+
   const [refetch, setRefetch] = useState(false);
   const { refetchAttendance } = useGlobalStore();
 
   const navigate = useNavigate();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestId = searchParams.get("requestId");
+
+  const handleRequestClick = useCallback(
+  (request: any) => {
+    console.log("Request clicked:", request);
+    if (request?.todo_id) {
+      setSearchParams({ requestId: request.todo_id });
+    }
+  },
+  [setSearchParams]
+);
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+    const handleActionComplete = useCallback(() => {
+      setSearchParams({});
+      // Trigger refetch after action
+      setRefetch(true);
+  }, [setSearchParams]);
+
   return (
     <div>
       <LayoutHeader
@@ -52,22 +78,18 @@ const AllOvertimePendingRequests = () => {
                 onToggleSelect={item?.onToggleSelect}
                 data={item?.data}
                 onAction={item?.onAction}
-                onClick={(request: MyPlannedAttendanceRequest) =>
-                  setSelectedRequest(request)
-                }
+                onClick={(request: MyPlannedAttendanceRequest) =>handleRequestClick(request)}
                 loadingAction={item?.loadingAction}
               />
             )}
           />
         </CardTable>
       </div>
-      {selectedRequest && (
+      {requestId && (
         <MyOvertimeDetails
-          data={selectedRequest as MyPlannedAttendanceRequest}
-          onClose={() => setSelectedRequest(null)}
-          onAction={() => {
-            setSelectedRequest(null);
-          }}
+          documentName={requestId}
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
         />
       )}
     </div>

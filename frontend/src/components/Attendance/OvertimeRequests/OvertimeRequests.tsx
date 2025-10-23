@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import CardTable from "../../shared/CardTable";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import {
   LoadingAction,
   MyPlannedAttendanceRequest,
@@ -39,6 +39,33 @@ const OvertimeRequests = () => {
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
   }, []);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestId = searchParams.get("requestId");
+
+  const handleRequestClick = useCallback(
+  (request: any) => {
+    console.log("Request clicked:", request);
+    if (request?.todo_id) {
+      setSearchParams({ requestId: request.todo_id });
+      setMySelectedRequest(request);
+    }
+  },
+  [setSearchParams]
+);
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+    const handleActionComplete = useCallback(() => {
+      setSearchParams({});
+      // Trigger refetch after action
+      setRefetchApprovalList(true);
+  }, [setSearchParams]);
+
+
+
 
   const [mySelectedRequest, setMySelectedRequest] = useState<
     (MyPlannedAttendanceRequest & { loadingAction?: LoadingAction }) | null
@@ -91,9 +118,7 @@ const OvertimeRequests = () => {
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}
                     onAction={item?.onAction}
-                    onClick={(request: MyPlannedAttendanceRequest) =>
-                      setMySelectedRequest(request)
-                    }
+                    onClick={(request: MyPlannedAttendanceRequest) =>  handleRequestClick(request) }
                     loadingAction={item?.loadingAction}
                   />
                 )}
@@ -147,9 +172,7 @@ const OvertimeRequests = () => {
                     return (
                       <MyRequestCard
                         request={props?.item}
-                        onClick={(request: MyPlannedAttendanceRequest) =>
-                          setMySelectedRequest(request)
-                        }
+                        onClick={(request: MyPlannedAttendanceRequest) => handleRequestClick(request)}
                       />
                     );
                   }}
@@ -170,13 +193,11 @@ const OvertimeRequests = () => {
         </div>
       </div>
 
-      {mySelectedRequest && (
+      {requestId && (
         <MyOvertimeDetails
-          data={mySelectedRequest as MyPlannedAttendanceRequest}
-          onClose={() => setMySelectedRequest(null)}
-          onAction={() => {
-            setMySelectedRequest(null);
-          }}
+          documentName={requestId}
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
         />
       )}
     </div>

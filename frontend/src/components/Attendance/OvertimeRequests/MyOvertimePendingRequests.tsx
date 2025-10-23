@@ -1,25 +1,21 @@
 import DataListView from "../../DataListView";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import {
-  LoadingAction,
   MyPlannedAttendanceRequest,
 } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import CardTable from "../../shared/CardTable";
 import LayoutHeader from "../../shared/LayoutHeader";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MyRequestCard } from "./MyRequestCard";
 
 const MyOvertimePendingRequests = () => {
   const navigate = useNavigate();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
-  const [selectedRequest, setSelectedRequest] = useState<
-    (MyPlannedAttendanceRequest & { loadingAction?: LoadingAction }) | null
-  >(null);
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
@@ -32,6 +28,30 @@ const MyOvertimePendingRequests = () => {
     }),
     [currentEmployee]
   );
+
+   const [searchParams, setSearchParams] = useSearchParams();
+  const requestId = searchParams.get("requestId");
+
+  const handleRequestClick = useCallback(
+  (request: any) => {
+    console.log("Request clicked:", request);
+    if (request?.todo_id) {
+      setSearchParams({ requestId: request.todo_id });
+    }
+  },
+  [setSearchParams]
+);
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+    const handleActionComplete = useCallback(() => {
+      setSearchParams({});
+      // Trigger refetch after action
+      setRefetchAttendance(true);
+  }, [setSearchParams]);
+
   return (
     <div>
       <LayoutHeader
@@ -64,9 +84,7 @@ const MyOvertimePendingRequests = () => {
             return (
               <MyRequestCard
                 request={props?.item}
-                onClick={(request: MyPlannedAttendanceRequest) =>
-                  setSelectedRequest(request)
-                }
+                onClick={(request: MyPlannedAttendanceRequest) =>handleRequestClick(request)}
               />
             );
           }}
@@ -86,12 +104,13 @@ const MyOvertimePendingRequests = () => {
           loadMorePagination={true}
           showPagination={false}
         />
-        {selectedRequest && (
+        {requestId && (
           <MyOvertimeDetails
             label="Planned Overtime Request"
-            data={selectedRequest as MyPlannedAttendanceRequest}
-            onClose={() => setSelectedRequest(null)}
-          />
+              documentName={requestId}
+              onClose={handleCloseModal}
+              onAction={handleActionComplete}
+         />
         )}
       </CardTable>
     </div>
