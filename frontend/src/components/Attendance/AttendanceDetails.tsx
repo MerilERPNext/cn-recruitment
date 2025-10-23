@@ -263,7 +263,6 @@ export function AttendanceDetailView({
 
   // Only render if we have documentName or data
   if (!shouldRender) return null;
-  console.log(data);
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -278,9 +277,7 @@ export function AttendanceDetailView({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
-            <h2 className="text-lg font-semibold text-gray-800">
-              {label} -<span className="font=md"> {data?.todo_id}</span>
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
           </div>
           <button
             onClick={onClose}
