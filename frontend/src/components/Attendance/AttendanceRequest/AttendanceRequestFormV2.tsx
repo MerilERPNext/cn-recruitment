@@ -1,15 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
-import { useCreateNewAttendanceRequest } from "../../../hooks/useAttendance";
+import {
+  useCreateNewAttendanceRequest,
+  useGetUserRoles,
+  useReqValidationsForAttendanceRequest,
+} from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import {
+  useCurrentEmployeeAllDetails,
+  useEmployeeReportees,
+} from "../../../hooks/useEmployee";
 import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import DOMPurify from "dompurify";
-import { useGetUserRoles } from "../../../hooks/useAttendance";
 
 // Import the JSON schema
 import defaultFormSchema from "./attendanceRequestFormSchema.json";
@@ -34,22 +40,73 @@ interface AttendanceFormData {
   currentUserId?: string;
 }
 
+interface FormioComponent {
+  setValue: (
+    value: string | boolean,
+    options?: { noUpdateEvent?: boolean }
+  ) => void;
+  redraw: () => void;
+}
+
 interface FormioFormInstance {
   submit: () => void;
   getValue: () => { data: AttendanceFormData };
   setValue: (value: { data: AttendanceFormData }) => void;
   redraw: () => void;
-  getComponent: (key: string) => {
-    setValue: (value: any, options?: { noUpdateEvent?: boolean }) => void;
-    redraw: () => void;
-  } | null;
+  getComponent: (key: string) => FormioComponent | null;
+  element?: HTMLElement;
+}
+
+interface FormSchema {
+  title: string;
+  name: string;
+  path: string;
+  display: string;
+  components: SchemaComponent[];
+}
+
+interface SchemaComponent {
+  type: string;
+  key: string;
+  label?: string;
+  components?: SchemaComponent[];
+  data?: {
+    values?: RequestTypeOption[];
+    url?: string;
+  };
+  dataSrc?: string;
+  valueProperty?: string;
+  selectValues?: string;
+  refreshOn?: string;
+}
+
+interface RequestTypeOption {
+  label: string;
+  value: string;
+}
+
+interface FormChangeSubmission {
+  changed?: {
+    component?: {
+      key?: string;
+    };
+  };
+  data?: AttendanceFormData;
+}
+
+// Extend HTMLInputElement to include flatpickr properties
+interface FlatpickrInput extends HTMLInputElement {
+  _flatpickr?: {
+    close: () => void;
+  };
+  __closeOtherFPHandler?: () => void;
 }
 
 interface AttendanceRequestFormV2Props {
   onClose: () => void;
   selectedDate?: Date | string;
-  schema?: any; // Optional: Backend can provide custom schema
-  schemaUrl?: string; // Optional: URL to fetch schema from backend
+  schema?: FormSchema;
+  schemaUrl?: string;
 }
 
 const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
@@ -62,8 +119,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
 
   const [isForOthers, setIsForOthers] = useState(false);
-  const [formSchema, setFormSchema] = useState<any>(
-    propSchema || defaultFormSchema
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [formSchema, setFormSchema] = useState<FormSchema>(
+    (propSchema || defaultFormSchema) as FormSchema
   );
   const [isSchemaLoading, setIsSchemaLoading] = useState(false);
 
@@ -72,6 +130,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     currentUser?.name as string
   );
   const { data: userRoles } = useGetUserRoles();
+  const { data: employeeReporteeList } = useEmployeeReportees();
+  const reqValidationmutation = useReqValidationsForAttendanceRequest(
+    currentEmployee?.employee as string
+  );
 
   const mutation = useCreateNewAttendanceRequest();
 
@@ -100,6 +162,61 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     }
   }, [propSchema]);
 
+  // Filter request types based on API conditions and remove dataSrc from company field
+  useEffect(() => {
+    if (reqValidationmutation?.data) {
+      const baseSchema = propSchema || defaultFormSchema;
+      const filteredSchema = JSON.parse(
+        JSON.stringify(baseSchema)
+      ) as FormSchema; // Deep clone
+
+      // Find the request_type field in the schema
+      const panel = filteredSchema.components?.[0];
+      if (panel?.components) {
+        const requestTypeField = panel.components.find(
+          (comp: SchemaComponent) => comp.key === "request_type"
+        );
+
+        if (requestTypeField?.data?.values) {
+          // Filter options based on API conditions
+          const filteredValues = requestTypeField.data.values.filter(
+            (option: RequestTypeOption) => {
+              switch (option.value) {
+                case "Clockin":
+                  return reqValidationmutation.data.clockin_requests;
+                case "Out Duty":
+                  return reqValidationmutation.data.out_duty_requests;
+                case "Short Attendance Request":
+                  return reqValidationmutation.data.short_leave_requests;
+                case "Attendance Adjustment":
+                  return reqValidationmutation.data
+                    .attendance_adjustment_requests;
+                default:
+                  return false;
+              }
+            }
+          );
+
+          requestTypeField.data.values = filteredValues;
+        }
+
+        // Remove dataSrc from company field to allow manual control
+        const companyField = panel.components.find(
+          (comp: SchemaComponent) => comp.key === "company"
+        );
+        if (companyField && companyField.dataSrc) {
+          delete companyField.dataSrc;
+          delete companyField.data;
+          delete companyField.valueProperty;
+          delete companyField.selectValues;
+          delete companyField.refreshOn;
+        }
+      }
+
+      setFormSchema(filteredSchema);
+    }
+  }, [reqValidationmutation?.data, propSchema]);
+
   // Update hidden fields when isForOthers or currentEmployee changes
   useEffect(() => {
     if (formAddressInstance.current) {
@@ -124,10 +241,37 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         });
       }
 
+      // Reset employee selection when switching to "For Others"
+      if (isForOthers) {
+        setSelectedEmployee("");
+      }
+
       // Force redraw to update conditional fields
       formAddressInstance.current?.redraw();
     }
   }, [isForOthers, currentEmployee]);
+
+  // Update company field when employee changes (matching old form behavior)
+  useEffect(() => {
+    if (formAddressInstance.current && employeeReporteeList) {
+      let company = "Not Assigned";
+      if (isForOthers && selectedEmployee) {
+        const selectedEmp = employeeReporteeList.find(
+          (emp) => emp.name === selectedEmployee
+        );
+        company = selectedEmp?.company || "Not Assigned";
+      } else if (currentEmployee?.company) {
+        company = currentEmployee.company;
+      }
+
+      const companyComponent =
+        formAddressInstance.current.getComponent("company");
+      if (companyComponent) {
+        // Use setValue without noUpdateEvent to trigger UI update
+        companyComponent.setValue(company);
+      }
+    }
+  }, [selectedEmployee, isForOthers, currentEmployee, employeeReporteeList]);
 
   const formatTime = (date: Date | string | undefined): string | undefined => {
     if (!date) return undefined;
@@ -142,9 +286,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     const baseBody = {
       custom_request_type: submission.data.request_type,
-      company: isForOthers
-        ? submission.data.company
-        : currentEmployee?.company,
+      company: isForOthers ? submission.data.company : currentEmployee?.company,
       employee: isForOthers
         ? submission.data.employee
         : currentEmployee?.employee,
@@ -157,7 +299,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       }),
     };
 
-    let requestBody: any = { ...baseBody };
+    let requestBody: Record<string, unknown> = { ...baseBody };
 
     switch (submission.data.request_type) {
       case "Clockin":
@@ -248,7 +390,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   };
 
   // Handle form change
-  const handleFormChange = (submission: any) => {
+  const handleFormChange = (submission: FormChangeSubmission) => {
+    // Track employee selection
+    if (submission?.changed?.component?.key === "employee") {
+      const employeeId = submission?.data?.employee || "";
+      setSelectedEmployee(employeeId);
+    }
+
     // Auto-sync from_date to to_date for certain request types
     if (submission?.changed?.component?.key === "from_date") {
       const formInstance = formAddressInstance.current;
@@ -256,7 +404,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         const fromDateValue = submission?.data?.from_date;
         const toDateComponent = formInstance.getComponent("to_date");
         if (toDateComponent && fromDateValue) {
-          toDateComponent.setValue(fromDateValue, {
+          toDateComponent.setValue(String(fromDateValue), {
             noUpdateEvent: true,
           });
           toDateComponent.redraw();
@@ -340,27 +488,44 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               noAlerts: true,
             }}
             onChange={handleFormChange}
-            onFormReady={(instance: any) => {
+            onFormReady={(instance: FormioFormInstance) => {
               formAddressInstance.current = instance;
+
+              // Disable dataSrc behavior on company field
+              const companyComponent = instance.getComponent("company");
+              if (companyComponent) {
+                // Override the component's data source to prevent auto-fetching
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const comp = companyComponent as any;
+                if (comp.component) {
+                  delete comp.component.dataSrc;
+                  delete comp.component.data;
+                  delete comp.component.valueProperty;
+                  delete comp.component.selectValues;
+                  delete comp.component.refreshOn;
+                }
+              }
 
               try {
                 const rootEl: HTMLElement | Document =
                   (instance && instance.element) || document;
 
-                const flatInputs: NodeListOf<HTMLInputElement> = (
+                const flatInputs: NodeListOf<FlatpickrInput> = (
                   rootEl as HTMLElement
                 ).querySelectorAll
-                  ? (rootEl as HTMLElement).querySelectorAll(
+                  ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
                       "input.flatpickr-input"
                     )
-                  : document.querySelectorAll("input.flatpickr-input");
+                  : document.querySelectorAll<FlatpickrInput>(
+                      "input.flatpickr-input"
+                    );
 
                 flatInputs.forEach((input) => {
                   const handler = () => {
                     flatInputs.forEach((other) => {
-                      if (other !== input && (other as any)._flatpickr) {
+                      if (other !== input && other._flatpickr) {
                         try {
-                          (other as any)._flatpickr.close();
+                          other._flatpickr.close();
                         } catch (err) {
                           console.error("flatpickr close failed", err);
                         }
@@ -369,9 +534,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                   };
 
                   // avoid adding duplicate listeners
-                  if (!(input as any).__closeOtherFPHandler) {
+                  if (!input.__closeOtherFPHandler) {
                     input.addEventListener("focus", handler);
-                    (input as any).__closeOtherFPHandler = handler;
+                    input.__closeOtherFPHandler = handler;
                   }
                 });
               } catch (err) {

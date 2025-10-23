@@ -43,7 +43,7 @@
           "customConditional": "show = data.isForOthers === true;",
           "dataSrc": "url",
           "data": {
-            "url": "/api/method/hrms.hr.doctype.employee.employee.get_employee_reportees"
+            "url": "/api/method/cn_leave_shift_managment.api.get_reportees"
           },
           "valueProperty": "name",
           "template": "<span>{{ item.employee_name }} ({{ item.name }})</span>",
@@ -61,12 +61,10 @@
           "customClass": "mb-4",
           "disabled": true,
           "customConditional": "show = data.isForOthers === true;",
-          "calculateValue": "value = 'Loading...'",
+          "defaultValue": "Not Assigned",
           "clearOnHide": false,
-          "dataSrc": "url",
-          "data": {
-            "url": "/api/method/hrms.hr.doctype.employee.employee.get_employee?employee={{data.employee}}"
-          }
+          "calculateValue": "value = data.employee ? 'Loading...' : 'Not Assigned'",
+          "allowCalculateOverride": true
         },
         {
           "label": "Request Type",
@@ -78,92 +76,26 @@
           "validate": {
             "required": true
           },
-          "dataSrc": "url",
           "data": {
-            "url": "api/method/cn_leave_shift_managment.cn_leave_shift_managment.overrides.attendace_request.get_active_attendance_policy?employee=HR-EMP-00001"
-          },
-          "valueProperty": "value",
-          "template": "<span>{{ item.label }}</span>",
-          "selectValues": "message.request_types",
-          "refreshOn": "employee",
-          "clearOnRefresh": false,
-          "lazyLoad": false
-        },
-        {
-          "label": "Current Shift",
-          "key": "current_shift",
-          "type": "textfield",
-          "input": true,
-          "placeholder": "Loading shift information...",
-          "customClass": "mb-4",
-          "disabled": true,
-          "defaultValue": "Not Assigned",
-          "clearOnHide": false,
-          "calculateValue": "value = data.shift_name || 'Not Assigned'"
-        },
-        {
-          "type": "columns",
-          "key": "shiftColumns",
-          "columns": [
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "textfield",
-                  "key": "shift_start",
-                  "label": "Shift Start",
-                  "placeholder": "Loading shift information...",
-                  "input": true,
-                  "defaultValue": "Not Assigned",
-                  "customClass": "mb-4",
-                  "disabled": true,
-                  "clearOnHide": false,
-                  "calculateValue": "value = data.shift_start_time || 'Not Assigned'"
-                }
-              ]
-            },
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "textfield",
-                  "key": "shift_end",
-                  "label": "Shift End",
-                  "placeholder": "Loading shift information...",
-                  "input": true,
-                  "defaultValue": "Not Assigned",
-                  "customClass": "mb-4",
-                  "disabled": true,
-                  "clearOnHide": false,
-                  "calculateValue": "value = data.shift_end_time || 'Not Assigned'"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "hidden",
-          "key": "shift_name",
-          "input": true,
-          "dataSrc": "url",
-          "data": {
-            "url": "/api/method/hrms.hr.doctype.employee_shift.employee_shift.get_employee_shift?user_id={{data.currentUserId}}&employee={{data.employee}}"
-          },
-          "valueProperty": "shift",
-          "selectValues": "message",
-          "refreshOn": "employee"
-        },
-        {
-          "type": "hidden",
-          "key": "shift_start_time",
-          "input": true,
-          "calculateValue": "value = data.shift_name ? 'Loading...' : 'Not Assigned'"
-        },
-        {
-          "type": "hidden",
-          "key": "shift_end_time",
-          "input": true,
-          "calculateValue": "value = data.shift_name ? 'Loading...' : 'Not Assigned'"
+            "values": [
+              {
+                "label": "Clockin Request",
+                "value": "Clockin"
+              },
+              {
+                "label": "Out Duty Request",
+                "value": "Out Duty"
+              },
+              {
+                "label": "Short Attendance Request",
+                "value": "Short Attendance Request"
+              },
+              {
+                "label": "Attendance Adjustment",
+                "value": "Attendance Adjustment"
+              }
+            ]
+          }
         },
         {
           "label": "From Date",
@@ -322,11 +254,11 @@
           "customConditional": "show = data.request_type !== 'Shift Change';",
           "dataSrc": "url",
           "data": {
-            "url": "/api/method/hrms.hr.doctype.attendance_reason.attendance_reason.get_reasons?request_type={{data.request_type}}"
+            "url": "/api/resource/Reason?fields=[\"name\",\"reason\",\"reason_type\"]&filters=[[\"reference_doctype\",\"=\",\"Attendance Request\"]]"
           },
           "valueProperty": "name",
           "template": "<span>{{ item.reason }}</span>",
-          "selectValues": "message",
+          "selectValues": "data",
           "refreshOn": "request_type",
           "clearOnRefresh": true,
           "lazyLoad": false
