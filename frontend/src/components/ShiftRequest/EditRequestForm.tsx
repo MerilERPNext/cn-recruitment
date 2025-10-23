@@ -4,7 +4,11 @@ import { Form } from "@tsed/react-formio";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
-import { useShiftTypes, useCreateShiftRequest, useShiftRequestById, useUpdateShiftRequest } from "../../hooks/useShift";
+import {
+  useShiftTypes,
+  useShiftRequestById,
+  useUpdateShiftRequest,
+} from "../../hooks/useShift";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import HeaderBar from "../HeaderBar";
 
@@ -20,12 +24,12 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
 
   const { id } = useParams<{ id: string }>();
 
-  
-  const { data : ShiftRequest , isLoading : loadingShiftRequest , error : ShiftRequestError } = useShiftRequestById(id as string);
+  const { data: ShiftRequest, isLoading: loadingShiftRequest } =
+    useShiftRequestById(id as string);
 
-  useEffect(()=>{
+  useEffect(() => {
     console.log("Shift Request Data in Edit Form:", ShiftRequest);
-  },[ShiftRequest]);
+  }, [ShiftRequest]);
   const navigate = useNavigate();
   const formRef = useRef<any>(null);
 
@@ -70,19 +74,21 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
         shift_request_approver: employeeDetails.shift_request_approver,
       };
 
-
-      updateShiftRequest({ doctype: "", name: id as string, data : payload}, {
-        onSuccess: () => {
-          onClose?.();
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 1000);
-          navigate("/webapp/shift-request/shift-list");
-        },
-        onError: () => {
-          console.error("Failed to update shift request.");
-        },
-      });
+      updateShiftRequest(
+        { doctype: "", name: id as string, data: payload },
+        {
+          onSuccess: () => {
+            onClose?.();
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 1000);
+            navigate("/webapp/shift-request/shift-list");
+          },
+          onError: () => {
+            console.error("Failed to update shift request.");
+          },
+        }
+      );
     } catch (error: any) {
       console.error("Form updating failed:", error);
 
@@ -94,7 +100,7 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
     }
   };
 
-  if (isLoading || loadingShiftRequest ) return <div>Loading shift…</div>;
+  if (isLoading || loadingShiftRequest) return <div>Loading shift…</div>;
   if (error)
     return (
       <div className="text-red-600">Error loading shift: {error.message}</div>
@@ -121,7 +127,8 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
                 format: "dd/MM/yyyy",
                 enableDate: true,
                 enableTime: false,
-                defaultValue: ShiftRequest?.from_date || new Date().toISOString(),
+                defaultValue:
+                  ShiftRequest?.from_date || new Date().toISOString(),
                 validate: { required: true },
               },
             ],
