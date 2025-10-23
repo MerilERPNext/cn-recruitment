@@ -30,13 +30,6 @@ export function AttendanceDetailView({
     error,
   } = useGetToDoWithReferenceDoc(documentName || "");
 
-  console.log("AttendanceDetailView rendered:", {
-    documentName,
-    isLoading,
-    hasError: !!error,
-    hasFetchedData: !!fetchedData,
-    hasPropData: !!propData,
-  });
 
   // Use fetched data if documentName is provided, otherwise use prop data
   const data = documentName ? fetchedData : propData;

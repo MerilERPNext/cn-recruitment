@@ -46,7 +46,7 @@ const ShiftRequestApp: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    console.log("Location pathname:", location);
+    // for handling copy/pasting link when model is open with requestId as query param from largescreen to small screen
     if(location.pathname === "/webapp/shift-request/all-shifts-dashboard"){
       const queryParams = new URLSearchParams(location.search);
         const requestId = queryParams.get("requestId");

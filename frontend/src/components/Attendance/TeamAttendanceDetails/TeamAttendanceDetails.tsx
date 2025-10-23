@@ -24,8 +24,6 @@ const TeamAttendanceDetails = () => {
 
   const requestId = searchParams.get("requestId");
 
-  console.log("TeamAttendanceDetails - requestId from URL:", requestId);
-
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
     // Also trigger actioned list refetch when approval list completes
