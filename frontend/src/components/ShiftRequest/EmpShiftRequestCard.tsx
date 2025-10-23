@@ -7,14 +7,28 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { MyShiftRequest } from "../../types/shift";
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import ShiftRequestFormModal from "./ShiftRequestFormModal";
+import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
+import { useNavigate } from "react-router-dom";
+import { useShiftTypes } from "../../hooks/useShift";
 
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
+  
+  const navigate = useNavigate();
+  const [edit, setEdit] = useState(false);
+  const {
+      data: shiftTypes,
+      isLoading: shiftTypesLoading,
+      error: shiftTypesError,
+    } = useShiftTypes();
 
   const handleEditClick = () => {
-    window.location.href = `/app/shift-request/${data.reference_name}`;
+      navigate(`/webapp/shift-request/shift-change-form/${data?.reference_document?.name}`);
   };
 
   const handleRevokeClick = () => {
@@ -68,6 +82,21 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const formattedToDate = data?.reference_document?.to_date
     ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
     : "";
+
+ const getShiftTimeline = (shiftTypeName: string) => {
+  if (shiftTypes && !shiftTypesLoading && !shiftTypesError) {
+    const shiftType = shiftTypes.data.find(
+      (type) => type.name === shiftTypeName
+    );
+
+    if (shiftType) {
+      return `${shiftType.start_time || "--"} - ${shiftType.end_time || "--"}`;
+    }
+  }
+
+  return "";
+};
+
   return (
     <>
       {isDesktop ? (
@@ -75,8 +104,9 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           className={`grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
         >
           {/* Request Type */}
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.reference_document?.shift_type}
+          <div className="text-sm font-medium text-gray-700 text-start truncate flex flex-col">
+            <div>{data?.reference_document?.shift_type}</div>
+            <div className="text-xs">{getShiftTimeline(data?.reference_document?.shift_type || "")}</div>
           </div>
 
           {/* From Date */}
@@ -101,7 +131,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               />
             </Tooltip>
           </div>
-          {data?.custom_allow_revoke &&
+          {data?.custom_allow_revoke && data?.can_edit && 
           data?.reference_document?.status === "Draft" ? (
             <div className="text-sm text-gray-900 text-start flex gap-5 items-center">
               {/* ✨ ADD THE EDIT BUTTON HERE */}
@@ -109,9 +139,9 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 icon={<Pencil className="h-3 w-3" />}
                 variant="outline"
                 size="sm"
-                onClick={handleEditClick}
+                onClick={()=> setEdit(true)}
               >
-                Edit
+                Edit 
               </Button>
               {/* REVOKE BUTTON */}
               <Button
@@ -176,9 +206,9 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               </div>
             </div>
           </div>
-
+   
           {/* Action Buttons */}
-          {data?.custom_allow_revoke &&
+          {data?.custom_allow_revoke && data?.can_edit &&
           data?.reference_document?.status === "Draft" ? (
             <div className="flex flex-wrap justify-start gap-2 mt-4">
               <Button
@@ -200,8 +230,24 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               </Button>
             </div>
           ) : null}
+
         </div>
       )}
+        {edit && isDesktop &&
+            createPortal(    
+               <ExpenseFormModal
+                    isOpen={edit}
+                    onClose={() => setEdit(false)}
+                    title="Request Shift Change"
+                  >
+                <ShiftRequestFormModal
+                  onClose={() => setEdit(false)}
+                  defaultShiftRequestData={data?.reference_document}
+                  forActionType="edit"
+              />
+        </ExpenseFormModal>,
+          document.body
+        )}
     </>
   );
 };

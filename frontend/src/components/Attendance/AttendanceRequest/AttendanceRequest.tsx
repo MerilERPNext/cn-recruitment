@@ -177,7 +177,7 @@ const AttendanceRequest = ({
                       return (
                         <EmpAttendanceRequestCard
                           type="actioned"
-                          columns={6}
+                          columns={5}
                           data={{
                             ...props?.item,
                           }}

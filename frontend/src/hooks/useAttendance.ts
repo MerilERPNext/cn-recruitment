@@ -296,6 +296,24 @@ export function useCreateNewAttendanceRequest() {
     },
   });
 }
+
+export function useUpdateAttendanceRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.updateAttendanceRequest(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
+
+
 export function useReqValidationsForAttendanceRequest(empId: string) {
   return useQuery({
     queryKey: ["attendance-request-validations", empId],
