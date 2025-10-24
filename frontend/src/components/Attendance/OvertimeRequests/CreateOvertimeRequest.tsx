@@ -13,7 +13,7 @@ import { format, isValid, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-
+import overtimeRequestSchema from "./overtimeRequestSchema.json";
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
   onCancel?: () => void;
@@ -30,78 +30,6 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
   const formInstance = useRef<any>(null);
   const { setRefetchAttendance } = useGlobalStore();
-
-  const overtimeForm = {
-    display: "form",
-    components: [
-      {
-        type: "datagrid",
-        key: "overtime_details",
-        label: "Overtime Requests",
-        addAnother: "New Row",
-        customClass: "border-0",
-        components: [
-          {
-            type: "datetime",
-            key: "start_date",
-            label: "Start Date *",
-            format: "dd-MM-yyyy",
-            enableTime: false,
-            validate: { required: true },
-
-            input: true,
-          },
-          {
-            type: "datetime",
-            key: "start_time",
-            label: "Start Time *",
-            enableDate: false,
-            enableTime: true,
-            input: true,
-            widget: { type: "calendar" },
-            validate: { required: true },
-          },
-          {
-            type: "datetime",
-            key: "end_date",
-            label: "End Date *",
-            format: "dd-MM-yyyy",
-            enableTime: false,
-            validate: { required: true },
-            input: true,
-          },
-          {
-            type: "datetime",
-            key: "end_time",
-            label: "End Time *",
-            enableDate: false,
-            enableTime: true,
-            input: true,
-            widget: { type: "calendar" },
-            validate: { required: true },
-          },
-
-          {
-            type: "textfield",
-            key: "message",
-            label: "Message *",
-            validate: { required: true },
-            input: true,
-          },
-        ],
-      },
-      plannedOvertimeRequestAttachments
-        ? {
-            type: "file",
-            key: "attachment",
-            label: "Attachment",
-            storage: "customBase64",
-            input: true,
-            validate: { required: true },
-          }
-        : null,
-    ],
-  };
 
   const handleSubmit = async () => {
     try {
@@ -206,7 +134,12 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         {/* Form.io Form */}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           <Form
-            form={overtimeForm}
+            form={overtimeRequestSchema}
+            submission={{
+              data: {
+                show_attachment: !!plannedOvertimeRequestAttachments,
+              },
+            }}
             onFormReady={(instance: any) => {
               formInstance.current = instance;
             }}
