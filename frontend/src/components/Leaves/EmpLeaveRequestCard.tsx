@@ -114,7 +114,9 @@ const EmpLeaveRequestCard = ({
   const ActionMenu = () => (
     <div
       ref={menuRef}
-      className="absolute right-0  md:-top-15 w-32 bg-white border border-gray-200 rounded-md shadow-md z-50"
+      className={`absolute right-0  ${
+        !allowRevoke && !allowEdit && allowReplace ? "md:-top-10" : "md:-top-15"
+      }  w-32 bg-white border border-gray-200 rounded-md shadow-md z-50`}
     >
       {data?.custom_allow_revoke &&
         data?.reference_document?.status === "Open" && (
