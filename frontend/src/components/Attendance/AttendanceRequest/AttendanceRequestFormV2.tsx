@@ -5,6 +5,7 @@ import {
   useCreateNewAttendanceRequest,
   useGetUserRoles,
   useReqValidationsForAttendanceRequest,
+  useUpdateAttendanceRequest,
 } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import {
@@ -16,6 +17,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import DOMPurify from "dompurify";
+import { AttendanceRequest } from "../../../types/attendance";
 
 // Import the JSON schema
 import defaultFormSchema from "./attendanceRequestFormSchema.json";
@@ -107,6 +109,8 @@ interface AttendanceRequestFormV2Props {
   selectedDate?: Date | string;
   schema?: FormSchema;
   schemaUrl?: string;
+  defaultAttendanceData?: AttendanceRequest | null;
+  forActionType?: "create" | "edit";
 }
 
 const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
@@ -114,6 +118,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   selectedDate = new Date(),
   schema: propSchema,
   schemaUrl,
+  defaultAttendanceData,
+  forActionType = "create",
 }) => {
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
@@ -136,6 +142,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   );
 
   const mutation = useCreateNewAttendanceRequest();
+  const { mutate: updateAttendanceRequest } = useUpdateAttendanceRequest();
 
   // Fetch schema from backend if schemaUrl is provided
   useEffect(() => {
@@ -280,6 +287,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     }
   }, [selectedEmployee, isForOthers, currentEmployee, employeeReporteeList]);
 
+  const normalizeTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+    try {
+      // Parse and format to HH:mm:ss
+      const [h, m, s] = timeStr.split(":");
+      const seconds = s ? s.split(".")[0].padStart(2, "0") : "00";
+      return `${h.padStart(2, "0")}:${m.padStart(2, "0")}:${seconds}`;
+    } catch {
+      return null;
+    }
+  };
+
   const formatTime = (date: Date | string | undefined): string | undefined => {
     if (!date) return undefined;
     const d = new Date(date);
@@ -374,26 +393,43 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       requestBody.custom_attachment = submission.data?.attachments?.[0]?.url;
     }
 
-    mutation.mutate(requestBody as Record<string, unknown>, {
-      onSuccess: () => {
-        onClose();
-        setTimeout(() => {
-          setRefetchAttendance(true);
-        }, 2000);
-        toast.success("Added Attendance Request successfully!");
-      },
-      onError: (error: CustomError) => {
-        const errorMessage =
-          error?.response?.data?.exception
-            ?.split(":")
-            .slice(1)
-            .join(":")
-            .trim() || "Something went wrong!!";
-        const cleanString = DOMPurify.sanitize(errorMessage || "");
-        toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
-        console.error(error);
-      },
-    });
+    const handleSuccess = (message: string) => {
+      onClose();
+      setTimeout(() => setRefetchAttendance(true), 2000);
+      toast.success(message);
+    };
+
+    const handleError = (error: CustomError) => {
+      const errorMessage =
+        error?.response?.data?.exception?.split(":").slice(1).join(":").trim() ||
+        "Something went wrong!!";
+      const cleanString = DOMPurify.sanitize(errorMessage || "");
+      toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
+      console.error(error);
+    };
+
+    if (forActionType && forActionType === "edit" && defaultAttendanceData) {
+      updateAttendanceRequest(
+        {
+          doctype: "Attendance Request",
+          name: defaultAttendanceData.name,
+          data: requestBody as Record<string, unknown>,
+        },
+        {
+          onSuccess: () => {
+            handleSuccess("Updated Attendance Request successfully!");
+          },
+          onError: handleError,
+        }
+      );
+    } else {
+      mutation.mutate(requestBody as Record<string, unknown>, {
+        onSuccess: () => {
+          handleSuccess("Added Attendance Request successfully!");
+        },
+        onError: handleError,
+      });
+    }
   };
 
   // Handle form change
@@ -444,7 +480,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
-            Create Attendance Request
+            {forActionType === "edit" ? "Edit" : "Create"} Attendance Request
           </h2>
           <button
             onClick={onClose}
@@ -481,8 +517,40 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             form={formSchema}
             submission={{
               data: {
-                from_date: selectedDate,
-                to_date: selectedDate,
+                from_date: defaultAttendanceData?.from_date || selectedDate,
+                to_date: defaultAttendanceData?.to_date || selectedDate,
+                request_type: defaultAttendanceData?.custom_request_type || "",
+                employee: defaultAttendanceData?.employee || "",
+                company: defaultAttendanceData?.company || currentEmployee?.company || "",
+                custom_from_time: defaultAttendanceData?.custom_from_time
+                  ? new Date(
+                      `1970-01-01T${normalizeTime(
+                        defaultAttendanceData.custom_from_time
+                      )}`
+                    )
+                  : "",
+                custom_to_time: defaultAttendanceData?.custom_to_time
+                  ? new Date(
+                      `1970-01-01T${normalizeTime(
+                        defaultAttendanceData.custom_to_time
+                      )}`
+                    )
+                  : "",
+                custom__request_reason: defaultAttendanceData?.custom__request_reason || "",
+                custom_location: defaultAttendanceData?.custom_location || "",
+                select_shift: defaultAttendanceData?.shift || "",
+                overnight_out_duty: false,
+                message: defaultAttendanceData?.explanation || "",
+                attachments: defaultAttendanceData?.custom_attachment
+                  ? [
+                      {
+                        name: defaultAttendanceData.custom_attachment
+                          .split("/")
+                          .pop(),
+                        url: defaultAttendanceData.custom_attachment,
+                      },
+                    ]
+                  : [],
                 isForOthers: isForOthers,
                 currentEmployeeId: currentEmployee?.employee || "",
                 currentUserId: currentEmployee?.user_id || "",

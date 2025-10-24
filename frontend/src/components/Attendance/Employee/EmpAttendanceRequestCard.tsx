@@ -1,4 +1,4 @@
-import { format, parse , isValid } from "date-fns";
+import { format, isValid } from "date-fns";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -9,7 +9,7 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import Button from "../../shared/atoms/Button";
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
+import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -195,7 +195,7 @@ const EmpAttendanceRequestCard = ({
       )}
       {edit &&
         createPortal(
-          <AttendanceRequestForm
+          <AttendanceRequestFormV2
             onClose={() => setEdit(false)}
             defaultAttendanceData={data?.reference_document}
             forActionType="edit"
