@@ -247,29 +247,36 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       }
 
       // Force redraw to update conditional fields
-      formAddressInstance.current?.redraw();
+      currentEmployeeIdComponent?.redraw();
     }
   }, [isForOthers, currentEmployee]);
 
   // Update company field when employee changes (matching old form behavior)
   useEffect(() => {
     if (formAddressInstance.current && employeeReporteeList) {
-      let company = "Not Assigned";
-      if (isForOthers && selectedEmployee) {
-        const selectedEmp = employeeReporteeList.find(
-          (emp) => emp.name === selectedEmployee
-        );
-        company = selectedEmp?.company || "Not Assigned";
-      } else if (currentEmployee?.company) {
-        company = currentEmployee.company;
-      }
+      // Use setTimeout to avoid race conditions with employee field rendering
+      const timeoutId = setTimeout(() => {
+        let company = "Not Assigned";
+        if (isForOthers && selectedEmployee) {
+          const selectedEmp = employeeReporteeList.find(
+            (emp) => emp.name === selectedEmployee
+          );
+          company = selectedEmp?.company || "Not Assigned";
+        } else if (currentEmployee?.company) {
+          company = currentEmployee.company;
+        }
 
-      const companyComponent =
-        formAddressInstance.current.getComponent("company");
-      if (companyComponent) {
-        // Use setValue without noUpdateEvent to trigger UI update
-        companyComponent.setValue(company);
-      }
+        const companyComponent =
+          formAddressInstance.current?.getComponent("company");
+        if (companyComponent) {
+          // Use setValue without noUpdateEvent to trigger UI update
+          companyComponent.setValue(company);
+
+          companyComponent.redraw();
+        }
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [selectedEmployee, isForOthers, currentEmployee, employeeReporteeList]);
 
@@ -450,7 +457,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
         {/* Content Area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
-          {userRoles?.roles["Employee Direct Manager"] ? (
+          {!userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
                 className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
