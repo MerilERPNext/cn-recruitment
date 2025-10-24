@@ -13,6 +13,19 @@ interface APIExpense {
   custom_expense_category: string;
 }
 
+const getStatusBadgeClasses = (status: string) => {
+  switch (status) {
+    case "Approved":
+      return "bg-green-100 text-green-800";
+    case "Draft":
+      return "bg-yellow-100 text-yellow-800";
+    case "Rejected":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
 const ExpensesItem: React.FC<{ item: APIExpense }> = ({ item }) => {
   const formattedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -24,19 +37,6 @@ const ExpensesItem: React.FC<{ item: APIExpense }> = ({ item }) => {
     day: "numeric",
     year: "numeric",
   });
-
-  const getStatusBadgeClasses = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "bg-green-100 text-green-800";
-      case "Draft":
-        return "bg-yellow-100 text-yellow-800";
-      case "Rejected":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <div className="rounded-xl my-1 border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
@@ -55,7 +55,9 @@ const ExpensesItem: React.FC<{ item: APIExpense }> = ({ item }) => {
               item.approval_status
             )}`}
           >
-            {item.approval_status}
+            {item?.approval_status === "Draft"
+              ? "Pending"
+              : item?.approval_status}
           </span>
         )}
       </div>
@@ -78,19 +80,6 @@ const ExpensesTableRow: React.FC<{ item: APIExpense }> = ({ item }) => {
     year: "numeric",
   });
 
-  const getStatusBadgeClasses = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "bg-green-100 text-green-800";
-      case "Draft":
-        return "bg-yellow-100 text-yellow-800";
-      case "Rejected":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
     <div
       className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
@@ -101,10 +90,12 @@ const ExpensesTableRow: React.FC<{ item: APIExpense }> = ({ item }) => {
       <span>{formattedDate || " - "}</span>
       <span
         className={`px-2 py-1 rounded-2xl text-xs font-medium text-center w-fit ${getStatusBadgeClasses(
-          item.approval_status
+          item?.approval_status
         )}`}
       >
-        {item.approval_status || " - "}
+        {item?.approval_status === "Draft"
+          ? "Pending"
+          : item?.approval_status || " - "}
       </span>
     </div>
   );

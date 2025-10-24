@@ -2,7 +2,7 @@
 import React, { useRef, useState, useMemo, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployee, useEmployees } from "../../hooks/useEmployee";
 import {
   useGetExpenseTypeFields,
   usePostExpenseClaim,
@@ -15,6 +15,13 @@ import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router-dom";
 import ExpenseFieldSkeleton from "./ExpenseFieldSkeleton";
 import { CalculateExpenseParams } from "../../types/expenseAdvance";
+import { SquarePen, Trash2 } from "lucide-react";
+import ParticipantsDrawer from "./ParticipantDrawer";
+
+export interface EmployeeOption {
+  name: string;
+  employee_name?: string;
+}
 
 interface Expense {
   id: string;
@@ -25,7 +32,7 @@ interface Expense {
   amount?: number;
   merchant?: string;
   invoice_number?: string;
-  attach_receipt?: string | null;
+  attach_receipt?: string | { url: string }[] | null;
   [key: string]: any;
 }
 
@@ -58,7 +65,21 @@ const AddExpenseForm: React.FC = () => {
   const [showCategoryAndType, setShowCategoryAndType] = useState(true);
   const [isCalculating, setIsCalculating] = useState(false);
 
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+
+  const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
+
   const { data: currentEmployee } = useCurrentEmployee();
+  const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
+    "name",
+    "employee_name",
+  ]);
+  const employeeOptionsForDrawer: EmployeeOption[] = (employeesList || []).map(
+    (e: any) => ({
+      name: e.name,
+      employee_name: e.employee_name || e.name,
+    })
+  );
   const { mutate: submitExpenseClaim, isPending } = usePostExpenseClaim();
 
   const [calcParams, setCalcParams] = useState<
@@ -95,7 +116,7 @@ const AddExpenseForm: React.FC = () => {
       return;
     }
 
-    setDynamicFormData({});
+    setDynamicFormData((prev: any) => prev ?? {});
     setDynamicFields([]);
     setCalcParams(undefined);
     setFormKey((k) => k + 1);
@@ -123,6 +144,20 @@ const AddExpenseForm: React.FC = () => {
       console.warn("Failed to clear local storage keys", e);
     }
   };
+
+  const displayParticipants = useMemo(() => {
+    if (editingExpenseId) {
+      const e = expenses.find((x) => x.id === editingExpenseId);
+      if (e && Array.isArray(e.participants)) return e.participants;
+    }
+    if (
+      dynamicFormData?.participants &&
+      Array.isArray(dynamicFormData.participants)
+    ) {
+      return dynamicFormData.participants;
+    }
+    return [];
+  }, [editingExpenseId, expenses, dynamicFormData]);
 
   const formSchema = useMemo(
     () => ({
@@ -189,15 +224,7 @@ const AddExpenseForm: React.FC = () => {
   );
 
   const handleSubmit = (submission: any) => {
-    console.log("Dynamic form data:", dynamicFormData);
-    console.log("Form submitted:", submission.data);
-    const newExpense: Expense = {
-      id: Date.now().toString(),
-      expenseCategory: submission.data.expenseCategory,
-      expenseType: submission.data.expenseType,
-    };
-    setExpenses((prev) => [...prev, newExpense]);
-    formRef.current?.reset();
+    setMainFormData(submission.data);
     setShowCategoryAndType(false);
     setFormKey((k) => k + 1);
   };
@@ -291,6 +318,35 @@ const AddExpenseForm: React.FC = () => {
             };
           case "Link":
             if (
+              field.fieldname === "currency" &&
+              field.options === "Currency"
+            ) {
+              const expenseClaimType =
+                mainFormData?.expenseType || mainFormData?.expense_type || "";
+
+              const url = expenseClaimType
+                ? `/api/method/chatnext_expense_trips.expense_claim.get_allowed_currencies_for_expense_claim_type?expense_claim_type=${encodeURIComponent(
+                    String(expenseClaimType)
+                  )}`
+                : `/api/method/chatnext_expense_trips.expense_claim.get_allowed_currencies_for_expense_claim_type`;
+              return {
+                type: "select",
+                key: field.fieldname,
+                label: field.label,
+                dataSrc: "url",
+                data: {
+                  url,
+                },
+                selectValues: "message.currencies",
+                template: "<span>{{ item }}</span>",
+                defaultValue: "INR",
+                valueProperty: "",
+                validate: { required: field.required },
+                input: true,
+                refreshOn: "expenseType",
+              };
+            }
+            if (
               field.fieldname === "vehicle_type" ||
               field.options === "Daily Allowance Vehicle Category"
             ) {
@@ -332,6 +388,8 @@ const AddExpenseForm: React.FC = () => {
   const expenseTypeValue: string | undefined = mainFormData?.expenseType;
   const { data: expenseTypeData, isFetching: isFetchingFields } =
     useGetExpenseTypeFields(expenseTypeValue);
+
+  const isShareAllowed = Boolean(expenseTypeData?.shared_expense_allowed);
 
   useEffect(() => {
     if (!expenseTypeData?.fields) {
@@ -429,7 +487,27 @@ const AddExpenseForm: React.FC = () => {
     }
   }, [calcData]);
 
+  useEffect(() => {
+    if (isSharePanelOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isSharePanelOpen]);
+
   const submitAll = () => {
+    const participantsForClaim: any[] =
+      (dynamicFormData?.participants &&
+      Array.isArray(dynamicFormData.participants)
+        ? dynamicFormData.participants
+        : null) ||
+      expenses.flatMap((e) =>
+        Array.isArray(e.participants) ? e.participants : []
+      );
+
     const payload = {
       employee: currentEmployee?.employee_number,
       employee_name: currentEmployee?.employee_name,
@@ -473,6 +551,7 @@ const AddExpenseForm: React.FC = () => {
           };
         }
       ),
+      participants: participantsForClaim || [],
     };
 
     submitExpenseClaim(JSON.stringify(payload), {
@@ -480,6 +559,22 @@ const AddExpenseForm: React.FC = () => {
         clearLocal();
       },
     } as any);
+  };
+
+  const handleEdit = (expense: Expense) => {
+    setEditingExpenseId(expense.id);
+    setMainFormData({
+      expenseCategory: expense.expenseCategory,
+      expenseType: expense.expenseType,
+    });
+
+    const copy = { ...expense };
+    if (expense.attach_receipt && typeof expense.attach_receipt === "string") {
+      copy.attach_receipt = [{ url: expense.attach_receipt }];
+    }
+    setDynamicFormData(copy);
+    setShowCategoryAndType(true);
+    setFormKey((k) => k + 1);
   };
 
   return (
@@ -643,7 +738,6 @@ const AddExpenseForm: React.FC = () => {
                         ...submission.data,
                         amount: amountFromApi,
                       }));
-                      toast.success("Amount calculated and filled.");
                     } else {
                       setDynamicFormData((prev: any) => ({
                         ...prev,
@@ -663,14 +757,22 @@ const AddExpenseForm: React.FC = () => {
                     combinedData.attach_receipt?.[0]?.url || null;
 
                   const newExpense: Expense = {
-                    id: Date.now().toString(),
+                    id: editingExpenseId ?? Date.now().toString(),
                     ...combinedData,
                     attach_receipt: attachment,
                     amount: amountFromApi ?? combinedData.amount ?? undefined,
                   };
 
-                  setExpenses((prev) => [...prev, newExpense]);
-
+                  if (editingExpenseId) {
+                    setExpenses((prev) =>
+                      prev.map((e) =>
+                        e.id === editingExpenseId ? newExpense : e
+                      )
+                    );
+                  } else {
+                    setExpenses((prev) => [...prev, newExpense]);
+                  }
+                  setEditingExpenseId(null);
                   formRef.current?.reset();
                   dynamicFormRef.current?.reset();
                   setMainFormData({});
@@ -728,6 +830,95 @@ const AddExpenseForm: React.FC = () => {
                   }
                 }}
               />
+              {displayParticipants && displayParticipants.length > 0 && (
+                <div className="mt-4 border rounded p-3 bg-white shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium">Participants</div>
+                    <div className="text-xs text-gray-500">
+                      {displayParticipants.length}{" "}
+                      {displayParticipants.length === 1
+                        ? "participant"
+                        : "participants"}
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-gray-600">
+                          <th className="px-2 py-1">#</th>
+                          <th className="px-2 py-1">Type</th>
+                          <th className="px-2 py-1">Employee / Name</th>
+                          <th className="px-2 py-1">Percentage</th>
+                          <th className="px-2 py-1">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayParticipants.map((p: any, idx: number) => (
+                          <tr key={idx} className="border-t">
+                            <td className="px-2 py-2 align-top">{idx + 1}</td>
+                            <td className="px-2 py-2 align-top">
+                              {p.employee_type ?? "-"}
+                            </td>
+                            <td className="px-2 py-2 align-top">
+                              {p.employee
+                                ? p.employee
+                                : p.guest_name
+                                ? p.guest_name
+                                : "-"}
+                              {p.employee_label ? (
+                                <div className="text-xs text-gray-500">
+                                  {p.employee_label}
+                                </div>
+                              ) : null}
+                            </td>
+                            <td className="px-2 py-2 align-top">
+                              {p.percentage !== undefined &&
+                              p.percentage !== null
+                                ? `${p.percentage}%`
+                                : "-"}
+                            </td>
+                            <td className="px-2 py-2 align-top">
+                              {p.amount !== undefined && p.amount !== null
+                                ? `INR ${Number(p.amount).toFixed(2)}`
+                                : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 flex gap-2">
+                {isShareAllowed && (
+                  <button
+                    type="button"
+                    onClick={() => setIsSharePanelOpen(true)}
+                    className={`font-semibold px-4 py-2 rounded 
+                            ${
+                              (editingExpenseId
+                                ? expenses.find(
+                                    (x) => x.id === editingExpenseId
+                                  )?.amount ?? dynamicFormData?.amount
+                                : dynamicFormData?.amount) > 0
+                                ? "bg-blue-600 text-white hover:bg-blue-700"
+                                : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                            }`}
+                    disabled={
+                      !(
+                        (editingExpenseId
+                          ? expenses.find((x) => x.id === editingExpenseId)
+                              ?.amount ?? dynamicFormData?.amount
+                          : dynamicFormData?.amount) > 0
+                      )
+                    }
+                  >
+                    Add Share
+                  </button>
+                )}
+              </div>
             </div>
           )}
           {expenses.length > 0 && (
@@ -802,7 +993,14 @@ const AddExpenseForm: React.FC = () => {
                           {expense.invoice_number || "-"}
                         </td>
                         <td className="px-4 py-2">{expense.amount ?? "-"}</td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 flex items-center gap-2">
+                          <button
+                            onClick={() => handleEdit(expense)}
+                            className="text-blue-400 hover:text-green-800"
+                            title="Edit"
+                          >
+                            <SquarePen />
+                          </button>
                           <button
                             onClick={() => {
                               setExpenses((prev) =>
@@ -812,22 +1010,10 @@ const AddExpenseForm: React.FC = () => {
                                 prev.filter((id) => id !== expense.id)
                               );
                             }}
-                            className="text-blue-500 hover:text-blue-700"
+                            className="text-red-400 hover:text-blue-700"
+                            title="Delete"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
+                            <Trash2 />
                           </button>
                         </td>
                       </tr>
@@ -842,6 +1028,9 @@ const AddExpenseForm: React.FC = () => {
                   onClick={() => {
                     setShowCategoryAndType(true);
                     setFormKey((prev) => prev + 1);
+                    setEditingExpenseId(null);
+                    setMainFormData({});
+                    setDynamicFormData({});
                   }}
                 >
                   Add More
@@ -859,6 +1048,42 @@ const AddExpenseForm: React.FC = () => {
           )}
         </div>
       </div>
+
+      {isSharePanelOpen && (
+        <ParticipantsDrawer
+          isOpen={isSharePanelOpen}
+          onClose={() => setIsSharePanelOpen(false)}
+          expenseAmount={Number(
+            (editingExpenseId
+              ? expenses.find((x) => x.id === editingExpenseId)?.amount ??
+                dynamicFormData?.amount
+              : dynamicFormData?.amount) ?? 0
+          )}
+          editingExpenseId={editingExpenseId}
+          expenses={expenses}
+          setExpenses={(fn) => setExpenses(fn)}
+          currentEmployee={currentEmployee || undefined}
+          maxParticipants={5}
+          employeeOptions={employeeOptionsForDrawer}
+          employeeOptionsLoading={isLoadingEmployees as boolean}
+          onSave={(formattedParticipants) => {
+            if (editingExpenseId) {
+              setExpenses((prev) =>
+                prev.map((e) =>
+                  e.id === editingExpenseId
+                    ? { ...e, participants: formattedParticipants }
+                    : e
+                )
+              );
+            } else {
+              setDynamicFormData((prev: any) => ({
+                ...(prev || {}),
+                participants: formattedParticipants,
+              }));
+            }
+          }}
+        />
+      )}
     </>
   );
 };
