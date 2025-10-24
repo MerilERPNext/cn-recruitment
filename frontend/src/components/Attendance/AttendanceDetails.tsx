@@ -7,21 +7,39 @@ import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
+import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { ErrorView, LoadingView } from "../shared/DetailViewErrorLoadingWrapper";
 
 export function AttendanceDetailView({
-  data,
+  data: propData,
+  documentName,
   onClose,
   onAction,
   label = "Attendance Request",
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
+  data?: any;
+  documentName?: string;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
 }) {
+  // Fetch data if documentName is provided
+  const {
+    data: fetchedData,
+    isLoading,
+    error,
+  } = useGetToDoWithReferenceDoc(documentName || "");
+
+
+  // Use fetched data if documentName is provided, otherwise use prop data
+  const data = documentName ? fetchedData : propData;
   const mutation = useApprovalListActions();
   const { setRefetchAttendance } = useGlobalStore();
+
+  // Don't render anything if neither documentName nor data is provided
+  // When documentName is provided, we should render even if data isn't loaded yet
+  const shouldRender = !!documentName || !!data?.todo_id;
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const cleanExplaination = DOMPurify.sanitize(
@@ -156,7 +174,21 @@ export function AttendanceDetailView({
     return "--/--/----";
   };
 
-  return data?.todo_id ? (
+  // Loading state
+  if (isLoading && documentName) {
+    return (
+       <LoadingView onClose={onClose} label={label} />
+    );
+  }
+
+  // Error state
+  if (error && documentName) {
+    return <ErrorView onClose={onClose} label={label} error={error} />;
+  }
+
+  // Only render if we have documentName or data
+  if (!shouldRender) return null;
+  return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
@@ -170,9 +202,7 @@ export function AttendanceDetailView({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
-            <h2 className="text-lg font-semibold text-gray-800">
-              {label} -<span className="font=md"> {data?.todo_id}</span>
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
           </div>
           <button
             onClick={onClose}
@@ -287,5 +317,5 @@ export function AttendanceDetailView({
           )}
       </div>
     </div>
-  ) : null;
+  );
 }

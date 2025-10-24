@@ -128,6 +128,7 @@ export interface MyPlannedAttendanceRequest {
   username: string;
   reference_name: string;
   status: string;
+  date?: string;
 }
 export interface AttendanceRequestValidations {
   attendance_adjustment_requests: number;

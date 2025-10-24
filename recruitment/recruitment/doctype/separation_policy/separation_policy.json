@@ -1,0 +1,227 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "SP.#####",
+ "creation": "2025-10-16 16:51:48.045783",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "basic_details_tab",
+  "policy_title",
+  "description",
+  "applicability_section",
+  "applicable_to",
+  "policy_details_tab",
+  "allow_past_date_of_resignation_according_to_notice_period",
+  "force_separate_employee_on_lwd_as_per_notice_period",
+  "process_details_tab",
+  "enable_custom_escalation",
+  "section_break_tgwv",
+  "escalation_after_number_of_days",
+  "column_break_qjfk",
+  "escalation_context",
+  "column_break_qqzv",
+  "escalate_to_role",
+  "section_break_uuzc",
+  "weekly_off",
+  "holiday",
+  "column_break_ggdm",
+  "approval_flow_configuration_section",
+  "capture_date_of_resignation",
+  "approval_flow_configuration",
+  "section_break_xfth",
+  "separation_workflow_configuration",
+  "notification_and_advanced_settings_tab",
+  "notification_configuration",
+  "advanced_configurations_section",
+  "permission_manager_link"
+ ],
+ "fields": [
+  {
+   "fieldname": "policy_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Policy Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "basic_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Basic Details"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "applicability_section",
+   "fieldtype": "Section Break",
+   "label": "Applicability"
+  },
+  {
+   "fieldname": "applicable_to",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable to",
+   "options": "User Assignment Table"
+  },
+  {
+   "fieldname": "policy_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Policy Details"
+  },
+  {
+   "fieldname": "process_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Process Details"
+  },
+  {
+   "fieldname": "notification_and_advanced_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Notification and Advanced Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_past_date_of_resignation_according_to_notice_period",
+   "fieldtype": "Check",
+   "label": "Allow past date of resignation according to notice period"
+  },
+  {
+   "default": "0",
+   "fieldname": "force_separate_employee_on_lwd_as_per_notice_period",
+   "fieldtype": "Check",
+   "label": "Force separate employee on LWD as per notice period"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_custom_escalation",
+   "fieldtype": "Check",
+   "label": "Enable Custom Escalation"
+  },
+  {
+   "fieldname": "section_break_tgwv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.enable_custom_escalation == 1",
+   "fieldname": "escalation_after_number_of_days",
+   "fieldtype": "Int",
+   "label": "Escalation after number of days",
+   "mandatory_depends_on": "eval:doc.enable_custom_escalation == 1",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_qjfk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.enable_custom_escalation == 1 ",
+   "fieldname": "escalation_context",
+   "fieldtype": "Select",
+   "label": "Escalation Context",
+   "options": "Subject\nAssignee"
+  },
+  {
+   "fieldname": "column_break_qqzv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.enable_custom_escalation ==1 ",
+   "fieldname": "escalate_to_role",
+   "fieldtype": "Link",
+   "label": "Escalate to Role",
+   "options": "Role"
+  },
+  {
+   "fieldname": "section_break_uuzc",
+   "fieldtype": "Section Break",
+   "label": "Restrict Last Working Day On"
+  },
+  {
+   "fieldname": "column_break_ggdm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "weekly_off",
+   "fieldtype": "Check",
+   "label": "Weekly Off"
+  },
+  {
+   "default": "0",
+   "fieldname": "holiday",
+   "fieldtype": "Check",
+   "label": "Holiday"
+  },
+  {
+   "fieldname": "approval_flow_configuration_section",
+   "fieldtype": "Section Break",
+   "label": "Approval Flow Configuration"
+  },
+  {
+   "default": "0",
+   "fieldname": "capture_date_of_resignation",
+   "fieldtype": "Check",
+   "label": "Capture Date Of Resignation, Requested LWD, Recovery Days While Raising Separation"
+  },
+  {
+   "fieldname": "approval_flow_configuration",
+   "fieldtype": "Table",
+   "options": "Approval Flow Configuration Table"
+  },
+  {
+   "fieldname": "notification_configuration",
+   "fieldtype": "Table",
+   "label": "Notification Configuration",
+   "options": "Separation Notification Configuration Table"
+  },
+  {
+   "fieldname": "section_break_xfth",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "separation_workflow_configuration",
+   "fieldtype": "Table",
+   "label": "Separation Workflow Configuration",
+   "options": "Separation Workflow Configuration"
+  },
+  {
+   "fieldname": "advanced_configurations_section",
+   "fieldtype": "Section Break",
+   "label": "Advanced Configurations"
+  },
+  {
+   "fieldname": "permission_manager_link",
+   "fieldtype": "HTML",
+   "label": "Permission Manager",
+   "options": "<a href=\"/app/permission-manager\" target=\"_blank\" style=\"color:#0b5ed7; font-weight:500;\">\n    Open Permission Manager\n</a>"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-10-20 14:22:33.328719",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Separation Policy",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

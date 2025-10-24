@@ -7,23 +7,37 @@ import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
 import { formatDate } from "../../utils/qrCodeUtils";
+import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { ErrorView, LoadingView } from "../shared/DetailViewErrorLoadingWrapper";
 
 export function ShiftDetailView({
-  data,
+  data : propData,
+  documentName,
   onClose,
   onAction,
   label = "Shift Request",
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
+  data?: any;
+  documentName: string;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
 }) {
   const mutation = useApprovalListActions();
   const { setRefetchAttendance } = useGlobalStore();
-  const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  
+  const {
+    data: fetchedData,
+    isLoading,
+    error,
+  } = useGetToDoWithReferenceDoc(documentName || "");
 
+  const data = documentName ? fetchedData : propData;
+  const shouldRender = !!documentName || !!data?.todo_id;
+
+  const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  
   const getStatus = (status: string) => {
     if (status === "Draft") {
       return {
@@ -137,7 +151,22 @@ export function ShiftDetailView({
     }
     return styles;
   };
-  return data?.todo_id ? (
+
+    // Loading state
+  if (isLoading && documentName) {
+    return (
+       <LoadingView onClose={onClose} label={label} />
+    );
+  }
+
+  // Error state
+  if (error && documentName) {
+    return <ErrorView onClose={onClose} label={label} error={error} />;
+  }
+  
+  if (!shouldRender) return null;
+
+  return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
@@ -268,5 +297,5 @@ export function ShiftDetailView({
         )}
       </div>
     </div>
-  ) : null;
+  );
 }

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { ExternalLink } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ApprovalList from "../shared/ApprovalList";
 import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
@@ -280,14 +280,33 @@ const AllMyShiftRequestsList = () => {
 export default function AllShiftsDashboard() {
   const navigate = useNavigate();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestId = searchParams.get("requestId");
+
+  const handleRequestClick = useCallback(
+  (request: any) => {
+    if (request?.todo_id) {
+      setSearchParams({ requestId: request.todo_id });
+    }
+  },
+  [setSearchParams]
+);
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+    const handleActionComplete = useCallback(() => {
+      setSearchParams({});
+      // Trigger refetch after action
+      setRefetchApprovalList(true);
+  }, [setSearchParams]);
+
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
-
-  const [selectedRequest, setSelectedRequest] = useState<
-    (MyShiftRequest & { loadingAction?: LoadingAction }) | null
-  >(null);
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans text-sm">
@@ -339,12 +358,7 @@ export default function AllShiftsDashboard() {
                         data={item?.data}
                         onAction={item?.onAction}
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        onClick={(request: any) =>
-                          setSelectedRequest({
-                            ...request,
-                            loadingAction: item?.loadingAction,
-                          })
-                        }
+                        onClick={handleRequestClick}
                         loadingAction={item?.loadingAction}
                       />
                     )}
@@ -352,13 +366,11 @@ export default function AllShiftsDashboard() {
                 </CardTable>
               </div>
             </Card>
-            {selectedRequest && (
+            {requestId && (
               <ShiftDetailView
-                data={selectedRequest}
-                onClose={() => setSelectedRequest(null)}
-                onAction={() => {
-                  setSelectedRequest(null);
-                }}
+                documentName={requestId}
+                onClose={handleCloseModal}
+                onAction={handleActionComplete}
               />
             )}
 

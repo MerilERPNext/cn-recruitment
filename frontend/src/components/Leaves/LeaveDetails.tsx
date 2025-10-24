@@ -7,21 +7,34 @@ import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
+import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { ErrorView, LoadingView } from "../shared/DetailViewErrorLoadingWrapper";
 
 export function LeaveDetailView({
-  data,
+  documentName,
+  data : propsData,
   onClose,
   onAction,
   label = "Attendance Request",
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
+  documentName?: string;
+  data?: any;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
 }) {
   const mutation = useApprovalListActions();
   const { setRefetchAttendance } = useGlobalStore();
+
+  const {
+        data: fetchedData,
+        isLoading,
+        error,
+    } = useGetToDoWithReferenceDoc(documentName || "");
+  
+  
+  const data = documentName ? fetchedData : propsData;
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const getStatus = (status: string) => {
@@ -98,6 +111,7 @@ export function LeaveDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
+
   const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
@@ -143,6 +157,18 @@ export function LeaveDetailView({
     return "--/--/----";
   };
 
+    // Loading state
+  if (isLoading && documentName) {
+    return (
+       <LoadingView onClose={onClose} label={label} />
+    );
+  }
+
+  // Error state
+  if (error && documentName) {
+    return <ErrorView onClose={onClose} label={label} error={error} />;
+  }
+
   return data?.todo_id ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -158,8 +184,7 @@ export function LeaveDetailView({
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
             <h2 className="text-lg font-semibold text-gray-800">
-              {label} -
-              <span className="font-md"> {data?.reference_document?.name}</span>
+              {label} 
             </h2>
           </div>
           <button
@@ -234,7 +259,7 @@ export function LeaveDetailView({
         </div>
 
         {/* Actions */}
-        {actions?.length > 0 && data?.status === "Pending" && (
+        {actions?.length > 0 && status?.label === "Pending" && (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
             <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
               {actions?.length &&

@@ -1,0 +1,65 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-16 15:40:49.592053",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "event",
+  "template",
+  "hr_letter_field",
+  "cc_recipients",
+  "cc_users"
+ ],
+ "fields": [
+  {
+   "fieldname": "event",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Event",
+   "options": "Employee's Confirmation is Approved\nEmployee's Probation is Extended"
+  },
+  {
+   "fieldname": "template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Template",
+   "options": "Confirmation Policy Templates"
+  },
+  {
+   "fieldname": "hr_letter_field",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "HR Letter Field",
+   "options": "Employment Related"
+  },
+  {
+   "fieldname": "cc_recipients",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "CC Recipients",
+   "options": "Role Configuration"
+  },
+  {
+   "fieldname": "cc_users",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "CC Users"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-10-16 16:14:03.385618",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Letter Configuration Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

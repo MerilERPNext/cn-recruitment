@@ -1,9 +1,8 @@
-import { useState } from "react";
-import { AttendanceRequest } from "../../types/attendance";
+import { useCallback, useState } from "react";
 import { AttendanceDetailView } from "../Attendance/AttendanceDetails";
 import LayoutHeader from "../shared/LayoutHeader";
 import ApprovalList from "../shared/ApprovalList";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
 import CardTable from "../shared/CardTable";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -11,13 +10,35 @@ import { IoChevronBackOutline } from "react-icons/io5";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
 const PendingTeamLeaves = () => {
-  const [selectedRequest, setSelectedRequest] =
-    useState<AttendanceRequest | null>(null);
   const [refetch, setRefetch] = useState(false);
 
   const navigate = useNavigate();
   const { refetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
+
+   const [searchParams, setSearchParams] = useSearchParams();
+
+  const requestId = searchParams.get("requestId");
+
+  const handleRequestClick = useCallback(
+    (request : any) => {
+      if (request?.todo_id) {
+        setSearchParams({ requestId: request.todo_id });
+      }
+    },
+    [setSearchParams]
+  );
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    // Trigger refetch after action
+     setRefetch(true);
+  }, [setSearchParams]);
+
 
   return (
     <div>
@@ -66,17 +87,18 @@ const PendingTeamLeaves = () => {
                 data={item?.data}
                 onAction={item?.onAction}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) => setSelectedRequest(request)}
+                onClick={(request: any) => handleRequestClick(request)}
                 loadingAction={item?.loadingAction}
               />
             )}
           />
         </CardTable>
       </div>
-      {selectedRequest && (
+      {requestId && (
         <AttendanceDetailView
-          data={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
+          documentName={requestId}
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
         />
       )}
     </div>

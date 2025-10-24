@@ -379,6 +379,15 @@ export const attendanceService = {
     );
     return response as UserRoles;
   },
+  getToDoWithReferenceDoc: async (todo_id?: string): Promise<any> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_hrms_core.api.get_reference_doc",
+      {
+        todo_id: todo_id,
+      }
+    );
+    return response;
+  },
 
   getAttendance: async (filters?: FilterCondition[]): Promise<Attendance[]> => {
     const response = await FrappeAPI.getDocumentList("Attendance", {

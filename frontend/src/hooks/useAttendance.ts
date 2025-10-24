@@ -146,6 +146,18 @@ export const useGetUserRoles = (
     ...defaultQueryOptions,
   });
 };
+export const useGetToDoWithReferenceDoc = (
+  todo_id: string
+): UseQueryResult<any, Error> => {
+  return useQuery<any, Error>({
+    queryKey: ["todo-refdocs", todo_id],
+    queryFn: () => attendanceService.getToDoWithReferenceDoc(todo_id),
+    enabled: !!todo_id,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
 export const useAllEmployeeCheckIns = (
   filters?: FilterCondition[]
 ): UseQueryResult<EmployeeCheckInLog[], Error> => {
@@ -190,7 +202,7 @@ export const useGetAllEventsAndAttendance = (
 //this is an reusable hook for getting mandatory details for emloyee id
 export function useCheckAttachmentMandatory(
   empId: string | null | undefined,
-date:string | null,
+  date: string | null,
   request_type: string
 ) {
   return useQuery({
@@ -201,8 +213,8 @@ date:string | null,
       request_type,
     ],
     queryFn: () =>
-      attendanceService.checkAttachmentMandatory(empId, date,request_type),
-    enabled: !!empId   && !!request_type,
+      attendanceService.checkAttachmentMandatory(empId, date, request_type),
+    enabled: !!empId && !!request_type,
   });
 }
 

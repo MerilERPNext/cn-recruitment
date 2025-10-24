@@ -3,6 +3,7 @@ import ApprovalList from "../shared/ApprovalList";
 import ApprovalRejectedForMobile from "./mobileUI/ApprovalRejectedCard";
 import { MyShiftRequest } from "../../types/shift";
 import { ShiftDetailView } from "./ShiftDetailView";
+import { useSearchParams } from "react-router-dom";
 type LoadingAction = {
   id: string;
   action: string;
@@ -10,14 +11,35 @@ type LoadingAction = {
 
 export default function ShiftChangeRequests() {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
-  
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const requestId = searchParams.get("requestId");
+
+  const handleRequestClick = useCallback(
+    (request: any) => {
+      if (request?.todo_id) {
+        setSearchParams({ requestId: request.todo_id });
+      }
+    },
+    [setSearchParams]
+  );
+
+  const handleCloseModal = useCallback(() => {
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    // Trigger refetch after action
+    setRefetchApprovalList(true);
+  }, [setSearchParams]);
+
     const handleApprovalRefetchComplete = useCallback(() => {
       setRefetchApprovalList(false);
     }, []);
   
-    const [selectedRequest, setSelectedRequest] = useState<
-      (MyShiftRequest & { loadingAction?: LoadingAction }) | null
-    >(null);
+    
   return (
     <div className="bg-white ">
       <ApprovalList
@@ -34,23 +56,17 @@ export default function ShiftChangeRequests() {
             data={item?.data}
             onAction={item?.onAction}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onClick={(request: any) =>
-              setSelectedRequest({
-                ...request,
-                loadingAction: item?.loadingAction,
-              })
-            }
+            onClick={(request: any) => handleRequestClick(request)}
             loadingAction={item?.loadingAction}
           />
         )}
       />
-      {selectedRequest && (
+      {requestId && (
               <ShiftDetailView
-                data={selectedRequest}
-                onClose={() => setSelectedRequest(null)}
-                onAction={() => {
-                  setSelectedRequest(null);
-                }}
+                documentName={requestId}
+                onClose={ handleCloseModal}
+                onAction={handleActionComplete}
+
               />
             )}
     </div>
