@@ -150,8 +150,9 @@ export const useGetToDoWithReferenceDoc = (
   todo_id: string
 ): UseQueryResult<any, Error> => {
   return useQuery<any, Error>({
-    queryKey: ["todo-refdocs", "all", todo_id],
+    queryKey: ["todo-refdocs", todo_id],
     queryFn: () => attendanceService.getToDoWithReferenceDoc(todo_id),
+    enabled: !!todo_id,
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });

@@ -27,7 +27,6 @@ const AllOvertimePendingRequests = () => {
 
   const handleRequestClick = useCallback(
   (request: any) => {
-    console.log("Request clicked:", request);
     if (request?.todo_id) {
       setSearchParams({ requestId: request.todo_id });
     }
