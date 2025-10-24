@@ -13,19 +13,29 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import FileRenderer from "../../shared/molecules/FileRenderer";
 import { formatDashedDate } from "../../../utils/formatToIndianDate";
+import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import { ErrorView, LoadingView } from "../../shared/DetailViewErrorLoadingWrapper";
 
 export function MyOvertimeDetails({
-  data,
+  documentName,
+  data : propData,
   onClose,
   onAction,
   label = "Planned Overtime Request",
 }: {
-  data: MyPlannedAttendanceRequest;
+  documentName?: string;
+  data?: MyPlannedAttendanceRequest;
   onClose: () => void;
   label?: string;
   onAction?: () => void;
   loadingAction?: { id: string; action: string } | null;
 }) {
+    const {
+      data: fetchedData,
+      isLoading,
+      error,
+  } = useGetToDoWithReferenceDoc(documentName || "");
+
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
@@ -33,6 +43,8 @@ export function MyOvertimeDetails({
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+
+  const data = (documentName ? fetchedData : propData) as MyPlannedAttendanceRequest;
   const handleAction = useCallback(
     async (action: string) => {
       setCurrentAction(action);
@@ -149,6 +161,19 @@ export function MyOvertimeDetails({
     return isValid(date) ? format(date, "dd/MM/yyyy") : "--/--";
   };
 
+     // Loading state
+  if (isLoading && documentName) {
+    return (
+       <LoadingView onClose={onClose} label={label} />
+    );
+  }
+
+  // Error state
+  if (error && documentName) {
+    return <ErrorView onClose={onClose} label={label} error={error} />;
+  }
+  
+
   return data?.allocated_to ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -161,7 +186,7 @@ export function MyOvertimeDetails({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
-            {label} {data?.todo_id}
+            {label} 
           </h2>
           <button
             onClick={onClose}
@@ -200,7 +225,7 @@ export function MyOvertimeDetails({
           <div>
             <div className="text-sm text-gray-500">Due Date</div>
             <div className="text-base text-gray-800">
-              {formatDashedDate(data?.due_date as string)}
+              {formatDashedDate( (data?.due_date || data?.date ) as string)}
             </div>
           </div>
 

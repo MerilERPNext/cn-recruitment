@@ -1,4 +1,4 @@
-import { format, isValid } from "date-fns";
+import { format, parse , isValid } from "date-fns";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -64,6 +64,7 @@ const EmpAttendanceRequestCard = ({
       };
     }
   };
+
   const status = getStatus(data?.reference_document?.custom_status);
 
   const formatDate = (dateString: string | undefined) => {
