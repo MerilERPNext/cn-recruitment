@@ -68,7 +68,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
             : Number(r.percentage || 0) || 0;
         const amt = +(totalAmount * (p / 100) || 0);
         r.percentage = isNaN(p) ? null : +p;
-        r.amount = isNaN(amt) ? null : +amt.toFixed(2);
+        r.amount = isNaN(amt) ? null : Number(amt.toFixed(2));
       } else {
         const amt =
           typeof r.amount === "number" ? r.amount : Number(r.amount || 0) || 0;

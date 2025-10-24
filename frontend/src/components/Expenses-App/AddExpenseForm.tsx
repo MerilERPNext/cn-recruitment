@@ -17,6 +17,7 @@ import ExpenseFieldSkeleton from "./ExpenseFieldSkeleton";
 import { CalculateExpenseParams } from "../../types/expenseAdvance";
 import { SquarePen, Trash2 } from "lucide-react";
 import ParticipantsDrawer from "./ParticipantDrawer";
+import { Employee } from "../../types/employee";
 
 export interface EmployeeOption {
   name: string;
@@ -75,7 +76,7 @@ const AddExpenseForm: React.FC = () => {
     "employee_name",
   ]);
   const employeeOptionsForDrawer: EmployeeOption[] = (employeesList || []).map(
-    (e: any) => ({
+    (e: Employee) => ({
       name: e.name,
       employee_name: e.employee_name || e.name,
     })
@@ -116,7 +117,8 @@ const AddExpenseForm: React.FC = () => {
       return;
     }
 
-    setDynamicFormData((prev: any) => prev ?? {});
+    setDynamicFormData({});
+    // setDynamicFormData((prev: any) => prev ?? {});
     setDynamicFields([]);
     setCalcParams(undefined);
     setFormKey((k) => k + 1);
