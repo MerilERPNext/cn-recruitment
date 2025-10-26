@@ -13,6 +13,7 @@ import AllAttendanceRequest from "./components/Attendance/AttendanceRequest/AllA
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
+import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/AddExpenseForm";
 
 // Lazy load heavy components with retry mechanism
@@ -670,7 +671,12 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/organizational-chart-two-level",
     element: <OrganizationCharttooo />,
   },
+  {
+    path: "/webapp/password-reset",
+    element: <PasswordReset />,
+  },
 ];
+
 
 // Export lazy loading utility for potential use elsewhere
 export { withLazyLoading };
