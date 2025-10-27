@@ -3,6 +3,7 @@ import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useCalculateExpenseAmount } from "../../hooks/useExpense";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 interface ExpenseClaimModalProps {
   isOpen: boolean;
@@ -24,6 +25,8 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   const lastExpenseType = useRef<string | null>(null);
   const lastCalculatedUnits = useRef<number | null>(null);
   const [isAmountReadonly, setIsAmountReadonly] = useState(false);
+  const { data: currentEmployee } = useCurrentEmployee();
+  const employeeId = currentEmployee?.name;
 
   useEffect(() => {
     // Only run if we have new data AND the amount field is readonly
@@ -54,12 +57,6 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
     }
   }, [calcData, isAmountReadonly, calcParams]);
 
-  const getBaseUrl = () =>
-    // @ts-ignore
-    window.__FORMIO_BASE_URL__ ||
-    window.location?.origin ||
-    "http://localhost:8000";
-
   // CORRECT: Your mapping function was already fixed, ensure it stays this way
   const mapFieldsToFormio = (fields: any[]) =>
     fields
@@ -71,8 +68,26 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               key: field.fieldname,
               label: field.label,
               enableTime: false,
-              format: "yyyy-MM-dd",
+              format: "dd-MM-yyyy",
+              placeholder: "Select date",
               validate: { required: !!field.required },
+              input: true,
+            };
+          case "Datetime":
+            return {
+              type: "datetime",
+              key: field.fieldname,
+              label: field.label,
+              format: "yyyy-MM-dd HH:mm",
+              enableTime: true,
+              enableDate: true,
+              placeholder: "Select date and time",
+              widget: {
+                type: "calendar",
+                displayInTimezone: "viewer",
+                locale: "en",
+              },
+              validate: { required: field.required },
               input: true,
             };
           case "Currency":
@@ -85,6 +100,18 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               validate: { required: !!field.required },
             };
           case "Data":
+            // Treat 'units' as 'number' if it's supposed to be calculated
+            if (field.fieldname === "units") {
+              return {
+                type: "number",
+                key: field.fieldname,
+                label: field.label,
+                input: true,
+                validate: { required: !!field.required },
+                description: field.description, // Keep description if available
+              };
+            }
+            // Treat 'units' as 'number' if it's supposed to be calculated
             return {
               type: "textfield",
               key: field.fieldname,
@@ -114,6 +141,66 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               filePattern: "*/*",
               validate: { required: !!field.required },
             };
+          case "Link":
+            if (
+              field.fieldname === "currency" &&
+              field.options === "Currency"
+            ) {
+              return {
+                type: "select",
+                key: field.fieldname,
+                label: field.label,
+                dataSrc: "url",
+
+                data: {
+                  url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}`,
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "message[0]",
+                defaultValue: "INR",
+                template: "<span>{{ item }}</span>",
+                valueProperty: "",
+                validate: { required: field.required },
+                input: true,
+                clearOnRefresh: false,
+              };
+            }
+
+            if (
+              field.fieldname === "vehicle_type" ||
+              field.options === "Daily Allowance Vehicle Category"
+            ) {
+              return {
+                type: "select",
+                key: field.fieldname,
+                label: field.label,
+                dataSrc: "url",
+                data: {
+                  url: `/api/resource/Daily%20Allowance%20Vehicle%20Category`,
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
+                validate: { required: field.required },
+                input: true,
+              };
+            }
+
+            // Generic Link field handling
+            return {
+              type: "select",
+              key: field.fieldname,
+              label: field.label,
+              dataSrc: "url",
+              data: {
+                url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field.options}`,
+              },
+              template: "<span>{{ item.name }}</span>",
+              valueProperty: "name",
+              selectValues: "message",
+              validate: { required: field.required },
+              input: true,
+            };
           default:
             return null;
         }
@@ -131,7 +218,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
           placeholder: "Select Expense Advance Type",
           dataSrc: "url",
           data: {
-            url: `${getBaseUrl()}/api/resource/Expense%20Claim%20Type?fields=["name"]&limit_page_length=100`,
+            url: `/api/resource/Expense%20Claim%20Type?fields=["name"]&limit_page_length=100`,
             headers: [{ key: "Accept", value: "application/json" }],
           },
           selectValues: "data",
@@ -154,7 +241,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
     }
     try {
       const res = await fetch(
-        `${getBaseUrl()}/api/method/chatnext_expense_trips.expense_claim.get_expense_type_fields?expense_type=${encodeURIComponent(
+        `/api/method/chatnext_expense_trips.expense_claim.get_expense_type_fields?expense_type=${encodeURIComponent(
           expenseType
         )}`
       );
@@ -277,6 +364,8 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                   null;
                 if (file) combinedData.attach_receipt = file;
               }
+
+              // Mapped all potential fields to the submission object
               const mappedExpense = {
                 id: crypto.randomUUID(),
                 expense_type: combinedData.expense_type,
@@ -285,9 +374,18 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 custom_mercent: combinedData.merchant,
                 custom_invoice_number: combinedData.invoice_number,
                 custom_attach_receipt: combinedData.attach_receipt?.file_url,
-                description: combinedData.description,
                 custom_units: combinedData.units,
+                custom_currency: combinedData.currency,
+                description: combinedData.description,
+                custom_vehicle_type: combinedData.vehicle_type,
+                custom_from_location: combinedData.from_location,
+                custom_to_location: combinedData.to_location,
+                custom_start_datetime: combinedData.start_datetime,
+                custom_end_datetime: combinedData.end_datetime,
+                custom_location: combinedData.location,
               };
+              console.log("mappedExpense", mappedExpense);
+
               onSave(mappedExpense);
 
               handleClose();

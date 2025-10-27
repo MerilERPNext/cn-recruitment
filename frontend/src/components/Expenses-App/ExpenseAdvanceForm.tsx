@@ -219,7 +219,7 @@ const ExpenseAdvanceForm: React.FC<{
                       label: "Posting Date",
                       input: true,
                       enableTime: false,
-                      format: "yyyy-MM-dd",
+                      format: "dd-MM-yyyy",
                       defaultValue: postingDate,
                     },
                   ],
