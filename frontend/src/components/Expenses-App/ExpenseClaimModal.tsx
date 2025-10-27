@@ -28,6 +28,19 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   const { data: currentEmployee } = useCurrentEmployee();
   const employeeId = currentEmployee?.name;
 
+  const formatMySQLDatetime = (
+    isoString: string | undefined
+  ): string | undefined => {
+    if (!isoString) return undefined;
+    const [datePart, timeWithOffset] = isoString.split("T");
+    if (!timeWithOffset) return isoString; // Handle unexpected format
+
+    const timePart = timeWithOffset.split("+")[0]?.split("Z")[0]; // Split by '+' or 'Z'
+    if (!timePart) return isoString;
+
+    return `${datePart} ${timePart}`;
+  };
+
   useEffect(() => {
     // Only run if we have new data AND the amount field is readonly
     if (calcData && isAmountReadonly) {
@@ -78,7 +91,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               type: "datetime",
               key: field.fieldname,
               label: field.label,
-              format: "yyyy-MM-dd HH:mm",
+              format: "dd-MM-yyyy HH:mm:ss",
               enableTime: true,
               enableDate: true,
               placeholder: "Select date and time",
@@ -365,6 +378,14 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 if (file) combinedData.attach_receipt = file;
               }
 
+              // Apply the formatting function to the datetime fields before mapping
+              const startDatetime = formatMySQLDatetime(
+                combinedData.start_datetime
+              );
+              const endDatetime = formatMySQLDatetime(
+                combinedData.end_datetime
+              );
+
               // Mapped all potential fields to the submission object
               const mappedExpense = {
                 id: crypto.randomUUID(),
@@ -380,8 +401,10 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 custom_vehicle_type: combinedData.vehicle_type,
                 custom_from_location: combinedData.from_location,
                 custom_to_location: combinedData.to_location,
-                custom_start_datetime: combinedData.start_datetime,
-                custom_end_datetime: combinedData.end_datetime,
+                // custom_start_datetime: combinedData.start_datetime,
+                // custom_end_datetime: combinedData.end_datetime,
+                custom_start_datetime: startDatetime, // Use the formatted value
+                custom_end_datetime: endDatetime, // Use the formatted value
                 custom_location: combinedData.location,
               };
               console.log("mappedExpense", mappedExpense);
