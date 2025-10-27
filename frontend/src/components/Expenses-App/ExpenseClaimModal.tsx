@@ -349,17 +349,22 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
 
               const units = change.data?.units;
               const numericUnits = Number(units);
+              const vehicleType = change.data?.vehicle_type;
 
               if (isAmountReadonly && units && newExpenseType) {
-                // Delay a bit
                 clearTimeout((window as any)._calcTimer);
                 (window as any)._calcTimer = setTimeout(() => {
                   if (numericUnits !== lastCalculatedUnits.current) {
                     lastCalculatedUnits.current = numericUnits;
-                    setCalcParams({
+                    const newCalcParams: any = {
                       expense_type: newExpenseType,
                       units: numericUnits,
-                    });
+                    };
+                    if (vehicleType) {
+                      newCalcParams.vehicle_type = vehicleType;
+                    }
+
+                    setCalcParams(newCalcParams);
                   }
                 }, 700);
               }
