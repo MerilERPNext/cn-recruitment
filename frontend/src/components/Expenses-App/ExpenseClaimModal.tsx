@@ -4,6 +4,9 @@ import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useCalculateExpenseAmount } from "../../hooks/useExpense";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { CalculateExpenseParams } from "../../types/expenseAdvance";
+import { formatMySQLDatetime } from "../../utils/dateTimeFormatUtils";
+
 
 interface ExpenseClaimModalProps {
   isOpen: boolean;
@@ -27,19 +30,6 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   const [isAmountReadonly, setIsAmountReadonly] = useState(false);
   const { data: currentEmployee } = useCurrentEmployee();
   const employeeId = currentEmployee?.name;
-
-  const formatMySQLDatetime = (
-    isoString: string | undefined
-  ): string | undefined => {
-    if (!isoString) return undefined;
-    const [datePart, timeWithOffset] = isoString.split("T");
-    if (!timeWithOffset) return isoString; // Handle unexpected format
-
-    const timePart = timeWithOffset.split("+")[0]?.split("Z")[0]; // Split by '+' or 'Z'
-    if (!timePart) return isoString;
-
-    return `${datePart} ${timePart}`;
-  };
 
   useEffect(() => {
     // Only run if we have new data AND the amount field is readonly
@@ -356,7 +346,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 (window as any)._calcTimer = setTimeout(() => {
                   if (numericUnits !== lastCalculatedUnits.current) {
                     lastCalculatedUnits.current = numericUnits;
-                    const newCalcParams: any = {
+                    const newCalcParams: CalculateExpenseParams = {
                       expense_type: newExpenseType,
                       units: numericUnits,
                     };
@@ -406,13 +396,10 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 custom_vehicle_type: combinedData.vehicle_type,
                 custom_from_location: combinedData.from_location,
                 custom_to_location: combinedData.to_location,
-                // custom_start_datetime: combinedData.start_datetime,
-                // custom_end_datetime: combinedData.end_datetime,
                 custom_start_datetime: startDatetime, // Use the formatted value
                 custom_end_datetime: endDatetime, // Use the formatted value
                 custom_location: combinedData.location,
               };
-              console.log("mappedExpense", mappedExpense);
 
               onSave(mappedExpense);
 
