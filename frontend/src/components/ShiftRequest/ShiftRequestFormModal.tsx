@@ -1,33 +1,37 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { toast } from "react-hot-toast";
 
-import { useShiftTypes, useCreateShiftRequest, useUpdateShiftRequest } from "../../hooks/useShift";
+import { useCreateShiftRequest, useUpdateShiftRequest } from "../../hooks/useShift";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 import type { ShiftRequestFormData, FormioSubmission, ShiftRequest } from "../../types/shift";
 import { Formio } from "formiojs";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
+import defaultFormSchema from "./ShiftRequestFormSchema.json";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
+  schema?: FormSchema;
   defaultShiftRequestData?: ShiftRequest;
-  forActionType?: "create" | "edit"; 
+  forActionType?: "create" | "edit";
 }
+
+type FormSchema = typeof defaultFormSchema;
 
 const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   onClose,
   defaultShiftRequestData,
+  schema: propSchema,
   forActionType
 }) => {
   const formRef = useRef<any>(null);
   const { setRefetchAttendance } = useGlobalStore();
-  const {
-    data: shiftTypes,
-    isLoading: shiftTypesLoading,
-    error: shiftTypesError,
-  } = useShiftTypes();
+  const [formSchema, setFormSchema] = useState<FormSchema>(
+    (propSchema || defaultFormSchema) as FormSchema
+  );
+
   const { mutate: createShiftRequest } = useCreateShiftRequest();
   const { mutate: updateShiftRequest } = useUpdateShiftRequest();
   const {
@@ -36,11 +40,11 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     error: employeeError,
   } = useCurrentEmployee();
 
-  const isLoading = shiftTypesLoading || employeeLoading;
-  const error = shiftTypesError || employeeError;
+  const isLoading = employeeLoading;
+  const error = employeeError;
 
 
-  const handleSubmitonSuccess = ()=>{
+  const handleSubmitonSuccess = () => {
     onClose?.();
     setTimeout(() => {
       setRefetchAttendance(true);
@@ -87,95 +91,33 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
       };
 
       if (forActionType === "edit" && defaultShiftRequestData?.name) {
-          updateShiftRequest( {doctype: defaultShiftRequestData.doctype, name: defaultShiftRequestData.name, data: payload } , {
-            onSuccess: handleSubmitonSuccess,
-            onError: (error: any) => {
-              handleSubmitionError("Error updating shift request:", error);
-            },
+        updateShiftRequest({ doctype: defaultShiftRequestData.doctype, name: defaultShiftRequestData.name, data: payload }, {
+          onSuccess: handleSubmitonSuccess,
+          onError: (error: any) => {
+            handleSubmitionError("Error updating shift request:", error);
+          },
         });
-      }else{
+      } else {
         createShiftRequest(payload, {
           onSuccess: handleSubmitonSuccess,
           onError: (error: any) => {
             handleSubmitionError("Error creating shift request:", error);
           },
         });
-    }
+      }
     } catch (formError) {
       console.error("Form submission error:", formError);
       toast.error("Please check your form inputs and try again.");
     }
   };
 
-  const formSchema = {
-    title: "Request Shift Change",
-    name: "requestShiftChange",
-    path: "request-shift-change",
-    display: "form",
-    components: [
-      {
-        type: "columns",
-        key: "dateRange",
-        label: "Date Range",
-        columns: [
-          {
-            components: [
-              {
-                type: "datetime",
-                key: "fromDate",
-                label: "From Date",
-                input: true,
-                format: "dd/MM/yyyy",
-                enableDate: true,
-                enableTime: false,
-                defaultValue: defaultShiftRequestData?.from_date || new Date().toISOString(),
-                validate: { required: true },
-              },
-            ],
-          },
-          {
-            components: [
-              {
-                type: "datetime",
-                key: "toDate",
-                label: "To Date",
-                input: true,
-                format: "dd/MM/yyyy",
-                enableDate: true,
-                enableTime: false,
-                defaultValue: defaultShiftRequestData?.to_date ||  new Date().toISOString(),
-                validate: { required: true },
-              },
-            ],
-          },
-        ],
-      },
-      {
-        type: "select",
-        key: "shiftType",
-        label: "Shift Type",
-        input: true,
-        placeholder: "Select shift type",
-        data: {
-          values:
-            shiftTypes?.data?.map((s: any) => ({
-              label: s?.name,
-              value: s?.name,
-            })) || [],
-        },
-        validate: { required: true },
-        defaultValue: defaultShiftRequestData?.shift_type || ""
-      },
-      {
-        type: "textarea",
-        key: "reason",
-        label: "Reason",
-        placeholder: "Enter reason",
-        input: true,
-        validate: { required: true },
-      },
-    ],
-  };
+  // Update schema when propSchema changes
+  useEffect(() => {
+    if (propSchema) {
+      setFormSchema(propSchema);
+    }
+  }, [propSchema]);
+
 
   if (isLoading) {
     return (
@@ -284,6 +226,13 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             form={formSchema}
             onFormReady={(instance: Formio) => {
               formRef.current = instance;
+            }}
+            submission={{
+              data: {
+                fromDate: defaultShiftRequestData?.from_date || new Date().toISOString(),
+                toDate: defaultShiftRequestData?.to_date || new Date().toISOString(),
+                shiftType: defaultShiftRequestData?.shift_type || ""
+              }
             }}
             options={{
               builder: { styles: false },
