@@ -1,0 +1,102 @@
+{
+  "title": "Employee Benefit Claim",
+  "name": "benefitClaim",
+  "path": "benefit-claim",
+  "display": "form",
+  "components": [
+    {
+      "type": "panel",
+      "key": "benefitPanel",
+      "label": "Benefit Claim Details",
+      "title": "Benefit Claim Details",
+      "hideLabel": true,
+      "customClass": "bg-white rounded-lg",
+      "components": [
+        {
+          "type": "hidden",
+          "key": "currentEmployeeId",
+          "input": true,
+          "defaultValue": ""
+        },
+        {
+          "type": "hidden",
+          "key": "claimDate",
+          "input": true,
+          "defaultValue": ""
+        },
+        {
+          "type": "select",
+          "key": "earning_component",
+          "label": "Claim Benefit For",
+          "placeholder": "Select Benefit Component",
+          "validate": {
+            "required": true
+          },
+          "input": true,
+          "dataSrc": "url",
+          "data": {
+            "url": "/api/method/cn_indian_payroll.cn_indian_payroll.overrides.benefit_claim.benefit_claim?employee={{data.currentEmployeeId}}&claim_date={{data.claimDate}}"
+          },
+          "valueProperty": "value",
+          "template": "<span>{{ item.label }}</span>",
+          "selectValues": "message.component_array",
+          "refreshOn": "currentEmployeeId,claimDate",
+          "clearOnRefresh": false,
+          "lazyLoad": false,
+          "customClass": "w-full"
+        },
+        {
+          "type": "number",
+          "key": "claimed_amount",
+          "label": "Claimed Amount",
+          "input": true,
+          "validate": {
+            "required": true,
+            "customMessage": "Claimed amount cannot be greater than Max amount eligible",
+            "custom": "valid = Number(data.custom_max_amount) < input ? false : true;"
+          }
+        },
+        {
+          "type": "select",
+          "disabled": true,
+          "key": "custom_max_amount",
+          "label": "Max Amount Eligible",
+          "placeholder": "0.00",
+          "input": true,
+          "dataSrc": "url",
+          "data": {
+            "url": "/api/method/cn_indian_payroll.cn_indian_payroll.overrides.benefit_claim.get_max_amount?employee={{data.currentEmployeeId}}&earning_component={{data.earning_component}}"
+          },
+          "valueProperty": "message",
+          "selectValues": "message",
+          "refreshOn": "earning_component",
+          "clearOnRefresh": true,
+          "lazyLoad": false,
+          "customConditional": "show = !!data.earning_component;",
+          "defaultValue": 0
+        },
+        {
+          "type": "textarea",
+          "key": "custom_note_by_employee",
+          "label": "Note by employee",
+          "input": true,
+          "placeholder": "Add a note...",
+          "rows": 4
+        },
+        {
+          "label": "Attachments",
+          "key": "attachments",
+          "type": "file",
+          "input": true,
+          "multiple": false,
+          "storage": "customBase64",
+          "filePattern": ".pdf,.doc,.docx,.jpg,.jpeg,.png",
+          "tooltip": "Upload receipts or supporting documents.",
+          "validate": {
+            "required": false
+          }
+        }
+      ]
+    }
+  ]
+}

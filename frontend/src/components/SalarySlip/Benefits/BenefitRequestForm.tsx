@@ -1,17 +1,14 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import {
-  useGetClaimBenefitFor,
-  useGetClaimBenifitMaxAmount,
-  useNewBenifitRequest,
-} from "../../../hooks/useBenifits";
+import { useNewBenifitRequest } from "../../../hooks/useBenifits";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
 import DOMPurify from "dompurify";
+import benefitRequestFormSchema from "./benefitRequestFormSchema.json";
 
 interface BenefitRequestFormProps {
   isOpen: boolean;
@@ -24,93 +21,13 @@ export default function BenefitRequestForm({
   onClose,
   onSuccess,
 }: BenefitRequestFormProps) {
-  const [claimBenifitFor, setClaimBenifitFor] = useState("");
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || ""
   );
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
-  const { data: claimBenifitForData } = useGetClaimBenefitFor(
-    currentEmployee?.employee,
-    format(new Date(), "yyyy-MM-dd")
-  );
-  const { data: claimBenifitForMaxAmount } = useGetClaimBenifitMaxAmount(
-    currentEmployee?.employee,
-    claimBenifitFor
-  );
   const mutation = useNewBenifitRequest();
-
-  const handleClaimBenifitChange = (event: {
-    data: { earning_component: string };
-  }) => {
-    const claimBenefit = event?.data?.earning_component || "";
-    setClaimBenifitFor(claimBenefit);
-  };
-  const createLoanFormSchema = {
-    type: "form",
-    display: "form",
-    components: [
-      {
-        type: "select",
-        key: "earning_component",
-        label: "Claim Benifit For",
-        placeholder: "Claim Benifit For",
-        validate: { required: true },
-        input: true,
-        onChange: handleClaimBenifitChange,
-        data: {
-          values: claimBenifitForData?.component_array,
-        },
-        customClass: "w-full",
-      },
-      {
-        type: "number",
-        key: "claimed_amount",
-        label: "Claimed Amount",
-        input: true,
-        validate: {
-          required: true,
-          customMessage:
-            "Claimed amount cannot be greater than Max amount eligible",
-          custom:
-            "valid = Number(data.custom_max_amount) < input ? false : true;",
-        },
-      },
-      {
-        type: "number",
-        disabled: true,
-        key: "custom_max_amount",
-        label: "Max Amount Eligible",
-        placeholder: "0.00",
-        defaultValue: claimBenifitForMaxAmount,
-        validate: { required: true },
-        input: true,
-      },
-      {
-        type: "textarea",
-        key: "custom_note_by_employee",
-        label: "Note by employee",
-        input: true,
-        placeholder: "Add a note...",
-      },
-
-      {
-        label: "Attachments",
-        fileTypes: [
-          { label: "Documents", value: ".pdf" },
-          { label: "Images", value: ".jpg,.jpeg,.png" },
-        ],
-        storage: "customBase64",
-        key: "attachments",
-        type: "file",
-        input: true,
-        multiple: false,
-
-        tooltip: "Upload receipts or supporting documents.",
-      },
-    ],
-  };
   const handleSubmit = async () => {
     const submission = await formRef.current?.submit();
 
@@ -178,7 +95,13 @@ export default function BenefitRequestForm({
         {/* Dialog Content */}
         <div className="flex-1 min-h-0 overflow-y-auto pb-20 px-6">
           <Form
-            form={createLoanFormSchema}
+            form={benefitRequestFormSchema}
+            submission={{
+              data: {
+                currentEmployeeId: currentEmployee?.employee || "",
+                claimDate: format(new Date(), "yyyy-MM-dd"),
+              },
+            }}
             options={{
               submitButton: false,
             }}
