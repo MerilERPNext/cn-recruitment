@@ -45,9 +45,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
     useCurrentEmployeeAllDetails(userId || "");
 
   const { data: currentUser } = useCurrentUser();
-  const canRedirectToDesk = currentUser?.roles?.some((role) =>
-    ["System Manager", "Payroll Manager"].includes(role.role)
-  );
+  const canRedirectToDesk = currentUser?.roles?.some(role => ['System User', 'Payroll Manager', "System Manager"].includes(role.role));
   // logout logic
   const logoutHandler = async () => {
     try {

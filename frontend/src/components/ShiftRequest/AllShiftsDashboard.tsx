@@ -19,10 +19,6 @@ import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import { ShiftDetailView } from "./ShiftDetailView";
 import getShiftStatus from "../../utils/getShiftStatus";
 
-type LoadingAction = {
-  id: string;
-  action: string;
-};
 
 export const StatusBadge = ({ status }: { status: string }) => {
   const baseStyle = "px-2 py-1 rounded-2xl text-xs inline-block";

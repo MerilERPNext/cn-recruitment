@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { Form } from "@tsed/react-formio";
+import { Formio } from "formiojs";
 import "formiojs/dist/formio.form.css";
 import { useCreateFrappeDocument } from "../../hooks/useFrappeQuery";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
@@ -536,6 +537,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             validateOnBlur: false,
             validateOnChange: false,
             suffix: "",
+            formio: Formio,
           }}
           onChange={({ data }: { data: FormSubmissionData }) => {
             setFormData(data);

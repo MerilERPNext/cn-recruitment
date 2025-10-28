@@ -2,7 +2,6 @@ import { useMemo, useState, useCallback } from "react";
 import CardTable from "../../shared/CardTable";
 import { useNavigate, useSearchParams } from "react-router";
 import {
-  LoadingAction,
   MyPlannedAttendanceRequest,
 } from "../../../types/attendance";
 import ApprovalList from "../../shared/ApprovalList";
@@ -48,7 +47,6 @@ const OvertimeRequests = () => {
     console.log("Request clicked:", request);
     if (request?.todo_id) {
       setSearchParams({ requestId: request.todo_id });
-      setMySelectedRequest(request);
     }
   },
   [setSearchParams]
@@ -65,11 +63,6 @@ const OvertimeRequests = () => {
   }, [setSearchParams]);
 
 
-
-
-  const [mySelectedRequest, setMySelectedRequest] = useState<
-    (MyPlannedAttendanceRequest & { loadingAction?: LoadingAction }) | null
-  >(null);
   return (
     <div>
       <div className="bg-white min-h-screen">

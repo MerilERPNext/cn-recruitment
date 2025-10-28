@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import {
-  LoadingAction,
   MyPlannedAttendanceRequest,
 } from "../../../types/attendance";
 import LayoutHeader from "../../shared/LayoutHeader";
@@ -12,10 +11,6 @@ import OvertimeApprovalCard from "./OvertimeApprovalCard";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 
 const AllOvertimePendingRequests = () => {
-  const [selectedRequest, setSelectedRequest] = useState<
-    (MyPlannedAttendanceRequest & { loadingAction?: LoadingAction }) | null
-  >(null);
-
 
   const [refetch, setRefetch] = useState(false);
   const { refetchAttendance } = useGlobalStore();
