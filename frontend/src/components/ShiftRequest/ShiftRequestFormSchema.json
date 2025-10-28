@@ -51,10 +51,13 @@
             "label": "Shift Type",
             "input": true,
             "placeholder": "Select shift type",
-            "dataSrc": "custom",
+            "dataSrc": "url",
             "data": {
-                "custom": "values = instance.options.data.shiftTypes;"
+                "url": "/api/resource/Shift Type?fields=[\"name\"]&order_by=creation desc"
             },
+            "valueProperty": "name",
+            "template": "<span>{{ item.name }}</span>",
+            "selectValues": "data",
             "validate": {
                 "required": true
             },

@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { toast } from "react-hot-toast";
 
-import { useShiftTypes, useCreateShiftRequest, useUpdateShiftRequest } from "../../hooks/useShift";
+import { useCreateShiftRequest, useUpdateShiftRequest } from "../../hooks/useShift";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 import type { ShiftRequestFormData, FormioSubmission, ShiftRequest } from "../../types/shift";
@@ -31,11 +31,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const [formSchema, setFormSchema] = useState<FormSchema>(
     (propSchema || defaultFormSchema) as FormSchema
   );
-  const {
-    data: shiftTypes,
-    isLoading: shiftTypesLoading,
-    error: shiftTypesError,
-  } = useShiftTypes();
+
   const { mutate: createShiftRequest } = useCreateShiftRequest();
   const { mutate: updateShiftRequest } = useUpdateShiftRequest();
   const {
@@ -44,8 +40,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     error: employeeError,
   } = useCurrentEmployee();
 
-  const isLoading = shiftTypesLoading || employeeLoading;
-  const error = shiftTypesError || employeeError;
+  const isLoading = employeeLoading;
+  const error = employeeError;
 
 
   const handleSubmitonSuccess = () => {
@@ -249,12 +245,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
               validateOnInit: false,
               validateOnBlur: false,
               validateOnChange: false,
-              data: {
-                shiftTypes: shiftTypes?.data?.map((s: { name: string }) => ({
-                  label: s.name,
-                  value: s.name,
-                })) || [],
-              }
             }}
             className="space-y-6"
           />
