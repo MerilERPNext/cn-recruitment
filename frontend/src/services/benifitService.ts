@@ -1,3 +1,4 @@
+import { BenefitClaimResponse } from "../types/employeeBenifit";
 import FrappeAPI from "../utils/frappeAPI";
 
 export type PayrollData = {
@@ -64,3 +65,16 @@ export const createBenifitRequest = async (
     throw error;
   }
 };
+
+
+export const EmployeeBenifitService = {
+  getEmployeeBenifitClaim: async (): Promise<BenefitClaimResponse[]> => {
+    const response = await FrappeAPI.getDocumentList("Employee Benefit Claim", {
+      fields: ["*"],
+      // filters: [["status", "=", "Draft"]],
+      orderBy: "creation desc",
+    });
+
+    return response.data as BenefitClaimResponse[];
+  },
+}

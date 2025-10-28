@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createBenifitRequest,
+  EmployeeBenifitService,
   getClaimBenefitFor,
   getClaimBenifitMaxAmount,
 } from "../services/benifitService";
+import { BenefitClaimResponse } from "../types/employeeBenifit";
 
 export function useGetClaimBenefitFor(
   empId: string | null | undefined,
@@ -40,3 +42,11 @@ export function useNewBenifitRequest() {
     },
   });
 }
+
+
+export const useEmployeeBenifit = () => {
+  return useQuery<BenefitClaimResponse[]>({
+    queryKey: ["employee-benifit-claim"],
+    queryFn: EmployeeBenifitService.getEmployeeBenifitClaim,
+  });
+};

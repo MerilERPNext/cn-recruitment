@@ -1,7 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useScreenSize } from "../hooks/useScreenSize";
-import { LogOut, ChevronDown, User, Search, Dock, Settings } from "lucide-react";
+import {
+  LogOut,
+  ChevronDown,
+  User,
+  Search,
+  Dock,
+  RotateCcwKey,
+} from "lucide-react";
 import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
@@ -10,6 +18,8 @@ import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { ROUTES } from "../constants/routes";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
+import { useRequestPasswordReset } from "../hooks/useResetPassword";
+import toast from "react-hot-toast";
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -33,7 +43,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee, isLoading: currentEmpIsLoading } =
     useCurrentEmployeeAllDetails(userId || "");
-  
+
   const { data: currentUser } = useCurrentUser();
   const canRedirectToDesk = currentUser?.roles?.some(role => ['System User', 'Payroll Manager', "System Manager"].includes(role.role));
   // logout logic
@@ -43,6 +53,22 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+  // reset password logic can be added here
+  const loginUserEmail = currentUser?.email || "";
+  const mutation = useRequestPasswordReset();
+  const handleReset = () => {
+    const email = loginUserEmail; 
+    mutation.mutate(email, {
+      onSuccess: (data) => {
+        toast("Password reset email sent successfully!");
+        console.log("Response:", data);
+      },
+      onError: (error: any) => {
+        toast("Failed to send password reset email!");
+        console.error(error);
+      },
+    });
   };
 
   // Handle click outside profile dropdown
@@ -119,11 +145,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
     navigate("/webapp/notification-log");
   };
 
-
-
   // Calculate dynamic margin based on sidebar width
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
-  
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -248,21 +271,30 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       <User className="w-4 h-4" />
                       My Profile
                     </button>
-                   {canRedirectToDesk && 
+                    {canRedirectToDesk && (
                       <button
-                      onClick={()=>{navigate('/desk') }}
+                        onClick={() => {
+                          navigate("/desk");
+                        }}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        <Dock className="w-4 h-4" />
+                        Switch to Desk
+                      </button>
+                    )}
+                    <button
+                      onClick={handleReset}
+                      disabled={mutation.isPending}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                     >
-                      <Dock className="w-4 h-4" />
-                      Switch to Desk
-                    </button>
-                    }
-                     <button
-                      onClick={ void(0) }
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Settings
+                      {mutation.isPending ? (
+                        "Sending..."
+                      ) : (
+                        <>
+                          <RotateCcwKey className="w-4 h-4" />
+                          Reset Password
+                        </>
+                      )}
                     </button>
 
                     <hr className="my-2 border-gray-100" />

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Calendar,
   Clock,
@@ -13,7 +14,7 @@ import {
   Timer,
   ArrowUpDown,
   Dock,
-  Settings
+  RotateCcwKey
 } from "lucide-react";
 import {
   useCanShowClockIn,
@@ -58,6 +59,7 @@ import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
+import { useRequestPasswordReset } from "../hooks/useResetPassword";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -86,7 +88,22 @@ export default function DesktopDashboard() {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
-
+//reset password logic ends here
+  const loginUserEmail = userId|| "";
+  const mutation = useRequestPasswordReset();
+  const handleReset = () => {
+    const email = loginUserEmail; // can be replaced with logged-in user's email
+    mutation.mutate(email, {
+      onSuccess: (data) => {
+       toast("Password reset email sent successfully!");
+        console.log("Response:", data);
+      },
+      onError: (error: any) => {
+        toast("Failed to send password reset email!");
+        console.error(error);
+      },
+    });
+  };
   // New hooks for check-in/check-out functionality
   const { data: canShowClockIn } = useCanShowClockIn(
     currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
@@ -557,12 +574,19 @@ export default function DesktopDashboard() {
                         </button>
                     } 
                      <button
-                      onClick={ void(0) }
+                      onClick={handleReset}
+                      disabled={mutation.isPending}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                     >
-                      <Settings className="w-4 h-4" />
-                      Settings
-                    </button>
+                      {mutation.isPending ? (
+                        "Sending..."
+                      ) : (
+                        <>
+                          <RotateCcwKey className="w-4 h-4" />
+                          Reset Password
+                        </>
+                      )}
+                      </button>
                      <hr className="my-2 border-gray-100" />
                     <button
                       onClick={async () => {
