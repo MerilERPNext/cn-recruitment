@@ -1,0 +1,80 @@
+{
+  "title": "Planned Overtime Request",
+  "name": "plannedOvertimeRequest",
+  "path": "planned-overtime-request",
+  "display": "form",
+  "components": [
+    {
+      "type": "hidden",
+      "key": "show_attachment",
+      "input": true
+    },
+    {
+      "type": "datagrid",
+      "key": "overtime_details",
+      "label": "Overtime Requests",
+      "addAnother": "New Row",
+      "customClass": "border-0",
+      "components": [
+        {
+          "type": "datetime",
+          "key": "start_date",
+          "label": "Start Date *",
+          "format": "dd-MM-yyyy",
+          "enableTime": false,
+          "validate": { "required": true },
+          "input": true
+        },
+        {
+          "type": "datetime",
+          "key": "start_time",
+          "label": "Start Time *",
+          "enableDate": false,
+          "enableTime": true,
+          "input": true,
+          "widget": { "type": "calendar" },
+          "validate": { "required": true }
+        },
+        {
+          "type": "datetime",
+          "key": "end_date",
+          "label": "End Date *",
+          "format": "dd-MM-yyyy",
+          "enableTime": false,
+          "validate": { "required": true },
+          "input": true
+        },
+        {
+          "type": "datetime",
+          "key": "end_time",
+          "label": "End Time *",
+          "enableDate": false,
+          "enableTime": true,
+          "input": true,
+          "widget": { "type": "calendar" },
+          "validate": { "required": true }
+        },
+        {
+          "type": "textfield",
+          "key": "message",
+          "label": "Message *",
+          "validate": { "required": true },
+          "input": true
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "key": "attachment",
+      "label": "Attachment",
+      "storage": "customBase64",
+      "input": true,
+      "validate": { "required": true },
+      "conditional": {
+        "show": true,
+        "when": "show_attachment",
+        "eq": true
+      }
+    }
+  ]
+}

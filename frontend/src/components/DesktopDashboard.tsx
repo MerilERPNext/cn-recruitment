@@ -14,7 +14,7 @@ import {
   Timer,
   ArrowUpDown,
   Dock,
-  RotateCcwKey
+  RotateCcwKey,
 } from "lucide-react";
 import {
   useCanShowClockIn,
@@ -50,7 +50,6 @@ import EmployeeFallback from "./EmployeeFallback";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import toast from "react-hot-toast";
-import AttendanceRequestForm from "./Attendance/AttendanceRequest/AttendanceRequestForm";
 import { LeaveRequestRefreshProvider } from "./Leaves/LeaveRequestRefreshContext";
 import { RequestLeaveModalProvider } from "./Leaves/RequestLeaveModalContext";
 import LeaveRequest from "./Attendance/LeaveRequest";
@@ -60,6 +59,7 @@ import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
 import { useRequestPasswordReset } from "../hooks/useResetPassword";
+import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -88,14 +88,14 @@ export default function DesktopDashboard() {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
-//reset password logic ends here
-  const loginUserEmail = userId|| "";
+  //reset password logic ends here
+  const loginUserEmail = userId || "";
   const mutation = useRequestPasswordReset();
   const handleReset = () => {
     const email = loginUserEmail; // can be replaced with logged-in user's email
     mutation.mutate(email, {
       onSuccess: (data) => {
-       toast("Password reset email sent successfully!");
+        toast("Password reset email sent successfully!");
         console.log("Response:", data);
       },
       onError: (error: any) => {
@@ -402,9 +402,9 @@ export default function DesktopDashboard() {
 
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
-  console.log("currentUser",currentUser)
-
-  const canRedirectToDesk = currentUser?.roles?.some(role => ['System User', 'Payroll Manager', "System Manager"].includes(role.role));
+  const canRedirectToDesk = currentUser?.roles?.some((role) =>
+    ["System User", "Payroll Manager", "System Manager"].includes(role.role)
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -563,17 +563,19 @@ export default function DesktopDashboard() {
                       <User className="w-4 h-4" />
                       View Full Profile
                     </button>
-                      
-                      {canRedirectToDesk &&
-                        <button
-                          onClick={()=>{navigate('/desk')}}
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                        >
-                          <Dock className="w-4 h-4" />
-                          Switch to Desk
-                        </button>
-                    } 
-                     <button
+
+                    {canRedirectToDesk && (
+                      <button
+                        onClick={() => {
+                          navigate("/desk");
+                        }}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        <Dock className="w-4 h-4" />
+                        Switch to Desk
+                      </button>
+                    )}
+                    <button
                       onClick={handleReset}
                       disabled={mutation.isPending}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
@@ -586,8 +588,8 @@ export default function DesktopDashboard() {
                           Reset Password
                         </>
                       )}
-                      </button>
-                     <hr className="my-2 border-gray-100" />
+                    </button>
+                    <hr className="my-2 border-gray-100" />
                     <button
                       onClick={async () => {
                         await logoutHandler();
@@ -944,7 +946,7 @@ export default function DesktopDashboard() {
       {showAttendanceRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <AttendanceRequestForm
+            <AttendanceRequestFormV2
               onClose={() => setShowAttendanceRequest(false)}
             />
           </div>
