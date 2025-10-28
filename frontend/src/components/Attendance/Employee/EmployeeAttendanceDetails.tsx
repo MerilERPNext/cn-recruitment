@@ -15,7 +15,6 @@ import { LeaveApplication } from "../../../types/leaves";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Plus, X } from "lucide-react";
-import AttendanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import {
   useGetButtonsStatus,
   useReplaceLeave,
@@ -28,6 +27,7 @@ import CircularLoader from "../../shared/atoms/CircularLoader";
 import RequestLeave from "../../Leaves/RequestLeave";
 import { useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
 import { LeaveDetailsCard } from "./LeaveDetailsCard";
+import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 
 interface EmployeeAttendanceDetailsProps {
   date?: Date;
@@ -351,7 +351,7 @@ const EmployeeAttendanceDetails = ({
 
       {showReqAttendanceCorrection &&
         createPortal(
-          <AttendanceRequestForm
+          <AttendanceRequestFormV2
             onClose={() => setShowReqAttendanceCorrection(false)}
             selectedDate={validDate || new Date()}
           />,

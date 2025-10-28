@@ -8,10 +8,7 @@ import {
   useUpdateAttendanceRequest,
 } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
-import {
-  useCurrentEmployeeAllDetails,
-  useEmployeeReportees,
-} from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
@@ -25,7 +22,11 @@ import defaultFormSchema from "./attendanceRequestFormSchema.json";
 interface AttendanceFormData {
   request_type?: string;
   company?: string;
-  employee?: string;
+  employee?: {
+    name: string;
+    employee_name: string;
+    company: string;
+  };
   message?: string;
   custom__request_reason?: string;
   from_date?: string | Date;
@@ -125,7 +126,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
 
   const [isForOthers, setIsForOthers] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [formSchema, setFormSchema] = useState<FormSchema>(
     (propSchema || defaultFormSchema) as FormSchema
   );
@@ -136,7 +136,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     currentUser?.name as string
   );
   const { data: userRoles } = useGetUserRoles();
-  const { data: employeeReporteeList } = useEmployeeReportees();
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
     currentEmployee?.employee as string
   );
@@ -249,43 +248,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       }
 
       // Reset employee selection when switching to "For Others"
-      if (isForOthers) {
-        setSelectedEmployee("");
-      }
 
       // Force redraw to update conditional fields
       currentEmployeeIdComponent?.redraw();
     }
   }, [isForOthers, currentEmployee]);
-
-  // Update company field when employee changes (matching old form behavior)
-  useEffect(() => {
-    if (formAddressInstance.current && employeeReporteeList) {
-      // Use setTimeout to avoid race conditions with employee field rendering
-      const timeoutId = setTimeout(() => {
-        let company = "Not Assigned";
-        if (isForOthers && selectedEmployee) {
-          const selectedEmp = employeeReporteeList.find(
-            (emp) => emp.name === selectedEmployee
-          );
-          company = selectedEmp?.company || "Not Assigned";
-        } else if (currentEmployee?.company) {
-          company = currentEmployee.company;
-        }
-
-        const companyComponent =
-          formAddressInstance.current?.getComponent("company");
-        if (companyComponent) {
-          // Use setValue without noUpdateEvent to trigger UI update
-          companyComponent.setValue(company);
-
-          companyComponent.redraw();
-        }
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedEmployee, isForOthers, currentEmployee, employeeReporteeList]);
 
   const normalizeTime = (timeStr?: string) => {
     if (!timeStr) return null;
@@ -314,7 +281,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       custom_request_type: submission.data.request_type,
       company: isForOthers ? submission.data.company : currentEmployee?.company,
       employee: isForOthers
-        ? submission.data.employee
+        ? submission.data.employee?.name
         : currentEmployee?.employee,
       explanation: submission.data.message,
       ...(submission.data.from_date && {
@@ -401,8 +368,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
     const handleError = (error: CustomError) => {
       const errorMessage =
-        error?.response?.data?.exception?.split(":").slice(1).join(":").trim() ||
-        "Something went wrong!!";
+        error?.response?.data?.exception
+          ?.split(":")
+          .slice(1)
+          .join(":")
+          .trim() || "Something went wrong!!";
       const cleanString = DOMPurify.sanitize(errorMessage || "");
       toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
       console.error(error);
@@ -435,10 +405,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   // Handle form change
   const handleFormChange = (submission: FormChangeSubmission) => {
     // Track employee selection
-    if (submission?.changed?.component?.key === "employee") {
-      const employeeId = submission?.data?.employee || "";
-      setSelectedEmployee(employeeId);
-    }
 
     // Auto-sync from_date to to_date for certain request types
     if (submission?.changed?.component?.key === "from_date") {
@@ -493,7 +459,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
         {/* Content Area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
-          {!userRoles?.roles["Employee Direct Manager"] ? (
+          {userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
                 className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
@@ -521,7 +487,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 to_date: defaultAttendanceData?.to_date || selectedDate,
                 request_type: defaultAttendanceData?.custom_request_type || "",
                 employee: defaultAttendanceData?.employee || "",
-                company: defaultAttendanceData?.company || currentEmployee?.company || "",
+                company: "",
                 custom_from_time: defaultAttendanceData?.custom_from_time
                   ? new Date(
                       `1970-01-01T${normalizeTime(
@@ -536,7 +502,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                       )}`
                     )
                   : "",
-                custom__request_reason: defaultAttendanceData?.custom__request_reason || "",
+                custom__request_reason:
+                  defaultAttendanceData?.custom__request_reason || "",
                 custom_location: defaultAttendanceData?.custom_location || "",
                 select_shift: defaultAttendanceData?.shift || "",
                 overnight_out_duty: false,

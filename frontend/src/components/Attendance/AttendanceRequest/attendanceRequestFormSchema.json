@@ -45,7 +45,23 @@
           "data": {
             "url": "/api/method/cn_leave_shift_managment.api.get_reportees"
           },
-          "valueProperty": "name",
+          "valueProperty": "",
+          "logic": [
+            {
+              "name": "update company",
+              "trigger": {
+                "type": "event",
+                "event": "change"
+              },
+              "actions": [
+                {
+                  "name": "company action",
+                  "type": "customAction",
+                  "customAction": "const company = instance.root.getComponent('company'); if (company && instance.dataValue) { company.setValue(instance.dataValue.company, { fromLogic: true }); }"
+                }
+              ]
+            }
+          ],
           "template": "<span>{{ item.employee_name }} ({{ item.name }})</span>",
           "selectValues": "message",
           "refreshOn": "isForOthers",
@@ -56,15 +72,15 @@
           "label": "Company",
           "key": "company",
           "type": "textfield",
+          "placeholder": "Company",
           "input": true,
-          "placeholder": "Loading company information...",
           "customClass": "mb-4",
           "disabled": true,
           "customConditional": "show = data.isForOthers === true;",
-          "defaultValue": "Not Assigned",
-          "clearOnHide": false,
-          "calculateValue": "value = data.employee ? 'Loading...' : 'Not Assigned'",
-          "allowCalculateOverride": true
+          "customDefaultValue": " ",
+          "calculateValue": " ",
+          "allowCalculateOverride": true,
+          "applyMaskOn": "change"
         },
         {
           "label": "Request Type",
