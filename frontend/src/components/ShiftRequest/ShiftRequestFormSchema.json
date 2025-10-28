@@ -1,0 +1,74 @@
+{
+    "title": "Request Shift Change",
+    "name": "requestShiftChange",
+    "path": "request-shift-change",
+    "display": "form",
+    "components": [
+        {
+            "type": "columns",
+            "key": "dateRange",
+            "label": "Date Range",
+            "columns": [
+                {
+                    "components": [
+                        {
+                            "type": "datetime",
+                            "key": "fromDate",
+                            "label": "From Date",
+                            "input": true,
+                            "format": "dd/MM/yyyy",
+                            "enableDate": true,
+                            "enableTime": false,
+                            "defaultValue": "",
+                            "validate": {
+                                "required": true
+                            }
+                        }
+                    ]
+                },
+                {
+                    "components": [
+                        {
+                            "type": "datetime",
+                            "key": "toDate",
+                            "label": "To Date",
+                            "input": true,
+                            "format": "dd/MM/yyyy",
+                            "enableDate": true,
+                            "enableTime": false,
+                            "defaultValue": "",
+                            "validate": {
+                                "required": true
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "select",
+            "key": "shiftType",
+            "label": "Shift Type",
+            "input": true,
+            "placeholder": "Select shift type",
+            "dataSrc": "custom",
+            "data": {
+                "custom": "values = instance.options.data.shiftTypes;"
+            },
+            "validate": {
+                "required": true
+            },
+            "defaultValue": ""
+        },
+        {
+            "type": "textarea",
+            "key": "reason",
+            "label": "Reason",
+            "placeholder": "Enter reason",
+            "input": true,
+            "validate": {
+                "required": true
+            }
+        }
+    ]
+}

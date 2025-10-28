@@ -20,7 +20,6 @@ const EmpAttendanceRequestCard = ({
   columns?: number;
   type: "actioned" | "pending";
 }) => {
-  console.log("data in emp card", data, type);
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
   const [edit, setEdit] = useState(false);
