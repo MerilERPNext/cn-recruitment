@@ -387,7 +387,7 @@ export default function DesktopDashboard() {
 
   console.log("currentUser",currentUser)
 
-  const canRedirectToDesk = currentUser?.roles?.some(role => ['System User', 'Payroll Manager'].includes(role.role));
+  const canRedirectToDesk = currentUser?.roles?.some(role => ['System User', 'Payroll Manager', "System Manager"].includes(role.role));
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
