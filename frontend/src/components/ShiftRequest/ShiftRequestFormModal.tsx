@@ -250,9 +250,9 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
               validateOnBlur: false,
               validateOnChange: false,
               data: {
-                shiftTypes: shiftTypes?.data?.map((s: any) => ({
-                  label: s?.name,
-                  value: s?.name,
+                shiftTypes: shiftTypes?.data?.map((s: { name: string }) => ({
+                  label: s.name,
+                  value: s.name,
                 })) || [],
               }
             }}
