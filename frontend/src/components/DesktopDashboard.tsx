@@ -402,8 +402,6 @@ export default function DesktopDashboard() {
 
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
-  console.log("currentUser", currentUser);
-
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
     ["System User", "Payroll Manager", "System Manager"].includes(role.role)
   );

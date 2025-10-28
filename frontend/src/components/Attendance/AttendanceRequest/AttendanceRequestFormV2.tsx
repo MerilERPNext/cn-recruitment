@@ -246,9 +246,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           noUpdateEvent: true,
         });
       }
-
-      // Reset employee selection when switching to "For Others"
-
       // Force redraw to update conditional fields
       currentEmployeeIdComponent?.redraw();
     }
@@ -318,10 +315,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           from_date: formatDateToYYYYMMDD(
-            new Date(submission.data.from_date || new Date())
+            new Date(submission.data.from_date || "")
           ),
           to_date: formatDateToYYYYMMDD(
-            new Date(submission.data.to_date || new Date())
+            new Date(submission.data.to_date || "")
           ),
           custom_from_time: formatTime(submission.data.custom_from_time),
           custom_to_time: formatTime(submission.data.custom_to_time),
