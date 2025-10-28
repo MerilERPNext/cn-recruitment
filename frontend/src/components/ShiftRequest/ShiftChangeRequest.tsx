@@ -1,13 +1,8 @@
 import { useCallback, useState } from "react";
 import ApprovalList from "../shared/ApprovalList";
 import ApprovalRejectedForMobile from "./mobileUI/ApprovalRejectedCard";
-import { MyShiftRequest } from "../../types/shift";
 import { ShiftDetailView } from "./ShiftDetailView";
 import { useSearchParams } from "react-router-dom";
-type LoadingAction = {
-  id: string;
-  action: string;
-};
 
 export default function ShiftChangeRequests() {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);

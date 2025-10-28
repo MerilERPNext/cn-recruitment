@@ -5,13 +5,7 @@ import ApprovalList from "../shared/ApprovalList";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import { useCallback, useState } from "react";
 import CardTable from "../shared/CardTable";
-import { MyShiftRequest } from "../../types/shift";
 import { ShiftDetailView } from "./ShiftDetailView";
-
-type LoadingAction = {
-  id: string;
-  action: string;
-};
 
 const AllShiftChangeRequestsList: React.FC = () => {
   const navigate = useNavigate();
@@ -44,10 +38,6 @@ const AllShiftChangeRequestsList: React.FC = () => {
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
-
-  const [selectedRequest, setSelectedRequest] = useState<
-    (MyShiftRequest & { loadingAction?: LoadingAction }) | null
-  >(null);
 
   return (
     <div className="w-full mx-auto pt-2 px-6">
