@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { format, isValid } from "date-fns";
-=======
-import { format , isValid } from "date-fns";
->>>>>>> hr-microapps
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
