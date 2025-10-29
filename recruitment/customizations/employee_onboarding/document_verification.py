@@ -17,20 +17,20 @@ def update_verification_documents(doc, method):
             child_row = existing_docs[fieldname]
             if child_row.attachments != attachment_value:
                 child_row.attachments = attachment_value or ""  
-                child_row.status = "Pending"  
+                child_row.status = "Pending" if attachment_value else ""
         else:
             # If it's a new attachment, add it to the child table
             doc.append("custom_documents_for_verification", {
                 "document": field.label,
                 "fieldname": fieldname,
                 "attachments": attachment_value or "",
-                "status": "Pending"
+                "status": "Pending" if attachment_value else "",
             })
     
     # Instead of removing rows, just clear the attachment field when it's empty
     for row in doc.get("custom_documents_for_verification", []):
         if not doc.get(row.fieldname):  
             row.attachments = ""  
-            row.status = "Pending"
+            row.status = "Pending" if row.attachments else ""
 
 

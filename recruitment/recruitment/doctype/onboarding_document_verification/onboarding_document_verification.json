@@ -26,8 +26,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected",
-   "read_only": 1
+   "options": "\nPending\nApproved\nRejected"
   },
   {
    "allow_on_submit": 1,
@@ -52,7 +51,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-10-01 12:51:37.191526",
+ "modified": "2025-10-29 17:14:00.196428",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Onboarding Document Verification",
