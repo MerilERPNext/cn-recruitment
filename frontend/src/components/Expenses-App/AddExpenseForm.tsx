@@ -25,7 +25,7 @@ export interface EmployeeOption {
 }
 
 interface Expense {
-  id: string;
+  uid: string;
   expenseCategory: string;
   expenseType: string;
   expense_date?: string;
@@ -67,6 +67,9 @@ const AddExpenseForm: React.FC = () => {
   const [isCalculating, setIsCalculating] = useState(false);
 
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [failedExpenseUids, setFailedExpenseUids] = useState<Set<string>>(
+    new Set()
+  );
 
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
 
@@ -149,7 +152,7 @@ const AddExpenseForm: React.FC = () => {
 
   const displayParticipants = useMemo(() => {
     if (editingExpenseId) {
-      const e = expenses.find((x) => x.id === editingExpenseId);
+      const e = expenses.find((x) => x.uid === editingExpenseId);
       if (e && Array.isArray(e.participants)) return e.participants;
     }
     if (
@@ -160,7 +163,6 @@ const AddExpenseForm: React.FC = () => {
     }
     return [];
   }, [editingExpenseId, expenses, dynamicFormData]);
-
   const formSchema = useMemo(
     () => ({
       display: "form",
@@ -205,7 +207,7 @@ const AddExpenseForm: React.FC = () => {
                   placeholder: "Select Expense Type",
                   dataSrc: "url",
                   data: {
-                    url: `/api/method/chatnext_expense_trips.expense_claim.get_expense_types_by_category?employee=${currentEmployee?.employee_number}&&reimbursement_category={{ data.expenseCategory }}`,
+                    url: `/api/method/chatnext_expense_trips.expense_claim.get_expense_types_by_category?employee=${currentEmployee?.name}&&reimbursement_category={{ data.expenseCategory }}`,
                     headers: [{ key: "Accept", value: "application/json" }],
                   },
                   selectValues: "message",
@@ -237,7 +239,15 @@ const AddExpenseForm: React.FC = () => {
     );
 
   const handleDeleteSelected = () => {
-    setExpenses((prev) => prev.filter((e) => !selectedExpenses.includes(e.id)));
+    setExpenses((prev) =>
+      prev.filter((e) => !selectedExpenses.includes(e.uid))
+    );
+    // Clear failed status for deleted expenses
+    setFailedExpenseUids((prev) => {
+      const newSet = new Set(prev);
+      selectedExpenses.forEach((uid) => newSet.delete(uid));
+      return newSet;
+    });
     setSelectedExpenses([]);
   };
 
@@ -511,7 +521,7 @@ const AddExpenseForm: React.FC = () => {
       );
 
     const payload = {
-      employee: currentEmployee?.employee_number,
+      employee: currentEmployee?.name,
       employee_name: currentEmployee?.employee_name,
       company: currentEmployee?.company,
       posting_date: new Date().toISOString().split("T")[0],
@@ -557,14 +567,59 @@ const AddExpenseForm: React.FC = () => {
     };
 
     submitExpenseClaim(JSON.stringify(payload), {
-      onSuccess: () => {
-        clearLocal();
+      onSuccess: (response: any) => {
+        const uidStatus = response?.uid_status || {};
+
+        // Separate successful and failed expenses
+        const failedUids: string[] = [];
+        const successfulUids: string[] = [];
+
+        Object.entries(uidStatus).forEach(([uid, status]) => {
+          if (status === "success") {
+            successfulUids.push(uid);
+          } else {
+            failedUids.push(uid);
+          }
+        });
+
+        // Filter out successful expenses, keep failed ones
+        const remainingExpenses = expenses.filter((expense) =>
+          failedUids.includes(expense.uid)
+        );
+
+        // Update state with failed expenses
+        setExpenses(remainingExpenses);
+        setFailedExpenseUids(new Set(failedUids));
+
+        // Clear localStorage and update with failed expenses only
+        if (remainingExpenses.length > 0) {
+          localStorage.setItem(
+            LOCAL_KEYS.EXPENSES,
+            JSON.stringify(remainingExpenses)
+          );
+
+          // Show error message for failed items
+          toast.error(
+            `${failedUids.length} expense item(s) failed to submit. Please review and try again.`
+          );
+        } else {
+          // All successful, clear everything
+          clearLocal();
+          toast.success("All expenses submitted successfully!");
+        }
+
+        // Show success message for successful items
+        if (successfulUids.length > 0) {
+          toast.success(
+            `${successfulUids.length} expense item(s) submitted successfully!`
+          );
+        }
       },
     } as any);
   };
 
   const handleEdit = (expense: Expense) => {
-    setEditingExpenseId(expense.id);
+    setEditingExpenseId(expense.uid);
     setMainFormData({
       expenseCategory: expense.expenseCategory,
       expenseType: expense.expenseType,
@@ -577,6 +632,13 @@ const AddExpenseForm: React.FC = () => {
     setDynamicFormData(copy);
     setShowCategoryAndType(true);
     setFormKey((k) => k + 1);
+
+    // Clear failed status when editing
+    setFailedExpenseUids((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(expense.uid);
+      return newSet;
+    });
   };
 
   return (
@@ -759,7 +821,7 @@ const AddExpenseForm: React.FC = () => {
                     combinedData.attach_receipt?.[0]?.url || null;
 
                   const newExpense: Expense = {
-                    id: editingExpenseId ?? Date.now().toString(),
+                    uid: editingExpenseId ?? Date.now().toString(),
                     ...combinedData,
                     attach_receipt: attachment,
                     amount: amountFromApi ?? combinedData.amount ?? undefined,
@@ -768,7 +830,7 @@ const AddExpenseForm: React.FC = () => {
                   if (editingExpenseId) {
                     setExpenses((prev) =>
                       prev.map((e) =>
-                        e.id === editingExpenseId ? newExpense : e
+                        e.uid === editingExpenseId ? newExpense : e
                       )
                     );
                   } else {
@@ -902,7 +964,7 @@ const AddExpenseForm: React.FC = () => {
                             ${
                               (editingExpenseId
                                 ? expenses.find(
-                                    (x) => x.id === editingExpenseId
+                                    (x) => x.uid === editingExpenseId
                                   )?.amount ?? dynamicFormData?.amount
                                 : dynamicFormData?.amount) > 0
                                 ? "bg-blue-600 text-white hover:bg-blue-700"
@@ -911,7 +973,7 @@ const AddExpenseForm: React.FC = () => {
                     disabled={
                       !(
                         (editingExpenseId
-                          ? expenses.find((x) => x.id === editingExpenseId)
+                          ? expenses.find((x) => x.uid === editingExpenseId)
                               ?.amount ?? dynamicFormData?.amount
                           : dynamicFormData?.amount) > 0
                       )
@@ -925,6 +987,32 @@ const AddExpenseForm: React.FC = () => {
           )}
           {expenses.length > 0 && (
             <div className="mt-8">
+              {failedExpenseUids.size > 0 && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <svg
+                      className="w-5 h-5 text-red-600 mt-0.5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-red-800">
+                        Submission Failed for {failedExpenseUids.size} item(s)
+                      </h3>
+                      <p className="mt-1 text-sm text-red-700">
+                        The highlighted expense items below failed to submit. Please
+                        review and correct them, then try submitting again.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Expense List</h2>
                 <button
@@ -949,7 +1037,7 @@ const AddExpenseForm: React.FC = () => {
                           type="checkbox"
                           onChange={(e) =>
                             setSelectedExpenses(
-                              e.target.checked ? expenses.map((e) => e.id) : []
+                              e.target.checked ? expenses.map((e) => e.uid) : []
                             )
                           }
                           checked={
@@ -968,19 +1056,32 @@ const AddExpenseForm: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {expenses.map((expense) => (
-                      <tr
-                        key={expense.id}
-                        className="border-t border-gray-200 hover:bg-gray-50"
-                      >
+                    {expenses.map((expense) => {
+                      const isFailed = failedExpenseUids.has(expense.uid);
+                      return (
+                        <tr
+                          key={expense.uid}
+                          className={`border-t border-gray-200 hover:bg-gray-50 ${
+                            isFailed ? "bg-red-50 border-red-200" : ""
+                          }`}
+                        >
                         <td className="px-4 py-2">
                           <input
                             type="checkbox"
-                            checked={selectedExpenses.includes(expense.id)}
-                            onChange={() => handleCheckboxChange(expense.id)}
+                            checked={selectedExpenses.includes(expense.uid)}
+                            onChange={() => handleCheckboxChange(expense.uid)}
                           />
                         </td>
-                        <td className="px-4 py-2">{expense.expenseCategory}</td>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center gap-2">
+                            {expense.expenseCategory}
+                            {isFailed && (
+                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+                                Failed
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-2">{expense.expenseType}</td>
                         <td className="px-4 py-2">
                           {expense.expense_date
@@ -1006,11 +1107,17 @@ const AddExpenseForm: React.FC = () => {
                           <button
                             onClick={() => {
                               setExpenses((prev) =>
-                                prev.filter((e) => e.id !== expense.id)
+                                prev.filter((e) => e.uid !== expense.uid)
                               );
                               setSelectedExpenses((prev) =>
-                                prev.filter((id) => id !== expense.id)
+                                prev.filter((id) => id !== expense.uid)
                               );
+                              // Clear failed status when deleting
+                              setFailedExpenseUids((prev) => {
+                                const newSet = new Set(prev);
+                                newSet.delete(expense.uid);
+                                return newSet;
+                              });
                             }}
                             className="text-red-400 hover:text-blue-700"
                             title="Delete"
@@ -1019,7 +1126,8 @@ const AddExpenseForm: React.FC = () => {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1057,7 +1165,7 @@ const AddExpenseForm: React.FC = () => {
           onClose={() => setIsSharePanelOpen(false)}
           expenseAmount={Number(
             (editingExpenseId
-              ? expenses.find((x) => x.id === editingExpenseId)?.amount ??
+              ? expenses.find((x) => x.uid === editingExpenseId)?.amount ??
                 dynamicFormData?.amount
               : dynamicFormData?.amount) ?? 0
           )}
@@ -1072,7 +1180,7 @@ const AddExpenseForm: React.FC = () => {
             if (editingExpenseId) {
               setExpenses((prev) =>
                 prev.map((e) =>
-                  e.id === editingExpenseId
+                  e.uid === editingExpenseId
                     ? { ...e, participants: formattedParticipants }
                     : e
                 )
