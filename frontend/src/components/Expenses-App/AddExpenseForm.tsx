@@ -36,6 +36,22 @@ interface Expense {
   attach_receipt?: string | { url: string }[] | null;
   [key: string]: any;
 }
+interface ExpenseSubmissionResponse {
+  uid_status: Record<string, "success" | "failed">;
+
+  message: {
+    success: boolean;
+    message: string;
+    claims: {
+      name: string;
+      category: string;
+      category_name: string;
+      total_amount: number;
+      expense_count: number;
+      expense_types: string[];
+    }[];
+  };
+}
 
 const LOCAL_KEYS = {
   MAIN: "add_expense_mainForm",
@@ -150,6 +166,15 @@ const AddExpenseForm: React.FC = () => {
     }
   };
 
+  const clearFailedStatus = (uids: string | string[]) => {
+    const uidsArray = Array.isArray(uids) ? uids : [uids];
+    setFailedExpenseUids((prev) => {
+      const newSet = new Set(prev);
+      uidsArray.forEach((uid) => newSet.delete(uid));
+      return newSet;
+    });
+  };
+
   const displayParticipants = useMemo(() => {
     if (editingExpenseId) {
       const e = expenses.find((x) => x.uid === editingExpenseId);
@@ -243,11 +268,7 @@ const AddExpenseForm: React.FC = () => {
       prev.filter((e) => !selectedExpenses.includes(e.uid))
     );
     // Clear failed status for deleted expenses
-    setFailedExpenseUids((prev) => {
-      const newSet = new Set(prev);
-      selectedExpenses.forEach((uid) => newSet.delete(uid));
-      return newSet;
-    });
+    clearFailedStatus(selectedExpenses);
     setSelectedExpenses([]);
   };
 
@@ -567,7 +588,7 @@ const AddExpenseForm: React.FC = () => {
     };
 
     submitExpenseClaim(JSON.stringify(payload), {
-      onSuccess: (response: any) => {
+      onSuccess: (response: ExpenseSubmissionResponse) => {
         const uidStatus = response?.uid_status || {};
 
         // Separate successful and failed expenses
@@ -634,11 +655,7 @@ const AddExpenseForm: React.FC = () => {
     setFormKey((k) => k + 1);
 
     // Clear failed status when editing
-    setFailedExpenseUids((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(expense.uid);
-      return newSet;
-    });
+    clearFailedStatus(expense.uid);
   };
 
   return (
@@ -1006,8 +1023,9 @@ const AddExpenseForm: React.FC = () => {
                         Submission Failed for {failedExpenseUids.size} item(s)
                       </h3>
                       <p className="mt-1 text-sm text-red-700">
-                        The highlighted expense items below failed to submit. Please
-                        review and correct them, then try submitting again.
+                        The highlighted expense items below failed to submit.
+                        Please review and correct them, then try submitting
+                        again.
                       </p>
                     </div>
                   </div>
@@ -1065,67 +1083,65 @@ const AddExpenseForm: React.FC = () => {
                             isFailed ? "bg-red-50 border-red-200" : ""
                           }`}
                         >
-                        <td className="px-4 py-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedExpenses.includes(expense.uid)}
-                            onChange={() => handleCheckboxChange(expense.uid)}
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <div className="flex items-center gap-2">
-                            {expense.expenseCategory}
-                            {isFailed && (
-                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
-                                Failed
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-2">{expense.expenseType}</td>
-                        <td className="px-4 py-2">
-                          {expense.expense_date
-                            ? format(
-                                new Date(expense.expense_date),
-                                "dd-MM-yyyy"
-                              )
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-2">{expense.merchant || "-"}</td>
-                        <td className="px-4 py-2">
-                          {expense.invoice_number || "-"}
-                        </td>
-                        <td className="px-4 py-2">{expense.amount ?? "-"}</td>
-                        <td className="px-4 py-2 flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(expense)}
-                            className="text-blue-400 hover:text-green-800"
-                            title="Edit"
-                          >
-                            <SquarePen />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setExpenses((prev) =>
-                                prev.filter((e) => e.uid !== expense.uid)
-                              );
-                              setSelectedExpenses((prev) =>
-                                prev.filter((id) => id !== expense.uid)
-                              );
-                              // Clear failed status when deleting
-                              setFailedExpenseUids((prev) => {
-                                const newSet = new Set(prev);
-                                newSet.delete(expense.uid);
-                                return newSet;
-                              });
-                            }}
-                            className="text-red-400 hover:text-blue-700"
-                            title="Delete"
-                          >
-                            <Trash2 />
-                          </button>
-                        </td>
-                      </tr>
+                          <td className="px-4 py-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedExpenses.includes(expense.uid)}
+                              onChange={() => handleCheckboxChange(expense.uid)}
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center gap-2">
+                              {expense.expenseCategory}
+                              {isFailed && (
+                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+                                  Failed
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">{expense.expenseType}</td>
+                          <td className="px-4 py-2">
+                            {expense.expense_date
+                              ? format(
+                                  new Date(expense.expense_date),
+                                  "dd-MM-yyyy"
+                                )
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-2">
+                            {expense.merchant || "-"}
+                          </td>
+                          <td className="px-4 py-2">
+                            {expense.invoice_number || "-"}
+                          </td>
+                          <td className="px-4 py-2">{expense.amount ?? "-"}</td>
+                          <td className="px-4 py-2 flex items-center gap-2">
+                            <button
+                              onClick={() => handleEdit(expense)}
+                              className="text-blue-400 hover:text-green-800"
+                              title="Edit"
+                            >
+                              <SquarePen />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setExpenses((prev) =>
+                                  prev.filter((e) => e.uid !== expense.uid)
+                                );
+                                setSelectedExpenses((prev) =>
+                                  prev.filter((id) => id !== expense.uid)
+                                );
+                                // Clear failed status when deleting
+                                clearFailedStatus(expense.uid);
+                              }}
+                              className="text-red-400 hover:text-blue-700"
+                              title="Delete"
+                            >
+                              <Trash2 />
+                            </button>
+                          </td>
+                        </tr>
                       );
                     })}
                   </tbody>
