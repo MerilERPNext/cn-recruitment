@@ -48,15 +48,6 @@ export default function PasswordReset() {
       confirmPassword: confirmPasswordError,
     });
   
-    // ❌ If there are validation errors — show toast + refresh after 2 seconds
-    if (newPasswordError || confirmPasswordError) {
-      toast.error("Please fix the highlighted errors and try again.");
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-      return;
-    }
-  
     // ✅ Submit the mutation
     mutation.mutate(
       { key, new_password: newPassword },
@@ -66,16 +57,11 @@ export default function PasswordReset() {
           console.log("Response:", data);
           setNewPassword("");
           setConfirmPassword("");
-          setTimeout(() => {
-            window.location.reload(); // refresh after successful submission too
-          }, 2000);
+          window.location.href = "/login?redirect-to=%2Fwebapp";
         },
         onError: (error: any) => {
           toast.error("Failed to reset password!");
           console.error(error);
-          setTimeout(() => {
-            window.location.reload(); // refresh on API error as well
-          }, 2000);
         },
       }
     );

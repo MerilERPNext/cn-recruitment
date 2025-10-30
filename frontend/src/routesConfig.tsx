@@ -15,6 +15,8 @@ import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/AddExpenseForm";
+import Separation from "./components/Flows/Separation/Separation";
+import ConfirmationWorkflow from "./components/Flows/Confirmation/Confirmation";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -663,6 +665,10 @@ export const routesConfig: AppRoute[] = [
       },
     ],
   },
+  
+    { path: "/webapp/flows-app/separation", element: <Separation /> },
+    { path: "/webapp/flows-app/confirmation-workflow", element: <ConfirmationWorkflow /> },
+  
   {
     path: "/webapp/organizational-chart",
     element: <OrganizationChart />,

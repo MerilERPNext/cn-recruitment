@@ -37,7 +37,7 @@ const BenefitCard = ({
     <>
       {isDesktop ? (
         <div
-          className={`w-full  grid grid-cols-6 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
+          className={`w-full  grid grid-cols-6 items-center gap-4 px-6 min-h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
         >
           <div className="font-medium">{data?.employee_name}</div>
           <div className="font-medium">
