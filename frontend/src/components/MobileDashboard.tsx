@@ -14,6 +14,7 @@ import {
   FileEdit,
   Timer,
   BanknoteX,
+  Workflow,
 } from "lucide-react";
 import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -568,6 +569,18 @@ const MobileDashboard: React.FC = () => {
               </div>
               <span className="text-xs font-medium text-purple-700 text-center">
                 Shifts
+              </span>
+            </Link>
+
+            <Link
+              to="/webapp/flow-app"
+              className="flex flex-col items-center group"
+            >
+              <div className="w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
+                <Workflow className="w-6 h-6 text-fuchsia-600 group-hover:text-fuchsia-800 transition-colors" />
+              </div>
+              <span className="text-xs font-medium text-pink-700 text-center">
+                Flows
               </span>
             </Link>
 
