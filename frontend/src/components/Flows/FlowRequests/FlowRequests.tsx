@@ -149,14 +149,15 @@ const requests = [
 const titles =  ["Request ID",
               "Flow Name",
               "Category",
-              "Approval Status",
-              "Workflow Status",
-              "Overall Flow Status",
               "Initiated On",
               "Initiated By",
               "Initiated For",
               "Last Triggered On",
-              "Triggering Event"]
+              "Triggering Event",
+              "Approval Status",
+              "Workflow Status",
+              "Overall Flow Status",
+            ]
 
 const FlowRequests : React.FC = () => {
   const [filter, setFilter] = useState({ currentTab: subtabs[0].name });
@@ -223,20 +224,20 @@ const FlowRequests : React.FC = () => {
               ))}
             </div>
             <div className="w-full">
-            {true ?
+            {requests.length > 0 ?
           requests.map((request) => (
-          <div key={request.requestId} className="hover:bg-gray-100 grid grid-cols-11 cursor-pointer text-xs w-full border-b">
+          <div key={request.requestId} className="hover:bg-gray-100 grid grid-cols-11 cursor-pointer text-sm w-full border-b">
             <span className="px-4 py-4 inline-block cursor-pointer text-blue-700 hover:text-blue-800 hover:underline" onClick={()=> handleNavigate(request.requestId)}>{request.requestId}</span>
             <span className="px-4 py-4 inline-block cursor-pointer text-blue-700 hover:text-blue-800 hover:underline" onClick={()=> handleNavigate(request.requestId)}>{request.flowName}</span>
             <span className="px-4 py-4 inline-block ">{request.category}</span>
-            <span className="px-4 py-4 inline-block "><Badge backgroundColor={getStatusTagColor(request.approvalStatus)} label={request.approvalStatus} size="sm" /></span>
-            <span className="px-4 py-4 inline-block "><Badge backgroundColor={getStatusTagColor(request.workflowStatus)} label={request.workflowStatus} size="sm" /></span>
-            <span className="px-4 py-4 inline-block "><Badge backgroundColor={getStatusTagColor(request.overallFlowStatus)} label={request.overallFlowStatus} size="sm" /></span>
             <span className="px-4 py-4 inline-block ">{request.initiatedOn}</span>
             <span className="px-4 py-4 inline-block ">{request.initiatedBy}</span>
             <span className="px-4 py-4 inline-block ">{request.initiatedFor}</span>
             <span className="px-4 py-4 inline-block ">{request.lastTriggeredOn}</span>
             <span className="px-4 py-4 inline-block ">{request.triggeringEvent}</span>
+            <span className="px-4 py-4 inline-block "><Badge backgroundColor={getStatusTagColor(request.approvalStatus)} label={request.approvalStatus} size="sm" /></span>
+            <span className="px-4 py-4 inline-block "><Badge backgroundColor={getStatusTagColor(request.workflowStatus)} label={request.workflowStatus} size="sm" /></span>
+            <span className="px-4 py-4 inline-block "><Badge backgroundColor={getStatusTagColor(request.overallFlowStatus)} label={request.overallFlowStatus} size="sm" /></span>
           </div>
         )):     <EmptyState />
     }

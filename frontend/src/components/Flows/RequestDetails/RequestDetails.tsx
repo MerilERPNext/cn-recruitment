@@ -106,9 +106,11 @@ const RequestDetails: React.FC = () => {
     }
   }
   return (
-    <div className="sm:px-8 p-4 min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
+      <div className="sm:px-4">
       <HeaderBar title={'Flow Request Details : ' + id} onBack={handleNavigateBack} />
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
+      </div>
+      <div className="sm:px-8 px-4  flex items-center justify-between mb-4 flex-wrap gap-4">
         <div className="flex w-full sm:w-fit border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
           {[
             { label: "Approval Flow Status", value: "Approval Flow Status" },
@@ -137,7 +139,8 @@ const RequestDetails: React.FC = () => {
           <div> <span className="font-bold ">Initiated On :</span> <span className="text-gray-900">17-10-2025</span> </div>
         </div>
       </div>
-
+    
+     <div className="sm:px-8 px-4 ">
       <CommonSearchAndActions hideEyeIcon={true} />
       {isDesktop ?
         <div className="w-full overflow-x-auto rounded-lg  border border-gray-200 bg-white shadow-sm">
@@ -153,7 +156,7 @@ const RequestDetails: React.FC = () => {
           </div>
 
           <div className="w-full">
-            {true ?
+            {stages.length > 0 ?
               stages.map((stage) => (
                 <div key={stage.triggerDate} className="hover:bg-gray-100 grid grid-cols-9 cursor-pointer text-xs w-full border-b">
                   <span className="px-4 py-4 inline-block text-sm">{stage.stageNumber}</span>
@@ -173,11 +176,12 @@ const RequestDetails: React.FC = () => {
         <div>
            {true ?
               stages.map((stage) => (
-                <RequestDetailsCard data={stage} />
+                <RequestDetailsCard key={stage.stageNumber} data={stage} />
               )) : <EmptyState />
             }
         </div>
       }
+      </div>
     </div>
   )
 }

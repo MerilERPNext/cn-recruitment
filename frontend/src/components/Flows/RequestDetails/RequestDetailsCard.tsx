@@ -34,7 +34,7 @@ const RequestDetailsCard : React.FC<RequestDetailsCardProps> = ({
     }
   };
   return (
-    <div className="p-4 border border-300 rounded-lg m-2">
+    <div className="p-4 border border-gray-300 rounded-lg m-2">
       <div className="grid gap-3">
       <div className="flex justify-between items-center">
         <span className="text-sm font-bold text-gray-600 inline-block">Stage {data.stageNumber}</span>
@@ -76,7 +76,7 @@ const RequestDetailsCard : React.FC<RequestDetailsCardProps> = ({
             {data.completedDate && (
             <div>
               <span className="text-xs text-gray-500">Completed Date</span>
-              <p className="text-gray-800">{new Date(data.completedDate).toLocaleDateString()}</p>
+              <p className="text-gray-800">{data.completedDate && data.completedDate !== '-' ? new Date(data.completedDate).toLocaleDateString() : '-'}</p>
             </div>
         )}
         </div>

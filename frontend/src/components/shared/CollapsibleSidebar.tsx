@@ -25,8 +25,6 @@ import {
   SeparatorHorizontal,
   CircleCheckBig,
   ArrowDownUp,
-  CalendarCheck2,
-  Split,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";

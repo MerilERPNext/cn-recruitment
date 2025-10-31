@@ -47,47 +47,47 @@ const FlowRequestCard : React.FC<FlowRequestCardProps> = (
     <div className="flex border border-gray-200 rounded-lg mb-4 p-4 bg-white shadow-sm gap-x-4">
     <div className="grid min-w-[870px]:grid-cols-2 grid-cols-1 gap-x-2 justify-between w-full">
       <div className="flex flex-col gap-y-2">
-        <span className="text-xs text-blue-600" onClick={()=> handleNavigate(data.requestId)}># {data.requestId}</span>
-        <span className="text-blue-600 font-medium" onClick={()=> handleNavigate(data.requestId)}>{data.flowName}</span>
+          <button type="button" className="text-xs text-blue-600 text-left hover:underline" onClick={()=> handleNavigate(data.requestId)}># {data.requestId}</button>
+        <button type="button" className="text-blue-600 font-medium text-left hover:underline" onClick={()=> handleNavigate(data.requestId)}>{data.flowName}</button>
       </div>
 
       <div className=" mt-4 grid grid-cols-3 justify-between">
         <div className="flex flex-col gap-y-1 text-sm items-start">
-            <label className="leading-[3px]  text-gray-500 text-xs">Approval Status</label>
+            <label className="leading-1  text-gray-500 text-xs">Approval Status</label>
             <Badge backgroundColor={getStatusTagColor(data.approvalStatus)} label={data.approvalStatus} size="sm" />
         </div>
             <div className="flex flex-col gap-y-1 text-sm justify-left">
-            <label className="leading-[3px]  text-gray-500 text-xs">Workflow Status</label>
+            <label className="leading-1  text-gray-500 text-xs">Workflow Status</label>
              <Badge backgroundColor={getStatusTagColor(data.workflowStatus)} label={data.workflowStatus} size="sm" />
         </div>
             <div className="flex flex-col gap-y-1 text-sm">
-            <label className="leading-[3px]  text-gray-500 text-xs">Overal Workflow Status</label>
+            <label className="leading-1  text-gray-500 text-xs">Overal Workflow Status</label>
             <Badge backgroundColor={getStatusTagColor(data.overallFlowStatus)} label={data.overallFlowStatus} size="sm" />
         </div>
       </div>
 
        <div className=" mt-4 grid grid-cols-3 justify-between">
         <div className="flex flex-col gap-y-1 text-sm items-start">
-            <label className="leading-[3px]  text-gray-500 text-xs">Initialized On</label>
+            <label className="leading-1  text-gray-500 text-xs">Initialized On</label>
             <span>{data.initiatedOn}</span>
         </div>
             <div className="flex flex-col gap-y-1 text-sm justify-left">
-            <label className="leading-[3px]  text-gray-500 text-xs">Initialized By</label>
+            <label className="leading-1  text-gray-500 text-xs">Initialized By</label>
             <span>{data.initiatedBy}</span>
         </div>
             <div className="flex flex-col gap-y-1 text-sm">
-            <label className="leading-[3px]  text-gray-500 text-xs">Initialized For</label>
+            <label className="leading-1  text-gray-500 text-xs">Initialized For</label>
             <span>{data.initiatedFor}</span>
         </div>
       </div>
 
        <div className=" mt-4 grid grid-cols-3 justify-between">
         <div className="flex flex-col gap-y-1 text-sm items-start">
-            <label className="leading-[3px]  text-gray-500 text-xs">Latest Triggered On</label>
+            <label className="leading-1  text-gray-500 text-xs">Latest Triggered On</label>
             <span>{data.lastTriggeredOn}</span>
         </div>
             <div className="flex flex-col gap-y-1 text-sm justify-left">
-            <label className="leading-[3px]  text-gray-500 text-xs">Triggered On</label>
+            <label className="leading-1  text-gray-500 text-xs">Triggered On</label>
             <span>{data.triggeringEvent}</span>
       </div>
       </div>

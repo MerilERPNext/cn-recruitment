@@ -49,11 +49,11 @@ const InitiateFlow : React.FC<InitiateFlowProps> = ({
   }
 
   return (
-    <div className={`sm:px-8 p-4 bg-white fixed w-screen h-screen top-0 left-0 z-40`}>
+    <div className={` bg-white fixed w-screen h-screen top-0 left-0 z-40`}>
         {openAsModel ?             
-          <><div className="flex items-center">
+          <><div className="flex items-center sm:px-8 px-4 pt-4">
             <h2 className="text-lg font-semibold ">Initiate Flow</h2>
-            <X onClick={handleCloseModel} className="ml-auto w-8 h-8 p-1 rounded-lg bg-gray-200 hover:bg-gray-300 cursor-pointer"/>
+            <X onClick={handleCloseModel} className="ml-auto  w-8 h-8 p-1 rounded-lg bg-gray-200 hover:bg-gray-300 cursor-pointer"/>
           </div>
           <hr className="my-4" />
           </>
@@ -63,7 +63,7 @@ const InitiateFlow : React.FC<InitiateFlowProps> = ({
               onBack={handlGoBack}
              />)
         }
-
+        <div className='sm:px-8 px-4'>
          <div className="relative mt-2 w-full max-w-[48rem]">
             <input
               type="text"
@@ -75,13 +75,14 @@ const InitiateFlow : React.FC<InitiateFlowProps> = ({
           <div className="mt-6 space-y-8">
             <h3>Business Flows : </h3>
             <div className="flex flex-wrap gap-4">
-                {data["Business Flows"].map((flow) => <RequestTypeCard label={flow} />)}
+                {data["Business Flows"].map((flow) => <RequestTypeCard key={flow} label={flow} />)}
             </div>
 
             <h3>Other Category : </h3>
             <div className="flex flex-wrap gap-4">
-              {data["Other Category"].map((flow) => <RequestTypeCard label={flow} />)}
+              {data["Other Category"].map((flow) => <RequestTypeCard key={flow} label={flow} />)}
             </div>
+          </div>
           </div>
     </div>
   )

@@ -76,15 +76,6 @@ const FlowApp: React.FC = () => {
 
     const mobileLayout = (
         <div className="flex flex-col min-h-screen bg-white">
-            <style>{`
-         .scrollbar-hidden {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .scrollbar-hidden::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
 
             <header className="sticky top-0 z-50 bg-white shadow-sm">
                 {!seprateRoute &&
@@ -102,7 +93,7 @@ const FlowApp: React.FC = () => {
                 }
             </header>
 
-            <main className="z-100 flex-grow overflow-y-auto">
+            <main className="z-10 flex-grow overflow-y-auto">
                 <Outlet />
             </main>
 
@@ -126,7 +117,7 @@ const FlowApp: React.FC = () => {
             onClick={handleInitiateModel}
             className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors shadow-lg "
         >
-            + INITIAT
+            + INITIATE
         </button>
     );
 
