@@ -127,11 +127,9 @@ const ExpensesList: React.FC = () => {
   }, [location.key]);
 
   const openModal = (id: string) => {
-    console.debug("[ExpensesList] openModal called with id:", id);
     setTimeout(() => setSelectedId(id), 0);
   };
   const closeModal = () => {
-    console.debug("[ExpensesList] closeModal");
     setSelectedId(null);
   };
 
@@ -144,10 +142,6 @@ const ExpensesList: React.FC = () => {
         onClick={(e) => {
           e.stopPropagation();
           if (!id) {
-            console.warn(
-              "[ExpensesList] row clicked but item.name is falsy",
-              item
-            );
             return;
           }
           openModal(id);
@@ -174,10 +168,6 @@ const ExpensesList: React.FC = () => {
         onClick={(e) => {
           e.stopPropagation();
           if (!id) {
-            console.warn(
-              "[ExpensesList] mobile item clicked but item.name missing",
-              item
-            );
             return;
           }
           openModal(id);
@@ -249,14 +239,6 @@ const ExpensesList: React.FC = () => {
         <ExpenseClaimDetailsModal
           id={selectedId}
           onClose={closeModal}
-          onRefreshList={() => {
-            queryClient.invalidateQueries({
-              queryKey: ["documents", "Expense Claim"],
-            });
-            queryClient.invalidateQueries({
-              queryKey: ["documents-infinite", "Expense Claim"],
-            });
-          }}
           getStatusBadgeClasses={getStatusBadgeClasses}
         />
       )}

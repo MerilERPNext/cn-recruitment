@@ -290,20 +290,20 @@ const AddExpenseForm: React.FC = () => {
   ) =>
     fields
       .map((field) => {
-        switch (field.fieldtype) {
+        switch (field?.fieldtype) {
           case "Date":
             return {
               type: "datetime",
               key: field?.fieldname,
               label:
                 field?.required === true
-                  ? `${field.label} <span style="color:red">&nbsp;*</span>`
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                   : field?.label,
               format: "dd-MM-yyyy",
               enableTime: false,
               validate: {
-                required: field.required,
-                customMessage: `${field.label} is required`,
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
               },
               input: true,
               html: true,
@@ -311,10 +311,10 @@ const AddExpenseForm: React.FC = () => {
           case "Datetime":
             return {
               type: "datetime",
-              key: field.fieldname,
+              key: field?.fieldname,
               label:
                 field?.required === true
-                  ? `${field.label} <span style="color:red">&nbsp;*</span>`
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                   : field?.label,
               format: "yyyy-MM-dd HH:mm",
               enableTime: true,
@@ -326,8 +326,8 @@ const AddExpenseForm: React.FC = () => {
                 locale: "en",
               },
               validate: {
-                required: field.required,
-                customMessage: `${field.label} is required`,
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
               },
               input: true,
               html: true,
@@ -335,17 +335,17 @@ const AddExpenseForm: React.FC = () => {
           case "Currency":
             return {
               type: "number",
-              key: field.fieldname,
+              key: field?.fieldname,
               label:
                 field?.required === true
-                  ? `${field.label} <span style="color:red">&nbsp;*</span>`
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                   : field?.label,
               validate: {
-                required: field.required,
-                customMessage: `${field.label} is required`,
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
               },
               input: true,
-              ...(field.fieldname === "amount" && isAmountReadonly
+              ...(field?.fieldname === "amount" && isAmountReadonly
                 ? { attributes: { readonly: true } }
                 : {}),
               html: true,
@@ -353,14 +353,14 @@ const AddExpenseForm: React.FC = () => {
           case "Data":
             return {
               type: "textfield",
-              key: field.fieldname,
+              key: field?.fieldname,
               label:
                 field?.required === true
-                  ? `${field.label} <span style="color:red">&nbsp;*</span>`
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                   : field?.label,
               validate: {
-                required: field.required,
-                customMessage: `${field.label} is required`,
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
               },
               input: true,
               html: true,
@@ -368,14 +368,14 @@ const AddExpenseForm: React.FC = () => {
           case "Text":
             return {
               type: "textarea",
-              key: field.fieldname,
+              key: field?.fieldname,
               label:
                 field?.required === true
-                  ? `${field.label} <span style="color:red">&nbsp;*</span>`
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                   : field?.label,
               validate: {
-                required: field.required,
-                customMessage: `${field.label} is required`,
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
               },
               rows: 5,
               input: true,
@@ -384,15 +384,15 @@ const AddExpenseForm: React.FC = () => {
           case "Attach":
             return {
               type: "file",
-              key: field.fieldname,
+              key: field?.fieldname,
               label:
                 field?.required === true
-                  ? `${field.label} <span style="color:red">&nbsp;*</span>`
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                   : field?.label || "Attachment",
               storage: "customBase64",
               validate: {
-                required: field.required,
-                customMessage: `${field.label} is required`,
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
               },
               input: true,
               fileTypes: [
@@ -405,8 +405,8 @@ const AddExpenseForm: React.FC = () => {
             };
           case "Link":
             if (
-              field.fieldname === "currency" &&
-              field.options === "Currency"
+              field?.fieldname === "currency" &&
+              field?.options === "Currency"
             ) {
               const expenseClaimType =
                 mainFormData?.expenseType || mainFormData?.expense_type || "";
@@ -418,10 +418,10 @@ const AddExpenseForm: React.FC = () => {
                 : `/api/method/chatnext_expense_trips.expense_claim.get_allowed_currencies_for_expense_claim_type`;
               return {
                 type: "select",
-                key: field.fieldname,
+                key: field?.fieldname,
                 label:
                   field?.required === true
-                    ? `${field.label} <span style="color:red">&nbsp;*</span>`
+                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                     : field?.label,
                 dataSrc: "url",
                 data: {
@@ -432,8 +432,8 @@ const AddExpenseForm: React.FC = () => {
                 defaultValue: "INR",
                 valueProperty: "",
                 validate: {
-                  required: field.required,
-                  customMessage: `${field.label} is required`,
+                  required: field?.required,
+                  customMessage: `${field?.label} is required`,
                 },
                 input: true,
                 refreshOn: "expenseType",
@@ -441,15 +441,15 @@ const AddExpenseForm: React.FC = () => {
               };
             }
             if (
-              field.fieldname === "vehicle_type" ||
-              field.options === "Daily Allowance Vehicle Category"
+              field?.fieldname === "vehicle_type" ||
+              field?.options === "Daily Allowance Vehicle Category"
             ) {
               return {
                 type: "select",
-                key: field.fieldname,
+                key: field?.fieldname,
                 label:
                   field?.required === true
-                    ? `${field.label} <span style="color:red">&nbsp;*</span>`
+                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                     : field?.label,
                 dataSrc: "url",
                 data: {
@@ -459,8 +459,8 @@ const AddExpenseForm: React.FC = () => {
                 valueProperty: "name",
                 template: "<span>{{ item.name }}</span>",
                 validate: {
-                  required: field.required,
-                  customMessage: `${field.label} is required`,
+                  required: field?.required,
+                  customMessage: `${field?.label} is required`,
                 },
                 input: true,
                 html: true,
@@ -468,21 +468,21 @@ const AddExpenseForm: React.FC = () => {
             }
             return {
               type: "select",
-              key: field.fieldname,
+              key: field?.fieldname,
               label:
                 field?.required === true
-                  ? `${field.label} <span style="color:red">&nbsp;*</span>`
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                   : field?.label,
               dataSrc: "url",
               data: {
-                url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field.options}`,
+                url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field?.options}`,
               },
               template: "<span>{{ item.name }}</span>",
               valueProperty: "name",
               selectValues: "message",
               validate: {
-                required: field.required,
-                customMessage: `${field.label} is required`,
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
               },
               input: true,
               html: true,

@@ -80,6 +80,26 @@ export interface CalculateExpenseResponse {
   message: CalculateExpenseMessage;
 }
 
+export interface Participant {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  employee_type: "Self" | "Employee" | "Guest" | string;
+  employee?: string;
+  employee_name?: string;
+  guest_name?: string;
+  percentage: number;
+  allocated_amount: number;
+  parent: string;
+  parentfield: string;
+  parenttype: string;
+  doctype: string;
+}
+
 export interface ExpenseClaim {
   name: string;
   owner: string;
@@ -115,7 +135,7 @@ export interface ExpenseClaim {
   doctype: string;
   advances: any[];
   taxes: any[];
-  custom_participants: any[];
+  custom_participants: Participant[];
   expenses: Expense[];
 }
 

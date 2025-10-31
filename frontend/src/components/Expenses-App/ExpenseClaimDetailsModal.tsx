@@ -1,13 +1,12 @@
 import React from "react";
 import { XIcon } from "lucide-react";
 import { useFrappeDocument } from "../../hooks/useFrappeQuery";
-import { ExpenseClaim } from "../../types/expenseAdvance";
+import { Expense, ExpenseClaim, Participant } from "../../types/expenseAdvance";
 import Badge from "../shared/Badge";
 
 interface ExpenseClaimModalProps {
   id: string | null;
   onClose: () => void;
-  onRefreshList?: () => void;
   getStatusBadgeClasses?: (status: string) => string;
 }
 
@@ -122,31 +121,30 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                       </thead>
 
                       <tbody>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any*/}
-                        {data.custom_participants.map((p: any) => {
+                        {data.custom_participants.map((p: Participant) => {
                           const name =
-                            p.employee_name ||
-                            p.guest_name ||
-                            p.employee ||
+                            p?.employee_name ||
+                            p?.guest_name ||
+                            p?.employee ||
                             "—";
                           return (
                             <tr
-                              key={p.name}
+                              key={p?.name}
                               className="even:bg-white odd:bg-gray-50 hover:bg-gray-100"
                             >
                               <td className="px-4 py-2 border-b align-top">
-                                {p.employee_type ?? "—"}
+                                {p?.employee_type ?? "—"}
                               </td>
                               <td className="px-4 py-2 border-b align-top">
                                 {name}
                               </td>
                               <td className="px-4 py-2 border-b text-right align-top">
-                                {typeof p.percentage === "number"
-                                  ? `${p.percentage}%`
+                                {typeof p?.percentage === "number"
+                                  ? `${p?.percentage}%`
                                   : "—"}
                               </td>
                               <td className="px-4 py-2 border-b text-right align-top">
-                                {formatINR(p.allocated_amount)}
+                                {formatINR(p?.allocated_amount)}
                               </td>
                             </tr>
                           );
@@ -179,8 +177,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   <tbody>
                     {Array.isArray(data?.expenses) &&
                     data.expenses.length > 0 ? (
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      data.expenses.map((item: any) => {
+                      data.expenses.map((item: Expense) => {
                         const rowStatus =
                           item.custom_approval_staus?.trim() ||
                           data?.approval_status ||
