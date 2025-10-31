@@ -7,6 +7,11 @@ import {
 import { FilterCondition } from "../types/frappe";
 import { FrappeAPI } from "../utils/frappeAPI";
 
+export interface PerMileageUnitRateResponse {
+  message?: string | { label?: string; rate?: number; [k: string]: any };
+  // other keys if any
+}
+
 export const expenseService = {
   getExpensesTypes: async (filters: FilterCondition[]): Promise<any> => {
     const response = await FrappeAPI.getDocumentList("Expense Claim Type", {
@@ -102,5 +107,23 @@ export const expenseService = {
     );
 
     return response as CalculateExpenseResponse;
+  },
+
+  getUnitPrice: async (
+    claimTypeDoc: string,
+    vehicleType: string
+  ): Promise<PerMileageUnitRateResponse> => {
+    if (!claimTypeDoc) throw new Error("claimTypeDoc is required");
+    if (!vehicleType) throw new Error("vehicleType is required");
+
+    const response = await FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.get_per_mileage_unit_rate",
+      {
+        claim_type_doc: claimTypeDoc,
+        vehicle_type: vehicleType,
+      }
+    );
+
+    return response as PerMileageUnitRateResponse;
   },
 };

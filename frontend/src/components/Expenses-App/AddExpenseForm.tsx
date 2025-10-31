@@ -208,7 +208,8 @@ const AddExpenseForm: React.FC = () => {
                 {
                   type: "select",
                   key: "expenseCategory",
-                  label: "Select Expense Category",
+                  label:
+                    'Select Expense Category <span style="color:red">&nbsp;*</span>',
                   placeholder: "Select Expense Category",
                   dataSrc: "url",
                   data: {
@@ -218,8 +219,13 @@ const AddExpenseForm: React.FC = () => {
                   selectValues: "message",
                   valueProperty: "name",
                   template: "<span>{{ item.category_name }}</span>",
-                  validate: { required: true },
+                  validate: {
+                    required: true,
+                    customMessage: "Expense Category is required",
+                  },
                   input: true,
+                  html: true,
+                  clearOnRefresh: true,
                 },
               ],
             },
@@ -228,7 +234,8 @@ const AddExpenseForm: React.FC = () => {
                 {
                   type: "select",
                   key: "expenseType",
-                  label: "Select Expense Type",
+                  label:
+                    'Select Expense Type <span style="color:red">&nbsp;*</span>',
                   placeholder: "Select Expense Type",
                   dataSrc: "url",
                   data: {
@@ -239,9 +246,15 @@ const AddExpenseForm: React.FC = () => {
                   valueProperty: "name",
                   template: "<span>{{ item.name }}</span>",
                   refreshOn: "expenseCategory",
-                  validate: { required: true },
+                  clearOnRefresh: true,
+                  clearOnHide: true,
+                  validate: {
+                    required: true,
+                    customMessage: "Expense Type is required",
+                  },
                   input: true,
                   customClass: "mt-4 md:mt-0",
+                  html: true,
                 },
               ],
             },
@@ -267,7 +280,6 @@ const AddExpenseForm: React.FC = () => {
     setExpenses((prev) =>
       prev.filter((e) => !selectedExpenses.includes(e.uid))
     );
-    // Clear failed status for deleted expenses
     clearFailedStatus(selectedExpenses);
     setSelectedExpenses([]);
   };
@@ -278,22 +290,32 @@ const AddExpenseForm: React.FC = () => {
   ) =>
     fields
       .map((field) => {
-        switch (field.fieldtype) {
+        switch (field?.fieldtype) {
           case "Date":
             return {
               type: "datetime",
-              key: field.fieldname,
-              label: field.label,
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
               format: "dd-MM-yyyy",
               enableTime: false,
-              validate: { required: field.required },
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
+              html: true,
             };
           case "Datetime":
             return {
               type: "datetime",
-              key: field.fieldname,
-              label: field.label,
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
               format: "yyyy-MM-dd HH:mm",
               enableTime: true,
               enableDate: true,
@@ -303,44 +325,75 @@ const AddExpenseForm: React.FC = () => {
                 displayInTimezone: "viewer",
                 locale: "en",
               },
-              validate: { required: field.required },
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
+              html: true,
             };
           case "Currency":
             return {
               type: "number",
-              key: field.fieldname,
-              label: field.label,
-              validate: { required: field.required },
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
-              ...(field.fieldname === "amount" && isAmountReadonly
+              ...(field?.fieldname === "amount" && isAmountReadonly
                 ? { attributes: { readonly: true } }
                 : {}),
+              html: true,
             };
           case "Data":
             return {
               type: "textfield",
-              key: field.fieldname,
-              label: field.label,
-              validate: { required: field.required },
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
+              html: true,
             };
           case "Text":
             return {
               type: "textarea",
-              key: field.fieldname,
-              label: field.label,
-              validate: { required: field.required },
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               rows: 5,
               input: true,
+              html: true,
             };
           case "Attach":
             return {
               type: "file",
-              key: field.fieldname,
-              label: field.label || "Attachment",
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label || "Attachment",
               storage: "customBase64",
-              validate: { required: field.required },
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
               fileTypes: [
                 { label: "Documents", value: ".pdf,.doc,.docx" },
@@ -348,11 +401,12 @@ const AddExpenseForm: React.FC = () => {
               ],
               filePattern: "*/*",
               customClass: "mb-4",
+              html: true,
             };
           case "Link":
             if (
-              field.fieldname === "currency" &&
-              field.options === "Currency"
+              field?.fieldname === "currency" &&
+              field?.options === "Currency"
             ) {
               const expenseClaimType =
                 mainFormData?.expenseType || mainFormData?.expense_type || "";
@@ -364,8 +418,11 @@ const AddExpenseForm: React.FC = () => {
                 : `/api/method/chatnext_expense_trips.expense_claim.get_allowed_currencies_for_expense_claim_type`;
               return {
                 type: "select",
-                key: field.fieldname,
-                label: field.label,
+                key: field?.fieldname,
+                label:
+                  field?.required === true
+                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                    : field?.label,
                 dataSrc: "url",
                 data: {
                   url,
@@ -374,19 +431,26 @@ const AddExpenseForm: React.FC = () => {
                 template: "<span>{{ item }}</span>",
                 defaultValue: "INR",
                 valueProperty: "",
-                validate: { required: field.required },
+                validate: {
+                  required: field?.required,
+                  customMessage: `${field?.label} is required`,
+                },
                 input: true,
                 refreshOn: "expenseType",
+                html: true,
               };
             }
             if (
-              field.fieldname === "vehicle_type" ||
-              field.options === "Daily Allowance Vehicle Category"
+              field?.fieldname === "vehicle_type" ||
+              field?.options === "Daily Allowance Vehicle Category"
             ) {
               return {
                 type: "select",
-                key: field.fieldname,
-                label: field.label,
+                key: field?.fieldname,
+                label:
+                  field?.required === true
+                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                    : field?.label,
                 dataSrc: "url",
                 data: {
                   url: `/api/resource/Daily%20Allowance%20Vehicle%20Category`,
@@ -394,23 +458,34 @@ const AddExpenseForm: React.FC = () => {
                 selectValues: "data",
                 valueProperty: "name",
                 template: "<span>{{ item.name }}</span>",
-                validate: { required: field.required },
+                validate: {
+                  required: field?.required,
+                  customMessage: `${field?.label} is required`,
+                },
                 input: true,
+                html: true,
               };
             }
             return {
               type: "select",
-              key: field.fieldname,
-              label: field.label,
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
               dataSrc: "url",
               data: {
-                url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field.options}`,
+                url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field?.options}`,
               },
               template: "<span>{{ item.name }}</span>",
               valueProperty: "name",
               selectValues: "message",
-              validate: { required: field.required },
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
+              html: true,
             };
           default:
             return null;
@@ -591,7 +666,6 @@ const AddExpenseForm: React.FC = () => {
       onSuccess: (response: ExpenseSubmissionResponse) => {
         const uidStatus = response?.uid_status || {};
 
-        // Separate successful and failed expenses
         const failedUids: string[] = [];
         const successfulUids: string[] = [];
 
@@ -603,33 +677,27 @@ const AddExpenseForm: React.FC = () => {
           }
         });
 
-        // Filter out successful expenses, keep failed ones
         const remainingExpenses = expenses.filter((expense) =>
           failedUids.includes(expense.uid)
         );
 
-        // Update state with failed expenses
         setExpenses(remainingExpenses);
         setFailedExpenseUids(new Set(failedUids));
 
-        // Clear localStorage and update with failed expenses only
         if (remainingExpenses.length > 0) {
           localStorage.setItem(
             LOCAL_KEYS.EXPENSES,
             JSON.stringify(remainingExpenses)
           );
 
-          // Show error message for failed items
           toast.error(
             `${failedUids.length} expense item(s) failed to submit. Please review and try again.`
           );
         } else {
-          // All successful, clear everything
           clearLocal();
           toast.success("All expenses submitted successfully!");
         }
 
-        // Show success message for successful items
         if (successfulUids.length > 0) {
           toast.success(
             `${successfulUids.length} expense item(s) submitted successfully!`
@@ -654,7 +722,6 @@ const AddExpenseForm: React.FC = () => {
     setShowCategoryAndType(true);
     setFormKey((k) => k + 1);
 
-    // Clear failed status when editing
     clearFailedStatus(expense.uid);
   };
 
@@ -1132,7 +1199,6 @@ const AddExpenseForm: React.FC = () => {
                                 setSelectedExpenses((prev) =>
                                   prev.filter((id) => id !== expense.uid)
                                 );
-                                // Clear failed status when deleting
                                 clearFailedStatus(expense.uid);
                               }}
                               className="text-red-400 hover:text-blue-700"
