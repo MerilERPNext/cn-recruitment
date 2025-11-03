@@ -33,19 +33,74 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   const { data: currentEmployee } = useCurrentEmployee();
   const employeeId = currentEmployee?.name;
 
+  const mapStoredDataToForm = (storedData: any) => {
+    if (!storedData) return {};
+
+    const formReadyData = {
+      // Basic Fields
+      id: storedData.id,
+      expense_type: storedData.expense_type,
+      amount: storedData.amount,
+      description: storedData.description,
+      expense_date: storedData.expense_date,
+
+      // Mapped Custom Fields (These were missing in your Edit modal)
+      currency: storedData.custom_currency,
+      invoice_number: storedData.custom_invoice_number,
+      merchant: storedData.custom_mercent,
+      units: storedData.custom_units,
+
+      // Mapped Datetime/Location fields
+      vehicle_type: storedData.custom_vehicle_type,
+      from_location: storedData.custom_from_location,
+      to_location: storedData.custom_to_location,
+      start_datetime: storedData.custom_start_datetime,
+      end_datetime: storedData.custom_end_datetime,
+      location: storedData.custom_location,
+
+      // File/Attachment Field: Transform stored URL back into Form.io's file array structure
+      // This is crucial for the file component to display the existing file.
+      attach_receipt: storedData.custom_attach_receipt
+        ? [
+            {
+              name:
+                storedData.custom_attach_receipt.substring(
+                  storedData.custom_attach_receipt.lastIndexOf("/") + 1
+                ) || "Attached File",
+              originalName: "Attached File",
+              size: 1, // Must be a number > 0 for Form.io to render the file list entry
+              type: "application/octet-stream",
+              url: storedData.custom_attach_receipt,
+              data: storedData.custom_attach_receipt,
+              storage: "customBase64",
+            },
+          ]
+        : [],
+    };
+
+    // Filter out undefined values to prevent Form.io issues
+    return Object.fromEntries(
+      Object.entries(formReadyData).filter(([, value]) => value !== undefined)
+    );
+  };
+
   // 4. Effect to reset form state when the modal opens/initialData changes
   useEffect(() => {
     if (isOpen) {
-      // Set initial data for the Form.io component
-      setFormData(initialData || {});
+      // Set initial data for the Form.io component using the mapping function
+      const remappedData = mapStoredDataToForm(initialData);
+      setFormData(remappedData);
+
       // Force a re-render of the Form.io component by changing the key
       setFormKey((prev) => prev + 1);
+
       // Reset ref-based state for recalculation logic on edit
       lastExpenseType.current = initialData?.expense_type || null;
       lastCalculatedUnits.current = null;
 
       if (initialData?.expense_type) {
         // If we have an expense type from initial data, fetch its fields
+        // This will also handle setting the readonly state for 'amount'
         fetchExpenseTypeFields(initialData.expense_type);
       } else {
         // Otherwise, reset to initial schema (only expense_type select)
@@ -448,16 +503,25 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             }}
             onSubmit={(submission: any) => {
               const combinedData = submission.data;
+
+              let attachReceiptValue = null;
+
               if (
                 combinedData.attach_receipt &&
                 Array.isArray(combinedData.attach_receipt) &&
                 combinedData.attach_receipt.length > 0
               ) {
-                const file =
+                // Case 1: New file uploaded or existing file kept. Extract the URL/data string.
+                attachReceiptValue =
                   combinedData.attach_receipt[0]?.data ||
                   combinedData.attach_receipt[0]?.url ||
                   null;
-                if (file) combinedData.attach_receipt = file;
+              }
+
+              // Fallback logic (Core fix from previous step)
+              if (!attachReceiptValue && initialData?.custom_attach_receipt) {
+                // Case 3: User clicked Save without changing the file. Preserve the original file link.
+                attachReceiptValue = initialData.custom_attach_receipt;
               }
 
               // Apply the formatting function to the datetime fields before mapping
@@ -467,6 +531,15 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               const endDatetime = formatMySQLDatetime(
                 combinedData.end_datetime
               );
+              let finalAttachValue = attachReceiptValue;
+
+              // We check for the 'file_url' key which exists in the metadata object.
+              if (
+                typeof attachReceiptValue === "object" &&
+                attachReceiptValue !== null
+              ) {
+                finalAttachValue = attachReceiptValue.file_url || null;
+              }
 
               // Mapped all potential fields to the submission object
               const mappedExpense = {
@@ -477,18 +550,18 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 amount: combinedData.amount,
                 custom_mercent: combinedData.merchant,
                 custom_invoice_number: combinedData.invoice_number,
-                custom_attach_receipt: combinedData.attach_receipt?.file_url,
+                custom_attach_receipt: finalAttachValue,
                 custom_units: combinedData.units,
                 custom_currency: combinedData.currency,
                 description: combinedData.description,
                 custom_vehicle_type: combinedData.vehicle_type,
-                custom_from_location: combinedData.from_location,
-                custom_to_location: combinedData.to_location,
+                custom_from_location: combinedData.custom_from_location,
+                custom_to_location: combinedData.custom_to_location,
                 custom_start_datetime: startDatetime, // Use the formatted value
                 custom_end_datetime: endDatetime, // Use the formatted value
                 custom_location: combinedData.location,
               };
-              // 8. Call onSave with the mapped expense (it will either update or add in the main form)
+              // 9. Call onSave with the mapped expense (it will either update or add in the main form)
               onSave(mappedExpense);
 
               handleClose();
