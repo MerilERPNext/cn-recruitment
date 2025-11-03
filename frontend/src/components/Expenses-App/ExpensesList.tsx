@@ -5,6 +5,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
+import Tooltip from "../shared/Tooltip";
 
 interface APIExpense {
   name: string;
@@ -12,6 +13,7 @@ interface APIExpense {
   total_claimed_amount: number;
   creation: string;
   custom_expense_category: string;
+  custom_assigned_user?: string;
 }
 
 const getStatusBadgeClasses = (status: string) => {
@@ -93,15 +95,23 @@ const ExpensesTableRow: React.FC<{ item: APIExpense }> = ({ item }) => {
       <span>{item.custom_expense_category || " - "}</span>
       <span>{formattedAmount || " - "}</span>
       <span>{formattedDate || " - "}</span>
-      <span
-        className={`px-2 py-1 rounded-2xl text-xs font-medium text-center w-fit ${getStatusBadgeClasses(
-          item?.approval_status
-        )}`}
-      >
-        {item?.approval_status === "Draft"
-          ? "Pending"
-          : item?.approval_status || " - "}
-      </span>
+      <div className="w-fit">
+        <Tooltip
+          content={
+            item?.approval_status === "Draft" ? item?.custom_assigned_user : ""
+          }
+        >
+          <span
+            className={`px-2 py-1 w-fit rounded-2xl text-xs font-medium text-center w-fit ${getStatusBadgeClasses(
+              item?.approval_status
+            )}`}
+          >
+            {item?.approval_status === "Draft"
+              ? "Pending"
+              : item?.approval_status || " - "}
+          </span>
+        </Tooltip>
+      </div>
     </div>
   );
 };

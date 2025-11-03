@@ -37,22 +37,6 @@ interface Expense {
   attach_receipt?: string | { url: string }[] | null;
   [key: string]: any;
 }
-interface ExpenseSubmissionResponse {
-  uid_status: Record<string, "success" | "failed">;
-
-  message: {
-    success: boolean;
-    message: string;
-    claims: {
-      name: string;
-      category: string;
-      category_name: string;
-      total_amount: number;
-      expense_count: number;
-      expense_types: string[];
-    }[];
-  };
-}
 
 const LOCAL_KEYS = {
   MAIN: "add_expense_mainForm",
@@ -138,6 +122,10 @@ const AddExpenseForm: React.FC = () => {
       return;
     }
 
+    if (editingExpenseId) {
+      return;
+    }
+
     setDynamicFormData({});
     // setDynamicFormData((prev: any) => prev ?? {});
     setDynamicFields([]);
@@ -154,6 +142,7 @@ const AddExpenseForm: React.FC = () => {
     mainFormData?.expenseType,
     mainFormData?.expense_type,
     mainFormData?.expenseCategory,
+    editingExpenseId,
   ]);
 
   useEffect(() => {
@@ -232,6 +221,7 @@ const AddExpenseForm: React.FC = () => {
                   input: true,
                   html: true,
                   clearOnRefresh: true,
+                  disabled: !!editingExpenseId,
                 },
               ],
             },
@@ -261,6 +251,7 @@ const AddExpenseForm: React.FC = () => {
                   input: true,
                   customClass: "mt-4 md:mt-0",
                   html: true,
+                  disabled: !!editingExpenseId,
                 },
               ],
             },
@@ -268,7 +259,7 @@ const AddExpenseForm: React.FC = () => {
         },
       ],
     }),
-    [currentEmployee]
+    [currentEmployee, editingExpenseId]
   );
 
   const handleSubmit = (submission: any) => {
@@ -712,65 +703,29 @@ const AddExpenseForm: React.FC = () => {
     };
 
     submitExpenseClaim(JSON.stringify(payload), {
-      onSuccess: (response: ExpenseSubmissionResponse) => {
-        const uidStatus = response?.uid_status || {};
-
-        const failedUids: string[] = [];
-        const successfulUids: string[] = [];
-
-        Object.entries(uidStatus).forEach(([uid, status]) => {
-          if (status === "success") {
-            successfulUids.push(uid);
-          } else {
-            failedUids.push(uid);
-          }
-        });
-
-        const remainingExpenses = expenses.filter((expense) =>
-          failedUids.includes(expense.uid)
-        );
-
-        setExpenses(remainingExpenses);
-        setFailedExpenseUids(new Set(failedUids));
-
-        if (remainingExpenses.length > 0) {
-          localStorage.setItem(
-            LOCAL_KEYS.EXPENSES,
-            JSON.stringify(remainingExpenses)
-          );
-
-          toast.error(
-            `${failedUids.length} expense item(s) failed to submit. Please review and try again.`
-          );
-        } else {
-          clearLocal();
-          toast.success("All expenses submitted successfully!");
-        }
-
-        if (successfulUids.length > 0) {
-          toast.success(
-            `${successfulUids.length} expense item(s) submitted successfully!`
-          );
-        }
+      onSuccess: () => {
+        clearLocal();
       },
     } as any);
   };
 
   const handleEdit = (expense: Expense) => {
     setEditingExpenseId(expense.uid);
-    setMainFormData({
-      expenseCategory: expense.expenseCategory,
-      expenseType: expense.expenseType,
-    });
 
     const copy = { ...expense };
     if (expense.attach_receipt && typeof expense.attach_receipt === "string") {
       copy.attach_receipt = [{ url: expense.attach_receipt }];
     }
+
     setDynamicFormData(copy);
+
+    setMainFormData({
+      expenseCategory: expense.expenseCategory,
+      expenseType: expense.expenseType,
+    });
+
     setShowCategoryAndType(true);
     setFormKey((k) => k + 1);
-
     clearFailedStatus(expense.uid);
   };
 
