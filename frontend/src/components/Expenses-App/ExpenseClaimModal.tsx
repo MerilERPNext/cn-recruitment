@@ -64,23 +64,31 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   const mapFieldsToFormio = (fields: any[]) =>
     fields
       .map((field) => {
+        // Add a red asterisk (*) for required fields
+        const labelWithAsterisk = field.required
+          ? `${field.label} <span style="color:red">&nbsp;*</span>`
+          : field.label;
         switch (field.fieldtype) {
           case "Date":
             return {
               type: "datetime",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               enableTime: false,
               format: "dd-MM-yyyy",
               placeholder: "Select date",
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
               input: true,
             };
           case "Datetime":
             return {
               type: "datetime",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               format: "dd-MM-yyyy HH:mm:ss",
               enableTime: true,
               enableDate: true,
@@ -90,7 +98,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 displayInTimezone: "viewer",
                 locale: "en",
               },
-              validate: { required: field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
               input: true,
             };
           case "Currency":
@@ -98,9 +110,13 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             return {
               type: "number",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               input: true,
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
             };
           case "Data":
             // Treat 'units' as 'number' if it's supposed to be calculated
@@ -108,9 +124,13 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               return {
                 type: "number",
                 key: field.fieldname,
-                label: field.label,
+                label: labelWithAsterisk,
                 input: true,
-                validate: { required: !!field.required },
+                validate: {
+                  required: !!field.required,
+                  customMessage: `${field?.label} is required`,
+                },
+                html: true,
                 description: field.description, // Keep description if available
               };
             }
@@ -118,23 +138,31 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             return {
               type: "textfield",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               input: true,
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
             };
           case "Text":
             return {
               type: "textarea",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               input: true,
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
             };
           case "Attach":
             return {
               type: "file",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               storage: "customBase64",
               input: true,
               fileTypes: [
@@ -142,7 +170,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 { label: "Images", value: ".jpg,.jpeg,.png" },
               ],
               filePattern: "*/*",
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
             };
           case "Link":
             if (
@@ -152,7 +184,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               return {
                 type: "select",
                 key: field.fieldname,
-                label: field.label,
+                label: labelWithAsterisk,
                 dataSrc: "url",
 
                 data: {
@@ -163,7 +195,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 defaultValue: "INR",
                 template: "<span>{{ item }}</span>",
                 valueProperty: "",
-                validate: { required: field.required },
+                validate: {
+                  required: !!field.required,
+                  customMessage: `${field?.label} is required`,
+                },
+                html: true,
                 input: true,
                 clearOnRefresh: false,
               };
@@ -176,7 +212,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               return {
                 type: "select",
                 key: field.fieldname,
-                label: field.label,
+                label: labelWithAsterisk,
                 dataSrc: "url",
                 data: {
                   url: `/api/resource/Daily%20Allowance%20Vehicle%20Category`,
@@ -184,7 +220,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 selectValues: "data",
                 valueProperty: "name",
                 template: "<span>{{ item.name }}</span>",
-                validate: { required: field.required },
+                validate: {
+                  required: !!field.required,
+                  customMessage: `${field?.label} is required`,
+                },
+                html: true,
                 input: true,
               };
             }
@@ -193,7 +233,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             return {
               type: "select",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               dataSrc: "url",
               data: {
                 url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field.options}`,
@@ -201,7 +241,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               template: "<span>{{ item.name }}</span>",
               valueProperty: "name",
               selectValues: "message",
-              validate: { required: field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
               input: true,
             };
           default:
@@ -324,7 +368,6 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             onFormReady={(formio: any) => {
               formioInstanceRef.current = formio;
             }}
-
             onChange={(change: any) => {
               const newExpenseType = change.data?.expense_type;
               const units = change.data?.units;
@@ -417,7 +460,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
 
               handleClose();
             }}
-            options={{ noAlerts: true }}
+            options={{ noAlerts: true, showRequiredFields: true }}
           />
         </div>
       </div>

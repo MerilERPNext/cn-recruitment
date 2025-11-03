@@ -51,6 +51,10 @@ const ExpenseAdvanceForm: React.FC<{
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
 
+  const getLabelWithAsterisk = (label: string, required?: boolean) => {
+    return required ? `${label} <span style="color:red">&nbsp;*</span>` : label;
+  };
+
   const handleSubmit = async () => {
     try {
       const submission = await formRef.current?.submit();
@@ -272,7 +276,8 @@ const ExpenseAdvanceForm: React.FC<{
                     {
                       type: "select",
                       key: "currency",
-                      label: "Currency",
+                      label: getLabelWithAsterisk("Currency", true),
+                      html: true,
                       input: true,
                       validate: { required: true },
                       data: { values: allowedCurrencies },
@@ -286,7 +291,8 @@ const ExpenseAdvanceForm: React.FC<{
                     {
                       type: "number",
                       key: "exchange_rate",
-                      label: "Exchange Rate",
+                      label: getLabelWithAsterisk("Exchange Rate", true),
+                      html: true,
                       input: true,
                       defaultValue: 1,
                       validate: { required: true, min: 1 },
@@ -310,7 +316,12 @@ const ExpenseAdvanceForm: React.FC<{
                                 {
                                   type: "select",
                                   key: "project",
-                                  label: "Project",
+                                  label: getLabelWithAsterisk(
+                                    "Project",
+                                    projectMandatory
+                                  ),
+                                  html: true,
+
                                   input: true,
                                   placeholder: "Select project",
                                   data: {
@@ -335,7 +346,11 @@ const ExpenseAdvanceForm: React.FC<{
                                 {
                                   type: "select",
                                   key: "cost_center",
-                                  label: "Cost Center",
+                                  label: getLabelWithAsterisk(
+                                    "Cost Center",
+                                    costCenterMandatory
+                                  ),
+                                  html: true,
                                   input: true,
                                   placeholder: "Select cost center",
                                   data: {
@@ -360,7 +375,8 @@ const ExpenseAdvanceForm: React.FC<{
             {
               type: "number",
               key: "advance_amount",
-              label: "Advance Amount",
+              label: getLabelWithAsterisk("Advance Amount", true),
+              html: true,
               input: true,
               placeholder: "Enter amount",
               validate: { required: true, min: 1 },
@@ -368,7 +384,8 @@ const ExpenseAdvanceForm: React.FC<{
             {
               type: "textarea",
               key: "purpose",
-              label: "Purpose",
+              label: getLabelWithAsterisk("Purpose", true),
+              html: true,
               input: true,
               placeholder: "Describe the purpose of advance",
               validate: { required: true },
@@ -423,7 +440,7 @@ const ExpenseAdvanceForm: React.FC<{
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
-              Add New Advance
+              Advance Break Up
             </button>
           </div>
 
