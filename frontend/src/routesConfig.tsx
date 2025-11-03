@@ -15,8 +15,6 @@ import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/AddExpenseForm";
-import Separation from "./components/Flows/Separation/Separation";
-import ConfirmationWorkflow from "./components/Flows/Confirmation/Confirmation";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -354,6 +352,36 @@ const CompensatoryRequest = lazyWithRetry(
   "CompensatoryRequest"
 );
 
+const FlowApp = lazyWithRetry(
+  () => import("./components/Flows/FlowApp"),
+  "FlowApp"
+);
+
+const FlowRequests2 = lazyWithRetry(
+  () => import("./components/Flows/FlowRequests/FlowRequests"),
+  "FlowRequests2"
+);
+
+const Separation = lazyWithRetry(
+  () => import("./components/Flows/Separation/Separation"),
+  "Separation"
+);
+
+const Confirmation = lazyWithRetry(
+  () => import("./components/Flows/Confirmation/Confirmation"),
+  "Confirmation"
+);
+
+const InitiateFlow2 = lazyWithRetry(
+  () => import("./components/Flows/Initiate/InitiateFlow"),
+  "InitiateFlow2"
+);
+
+const RequestDetails = lazyWithRetry(
+  ()=> import("./components/Flows/RequestDetails/RequestDetails"),
+  "RequestDetails"
+)
+
 // Loading component for Suspense fallbacks
 // eslint-disable-next-line react-refresh/only-export-components
 const LoadingSpinner = () => (
@@ -665,9 +693,18 @@ export const routesConfig: AppRoute[] = [
       },
     ],
   },
-  
-    { path: "/webapp/flows-app/separation", element: <Separation /> },
-    { path: "/webapp/flows-app/confirmation-workflow", element: <ConfirmationWorkflow /> },
+  // Flow App Routes
+  {
+    path: "/webapp/flow-app",
+    element: <FlowApp />,
+    children: [
+      {path: "flow-requests", element: <FlowRequests2 />},
+      {path: "separation", element: <Separation />},
+      {path: "confirmation", element: <Confirmation />},
+      {path: "initiate-flow", element: <InitiateFlow2 />},
+      {path: "flow-request/:id", element: <RequestDetails />}
+    ]
+  },
   
   {
     path: "/webapp/organizational-chart",

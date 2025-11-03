@@ -8,7 +8,6 @@ import DOMPurify from "dompurify";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import {
-  useAdvancesType,
   useCreateNewAdvance,
   useEmployeeAdvancesAmount,
 } from "../../../hooks/useEmployeeAdvances";
@@ -25,7 +24,6 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const formAdvanceInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
-  const { data: advanceType } = useAdvancesType();
 
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string>();
   const [postingDate] = useState<string>(

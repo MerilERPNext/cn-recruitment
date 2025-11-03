@@ -24,6 +24,7 @@ import {
   Workflow,
   SeparatorHorizontal,
   CircleCheckBig,
+  ArrowDownUp,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -258,26 +259,28 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
       ],
     },
-
-// flows routes here 
-    {
+      {
       icon: Workflow,
       label: "Flows",
-      path: "/webapp/flows-app",
+      path: "/webapp/flow-app",
       subItems: [
         {
-          name: "Separation",
-          icon: SeparatorHorizontal,
-          href: "/webapp/flows-app/separation",
+          name: "Flow Requests",
+          icon: ArrowDownUp,
+          href: "/webapp/flow-app/flow-requests",
         },
         {
+        name: "Separation",
+        icon: SeparatorHorizontal,
+        href: "/webapp/flow-app/separation",
+      },
+        {
           name: "Confirmation",
-          icon:  CircleCheckBig,
-          href: "/webapp/flows-app/confirmation-workflow",
+          icon: CircleCheckBig,
+          href: "/webapp/flow-app/confirmation",
         }
-    
-      ],
-    },
+      ]
+      },
     {
       icon: Shield,
       label: "Policies",
