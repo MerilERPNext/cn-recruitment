@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import ExpenseClaimModal from "./ExpenseClaimModal";
-import {SquarePen, Trash2, Plus } from "lucide-react";
+import { SquarePen, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 
 interface ExpenseClaim {
@@ -299,7 +299,10 @@ const ExpenseAdvanceForm: React.FC<{
                       label: getLabelWithAsterisk("Currency", true),
                       html: true,
                       input: true,
-                      validate: { required: true, customMessage: "Currency is required" },
+                      validate: {
+                        required: true,
+                        customMessage: "Currency is required",
+                      },
                       data: { values: allowedCurrencies },
                       defaultValue: "INR",
                     },
@@ -315,7 +318,11 @@ const ExpenseAdvanceForm: React.FC<{
                       html: true,
                       input: true,
                       defaultValue: 1,
-                      validate: { required: true, min: 1, customMessage: "Exchange Rate must be at least 1" },
+                      validate: {
+                        required: true,
+                        min: 1,
+                        customMessage: "Exchange Rate must be at least 1",
+                      },
                     },
                   ],
                 },
@@ -351,7 +358,10 @@ const ExpenseAdvanceForm: React.FC<{
                                         value: pro.project_name,
                                       })) || [],
                                   },
-                                  validate: { required: projectMandatory, customMessage: "Project is required" },
+                                  validate: {
+                                    required: projectMandatory,
+                                    customMessage: "Project is required",
+                                  },
                                 },
                               ],
                             },
@@ -380,7 +390,10 @@ const ExpenseAdvanceForm: React.FC<{
                                         value: cc.name,
                                       })) || [],
                                   },
-                                  validate: { required: costCenterMandatory, customMessage: "Cost Center is required"},
+                                  validate: {
+                                    required: costCenterMandatory,
+                                    customMessage: "Cost Center is required",
+                                  },
                                 },
                               ],
                             },
@@ -399,7 +412,11 @@ const ExpenseAdvanceForm: React.FC<{
               html: true,
               input: true,
               placeholder: "Enter amount",
-              validate: { required: true, min: 1, customMessage: "Advance Amount must be at least 1" },
+              validate: {
+                required: true,
+                min: 1,
+                customMessage: "Advance Amount must be at least 1",
+              },
             },
             {
               type: "textarea",
@@ -408,7 +425,10 @@ const ExpenseAdvanceForm: React.FC<{
               html: true,
               input: true,
               placeholder: "Describe the purpose of advance",
-              validate: { required: true, customMessage: "Purpose is required"},
+              validate: {
+                required: true,
+                customMessage: "Purpose is required",
+              },
               rows: 3,
             },
           ],
@@ -511,13 +531,22 @@ const ExpenseAdvanceForm: React.FC<{
                         Expense Type
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
+                        Expense Date
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Currency
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Amount
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Merchant
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Invoice No.
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Description
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
@@ -550,10 +579,19 @@ const ExpenseAdvanceForm: React.FC<{
                             : "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.custom_currency || expense.currency || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
                           {expense.amount || "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {expense.custom_mercent || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.custom_invoice_number || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900 overflow-auto whitespace-normal max-w-xs">
+                          {expense.description || "-"}
                         </td>
                         <td className="px-4 py-3">
                           {/* 5. Add Edit button */}
@@ -618,7 +656,6 @@ const ExpenseAdvanceForm: React.FC<{
           // 6. Reset expenseToEdit when closing the modal
           setExpenseToEdit(null);
         }}
-
         // 7. Pass the correct handler based on whether we are editing or adding
         onSave={expenseToEdit ? handleUpdateExpense : handleAddExpense}
         // 8. Pass the expense to edit as initial data

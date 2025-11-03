@@ -555,8 +555,8 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 custom_currency: combinedData.currency,
                 description: combinedData.description,
                 custom_vehicle_type: combinedData.vehicle_type,
-                custom_from_location: combinedData.custom_from_location,
-                custom_to_location: combinedData.custom_to_location,
+                custom_from_location: combinedData.from_location,
+                custom_to_location: combinedData.to_location,
                 custom_start_datetime: startDatetime, // Use the formatted value
                 custom_end_datetime: endDatetime, // Use the formatted value
                 custom_location: combinedData.location,
