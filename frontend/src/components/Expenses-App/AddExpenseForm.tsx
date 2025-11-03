@@ -7,6 +7,7 @@ import {
   useGetExpenseTypeFields,
   usePostExpenseClaim,
   useCalculateExpenseAmount,
+  useGetUnitPrice,
 } from "../../hooks/useExpense";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -63,6 +64,7 @@ const AddExpenseForm: React.FC = () => {
   const formRef = useRef<any>(null);
   const dynamicFormRef = useRef<any>(null);
   const [formKey, setFormKey] = useState<number>(0);
+  const [vehicleType, setVehicleType] = useState<string | null>(null);
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     try {
@@ -148,7 +150,11 @@ const AddExpenseForm: React.FC = () => {
     ) {
       dynamicFormRef.current.reset();
     }
-  }, [mainFormData?.expenseType, mainFormData?.expense_type]);
+  }, [
+    mainFormData?.expenseType,
+    mainFormData?.expense_type,
+    mainFormData?.expenseCategory,
+  ]);
 
   useEffect(() => {
     try {
@@ -351,6 +357,26 @@ const AddExpenseForm: React.FC = () => {
               html: true,
             };
           case "Data":
+            if (
+              field?.fieldname === "units" ||
+              field?.fieldname === "no_of_units"
+            ) {
+              return {
+                type: "number",
+                key: field?.fieldname,
+                label:
+                  field?.required === true
+                    ? `${unitFieldLabel} <span style="color:red">&nbsp;*</span>`
+                    : unitFieldLabel,
+                validate: {
+                  required: field?.required,
+                  customMessage: `${field?.label} is required`,
+                },
+                input: true,
+                html: true,
+              };
+            }
+
             return {
               type: "textfield",
               key: field?.fieldname,
@@ -497,6 +523,28 @@ const AddExpenseForm: React.FC = () => {
   const { data: expenseTypeData, isFetching: isFetchingFields } =
     useGetExpenseTypeFields(expenseTypeValue);
 
+  const claimTypeValue =
+    mainFormData?.expenseType ?? mainFormData?.expense_type;
+
+  const { data: unitPriceData } = useGetUnitPrice(
+    claimTypeValue,
+    vehicleType || undefined
+  );
+
+  const unitFieldLabel = useMemo(() => {
+    if (
+      unitPriceData &&
+      typeof unitPriceData === "object" &&
+      "message" in unitPriceData
+    ) {
+      return unitPriceData.message;
+    }
+    if (typeof unitPriceData === "string") {
+      return unitPriceData;
+    }
+    return "Units";
+  }, [unitPriceData]);
+
   const isShareAllowed = Boolean(expenseTypeData?.shared_expense_allowed);
 
   useEffect(() => {
@@ -510,7 +558,8 @@ const AddExpenseForm: React.FC = () => {
       isAmountReadonly
     );
     setDynamicFields(components);
-  }, [expenseTypeData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expenseTypeData, unitFieldLabel]);
 
   const debounceRef = useRef<number | null>(null);
   const parseUnits = (raw: any): number | undefined => {
@@ -931,6 +980,9 @@ const AddExpenseForm: React.FC = () => {
                 }}
                 onChange={(change: any) => {
                   setDynamicFormData(change.data);
+                  if (change.data?.vehicle_type) {
+                    setVehicleType(change.data.vehicle_type);
+                  }
 
                   const isAmountReadonly =
                     expenseTypeData?.is_amount_readonly ?? false;

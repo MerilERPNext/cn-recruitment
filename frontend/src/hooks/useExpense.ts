@@ -164,6 +164,7 @@ export const useGetUnitPrice = (
     },
     enabled: !!claimTypeDoc && !!vehicleType,
     staleTime: 0,
+    refetchOnMount: "always",
     retry: 1,
   });
 };
