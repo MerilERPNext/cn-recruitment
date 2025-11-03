@@ -470,7 +470,9 @@ const ExpenseAdvanceForm: React.FC<{
         )}
 
         {/* Add Expense Claims Section */}
-        <div className="mt-8 border-t pt-6">
+        {/* {fieldSettings?.expense_table_mandatory && ( */}
+        {true && (
+          <div className="mt-8 border-t pt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-800">
               Advance Break Up
@@ -627,6 +629,7 @@ const ExpenseAdvanceForm: React.FC<{
             </div>
           )}
         </div>
+        )}
       </div>
 
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
