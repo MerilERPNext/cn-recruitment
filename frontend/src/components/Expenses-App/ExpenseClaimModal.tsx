@@ -7,7 +7,6 @@ import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { CalculateExpenseParams } from "../../types/expenseAdvance";
 import { formatMySQLDatetime } from "../../utils/dateTimeFormatUtils";
 
-
 interface ExpenseClaimModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -26,14 +25,15 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   const { data: calcData } = useCalculateExpenseAmount(calcParams);
 
   const lastExpenseType = useRef<string | null>(null);
-  const lastCalculatedUnits = useRef<number | null>(null);
-  const [isAmountReadonly, setIsAmountReadonly] = useState(false);
+  const lastCalculatedUnits = useRef<CalculateExpenseParams | null>(null);
+
+  const [_isAmountReadonly, setIsAmountReadonly] = useState(false);
   const { data: currentEmployee } = useCurrentEmployee();
   const employeeId = currentEmployee?.name;
 
   useEffect(() => {
     // Only run if we have new data AND the amount field is readonly
-    if (calcData && isAmountReadonly) {
+    if (calcData) {
       const amount =
         (calcData as any)?.amount ??
         (calcData as any)?.message?.amount ??
@@ -58,7 +58,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
         toast.error("Failed to calculate amount.");
       }
     }
-  }, [calcData, isAmountReadonly, calcParams]);
+  }, [calcData, calcParams]);
 
   // CORRECT: Your mapping function was already fixed, ensure it stays this way
   const mapFieldsToFormio = (fields: any[]) =>
@@ -324,10 +324,16 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             onFormReady={(formio: any) => {
               formioInstanceRef.current = formio;
             }}
+
             onChange={(change: any) => {
               const newExpenseType = change.data?.expense_type;
+              const units = change.data?.units;
+              const numericUnits = Number(units);
+              const vehicleType = change.data?.vehicle_type;
+
               setFormData(change.data);
 
+              // Handle expense type change
               if (
                 newExpenseType &&
                 newExpenseType !== lastExpenseType.current
@@ -337,23 +343,29 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 fetchExpenseTypeFields(newExpenseType);
               }
 
-              const units = change.data?.units;
-              const numericUnits = Number(units);
-              const vehicleType = change.data?.vehicle_type;
-
-              if (isAmountReadonly && units && newExpenseType) {
+              // 🔹 Trigger recalculation whenever units OR vehicle_type changes
+              if (newExpenseType && (units || vehicleType)) {
                 clearTimeout((window as any)._calcTimer);
                 (window as any)._calcTimer = setTimeout(() => {
-                  if (numericUnits !== lastCalculatedUnits.current) {
-                    lastCalculatedUnits.current = numericUnits;
+                  const lastParams = lastCalculatedUnits.current;
+
+                  // Recalculate only if something changed
+                  if (
+                    !lastParams ||
+                    lastParams.units !== numericUnits ||
+                    lastParams.vehicle_type !== vehicleType ||
+                    lastParams.expense_type !== newExpenseType
+                  ) {
                     const newCalcParams: CalculateExpenseParams = {
                       expense_type: newExpenseType,
                       units: numericUnits,
                     };
+
                     if (vehicleType) {
                       newCalcParams.vehicle_type = vehicleType;
                     }
 
+                    lastCalculatedUnits.current = newCalcParams;
                     setCalcParams(newCalcParams);
                   }
                 }, 700);
