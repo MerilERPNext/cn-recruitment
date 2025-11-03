@@ -10,16 +10,20 @@ import { formatMySQLDatetime } from "../../utils/dateTimeFormatUtils";
 interface ExpenseClaimModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (expense: any) => void;
+  onSave: (expense: any) => void; 
+  // 1. New prop for initial data when editing
+  initialData?: any;
 }
 
 const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  initialData, // 2. Destructure initialData
 }) => {
   const [formKey, setFormKey] = useState(0);
-  const [formData, setFormData] = useState<any>({});
+  // 3. Initialize formData with initialData if available
+  const [formData, setFormData] = useState<any>(initialData || {});
   const [calcParams, setCalcParams] = useState<any>();
   const formioInstanceRef = useRef<any>(null);
   const { data: calcData } = useCalculateExpenseAmount(calcParams);
@@ -30,6 +34,27 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   const [_isAmountReadonly, setIsAmountReadonly] = useState(false);
   const { data: currentEmployee } = useCurrentEmployee();
   const employeeId = currentEmployee?.name;
+
+  // 4. Effect to reset form state when the modal opens/initialData changes
+  useEffect(() => {
+    if (isOpen) {
+      // Set initial data for the Form.io component
+      setFormData(initialData || {}); 
+      // Force a re-render of the Form.io component by changing the key
+      setFormKey((prev) => prev + 1); 
+      // Reset ref-based state for recalculation logic on edit
+      lastExpenseType.current = initialData?.expense_type || null;
+      lastCalculatedUnits.current = null;
+
+      if (initialData?.expense_type) {
+        // If we have an expense type from initial data, fetch its fields
+        fetchExpenseTypeFields(initialData.expense_type);
+      } else {
+        // Otherwise, reset to initial schema (only expense_type select)
+        setFormSchema(initialSchema);
+      }
+    }
+  }, [isOpen, initialData]); 
 
   useEffect(() => {
     // Only run if we have new data AND the amount field is readonly
@@ -338,19 +363,26 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
 
   const handleClose = () => {
     lastExpenseType.current = null;
+    // 5. Reset the form schema and data state
     setFormSchema(initialSchema);
-    setFormData({});
-    setFormKey((prev) => prev + 1);
+    setFormData({}); 
+    // Do NOT increment formKey here, as it's handled in the useEffect
+    // setFormKey((prev) => prev + 1); 
     onClose();
   };
 
   if (!isOpen) return null;
 
+  // 6. Update modal title based on whether we are editing or adding
+  const modalTitle = initialData
+    ? "Edit Expense Advance Breakup"
+    : "Add Expense Advance Breakup";
+
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-2xl rounded-lg shadow-xl overflow-visible p-4">
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="font-semibold text-lg">Add Expense Advance</h2>
+          <h2 className="font-semibold text-lg">{modalTitle}</h2> 
           <button
             type="button"
             onClick={handleClose}
@@ -364,7 +396,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
           <Form
             key={formKey}
             form={formSchema}
-            submission={{ data: formData }}
+            submission={{ data: formData }} // Use formData which is set via useEffect
             onFormReady={(formio: any) => {
               formioInstanceRef.current = formio;
             }}
@@ -438,7 +470,8 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
 
               // Mapped all potential fields to the submission object
               const mappedExpense = {
-                id: crypto.randomUUID(),
+                // 7. Crucial: Keep the original ID if editing, or generate a new one if adding
+                id: initialData?.id || crypto.randomUUID(),
                 expense_type: combinedData.expense_type,
                 expense_date: combinedData.expense_date,
                 amount: combinedData.amount,
@@ -455,8 +488,8 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 custom_end_datetime: endDatetime, // Use the formatted value
                 custom_location: combinedData.location,
               };
-
-              onSave(mappedExpense);
+              // 8. Call onSave with the mapped expense (it will either update or add in the main form)
+              onSave(mappedExpense); 
 
               handleClose();
             }}

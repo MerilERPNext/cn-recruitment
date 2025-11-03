@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import ExpenseClaimModal from "./ExpenseClaimModal";
-import { Trash2, Plus } from "lucide-react";
+import {SquarePen, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 
 interface ExpenseClaim {
@@ -50,6 +50,9 @@ const ExpenseAdvanceForm: React.FC<{
   const [expenseClaims, setExpenseClaims] = useState<ExpenseClaim[]>([]);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
+
+  // 1. New state to hold the expense item being edited
+  const [expenseToEdit, setExpenseToEdit] = useState<ExpenseClaim | null>(null);
 
   const getLabelWithAsterisk = (label: string, required?: boolean) => {
     return required ? `${label} <span style="color:red">&nbsp;*</span>` : label;
@@ -152,6 +155,23 @@ const ExpenseAdvanceForm: React.FC<{
   const handleAddExpense = (expense: ExpenseClaim) => {
     setExpenseClaims((prev) => [...prev, expense]);
     toast.success("Expense claim added successfully!");
+  };
+
+  // 2. New function to handle updating an existing expense
+  const handleUpdateExpense = (updatedExpense: ExpenseClaim) => {
+    setExpenseClaims((prev) =>
+      prev.map((exp) => (exp.id === updatedExpense.id ? updatedExpense : exp))
+    );
+    toast.success("Expense claim updated successfully!");
+    // Close modal and reset editing state
+    setIsExpenseModalOpen(false);
+    setExpenseToEdit(null);
+  };
+
+  // 3. New function to set the expense to edit and open the modal
+  const handleEditExpense = (expense: ExpenseClaim) => {
+    setExpenseToEdit(expense);
+    setIsExpenseModalOpen(true);
   };
 
   const handleDeleteExpense = (id: string) => {
@@ -436,7 +456,11 @@ const ExpenseAdvanceForm: React.FC<{
               Advance Break Up
             </h3>
             <button
-              onClick={() => setIsExpenseModalOpen(true)}
+              onClick={() => {
+                setIsExpenseModalOpen(true);
+                // 4. Clear expenseToEdit when adding a new expense
+                setExpenseToEdit(null);
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
@@ -532,6 +556,14 @@ const ExpenseAdvanceForm: React.FC<{
                           {expense.custom_mercent || "-"}
                         </td>
                         <td className="px-4 py-3">
+                          {/* 5. Add Edit button */}
+                          <button
+                            onClick={() => handleEditExpense(expense)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors mr-3"
+                            title="Edit expense"
+                          >
+                            <SquarePen size={18} />
+                          </button>
                           <button
                             onClick={() => handleDeleteExpense(expense.id)}
                             className="text-red-600 hover:text-red-800 transition-colors"
@@ -578,12 +610,19 @@ const ExpenseAdvanceForm: React.FC<{
           {submitting ? "Submitting..." : "Submit"}
         </button>
       </div>
-
       {/* Expense Claim Modal */}
       <ExpenseClaimModal
         isOpen={isExpenseModalOpen}
-        onClose={() => setIsExpenseModalOpen(false)}
-        onSave={handleAddExpense}
+        onClose={() => {
+          setIsExpenseModalOpen(false);
+          // 6. Reset expenseToEdit when closing the modal
+          setExpenseToEdit(null);
+        }}
+
+        // 7. Pass the correct handler based on whether we are editing or adding
+        onSave={expenseToEdit ? handleUpdateExpense : handleAddExpense}
+        // 8. Pass the expense to edit as initial data
+        initialData={expenseToEdit}
       />
     </div>
   );
