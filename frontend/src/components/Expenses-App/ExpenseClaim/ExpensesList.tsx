@@ -1,11 +1,11 @@
 import React from "react";
-import FrappeListView from "../ListView";
-import CardTable from "../shared/CardTable";
-import { useScreenSize } from "../../hooks/useScreenSize";
+import FrappeListView from "../../ListView";
+import CardTable from "../../shared/CardTable";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
-import Tooltip from "../shared/Tooltip";
+import Tooltip from "../../shared/Tooltip";
 
 interface APIExpense {
   name: string;

@@ -14,7 +14,7 @@ import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
-import AddExpenseForm from "./components/Expenses-App/AddExpenseForm";
+import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -90,15 +90,15 @@ const ExpensesApp = lazyWithRetry(
   "ExpensesApp"
 );
 const ExpensesList = lazyWithRetry(
-  () => import("./components/Expenses-App/ExpensesList"),
+  () => import("./components/Expenses-App/ExpenseClaim/ExpensesList"),
   "ExpensesList"
 );
 const AdvanceExpenseList = lazyWithRetry(
-  () => import("./components/Expenses-App/AdvanceExpenseList"),
+  () => import("./components/Expenses-App/ExpenseAdvance/AdvanceExpenseList"),
   "AdvanceExpenseList"
 );
 const ExpenseAdvanceForm = lazyWithRetry(
-  () => import("./components/Expenses-App/ExpenseAdvanceForm"),
+  () => import("./components/Expenses-App/ExpenseAdvance/ExpenseAdvanceForm"),
   "ExpenseAdvanceForm"
 );
 const Holidays = lazyWithRetry(

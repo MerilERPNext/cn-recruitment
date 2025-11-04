@@ -5,7 +5,7 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import ExpenseFormModal from "./ExpenseFormModal";
 import NavigationTabs, { Tab } from "../NavigationTab";
-import ExpenseAdvanceForm from "./ExpenseAdvanceForm";
+import ExpenseAdvanceForm from "./ExpenseAdvance/ExpenseAdvanceForm";
 
 type TabName = "Expenses" | "Advances";
 
