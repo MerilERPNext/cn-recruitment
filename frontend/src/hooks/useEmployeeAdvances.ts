@@ -6,6 +6,7 @@ import {
   getAllAdvancesTypes,
   getCostCenters,
   getCurrencies,
+  getExpenseAdvanceDetails,
   getExpenseAdvanceList,
   getExpenseTableFieldSettings,
   getExpenseTypeFields,
@@ -34,6 +35,14 @@ export const useExpenseAdvances = (employeeId: string) => {
     queryKey: ["employee-advance", employeeId],
     queryFn: () => getExpenseAdvanceList(employeeId),
     enabled: !!employeeId,
+  });
+};
+
+export const useExpenseAdvanceDetails = (advanceName: string | null) => {
+  return useQuery({
+    queryKey: ["employeeAdvanceDetail", advanceName],
+    queryFn: () => getExpenseAdvanceDetails(advanceName!),
+    enabled: !!advanceName, // Only fetch if advanceName is provided
   });
 };
 

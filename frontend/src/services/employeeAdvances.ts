@@ -75,6 +75,20 @@ export const getExpenseAdvanceList = async (
   };
 };
 
+export const getExpenseAdvanceDetails = async (
+  advanceName: string
+): Promise<any> => {
+  if (!advanceName) throw new Error("Advance Name is required");
+
+  // This Frappe call uses the standard resource endpoint to fetch a single document by its name.
+  const res = (await FrappeAPI.getDocument("Employee Advance", advanceName)) as {
+    data: Record<string, unknown>;
+  };
+  
+  // The API response structure is { data: { ...document_fields... } }
+  return res.data; 
+};
+
 export const getAdvancesAmount = async (
   employeeId: string,
   advanceType?: string,
