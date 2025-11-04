@@ -470,7 +470,7 @@ const ExpenseAdvanceForm: React.FC<{
         )}
 
         {/* Add Expense Claims Section */}
-          {true && (
+        {true && (
           <div className="mt-8 border-t pt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800">
