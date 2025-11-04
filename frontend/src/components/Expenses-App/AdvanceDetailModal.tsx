@@ -27,7 +27,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="bg-white w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Modal Header */}
         <div className="flex justify-between items-center p-5 border-b">
           <h3 className="text-lg font-semibold text-gray-800">
