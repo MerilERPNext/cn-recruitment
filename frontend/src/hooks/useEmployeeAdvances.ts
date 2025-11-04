@@ -110,6 +110,3 @@ export const useExpenseTableFieldSettings = (employeeId: string | null) => {
     enabled: !!employeeId,
   });
 };
-
-
-
