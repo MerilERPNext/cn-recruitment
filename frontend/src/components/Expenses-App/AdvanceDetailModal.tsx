@@ -93,8 +93,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                 {/* Row 4 (Financials) */}
                 <p className="text-base font-bold text-blue-700">
                   <strong className="text-gray-600">Amount:</strong>{" "}
-                  {formatCurrency(advanceDetails.advance_amount)}{" "}
-                  {advanceDetails.currency}
+                  {formatCurrency(advanceDetails.advance_amount)}
                 </p>
               </div>
 
