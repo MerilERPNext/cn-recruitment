@@ -102,7 +102,7 @@ const ExpensesTableRow: React.FC<{ item: APIExpense }> = ({ item }) => {
           }
         >
           <span
-            className={`px-2 py-1 w-fit rounded-2xl text-xs font-medium text-center w-fit ${getStatusBadgeClasses(
+            className={`px-2 py-1 w-fit rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
               item?.approval_status
             )}`}
           >
