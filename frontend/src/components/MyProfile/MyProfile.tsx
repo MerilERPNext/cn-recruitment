@@ -20,6 +20,7 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import EmploymentHistory from "./EmploymentHistory";
 import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
+import DocumentLibrary from "../Library/Library";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -64,6 +65,7 @@ const MyProfile: React.FC = () => {
       "ORG-chart": <TwoLevelOrgChart />,
       // "hr-letters": <HRLetters />,
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
+      "document-library": <DocumentLibrary />,
     }),
     [user, userAddress]
   );
