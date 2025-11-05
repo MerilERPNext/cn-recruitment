@@ -49,5 +49,7 @@ export interface Installment {
     applicantName: string
     standardInterest: number
     loanName: string
+    name: string
+    employee: string
   }
   

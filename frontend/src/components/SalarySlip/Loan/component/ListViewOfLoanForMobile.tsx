@@ -1,49 +1,49 @@
-// import { useNavigate } from "react-router-dom";
 import { IoIosArrowForward } from "react-icons/io";
-import FrappeListView from "../../../ListView";
-import { PiCurrencyInrFill } from "react-icons/pi";
 import { useNavigate } from "react-router";
-
-interface Loan {
-  loan_application: string;
-  applicant_name: string;
-  loan_amount: number;
-  total_payment: number;
-  name: string;
-  employee: string;
-  department: string;
-  from_date: string;
-  to_date: string;
-  shift_type: string;
-  status: string;
-  creation: string;
-}
+import DataListView from "../../../DataListView";
+import { useCurrentEmployee } from "../../../../hooks/useEmployee";
+import { Loan } from "../Type/loan";
+import { formatCurrency } from "../../../../utils/currencyFormatter";
+import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 
 const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
+  const { data: currentEmployee } = useCurrentEmployee();
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const handleGoToLoanDetails = (loan_application: string) => {
     navigate(`/webapp/salary-slip-app/loan/${loan_application}`);
   };
 
   return (
-    <FrappeListView
-      doctype="Loan"
-      ItemComponent={LoantItem}
-      onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_application)} // ✅ Pass item.name
+    <DataListView
+      queryKey="loan-requests"
+      customAPI={{
+        method:
+          "cn_indian_payroll.cn_indian_payroll.overrides.loan_dashboard.print_loan_dashboard",
+        params: {
+          employee: currentEmployee?.name,
+        },
+      }}
+      ItemComponent={({ item }) => <LoantItem item={item} />}
+      onRefetchComplete={() => setRefetchAttendance(false)}
+      refetchTrigger={refetchAttendance}
+      onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_name)}
       isSearch={true}
+      isFilter={false}
       pageSize={10}
-      defaultFields={["*"]}
-      searchFields={["employee", "status", "shift_type"]}
+      showRefreshButton={false}
+      orderBy="modified desc"
       infiniteScroll={true}
+      loadMorePagination={true}
+      showPagination={false}
+      searchFields={["employee", "status", "shift_type"]}
     />
   );
 };
 
 const LoantItem: React.FC<{
   item: Loan;
-  index?: number;
-  doctype: string;
 }> = ({ item }) => {
   return (
     <div
@@ -53,22 +53,36 @@ const LoantItem: React.FC<{
       {/* Left content */}
       <div className="flex flex-col flex-grow">
         <h3 className="text-[var(--text-primary)] text-base font-semibold mb-1">
-          {item.applicant_name}
+          {item.loan_name}
         </h3>
         <p className="text-sm text-[var(--secondary-color)]">
-          Name: <span className="font-semibold">{item.name}</span>
+          <span className="font-semibold">{item.emi_type}</span>
         </p>
       </div>
 
       {/* Right content */}
-      <div className="flex items-center gap-3">
-        <p className="flex items-center text-sm text-[var(--text-primary)]">
-          <PiCurrencyInrFill className="mr-1 text-[var(--secondary-color)]" />
-          <span className="font-bold">{item.loan_amount}</span>
+      <div className="flex items-center gap-3 flex-col">
+        <p
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ml-auto ${
+            item.status === "Open"
+              ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+              : "bg-green-100 text-green-800 border border-green-200"
+          }`}
+        >
+          {item.status === "Open" ? "Pending" : item.status}
         </p>
-        <button className="text-xl text-[var(--secondary-color)] hover:text-[var(--text-primary)] transition-colors">
-          <IoIosArrowForward />
-        </button>
+        <div className="flex gap-2">
+          <p className="flex items-center text-sm text-[var(--text-primary)]">
+            <span className="font-bold">
+              {item.status === "Open"
+                ? formatCurrency(item.loan_requested_amount)
+                : formatCurrency(item.loan_approved_amount)}
+            </span>
+          </p>
+          <button className="text-xl text-[var(--secondary-color)] hover:text-[var(--text-primary)] transition-colors">
+            <IoIosArrowForward />
+          </button>
+        </div>
       </div>
     </div>
   );
