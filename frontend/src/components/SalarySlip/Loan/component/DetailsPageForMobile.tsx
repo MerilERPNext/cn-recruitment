@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useNavigate, useParams } from "react-router";
 import HeaderBar from "../../../HeaderBar";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
@@ -58,11 +57,6 @@ export default function LoanSummary() {
     document.body.removeChild(link);
   };
 
-  const formatPrice = (amount: number | string) => {
-    if (!amount) return "0.00";
-    return parseFloat(amount as string).toFixed(2);
-  };
-
   if (!selectedLoan) {
     return (
       <div className="text-center text-gray-600">
@@ -72,7 +66,6 @@ export default function LoanSummary() {
     );
   }
 
-  console.log("loan-detail: ", selectedLoan);
   return (
     <div>
       <HeaderBar title="Loan Details" onBack={() => navigate(-1)} />
@@ -98,7 +91,6 @@ export default function LoanSummary() {
             <div>
               <p className="text-sm text-gray-500 mb-1">Loan Amount</p>
               <p className="text-xs font-semibold text-gray-900">
-                {selectedLoan.loan_approved_amount}
                 {selectedLoan.status === "Open"
                   ? formatCurrency(selectedLoan.loan_requested_amount)
                   : formatCurrency(selectedLoan.loan_approved_amount)}
@@ -113,7 +105,9 @@ export default function LoanSummary() {
                     : "bg-green-100 text-green-800 border border-green-200"
                 }`}
               >
-                {selectedLoan.status === "Open" ? "Pending" : selectedLoan.status}
+                {selectedLoan.status === "Open"
+                  ? "Pending"
+                  : selectedLoan.status}
               </p>
             </div>
           </div>
@@ -147,13 +141,13 @@ export default function LoanSummary() {
                   </div>
                   <div className="text-gray-600">{item.payment_date}</div>
                   <div className="text-gray-900">
-                    ₹{formatPrice(item.principal_amount)}
+                    {formatCurrency(item.principal_amount)}
                   </div>
                   <div className="text-gray-900">
-                    ₹{formatPrice(item.interest_amount)}
+                    {formatCurrency(item.interest_amount)}
                   </div>
                   <div className="text-gray-900">
-                    ₹{formatPrice(item.balance_loan_amount)}
+                    {formatCurrency(item.balance_loan_amount)}
                   </div>
                 </div>
               )

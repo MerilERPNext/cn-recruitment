@@ -1,4 +1,3 @@
-// import { useNavigate } from "react-router-dom";
 import { IoIosArrowForward } from "react-icons/io";
 import { useNavigate } from "react-router";
 import DataListView from "../../../DataListView";
@@ -10,8 +9,7 @@ import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
   const { data: currentEmployee } = useCurrentEmployee();
-    const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const handleGoToLoanDetails = (loan_application: string) => {
     navigate(`/webapp/salary-slip-app/loan/${loan_application}`);
@@ -27,12 +25,10 @@ const ListViewOfLoanForMobile = () => {
           employee: currentEmployee?.name,
         },
       }}
-      ItemComponent={(props: { item: Loan }) => {
-        return <LoantItem item={{ ...props?.item }} />;
-      }}
+      ItemComponent={({ item }) => <LoantItem item={item} />}
       onRefetchComplete={() => setRefetchAttendance(false)}
       refetchTrigger={refetchAttendance}
-      onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_name)} 
+      onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_name)}
       isSearch={true}
       isFilter={false}
       pageSize={10}
@@ -49,7 +45,6 @@ const ListViewOfLoanForMobile = () => {
 const LoantItem: React.FC<{
   item: Loan;
 }> = ({ item }) => {
-  console.log("Loan Item:", item);
   return (
     <div
       key={item.name}
