@@ -14,11 +14,11 @@ type StageDataType = {
   actions: string;
 };
 
-interface TimelineProps {
+interface RequestDetailsCardProps {
   stages: StageDataType[];
 }
 
-const Timeline: React.FC<TimelineProps> = ({ stages }) => {
+const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
   const getIcon = (status: string) => {
     const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
 
@@ -64,7 +64,7 @@ const Timeline: React.FC<TimelineProps> = ({ stages }) => {
             key={stage.stageNumber}
             className="relative flex gap-4 w-full last:mb-0 mb-10"
           >
-            {/* Timeline Left Column */}
+            {/* RequestDetailsCard Left Column */}
             <div className="relative flex flex-col items-center">
               {/* Connector Line */}
               {index !== stages.length - 1 && (
@@ -151,12 +151,12 @@ const Timeline: React.FC<TimelineProps> = ({ stages }) => {
         );
       })}
 
-      {/* Timeline End Indicator */}
+      {/* RequestDetailsCard End Indicator */}
       <div className="flex items-center gap-2 text-green-600 text-sm font-medium mt-2 ml-7">
-        <Check size={18} strokeWidth={3} /> Timeline up to date
+        <Check size={18} strokeWidth={3} /> TimeLine up to date
       </div>
     </div>
   );
 };
 
-export default Timeline;
+export default RequestDetailsCard;

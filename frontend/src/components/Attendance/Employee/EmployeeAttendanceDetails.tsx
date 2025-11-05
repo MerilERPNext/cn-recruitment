@@ -186,7 +186,7 @@ const EmployeeAttendanceDetails = ({
     });
     setShowEditModal(true);
   };
-
+   
   const renderHeader = () => {
     let headerTitle = "Attendance Details";
 
@@ -300,6 +300,11 @@ const EmployeeAttendanceDetails = ({
       return renderLoadingState();
     }
 
+    if(data?.status.toLowerCase()==="holiday" && data?.title){
+      return(
+        <p className="text-sm my-4 text-gray-700 text-center">{data.title}</p>
+      )
+    }
     return (
       <div className="flex-grow overflow-y-auto p-4">
         {renderRegularContent()}

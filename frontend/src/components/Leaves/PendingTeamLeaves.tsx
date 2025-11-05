@@ -31,7 +31,7 @@ const PendingTeamLeaves = () => {
 
   const handleCloseModal = useCallback(() => {
     navigate(-1);
-  }, [setSearchParams]);
+  }, [navigate]);
 
   const handleActionComplete = useCallback(() => {
     setSearchParams({});

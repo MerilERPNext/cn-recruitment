@@ -270,7 +270,6 @@ const AllEmpAttendance = () => {
                   <div className="flex flex-1 flex-col gap-1">
                     <div className="flex gap-2 items-center justify-between w-full">
                       <div className="font-semibold text-sm text-gray-800">
-                       Attendance Request : {" "}
                         {item?.status}
                       </div>
                       {item?.shift && (
