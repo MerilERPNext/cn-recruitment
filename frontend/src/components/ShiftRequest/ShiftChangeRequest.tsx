@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import ApprovalList from "../shared/ApprovalList";
 import ApprovalRejectedForMobile from "./mobileUI/ApprovalRejectedCard";
 import { ShiftDetailView } from "./ShiftDetailView";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function ShiftChangeRequests() {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -10,6 +10,7 @@ export default function ShiftChangeRequests() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const requestId = searchParams.get("requestId");
+  const navigate = useNavigate();
 
   const handleRequestClick = useCallback(
     (request: any) => {
@@ -21,7 +22,7 @@ export default function ShiftChangeRequests() {
   );
 
   const handleCloseModal = useCallback(() => {
-    setSearchParams({});
+      navigate(-1);
   }, [setSearchParams]);
 
   const handleActionComplete = useCallback(() => {

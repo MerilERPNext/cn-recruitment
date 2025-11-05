@@ -26,8 +26,8 @@ const AllShiftChangeRequestsList: React.FC = () => {
   );
 
   const handleCloseModal = useCallback(() => {
-    setSearchParams({});
-  }, [setSearchParams]);
+    navigate(-1);
+  }, [navigate]);
 
   const handleActionComplete = useCallback(() => {
     setSearchParams({});
