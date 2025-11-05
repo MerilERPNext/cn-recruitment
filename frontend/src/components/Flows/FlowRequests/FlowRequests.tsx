@@ -163,7 +163,8 @@ const FlowRequests : React.FC = () => {
   const [filter, setFilter] = useState({ currentTab: subtabs[0].name });
   const {isDesktop} = useScreenSize();
   const navigate = useNavigate();
-  
+  const { isMobile } = useScreenSize();
+
   const getStatusTagColor = (status: string) => {
     switch (status) {
       case 'Approved':
@@ -188,29 +189,30 @@ const FlowRequests : React.FC = () => {
   }
   
   return (
-    <div className="p-4 bg-white">
-      <div className=' p-2 '>
-        <div className='w-full overflow-x-auto text-nowrap scrollbar-hide'>
-        <div className="rounded-lg border border-gray-300 bg-white flex space-x-1 w-fit p-1 ">
-          {subtabs.map((tab) =>(
-            <button
-                key={tab.name}
-                className={`text-sm ${filter.currentTab === tab.name
-                  ? "bg-blue-500 text-white rounded-lg"
-                  : "text-gray-500 hover:bg-gray-200 rounded-lg"
-                  }  px-4 py-2 font-medium`}
-                onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
-                  setFilter({ ...filter, currentTab: tab.name });
-                  event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                }}
-              >
-                {tab.name} {tab.count}
-              </button>
-          ))}
-        </div>
-        </div>
-
-      <CommonSearchAndActions />
+    <div className=" bg-white">
+        <div className={` px-8 bg-white pt-2 ${isMobile && "top-26 left-0 sticky pb-1 shadow-sm"}`}>
+            <div className='w-full overflow-x-auto text-nowrap scrollbar-hide'>
+              <div className="rounded-lg border border-gray-300 bg-white flex space-x-1 w-fit p-1 ">
+                {subtabs.map((tab) =>(
+                  <button
+                      key={tab.name}
+                      className={`text-sm ${filter.currentTab === tab.name
+                        ? "bg-blue-500 text-white rounded-lg"
+                        : "text-gray-500 hover:bg-gray-200 rounded-lg"
+                        }  px-4 py-2 font-medium`}
+                      onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                        setFilter({ ...filter, currentTab: tab.name });
+                        event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                      }}
+                    >
+                      {tab.name} {tab.count}
+                    </button>
+                ))}
+              </div>
+          </div>
+          <CommonSearchAndActions />
+      </div>
+      <div className='px-8'>
      { isDesktop ?
         (<div className="w-full overflow-x-auto rounded-lg  border border-gray-200 bg-white shadow-sm">
             <div className='min-h-12 bg-gray-50 border-b border-gray-200 grid grid-cols-11 items-center'>

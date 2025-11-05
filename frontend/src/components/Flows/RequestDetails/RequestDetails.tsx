@@ -4,7 +4,7 @@ import CommonSearchAndActions from '../CommonSearchAndActions';
 import HeaderBar from '../../HeaderBar';
 import { useNavigate, useParams } from 'react-router-dom';
 import Badge from '../../shared/Badge';
-import RequestDetailsCard from './RequestDetailsCard';
+import RequestTimeline from './RequestDetailsCard';
 
 const titles = ["Stage Number",
   "Stage Name",
@@ -67,7 +67,7 @@ const stages = [
     stageName: "HR Verification",
     assignedTo: "Michael Brown",
     actionTakenBy: "Michael Brown",
-    status: "Completed",
+    status: "Pending",
     triggerDate: "2025-10-09",
     dueDate: "2025-10-11",
     completedDate: "2025-10-10",
@@ -107,10 +107,11 @@ const RequestDetails: React.FC = () => {
   }
   return (
     <div className="min-h-screen bg-white">
+      <div className="top-0 sticky z-20 bg-white">
       <div className="sm:px-4">
       <HeaderBar title={'Flow Request Details : ' + id} onBack={handleNavigateBack} />
       </div>
-      <div className="sm:px-8 px-4  flex items-center justify-between mb-4 flex-wrap gap-4">
+      <div className="px-8  flex items-center justify-between mb-4 flex-wrap gap-4">
         <div className="flex w-full sm:w-fit border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
           {[
             { label: "Approval Flow Status", value: "Approval Flow Status" },
@@ -134,16 +135,17 @@ const RequestDetails: React.FC = () => {
           })}
         </div>
 
-        <div className="text-sm">
-          <div ><span className="font-bold ">Initiated By :</span> <span className="text-gray-900">Yojesh Jain </span></div>
-          <div> <span className="font-bold ">Initiated On :</span> <span className="text-gray-900">17-10-2025</span> </div>
+        <div className="text-sm flex sm:flex-col justify-between sm:w-fit w-full">
+          <div ><span className="font-medium text-gray-500 ">Initiated By :</span> <span className="text-gray-900">Yojesh Jain </span></div>
+          <div> <span className="font-medium text-gray-500 ">Initiated On :</span> <span className="text-gray-900">17-10-2025</span> </div>
         </div>
       </div>
-    
-     <div className="sm:px-8 px-4 ">
-      <CommonSearchAndActions hideEyeIcon={true} />
+      <div className="px-8 "><CommonSearchAndActions hideEyeIcon={true} /></div>
+          </div>
+
+     <div className="sm:px-8 px-4">
       {isDesktop ?
-        <div className="w-full overflow-x-auto rounded-lg  border border-gray-200 bg-white shadow-sm">
+        (<div className="w-full overflow-x-auto rounded-lg  border border-gray-200 bg-white shadow-sm">
           <div className='min-h-12 bg-gray-50 border-b border-gray-200 grid grid-cols-9 items-center'>
             {titles.map((title) => (
               <span
@@ -172,15 +174,16 @@ const RequestDetails: React.FC = () => {
               )) : <EmptyState />
             }
           </div>
-        </div>:
-        <div>
+        </div> )
+        :
+        (<div>
            {true ?
-              stages.map((stage) => (
-                <RequestDetailsCard key={stage.stageNumber} data={stage} />
-              )) : <EmptyState />
+              <RequestTimeline stages={stages}/> : <EmptyState />
             }
-        </div>
+        </div>)
       }
+
+      
       </div>
     </div>
   )

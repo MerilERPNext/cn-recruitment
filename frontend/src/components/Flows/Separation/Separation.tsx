@@ -53,11 +53,10 @@ const Separation = () => {
           <div className="flex flex-col md:flex-row items-center justify-between">
             {/* Left Section */}
             <div className="flex-1 p-10">
-              <div className="bg-blue-200 text-black font-bold text-3xl md:text-4xl leading-snug p-8 rounded-lg w-fit">
-                <p>WE’RE SAD TO</p>
-                <p>SEE YOU GO</p>
+              <div className="bg-blue-200 text-black font-bold text-xl md:text-4xl leading-snug md:p-8 p-4 rounded-lg sm:w-fit ">
+                <p className="md:max-w-[280px] w-full">WE’RE SAD TO SEE YOU GO</p>
               </div>
-              <p className="mt-6 text-gray-700 text-sm md:text-base">
+              <p className="mt-6 text-gray-700 text-sm md:text-base md:text-start text-center">
                 Please connect with your HBRP once
               </p>
             </div>

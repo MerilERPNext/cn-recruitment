@@ -92,13 +92,12 @@ const FlowApp: React.FC = () => {
                     </>
                 }
             </header>
-
-            <main className="z-10 flex-grow overflow-y-auto">
+            <main className="z-10 flex-grow">
                 <Outlet />
             </main>
 
             {showInitiateButton &&
-                <div className="sticky mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
+                <div className="sticky z-10 mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
                     <div className="max-w-4xl mx-auto flex space-x-4">
                         <button
                             onClick={handleInitiate}

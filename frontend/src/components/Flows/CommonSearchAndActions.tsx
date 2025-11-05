@@ -8,7 +8,7 @@ const CommonSearchAndActions: React.FC<CommonSearchAndActionsProps> = (
     {hideEyeIcon = false}
 ) => {
   return (
-     <div className="mt-4 mb-4 flex justify-between items-center flex-wrap gap-4">
+     <div className="mt-4 mb-4 flex justify-between items-center gap-4">
           <div className="relative w-full max-w-[48rem]">
             <input
               type="text"

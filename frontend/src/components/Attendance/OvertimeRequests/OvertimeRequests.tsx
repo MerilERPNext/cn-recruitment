@@ -53,7 +53,7 @@ const OvertimeRequests = () => {
 );
 
   const handleCloseModal = useCallback(() => {
-    setSearchParams({});
+    navigate(-1);
   }, [setSearchParams]);
 
     const handleActionComplete = useCallback(() => {
