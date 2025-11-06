@@ -2,7 +2,7 @@ import { FaCheckCircle } from "react-icons/fa";
 import img from "../../../assets/pngegg.png";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useDifinitaionName, useChatAssistant } from "../../../hooks/useFlows";
+import {  useChatAssistant, useDifinitaionNameForSeparation } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 
 const ConfirmationWorkflow = () => {
@@ -10,8 +10,16 @@ const ConfirmationWorkflow = () => {
   const { data: employee_name } = useCurrentEmployeeAllDetails(userId || "");
   const doctype_name = "Employee";
   const document_name = employee_name?.name || "";
-  const { data: definitionName } = useDifinitaionName();
-  const definition_name = definitionName || "";
+  const { data: definitionName } = useDifinitaionNameForSeparation();
+  console.log("Definition Name: intiated confirmation", definitionName);
+  function getFunnelData(funnelName: string) {
+    return Array.isArray(definitionName)
+      ? definitionName.filter((item: { funnel_name: string }) => item.funnel_name === funnelName)
+      : [];
+  }
+//   const separationData = getFunnelData("Separation");
+const confirmationData = getFunnelData("Initiate Confirmation");
+const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
 
   const { data } = useChatAssistant(

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -7,12 +8,9 @@ type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onAction: (action: string, data: any) => void;
   refetch?: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
 };

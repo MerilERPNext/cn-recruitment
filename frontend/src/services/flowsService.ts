@@ -1,19 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ChatAssistantItem } from "../types/flows";
 import FrappeAPI from "../utils/frappeAPI";
 
-export const getDifinitionName = async (): Promise<string> => {
+export const getDifinitionNameForSeparation = async (): Promise<string> => {
   const response = (await FrappeAPI.callMethod(
     "nextai.funnel.doctype.funnel_task.assistant_api.get_chatnext_assistant_private_doc_trigger_list",
     { doctype: "Employee" }
-  )) as ChatAssistantItem[];
-
-  const name = response?.[0]?.name;
-  return name;
+  )) ;
+  return response as string;
 };
 
-
-  
 
 export const getChatAssistantData = async (
 doctype_name: string,
