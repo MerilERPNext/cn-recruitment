@@ -120,7 +120,10 @@ const EmployeeStatusCard = ({
               <h5 className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none">
                 {data?.employee_name}
               </h5>
+              { data?.shift ?
               <Badge size="sm" label={"Shift " + data?.shift} />
+              : null
+              }
             </div>
             <p
               className={`font-medium text-sm capitalize mt-1 ${

@@ -89,8 +89,12 @@ const ApprovalRejectionQueue = ({
       <div className="truncate text-gray-900 font-medium text-sm text-start">
         {data.reference_document.employee_name}
       </div>
-      <div className="flex items-center text-gray-900 text-sm">
-        {data.reference_document.shift_type}
+      <div className="flex text-gray-900 text-sm flex-col">
+        <span>{data.reference_document.shift_type}</span>
+        <span className="text-[12px] text-gray-700 whitespace-nowrap">
+           {(data.reference_document.custom_start_time && data.reference_document.custom_end_time)
+      ? `${data.reference_document.custom_start_time} - ${data.reference_document.custom_end_time}`
+      : "---"}</span>
       </div>
       <div className="flex items-center text-gray-900 text-sm">
         {formatToIndianDate(data.reference_document.from_date)}
