@@ -1,8 +1,8 @@
 import React from "react";
 import { XIcon } from "lucide-react";
-import { useFrappeDocument } from "../../hooks/useFrappeQuery";
-import { Expense, ExpenseClaim, Participant } from "../../types/expenseAdvance";
-import Badge from "../shared/Badge";
+import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
+import { Expense, ExpenseClaim, Participant } from "../../../types/expenseAdvance";
+import Badge from "../../shared/Badge";
 
 interface ExpenseClaimModalProps {
   id: string | null;

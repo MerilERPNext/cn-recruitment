@@ -1,20 +1,20 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import HeaderBar from "../HeaderBar";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import HeaderBar from "../../HeaderBar";
+import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import {
   useCostCenters,
   useCreateNewAdvance,
   useExpenseTableFieldSettings,
   useProjects,
-} from "../../hooks/useEmployeeAdvances";
+} from "../../../hooks/useEmployeeAdvances";
 import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
 import { useNavigate } from "react-router-dom";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import ExpenseClaimModal from "./ExpenseClaimModal";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
+import ExpenseBreakupModal from "./ExpenseBreakupModal";
 import { SquarePen, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 
@@ -639,7 +639,7 @@ const ExpenseAdvanceForm: React.FC<{
         </button>
       </div>
       {/* Expense Claim Modal */}
-      <ExpenseClaimModal
+      <ExpenseBreakupModal
         isOpen={isExpenseModalOpen}
         onClose={() => {
           setIsExpenseModalOpen(false);

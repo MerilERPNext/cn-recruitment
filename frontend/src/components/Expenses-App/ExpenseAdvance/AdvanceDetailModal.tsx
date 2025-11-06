@@ -1,9 +1,9 @@
 import React from "react";
 import { X } from "lucide-react"; // Renamed XIcon to X for Lucide consistency
-import { StatusBadge } from "../SalarySlip/Advances/StatusBadge";
-import { formatCurrency } from "../../utils/currencyFormatter";
-import formatToIndianDate from "../../utils/formatToIndianDate";
-import { useFrappeDocument } from "../../hooks/useFrappeQuery"; // Assuming this is the correct hook
+import { StatusBadge } from "../../SalarySlip/Advances/StatusBadge";
+import { formatCurrency } from "../../../utils/currencyFormatter";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { useFrappeDocument } from "../../../hooks/useFrappeQuery"; // Assuming this is the correct hook
 
 
 interface AdvanceDetailModalProps {

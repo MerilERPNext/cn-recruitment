@@ -2,12 +2,12 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
-import { useCalculateExpenseAmount } from "../../hooks/useExpense";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
-import { CalculateExpenseParams } from "../../types/expenseAdvance";
-import { formatMySQLDatetime } from "../../utils/dateTimeFormatUtils";
+import { useCalculateExpenseAmount } from "../../../hooks/useExpense";
+import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { CalculateExpenseParams } from "../../../types/expenseAdvance";
+import { formatMySQLDatetime } from "../../../utils/dateTimeFormatUtils";
 
-interface ExpenseClaimModalProps {
+interface ExpenseBreakupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (expense: any) => void;
@@ -15,7 +15,7 @@ interface ExpenseClaimModalProps {
   initialData?: any;
 }
 
-const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
+const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
   isOpen,
   onClose,
   onSave,
@@ -574,4 +574,4 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   );
 };
 
-export default ExpenseClaimModal;
+export default ExpenseBreakupModal;

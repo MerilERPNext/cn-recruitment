@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import formatToIndianDate from "../../utils/formatToIndianDate";
-import { formatCurrency } from "../../utils/currencyFormatter";
-import { StatusBadge } from "../SalarySlip/Advances/StatusBadge";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
-import { useExpenseAdvances } from "../../hooks/useEmployeeAdvances";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { formatCurrency } from "../../../utils/currencyFormatter";
+import { StatusBadge } from "../../SalarySlip/Advances/StatusBadge";
+import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { useExpenseAdvances } from "../../../hooks/useEmployeeAdvances";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import AdvanceDetailModal from "./AdvanceDetailModal";
 
 const AdvanceExpenseList: React.FC = () => {
