@@ -3,7 +3,6 @@ import image from "../../../assets/welcome-sep.svg";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useChatAssistant, useDifinitaionName } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 
 const Separation = () => {
   const { data: userId } = useLoggedInUser();
@@ -36,7 +35,7 @@ const Separation = () => {
   };
 
   return (
-    <DesktopLayoutWrapper title="Separation">
+  
    <div className="flex flex-col min-h-screen p-6 gap-4 bg-white">
     {/*list view of separation */}
     <div className="flex justify-between rounded items-center p-3 border bg-blue-50 border-blue-300">
@@ -83,7 +82,6 @@ const Separation = () => {
         </div>
       </div>
    </div>
-    </DesktopLayoutWrapper>
   );
 };
 

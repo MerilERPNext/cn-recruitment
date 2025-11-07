@@ -25,6 +25,9 @@ import {
   SeparatorHorizontal,
   CircleCheckBig,
   ArrowDownUp,
+  ChartNoAxesCombined,
+  Telescope,
+  Goal,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -279,6 +282,23 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: CircleCheckBig,
           href: "/webapp/flow-app/confirmation",
         }
+      ]
+      },
+       {
+      icon: ChartNoAxesCombined,
+      label: "Performance",
+      path: "/webapp/performance-app",
+      subItems: [
+        {
+          name: "Overview",
+          icon: Telescope,
+          href: "/webapp/performance-app/overview",
+        },
+        {
+        name: "New Goal Plan",
+        icon: Goal,
+        href: "/webapp/performance-app/new-goal-plan",
+      }
       ]
       },
     {

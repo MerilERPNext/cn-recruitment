@@ -1,6 +1,5 @@
 import { FaCheckCircle } from "react-icons/fa";
 import { MdInbox } from "react-icons/md";
-import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 
 const ConfirmationWorkflow = () => {
   const employeeData = {
@@ -24,7 +23,6 @@ const ConfirmationWorkflow = () => {
   ];
 
   return (
-    <DesktopLayoutWrapper title="Confirmation">
     <div className=" bg-white  min-h-screen  p-8  text-gray-800  font-sans">
       {/* Header */}
       <div className=" flex  justify-between  items-start  mb-6">
@@ -82,7 +80,6 @@ const ConfirmationWorkflow = () => {
         </p>
       </div>
     </div>
-    </DesktopLayoutWrapper>
   );
 };
 

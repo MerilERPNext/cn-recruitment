@@ -380,7 +380,25 @@ const InitiateFlow2 = lazyWithRetry(
 const RequestDetails = lazyWithRetry(
   ()=> import("./components/Flows/RequestDetails/RequestDetails"),
   "RequestDetails"
+);
+
+const PerformanceApp = lazyWithRetry(
+  ()=> import("./components/Performance/PerformanceApp"),
+  "PerFormanceApp"
+);
+
+const Overview = lazyWithRetry(
+  ()=> import("./components/Performance/Overview/Overview"),
+  "Overview"
+);
+
+const NewGoalPlan = lazyWithRetry(
+  ()=> import("./components/Performance/NewGoalPlan/NewGoalPlan"),
+  "NewGoalPlan"
 )
+
+
+
 
 // Loading component for Suspense fallbacks
 // eslint-disable-next-line react-refresh/only-export-components
@@ -705,7 +723,14 @@ export const routesConfig: AppRoute[] = [
       {path: "flow-request/:id", element: <RequestDetails />}
     ]
   },
-  
+  {
+    path: "/webapp/performance-app",
+    element: <PerformanceApp />,
+    children: [
+      {path: "overview", element: <Overview />},
+      {path: "new-goal-plan", element: <NewGoalPlan />},
+    ]
+  },
   {
     path: "/webapp/organizational-chart",
     element: <OrganizationChart />,

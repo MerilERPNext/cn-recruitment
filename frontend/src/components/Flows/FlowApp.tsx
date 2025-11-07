@@ -120,7 +120,7 @@ const FlowApp: React.FC = () => {
         </button>
     );
 
-    const desktopLayout = (activeTab === "Flow Requests" && !seprateRoute ? (
+    const desktopLayout = (!seprateRoute ? (
         <DesktopLayoutWrapper title="Flows" actionButton={actionButton}>
             <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto relative">
