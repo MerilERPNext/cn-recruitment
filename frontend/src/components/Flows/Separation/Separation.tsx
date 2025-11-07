@@ -97,7 +97,6 @@ const Separation = () => {
           </div>
         </div>
       </div>
-   </div>
   );
 };
 

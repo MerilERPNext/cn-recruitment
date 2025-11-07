@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import DataListView from "../../DataListView";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
