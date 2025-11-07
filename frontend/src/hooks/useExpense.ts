@@ -5,7 +5,10 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { expenseService } from "../services/expenseService";
+import {
+  expenseService,
+  PerMileageUnitRateResponse,
+} from "../services/expenseService";
 import { FilterCondition } from "../types/frappe";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -144,6 +147,24 @@ export const useCalculateExpenseAmount = (params?: CalculateExpenseParams) => {
       params.units !== null
     ),
     staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+export const useGetUnitPrice = (
+  claimTypeDoc?: string,
+  vehicleType?: string
+) => {
+  return useQuery<PerMileageUnitRateResponse>({
+    queryKey: ["unit-price", claimTypeDoc, vehicleType],
+    queryFn: () => {
+      if (!claimTypeDoc) throw new Error("claimTypeDoc is required");
+      if (!vehicleType) throw new Error("vehicleType is required");
+      return expenseService.getUnitPrice(claimTypeDoc, vehicleType);
+    },
+    enabled: !!claimTypeDoc && !!vehicleType,
+    staleTime: 0,
+    refetchOnMount: "always",
     retry: 1,
   });
 };

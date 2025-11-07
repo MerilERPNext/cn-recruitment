@@ -1,9 +1,11 @@
 import React from "react";
-import FrappeListView from "../ListView";
-import CardTable from "../shared/CardTable";
-import { useScreenSize } from "../../hooks/useScreenSize";
+import FrappeListView from "../../ListView";
+import CardTable from "../../shared/CardTable";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
+import Tooltip from "../../shared/Tooltip";
 
 interface APIExpense {
   name: string;
@@ -11,6 +13,7 @@ interface APIExpense {
   total_claimed_amount: number;
   creation: string;
   custom_expense_category: string;
+  custom_assigned_user?: string;
 }
 
 const getStatusBadgeClasses = (status: string) => {
@@ -30,13 +33,15 @@ const ExpensesItem: React.FC<{ item: APIExpense }> = ({ item }) => {
   const formattedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
-  }).format(item.total_claimed_amount);
+  }).format(item.total_claimed_amount ?? 0);
 
-  const formattedDate = new Date(item.creation).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const formattedDate = item.creation
+    ? new Date(item.creation).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : " - ";
 
   return (
     <div className="rounded-xl my-1 border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
@@ -72,13 +77,15 @@ const ExpensesTableRow: React.FC<{ item: APIExpense }> = ({ item }) => {
   const formattedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
-  }).format(item.total_claimed_amount);
+  }).format(item.total_claimed_amount ?? 0);
 
-  const formattedDate = new Date(item.creation).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const formattedDate = item.creation
+    ? new Date(item.creation).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : " - ";
 
   return (
     <div
@@ -88,15 +95,23 @@ const ExpensesTableRow: React.FC<{ item: APIExpense }> = ({ item }) => {
       <span>{item.custom_expense_category || " - "}</span>
       <span>{formattedAmount || " - "}</span>
       <span>{formattedDate || " - "}</span>
-      <span
-        className={`px-2 py-1 rounded-2xl text-xs font-medium text-center w-fit ${getStatusBadgeClasses(
-          item?.approval_status
-        )}`}
-      >
-        {item?.approval_status === "Draft"
-          ? "Pending"
-          : item?.approval_status || " - "}
-      </span>
+      <div className="w-fit">
+        <Tooltip
+          content={
+            item?.approval_status === "Draft" ? item?.custom_assigned_user : ""
+          }
+        >
+          <span
+            className={`px-2 py-1 w-fit rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
+              item?.approval_status
+            )}`}
+          >
+            {item?.approval_status === "Draft"
+              ? "Pending"
+              : item?.approval_status || " - "}
+          </span>
+        </Tooltip>
+      </div>
     </div>
   );
 };
@@ -105,6 +120,7 @@ const ExpensesList: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -120,6 +136,69 @@ const ExpensesList: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
 
+  const openModal = (id: string) => {
+    setTimeout(() => setSelectedId(id), 0);
+  };
+  const closeModal = () => {
+    setSelectedId(null);
+  };
+
+  const RowWrapper: React.FC<{ item: APIExpense }> = ({ item }) => {
+    const id = item?.name;
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!id) {
+            return;
+          }
+          openModal(id);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            if (id) openModal(id);
+          }
+        }}
+        className="cursor-pointer"
+      >
+        <ExpensesTableRow item={item} />
+      </div>
+    );
+  };
+
+  const ItemWrapper: React.FC<{ item: APIExpense }> = ({ item }) => {
+    const id = item?.name;
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!id) {
+            return;
+          }
+          openModal(id);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            if (id) openModal(id);
+          }
+        }}
+        className="cursor-pointer"
+      >
+        <ExpensesItem item={item} />
+      </div>
+    );
+  };
+
+  React.useEffect(() => {
+    console.debug("[ExpensesList] selectedId changed:", selectedId);
+  }, [selectedId]);
+
   return (
     <div
       className="relative flex size-full flex-col group/design-root md:p-6"
@@ -127,12 +206,17 @@ const ExpensesList: React.FC = () => {
     >
       {isDesktop ? (
         <CardTable
-          titles={["Expense Category", "Amount", "Claim Date", "Status"]}
+          titles={[
+            "Expense Category",
+            "Claimed Amount",
+            "Claim Date",
+            "Status",
+          ]}
           columnWidths={["1fr", "1fr", "1fr", "1fr"]}
         >
           <FrappeListView
             doctype="Expense Claim"
-            ItemComponent={ExpensesTableRow}
+            ItemComponent={RowWrapper}
             isSearch={false}
             pageSize={10}
             defaultFields={["*"]}
@@ -144,7 +228,7 @@ const ExpensesList: React.FC = () => {
       ) : (
         <FrappeListView
           doctype="Expense Claim"
-          ItemComponent={ExpensesItem}
+          ItemComponent={ItemWrapper}
           isSearch={true}
           pageSize={10}
           showRefereshButton={true}
@@ -158,6 +242,14 @@ const ExpensesList: React.FC = () => {
           ]}
           infiniteScroll={true}
           onRefetchAvailable={() => location.key}
+        />
+      )}
+
+      {selectedId && (
+        <ExpenseClaimDetailsModal
+          id={selectedId}
+          onClose={closeModal}
+          getStatusBadgeClasses={getStatusBadgeClasses}
         />
       )}
     </div>

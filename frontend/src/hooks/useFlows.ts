@@ -1,12 +1,12 @@
 // src/hooks/useChatAssistant.ts
 import { useQuery } from "@tanstack/react-query";
-import { getChatAssistantData, getDifinitionName } from "../services/flowsService";
+import { getChatAssistantData, getDifinitionNameForSeparation, } from "../services/flowsService";
 
 
-export const useDifinitaionName = () => {
+export const useDifinitaionNameForSeparation = () => {
   return useQuery<string>({
     queryKey: ["chatAssistant"],
-    queryFn: getDifinitionName,
+    queryFn: getDifinitionNameForSeparation,
   });
 };
 

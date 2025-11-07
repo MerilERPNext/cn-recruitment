@@ -29,7 +29,6 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const [postingDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
-
   const { data: advanceAmountData } = useEmployeeAdvancesAmount(
     user?.employee,
     selectedAdvanceType,

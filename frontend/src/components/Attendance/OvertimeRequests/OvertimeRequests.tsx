@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useState, useCallback } from "react";
 import CardTable from "../../shared/CardTable";
 import { useNavigate, useSearchParams } from "react-router";
@@ -24,7 +25,6 @@ const OvertimeRequests = () => {
     () => ({
       reference_type: "Planned Overtime Request",
       employee: currentEmployee?.employee,
-      status: ["!=", "Open"],
     }),
     [currentEmployee]
   );

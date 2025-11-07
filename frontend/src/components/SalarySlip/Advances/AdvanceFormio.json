@@ -13,16 +13,6 @@
       "customClass": "bg-white rounded-lg",
       "components": [
         {
-          "label": "Employee",
-          "key": "employee",
-          "type": "textfield",
-          "input": true,
-          "placeholder": "Enter employee ID/name",
-          "disabled": true,
-          "validate": { "required": true },
-          "customClass": "mb-4"
-        },
-        {
           "label": "Advance Type",
           "key": "custom_advance_type",
           "type": "select",

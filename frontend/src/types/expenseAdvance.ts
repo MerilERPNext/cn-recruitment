@@ -57,7 +57,6 @@ export interface ExpenseTableFieldSettings {
   conversion_date_option: string | null;
 }
 
-
 export interface ExpenseTypeFieldsResponse {
   fields?: any[];
   claim_type_based_on?: string;
@@ -79,4 +78,101 @@ export interface CalculateExpenseMessage {
 
 export interface CalculateExpenseResponse {
   message: CalculateExpenseMessage;
+}
+
+export interface Participant {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  employee_type: "Self" | "Employee" | "Guest" | string;
+  employee?: string;
+  employee_name?: string;
+  guest_name?: string;
+  percentage: number;
+  allocated_amount: number;
+  parent: string;
+  parentfield: string;
+  parenttype: string;
+  doctype: string;
+}
+
+export interface ExpenseClaim {
+  name: string;
+  owner: string;
+  creation: Date;
+  modified: Date;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  naming_series: string;
+  employee: string;
+  employee_name: string;
+  department: string;
+  company: string;
+  custom_is_recurring_expense: number;
+  custom_frequency: string;
+  custom_day_of_month: number;
+  custom_day_of_week: string;
+  custom_expense_category: string;
+  custom_is_shared_expense: number;
+  expense_approver: string;
+  approval_status: string;
+  total_sanctioned_amount: number;
+  total_taxes_and_charges: number;
+  total_advance_amount: number;
+  grand_total: number;
+  total_claimed_amount: number;
+  total_amount_reimbursed: number;
+  posting_date: Date;
+  is_paid: number;
+  payable_account: string;
+  cost_center: string;
+  status: string;
+  doctype: string;
+  advances: any[];
+  taxes: any[];
+  custom_participants: Participant[];
+  expenses: Expense[];
+}
+
+export interface Expense {
+  name: string;
+  owner: string;
+  creation: Date;
+  modified: Date;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  expense_date: Date;
+  custom_reimbursement_category_: string;
+  expense_type: string;
+  default_account: string;
+  custom_claim_type_based_on: string;
+  custom_approval_staus: string;
+  custom_mercent: string;
+  custom_from_location?: string;
+  custom_to_location?: string;
+  custom_invoice_number: string;
+  custom_vehicle_type?: string;
+  custom_units?: string;
+  description: string;
+  amount: number;
+  custom_currency: string;
+  custom_amount_in_other_currency: number;
+  sanctioned_amount: number;
+  custom_sanctioned_amount_in_other_currency: number;
+  custom_exchange_rate: number;
+  custom_attach_receipt: string;
+  cost_center: string;
+  parent: string;
+  parentfield: string;
+  parenttype: string;
+  doctype: string;
+  custom_start_datetime?: Date;
+  custom_location?: string;
+  custom_end_datetime?: Date;
 }

@@ -14,7 +14,7 @@ import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
-import AddExpenseForm from "./components/Expenses-App/AddExpenseForm";
+import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -90,27 +90,15 @@ const ExpensesApp = lazyWithRetry(
   "ExpensesApp"
 );
 const ExpensesList = lazyWithRetry(
-  () => import("./components/Expenses-App/ExpensesList"),
+  () => import("./components/Expenses-App/ExpenseClaim/ExpensesList"),
   "ExpensesList"
 );
 const AdvanceExpenseList = lazyWithRetry(
-  () => import("./components/Expenses-App/AdvanceExpenseList"),
+  () => import("./components/Expenses-App/ExpenseAdvance/AdvanceExpenseList"),
   "AdvanceExpenseList"
 );
-const GeneralExpenseClaim = lazyWithRetry(
-  () => import("./components/Expenses-App/GeneralExpenseClaim"),
-  "GeneralExpenseClaim"
-);
-const MileageExpenseClaim = lazyWithRetry(
-  () => import("./components/Expenses-App/MileageExpenseClaim"),
-  "MileageExpenseClaim"
-);
-const NewExpenseType = lazyWithRetry(
-  () => import("./components/Expenses-App/NewExpenseType"),
-  "NewExpenseType"
-);
 const ExpenseAdvanceForm = lazyWithRetry(
-  () => import("./components/Expenses-App/ExpenseAdvanceForm"),
+  () => import("./components/Expenses-App/ExpenseAdvance/ExpenseAdvanceForm"),
   "ExpenseAdvanceForm"
 );
 const Holidays = lazyWithRetry(
@@ -212,11 +200,6 @@ const PoliciesEnforced = lazyWithRetry(
 const PolicySignOff = lazyWithRetry(
   () => import("./components/PolicySignOff"),
   "PolicySignOff"
-);
-const DailyAllowanceClaim = lazyWithRetry(
-  () =>
-    import("./components/Expenses-App/DailyAllowanceClaim/DailyAllowanceClaim"),
-  "DailyAllowanceClaim"
 );
 const CTCSalaryUI = lazyWithRetry(
   () => import("./components/SalarySlip/CTCSalaryBreakdown"),
@@ -378,7 +361,7 @@ const InitiateFlow2 = lazyWithRetry(
 );
 
 const RequestDetails = lazyWithRetry(
-  ()=> import("./components/Flows/RequestDetails/RequestDetails"),
+  () => import("./components/Flows/RequestDetails/RequestDetails"),
   "RequestDetails"
 );
 
@@ -661,25 +644,6 @@ export const routesConfig: AppRoute[] = [
       },
     ],
   },
-  {
-    path: "/webapp/expenses-app/expenses-list/new-expense-type",
-    element: <NewExpenseType />,
-  },
-  // New route for General Expense Claim
-  {
-    path: "/webapp/expenses-app/general-expense-claim",
-    element: <GeneralExpenseClaim />,
-  },
-  // New route for Daily Allowance Claim
-  {
-    path: "/webapp/expenses-app/daily-allowance-claim",
-    element: <DailyAllowanceClaim />,
-  },
-  // New route for Mileage Expense Claim
-  {
-    path: "/webapp/expenses-app/mileage-expense-claim",
-    element: <MileageExpenseClaim />,
-  },
 
   // New route for Expense Advance Form
   {
@@ -716,12 +680,12 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/flow-app",
     element: <FlowApp />,
     children: [
-      {path: "flow-requests", element: <FlowRequests2 />},
-      {path: "separation", element: <Separation />},
-      {path: "confirmation", element: <Confirmation />},
-      {path: "initiate-flow", element: <InitiateFlow2 />},
-      {path: "flow-request/:id", element: <RequestDetails />}
-    ]
+      { path: "flow-requests", element: <FlowRequests2 /> },
+      { path: "separation", element: <Separation /> },
+      { path: "confirmation", element: <Confirmation /> },
+      { path: "initiate-flow", element: <InitiateFlow2 /> },
+      { path: "flow-request/:id", element: <RequestDetails /> },
+    ],
   },
   {
     path: "/webapp/performance-app",
@@ -744,7 +708,6 @@ export const routesConfig: AppRoute[] = [
     element: <PasswordReset />,
   },
 ];
-
 
 // Export lazy loading utility for potential use elsewhere
 export { withLazyLoading };

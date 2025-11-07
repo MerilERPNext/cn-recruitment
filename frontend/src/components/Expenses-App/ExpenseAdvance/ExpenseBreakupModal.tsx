@@ -2,38 +2,116 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
-import { useCalculateExpenseAmount } from "../../hooks/useExpense";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
-import { CalculateExpenseParams } from "../../types/expenseAdvance";
-import { formatMySQLDatetime } from "../../utils/dateTimeFormatUtils";
+import { useCalculateExpenseAmount } from "../../../hooks/useExpense";
+import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { CalculateExpenseParams } from "../../../types/expenseAdvance";
+import { formatMySQLDatetime } from "../../../utils/dateTimeFormatUtils";
 
-
-interface ExpenseClaimModalProps {
+interface ExpenseBreakupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (expense: any) => void;
+  // 1. New prop for initial data when editing
+  initialData?: any;
 }
 
-const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
+const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  initialData, // 2. Destructure initialData
 }) => {
   const [formKey, setFormKey] = useState(0);
-  const [formData, setFormData] = useState<any>({});
+  // 3. Initialize formData with initialData if available
+  const [formData, setFormData] = useState<any>(initialData || {});
   const [calcParams, setCalcParams] = useState<any>();
   const formioInstanceRef = useRef<any>(null);
   const { data: calcData } = useCalculateExpenseAmount(calcParams);
 
   const lastExpenseType = useRef<string | null>(null);
-  const lastCalculatedUnits = useRef<number | null>(null);
-  const [isAmountReadonly, setIsAmountReadonly] = useState(false);
+  const lastCalculatedUnits = useRef<CalculateExpenseParams | null>(null);
   const { data: currentEmployee } = useCurrentEmployee();
   const employeeId = currentEmployee?.name;
 
+  const mapStoredDataToForm = (storedData: any) => {
+    if (!storedData) return {};
+
+    const formReadyData = {
+      // Basic Fields
+      id: storedData.id,
+      expense_type: storedData.expense_type,
+      amount: storedData.amount,
+      description: storedData.description,
+      expense_date: storedData.expense_date,
+
+      // Mapped Custom Fields (These were missing in your Edit modal)
+      currency: storedData.custom_currency,
+      invoice_number: storedData.custom_invoice_number,
+      merchant: storedData.custom_mercent,
+      units: storedData.custom_units,
+
+      // Mapped Datetime/Location fields
+      vehicle_type: storedData.custom_vehicle_type,
+      from_location: storedData.custom_from_location,
+      to_location: storedData.custom_to_location,
+      start_datetime: storedData.custom_start_datetime,
+      end_datetime: storedData.custom_end_datetime,
+      location: storedData.custom_location,
+
+      // File/Attachment Field: Transform stored URL back into Form.io's file array structure
+      // This is crucial for the file component to display the existing file.
+      attach_receipt: storedData.custom_attach_receipt
+        ? [
+            {
+              name:
+                storedData.custom_attach_receipt.substring(
+                  storedData.custom_attach_receipt.lastIndexOf("/") + 1
+                ) || "Attached File",
+              originalName: "Attached File",
+              size: 1, // Must be a number > 0 for Form.io to render the file list entry
+              type: "application/octet-stream",
+              url: storedData.custom_attach_receipt,
+              data: storedData.custom_attach_receipt,
+              storage: "customBase64",
+            },
+          ]
+        : [],
+    };
+
+    // Filter out undefined values to prevent Form.io issues
+    return Object.fromEntries(
+      Object.entries(formReadyData).filter(([, value]) => value !== undefined)
+    );
+  };
+
+  // 4. Effect to reset form state when the modal opens/initialData changes
+  useEffect(() => {
+    if (isOpen) {
+      // Set initial data for the Form.io component using the mapping function
+      const remappedData = mapStoredDataToForm(initialData);
+      setFormData(remappedData);
+
+      // Force a re-render of the Form.io component by changing the key
+      setFormKey((prev) => prev + 1);
+
+      // Reset ref-based state for recalculation logic on edit
+      lastExpenseType.current = initialData?.expense_type || null;
+      lastCalculatedUnits.current = null;
+
+      if (initialData?.expense_type) {
+        // If we have an expense type from initial data, fetch its fields
+        // This will also handle setting the readonly state for 'amount'
+        fetchExpenseTypeFields(initialData.expense_type);
+      } else {
+        // Otherwise, reset to initial schema (only expense_type select)
+        setFormSchema(initialSchema);
+      }
+    }
+  }, [isOpen, initialData]);
+
   useEffect(() => {
     // Only run if we have new data AND the amount field is readonly
-    if (calcData && isAmountReadonly) {
+    if (calcData) {
       const amount =
         (calcData as any)?.amount ??
         (calcData as any)?.message?.amount ??
@@ -58,29 +136,37 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
         toast.error("Failed to calculate amount.");
       }
     }
-  }, [calcData, isAmountReadonly, calcParams]);
+  }, [calcData, calcParams]);
 
   // CORRECT: Your mapping function was already fixed, ensure it stays this way
   const mapFieldsToFormio = (fields: any[]) =>
     fields
       .map((field) => {
+        // Add a red asterisk (*) for required fields
+        const labelWithAsterisk = field.required
+          ? `${field.label} <span style="color:red">&nbsp;*</span>`
+          : field.label;
         switch (field.fieldtype) {
           case "Date":
             return {
               type: "datetime",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               enableTime: false,
               format: "dd-MM-yyyy",
               placeholder: "Select date",
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
               input: true,
             };
           case "Datetime":
             return {
               type: "datetime",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               format: "dd-MM-yyyy HH:mm:ss",
               enableTime: true,
               enableDate: true,
@@ -90,7 +176,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 displayInTimezone: "viewer",
                 locale: "en",
               },
-              validate: { required: field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
               input: true,
             };
           case "Currency":
@@ -98,9 +188,13 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             return {
               type: "number",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               input: true,
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
             };
           case "Data":
             // Treat 'units' as 'number' if it's supposed to be calculated
@@ -108,9 +202,13 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               return {
                 type: "number",
                 key: field.fieldname,
-                label: field.label,
+                label: labelWithAsterisk,
                 input: true,
-                validate: { required: !!field.required },
+                validate: {
+                  required: !!field.required,
+                  customMessage: `${field?.label} is required`,
+                },
+                html: true,
                 description: field.description, // Keep description if available
               };
             }
@@ -118,23 +216,31 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             return {
               type: "textfield",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               input: true,
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
             };
           case "Text":
             return {
               type: "textarea",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               input: true,
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
             };
           case "Attach":
             return {
               type: "file",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               storage: "customBase64",
               input: true,
               fileTypes: [
@@ -142,7 +248,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 { label: "Images", value: ".jpg,.jpeg,.png" },
               ],
               filePattern: "*/*",
-              validate: { required: !!field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
             };
           case "Link":
             if (
@@ -152,7 +262,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               return {
                 type: "select",
                 key: field.fieldname,
-                label: field.label,
+                label: labelWithAsterisk,
                 dataSrc: "url",
 
                 data: {
@@ -163,7 +273,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 defaultValue: "INR",
                 template: "<span>{{ item }}</span>",
                 valueProperty: "",
-                validate: { required: field.required },
+                validate: {
+                  required: !!field.required,
+                  customMessage: `${field?.label} is required`,
+                },
+                html: true,
                 input: true,
                 clearOnRefresh: false,
               };
@@ -176,7 +290,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               return {
                 type: "select",
                 key: field.fieldname,
-                label: field.label,
+                label: labelWithAsterisk,
                 dataSrc: "url",
                 data: {
                   url: `/api/resource/Daily%20Allowance%20Vehicle%20Category`,
@@ -184,7 +298,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 selectValues: "data",
                 valueProperty: "name",
                 template: "<span>{{ item.name }}</span>",
-                validate: { required: field.required },
+                validate: {
+                  required: !!field.required,
+                  customMessage: `${field?.label} is required`,
+                },
+                html: true,
                 input: true,
               };
             }
@@ -193,7 +311,7 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             return {
               type: "select",
               key: field.fieldname,
-              label: field.label,
+              label: labelWithAsterisk,
               dataSrc: "url",
               data: {
                 url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field.options}`,
@@ -201,7 +319,11 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               template: "<span>{{ item.name }}</span>",
               valueProperty: "name",
               selectValues: "message",
-              validate: { required: field.required },
+              validate: {
+                required: !!field.required,
+                customMessage: `${field?.label} is required`,
+              },
+              html: true,
               input: true,
             };
           default:
@@ -253,7 +375,6 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
       const dynamicComponents = mapFieldsToFormio(fields);
 
       const isReadonly = data.message?.is_amount_readonly ?? false;
-      setIsAmountReadonly(isReadonly);
 
       const dynamicComponentsWithReadonly = dynamicComponents.map(
         (comp: any) => {
@@ -294,19 +415,26 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
 
   const handleClose = () => {
     lastExpenseType.current = null;
+    // 5. Reset the form schema and data state
     setFormSchema(initialSchema);
     setFormData({});
-    setFormKey((prev) => prev + 1);
+    // Do NOT increment formKey here, as it's handled in the useEffect
+    // setFormKey((prev) => prev + 1);
     onClose();
   };
 
   if (!isOpen) return null;
 
+  // 6. Update modal title based on whether we are editing or adding
+  const modalTitle = initialData
+    ? "Edit Expense Advance Breakup"
+    : "Add Expense Advance Breakup";
+
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-2xl rounded-lg shadow-xl overflow-visible p-4">
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="font-semibold text-lg">Add Expense Advance</h2>
+          <h2 className="font-semibold text-lg">{modalTitle}</h2>
           <button
             type="button"
             onClick={handleClose}
@@ -320,14 +448,19 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
           <Form
             key={formKey}
             form={formSchema}
-            submission={{ data: formData }}
+            submission={{ data: formData }} // Use formData which is set via useEffect
             onFormReady={(formio: any) => {
               formioInstanceRef.current = formio;
             }}
             onChange={(change: any) => {
               const newExpenseType = change.data?.expense_type;
+              const units = change.data?.units;
+              const numericUnits = Number(units);
+              const vehicleType = change.data?.vehicle_type;
+
               setFormData(change.data);
 
+              // Handle expense type change
               if (
                 newExpenseType &&
                 newExpenseType !== lastExpenseType.current
@@ -337,23 +470,32 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 fetchExpenseTypeFields(newExpenseType);
               }
 
-              const units = change.data?.units;
-              const numericUnits = Number(units);
-              const vehicleType = change.data?.vehicle_type;
-
-              if (isAmountReadonly && units && newExpenseType) {
+              // 🔹 Trigger recalculation whenever units OR vehicle_type changes
+              if (
+                newExpenseType &&
+                ((units !== null && units !== undefined) || vehicleType)
+              ) {
                 clearTimeout((window as any)._calcTimer);
                 (window as any)._calcTimer = setTimeout(() => {
-                  if (numericUnits !== lastCalculatedUnits.current) {
-                    lastCalculatedUnits.current = numericUnits;
+                  const lastParams = lastCalculatedUnits.current;
+
+                  // Recalculate only if something changed
+                  if (
+                    !lastParams ||
+                    lastParams.units !== numericUnits ||
+                    lastParams.vehicle_type !== vehicleType ||
+                    lastParams.expense_type !== newExpenseType
+                  ) {
                     const newCalcParams: CalculateExpenseParams = {
                       expense_type: newExpenseType,
                       units: numericUnits,
                     };
+
                     if (vehicleType) {
                       newCalcParams.vehicle_type = vehicleType;
                     }
 
+                    lastCalculatedUnits.current = newCalcParams;
                     setCalcParams(newCalcParams);
                   }
                 }, 700);
@@ -361,16 +503,25 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
             }}
             onSubmit={(submission: any) => {
               const combinedData = submission.data;
+
+              let attachReceiptValue = null;
+
               if (
                 combinedData.attach_receipt &&
                 Array.isArray(combinedData.attach_receipt) &&
                 combinedData.attach_receipt.length > 0
               ) {
-                const file =
+                // Case 1: New file uploaded or existing file kept. Extract the URL/data string.
+                attachReceiptValue =
                   combinedData.attach_receipt[0]?.data ||
                   combinedData.attach_receipt[0]?.url ||
                   null;
-                if (file) combinedData.attach_receipt = file;
+              }
+
+              // Fallback logic (Core fix from previous step)
+              if (!attachReceiptValue && initialData?.custom_attach_receipt) {
+                // Case 3: User clicked Save without changing the file. Preserve the original file link.
+                attachReceiptValue = initialData.custom_attach_receipt;
               }
 
               // Apply the formatting function to the datetime fields before mapping
@@ -380,16 +531,26 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
               const endDatetime = formatMySQLDatetime(
                 combinedData.end_datetime
               );
+              let finalAttachValue = attachReceiptValue;
+
+              // We check for the 'file_url' key which exists in the metadata object.
+              if (
+                typeof attachReceiptValue === "object" &&
+                attachReceiptValue !== null
+              ) {
+                finalAttachValue = attachReceiptValue.file_url || null;
+              }
 
               // Mapped all potential fields to the submission object
               const mappedExpense = {
-                id: crypto.randomUUID(),
+                // 7. Crucial: Keep the original ID if editing, or generate a new one if adding
+                id: initialData?.id || crypto.randomUUID(),
                 expense_type: combinedData.expense_type,
                 expense_date: combinedData.expense_date,
                 amount: combinedData.amount,
                 custom_mercent: combinedData.merchant,
                 custom_invoice_number: combinedData.invoice_number,
-                custom_attach_receipt: combinedData.attach_receipt?.file_url,
+                custom_attach_receipt: finalAttachValue,
                 custom_units: combinedData.units,
                 custom_currency: combinedData.currency,
                 description: combinedData.description,
@@ -400,12 +561,12 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
                 custom_end_datetime: endDatetime, // Use the formatted value
                 custom_location: combinedData.location,
               };
-
+              // 9. Call onSave with the mapped expense (it will either update or add in the main form)
               onSave(mappedExpense);
 
               handleClose();
             }}
-            options={{ noAlerts: true }}
+            options={{ noAlerts: true, showRequiredFields: true }}
           />
         </div>
       </div>
@@ -413,4 +574,4 @@ const ExpenseClaimModal: React.FC<ExpenseClaimModalProps> = ({
   );
 };
 
-export default ExpenseClaimModal;
+export default ExpenseBreakupModal;

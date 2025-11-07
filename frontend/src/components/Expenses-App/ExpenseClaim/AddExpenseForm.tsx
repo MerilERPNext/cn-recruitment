@@ -2,22 +2,23 @@
 import React, { useRef, useState, useMemo, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
-import { useCurrentEmployee, useEmployees } from "../../hooks/useEmployee";
+import { useCurrentEmployee, useEmployees } from "../../../hooks/useEmployee";
 import {
   useGetExpenseTypeFields,
   usePostExpenseClaim,
   useCalculateExpenseAmount,
-} from "../../hooks/useExpense";
+  useGetUnitPrice,
+} from "../../../hooks/useExpense";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import HeaderBar from "../HeaderBar";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import HeaderBar from "../../HeaderBar";
 import { useNavigate } from "react-router-dom";
 import ExpenseFieldSkeleton from "./ExpenseFieldSkeleton";
-import { CalculateExpenseParams } from "../../types/expenseAdvance";
+import { CalculateExpenseParams } from "../../../types/expenseAdvance";
 import { SquarePen, Trash2 } from "lucide-react";
 import ParticipantsDrawer from "./ParticipantDrawer";
-import { Employee } from "../../types/employee";
+import { Employee } from "../../../types/employee";
 
 export interface EmployeeOption {
   name: string;
@@ -25,7 +26,7 @@ export interface EmployeeOption {
 }
 
 interface Expense {
-  id: string;
+  uid: string;
   expenseCategory: string;
   expenseType: string;
   expense_date?: string;
@@ -47,6 +48,7 @@ const AddExpenseForm: React.FC = () => {
   const formRef = useRef<any>(null);
   const dynamicFormRef = useRef<any>(null);
   const [formKey, setFormKey] = useState<number>(0);
+  const [vehicleType, setVehicleType] = useState<string | null>(null);
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     try {
@@ -67,6 +69,9 @@ const AddExpenseForm: React.FC = () => {
   const [isCalculating, setIsCalculating] = useState(false);
 
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [failedExpenseUids, setFailedExpenseUids] = useState<Set<string>>(
+    new Set()
+  );
 
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
 
@@ -117,6 +122,10 @@ const AddExpenseForm: React.FC = () => {
       return;
     }
 
+    if (editingExpenseId) {
+      return;
+    }
+
     setDynamicFormData({});
     // setDynamicFormData((prev: any) => prev ?? {});
     setDynamicFields([]);
@@ -129,7 +138,12 @@ const AddExpenseForm: React.FC = () => {
     ) {
       dynamicFormRef.current.reset();
     }
-  }, [mainFormData?.expenseType, mainFormData?.expense_type]);
+  }, [
+    mainFormData?.expenseType,
+    mainFormData?.expense_type,
+    mainFormData?.expenseCategory,
+    editingExpenseId,
+  ]);
 
   useEffect(() => {
     try {
@@ -147,9 +161,18 @@ const AddExpenseForm: React.FC = () => {
     }
   };
 
+  const clearFailedStatus = (uids: string | string[]) => {
+    const uidsArray = Array.isArray(uids) ? uids : [uids];
+    setFailedExpenseUids((prev) => {
+      const newSet = new Set(prev);
+      uidsArray.forEach((uid) => newSet.delete(uid));
+      return newSet;
+    });
+  };
+
   const displayParticipants = useMemo(() => {
     if (editingExpenseId) {
-      const e = expenses.find((x) => x.id === editingExpenseId);
+      const e = expenses.find((x) => x.uid === editingExpenseId);
       if (e && Array.isArray(e.participants)) return e.participants;
     }
     if (
@@ -160,7 +183,6 @@ const AddExpenseForm: React.FC = () => {
     }
     return [];
   }, [editingExpenseId, expenses, dynamicFormData]);
-
   const formSchema = useMemo(
     () => ({
       display: "form",
@@ -181,7 +203,8 @@ const AddExpenseForm: React.FC = () => {
                 {
                   type: "select",
                   key: "expenseCategory",
-                  label: "Select Expense Category",
+                  label:
+                    'Select Expense Category <span style="color:red">&nbsp;*</span>',
                   placeholder: "Select Expense Category",
                   dataSrc: "url",
                   data: {
@@ -191,8 +214,14 @@ const AddExpenseForm: React.FC = () => {
                   selectValues: "message",
                   valueProperty: "name",
                   template: "<span>{{ item.category_name }}</span>",
-                  validate: { required: true },
+                  validate: {
+                    required: true,
+                    customMessage: "Expense Category is required",
+                  },
                   input: true,
+                  html: true,
+                  clearOnRefresh: true,
+                  disabled: !!editingExpenseId,
                 },
               ],
             },
@@ -201,20 +230,28 @@ const AddExpenseForm: React.FC = () => {
                 {
                   type: "select",
                   key: "expenseType",
-                  label: "Select Expense Type",
+                  label:
+                    'Select Expense Type <span style="color:red">&nbsp;*</span>',
                   placeholder: "Select Expense Type",
                   dataSrc: "url",
                   data: {
-                    url: `/api/method/chatnext_expense_trips.expense_claim.get_expense_types_by_category?employee=${currentEmployee?.employee_number}&&reimbursement_category={{ data.expenseCategory }}`,
+                    url: `/api/method/chatnext_expense_trips.expense_claim.get_expense_types_by_category?employee=${currentEmployee?.name}&&reimbursement_category={{ data.expenseCategory }}`,
                     headers: [{ key: "Accept", value: "application/json" }],
                   },
                   selectValues: "message",
                   valueProperty: "name",
                   template: "<span>{{ item.name }}</span>",
                   refreshOn: "expenseCategory",
-                  validate: { required: true },
+                  clearOnRefresh: true,
+                  clearOnHide: true,
+                  validate: {
+                    required: true,
+                    customMessage: "Expense Type is required",
+                  },
                   input: true,
                   customClass: "mt-4 md:mt-0",
+                  html: true,
+                  disabled: !!editingExpenseId,
                 },
               ],
             },
@@ -222,7 +259,7 @@ const AddExpenseForm: React.FC = () => {
         },
       ],
     }),
-    [currentEmployee]
+    [currentEmployee, editingExpenseId]
   );
 
   const handleSubmit = (submission: any) => {
@@ -237,7 +274,10 @@ const AddExpenseForm: React.FC = () => {
     );
 
   const handleDeleteSelected = () => {
-    setExpenses((prev) => prev.filter((e) => !selectedExpenses.includes(e.id)));
+    setExpenses((prev) =>
+      prev.filter((e) => !selectedExpenses.includes(e.uid))
+    );
+    clearFailedStatus(selectedExpenses);
     setSelectedExpenses([]);
   };
 
@@ -247,22 +287,32 @@ const AddExpenseForm: React.FC = () => {
   ) =>
     fields
       .map((field) => {
-        switch (field.fieldtype) {
+        switch (field?.fieldtype) {
           case "Date":
             return {
               type: "datetime",
-              key: field.fieldname,
-              label: field.label,
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
               format: "dd-MM-yyyy",
               enableTime: false,
-              validate: { required: field.required },
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
+              html: true,
             };
           case "Datetime":
             return {
               type: "datetime",
-              key: field.fieldname,
-              label: field.label,
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
               format: "yyyy-MM-dd HH:mm",
               enableTime: true,
               enableDate: true,
@@ -272,44 +322,95 @@ const AddExpenseForm: React.FC = () => {
                 displayInTimezone: "viewer",
                 locale: "en",
               },
-              validate: { required: field.required },
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
+              html: true,
             };
           case "Currency":
             return {
               type: "number",
-              key: field.fieldname,
-              label: field.label,
-              validate: { required: field.required },
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
-              ...(field.fieldname === "amount" && isAmountReadonly
+              ...(field?.fieldname === "amount" && isAmountReadonly
                 ? { attributes: { readonly: true } }
                 : {}),
+              html: true,
             };
           case "Data":
+            if (
+              field?.fieldname === "units" ||
+              field?.fieldname === "no_of_units"
+            ) {
+              return {
+                type: "number",
+                key: field?.fieldname,
+                label:
+                  field?.required === true
+                    ? `${unitFieldLabel} <span style="color:red">&nbsp;*</span>`
+                    : unitFieldLabel,
+                validate: {
+                  required: field?.required,
+                  customMessage: `${field?.label} is required`,
+                },
+                input: true,
+                html: true,
+              };
+            }
+
             return {
               type: "textfield",
-              key: field.fieldname,
-              label: field.label,
-              validate: { required: field.required },
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
+              html: true,
             };
           case "Text":
             return {
               type: "textarea",
-              key: field.fieldname,
-              label: field.label,
-              validate: { required: field.required },
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               rows: 5,
               input: true,
+              html: true,
             };
           case "Attach":
             return {
               type: "file",
-              key: field.fieldname,
-              label: field.label || "Attachment",
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label || "Attachment",
               storage: "customBase64",
-              validate: { required: field.required },
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
               fileTypes: [
                 { label: "Documents", value: ".pdf,.doc,.docx" },
@@ -317,11 +418,12 @@ const AddExpenseForm: React.FC = () => {
               ],
               filePattern: "*/*",
               customClass: "mb-4",
+              html: true,
             };
           case "Link":
             if (
-              field.fieldname === "currency" &&
-              field.options === "Currency"
+              field?.fieldname === "currency" &&
+              field?.options === "Currency"
             ) {
               const expenseClaimType =
                 mainFormData?.expenseType || mainFormData?.expense_type || "";
@@ -333,8 +435,11 @@ const AddExpenseForm: React.FC = () => {
                 : `/api/method/chatnext_expense_trips.expense_claim.get_allowed_currencies_for_expense_claim_type`;
               return {
                 type: "select",
-                key: field.fieldname,
-                label: field.label,
+                key: field?.fieldname,
+                label:
+                  field?.required === true
+                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                    : field?.label,
                 dataSrc: "url",
                 data: {
                   url,
@@ -343,19 +448,26 @@ const AddExpenseForm: React.FC = () => {
                 template: "<span>{{ item }}</span>",
                 defaultValue: "INR",
                 valueProperty: "",
-                validate: { required: field.required },
+                validate: {
+                  required: field?.required,
+                  customMessage: `${field?.label} is required`,
+                },
                 input: true,
                 refreshOn: "expenseType",
+                html: true,
               };
             }
             if (
-              field.fieldname === "vehicle_type" ||
-              field.options === "Daily Allowance Vehicle Category"
+              field?.fieldname === "vehicle_type" ||
+              field?.options === "Daily Allowance Vehicle Category"
             ) {
               return {
                 type: "select",
-                key: field.fieldname,
-                label: field.label,
+                key: field?.fieldname,
+                label:
+                  field?.required === true
+                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                    : field?.label,
                 dataSrc: "url",
                 data: {
                   url: `/api/resource/Daily%20Allowance%20Vehicle%20Category`,
@@ -363,23 +475,34 @@ const AddExpenseForm: React.FC = () => {
                 selectValues: "data",
                 valueProperty: "name",
                 template: "<span>{{ item.name }}</span>",
-                validate: { required: field.required },
+                validate: {
+                  required: field?.required,
+                  customMessage: `${field?.label} is required`,
+                },
                 input: true,
+                html: true,
               };
             }
             return {
               type: "select",
-              key: field.fieldname,
-              label: field.label,
+              key: field?.fieldname,
+              label:
+                field?.required === true
+                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                  : field?.label,
               dataSrc: "url",
               data: {
-                url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field.options}`,
+                url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field?.options}`,
               },
               template: "<span>{{ item.name }}</span>",
               valueProperty: "name",
               selectValues: "message",
-              validate: { required: field.required },
+              validate: {
+                required: field?.required,
+                customMessage: `${field?.label} is required`,
+              },
               input: true,
+              html: true,
             };
           default:
             return null;
@@ -390,6 +513,28 @@ const AddExpenseForm: React.FC = () => {
   const expenseTypeValue: string | undefined = mainFormData?.expenseType;
   const { data: expenseTypeData, isFetching: isFetchingFields } =
     useGetExpenseTypeFields(expenseTypeValue);
+
+  const claimTypeValue =
+    mainFormData?.expenseType ?? mainFormData?.expense_type;
+
+  const { data: unitPriceData } = useGetUnitPrice(
+    claimTypeValue,
+    vehicleType || undefined
+  );
+
+  const unitFieldLabel = useMemo(() => {
+    if (
+      unitPriceData &&
+      typeof unitPriceData === "object" &&
+      "message" in unitPriceData
+    ) {
+      return unitPriceData.message;
+    }
+    if (typeof unitPriceData === "string") {
+      return unitPriceData;
+    }
+    return "Units";
+  }, [unitPriceData]);
 
   const isShareAllowed = Boolean(expenseTypeData?.shared_expense_allowed);
 
@@ -404,7 +549,8 @@ const AddExpenseForm: React.FC = () => {
       isAmountReadonly
     );
     setDynamicFields(components);
-  }, [expenseTypeData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expenseTypeData, unitFieldLabel]);
 
   const debounceRef = useRef<number | null>(null);
   const parseUnits = (raw: any): number | undefined => {
@@ -511,7 +657,7 @@ const AddExpenseForm: React.FC = () => {
       );
 
     const payload = {
-      employee: currentEmployee?.employee_number,
+      employee: currentEmployee?.name,
       employee_name: currentEmployee?.employee_name,
       company: currentEmployee?.company,
       posting_date: new Date().toISOString().split("T")[0],
@@ -564,19 +710,23 @@ const AddExpenseForm: React.FC = () => {
   };
 
   const handleEdit = (expense: Expense) => {
-    setEditingExpenseId(expense.id);
-    setMainFormData({
-      expenseCategory: expense.expenseCategory,
-      expenseType: expense.expenseType,
-    });
+    setEditingExpenseId(expense.uid);
 
     const copy = { ...expense };
     if (expense.attach_receipt && typeof expense.attach_receipt === "string") {
       copy.attach_receipt = [{ url: expense.attach_receipt }];
     }
+
     setDynamicFormData(copy);
+
+    setMainFormData({
+      expenseCategory: expense.expenseCategory,
+      expenseType: expense.expenseType,
+    });
+
     setShowCategoryAndType(true);
     setFormKey((k) => k + 1);
+    clearFailedStatus(expense.uid);
   };
 
   return (
@@ -759,7 +909,7 @@ const AddExpenseForm: React.FC = () => {
                     combinedData.attach_receipt?.[0]?.url || null;
 
                   const newExpense: Expense = {
-                    id: editingExpenseId ?? Date.now().toString(),
+                    uid: editingExpenseId ?? Date.now().toString(),
                     ...combinedData,
                     attach_receipt: attachment,
                     amount: amountFromApi ?? combinedData.amount ?? undefined,
@@ -768,7 +918,7 @@ const AddExpenseForm: React.FC = () => {
                   if (editingExpenseId) {
                     setExpenses((prev) =>
                       prev.map((e) =>
-                        e.id === editingExpenseId ? newExpense : e
+                        e.uid === editingExpenseId ? newExpense : e
                       )
                     );
                   } else {
@@ -785,6 +935,9 @@ const AddExpenseForm: React.FC = () => {
                 }}
                 onChange={(change: any) => {
                   setDynamicFormData(change.data);
+                  if (change.data?.vehicle_type) {
+                    setVehicleType(change.data.vehicle_type);
+                  }
 
                   const isAmountReadonly =
                     expenseTypeData?.is_amount_readonly ?? false;
@@ -902,7 +1055,7 @@ const AddExpenseForm: React.FC = () => {
                             ${
                               (editingExpenseId
                                 ? expenses.find(
-                                    (x) => x.id === editingExpenseId
+                                    (x) => x.uid === editingExpenseId
                                   )?.amount ?? dynamicFormData?.amount
                                 : dynamicFormData?.amount) > 0
                                 ? "bg-blue-600 text-white hover:bg-blue-700"
@@ -911,7 +1064,7 @@ const AddExpenseForm: React.FC = () => {
                     disabled={
                       !(
                         (editingExpenseId
-                          ? expenses.find((x) => x.id === editingExpenseId)
+                          ? expenses.find((x) => x.uid === editingExpenseId)
                               ?.amount ?? dynamicFormData?.amount
                           : dynamicFormData?.amount) > 0
                       )
@@ -925,6 +1078,33 @@ const AddExpenseForm: React.FC = () => {
           )}
           {expenses.length > 0 && (
             <div className="mt-8">
+              {failedExpenseUids.size > 0 && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <svg
+                      className="w-5 h-5 text-red-600 mt-0.5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-red-800">
+                        Submission Failed for {failedExpenseUids.size} item(s)
+                      </h3>
+                      <p className="mt-1 text-sm text-red-700">
+                        The highlighted expense items below failed to submit.
+                        Please review and correct them, then try submitting
+                        again.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Expense List</h2>
                 <button
@@ -949,7 +1129,7 @@ const AddExpenseForm: React.FC = () => {
                           type="checkbox"
                           onChange={(e) =>
                             setSelectedExpenses(
-                              e.target.checked ? expenses.map((e) => e.id) : []
+                              e.target.checked ? expenses.map((e) => e.uid) : []
                             )
                           }
                           checked={
@@ -968,58 +1148,75 @@ const AddExpenseForm: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {expenses.map((expense) => (
-                      <tr
-                        key={expense.id}
-                        className="border-t border-gray-200 hover:bg-gray-50"
-                      >
-                        <td className="px-4 py-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedExpenses.includes(expense.id)}
-                            onChange={() => handleCheckboxChange(expense.id)}
-                          />
-                        </td>
-                        <td className="px-4 py-2">{expense.expenseCategory}</td>
-                        <td className="px-4 py-2">{expense.expenseType}</td>
-                        <td className="px-4 py-2">
-                          {expense.expense_date
-                            ? format(
-                                new Date(expense.expense_date),
-                                "dd-MM-yyyy"
-                              )
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-2">{expense.merchant || "-"}</td>
-                        <td className="px-4 py-2">
-                          {expense.invoice_number || "-"}
-                        </td>
-                        <td className="px-4 py-2">{expense.amount ?? "-"}</td>
-                        <td className="px-4 py-2 flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(expense)}
-                            className="text-blue-400 hover:text-green-800"
-                            title="Edit"
-                          >
-                            <SquarePen />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setExpenses((prev) =>
-                                prev.filter((e) => e.id !== expense.id)
-                              );
-                              setSelectedExpenses((prev) =>
-                                prev.filter((id) => id !== expense.id)
-                              );
-                            }}
-                            className="text-red-400 hover:text-blue-700"
-                            title="Delete"
-                          >
-                            <Trash2 />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {expenses.map((expense) => {
+                      const isFailed = failedExpenseUids.has(expense.uid);
+                      return (
+                        <tr
+                          key={expense.uid}
+                          className={`border-t border-gray-200 hover:bg-gray-50 ${
+                            isFailed ? "bg-red-50 border-red-200" : ""
+                          }`}
+                        >
+                          <td className="px-4 py-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedExpenses.includes(expense.uid)}
+                              onChange={() => handleCheckboxChange(expense.uid)}
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center gap-2">
+                              {expense.expenseCategory}
+                              {isFailed && (
+                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+                                  Failed
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">{expense.expenseType}</td>
+                          <td className="px-4 py-2">
+                            {expense.expense_date
+                              ? format(
+                                  new Date(expense.expense_date),
+                                  "dd-MM-yyyy"
+                                )
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-2">
+                            {expense.merchant || "-"}
+                          </td>
+                          <td className="px-4 py-2">
+                            {expense.invoice_number || "-"}
+                          </td>
+                          <td className="px-4 py-2">{expense.amount ?? "-"}</td>
+                          <td className="px-4 py-2 flex items-center gap-2">
+                            <button
+                              onClick={() => handleEdit(expense)}
+                              className="text-blue-400 hover:text-green-800"
+                              title="Edit"
+                            >
+                              <SquarePen />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setExpenses((prev) =>
+                                  prev.filter((e) => e.uid !== expense.uid)
+                                );
+                                setSelectedExpenses((prev) =>
+                                  prev.filter((id) => id !== expense.uid)
+                                );
+                                clearFailedStatus(expense.uid);
+                              }}
+                              className="text-red-400 hover:text-blue-700"
+                              title="Delete"
+                            >
+                              <Trash2 />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1057,7 +1254,7 @@ const AddExpenseForm: React.FC = () => {
           onClose={() => setIsSharePanelOpen(false)}
           expenseAmount={Number(
             (editingExpenseId
-              ? expenses.find((x) => x.id === editingExpenseId)?.amount ??
+              ? expenses.find((x) => x.uid === editingExpenseId)?.amount ??
                 dynamicFormData?.amount
               : dynamicFormData?.amount) ?? 0
           )}
@@ -1072,7 +1269,7 @@ const AddExpenseForm: React.FC = () => {
             if (editingExpenseId) {
               setExpenses((prev) =>
                 prev.map((e) =>
-                  e.id === editingExpenseId
+                  e.uid === editingExpenseId
                     ? { ...e, participants: formattedParticipants }
                     : e
                 )

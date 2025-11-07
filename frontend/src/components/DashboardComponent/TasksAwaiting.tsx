@@ -101,10 +101,10 @@ const MyToDoItem: React.FC<{
                 Due on {item.date}
               </span>
             )}
-            <span className="flex gap-2">
+            <div className="flex gap-2">
               {getPriorityBadge(item.priority)}
               {getStatusBadge(item.status)}
-            </span>
+            </div>
           </div>
         </div>
       </div>

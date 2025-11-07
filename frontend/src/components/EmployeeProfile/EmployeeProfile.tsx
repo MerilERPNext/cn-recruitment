@@ -25,6 +25,7 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import toast from "react-hot-toast";
 import CircularLoader from "../shared/atoms/CircularLoader";
+import DocumentLibrary from "../Library/Library";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -99,6 +100,8 @@ const EmployeeProfile: React.FC = () => {
       { key: "ORG-chart", label: "Organization Chart" },
       { key: "employment-history", label: "Employment History" },
       { key: "employee-holidays", label: "Employee Holidays" },
+      { key: "employee-documents", label: "Employee Documents" },
+
     ],
     []
   );
@@ -110,6 +113,7 @@ const EmployeeProfile: React.FC = () => {
       "ORG-chart": <TwoLevelOrgChart />,
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
       "employee-holidays": <ShowHolidays />,
+      "employee-documents": <DocumentLibrary/>,
     }),
     [user]
   );

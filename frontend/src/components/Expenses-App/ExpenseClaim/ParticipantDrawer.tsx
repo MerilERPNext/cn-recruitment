@@ -2,7 +2,7 @@
 import { Trash2 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { Employee } from "../../types/employee";
+import { Employee } from "../../../types/employee";
 
 export interface ParticipantRow {
   employee_type?: string;

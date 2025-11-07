@@ -1,7 +1,48 @@
 import { FaCheckCircle } from "react-icons/fa";
 import { MdInbox } from "react-icons/md";
+import img from "../../../assets/pngegg.png";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import {  useChatAssistant, useDifinitaionNameForSeparation } from "../../../hooks/useFlows";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 
 const ConfirmationWorkflow = () => {
+ const { data: userId } = useLoggedInUser();
+  const { data: employee_name } = useCurrentEmployeeAllDetails(userId || "");
+  const doctype_name = "Employee";
+  const document_name = employee_name?.name || "";
+  const { data: definitionName } = useDifinitaionNameForSeparation();
+  console.log("Definition Name: intiated confirmation", definitionName);
+  function getFunnelData(funnelName: string) {
+    return Array.isArray(definitionName)
+      ? definitionName.filter((item: { funnel_name: string }) => item.funnel_name === funnelName)
+      : [];
+  }
+//   const separationData = getFunnelData("Separation");
+const confirmationData = getFunnelData("Initiate Confirmation");
+const definition_name = confirmationData?.[0]?.name || "";
+  const l = "true";
+
+  const { data } = useChatAssistant(
+    doctype_name,
+    document_name,
+    definition_name,
+    l
+  );
+ 
+  const handleTriggerChat = () => {
+    if (
+      typeof window !== "undefined" &&
+      typeof window.trigger_chatnext_assistant === "function"
+    ) {
+      window.trigger_chatnext_assistant(
+       true,
+       data?.session
+      );
+    } else {
+      console.warn("⚠️ trigger_chatnext_assistant is not available on window.");
+    }
+  };
+
   const employeeData = {
     name: "Yogesh Jain",
     joiningDate: "01-10-2021",
@@ -72,13 +113,42 @@ const ConfirmationWorkflow = () => {
         </div>
       ))}
 
-      {/* Empty Review Section */}
-      <div className=" flex  flex-col  items-center  justify-center  mt-16">
-        <MdInbox className=" text-blue-400  text-7xl  mb-4" />
-        <p className=" text-gray-600  text-lg">
-          No ongoing review for Employee
-        </p>
+
+    <div className="   mt-2  min-h-auto  flex   flex-col   items-center   justify-center   rounded-xl      py-4">
+      <div className="  flex   flex-col md:flex-row   items-center   justify-between   w-full   bg-[#eef4fd]   rounded-xl   p-6 md:p-12">
+        {/* Left Text Section */}
+        <div className="  flex-1   text-center md:text-left">
+          <div className="  bg-[#6da8ff]   text-white   font-bold   text-3xl md:text-4xl   p-8   rounded-lg   inline-block">
+            WE'RE HAPPY TO CONFIRM YOU 🎉
+          </div>
+          <p className="  text-gray-600   mt-6   text-sm md:text-base">
+            Please connect with your HRBP for confirmation details.
+          </p>
+        </div>
+
+        {/* Right Illustration */}
+        <div className="  flex-1   flex   justify-center   mt-8 md:mt-0">
+          <img
+            src={img}
+            alt="confirmation illustration"
+            className="  w-72 md:w-96   h-auto"
+          />
+        </div>
       </div>
+
+      {/* Button */}
+      <button
+        className="  mt-8   bg-blue-500   text-white   font-semibold   px-6   py-2   rounded-md    hover:bg-blue-600   transition-all"
+        onClick={handleTriggerChat}
+      >
+        INITIATE CONFIRMATION
+      </button>
+    </div>
+  
+
+
+
+
     </div>
   );
 };
