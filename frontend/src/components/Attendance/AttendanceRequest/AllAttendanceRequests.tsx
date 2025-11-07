@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import DataListView from "../../DataListView";
 import AttndanceRequestForm from "./AttendanceRequestForm";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -11,6 +11,14 @@ import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useLocation, useNavigate } from "react-router-dom";
 import LayoutHeader from "../../shared/LayoutHeader";
+import HeaderBar from "../../HeaderBar";
+
+const ALL_STATUS_OPTIONS = [
+  { label: "Pending", value: "Pending" },
+  { label: "Approved", value: "Approved" },
+  { label: "Rejected", value: "Rejected" },
+  { label: "Cancelled", value: "Cancelled" },
+];
 
 const AllAttendanceRequest = ({
   pageSize = 10,
@@ -34,20 +42,28 @@ const AllAttendanceRequest = ({
     ? "actioned"
     : "pending";
 
+  const [selectedStatus, setSelectedStatus] = useState("Pending");
   const defaultFilters = useMemo(() => {
     if (!currentEmployee?.employee) return undefined;
 
     const baseFilters = { employee: currentEmployee?.employee };
 
-    // Add status filter based on type
-    if (statusType === "pending") {
-      return { ...baseFilters, status: "Pending" };
-    } else if (statusType === "actioned") {
-      return { ...baseFilters, status: ["!=", "Pending"] };
+    // If a status is selected, use it. Otherwise, rely on the statusType logic.
+    if (selectedStatus) {
+      return { ...baseFilters, status: selectedStatus };
     }
 
     return baseFilters;
-  }, [currentEmployee?.employee, statusType]);
+  }, [currentEmployee?.employee, selectedStatus]);
+
+  // Handler for the dropdown change
+  const handleStatusChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      setSelectedStatus(event.target.value);
+      setRefetchAttendance(true); // Trigger refetch on filter change
+    },
+    [setRefetchAttendance]
+  );
 
   const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
@@ -64,16 +80,42 @@ const AllAttendanceRequest = ({
       </div>
     </div>
   );
+
+  // 5. Create the Filter Dropdown Component
+  const FilterDropdowns = () => (
+    <div className="flex items-center gap-2">
+      <select
+        value={selectedStatus}
+        onChange={handleStatusChange}
+        className="border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100"
+      >
+        {ALL_STATUS_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
     <>
       <LayoutHeader
-        tab={`${
-          statusType === "pending" ? "Pending" : "Actioned"
-        } Attendance Requests`}
+        tab={`My Attendance Requests`}
         onBack={() => {
           navigate(-1);
         }}
+        children={<FilterDropdowns />}
       />
+
+      {isDesktop && (
+        <HeaderBar
+          title={"My Attendance Requests"}
+          onBack={() => navigate(-1)}
+          rightSlot={<FilterDropdowns />}
+        ></HeaderBar>
+      )}
+
       {showForm ? (
         <AttndanceRequestForm
           onClose={() => {
@@ -105,7 +147,7 @@ const AllAttendanceRequest = ({
             }
           >
             <DataListView
-              queryKey={["attendance-requests", statusType]}
+              queryKey={["attendance-requests", selectedStatus]}
               customAPI={{
                 method: "cn_leave_shift_managment.api.get_open_approval_todos",
                 params: {

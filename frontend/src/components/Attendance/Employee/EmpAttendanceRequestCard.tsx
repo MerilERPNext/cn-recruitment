@@ -56,10 +56,15 @@ const EmpAttendanceRequestCard = ({
         label: "Approved",
         statusColor: "bg-green-100 text-green-800",
       };
+    } else if (status === "cancelled" || status === "rejected") {
+      return {
+        label: status === "cancelled" ? "Cancelled" : "Rejected",
+        statusColor: "bg-red-100 text-red-800",
+      };
     } else {
       return {
-        statusColor: "bg-red-100 text-red-800",
-        label: "Rejected",
+        statusColor: "bg-gray-100 text-gray-800",
+        label: rawStatus || "Unknown",
       };
     }
   };

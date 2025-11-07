@@ -16,6 +16,7 @@ type ApprovalCardProps = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
+  isBulkSelectEnabled?: boolean;
 };
 const ApprovalCard = ({
   isSelected = false,
@@ -25,6 +26,7 @@ const ApprovalCard = ({
   onAction,
   onClick,
   loadingAction,
+  isBulkSelectEnabled,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const actions = data?.custom_doctype_actions
@@ -79,8 +81,9 @@ const ApprovalCard = ({
     return "--/--/----";
   };
 
-  // const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const gridTemplateColumns = "5% 10% 15% 8% 8% 8% 10% 20%";
+  const gridTemplateColumns = isBulkSelectEnabled
+    ? "5% 10% 15% 8% 8% 8% 10% 20%" // 8 columns (with Select)
+    : "12% 20% 10% 10% 10% 10% 20%"; // 7 columns (Adjusted widths)
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
@@ -93,9 +96,9 @@ const ApprovalCard = ({
         label: "Approved",
         statusColor: "bg-green-100 text-green-600",
       };
-    } else if (status === "Rejected") {
+    } else if (status === "Rejected" || status === "Cancelled") {
       return {
-        label: "Rejected",
+        label: status === "Cancelled" ? "Cancelled" : "Rejected",
         statusColor: "bg-red-100 text-red-600",
       };
     }
@@ -117,20 +120,22 @@ const ApprovalCard = ({
           onClick={() => onClick?.(data)}
         >
           {/* Checkbox */}
-          <div className="flex items-center justify-start">
-            <input
-              type="checkbox"
-              className="accent-blue-500"
-              checked={isSelected}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleSelect?.(data?.todo_id)}
-              disabled={
-                isDisabled ||
-                actionsWithForm?.includes("Approve") ||
-                actionsWithForm?.includes("Reject")
-              }
-            />
-          </div>
+          {isBulkSelectEnabled && (
+            <div className="flex items-center justify-start">
+              <input
+                type="checkbox"
+                className="accent-blue-500"
+                checked={isSelected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => onToggleSelect?.(data?.todo_id)}
+                disabled={
+                  isDisabled ||
+                  actionsWithForm?.includes("Approve") ||
+                  actionsWithForm?.includes("Reject")
+                }
+              />
+            </div>
+          )}
 
           {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
@@ -196,18 +201,20 @@ const ApprovalCard = ({
           }}
         >
           <div className="p-4 flex items-start gap-3 w-full">
-            <input
-              type="checkbox"
-              className="mt-1 accent-blue-500"
-              checked={isSelected}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleSelect?.(data?.todo_id)}
-              disabled={
-                isDisabled ||
-                actionsWithForm?.includes("Approve") ||
-                actionsWithForm?.includes("Reject")
-              }
-            />
+            {isBulkSelectEnabled && (
+              <input
+                type="checkbox"
+                className="mt-1 accent-blue-500"
+                checked={isSelected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => onToggleSelect?.(data?.todo_id)}
+                disabled={
+                  isDisabled ||
+                  actionsWithForm?.includes("Approve") ||
+                  actionsWithForm?.includes("Reject")
+                }
+              />
+            )}
 
             <div className="w-full">
               <div className="flex items-start justify-between">

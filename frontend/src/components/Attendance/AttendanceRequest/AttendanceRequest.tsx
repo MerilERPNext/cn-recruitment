@@ -11,8 +11,15 @@ import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router-dom";
 
+const STATUS_OPTIONS = [
+  { label: "Pending", value: "Pending" },
+  { label: "Approved", value: "Approved" },
+  { label: "Rejected", value: "Rejected" },
+  { label: "Cancelled", value: "Cancelled" },
+];
+
 const AttendanceRequest = ({
-  pageSize = 5,
+  pageSize = 10,
   showPagination = false,
   showAttendanceRequest = true,
 }: {
@@ -25,6 +32,8 @@ const AttendanceRequest = ({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+  // 2. Add state for selected status
+  const [selectedStatus, setSelectedStatus] = useState("Pending");
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const [showForm, setShowForm] = useState(false);
@@ -48,6 +57,30 @@ const AttendanceRequest = ({
       </div>
     </div>
   );
+
+  // Handler for the dropdown change
+  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(event.target.value);
+    setRefetchAttendance(true); // Trigger refetch on filter change
+  };
+
+  // 3. Create the Dropdown Component
+  const FilterDropdowns = () => (
+    <div className="flex items-center gap-2">
+      <select
+        value={selectedStatus}
+        onChange={handleStatusChange}
+        className="border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100"
+      >
+        {STATUS_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
     <>
       {showForm ? (
@@ -65,18 +98,22 @@ const AttendanceRequest = ({
 
                 <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-800 pb-1">
-                    Pending Attendance Requests
+                    My Attendance Requests
                   </h2>
-                  <button
-                    onClick={() => {
-                      navigate(
-                        "/webapp/attendance/attendance-request/pendings"
-                      );
-                    }}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    View All
-                  </button>
+
+                  <div className="flex items-center space-x-3 pb-1">
+                    <FilterDropdowns /> {/* Add the dropdown here */}
+                    <button
+                      onClick={() => {
+                        navigate(
+                          "/webapp/attendance/attendance-request/pendings"
+                        );
+                      }}
+                      className="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
+                    >
+                      View All
+                    </button>
+                  </div>
                 </div>
                 <CardTable
                   titles={[
@@ -91,17 +128,15 @@ const AttendanceRequest = ({
                 >
                   {currentEmployee?.employee ? (
                     <DataListView
-                      queryKey={["attendance-requests", "pending"]}
+                      queryKey={["attendance-requests", "selectedStatus"]}
                       customAPI={{
                         method:
                           "cn_leave_shift_managment.api.get_open_approval_todos",
                         params: {
                           doctype: "Attendance Request",
                           employee: currentEmployee?.employee,
+                          status: selectedStatus,
                         },
-                      }}
-                      defaultFilters={{
-                        status: "Pending",
                       }}
                       ItemComponent={(props: { item: MyAttendanceRequest }) => {
                         return (
@@ -133,76 +168,6 @@ const AttendanceRequest = ({
                   )}
                 </CardTable>
               </div>
-            </div>
-          </div>
-          <div className="bg-white h-full px-4 pt-2 mb-18 mt-2">
-            <div className="bg-white px-2">
-              <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 pb-1">
-                  Actioned Attendance Requests
-                </h2>
-                <button
-                  onClick={() => {
-                    navigate("/webapp/attendance/attendance-request/actioned");
-                  }}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  View All
-                </button>
-              </div>
-
-              <CardTable
-                titles={[
-                  "Allocated To",
-                  "Request Type",
-                  "From Date",
-                  "To Date",
-                  "Due Date",
-                  "Status",
-                ]}
-              >
-                {currentEmployee?.employee ? (
-                  <DataListView
-                    queryKey={["attendance-requests", "actioned"]}
-                    customAPI={{
-                      method:
-                        "cn_leave_shift_managment.api.get_open_approval_todos",
-                      params: {
-                        doctype: "Attendance Request",
-                        employee: currentEmployee?.employee,
-                      },
-                    }}
-                    defaultFilters={{ status: ["!=", "Pending"] }}
-                    ItemComponent={(props: { item: MyAttendanceRequest }) => {
-                      return (
-                        <EmpAttendanceRequestCard
-                          type="actioned"
-                          columns={6}
-                          data={{
-                            ...props?.item,
-                          }}
-                        />
-                      );
-                    }}
-                    SkeletonComponent={CardSkeleton}
-                    onItemClick={(data) => {
-                      console.log(data);
-                    }}
-                    onRefetchComplete={handleRefetchComplete}
-                    refetchTrigger={refetchAttendance}
-                    isSearch={false}
-                    isFilter={false}
-                    pageSize={pageSize}
-                    showRefreshButton={false}
-                    orderBy="modified desc"
-                    infiniteScroll={false}
-                    loadMorePagination={true}
-                    showPagination={showPagination}
-                  />
-                ) : (
-                  <></>
-                )}
-              </CardTable>
             </div>
           </div>
         </div>

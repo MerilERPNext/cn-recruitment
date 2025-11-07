@@ -215,7 +215,7 @@ const ApprovalList = ({
         onDataLoad={(data) => setAllRequests(data)}
         PreListComponent={() => (
           <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
-            {status === "Open" && (
+            {(status === "Open" || status === "Pending") && (
               <BulkActionBar
                 selectedIds={selectedIds}
                 pendingRequests={allRequests}
