@@ -1,6 +1,6 @@
 import { FaCheckCircle } from "react-icons/fa";
+import { MdInbox } from "react-icons/md";
 import img from "../../../assets/pngegg.png";
-import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import {  useChatAssistant, useDifinitaionNameForSeparation } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
@@ -64,8 +64,7 @@ const definition_name = confirmationData?.[0]?.name || "";
   ];
 
   return (
-    <DesktopLayoutWrapper title="Confirmation">
-    <div className=" bg-white  h-screen overflow-scroll p-8 text-gray-800  font-sans">
+    <div className=" bg-white  min-h-screen  p-8  text-gray-800  font-sans">
       {/* Header */}
       <div className=" flex  justify-between  items-start  mb-6">
         <div>
@@ -151,7 +150,6 @@ const definition_name = confirmationData?.[0]?.name || "";
 
 
     </div>
-    </DesktopLayoutWrapper>
   );
 };
 

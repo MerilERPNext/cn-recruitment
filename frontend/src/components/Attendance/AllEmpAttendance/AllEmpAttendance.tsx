@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
 import LayoutHeader from "../../shared/LayoutHeader";
-import { CalendarDays, LogIn, LogOut } from "lucide-react";
+import { CalendarDays, CalendarSearch, LogIn, LogOut } from "lucide-react";
 import { useState } from "react";
 import SelectByMonth, { MonthOption } from "./SelectByMonth";
 
@@ -200,20 +200,28 @@ const AllEmpAttendance = () => {
 
       <div className="mx-auto bg-white h-screen px-4">
         <div className="flex justify-center gap-2 items-center">
-          <h2 className="font-semibold text-lg text-center py-2">
-            {selectedMonth?.label}
-          </h2>
-          {isDesktop && (
-            <button
-              className="bg-gray-200 p-1 rounded-md h-fit"
+
+          {isDesktop ? (
+            <button className="bg-gray-100 hover:bg-gray-200 w-fit mx-auto border flex items-center gap-x-1 px-2 rounded-lg mt-3 mb-6 cursor-pointer transition-all duration-200"
               onClick={() => setShowSelectByMonth(true)}
             >
-              <CalendarDays
-                className="h-4 w-4"
-                key={"desktop-calendar-filter-icon"}
-              />
+              <h2 className="font-semibold text-lg text-center py-2">
+                {selectedMonth?.label}
+              </h2>
+              <div
+                className=" p-1 rounded-md h-fit"
+              >
+                <CalendarSearch
+                  className="h-5 w-5"
+                  key={"desktop-calendar-filter-icon"}
+                />
+              </div>
             </button>
-          )}
+          ):
+             <h2 className="font-semibold text-lg text-center py-2">
+            {selectedMonth?.label}
+          </h2>
+          }
         </div>
 
         <div className="flex flex-col gap-2 pb-4">
@@ -254,9 +262,9 @@ const AllEmpAttendance = () => {
                     style={
                       item?.status?.toLocaleLowerCase() === "half day"
                         ? getStatusGradient(
-                            item?.half_day_status_first_half || "",
-                            item?.half_day_status_second_half || ""
-                          )
+                          item?.half_day_status_first_half || "",
+                          item?.half_day_status_second_half || ""
+                        )
                         : {}
                     }
                   >
@@ -287,11 +295,10 @@ const AllEmpAttendance = () => {
                           </p>
                           <div className="flex justify-center items-center gap-2">
                             <LogIn
-                              className={`h-4 w-4 ${
-                                item?.in_time
+                              className={`h-4 w-4 ${item?.in_time
                                   ? "text-green-600"
                                   : "text-gray-600"
-                              }`}
+                                }`}
                             />
                             <h5 className="font-semibold text-start">
                               {formatTimeSafe(item?.in_time)}
@@ -304,11 +311,10 @@ const AllEmpAttendance = () => {
                           </p>
                           <div className="flex justify-center items-center gap-2">
                             <LogOut
-                              className={`h-4 w-4 ${
-                                item?.out_time
+                              className={`h-4 w-4 ${item?.out_time
                                   ? "text-red-600"
                                   : "text-gray-600"
-                              }`}
+                                }`}
                             />
                             <h5 className="font-semibold text-start">
                               {formatTimeSafe(item?.out_time)}
@@ -329,7 +335,7 @@ const AllEmpAttendance = () => {
         <Modal
           isOpen={true}
           onClose={() => setShowDetailsFor(null)}
-          size={isDesktop ? "lg" : "full"}
+          size={isDesktop ? "sm" : "full"}
         >
           <EmployeeAttendanceDetails
             data={showDetailsFor?.data}
