@@ -13,9 +13,16 @@ import {
 } from "../../hooks/useLeaves";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
 
+// 1. Status options based on the common leave application statuses
+const LEAVE_STATUS_OPTIONS = [
+  { label: "Pending", value: "Open" },
+  { label: "Approved", value: "Approved" },
+  { label: "Cancelled", value: "Cancelled" },
+];
+
 const MyLeaveRequests = ({
-  pageSize = 5,
-  showPagination = true,
+  pageSize = 14,
+  showPagination = false,
 }: {
   pageSize?: number;
   showPagination?: boolean;
@@ -48,6 +55,16 @@ const MyLeaveRequests = ({
     currentEmployee?.name || ""
   );
 
+  // State for the selected status filter
+  const [selectedStatus, setSelectedStatus] = useState("Open");
+
+  // Handler for the dropdown change
+  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(event.target.value);
+    // Trigger a refetch/reload of the list when the filter changes
+    setRefetchAttendance(true);
+  };
+
   const handleOpenReplaceModal = (leaveData: MyLeaveRequestType) => {
     setReplaceModalData({
       isOpen: true,
@@ -70,7 +87,6 @@ const MyLeaveRequests = ({
     });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleReplace = (data: any) => {
     replaceLeave.mutate(
       {
@@ -104,22 +120,60 @@ const MyLeaveRequests = ({
     </div>
   );
 
+  // Conditionally construct the API parameters object
+  const apiParams = {
+    doctype: "Leave Application",
+    employee: currentEmployee?.name,
+    // Add the status filter parameter only if a status is selected
+    ...(selectedStatus && { status: selectedStatus }),
+  };
+
+  const FilterDropdowns = () => (
+    <div className="flex items-center gap-2">
+      <select
+        value={selectedStatus}
+        onChange={handleStatusChange}
+        className="border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100"
+      >
+        {LEAVE_STATUS_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
     <>
       <div>
         <div className="bg-white h-full md:px-4 md:pt-2">
           <div className="bg-white px-2">
+            {/* 3. REVISED HEADER ROW to include the dropdown */}
             <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
               <h2 className="text-lg font-semibold text-gray-800 pb-1">
-                Pending Requests
+                My Leave Requests
               </h2>
-              <button
-                onClick={() => navigate("/webapp/leave-app/requests/pendings")}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                View All
-              </button>
+
+              {/* Dropdown Group */}
+              <div className="flex items-center space-x-3 pb-1">
+                {/* Filter Dropdown */}
+                <FilterDropdowns />
+                {/* End Filter Dropdown */}
+
+                <button
+                  onClick={() =>
+                    navigate("/webapp/leave-app/requests/pendings")
+                  }
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  View All
+                </button>
+              </div>
+              {/* End Dropdown Group */}
             </div>
+            {/* End REVISED HEADER ROW */}
+
             {isEmployeeLoading ? (
               <CardSkeleton />
             ) : (
@@ -141,79 +195,8 @@ const MyLeaveRequests = ({
                     customAPI={{
                       method:
                         "cn_leave_shift_managment.api.get_open_approval_todos",
-                      params: {
-                        doctype: "Leave Application",
-                        employee: currentEmployee?.name,
-                      },
-                    }}
-                    defaultFilters={{ status: "Open" }}
-                    ItemComponent={(props: { item: MyLeaveRequestType }) => (
-                      <EmpLeaveRequestCard
-                        data={props.item}
-                        buttonStatus={buttonStatus}
-                        onOpenReplaceModal={() =>
-                          handleOpenReplaceModal(props.item)
-                        }
-                      />
-                    )}
-                    SkeletonComponent={CardSkeleton}
-                    onRefetchComplete={() => setRefetchAttendance(false)}
-                    refetchTrigger={refetchAttendance}
-                    isSearch={false}
-                    isFilter={false}
-                    pageSize={pageSize}
-                    showRefreshButton={false}
-                    orderBy="modified desc"
-                    infiniteScroll={false}
-                    loadMorePagination={true}
-                    showPagination={showPagination}
-                  />
-                )}
-              </CardTable>
-            )}
-          </div>
-        </div>
-        <div className="bg-white pb-[5.5rem] h-full md:px-4 pt-2 mb-18 mt-2">
-          <div className="bg-white px-2">
-            <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800 pb-1">
-                Actioned Requests
-              </h2>
-              <button
-                onClick={() => navigate("/webapp/leave-app/requests/actioned")}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                View All
-              </button>
-            </div>
-            {isEmployeeLoading ? (
-              <CardSkeleton />
-            ) : (
-              <CardTable
-                titles={[
-                  "Leave Type",
-                  "From Date",
-                  "To Date",
-                  "Description",
-                  "Leave Days",
-                  "Status",
-                  "Actions",
-                ]}
-                columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr"]}
-              >
-                {currentEmployee?.name && (
-                  <DataListView
-                    queryKey="leave-requests"
-                    customAPI={{
-                      method:
-                        "cn_leave_shift_managment.api.get_open_approval_todos",
-                      params: {
-                        doctype: "Leave Application",
-                        employee: currentEmployee?.name,
-                      },
-                    }}
-                    defaultFilters={{
-                      status: ["in", ["Rejected", "Approved"]],
+                      // 4. Pass the dynamically constructed parameters
+                      params: apiParams,
                     }}
                     ItemComponent={(props: { item: MyLeaveRequestType }) => (
                       <EmpLeaveRequestCard
@@ -236,7 +219,7 @@ const MyLeaveRequests = ({
                     showRefreshButton={false}
                     orderBy="modified desc"
                     infiniteScroll={false}
-                    loadMorePagination
+                    loadMorePagination={true}
                     showPagination={showPagination}
                   />
                 )}

@@ -100,7 +100,12 @@ const EmpLeaveRequestCard = ({
       return { label: "Pending", statusColor: "bg-yellow-100 text-yellow-800" };
     if (status === "approved")
       return { label: "Approved", statusColor: "bg-green-100 text-green-800" };
-    return { label: "Rejected", statusColor: "bg-red-100 text-red-800" };
+    if (status === "cancelled")
+      return { label: "Cancelled", statusColor: "bg-red-100 text-red-800" };
+    return {
+      label: rawStatus || "Unknown",
+      statusColor: "bg-gray-100 text-gray-800",
+    };
   };
 
   const status = getStatus(data?.reference_document?.status);
