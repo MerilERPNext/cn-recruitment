@@ -53,7 +53,7 @@ const AllTeamClaimRequests = () => {
   return (
     <div>
       <LayoutHeader
-        tab={"Pending Team Attendance Requests"}
+        tab={"All team Claim Requests"}
         onBack={() => {
           navigate(-1);
         }}
@@ -97,7 +97,7 @@ const AllTeamClaimRequests = () => {
         >
           <ApprovalList
             doctype={"Expense Claim"}
-            status={statusFilter || "Open"}
+            status={statusFilter}
             pageSize={10}
             refetch={refetchAttendance || refetch}
             onApprovalRefetchComplete={() => {

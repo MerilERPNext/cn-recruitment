@@ -172,32 +172,34 @@ export const useGetUnitPrice = (
   });
 };
 
+const handleError = (err: any) => {
+  let errorMsg = "Submission failed. Please try again.";
+  try {
+    const raw = err?.response?.data?._server_messages;
+    if (raw) {
+      const messages = JSON.parse(raw);
+      if (Array.isArray(messages) && messages.length > 0) {
+        const firstMessage = JSON.parse(messages[0]);
+        if (firstMessage?.message) {
+          errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
+        }
+      }
+    } else if (err?.response?.data?.message) {
+      errorMsg = err.response.data.message;
+    } else if (err?.message) {
+      errorMsg = err.message;
+    }
+  } catch (e) {
+    console.error("Failed to parse server error message:", e);
+  }
+
+  toast.error(errorMsg);
+};
+
 //Expense approval hooks
 export function useExpenseApproval() {
   const queryClient = useQueryClient();
-  const handleError = (err: any) => {
-    let errorMsg = "Submission failed. Please try again.";
-    try {
-      const raw = err?.response?.data?._server_messages;
-      if (raw) {
-        const messages = JSON.parse(raw);
-        if (Array.isArray(messages) && messages.length > 0) {
-          const firstMessage = JSON.parse(messages[0]);
-          if (firstMessage?.message) {
-            errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
-          }
-        }
-      } else if (err?.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      } else if (err?.message) {
-        errorMsg = err.message;
-      }
-    } catch (e) {
-      console.error("Failed to parse server error message:", e);
-    }
 
-    toast.error(errorMsg);
-  };
   return useMutation({
     mutationFn: async (payload: ExpenseApprovalPayload) =>
       expenseService.approveRejectLineItems(payload),
@@ -217,29 +219,7 @@ export function useExpenseApproval() {
 // Hook for single item approval/rejection
 export function useExpenseSingleItemApproval() {
   const queryClient = useQueryClient();
-  const handleError = (err: any) => {
-    let errorMsg = "Submission failed. Please try again.";
-    try {
-      const raw = err?.response?.data?._server_messages;
-      if (raw) {
-        const messages = JSON.parse(raw);
-        if (Array.isArray(messages) && messages.length > 0) {
-          const firstMessage = JSON.parse(messages[0]);
-          if (firstMessage?.message) {
-            errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
-          }
-        }
-      } else if (err?.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      } else if (err?.message) {
-        errorMsg = err.message;
-      }
-    } catch (e) {
-      console.error("Failed to parse server error message:", e);
-    }
 
-    toast.error(errorMsg);
-  };
   return useMutation({
     mutationFn: async ({
       claimId,
