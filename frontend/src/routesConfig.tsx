@@ -93,6 +93,10 @@ const ExpensesList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseClaim/ExpensesList"),
   "ExpensesList"
 );
+const AllExpensesList = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpenseClaim/AllExpenseList"),
+  "AllExpensesList"
+);
 const AdvanceExpenseList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseAdvance/AdvanceExpenseList"),
   "AdvanceExpenseList"
@@ -366,22 +370,19 @@ const RequestDetails = lazyWithRetry(
 );
 
 const PerformanceApp = lazyWithRetry(
-  ()=> import("./components/Performance/PerformanceApp"),
+  () => import("./components/Performance/PerformanceApp"),
   "PerFormanceApp"
 );
 
 const Overview = lazyWithRetry(
-  ()=> import("./components/Performance/Overview/Overview"),
+  () => import("./components/Performance/Overview/Overview"),
   "Overview"
 );
 
 const NewGoalPlan = lazyWithRetry(
-  ()=> import("./components/Performance/NewGoalPlan/NewGoalPlan"),
+  () => import("./components/Performance/NewGoalPlan/NewGoalPlan"),
   "NewGoalPlan"
-)
-
-
-
+);
 
 // Loading component for Suspense fallbacks
 // eslint-disable-next-line react-refresh/only-export-components
@@ -531,6 +532,7 @@ export const routesConfig: AppRoute[] = [
     element: <ExpensesApp />,
     children: [
       { path: "expenses-list", element: <ExpensesList /> },
+      { path: "expenses-list/view-all", element: <AllExpensesList /> },
       { path: "add-expense", element: <AddExpenseForm /> },
       { path: "advance-expense-list", element: <AdvanceExpenseList /> },
     ],
@@ -691,9 +693,9 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/performance-app",
     element: <PerformanceApp />,
     children: [
-      {path: "overview", element: <Overview />},
-      {path: "new-goal-plan", element: <NewGoalPlan />},
-    ]
+      { path: "overview", element: <Overview /> },
+      { path: "new-goal-plan", element: <NewGoalPlan /> },
+    ],
   },
   {
     path: "/webapp/organizational-chart",

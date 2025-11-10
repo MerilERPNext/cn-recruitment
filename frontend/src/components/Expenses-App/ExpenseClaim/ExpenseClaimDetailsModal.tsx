@@ -1,19 +1,27 @@
 import React from "react";
 import { XIcon } from "lucide-react";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
-import { Expense, ExpenseClaim, Participant } from "../../../types/expenseAdvance";
+import {
+  ApprovalStage,
+  Expense,
+  ExpenseClaim,
+  Participant,
+} from "../../../types/expenseAdvance";
 import Badge from "../../shared/Badge";
+import ApprovalStagesProgress from "./ApprovalStagesProgress";
 
 interface ExpenseClaimModalProps {
   id: string | null;
   onClose: () => void;
   getStatusBadgeClasses?: (status: string) => string;
+  selectedStages: ApprovalStage[];
 }
 
 const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   id,
   onClose,
   getStatusBadgeClasses,
+  selectedStages,
 }) => {
   const raw = useFrappeDocument("Expense Claim", id as string);
 
@@ -99,7 +107,21 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                     })
                   : "—"}
               </p>
+
+              {/* NEW: Placeholder for alignment */}
+              <div className="hidden md:block"></div>
             </div>
+
+            {/* MODIFIED: Use the passed selectedStages prop for the progress bar */}
+            {Array.isArray(selectedStages) && selectedStages.length > 0 && (
+              <div className="mb-4 pt-2">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  Approval Stages
+                </h4>
+                <ApprovalStagesProgress stages={selectedStages} />
+              </div>
+            )}
+            {/* END MODIFIED: Approval Stages Progress Bar Section */}
 
             {Array.isArray(data?.custom_participants) &&
               data.custom_participants.length > 0 && (

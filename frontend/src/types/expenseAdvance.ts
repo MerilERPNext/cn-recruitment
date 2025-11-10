@@ -100,6 +100,13 @@ export interface Participant {
   doctype: string;
 }
 
+export interface ApprovalStage {
+  stage_name: string | null;
+  user: string | null;
+  role: string;
+  status: string;
+}
+
 export interface ExpenseClaim {
   name: string;
   owner: string;
@@ -137,6 +144,7 @@ export interface ExpenseClaim {
   taxes: any[];
   custom_participants: Participant[];
   expenses: Expense[];
+  approval_stages_status: ApprovalStage[];
 }
 
 export interface Expense {
