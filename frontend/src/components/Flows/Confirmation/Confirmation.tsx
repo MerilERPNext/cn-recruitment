@@ -17,7 +17,7 @@ const ConfirmationWorkflow = () => {
       : [];
   }
 //   const separationData = getFunnelData("Separation");
-const confirmationData = getFunnelData("Initiate Confirmation");
+const confirmationData = getFunnelData("Initiate Confirmation tool");
 const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
 
