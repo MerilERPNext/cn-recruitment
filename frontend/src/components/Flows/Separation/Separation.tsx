@@ -13,7 +13,6 @@ const Separation = () => {
   const doctype_name = "Employee";
   const document_name = employee_name?.name || "";
   const { data: definitionName } = useDifinitaionNameForSeparation();
-  console.log("Definition Name: intiated confirmation", definitionName);
   function getFunnelData(funnelName: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
@@ -21,7 +20,7 @@ const Separation = () => {
         )
       : [];
   }
-  const separationData = getFunnelData("Separation");
+  const separationData = getFunnelData("Separation funnel");
   const definition_name = separationData?.[0]?.name || "";
   const l = "true";
   const { data } = useChatAssistant(
