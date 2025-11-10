@@ -25,7 +25,7 @@ type ApprovalListProps = {
   }) => ReactNode;
   refetch?: boolean;
   setRefetch?: (value: boolean) => void;
-  status: string;
+  status?: string;
   pageSize?: number;
   showPagination?: boolean;
   onApprovalRefetchComplete?: () => void;
