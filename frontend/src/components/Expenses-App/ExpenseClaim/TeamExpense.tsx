@@ -95,7 +95,7 @@ const TeamExpense = () => {
             {currentUser?.name ? (
               <ApprovalList
                 doctype={"Expense Claim"}
-                status={statusFilter} // Pass the status filter
+                status={statusFilter}
                 refetch={refetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}

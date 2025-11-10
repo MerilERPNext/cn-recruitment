@@ -208,6 +208,7 @@ export function useExpenseApproval() {
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
       queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
       queryClient.invalidateQueries({ queryKey: ["todo"] });
+      queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
     },
     onError: (error) => {
       handleError(error);
@@ -246,6 +247,7 @@ export function useExpenseSingleItemApproval() {
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
       queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
       queryClient.invalidateQueries({ queryKey: ["todo"] });
+      queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
     },
     onError: (error) => {
       handleError(error);
