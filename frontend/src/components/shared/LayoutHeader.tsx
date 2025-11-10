@@ -52,7 +52,7 @@ const LayoutHeader = ({
             </div>
 
             {/* Right: Children */}
-            <div className="flex items-center justify-end overflow-hidden max-w-20 h-full">
+            <div className="flex items-center justify-end overflow-hidden h-full">
               {children}
             </div>
           </div>

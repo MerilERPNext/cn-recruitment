@@ -1,41 +1,36 @@
 import { useState, useCallback } from "react";
-import { RequestCard } from "../Attendance/TeamAttendanceDetails/RequestCard";
-import { MyAttendanceRequest } from "../../types/attendance";
-//import { AttendanceDetailView } from "../Attendance/AttendanceDetails";
 import { useNavigate, useSearchParams } from "react-router";
 import ApprovalList from "../shared/ApprovalList";
-import ApprovalCard from "../Attendance/TeamAttendanceDetails/ApprovalCard";
 import CardTable from "../shared/CardTable";
 import useCurrentUser from "../../hooks/useCurrentUser";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import DataListView from "../DataListView";
 import { LeaveDetailView } from "./LeaveDetails";
+import LeaveApprovalCard from "./LeaveApprovalCard";
+
+const TODO_STATUS_OPTIONS = [
+  { label: "Pending", value: "Open" }, // Default option
+  { label: "Approved", value: "Approved" },
+  { label: "Cancelled", value: "Cancelled" },
+];
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
-  );
 
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
-  const [refetchActionedList, setRefetchActionedList] = useState(false);
   const navigate = useNavigate();
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
-    setRefetchActionedList(true);
-  }, []);
-
-  const handleActionedRefetchComplete = useCallback(() => {
-    setRefetchActionedList(false);
   }, []);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // 1. Set the default selected status to "Open"
+  const [selectedStatus, setSelectedStatus] = useState("Open");
+
   const requestId = searchParams.get("requestId");
 
   const handleRequestClick = useCallback(
-    (request : any) => {
+    (request: any) => {
       if (request?.todo_id) {
         setSearchParams({ requestId: request.todo_id });
       }
@@ -49,121 +44,102 @@ const TeamLeaveRequest = () => {
 
   const handleActionComplete = useCallback(() => {
     setSearchParams({});
-    // Trigger refetch after action
     setRefetchApprovalList(true);
   }, [setSearchParams]);
 
+  // 2. Handler for the dropdown change
+  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(event.target.value);
+    setRefetchApprovalList(true); // Trigger refetch on filter change
+  };
+
+  const FilterDropdowns = () => (
+    <div className="flex items-center gap-2">
+      <select
+        value={selectedStatus}
+        onChange={handleStatusChange}
+        className="border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100"
+      >
+        {TODO_STATUS_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
+  // 💡 NEW: Conditional titles and widths based on selectedStatus
+  const isBulkSelectEnabled = selectedStatus === "Open";
+
+  const tableTitles = isBulkSelectEnabled
+    ? [
+        "Select",
+        "Employee",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "Actions",
+      ]
+    : ["Employee", "From Date", "To Date", "Due Date", "Status", "Actions"];
+
+  // Fix the columnWidths to match the number of titles:
+  const finalColumnWidths = isBulkSelectEnabled
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"] // 7 titles, 7 widths
+    : ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"]; // 6 titles, 6 widths (Adjust 'Employee' width slightly)
 
   return (
     <>
       <div className="bg-white min-h-screen">
         <div className="bg-white px-2">
-          {/* Pending */}
-
+          {/* Pending: HEADER ROW */}
           <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
             <h2 className="text-lg font-semibold text-gray-800 pb-1">
-              Pending Team Leave Requests
+              Team Leave Requests
             </h2>
-            <button
-              onClick={() => {
-                navigate("/webapp/leave-app/leave-requests/pending");
-              }}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              View All
-            </button>
+
+            {/* 💡 REVISED Dropdown Group: Moved to the right-hand side 💡 */}
+            <div className="flex items-center space-x-3 pb-1">
+              <FilterDropdowns />
+
+              <button
+                onClick={() => {
+                  navigate("/webapp/leave-app/leave-requests/pending");
+                }}
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                View All
+              </button>
+            </div>
+            {/* End REVISED Dropdown Group */}
           </div>
-          <CardTable
-            titles={[
-              "Select",
-              "Name",
-              "Employee",
-              "From Date",
-              "To Date",
-              "Due Date",
-              "Status",
-              "Actions",
-            ]}
-            columnWidths={["5%", "15%", "10%", "8%", "8%", "8%", "10%", "20%"]}
-          >
+          {/* End HEADER ROW */}
+
+          <CardTable titles={tableTitles} columnWidths={finalColumnWidths}>
             {currentUser?.name ? (
               <ApprovalList
                 doctype={"Leave Application"}
-                status="Open"
                 refetch={refetchApprovalList}
-                //setRefetch={setRefetchApprovalList}
+                setRefetch={setRefetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
-                pageSize={3}
+                pageSize={10}
+                status={selectedStatus}
                 showPagination={false}
                 renderCardContent={(item) => (
-                  <ApprovalCard
+                  <LeaveApprovalCard
                     isSelected={item?.isSelected}
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}
                     onAction={item?.onAction}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick={(request: any) =>handleRequestClick(request)}
+                    onClick={(request: any) => handleRequestClick(request)}
                     loadingAction={item?.loadingAction}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
                   />
                 )}
               />
             ) : null}
           </CardTable>
-        </div>
-
-        {/* Actioned */}
-        <div className="bg-white px-2 mt-4 md:pb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b-1 border-gray-200 pb-1">
-              Actioned Team Leave Requests
-            </h2>
-            <CardTable
-              columnWidths={["15%", "15%", "8%", "8%", "8%", "20%"]}
-              titles={[
-                "Name",
-                "Employee",
-                "From Date",
-                "To Date",
-                "Due Date",
-                "Status",
-              ]}
-            >
-              {currentEmployee?.employee ? (
-                <DataListView
-                  queryKey="attendance-request"
-                  customAPI={{
-                    method:
-                      "cn_leave_shift_managment.api.get_open_approval_todos",
-                    params: {
-                      doctype: "Leave Application",
-                      include_allocated_todos: true,
-
-                      fields: ["*"],
-                    },
-                  }}
-                  defaultFilters={{ status: ["!=", "Open"] }}
-                  ItemComponent={(props: { item: MyAttendanceRequest }) => {
-                    return (
-                      <RequestCard
-                        request={props?.item}
-                        onClick={(request: MyAttendanceRequest) => handleRequestClick(request)}
-                      />
-                    );
-                  }}
-                  onRefetchComplete={handleActionedRefetchComplete}
-                  refetchTrigger={refetchActionedList}
-                  isSearch={false}
-                  isFilter={false}
-                  pageSize={5}
-                  showRefreshButton={false}
-                  orderBy="modified desc"
-                  infiniteScroll={false}
-                  loadMorePagination={true}
-                  showPagination={false}
-                />
-              ) : null}
-            </CardTable>
-          </div>
         </div>
       </div>
 

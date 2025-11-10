@@ -1,24 +1,20 @@
 import { format, isValid, parse } from "date-fns";
-import Badge from "../../shared/Badge";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button from "../../shared/atoms/Button";
-import DOMPurify from "dompurify";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import Badge from "../shared/Badge";
+import Button from "../shared/atoms/Button";
 
-type ApprovalCardProps = {
+type LeaveApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onAction: (action: string, data: any) => void;
   refetch?: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
-  isBulkSelectEnabled?: boolean;
+  isBulkSelectEnabled: boolean;
 };
-const ApprovalCard = ({
+const LeaveApprovalCard = ({
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -27,7 +23,7 @@ const ApprovalCard = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled,
-}: ApprovalCardProps) => {
+}: LeaveApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -81,10 +77,6 @@ const ApprovalCard = ({
     return "--/--/----";
   };
 
-  const gridTemplateColumns = isBulkSelectEnabled
-    ? "5% 10% 15% 8% 8% 8% 10% 20%" // 8 columns (with Select)
-    : "12% 20% 10% 10% 10% 10% 20%"; // 7 columns (Adjusted widths)
-
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
       return {
@@ -96,9 +88,9 @@ const ApprovalCard = ({
         label: "Approved",
         statusColor: "bg-green-100 text-green-600",
       };
-    } else if (status === "Rejected" || status === "Cancelled") {
+    } else if (status === "Cancelled") {
       return {
-        label: status === "Cancelled" ? "Cancelled" : "Rejected",
+        label: "Cancelled",
         statusColor: "bg-red-100 text-red-600",
       };
     }
@@ -107,10 +99,10 @@ const ApprovalCard = ({
       statusColor: "bg-gray-100 text-gray-600",
     };
   };
-  const cleanExplaination = DOMPurify.sanitize(
-    data?.reference_document?.explanation || ""
-  );
-  const status = getStatus(data?.status);
+  const status = getStatus(data?.reference_document?.status);
+  const gridTemplateColumns = isBulkSelectEnabled
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1.5fr 1fr 1fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -141,10 +133,6 @@ const ApprovalCard = ({
           <div className="truncate text-gray-900 font-medium text-sm text-start">
             {data?.reference_document?.employee_name}
           </div>
-          <div className="truncate text-gray-900 font-medium text-sm text-start line-clamp-1">
-            {cleanExplaination}
-          </div>
-
           {/* Date */}
           <div className="text-gray-700 text-sm text-start">
             {formatDate(data?.reference_document?.from_date)}
@@ -166,7 +154,7 @@ const ApprovalCard = ({
           </div>
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
-              data?.status === "Pending" &&
+              data?.reference_document?.status === "Open" &&
               actions.map((action: string) => (
                 <Button
                   key={action}
@@ -225,7 +213,6 @@ const ApprovalCard = ({
                   </p>
                   <p className="text-sm text-gray-500">{data?.todo_id} </p>
                 </div>
-
                 <Badge
                   size="sm"
                   label={status?.label as string}
@@ -266,7 +253,7 @@ const ApprovalCard = ({
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length > 0 &&
-                  data?.status === "Pending" &&
+                  data?.reference_document?.status === "Open" &&
                   actions.map((action: string) => (
                     <Button
                       key={action}
@@ -300,4 +287,4 @@ const ApprovalCard = ({
   );
 };
 
-export default ApprovalCard;
+export default LeaveApprovalCard;

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, ReactNode, useCallback, useEffect } from "react";
 import DataListView from "../DataListView";
 import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
@@ -34,7 +33,7 @@ type ApprovalListProps = {
 
 const ApprovalList = ({
   doctype,
-  status = "Pending",
+  status,
   renderCardContent,
   pageSize,
   refetch,
@@ -77,7 +76,6 @@ const ApprovalList = ({
         handleChatClose
       );
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Toggle single
   const handleToggleSelect = (id: string) => {
@@ -111,63 +109,56 @@ const ApprovalList = ({
     }
   };
 
-  const handleAction = useCallback(
-    async (action: string, data: any) => {
-      try {
-        if (mutation?.isPending) return;
-        setLoadingAction({ id: data?.todo_id, action });
-        const response = await mutation?.mutateAsync({
-          action,
-          name: data?.todo_id || "",
-        });
+  const handleAction = useCallback(async (action: string, data: any) => {
+    try {
+      if (mutation?.isPending) return;
+      setLoadingAction({ id: data?.todo_id, action });
+      const response = await mutation?.mutateAsync({
+        action,
+        name: data?.todo_id || "",
+      });
 
-        console.log("Action response:", response);
-        const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
+      console.log("Action response:", response);
+      const responseWithSession = response as unknown as { session?: any };
+      console.log("Session data:", responseWithSession?.session);
+      console.log(
+        "Assistant trigger enabled:",
+        data?.custom_open_chatnext_assistant_on_action
+      );
+
+      if (
+        (data?.custom_approval_type === "Approval Matrix" &&
+          responseWithSession?.session) ||
+        (data?.custom_approval_type === "Multi Actions" &&
+          data?.custom_open_chatnext_assistant_on_action)
+      ) {
         console.log(
-          "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action
+          "Opening assistant with session:",
+          responseWithSession?.session
         );
 
-        if (
-          (data?.custom_approval_type === "Approval Matrix" &&
-            responseWithSession?.session) ||
-          (data?.custom_approval_type === "Multi Actions" &&
-            data?.custom_open_chatnext_assistant_on_action)
-        ) {
-          console.log(
-            "Opening assistant with session:",
-            responseWithSession?.session
-          );
-
-          if (window.trigger_chatnext_assistant) {
-            window.trigger_chatnext_assistant(
-              true,
-              responseWithSession?.session
-            );
-          }
-          if (action.toLowerCase() !== "approve") {
-            triggerRefetch();
-          }
-        } else {
+        if (window.trigger_chatnext_assistant) {
+          window.trigger_chatnext_assistant(true, responseWithSession?.session);
+        }
+        if (action.toLowerCase() !== "approve") {
           triggerRefetch();
         }
-        // Query invalidation now handled by Frappe realtime events
-      } catch (error: any) {
-        const exceptions = error?.response?.data?.exception?.split(":");
-        const errMessage =
-          exceptions?.length > 1
-            ? exceptions[1] + " " + exceptions[2]
-            : exceptions[1];
-        console.error("Action failed", error);
-        toast.error(errMessage);
-      } finally {
-        setLoadingAction(null);
+      } else {
+        triggerRefetch();
       }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+      // Query invalidation now handled by Frappe realtime events
+    } catch (error: any) {
+      const exceptions = error?.response?.data?.exception?.split(":");
+      const errMessage =
+        exceptions?.length > 1
+          ? exceptions[1] + " " + exceptions[2]
+          : exceptions[1];
+      console.error("Action failed", error);
+      toast.error(errMessage);
+    } finally {
+      setLoadingAction(null);
+    }
+  }, [mutation, setLoadingAction, triggerRefetch]);
 
   const batchActionMutation = useActionOnAttendanceRequest();
   const handleBulkAction = (action: "Approve" | "Reject") => {
@@ -224,13 +215,15 @@ const ApprovalList = ({
         onDataLoad={(data) => setAllRequests(data)}
         PreListComponent={() => (
           <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
-            <BulkActionBar
-              selectedIds={selectedIds}
-              pendingRequests={allRequests}
-              onSelectAll={handleSelectAll}
-              onBulkAction={handleBulkAction}
-              loadingAction={bulkLoading}
-            />
+            {(status === "Open" || status === "Pending") && (
+              <BulkActionBar
+                selectedIds={selectedIds}
+                pendingRequests={allRequests}
+                onSelectAll={handleSelectAll}
+                onBulkAction={handleBulkAction}
+                loadingAction={bulkLoading}
+              />
+            )}
           </div>
         )}
         ItemComponent={(props: { item: any }) => {

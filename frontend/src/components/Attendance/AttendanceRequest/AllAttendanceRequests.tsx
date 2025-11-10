@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import DataListView from "../../DataListView";
 import AttndanceRequestForm from "./AttendanceRequestForm";
-import { useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -9,8 +9,16 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import LayoutHeader from "../../shared/LayoutHeader";
+import HeaderBar from "../../HeaderBar";
+
+const ALL_STATUS_OPTIONS = [
+  { label: "Pending", value: "Pending" },
+  { label: "Approved", value: "Approved" },
+  { label: "Rejected", value: "Rejected" },
+  { label: "Cancelled", value: "Cancelled" },
+];
 
 const AllAttendanceRequest = ({
   pageSize = 10,
@@ -27,30 +35,26 @@ const AllAttendanceRequest = ({
     currentUser?.name as string
   );
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const location = useLocation();
 
-  // Get status type from route path
-  const statusType = location.pathname.includes("/actioned")
-    ? "actioned"
-    : "pending";
+  const [selectedStatus, setSelectedStatus] = useState("Pending");
 
-  const defaultFilters = useMemo(() => {
-    if (!currentEmployee?.employee) return undefined;
+  // Use useCallback to memoize the onRefetchComplete handler
+  const handleRefetchComplete = useCallback(() => {
+    setRefetchAttendance(false);
+  }, [setRefetchAttendance]);
 
-    const baseFilters = { employee: currentEmployee?.employee };
-
-    // Add status filter based on type
-    if (statusType === "pending") {
-      return { ...baseFilters, status: "Pending" };
-    } else if (statusType === "actioned") {
-      return { ...baseFilters, status: ["!=", "Pending"] };
-    }
-
-    return baseFilters;
-  }, [currentEmployee?.employee, statusType]);
+  // Handler for the dropdown change
+  const handleStatusChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      setSelectedStatus(event.target.value);
+      setRefetchAttendance(true); // Trigger refetch on filter change
+    },
+    [setRefetchAttendance]
+  );
 
   const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
+
   const CardSkeleton = () => (
     <div className="rounded-xl bg-gray-100 animate-pulse my-4">
       <div className="px-4 py-2">
@@ -64,16 +68,42 @@ const AllAttendanceRequest = ({
       </div>
     </div>
   );
+
+  // 5. Create the Filter Dropdown Component
+  const FilterDropdowns = () => (
+    <div className="flex items-center gap-2">
+      <select
+        value={selectedStatus}
+        onChange={handleStatusChange}
+        className="border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100"
+      >
+        {ALL_STATUS_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
     <>
       <LayoutHeader
-        tab={`${
-          statusType === "pending" ? "Pending" : "Actioned"
-        } Attendance Requests`}
+        tab={`My Attendance Requests`}
         onBack={() => {
           navigate(-1);
         }}
+        children={<FilterDropdowns />}
       />
+
+      {isDesktop && (
+        <HeaderBar
+          title={"My Attendance Requests"}
+          onBack={() => navigate(-1)}
+          rightSlot={<FilterDropdowns />}
+        ></HeaderBar>
+      )}
+
       {showForm ? (
         <AttndanceRequestForm
           onClose={() => {
@@ -83,42 +113,30 @@ const AllAttendanceRequest = ({
       ) : (
         <div className="bg-white h-full px-4 pt-2 mb-32">
           <CardTable
-            titles={
-              statusType === "pending"
-                ? [
-                    "Allocated To",
-                    "Request Type",
-                    "From Date",
-                    "To Date",
-                    "Due Date",
-                    "Status",
-                    "Actions",
-                  ]
-                : [
-                    "Allocated To",
-                    "Request Type",
-                    "From Date",
-                    "To Date",
-                    "Due Date",
-                    "Status",
-                  ]
-            }
+            titles={[
+              "Allocated To",
+              "Request Type",
+              "From Date",
+              "To Date",
+              "Due Date",
+              "Status",
+              "Actions",
+            ]}
           >
             <DataListView
-              queryKey={["attendance-requests", statusType]}
+              queryKey={["attendance-requests", selectedStatus]}
               customAPI={{
                 method: "cn_leave_shift_managment.api.get_open_approval_todos",
                 params: {
                   doctype: "Attendance Request",
                   employee: currentEmployee?.employee,
+                  status: selectedStatus,
                 },
               }}
-              defaultFilters={defaultFilters}
               ItemComponent={(props: { item: MyAttendanceRequest }) => {
                 return (
                   <EmpAttendanceRequestCard
-                    columns={statusType === "actioned" ? 6 : 7}
-                    type={statusType}
+                    type="pending"
                     data={{
                       ...props?.item,
                     }}
@@ -129,9 +147,7 @@ const AllAttendanceRequest = ({
               onItemClick={(data) => {
                 console.log(data);
               }}
-              onRefetchComplete={() => {
-                setRefetchAttendance(false);
-              }}
+              onRefetchComplete={handleRefetchComplete}
               refetchTrigger={refetchAttendance}
               isSearch={false}
               isFilter={false}

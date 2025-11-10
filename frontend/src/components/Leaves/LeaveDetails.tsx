@@ -8,16 +8,18 @@ import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
-import { ErrorView, LoadingView } from "../shared/DetailViewErrorLoadingWrapper";
+import {
+  ErrorView,
+  LoadingView,
+} from "../shared/DetailViewErrorLoadingWrapper";
 
 export function LeaveDetailView({
   documentName,
-  data : propsData,
+  data: propsData,
   onClose,
   onAction,
-  label = "Attendance Request",
+  label = "Leave Request",
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   documentName?: string;
   data?: any;
   onClose: () => void;
@@ -28,12 +30,11 @@ export function LeaveDetailView({
   const { setRefetchAttendance } = useGlobalStore();
 
   const {
-        data: fetchedData,
-        isLoading,
-        error,
-    } = useGetToDoWithReferenceDoc(documentName || "");
-  
-  
+    data: fetchedData,
+    isLoading,
+    error,
+  } = useGetToDoWithReferenceDoc(documentName || "");
+
   const data = documentName ? fetchedData : propsData;
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
@@ -111,7 +112,6 @@ export function LeaveDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-
   const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
@@ -157,11 +157,9 @@ export function LeaveDetailView({
     return "--/--/----";
   };
 
-    // Loading state
+  // Loading state
   if (isLoading && documentName) {
-    return (
-       <LoadingView onClose={onClose} label={label} />
-    );
+    return <LoadingView onClose={onClose} label={label} />;
   }
 
   // Error state
@@ -183,9 +181,7 @@ export function LeaveDetailView({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
-            <h2 className="text-lg font-semibold text-gray-800">
-              {label} 
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
           </div>
           <button
             onClick={onClose}
@@ -239,7 +235,7 @@ export function LeaveDetailView({
           <div className="py-4">
             <p className="text-sm  mb-2 font-bold">Reason</p>
 
-            {data?.reference_document?.reason}
+            {data?.reference_document?.custom_reason}
           </div>
           {/* explanation */}
           <div className="py-4">
