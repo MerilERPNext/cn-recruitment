@@ -166,6 +166,7 @@ const ApprovalCard = ({
           </div>
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
+              data?.status === "Pending" &&
               actions.map((action: string) => (
                 <Button
                   key={action}
@@ -227,8 +228,8 @@ const ApprovalCard = ({
 
                 <Badge
                   size="sm"
-                  label={data?.status}
-                  backgroundColor="bg-yellow-100 text-yellow-600"
+                  label={status?.label as string}
+                  backgroundColor={status?.statusColor}
                 />
               </div>
               <div className="my-2 py-2">
@@ -265,6 +266,7 @@ const ApprovalCard = ({
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length > 0 &&
+                  data?.status === "Pending" &&
                   actions.map((action: string) => (
                     <Button
                       key={action}

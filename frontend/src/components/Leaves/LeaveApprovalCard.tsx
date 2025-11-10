@@ -99,7 +99,7 @@ const LeaveApprovalCard = ({
       statusColor: "bg-gray-100 text-gray-600",
     };
   };
-  const status = getStatus(data?.status);
+  const status = getStatus(data?.reference_document?.status);
   const gridTemplateColumns = isBulkSelectEnabled
     ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr"
     : "1.5fr 1fr 1fr 1fr 1fr 1fr";
@@ -154,7 +154,7 @@ const LeaveApprovalCard = ({
           </div>
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
-              data?.todo_status === "Open" &&
+              data?.reference_document?.status === "Open" &&
               actions.map((action: string) => (
                 <Button
                   key={action}
@@ -253,6 +253,7 @@ const LeaveApprovalCard = ({
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length > 0 &&
+                  data?.reference_document?.status === "Open" &&
                   actions.map((action: string) => (
                     <Button
                       key={action}

@@ -128,7 +128,7 @@ const AttendanceRequest = ({
                 >
                   {currentEmployee?.employee ? (
                     <DataListView
-                      queryKey={["attendance-requests", "selectedStatus"]}
+                      queryKey={["attendance-requests", selectedStatus]}
                       customAPI={{
                         method:
                           "cn_leave_shift_managment.api.get_open_approval_todos",

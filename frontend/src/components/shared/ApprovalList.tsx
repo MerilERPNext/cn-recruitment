@@ -25,7 +25,7 @@ type ApprovalListProps = {
   }) => ReactNode;
   refetch?: boolean;
   setRefetch?: (value: boolean) => void;
-  status?: string;
+  status: string;
   pageSize?: number;
   showPagination?: boolean;
   onApprovalRefetchComplete?: () => void;
@@ -158,7 +158,7 @@ const ApprovalList = ({
     } finally {
       setLoadingAction(null);
     }
-  }, []);
+  }, [mutation, setLoadingAction, triggerRefetch]);
 
   const batchActionMutation = useActionOnAttendanceRequest();
   const handleBulkAction = (action: "Approve" | "Reject") => {

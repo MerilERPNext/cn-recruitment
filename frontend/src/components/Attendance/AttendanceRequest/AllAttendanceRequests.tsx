@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import DataListView from "../../DataListView";
 import AttndanceRequestForm from "./AttendanceRequestForm";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -9,7 +9,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import LayoutHeader from "../../shared/LayoutHeader";
 import HeaderBar from "../../HeaderBar";
 
@@ -35,26 +35,13 @@ const AllAttendanceRequest = ({
     currentUser?.name as string
   );
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const location = useLocation();
-
-  // Get status type from route path
-  const statusType = location.pathname.includes("/actioned")
-    ? "actioned"
-    : "pending";
 
   const [selectedStatus, setSelectedStatus] = useState("Pending");
-  const defaultFilters = useMemo(() => {
-    if (!currentEmployee?.employee) return undefined;
 
-    const baseFilters = { employee: currentEmployee?.employee };
-
-    // If a status is selected, use it. Otherwise, rely on the statusType logic.
-    if (selectedStatus) {
-      return { ...baseFilters, status: selectedStatus };
-    }
-
-    return baseFilters;
-  }, [currentEmployee?.employee, selectedStatus]);
+  // Use useCallback to memoize the onRefetchComplete handler
+  const handleRefetchComplete = useCallback(() => {
+    setRefetchAttendance(false);
+  }, [setRefetchAttendance]);
 
   // Handler for the dropdown change
   const handleStatusChange = useCallback(
@@ -67,6 +54,7 @@ const AllAttendanceRequest = ({
 
   const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
+
   const CardSkeleton = () => (
     <div className="rounded-xl bg-gray-100 animate-pulse my-4">
       <div className="px-4 py-2">
@@ -125,26 +113,15 @@ const AllAttendanceRequest = ({
       ) : (
         <div className="bg-white h-full px-4 pt-2 mb-32">
           <CardTable
-            titles={
-              statusType === "pending"
-                ? [
-                    "Allocated To",
-                    "Request Type",
-                    "From Date",
-                    "To Date",
-                    "Due Date",
-                    "Status",
-                    "Actions",
-                  ]
-                : [
-                    "Allocated To",
-                    "Request Type",
-                    "From Date",
-                    "To Date",
-                    "Due Date",
-                    "Status",
-                  ]
-            }
+            titles={[
+              "Allocated To",
+              "Request Type",
+              "From Date",
+              "To Date",
+              "Due Date",
+              "Status",
+              "Actions",
+            ]}
           >
             <DataListView
               queryKey={["attendance-requests", selectedStatus]}
@@ -153,14 +130,13 @@ const AllAttendanceRequest = ({
                 params: {
                   doctype: "Attendance Request",
                   employee: currentEmployee?.employee,
+                  status: selectedStatus,
                 },
               }}
-              defaultFilters={defaultFilters}
               ItemComponent={(props: { item: MyAttendanceRequest }) => {
                 return (
                   <EmpAttendanceRequestCard
-                    columns={statusType === "actioned" ? 6 : 7}
-                    type={statusType}
+                    type="pending"
                     data={{
                       ...props?.item,
                     }}
@@ -171,9 +147,7 @@ const AllAttendanceRequest = ({
               onItemClick={(data) => {
                 console.log(data);
               }}
-              onRefetchComplete={() => {
-                setRefetchAttendance(false);
-              }}
+              onRefetchComplete={handleRefetchComplete}
               refetchTrigger={refetchAttendance}
               isSearch={false}
               isFilter={false}
