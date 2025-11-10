@@ -29,8 +29,8 @@ export function TeamExpenseDetailView({
   onAction?: () => void;
   label?: string;
 }) {
-  const bulkMutation = useExpenseApproval(); // For bulk actions
-  const singleMutation = useExpenseSingleItemApproval(); // For single item actions
+  const bulkMutation = useExpenseApproval();
+  const singleMutation = useExpenseSingleItemApproval();
   const { setRefetchAttendance } = useGlobalStore();
 
   const {
@@ -42,14 +42,11 @@ export function TeamExpenseDetailView({
   const data = documentName ? fetchedData : propsData;
   const ref = data?.reference_document || {};
 
-  // Get claim_id from reference document
   const claimId = ref?.name || data?.reference_name || "";
 
-  // Initialize state with empty array
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [expenseItems, setExpenseItems] = useState<any[]>([]);
 
-  // Update expenseItems when data becomes available
   useEffect(() => {
     if (ref?.expenses && Array.isArray(ref.expenses)) {
       setExpenseItems(
@@ -117,7 +114,6 @@ export function TeamExpenseDetailView({
   const formatINR = (value?: number | null) =>
     typeof value === "number" ? value.toFixed(2) : "0.00";
 
-  // Toggle selection
   const toggleSelection = (itemId: string) => {
     setExpenseItems((prev) =>
       prev.map((item) =>
@@ -126,7 +122,6 @@ export function TeamExpenseDetailView({
     );
   };
 
-  // Toggle all selections
   const toggleSelectAll = () => {
     const allSelected = expenseItems.every((item) => item.selected);
     setExpenseItems((prev) =>
@@ -134,7 +129,6 @@ export function TeamExpenseDetailView({
     );
   };
 
-  // Update sanctioned amount
   const updateSanctionedAmount = (itemId: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     setExpenseItems((prev) =>
@@ -144,7 +138,6 @@ export function TeamExpenseDetailView({
     );
   };
 
-  // Update comment
   const updateComment = (itemId: string, value: string) => {
     setExpenseItems((prev) =>
       prev.map((item) =>
@@ -153,7 +146,6 @@ export function TeamExpenseDetailView({
     );
   };
 
-  // Handle individual item action
   const handleItemAction = async (
     itemId: string,
     action: "Approve" | "Reject"
@@ -172,13 +164,12 @@ export function TeamExpenseDetailView({
     try {
       await singleMutation.mutateAsync({
         claimId,
-        itemName: item.name, // Use the actual line item name
+        itemName: item.name,
         sanctionedAmount: item.sanctionedAmount,
         comments: item.comment,
         status: action,
       });
 
-      // Update UI or refetch data
       setTimeout(() => {
         setRefetchAttendance(true);
       }, 2000);
@@ -193,7 +184,6 @@ export function TeamExpenseDetailView({
     }
   };
 
-  // Handle bulk action
   const handleBulkAction = async (action: "Approve" | "Reject") => {
     const selectedItems = expenseItems.filter((item) => item.selected);
 
@@ -202,7 +192,6 @@ export function TeamExpenseDetailView({
       return;
     }
 
-    // Check all selected items have comments
     const missingComments = selectedItems.some((item) => !item.comment.trim());
     if (missingComments) {
       toast.error("All selected items must have comments");
@@ -215,7 +204,7 @@ export function TeamExpenseDetailView({
       const payload = {
         claim_id: claimId,
         line_items: selectedItems.map((item) => ({
-          name: item.name, // Use the actual line item name
+          name: item.name,
           sanctioned_amount:
             action === "Approve" ? item.sanctionedAmount : undefined,
           comments: item.comment,
@@ -239,7 +228,6 @@ export function TeamExpenseDetailView({
     }
   };
 
-  // Calculate totals
   const nonReimbursableAmount = 0;
   const totalToBeReimbursed = expenseItems.reduce(
     (sum, item) => sum + item.sanctionedAmount,
@@ -247,12 +235,10 @@ export function TeamExpenseDetailView({
   );
   const totalAmount = totalToBeReimbursed;
 
-  // Loading state
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
   }
 
-  // Error state
   if (error && documentName) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
@@ -271,7 +257,6 @@ export function TeamExpenseDetailView({
         className="w-full h-full md:h-auto md:max-w-4xl md:max-h-[90vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
           <div className="flex gap-2 items-center">
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
@@ -293,7 +278,6 @@ export function TeamExpenseDetailView({
           </button>
         </div>
 
-        {/* Status and Due Date */}
         <div className="px-6 py-3 bg-gray-50 border-b">
           <div className="flex items-center gap-4">
             <Badge
@@ -313,40 +297,41 @@ export function TeamExpenseDetailView({
           </div>
         </div>
 
-        {/* Bulk Actions */}
-        <div className="px-6 py-3 border-b bg-white flex items-center gap-3">
-          <input
-            type="checkbox"
-            checked={allSelected}
-            onChange={toggleSelectAll}
-            className="w-4 h-4 rounded border-gray-300"
-          />
-          <span className="text-sm font-medium text-gray-700">Select All</span>
-          <div className="flex gap-2 ml-auto">
-            <Button
-              onClick={() => handleBulkAction("Approve")}
-              disabled={bulkMutation.isPending || currentAction === "Approve"}
-              size="sm"
-              bgColor="green-100"
-              textColor="green-600"
-            >
-              {currentAction === "Approve" ? "Processing..." : "Bulk Approve"}
-            </Button>
-            <Button
-              onClick={() => handleBulkAction("Reject")}
-              disabled={bulkMutation.isPending || currentAction === "Reject"}
-              size="sm"
-              bgColor="red-100"
-              textColor="red-600"
-            >
-              {currentAction === "Reject" ? "Processing..." : "Bulk Reject"}
-            </Button>
+        {statusSource !== "Approved" && statusSource !== "Rejected" && (
+          <div className="px-6 py-3 border-b bg-white flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              className="w-4 h-4 rounded border-gray-300"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Select All
+            </span>
+            <div className="flex gap-2 ml-auto">
+              <Button
+                onClick={() => handleBulkAction("Approve")}
+                disabled={bulkMutation.isPending || currentAction === "Approve"}
+                size="sm"
+                bgColor="green-100"
+                textColor="green-600"
+              >
+                {currentAction === "Approve" ? "Processing..." : "Bulk Approve"}
+              </Button>
+              <Button
+                onClick={() => handleBulkAction("Reject")}
+                disabled={bulkMutation.isPending || currentAction === "Reject"}
+                size="sm"
+                bgColor="red-100"
+                textColor="red-600"
+              >
+                {currentAction === "Reject" ? "Processing..." : "Bulk Reject"}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {/* Report Details */}
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <h3 className="text-sm font-semibold text-gray-700 mb-2">
               Report Details
@@ -361,7 +346,6 @@ export function TeamExpenseDetailView({
             </div>
           </div>
 
-          {/* Expense Items */}
           {expenseItems.length > 0 ? (
             expenseItems.map((item) => (
               <div
@@ -377,7 +361,6 @@ export function TeamExpenseDetailView({
                   />
 
                   <div className="flex-1">
-                    {/* Date and Amount Header */}
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
@@ -391,7 +374,6 @@ export function TeamExpenseDetailView({
                       </div>
                     </div>
 
-                    {/* Expense Type */}
                     <div className="mb-3">
                       <p className="text-xs text-gray-500 uppercase mb-1">
                         EXPENSE TYPE
@@ -401,7 +383,6 @@ export function TeamExpenseDetailView({
                       </p>
                     </div>
 
-                    {/* Description */}
                     {item.description && (
                       <div className="mb-3">
                         <p className="text-xs text-gray-500 uppercase mb-1">
@@ -413,7 +394,6 @@ export function TeamExpenseDetailView({
                       </div>
                     )}
 
-                    {/* Additional Details */}
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <div>
                         <p className="text-xs text-gray-500 mb-1">
@@ -433,7 +413,6 @@ export function TeamExpenseDetailView({
                       </div>
                     </div>
 
-                    {/* Documents */}
                     {item.custom_attach_receipt && (
                       <div className="mb-3">
                         <p className="text-xs text-gray-500 uppercase mb-1">
@@ -450,7 +429,6 @@ export function TeamExpenseDetailView({
                       </div>
                     )}
 
-                    {/* Sanctioned Amount Input */}
                     <div className="mb-3">
                       <label className="text-xs text-gray-500 uppercase mb-1 block">
                         SANCTIONED AMOUNT (INR) *
@@ -467,7 +445,6 @@ export function TeamExpenseDetailView({
                       />
                     </div>
 
-                    {/* Comment Field */}
                     <div className="mb-3">
                       <label className="text-xs text-gray-500 uppercase mb-1 block">
                         COMMENT *
@@ -481,39 +458,40 @@ export function TeamExpenseDetailView({
                       />
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleItemAction(item.id, "Approve")}
-                        disabled={
-                          processingItemId === item.id || !item.comment.trim()
-                        }
-                        size="sm"
-                        bgColor="green-100"
-                        textColor="green-600"
-                      >
-                        {processingItemId === item.id ? (
-                          <span className="inline-block w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          "Approve"
-                        )}
-                      </Button>
-                      <Button
-                        onClick={() => handleItemAction(item.id, "Reject")}
-                        disabled={
-                          processingItemId === item.id || !item.comment.trim()
-                        }
-                        size="sm"
-                        bgColor="red-100"
-                        textColor="red-600"
-                      >
-                        {processingItemId === item.id ? (
-                          <span className="inline-block w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          "Reject"
-                        )}
-                      </Button>
-                    </div>
+                    {item?.custom_approval_staus === "" && (
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleItemAction(item.id, "Approve")}
+                          disabled={
+                            processingItemId === item.id || !item.comment.trim()
+                          }
+                          size="sm"
+                          bgColor="green-100"
+                          textColor="green-600"
+                        >
+                          {processingItemId === item.id ? (
+                            <span className="inline-block w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            "Approve"
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => handleItemAction(item.id, "Reject")}
+                          disabled={
+                            processingItemId === item.id || !item.comment.trim()
+                          }
+                          size="sm"
+                          bgColor="red-100"
+                          textColor="red-600"
+                        >
+                          {processingItemId === item.id ? (
+                            <span className="inline-block w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            "Reject"
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -525,7 +503,6 @@ export function TeamExpenseDetailView({
           )}
         </div>
 
-        {/* Footer - Summary */}
         <div className="border-t bg-white px-6 py-4">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">

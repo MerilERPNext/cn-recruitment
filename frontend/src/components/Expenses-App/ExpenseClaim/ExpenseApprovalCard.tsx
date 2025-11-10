@@ -163,7 +163,8 @@ const ExpenseApprovalCard = ({
           </div>
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
-              data?.reference_document?.status === "Draft" &&
+              data?.status !== "Approved" &&
+              data?.status !== "Rejected" &&
               actions.map((action: string) => (
                 <Button
                   key={action}
