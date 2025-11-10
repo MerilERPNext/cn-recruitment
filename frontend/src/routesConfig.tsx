@@ -15,6 +15,7 @@ import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
+import AllTeamClaimRequests from "./components/Expenses-App/ExpenseClaim/AllTeamClaimRequests";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -92,6 +93,10 @@ const ExpensesApp = lazyWithRetry(
 const ExpensesList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseClaim/ExpensesList"),
   "ExpensesList"
+);
+const TeamExpense = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpenseClaim/TeamExpense"),
+  "TeamExpense"
 );
 const AdvanceExpenseList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseAdvance/AdvanceExpenseList"),
@@ -532,6 +537,8 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "expenses-list", element: <ExpensesList /> },
       { path: "add-expense", element: <AddExpenseForm /> },
+      { path: "team-requests", element: <TeamExpense /> },
+      { path: "team-requests/all", element: <AllTeamClaimRequests /> },
       { path: "advance-expense-list", element: <AdvanceExpenseList /> },
     ],
   },

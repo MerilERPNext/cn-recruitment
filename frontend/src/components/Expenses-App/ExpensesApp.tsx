@@ -7,10 +7,11 @@ import ExpenseFormModal from "./ExpenseFormModal";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import ExpenseAdvanceForm from "./ExpenseAdvance/ExpenseAdvanceForm";
 
-type TabName = "Expenses" | "Advances";
+type TabName = "Expenses" | "Team" | "Advances";
 
 const tabRoutes: Record<TabName, string> = {
   Expenses: "/webapp/expenses-app/expenses-list",
+  Team: "/webapp/expenses-app/team-requests",
   Advances: "/webapp/expenses-app/advance-expense-list",
 };
 
@@ -53,6 +54,10 @@ const ExpensesApp: React.FC = () => {
   };
 
   const isFormActive = location.pathname === "/webapp/expenses-app/add-expense";
+  const isTeamRequests =
+    location.pathname === "/webapp/expenses-app/team-requests";
+  const isTeamRequestsAll =
+    location.pathname === "/webapp/expenses-app/team-requests/all";
 
   const handleAddNew = () => {
     if (activeTab === "Expenses") {
@@ -127,7 +132,7 @@ const ExpensesApp: React.FC = () => {
         <Outlet />
       </main>
 
-      {!isFormActive && (
+      {!isFormActive && !isTeamRequests && !isTeamRequestsAll && (
         <div className="sticky mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
           <div className="max-w-4xl mx-auto flex space-x-4">
             <button
@@ -143,14 +148,15 @@ const ExpensesApp: React.FC = () => {
   );
 
   // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
-  const actionButton = !isFormActive ? (
-    <button
-      onClick={handleAddNew}
-      className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
-    >
-      {activeTab === "Expenses" ? "+ Add Expense" : "+ Add Advance"}
-    </button>
-  ) : null;
+  const actionButton =
+    !isFormActive && !isTeamRequests && !isTeamRequestsAll ? (
+      <button
+        onClick={handleAddNew}
+        className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
+      >
+        {activeTab === "Expenses" ? "+ Add Expense" : "+ Add Advance"}
+      </button>
+    ) : null;
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Expenses" actionButton={actionButton}>

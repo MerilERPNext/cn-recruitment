@@ -256,13 +256,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/expenses-app/expenses-list",
         },
         {
+          name: "Team Requests",
+          icon: DollarSign,
+          href: "/webapp/expenses-app/team-requests",
+        },
+        {
           name: "Advance Expenses",
           icon: ArrowUpDown,
           href: "/webapp/expenses-app/advance-expense-list",
         },
       ],
     },
-      {
+    {
       icon: Workflow,
       label: "Flows",
       path: "/webapp/flow-app",
@@ -273,18 +278,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/flow-app/flow-requests",
         },
         {
-        name: "Separation",
-        icon: SeparatorHorizontal,
-        href: "/webapp/flow-app/separation",
-      },
+          name: "Separation",
+          icon: SeparatorHorizontal,
+          href: "/webapp/flow-app/separation",
+        },
         {
           name: "Confirmation",
           icon: CircleCheckBig,
           href: "/webapp/flow-app/confirmation",
-        }
-      ]
-      },
-       {
+        },
+      ],
+    },
+    {
       icon: ChartNoAxesCombined,
       label: "Performance",
       path: "/webapp/performance-app",
@@ -295,12 +300,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/performance-app/overview",
         },
         {
-        name: "New Goal Plan",
-        icon: Goal,
-        href: "/webapp/performance-app/new-goal-plan",
-      }
-      ]
-      },
+          name: "New Goal Plan",
+          icon: Goal,
+          href: "/webapp/performance-app/new-goal-plan",
+        },
+      ],
+    },
+
     {
       icon: Shield,
       label: "Policies",
