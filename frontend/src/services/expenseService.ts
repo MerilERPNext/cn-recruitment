@@ -12,6 +12,23 @@ export interface PerMileageUnitRateResponse {
   // other keys if any
 }
 
+export interface ExpenseLineItem {
+  name: string;
+  sanctioned_amount?: number;
+  comments: string;
+  status: "Approve" | "Reject";
+}
+
+// export interface ExpenseApprovalPayload {
+//   claim_id: string;
+//   line_items: ExpenseLineItem[];
+// }
+
+export interface ExpenseApprovalPayload extends Record<string, unknown> {
+  claim_id: string;
+  line_items: ExpenseLineItem[];
+}
+
 export const expenseService = {
   getExpensesTypes: async (filters: FilterCondition[]): Promise<any> => {
     const response = await FrappeAPI.getDocumentList("Expense Claim Type", {
@@ -125,5 +142,57 @@ export const expenseService = {
     );
 
     return response as PerMileageUnitRateResponse;
+  },
+
+  //Approve or reject line expense
+  approveRejectLineItems: async (
+    payload: ExpenseApprovalPayload
+  ): Promise<any> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_expense_trips.expense_claim.approve_reject_line_items",
+        payload
+      );
+      return response;
+    } catch (error) {
+      console.error("📡 Error while approving/rejecting expense items:", error);
+      throw error;
+    }
+  },
+
+  // Optional: Single item approval/rejection
+  approveSingleItem: async (
+    claimId: string,
+    itemName: string,
+    sanctionedAmount: number,
+    comments: string,
+    status: "Approve" | "Reject"
+  ): Promise<any> => {
+    try {
+      const payload: ExpenseApprovalPayload = {
+        claim_id: claimId,
+        line_items: [
+          {
+            name: itemName,
+            sanctioned_amount:
+              status === "Approve" ? sanctionedAmount : undefined,
+            comments,
+            status,
+          },
+        ],
+      };
+
+      const response = await FrappeAPI.callMethod(
+        "chatnext_expense_trips.expense_claim.approve_reject_line_items",
+        payload
+      );
+      return response;
+    } catch (error) {
+      console.error(
+        "📡 Error while approving/rejecting single expense item:",
+        error
+      );
+      throw error;
+    }
   },
 };

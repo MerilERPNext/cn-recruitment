@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Employee } from "../../../types/employee";
+import SearchableSelect from "../../shared/SearchableSelect";
 
 export interface ParticipantRow {
   employee_type?: string;
@@ -545,27 +546,23 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                       />
                     ) : row.employee_type === "Employee" ? (
                       employeeOptionsLoading ? (
-                        <select
+                        <input
+                          type="text"
                           disabled
-                          className="w-full p-1 border rounded text-sm"
-                        >
-                          <option>Loading...</option>
-                        </select>
+                          value="Loading..."
+                          className="w-full p-1 border rounded text-sm bg-gray-100"
+                        />
                       ) : optionsSource && optionsSource.length > 0 ? (
-                        <select
+                        <SearchableSelect
+                          options={optionsSource.map((opt) => ({
+                            value: opt.name,
+                            label: opt.employee_name ?? opt.name,
+                          }))}
                           value={row.name || ""}
-                          onChange={(e) =>
-                            updateRow(i, { name: e.target.value })
-                          }
-                          className="w-full p-1 border rounded text-sm"
-                        >
-                          <option value="">Select employee</option>
-                          {optionsSource.map((opt) => (
-                            <option key={opt.name} value={opt.name}>
-                              {opt.employee_name ?? opt.name}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(value) => updateRow(i, { name: value })}
+                          placeholder="Search employee..."
+                          disabled={false}
+                        />
                       ) : (
                         <input
                           type="text"

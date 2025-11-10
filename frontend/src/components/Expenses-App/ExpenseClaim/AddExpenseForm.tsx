@@ -127,7 +127,6 @@ const AddExpenseForm: React.FC = () => {
     }
 
     setDynamicFormData({});
-    // setDynamicFormData((prev: any) => prev ?? {});
     setDynamicFields([]);
     setCalcParams(undefined);
     setFormKey((k) => k + 1);
@@ -183,6 +182,7 @@ const AddExpenseForm: React.FC = () => {
     }
     return [];
   }, [editingExpenseId, expenses, dynamicFormData]);
+
   const formSchema = useMemo(
     () => ({
       display: "form",
@@ -646,6 +646,17 @@ const AddExpenseForm: React.FC = () => {
     };
   }, [isSharePanelOpen]);
 
+  // NEW: Reset checkbox when sidebar closes
+  useEffect(() => {
+    if (!isSharePanelOpen) {
+      // Uncheck the checkbox in the form data
+      setDynamicFormData((prev: any) => ({
+        ...prev,
+        shareExpenseCheckbox: false,
+      }));
+    }
+  }, [isSharePanelOpen]);
+
   const submitAll = () => {
     const participantsForClaim: any[] =
       (dynamicFormData?.participants &&
@@ -775,6 +786,21 @@ const AddExpenseForm: React.FC = () => {
                     if (isMobile) {
                       return [
                         ...dynamicFields.map((comp) => comp),
+                        // Checkbox before Save button (mobile)
+                        ...(isShareAllowed
+                          ? [
+                              {
+                                type: "checkbox",
+                                key: "shareExpenseCheckbox",
+                                label: "Share Expense",
+                                customClass: "mt-4",
+                                disabled:
+                                  isCalculating ||
+                                  !(dynamicFormData?.amount > 0),
+                                input: true,
+                              },
+                            ]
+                          : []),
                         {
                           type: "button",
                           action: "submit",
@@ -787,6 +813,7 @@ const AddExpenseForm: React.FC = () => {
                       ];
                     }
 
+                    // Desktop layout
                     return [
                       {
                         type: "columns",
@@ -804,13 +831,54 @@ const AddExpenseForm: React.FC = () => {
                           },
                         ],
                       },
+                      // Checkbox and button row for desktop
                       {
-                        type: "button",
-                        action: "submit",
-                        label: isCalculating ? "Calculating..." : "Save",
-                        theme: "primary",
-                        key: "submitButton",
+                        type: "columns",
+                        key: "actionsRow",
                         customClass: "mt-4",
+                        columns: [
+                          ...(isShareAllowed
+                            ? [
+                                {
+                                  width: 6,
+                                  components: [
+                                    {
+                                      type: "checkbox",
+                                      key: "shareExpenseCheckbox",
+                                      label: "Share Expense",
+                                      disabled:
+                                        isCalculating ||
+                                        !(
+                                          (editingExpenseId
+                                            ? expenses.find(
+                                                (x) =>
+                                                  x.uid === editingExpenseId
+                                              )?.amount ??
+                                              dynamicFormData?.amount
+                                            : dynamicFormData?.amount) > 0
+                                        ),
+                                      input: true,
+                                    },
+                                  ],
+                                },
+                              ]
+                            : []),
+                          {
+                            width: isShareAllowed ? 6 : 12,
+                            components: [
+                              {
+                                type: "button",
+                                action: "submit",
+                                label: isCalculating
+                                  ? "Calculating..."
+                                  : "Save",
+                                theme: "primary",
+                                key: "submitButton",
+                                disabled: isCalculating,
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ];
                   })(),
@@ -924,6 +992,10 @@ const AddExpenseForm: React.FC = () => {
                   } else {
                     setExpenses((prev) => [...prev, newExpense]);
                   }
+
+                  // NEW: Uncheck checkbox and close drawer on save
+                  setIsSharePanelOpen(false);
+
                   setEditingExpenseId(null);
                   formRef.current?.reset();
                   dynamicFormRef.current?.reset();
@@ -935,6 +1007,12 @@ const AddExpenseForm: React.FC = () => {
                 }}
                 onChange={(change: any) => {
                   setDynamicFormData(change.data);
+
+                  // Handle share checkbox state
+                  if (change.data?.shareExpenseCheckbox !== undefined) {
+                    setIsSharePanelOpen(change.data.shareExpenseCheckbox);
+                  }
+
                   if (change.data?.vehicle_type) {
                     setVehicleType(change.data.vehicle_type);
                   }
@@ -1045,37 +1123,9 @@ const AddExpenseForm: React.FC = () => {
                   </div>
                 </div>
               )}
-
-              <div className="mt-4 flex gap-2">
-                {isShareAllowed && (
-                  <button
-                    type="button"
-                    onClick={() => setIsSharePanelOpen(true)}
-                    className={`font-semibold px-4 py-2 rounded 
-                            ${
-                              (editingExpenseId
-                                ? expenses.find(
-                                    (x) => x.uid === editingExpenseId
-                                  )?.amount ?? dynamicFormData?.amount
-                                : dynamicFormData?.amount) > 0
-                                ? "bg-blue-600 text-white hover:bg-blue-700"
-                                : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                            }`}
-                    disabled={
-                      !(
-                        (editingExpenseId
-                          ? expenses.find((x) => x.uid === editingExpenseId)
-                              ?.amount ?? dynamicFormData?.amount
-                          : dynamicFormData?.amount) > 0
-                      )
-                    }
-                  >
-                    Add Share
-                  </button>
-                )}
-              </div>
             </div>
           )}
+
           {expenses.length > 0 && (
             <div className="mt-8">
               {failedExpenseUids.size > 0 && (

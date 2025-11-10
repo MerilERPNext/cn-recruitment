@@ -107,3 +107,22 @@ async function set_actual_last_working_date(frm) {
         }
     }
 }
+
+
+// frappe.ui.form.on('Employee Separation', {
+//     onload_post_render(frm) {
+//         if (frm.doc.name && !frm.__form_conversations_loaded) {
+//             frm.__form_conversations_loaded = true;
+//             frappe.call({
+//                 method: "recruitment.customizations.employee_separation.employee_separation.get_dynamic_conversation_html",
+//                 args: { docname: frm.doc.name },
+//                 callback: function (r) {
+//                     if (r.message) {
+//                         frm.fields_dict['custom_form_details'].html(r.message);
+//                     }
+//                 }
+//             });
+//         }
+//     }
+// });
+

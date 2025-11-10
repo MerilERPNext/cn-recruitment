@@ -29,6 +29,12 @@
   "process_details_tab",
   "section_break_acgw",
   "workflow_configuration",
+  "section_break_udsn",
+  "confirmation_workflow",
+  "confirmation_extension_workflow",
+  "column_break_qbus",
+  "confirmation_form",
+  "confirmation_extension_form",
   "notification_and_advanced_settings_tab",
   "letter_configuration",
   "section_break_lgfk",
@@ -179,12 +185,44 @@
    "fieldtype": "Table",
    "label": "Notification Configuration",
    "options": "Notification Configuration Table"
+  },
+  {
+   "fieldname": "confirmation_workflow",
+   "fieldtype": "Link",
+   "label": "Confirmation Workflow",
+   "options": "Approval Policy Matrix"
+  },
+  {
+   "fieldname": "confirmation_extension_workflow",
+   "fieldtype": "Link",
+   "label": "Confirmation Extension Workflow",
+   "options": "Approval Policy Matrix"
+  },
+  {
+   "fieldname": "section_break_udsn",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_qbus",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "confirmation_form",
+   "fieldtype": "Link",
+   "label": "Confirmation Form",
+   "options": "Microapp Form Widget"
+  },
+  {
+   "fieldname": "confirmation_extension_form",
+   "fieldtype": "Link",
+   "label": "Confirmation Extension Form",
+   "options": "Microapp Form Widget"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-17 12:30:14.466145",
+ "modified": "2025-11-04 17:18:58.643270",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Confirmation Policy",
