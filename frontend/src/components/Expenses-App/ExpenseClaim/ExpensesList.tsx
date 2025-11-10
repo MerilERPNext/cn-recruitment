@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React from "react";
 import CardTable from "../../shared/CardTable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -252,10 +252,6 @@ const ExpensesList: React.FC = () => {
     employee: currentEmployee?.name,
     ...(selectedStatus && { status: selectedStatus }),
   };
-
-  React.useEffect(() => {
-    console.debug("[ExpensesList] selectedId changed:", selectedId);
-  }, [selectedId]);
 
   return (
     <div
