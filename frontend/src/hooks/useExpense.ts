@@ -6,6 +6,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
+  ExpenseApprovalPayload,
   expenseService,
   PerMileageUnitRateResponse,
 } from "../services/expenseService";
@@ -107,7 +108,9 @@ export function usePostExpenseClaim() {
         state: { refresh: true },
       });
 
-      queryClient.invalidateQueries({ queryKey: ["employee-expense-claim"] });
+      queryClient.invalidateQueries({
+        queryKey: ["expense-claims"],
+      });
     },
     onError: handleError,
   });
@@ -168,3 +171,105 @@ export const useGetUnitPrice = (
     retry: 1,
   });
 };
+
+//Expense approval hooks
+export function useExpenseApproval() {
+  const queryClient = useQueryClient();
+  const handleError = (err: any) => {
+    let errorMsg = "Submission failed. Please try again.";
+    try {
+      const raw = err?.response?.data?._server_messages;
+      if (raw) {
+        const messages = JSON.parse(raw);
+        if (Array.isArray(messages) && messages.length > 0) {
+          const firstMessage = JSON.parse(messages[0]);
+          if (firstMessage?.message) {
+            errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
+          }
+        }
+      } else if (err?.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err?.message) {
+        errorMsg = err.message;
+      }
+    } catch (e) {
+      console.error("Failed to parse server error message:", e);
+    }
+
+    toast.error(errorMsg);
+  };
+  return useMutation({
+    mutationFn: async (payload: ExpenseApprovalPayload) =>
+      expenseService.approveRejectLineItems(payload),
+    onSuccess: () => {
+      toast.success("Expense claim updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
+      queryClient.invalidateQueries({ queryKey: ["todo"] });
+    },
+    onError: (error) => {
+      handleError(error);
+      console.error("Expense approval/rejection failed:", error);
+    },
+  });
+}
+
+// Hook for single item approval/rejection
+export function useExpenseSingleItemApproval() {
+  const queryClient = useQueryClient();
+  const handleError = (err: any) => {
+    let errorMsg = "Submission failed. Please try again.";
+    try {
+      const raw = err?.response?.data?._server_messages;
+      if (raw) {
+        const messages = JSON.parse(raw);
+        if (Array.isArray(messages) && messages.length > 0) {
+          const firstMessage = JSON.parse(messages[0]);
+          if (firstMessage?.message) {
+            errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
+          }
+        }
+      } else if (err?.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err?.message) {
+        errorMsg = err.message;
+      }
+    } catch (e) {
+      console.error("Failed to parse server error message:", e);
+    }
+
+    toast.error(errorMsg);
+  };
+  return useMutation({
+    mutationFn: async ({
+      claimId,
+      itemName,
+      sanctionedAmount,
+      comments,
+      status,
+    }: {
+      claimId: string;
+      itemName: string;
+      sanctionedAmount: number;
+      comments: string;
+      status: "Approve" | "Reject";
+    }) =>
+      expenseService.approveSingleItem(
+        claimId,
+        itemName,
+        sanctionedAmount,
+        comments,
+        status
+      ),
+    onSuccess: () => {
+      toast.success("Expense claim updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
+      queryClient.invalidateQueries({ queryKey: ["todo"] });
+    },
+    onError: (error) => {
+      handleError(error);
+      console.error("Single item approval/rejection failed:", error);
+    },
+  });
+}
