@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useEffect, useState } from "react";
 import { useEmployeeDocument } from "../../hooks/useEmployeeDocuments";
 
@@ -40,7 +41,7 @@ const DocumentLibrary = () => {
       doc.status === "Acknowledgement Required"
   );
 
-  const getFileUrl = (path: string) => `http://localhost:8080${path}`;
+  const getFileUrl = (path: string) => `${path}`;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">

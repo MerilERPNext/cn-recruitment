@@ -17,7 +17,7 @@ export interface DocumentItem {
     acknowledgement_form: string;
   }
   
-  export interface DocumentApiResponse {
+  export interface DocumentItem {
     status: string;
     data: DocumentItem[];
   }

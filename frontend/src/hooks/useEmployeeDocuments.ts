@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { EmployeeDocumentService } from "../services/EmployeeDocumentService";
-import { DocumentApiResponse } from "../types/employeeDocument";
+import { DocumentItem } from "../types/employeeDocument";
 
 export const useEmployeeDocument = () => {
-    return useQuery<DocumentApiResponse[]>({
+    return useQuery<DocumentItem[]>({
       queryKey: ["employee-documents", "status"],
       queryFn: EmployeeDocumentService.getDraftEmployeeDocument,
     });
