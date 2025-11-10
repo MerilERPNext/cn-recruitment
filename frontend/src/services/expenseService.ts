@@ -19,7 +19,12 @@ export interface ExpenseLineItem {
   status: "Approve" | "Reject";
 }
 
-export interface ExpenseApprovalPayload {
+// export interface ExpenseApprovalPayload {
+//   claim_id: string;
+//   line_items: ExpenseLineItem[];
+// }
+
+export interface ExpenseApprovalPayload extends Record<string, unknown> {
   claim_id: string;
   line_items: ExpenseLineItem[];
 }
