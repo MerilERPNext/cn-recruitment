@@ -232,7 +232,7 @@ const DocumentLibrary = () => {
             {/* PDF viewer */}
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={getFileUrl(selectedFile)}
+                src={getFileUrl(selectedFile + "#toolbar=0")}
                 title="Document PDF"
                 className="w-full h-[80vh]"
               ></iframe>

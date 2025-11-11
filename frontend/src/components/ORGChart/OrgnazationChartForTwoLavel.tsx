@@ -17,13 +17,11 @@ import { useGetEmployeeSubordinateHierarchy } from "../../hooks/useEmployee";
 import { useNavigate, useParams } from "react-router";
 import { IoChevronForwardOutline } from "react-icons/io5";
 
-// ✅ Normalize IDs to string for reliable comparison
 const normalizeId = (id: unknown): string | null => {
   if (!id) return null;
   return String(id);
 };
 
-// ✅ Safe match helper
 const isMatch = (nodeId: string, userId: unknown) => {
   const normNodeId = normalizeId(nodeId);
   const normUserId = normalizeId(userId);
@@ -32,7 +30,6 @@ const isMatch = (nodeId: string, userId: unknown) => {
   );
 };
 
-// ✅ Recursive: find node in tree
 export function findNode(
   hierarchy: EmployeeHierarchy[] | EmployeeHierarchy,
   id: string
@@ -48,33 +45,21 @@ export function findNode(
   return null;
 }
 
-// ✅ Recursive: find parent of a node
 export const findParent = (
   root: EmployeeHierarchy,
   employeeId: unknown
 ): EmployeeHierarchy | null => {
-  const empId = normalizeId(employeeId); // Normalize here as well
-  if (!empId) {
-    console.log(`Invalid employeeId: ${employeeId}`);
-    return null;
-  }
-  console.log(`Looking for employee ${empId} in root ${root.id}`);
+  const empId = normalizeId(employeeId);
+  if (!empId) return null;
   for (const child of root.children || []) {
-    console.log(`Checking child ${child.id}`);
-    if (isMatch(child.id, empId)) {
-      console.log(`Found parent: ${root.id}`);
-      return root;
-    }
+    if (isMatch(child.id, empId)) return root;
     const found = findParent(child, empId);
-    if (found) {
-      console.log(`Found parent in child tree: ${found.id}`);
-      return found;
-    }
+    if (found) return found;
   }
   return null;
 };
 
-// ✅ Build nodes/edges for parent + current user + children (three levels)
+// ✅ Limit children to 5 visible, show total count on parent
 const buildThreeLevelHierarchy = (
   user: EmployeeHierarchy,
   parent: EmployeeHierarchy | null
@@ -83,7 +68,6 @@ const buildThreeLevelHierarchy = (
   const edges: Edge[] = [];
   const baseY = 100;
 
-  // Parent node
   if (parent) {
     nodes.push({
       id: parent.id,
@@ -97,6 +81,7 @@ const buildThreeLevelHierarchy = (
         isExpanded: true,
         onToggleExpand: () => {},
         showExpand: false,
+        totalChildren: parent.children?.length || 0,
       },
     });
 
@@ -109,7 +94,10 @@ const buildThreeLevelHierarchy = (
     });
   }
 
-  // Current user
+  // current user
+  const visibleChildren = (user.children || []).slice(0, 5);
+  const totalChildren = user.children?.length || 0;
+
   nodes.push({
     id: user.id,
     type: "person",
@@ -118,22 +106,22 @@ const buildThreeLevelHierarchy = (
       id: user.id,
       name: user.name,
       title: user.title || "",
-      hasChildren: (user.children || []).length > 0,
-      childrens: user?.children || [],
+      hasChildren: totalChildren > 0,
+      childrens: visibleChildren,
+      totalChildren,
       showExpand: false,
       isExpanded: true,
       onToggleExpand: () => {},
     },
   });
 
-  // Children nodes
-  const children = user.children || [];
-  if (children.length > 0) {
+  // only first 5 children visible
+  if (visibleChildren.length > 0) {
     const childSpacing = 250;
-    const totalWidth = (children.length - 1) * childSpacing;
+    const totalWidth = (visibleChildren.length - 1) * childSpacing;
     const startX = 400 - totalWidth / 2;
 
-    children.forEach((child, index) => {
+    visibleChildren.forEach((child, index) => {
       const childX = startX + index * childSpacing;
       const childY = baseY + 300;
 
@@ -146,7 +134,8 @@ const buildThreeLevelHierarchy = (
           name: child.name,
           title: child.title || "",
           hasChildren: (child.children || []).length > 0,
-          childrens: child?.children || [],
+          childrens: child.children || [],
+          totalChildren: child.children?.length || 0,
           showExpand: false,
           isExpanded: false,
           onToggleExpand: () => {},
@@ -169,43 +158,26 @@ const buildThreeLevelHierarchy = (
 export default function TwoLevelOrgChart() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const navigatorate = useNavigate();
+  const navigate = useNavigate();
   const { id: employeeId } = useParams<{ id: string }>();
   const { data: employeeHierarchy } = useGetEmployeeSubordinateHierarchy(
     employeeId || ""
   );
-  useEffect(() => {
-    if (!employeeHierarchy || !employeeId) {
-      console.log("⏳ Waiting for data...", { employeeHierarchy, employeeId });
-      return;
-    }
 
-    // Normalize hierarchy data - handle both object and array
+  useEffect(() => {
+    if (!employeeHierarchy || !employeeId) return;
+
     const hierarchyArray = Array.isArray(employeeHierarchy)
       ? employeeHierarchy
       : [employeeHierarchy];
 
-    if (!hierarchyArray.length) {
-      console.log("⏳ No hierarchy data available");
-      return;
-    }
-
-    // Search for the current user across all root nodes
     let currentUser: EmployeeHierarchy | null = null;
     let parent: EmployeeHierarchy | null = null;
 
     for (const hierarchyData of hierarchyArray) {
-      currentUser = findNode(
-        hierarchyData as unknown as EmployeeHierarchy,
-        employeeId
-      );
-
+      currentUser = findNode(hierarchyData, employeeId);
       if (currentUser) {
-        // Found the user, now find their parent
-        parent = findParent(
-          hierarchyData as unknown as EmployeeHierarchy,
-          employeeId
-        );
+        parent = findParent(hierarchyData, employeeId);
         break;
       }
     }
@@ -214,31 +186,25 @@ export default function TwoLevelOrgChart() {
       const { nodes, edges } = buildThreeLevelHierarchy(currentUser, parent);
       setNodes(nodes);
       setEdges(edges);
-    } else {
-      console.log("⚠️ Current user not found in hierarchy");
     }
   }, [employeeHierarchy, employeeId, setNodes, setEdges]);
-
-  const proOptions = { hideAttribution: true };
 
   return (
     <div className="w-full h-screen bg-gray-100">
       <div className=" bg-white shadow-sm px-4 py-3 flex items-center justify-between">
-        <h1></h1>
-        {/* Title */}
         <h1 className="text-lg font-semibold text-gray-900">
           Organizational Chart
         </h1>
 
-        {/* Right side */}
         <button
-          onClick={() => navigatorate("/webapp/organizational-chart")}
-          className="flex items-center space-x-1 text-gray-700 hover:text-black focus:outline-none"
+          onClick={() => navigate("/webapp/organizational-chart")}
+          className="flex items-center space-x-1 text-gray-700 hover:text-black"
         >
           <span className="text-sm font-medium text-blue-600">View All</span>
           <IoChevronForwardOutline size={18} />
         </button>
       </div>
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -247,12 +213,12 @@ export default function TwoLevelOrgChart() {
         nodeTypes={{ person: PersonNode }}
         fitView
         attributionPosition="top-right"
-        proOptions={proOptions}
+        proOptions={{ hideAttribution: true }}
         minZoom={0.1}
         maxZoom={2}
         defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
       >
-        <Controls position="top-right" showZoom={true} showFitView={true} />
+        <Controls position="top-right" showZoom showFitView />
       </ReactFlow>
     </div>
   );

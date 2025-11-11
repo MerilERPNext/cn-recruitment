@@ -2,8 +2,12 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { User, ChevronUp, ChevronDown } from "lucide-react";
 import type { EmployeeNode } from "./type/type";
 import { useNavigate } from "react-router";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
+    const { data: employee  } = useCurrentEmployee();
+    const employeeId = employee?.name;
+  console.log("currentEmployee1234567890", employeeId)
   const {
     id,
     name,
@@ -11,29 +15,29 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
     hasChildren,
     isExpanded,
     onToggleExpand,
-    childrens,
+    totalChildren = 0,
     showExpand = true,
   } = data;
   const navigate = useNavigate();
+
   return (
     <div className="relative">
       <Handle
         type="target"
         position={Position.Top}
-        style={{
-          background: "transparent",
-          border: "none",
-          width: "1px",
-          height: "1px",
-        }}
+        style={{ background: "transparent", border: "none", width: "1px", height: "1px" }}
       />
 
       <div
-        className="min-w-[160px] px-4 py-3 bg-white border border-gray-300 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg"
+        className="min-w-[160px] px-4 py-3 bg-white border border-gray-300 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg cursor-pointer"
         onClick={() => {
-          const tabname = window.location.pathname.split("/")[2];
-          if (tabname === "employee-profile") {
+          // Redirect to the clicked employee profile
+          if (employeeId === id) {
+            // Agar current user ki ID match karti hai
             navigate(`/webapp/organizational-chart?employee=${id}`);
+          } else {
+            // Agar different user par click hua hai
+            navigate(`/webapp/employee-profile/${id}`);
           }
         }}
       >
@@ -43,19 +47,15 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-gray-900 text-sm truncate">
-              {name}
-            </h3>
-            <div className="flex gap-2">
+            <h3 className="font-medium text-gray-900 text-sm truncate">{name}</h3>
+            <div className="flex gap-2 items-center">
               {title && (
                 <p className="text-gray-500 text-xs truncate mt-0.5">{title}</p>
               )}
-              {!isExpanded && childrens?.length > 0 ? (
-                <p className="text-green-500 bg-green-100 rounded-sm text-xs truncate mt-0.5 px-1">
-                  {childrens?.length || ""}
+              {totalChildren > 0 && (
+                <p className="text-green-600 bg-green-100 rounded-sm text-xs truncate mt-0.5 px-1">
+                  {totalChildren}
                 </p>
-              ) : (
-                ""
               )}
             </div>
           </div>
@@ -82,12 +82,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
       <Handle
         type="source"
         position={Position.Bottom}
-        style={{
-          background: "transparent",
-          border: "none",
-          width: "1px",
-          height: "1px",
-        }}
+        style={{ background: "transparent", border: "none", width: "1px", height: "1px" }}
       />
     </div>
   );

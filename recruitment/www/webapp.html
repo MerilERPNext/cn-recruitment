@@ -11,13 +11,13 @@
         display: none !important;
       }
     </style>
-    <script type="module" crossorigin src="/assets/recruitment/webapp/index.Bemh26Jg.js"></script>
+    <script type="module" crossorigin src="/assets/recruitment/webapp/index.CFzta7Nd.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-react.DiHaRtpc.js">
     <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-mui.CzYc_fYp.js">
     <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-utils.DEBd35cS.js">
     <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-charts.BTuVbmy4.js">
     <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-pdf.DA-Ov7Ix.js">
-    <link rel="stylesheet" crossorigin href="/assets/recruitment/webapp/index.CnzIPAS1.css">
+    <link rel="stylesheet" crossorigin href="/assets/recruitment/webapp/index.BS0lNO-P.css">
   </head>
   <body>
     <div id="root"></div>
@@ -27,15 +27,6 @@
       if (!window.csrf_token) {
         window.csrf_token = "{{ csrf_token }}";
       }
-    </script>
-    <script>
-      fetch("/assets/assets.json")
-        .then((response) => response.json())
-        .then((data) => {
-          const script = document.createElement("script");
-          script.src = data["cn-app.bundle.js"];
-          document.body.appendChild(script);
-        });
     </script>
   </body>
 </html>
