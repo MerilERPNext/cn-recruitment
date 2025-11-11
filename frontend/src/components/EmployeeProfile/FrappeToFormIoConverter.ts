@@ -197,6 +197,11 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       break;
 
     case "Small Text":
+      schema.placeholder = schema.placeholder || "Enter text";
+      schema.input = true;
+      schema.type = "textfield";
+      break;
+
     case "Textarea":
       schema.rows = 3;
       break;
@@ -418,23 +423,75 @@ export function convertToFormioWithLayout(
       // Ensure we have a current tab
       ensureCurrentTab();
 
-      // Start new section
-      currentSection = {
-        type: "panel",
-        title: field.label || "",
-        key:
-          field.fieldname ||
-          `section_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
-        components: [],
-        input: false,
-        tableView: false,
-        collapsible: field.collapsible || false,
-        collapsed: (field.collapsible && field.collapsed) || false,
-      };
+      // Build panel base
+      const panelKey =
+        field.fieldname ||
+        `section_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
-      // Add description if available
-      if (field.description) {
-        currentSection.tooltip = field.description;
+      // If the section is collapsible, set the title (panel header) to an inline-styled HTML string.
+      // If Form.io sanitizes the title HTML, it will fall back to plain text — in that case the title
+      // will still be present and the collapse icon will remain inline with it.
+      if (field.collapsible) {
+        currentSection = {
+          type: "panel",
+          // inline-styled HTML for the title — no external CSS needed
+          title: field.label
+            ? `<span style="font-weight:600; font-size:1.05rem; line-height:1.2;">${field.label}</span>`
+            : "",
+          key: panelKey,
+          components: [],
+          input: false,
+          tableView: false,
+          collapsible: true,
+          collapsed: !!field.collapsed,
+          customClass: "formio-section-panel", // keeps a hook if you ever want CSS
+        };
+
+        // Add optional description as an htmlelement inside the panel body (keeps icon+title inline)
+        if (field.description) {
+          currentSection.components.push({
+            type: "htmlelement",
+            key: `desc_${panelKey}`,
+            content: `<div style="color:#555; font-size:0.9rem; margin-bottom:12px;">${field.description}</div>`,
+            input: false,
+            tableView: false,
+          });
+        }
+      } else {
+        // Non-collapsible: create a panel with an empty title (so the injected htmlelement
+        // visually matches other headers) and then inject a styled htmlelement as the first child.
+        currentSection = {
+          type: "panel",
+          title: "", // leave title empty to avoid duplicate header area
+          key: panelKey,
+          components: [],
+          input: false,
+          tableView: false,
+          collapsible: false,
+          collapsed: false,
+          customClass: "",
+        };
+
+        if (field.label) {
+          currentSection.components.push({
+            type: "htmlelement",
+            key: `header_${panelKey}`,
+            label: field.label,
+            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;">${field.label}</h4>`,
+            input: false,
+            tableView: false,
+          });
+        }
+
+        if (field.description) {
+          currentSection.components.push({
+            type: "htmlelement",
+            key: `desc_${panelKey}`,
+            content: `<div style="color:#555; font-size:0.9rem; margin-bottom:12px;">${field.description}</div>`,
+            input: false,
+            tableView: false,
+          });
+        }
       }
 
       currentColumns = null;

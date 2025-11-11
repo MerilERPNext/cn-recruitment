@@ -335,3 +335,43 @@ code {
   color: #333;
   width: 100%;
 }
+/* Make collapsible panel title visually match the h4 heading we inject */
+.formio-section-panel > .panel-heading,
+.formio-section-panel .panel-heading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0.75rem 1rem !important;
+  background: transparent;
+  border-bottom: 1px solid #eee;
+}
+
+/* Target the title text and any anchor/icon inside it */
+.formio-section-panel .panel-heading .panel-title,
+.formio-section-panel .panel-heading .panel-title a,
+.formio-section-panel .panel-heading .panel-title span {
+  font-weight: 600 !important; /* make it bold */
+  font-size: 1.1rem !important; /* match your injected h4 */
+  color: #111 !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Make sure the toggle icon doesn't sit above the title */
+.formio-section-panel .panel-heading .btn,
+.formio-section-panel .panel-heading .glyphicon,
+.formio-section-panel .panel-heading .fa {
+  margin-top: 0 !important;
+  vertical-align: middle;
+}
+
+/* If you use .form-section-header injected h4, keep them visually identical */
+.form-section-header h4 {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 8px 0 12px;
+  color: #111;
+}
