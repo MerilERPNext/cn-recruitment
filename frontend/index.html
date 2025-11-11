@@ -22,7 +22,7 @@
         window.csrf_token = "{{ csrf_token }}";
       }
     </script>
-    <script>
+    <script type="module">
       fetch("/assets/assets.json")
         .then((response) => response.json())
         .then((data) => {
