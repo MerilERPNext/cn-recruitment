@@ -76,7 +76,7 @@ const NewGoalPlan: React.FC = () => {
 
       <div className='bg-white lg:p-8 px-4 rounded-xl mt-8'>
         <div className='flex justify-between mb-4'>
-         <h3 className='sm:text-2xl text-xl font-semibold text-gray-700'>Goals Pending Approval</h3>
+         <h3 className='sm:text-xl text-lg font-semibold text-gray-900'>Goals Pending Approval</h3>
          <button className='text-gray-500 bg-gray-100 rounded-lg px-4 sm:py-2 whitespace-nowrap cursor-pointer hover:bg-gray-200'>+ Add Goal</button>
          </div>
          {isDesktop ?

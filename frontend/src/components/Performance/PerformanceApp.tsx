@@ -72,7 +72,7 @@ const PerformanceApp: React.FC = () => {
     );
 
     const desktopLayout = (
-        <DesktopLayoutWrapper title="Flows" >
+        <DesktopLayoutWrapper title="Performance" >
             <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto relative">
                     <Outlet />

@@ -71,6 +71,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
     });
   };
 
+  const currentUserIsAdmin = currentUser?.roles?.some(role => "Administrator"==role.role);
+
   // Handle click outside profile dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -193,7 +195,32 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             </button>
 
             <div className="relative" ref={profileDropdownRef}>
-              {currentEmpIsLoading || !currentEmployee?.employee ? (
+                {currentUserIsAdmin ? 
+               <button
+                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 text-right">
+                      {currentUser?.username}
+                    </p>
+                    <p className="text-xs text-gray-500 text-right">
+                      Employee ID: {currentEmployee?.employee}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                    <img
+                      src={currentUser?.user_image || defaultProfile}
+                      alt="User avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>:currentEmpIsLoading || !currentEmployee?.employee ? (
                 <div className="flex w-30 animate-pulse gap-2 items-center">
                   <div className="h-4 bg-gray-300 rounded w-20  flex-1"></div>
                   <div className="h-6 w-6 bg-gray-300 rounded-full "></div>
