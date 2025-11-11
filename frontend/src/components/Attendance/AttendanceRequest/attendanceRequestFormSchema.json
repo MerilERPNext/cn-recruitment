@@ -114,42 +114,46 @@
           }
         },
         {
-          "label": "From Date",
-          "key": "from_date",
-          "type": "datetime",
-          "input": true,
-          "widget": {
-            "type": "calendar"
-          },
-          "format": "dd-MM-yyyy",
-          "placeholder": "dd-mm-yyyy",
-          "customClass": "mb-4",
-          "enableTime": false,
-          "validate": {
-            "required": true
-          },
-          "disabled": false,
-          "redrawOn": "request_type"
-        },
-        {
-          "label": "To Date",
-          "key": "to_date",
-          "type": "datetime",
-          "input": true,
-          "widget": {
-            "type": "calendar"
-          },
-          "format": "dd-MM-yyyy",
-          "placeholder": "dd-mm-yyyy",
-          "customClass": "mb-4",
-          "enableTime": false,
-          "validate": {
-            "required": true
-          },
-          "customConditional": "show = !['Clockin'].includes(data.request_type || '');",
-          "calculateValue": "value = data.request_type === 'Short Attendance Request' ? data.from_date : value",
-          "disabled": false
-        },
+    "label": "From Date",
+    "key": "from_date",
+    "type": "datetime",
+    "input": true,
+    "widget": {
+      "type": "calendar",
+    "minDate": "today"
+    },
+    "format": "dd-MM-yyyy",
+    "placeholder": "dd-mm-yyyy",
+    "customClass": "mb-4",
+    "enableTime": false,
+    "validate": {
+      "required": true,
+      "custom": "if (input && moment(input).isBefore(moment().startOf('day'))) { return 'From Date cannot be before today'; } return true;"
+    },
+    "disabled": false,
+    "redrawOn": "request_type"
+  },
+  {
+    "label": "To Date",
+    "key": "to_date",
+    "type": "datetime",
+    "input": true,
+    "widget": {
+      "type": "calendar"
+    },
+    "format": "dd-MM-yyyy",
+    "placeholder": "dd-mm-yyyy",
+    "customClass": "mb-4",
+    "enableTime": false,
+    "validate": {
+      "required": true,
+      "custom": "if (data.from_date && input && moment(input).isBefore(moment(data.from_date))) { return 'To Date cannot be before From Date'; } return true;"
+    },
+    "customConditional": "show = !['Clockin'].includes(data.request_type || '');",
+    "calculateValue": "value = data.request_type === 'Short Attendance Request' ? data.from_date : value",
+    "disabled": false,
+    "redrawOn": "from_date"
+  },
         {
           "label": "From Time",
           "key": "custom_from_time",
