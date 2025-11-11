@@ -2,17 +2,16 @@ import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import LayoutHeader from "../../shared/LayoutHeader";
 import { IoChevronBackOutline } from "react-icons/io5";
 import CardTable from "../../shared/CardTable";
 import ApprovalList from "../../shared/ApprovalList";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import TeamExpenseDetailView from "./TeamExpenseDetailView";
+import HeaderBar from "../../HeaderBar";
 
 const AllTeamClaimRequests = () => {
   const [refetch, setRefetch] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("Draft");
-
   const navigate = useNavigate();
   const { refetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
@@ -51,13 +50,27 @@ const AllTeamClaimRequests = () => {
   );
 
   return (
-    <div>
-      <LayoutHeader
-        tab={"All team Claim Requests"}
-        onBack={() => {
-          navigate(-1);
-        }}
-      />
+    <div className="flex flex-col min-h-screen bg-white absolute inset-0 z-50">
+      {!isDesktop && (
+        <HeaderBar
+          title={"Team Claims"}
+          onBack={() => navigate(-1)}
+          rightSlot={
+            <div className="flex items-center">
+              <select
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+                className="px-2 py-1 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Filter status"
+              >
+                <option value="Draft">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+          }
+        />
+      )}
       {isDesktop && (
         <div className="flex justify-between items-center p-4">
           <button onClick={() => navigate(-1)}>

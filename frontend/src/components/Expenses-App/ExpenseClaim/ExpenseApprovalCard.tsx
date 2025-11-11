@@ -226,7 +226,7 @@ const ExpenseApprovalCard = ({
                 <Badge
                   size="sm"
                   label={data?.status === "Draft" ? "Pending" : data?.status}
-                  backgroundColor="bg-yellow-100 text-yellow-600"
+                  backgroundColor={status?.statusColor}
                 />
               </div>
               <div className="flex flex-col items-start justify-between bg-gray-100 mt-1 rounded-md p-1">
@@ -258,6 +258,8 @@ const ExpenseApprovalCard = ({
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length > 0 &&
+                  data?.status !== "Approved" &&
+                  data?.status !== "Rejected" &&
                   actions.map((action: string) => (
                     <Button
                       key={action}
