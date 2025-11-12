@@ -461,7 +461,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             redrawOn: "request_type",
             validate: {
               required: true,
-              custom: "if (input && moment(input).isBefore(moment().startOf('day'))) { return 'From Date cannot be before today'; } return true;"
+              custom: forActionType === 'create' ? "if (input && moment(input).isBefore(moment().startOf('day'))) { return 'From Date cannot be before today'; } return true;" : "return true;"
             },
           },
           {
