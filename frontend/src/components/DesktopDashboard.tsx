@@ -313,7 +313,7 @@ export default function DesktopDashboard() {
             </>
             :   <>
                 <div className="w-52 h-6 my-2 rounded-lg bg-gray-300 animate-pulse"></div>
-                <div className="w-30 h-4 my-1 rounded-lg bg-gray-300 animate-pulse"></div>
+                <div className="w-32 h-4 my-1 rounded-lg bg-gray-300 animate-pulse"></div>
                 </>
             }
           </div>
