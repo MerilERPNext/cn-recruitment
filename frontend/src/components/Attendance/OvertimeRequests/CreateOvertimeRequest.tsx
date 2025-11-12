@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import overtimeRequestSchema from "./overtimeRequestSchema.json";
+import DOMPurify from "dompurify";
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
   onCancel?: () => void;
@@ -78,7 +79,8 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
               e?.response?.data?.message?.error ||
               "Request Failed.";
             console.error(e);
-            toast.error(errorMessage);
+            const cleanString = DOMPurify.sanitize(errorMessage || "");
+            toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
           },
         }
       );

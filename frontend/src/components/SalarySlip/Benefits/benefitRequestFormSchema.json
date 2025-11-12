@@ -27,7 +27,7 @@
         {
           "type": "select",
           "key": "earning_component",
-          "label": "Claim Benefit For",
+          "label": "Claim Benefit For *",
           "placeholder": "Select Benefit Component",
           "validate": {
             "required": true
@@ -48,7 +48,7 @@
         {
           "type": "number",
           "key": "claimed_amount",
-          "label": "Claimed Amount",
+          "label": "Claimed Amount *",
           "input": true,
           "validate": {
             "required": true,

@@ -14,7 +14,7 @@
                         {
                             "type": "datetime",
                             "key": "fromDate",
-                            "label": "From Date",
+                            "label": "From Date *",
                             "input": true,
                             "format": "dd/MM/yyyy",
                             "enableDate": true,
@@ -31,7 +31,7 @@
                         {
                             "type": "datetime",
                             "key": "toDate",
-                            "label": "To Date",
+                            "label": "To Date *",
                             "input": true,
                             "format": "dd/MM/yyyy",
                             "enableDate": true,
@@ -48,7 +48,7 @@
         {
             "type": "select",
             "key": "shiftType",
-            "label": "Shift Type",
+            "label": "Shift Type *",
             "input": true,
             "placeholder": "Select shift type",
             "dataSrc": "url",
@@ -66,7 +66,7 @@
         {
             "type": "textarea",
             "key": "reason",
-            "label": "Reason",
+            "label": "Reason *",
             "placeholder": "Enter reason",
             "input": true,
             "validate": {

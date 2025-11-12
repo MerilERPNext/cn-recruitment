@@ -482,7 +482,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               data: {
                 from_date: defaultAttendanceData?.from_date || selectedDate,
                 to_date: defaultAttendanceData?.to_date || selectedDate,
-                request_type: defaultAttendanceData?.custom_request_type || "",
+                request_type: defaultAttendanceData?.custom_request_type,
                 employee: defaultAttendanceData?.employee || "",
                 company: "",
                 custom_from_time: defaultAttendanceData?.custom_from_time
