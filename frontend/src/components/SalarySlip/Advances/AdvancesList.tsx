@@ -4,17 +4,16 @@ import { useEffect, useState } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import InstallmentsList from "./InstallmentsList";
 import { StatusBadge } from "./StatusBadge";
-import AdvanceForm from "./AdvanceForm"; 
+import AdvanceForm from "./AdvanceForm";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { formatCurrency } from "../../../utils/currencyFormatter";
-import Modal from "./commonModal"
+import Modal from "./commonModal";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -22,7 +21,7 @@ const AdvancesList: React.FC = () => {
     null
   );
   const [showInstallments, setShowInstallments] = useState(false);
-  const [showAdvanceForm, setShowAdvanceForm] = useState(false); 
+  const [showAdvanceForm, setShowAdvanceForm] = useState(false);
 
   const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
@@ -32,11 +31,11 @@ const AdvancesList: React.FC = () => {
   const { data: advancesData, refetch } = useEmployeeAdvances(employeeId || "");
 
   useEffect(() => {
-  if (refetchAttendance) {
-    refetch();                          // trigger a fresh fetch
-    setRefetchAttendance(false);        // reset the flag
-  }
-}, [refetchAttendance, refetch, setRefetchAttendance]);
+    if (refetchAttendance) {
+      refetch(); // trigger a fresh fetch
+      setRefetchAttendance(false); // reset the flag
+    }
+  }, [refetchAttendance, refetch, setRefetchAttendance]);
 
   const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
     return apiData.map((a) => ({
@@ -102,13 +101,18 @@ const AdvancesList: React.FC = () => {
             >
               {maskAmounts ? (
                 <>
-                  <span className="text-sm font-medium text-gray-700">Show Amounts</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    Show Amounts
+                  </span>
                   <BsToggleOff className="w-6 h-6 text-gray-400" />
                 </>
               ) : (
                 <>
-                  <span className="text-sm font-medium text-gray-700">Hide Amounts</span>
-                  <BsToggleOn className="w-6 h-6 text-primary" /> {/* CHANGED: Using brand color */}
+                  <span className="text-sm font-medium text-gray-700">
+                    Hide Amounts
+                  </span>
+                  <BsToggleOn className="w-6 h-6 text-primary" />{" "}
+                  {/* CHANGED: Using brand color */}
                 </>
               )}
             </button>
@@ -130,8 +134,12 @@ const AdvancesList: React.FC = () => {
                 {/* CHANGED: Using .my-table-header-text on all header titles */}
                 <div className="my-table-header-text">Advance Name</div>
                 <div className="my-table-header-text text-center">Amount</div>
-                <div className="my-table-header-text text-center">Deductions</div>
-                <div className="my-table-header-text text-center">Start Date</div>
+                <div className="my-table-header-text text-center">
+                  Deductions
+                </div>
+                <div className="my-table-header-text text-center">
+                  Start Date
+                </div>
                 <div className="my-table-header-text text-center">End Date</div>
                 <div className="my-table-header-text text-center">Status</div>
               </div>
@@ -145,27 +153,48 @@ const AdvancesList: React.FC = () => {
                   className="my-data-row grid grid-cols-6 gap-4 cursor-pointer"
                   onClick={() => handleViewInstallments(advance)}
                 >
-                  <div className="my-data-cell font-medium">
-                    {advance.name}
-                  </div>
+                  <div className="my-data-cell font-medium">{advance.name}</div>
                   <div className="my-data-cell text-center">
                     {maskAmounts ? (
-                      <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+                      <span className="blur-sm select-none text-gray-400">
+                        ₹XX,XXX
+                      </span>
                     ) : (
-                      <span className="font-medium">{formatCurrency(advance.amount)}</span>
+                      <span className="font-medium">
+                        {formatCurrency(advance.amount)}
+                      </span>
                     )}
                   </div>
                   <div className="my-data-cell text-center">
                     {maskAmounts ? (
-                      <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+                      <span className="blur-sm select-none text-gray-400">
+                        ₹XX,XXX
+                      </span>
                     ) : (
-                      <span className="font-medium">{advance.numberOfDeductions}</span>
+                      <span className="font-medium">
+                        {advance.numberOfDeductions}
+                      </span>
                     )}
                   </div>
-                  <div className="my-data-cell text-center">{formatToIndianDate(advance.startDate)}</div>
-                  <div className="my-data-cell text-center">{formatToIndianDate(advance.endDate)}</div>
                   <div className="my-data-cell text-center">
+                    {formatToIndianDate(advance.startDate)}
+                  </div>
+                  <div className="my-data-cell text-center">
+                    {formatToIndianDate(advance.endDate)}
+                  </div>
+                  <div className="my-data-cell text-center relative group inline-block overflow-visible">
                     <StatusBadge status={advance.advanceStatus} />
+
+                    {/* Tooltip */}
+                    <div
+                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
+               opacity-0 invisible group-hover:opacity-100 group-hover:visible
+               transition-all duration-150 ease-out pointer-events-none
+               bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
+               shadow-lg z-50"
+                    >
+                      dummy email : anilr5364@gmail.com
+                    </div>
                   </div>
                 </div>
               ))}
@@ -192,17 +221,22 @@ const AdvancesList: React.FC = () => {
             className="my-btn-secondary"
             title={maskAmounts ? "Show amounts" : "Hide amounts"}
           >
-             {maskAmounts ? (
-                <>
-                  <span className="text-sm font-medium text-gray-700">Show Amounts</span>
-                  <BsToggleOff className="w-6 h-6 text-gray-400" />
-                </>
-              ) : (
-                <>
-                  <span className="text-sm font-medium text-gray-700">Hide Amounts</span>
-                  <BsToggleOn className="w-6 h-6 text-primary" /> {/* CHANGED: Using brand color */}
-                </>
-              )}
+            {maskAmounts ? (
+              <>
+                <span className="text-sm font-medium text-gray-700">
+                  Show Amounts
+                </span>
+                <BsToggleOff className="w-6 h-6 text-gray-400" />
+              </>
+            ) : (
+              <>
+                <span className="text-sm font-medium text-gray-700">
+                  Hide Amounts
+                </span>
+                <BsToggleOn className="w-6 h-6 text-primary" />{" "}
+                {/* CHANGED: Using brand color */}
+              </>
+            )}
           </button>
           {/* CHANGED: Using .my-btn-primary */}
           <button
@@ -222,34 +256,62 @@ const AdvancesList: React.FC = () => {
           >
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{advance.name}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {advance.name}
+                </h3>
               </div>
-              <StatusBadge status={advance.advanceStatus} />
+              <div className=" text-start relative group inline-block overflow-visible">
+                <StatusBadge status={advance.advanceStatus} />
+                
+                                         {/* Tooltip */}
+                                         <div
+                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
+               opacity-0 invisible group-hover:opacity-100 group-hover:visible
+               transition-all duration-150 ease-out pointer-events-none
+               bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
+               shadow-lg z-50"
+                    >
+                      dummy email : anilr5364@gmail.com
+                    </div>
+              </div>
             </div>
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
-                <span className="text-gray-600 text-xs uppercase tracking-wide">Total Amount</span>
+                <span className="text-gray-600 text-xs uppercase tracking-wide">
+                  Total Amount
+                </span>
                 {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+                  <span className="blur-sm select-none text-gray-400">
+                    ₹XX,XXX
+                  </span>
                 ) : (
-                  <span className="font-medium">{formatCurrency(advance.amount)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(advance.amount)}
+                  </span>
                 )}
               </div>
             </div>
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
-                <span className="text-gray-600 text-xs uppercase tracking-wide">Deduction Amount</span>
+                <span className="text-gray-600 text-xs uppercase tracking-wide">
+                  Deduction Amount
+                </span>
                 {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+                  <span className="blur-sm select-none text-gray-400">
+                    ₹XX,XXX
+                  </span>
                 ) : (
-                  <span className="font-medium">{formatCurrency(advance.numberOfDeductions)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(advance.numberOfDeductions)}
+                  </span>
                 )}
               </div>
             </div>
             <div className="mt-0 pt-3">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>
-                  <strong>{formatToIndianDate(advance.startDate)}</strong> to <strong>{formatToIndianDate(advance.endDate)}</strong>
+                  <strong>{formatToIndianDate(advance.startDate)}</strong> to{" "}
+                  <strong>{formatToIndianDate(advance.endDate)}</strong>
                 </span>
                 <span>{advance.installments.length} installments</span>
               </div>

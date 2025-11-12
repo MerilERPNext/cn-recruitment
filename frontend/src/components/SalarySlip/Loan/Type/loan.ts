@@ -19,6 +19,7 @@ export interface Installment {
   }
   
   export interface Loan {
+    for_user: ReactNode
     loan_requested_amount: number
     loan_amount: number
     loan_name: string

@@ -85,7 +85,7 @@ export default function LoanList({ loans }: LoanListProps) {
                   {loan.standard_interest || "0"}%
                 </div>
                 <div className="my-data-cell">{loan.emi_type}</div>
-                
+
                 <div className="my-data-cell">{loan.loan_tenure || "0"}</div>
                 <div className="my-data-cell">
                   {loan.loan_start_date || "-"}
@@ -95,16 +95,30 @@ export default function LoanList({ loans }: LoanListProps) {
                     ? calculateEndMonth(loan.loan_start_date, loan.loan_tenure)
                     : "-"}
                 </div>
-                <div className="my-data-cell">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ${
-                      loan.status === "Open"
-                        ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                        : "bg-green-100 text-green-800 border border-green-200"
-                    }`}
-                  >
-                    {loan.status === "Open" ? "Pending" : loan.status}
-                  </span>
+                <div className="my-data-cell relative inline-block overflow-visible">
+                  <div className="group inline-block relative">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium cursor-pointer ${
+                        loan.status === "Open"
+                          ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          : "bg-green-100 text-green-800 border border-green-200"
+                      }`}
+                    >
+                      {loan.status === "Open" ? "Pending" : loan.status}
+                    </span>
+
+                    {/* Tooltip */}
+                    <div
+                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
+                 opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                 transition-all duration-150 ease-out pointer-events-none
+                 bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
+                 shadow-lg z-50"
+                      role="tooltip"
+                    >
+                      {loan.for_user ?? "dummy email: anilr5364@gmail.com"}
+                    </div>
+                  </div>
                 </div>
               </div>
 

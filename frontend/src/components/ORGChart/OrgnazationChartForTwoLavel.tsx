@@ -45,6 +45,7 @@ export function findNode(
   return null;
 }
 
+// Find immediate parent
 export const findParent = (
   root: EmployeeHierarchy,
   employeeId: unknown
@@ -59,20 +60,63 @@ export const findParent = (
   return null;
 };
 
-// ✅ Limit children to 5 visible, show total count on parent
-const buildThreeLevelHierarchy = (
+// ✅ New: Find grandparent
+export const findGrandParent = (
+  root: EmployeeHierarchy,
+  employeeId: unknown
+): EmployeeHierarchy | null => {
+  const parent = findParent(root, employeeId);
+  if (parent) {
+    return findParent(root, parent.id);
+  }
+  return null;
+};
+
+// ✅ Show grandparent → parent → current user → children (only current branch)
+const buildHierarchyWithGrandparent = (
   user: EmployeeHierarchy,
-  parent: EmployeeHierarchy | null
+  parent: EmployeeHierarchy | null,
+  grandParent: EmployeeHierarchy | null
 ): { nodes: Node<NodeData>[]; edges: Edge[] } => {
   const nodes: Node<NodeData>[] = [];
   const edges: Edge[] = [];
   const baseY = 100;
 
+  // 🧓 Grandparent (top)
+  if (grandParent) {
+    nodes.push({
+      id: grandParent.id,
+      type: "person",
+      position: { x: 400, y: baseY },
+      data: {
+        id: grandParent.id,
+        name: grandParent.name,
+        title: grandParent.title || "",
+        hasChildren: true,
+        isExpanded: true,
+        onToggleExpand: () => {},
+        showExpand: false,
+        totalChildren: grandParent.children?.length || 0,
+      },
+    });
+
+    if (parent) {
+      edges.push({
+        id: `e${grandParent.id}-${parent.id}`,
+        source: grandParent.id,
+        target: parent.id,
+        type: "step",
+        style: { stroke: "#d1d5db", strokeWidth: 2 },
+      });
+    }
+  }
+
+  // 👨 Parent (middle)
   if (parent) {
     nodes.push({
       id: parent.id,
       type: "person",
-      position: { x: 400, y: baseY },
+      position: { x: 400, y: baseY + 150 },
       data: {
         id: parent.id,
         name: parent.name,
@@ -94,14 +138,14 @@ const buildThreeLevelHierarchy = (
     });
   }
 
-  // current user
+  // 👤 Current user
   const visibleChildren = (user.children || []).slice(0, 5);
   const totalChildren = user.children?.length || 0;
 
   nodes.push({
     id: user.id,
     type: "person",
-    position: { x: 400, y: baseY + 150 },
+    position: { x: 400, y: baseY + 300 },
     data: {
       id: user.id,
       name: user.name,
@@ -115,7 +159,7 @@ const buildThreeLevelHierarchy = (
     },
   });
 
-  // only first 5 children visible
+  // 👶 Children (limit 5)
   if (visibleChildren.length > 0) {
     const childSpacing = 250;
     const totalWidth = (visibleChildren.length - 1) * childSpacing;
@@ -123,7 +167,7 @@ const buildThreeLevelHierarchy = (
 
     visibleChildren.forEach((child, index) => {
       const childX = startX + index * childSpacing;
-      const childY = baseY + 300;
+      const childY = baseY + 450;
 
       nodes.push({
         id: child.id,
@@ -155,7 +199,7 @@ const buildThreeLevelHierarchy = (
   return { nodes, edges };
 };
 
-export default function TwoLevelOrgChart() {
+export default function ThreeLevelOrgChart() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const navigate = useNavigate();
@@ -173,17 +217,23 @@ export default function TwoLevelOrgChart() {
 
     let currentUser: EmployeeHierarchy | null = null;
     let parent: EmployeeHierarchy | null = null;
+    let grandParent: EmployeeHierarchy | null = null;
 
     for (const hierarchyData of hierarchyArray) {
       currentUser = findNode(hierarchyData, employeeId);
       if (currentUser) {
         parent = findParent(hierarchyData, employeeId);
+        grandParent = findGrandParent(hierarchyData, employeeId);
         break;
       }
     }
 
     if (currentUser) {
-      const { nodes, edges } = buildThreeLevelHierarchy(currentUser, parent);
+      const { nodes, edges } = buildHierarchyWithGrandparent(
+        currentUser,
+        parent,
+        grandParent
+      );
       setNodes(nodes);
       setEdges(edges);
     }
