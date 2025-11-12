@@ -13,7 +13,7 @@
       "customClass": "bg-white rounded-lg",
       "components": [
         {
-          "label": "Advance Type",
+          "label": "Advance Type *",
           "key": "custom_advance_type",
           "type": "select",
           "input": true,
@@ -51,7 +51,7 @@
 
         },
         {
-          "label": "Advance Amount",
+          "label": "Advance Amount *",
           "key": "advance_amount",
           "type": "currency",
           "input": true,
@@ -61,7 +61,7 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Repayment Type",
+          "label": "Repayment Type *",
           "key": "custom_repayment_type",
           "type": "select",
           "input": true,
@@ -91,7 +91,7 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Repayment Start Date",
+          "label": "Repayment Start Date *",
           "key": "custom_repayment_start_date",
           "type": "datetime",
           "input": true,
@@ -103,7 +103,7 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Repayment Period (Months)",
+          "label": "Repayment Period (Months) *",
           "key": "repayment_periods",
           "type": "number",
           "input": true,
@@ -113,7 +113,7 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Monthly Repayment Amount",
+          "label": "Monthly Repayment Amount *",
           "key": "repayment_amount",
           "type": "number",
           "input": true,
@@ -123,7 +123,7 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Purpose",
+          "label": "Purpose *",
           "key": "purpose",
           "type": "textarea",
           "input": true,

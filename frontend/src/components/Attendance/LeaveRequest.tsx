@@ -244,7 +244,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       {
         type: "select",
         key: "leaveType",
-        label: "Leave Type",
+        label: "Leave Type *",
         placeholder: "Select Leave Type",
         input: true,
         defaultValue: defaults?.leaveType ?? "",
@@ -264,7 +264,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "fromDate",
-                label: "From Date",
+                label: "From Date *",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
                 enableTime: false,
@@ -286,7 +286,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "toDate",
-                label: "To Date",
+                label: "To Date *",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
                 enableTime: false,

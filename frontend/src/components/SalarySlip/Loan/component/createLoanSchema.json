@@ -15,7 +15,7 @@
         {
           "type": "select",
           "key": "loan_product",
-          "label": "Loan Product",
+          "label": "Loan Product *",
           "placeholder": "Select Loan Product",
           "validate": {
             "required": true
@@ -34,7 +34,7 @@
         {
           "type": "number",
           "key": "loan_amount",
-          "label": "Loan Amount (INR)",
+          "label": "Loan Amount (INR) *",
           "validate": {
             "required": true,
             "min": 1
@@ -52,7 +52,7 @@
                 {
                   "type": "select",
                   "key": "repayment_method",
-                  "label": "Repayment Method",
+                  "label": "Repayment Method *",
                   "input": true,
                   "defaultValue": "Repay Over Number of Periods",
                   "validate": {
@@ -80,7 +80,7 @@
                 {
                   "type": "number",
                   "key": "repayment_amount",
-                  "label": "Monthly Repayment Amount",
+                  "label": "Monthly Repayment Amount *",
                   "input": true,
                   "customConditional": "show = ['Repay Fixed Amount per Period'].includes(data.repayment_method || '');",
                   "validate": {
@@ -91,7 +91,7 @@
                 {
                   "type": "number",
                   "key": "repayment_periods",
-                  "label": "Repayment Period in Months",
+                  "label": "Repayment Period in Months *",
                   "input": true,
                   "customConditional": "show = ['Repay Over Number of Periods'].includes(data.repayment_method || '');",
                   "validate": {
@@ -108,7 +108,7 @@
         {
           "type": "textarea",
           "key": "description",
-          "label": "Reason",
+          "label": "Reason *",
           "validate": {
             "required": true
           },
