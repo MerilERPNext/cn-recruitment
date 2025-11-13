@@ -19,7 +19,8 @@
         {
           "type": "datetime",
           "key": "start_date",
-          "label": "Start Date *",
+          "label": "Start Date <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Start Date",
           "format": "dd-MM-yyyy",
           "enableTime": false,
           "validate": { "required": true },
@@ -28,7 +29,8 @@
         {
           "type": "datetime",
           "key": "start_time",
-          "label": "Start Time *",
+          "label": "Start Time <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Start Time",
           "enableDate": false,
           "enableTime": true,
           "input": true,
@@ -38,7 +40,8 @@
         {
           "type": "datetime",
           "key": "end_date",
-          "label": "End Date *",
+          "label": "End Date <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "End Date",
           "format": "dd-MM-yyyy",
           "enableTime": false,
           "validate": { "required": true },
@@ -47,7 +50,8 @@
         {
           "type": "datetime",
           "key": "end_time",
-          "label": "End Time *",
+          "label": "End Time <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "End Time",
           "enableDate": false,
           "enableTime": true,
           "input": true,
@@ -57,7 +61,8 @@
         {
           "type": "textfield",
           "key": "message",
-          "label": "Message *",
+          "label": "Message <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Message",
           "validate": { "required": true },
           "input": true
         }

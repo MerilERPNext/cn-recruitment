@@ -15,7 +15,8 @@
         {
           "type": "select",
           "key": "loan_product",
-          "label": "Loan Product *",
+          "label": "Loan Product <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Loan Product",
           "placeholder": "Select Loan Product",
           "validate": {
             "required": true
@@ -34,7 +35,8 @@
         {
           "type": "number",
           "key": "loan_amount",
-          "label": "Loan Amount (INR) *",
+          "label": "Loan Amount (INR) <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Loan Amount (INR)",
           "validate": {
             "required": true,
             "min": 1
@@ -52,7 +54,8 @@
                 {
                   "type": "select",
                   "key": "repayment_method",
-                  "label": "Repayment Method *",
+                  "label": "Repayment Method <span style='color:red;margin-left:3px;'> *</span>",
+                  "errorLabel": "Repayment Method",
                   "input": true,
                   "defaultValue": "Repay Over Number of Periods",
                   "validate": {
@@ -80,7 +83,8 @@
                 {
                   "type": "number",
                   "key": "repayment_amount",
-                  "label": "Monthly Repayment Amount *",
+                  "label": "Monthly Repayment Amount <span style='color:red;margin-left:3px;'> *</span>",
+                  "errorLabel": "Monthly Repayment Amount",
                   "input": true,
                   "customConditional": "show = ['Repay Fixed Amount per Period'].includes(data.repayment_method || '');",
                   "validate": {
@@ -91,7 +95,8 @@
                 {
                   "type": "number",
                   "key": "repayment_periods",
-                  "label": "Repayment Period in Months *",
+                  "label": "Repayment Period in Months <span style='color:red;margin-left:3px;'> *</span>",
+                  "errorLabel": "Repayment Reriod in Months",
                   "input": true,
                   "customConditional": "show = ['Repay Over Number of Periods'].includes(data.repayment_method || '');",
                   "validate": {
@@ -108,7 +113,8 @@
         {
           "type": "textarea",
           "key": "description",
-          "label": "Reason *",
+          "label": "Reason <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Reason",
           "validate": {
             "required": true
           },

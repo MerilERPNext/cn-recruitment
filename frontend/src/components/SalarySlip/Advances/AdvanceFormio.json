@@ -13,7 +13,8 @@
       "customClass": "bg-white rounded-lg",
       "components": [
         {
-          "label": "Advance Type *",
+          "label": "Advance Type <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Advance Type",
           "key": "custom_advance_type",
           "type": "select",
           "input": true,
@@ -51,7 +52,8 @@
 
         },
         {
-          "label": "Advance Amount *",
+          "label": "Advance Amount <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Advance Amount",
           "key": "advance_amount",
           "type": "currency",
           "input": true,
@@ -61,7 +63,8 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Repayment Type *",
+          "label": "Repayment Type <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Repayment Type",
           "key": "custom_repayment_type",
           "type": "select",
           "input": true,
@@ -91,7 +94,8 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Repayment Start Date *",
+          "label": "Repayment Start Date <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Repayment Start Date",
           "key": "custom_repayment_start_date",
           "type": "datetime",
           "input": true,
@@ -103,7 +107,8 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Repayment Period (Months) *",
+          "label": "Repayment Period (Months) <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Repayment Period (Months)",
           "key": "repayment_periods",
           "type": "number",
           "input": true,
@@ -113,7 +118,8 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Monthly Repayment Amount *",
+          "label": "Monthly Repayment Amount <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Monthly Repayment Amount",
           "key": "repayment_amount",
           "type": "number",
           "input": true,
@@ -123,7 +129,8 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Purpose *",
+          "label": "Purpose <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Purpose",
           "key": "purpose",
           "type": "textarea",
           "input": true,

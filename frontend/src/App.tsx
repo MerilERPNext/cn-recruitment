@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import "./App.css";
 import "./utils/FormioConfig";
+import DOMPurify from "dompurify";
 
 import { AppRoute, routesConfig } from "./routesConfig";
 import ResponsiveDashboard from "./components/ResponsiveDashboard";
@@ -107,7 +108,13 @@ const App: React.FC = () => {
                         strokeWidth={2}
                       />
                     )}
-                    {message}
+                    {
+                      typeof message === "string" && /<\/?[a-z][\s\S]*>/i.test(message) ? (
+                        <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message || "") }} />
+                      ) : (
+                        <span>{message}</span>
+                      )
+                    }
                     {t.type !== "loading" && (
                       <button
                         className="ml-4 p-1 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 focus:outline-none transition-colors duration-200"
