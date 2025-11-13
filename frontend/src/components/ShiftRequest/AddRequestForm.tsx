@@ -108,7 +108,7 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
                 type: "datetime",
                 key: "fromDate",
                 label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
-                errorLabel: "Form Date",
+                errorLabel: "From Date",
                 input: true,
                 format: "dd/MM/yyyy",
                 enableDate: true,
@@ -140,7 +140,7 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
         type: "select",
         key: "shiftType",
         label: "Shift Type <span style='color:red;margin-left:3px;'> *</span>",
-                errorLabel: "Shift Type",
+        errorLabel: "Shift Type",
         input: true,
         placeholder: "Select shift type",
         data: {

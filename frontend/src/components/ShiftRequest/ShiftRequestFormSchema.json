@@ -14,7 +14,7 @@
                         {
                             "type": "datetime",
                             "key": "fromDate",
-                            "label": "From Date <span style='color:red;margin-left:3px;'>*</span>",
+                            "label": "From Date <span style='color:red;margin-left:3px;'> *</span>",
                             "errorLabel": "From Date",
                             "input": true,
                             "format": "dd/MM/yyyy",

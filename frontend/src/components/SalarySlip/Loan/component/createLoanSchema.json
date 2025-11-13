@@ -96,7 +96,7 @@
                   "type": "number",
                   "key": "repayment_periods",
                   "label": "Repayment Period in Months <span style='color:red;margin-left:3px;'> *</span>",
-                  "errorLabel": "Repayment Reriod in Months",
+                  "errorLabel": "Repayment Period in Months",
                   "input": true,
                   "customConditional": "show = ['Repay Over Number of Periods'].includes(data.repayment_method || '');",
                   "validate": {

@@ -448,7 +448,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
 
           {
             label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
-            errorLabel: "Form Date",
+            errorLabel: "From Date",
             key: "from_date",
             type: "datetime",
             input: true,

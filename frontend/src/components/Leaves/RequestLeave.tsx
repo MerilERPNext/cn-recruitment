@@ -276,7 +276,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       {
         type: "select",
         key: "leaveType",
-        label: "Leave Type <span <span style='color:red;margin-left:3px;'> *</span>",
+        label: "Leave Type <span style='color:red;margin-left:3px;'> *</span>",
         errorLabel: "Leave Type",
         placeholder: "Select Leave Type",
         input: true,
@@ -297,7 +297,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "fromDate",
-                label: "From Date <span <span style='color:red;margin-left:3px;'> *</span>",
+                label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "From Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -322,7 +322,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "toDate",
-                label: "To Date <span <span style='color:red;margin-left:3px;'> *</span>",
+                label: "To Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "To Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
