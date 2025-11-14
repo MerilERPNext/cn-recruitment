@@ -103,7 +103,29 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       }
       break;
 
-    case "Link":
+    case "Link": {
+      schema.type = "select";
+      schema.dataSrc = "url";
+      schema.searchEnabled = true;
+
+      schema.data = {
+        url: `/api/method/nextai.funnel.apis.fetch_data.get_searched_doc_list?fields=*`,
+      };
+
+      schema.filter = `doctype=${field?.options ?? ""}&limit=20`;
+      schema.dataType = "string";
+      schema.idPath = "name";
+      schema.valueProperty = "name";
+      schema.selectValues = "message";
+      schema.searchField = "q";
+
+      schema.template = `
+    <span>{{ item.title || item.label || item.full_name || item.fullname || item.first_name || item.name }}</span>
+  `;
+
+      break;
+    }
+
     case "Dynamic Link":
       // For Link fields, we'll treat them as select fields with empty options
       // In a real implementation, you'd fetch the linked doctype's records
