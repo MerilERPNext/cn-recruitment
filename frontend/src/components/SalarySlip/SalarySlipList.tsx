@@ -195,7 +195,7 @@ const SalarySlipsList = () => {
         )}
         isSearch={true}
         pageSize={10}
-        defaultFields={["name", "employee", "start_date", "end_date", "gross_pay", "net_pay", "status", "posting_date"]}
+        defaultFields={["name", "employee","employee_name", "start_date", "end_date", "gross_pay", "net_pay", "status", "posting_date"]}
         searchFields={["employee", "status", "posting_date"]}
         infiniteScroll={true}
         defaultFilters={filters as any}
@@ -346,7 +346,7 @@ const SalarySlipItemDesktop = ({
   return (
     <div className="my-data-row">
       <div className="flex items-center justify-between">
-        <span className="my-data-cell flex-1 font-medium truncate">{item.employee}</span>
+        <span className="my-data-cell flex-1 font-medium truncate">{item.employee_name}</span>
         <div className="my-data-cell flex-1 text-center">{formatToIndianDate(item.start_date)}</div>
         <div className="my-data-cell flex-1 text-center">{formatToIndianDate(item.end_date)}</div>
         <div className="my-data-cell flex-1 text-center">

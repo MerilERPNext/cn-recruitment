@@ -50,7 +50,7 @@ const BenefitCard = ({
                bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
                shadow-lg z-50"
                     >
-                      dummy email : anilr5364@gmail.com
+                      {data?.employee_name}
                     </div>
           </div>
           <div className="text-start">{data?.earning_component}</div>

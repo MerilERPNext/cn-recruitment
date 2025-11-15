@@ -3,6 +3,7 @@ import img from "../../../assets/pngegg.png";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import {  useChatAssistant, useDifinitaionNameForSeparation } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useConfirmation } from "../../../hooks/useConfiremnation";
 
 const ConfirmationWorkflow = () => {
  const { data: userId } = useLoggedInUser();
@@ -16,6 +17,9 @@ const ConfirmationWorkflow = () => {
       ? definitionName.filter((item: { funnel_name: string }) => item.funnel_name === funnelName)
       : [];
   }
+  const confirmationCreationData = useConfirmation();
+
+  console.log("Data:asdas???????????", confirmationCreationData?.data?.map((item: { name: string }) => item));
 //   const separationData = getFunnelData("Separation");
 const confirmationData = getFunnelData("Initiate Confirmation tool");
 const definition_name = confirmationData?.[0]?.name || "";

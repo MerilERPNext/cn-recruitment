@@ -8,6 +8,7 @@ export interface ApiRepayment {
 }
 
 export type ApiAdvance =  {
+  employee_name: any;
   amount: number;
   advance_account: string;
   employee: string;
@@ -23,6 +24,7 @@ export type ApiAdvance =  {
 
 // UI shape (your old Advance type)
 export interface UiAdvance {
+  employee_name: ReactNode;
   name: string;
   amount: number;
   numberOfDeductions: number;
