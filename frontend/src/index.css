@@ -368,6 +368,27 @@ code {
   vertical-align: middle;
 }
 
+/* Style the disabled select field */
+.formio-component-select select:disabled,
+.formio-component-select .form-control[disabled] {
+  background-color: #d1d5db; /* Light gray background */
+  cursor: not-allowed; /* Optional: make it clear that the field is disabled */
+}
+
+/* Style the disabled dropdown */
+.formio-component-select
+  .choices__list--dropdown[aria-expanded="false"]:disabled,
+.formio-component-select .choices__item[aria-disabled="true"] {
+  background-color: #d1d5db; /* Same light gray background */
+  cursor: not-allowed; /* Make it clear that the options are not clickable */
+}
+
+/* Make the input area in the dropdown look disabled */
+.formio-component-select .choices__input--cloned[disabled] {
+  background-color: #d1d5db; /* Light gray */
+  cursor: not-allowed;
+}
+
 /* If you use .form-section-header injected h4, keep them visually identical */
 .form-section-header h4 {
   font-weight: 600;

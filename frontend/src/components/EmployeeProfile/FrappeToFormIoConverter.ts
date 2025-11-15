@@ -103,7 +103,29 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       }
       break;
 
-    case "Link":
+    case "Link": {
+      schema.type = "select";
+      schema.dataSrc = "url";
+      schema.searchEnabled = true;
+
+      schema.data = {
+        url: `/api/method/nextai.funnel.apis.fetch_data.get_searched_doc_list?fields=*`,
+      };
+
+      schema.filter = `doctype=${field?.options ?? ""}&limit=20`;
+      schema.dataType = "string";
+      schema.idPath = "name";
+      schema.valueProperty = "name";
+      schema.selectValues = "message";
+      schema.searchField = "q";
+
+      schema.template = `
+    <span>{{ item.title || item.label || item.full_name || item.fullname || item.first_name || item.name }}</span>
+  `;
+
+      break;
+    }
+
     case "Dynamic Link":
       // For Link fields, we'll treat them as select fields with empty options
       // In a real implementation, you'd fetch the linked doctype's records
@@ -358,7 +380,7 @@ export function convertToFormioWithLayout(
     }
   };
 
-  // Helper function to ensure we have a current tab
+  // Helper to ensure we have a tab
   const ensureCurrentTab = () => {
     if (!currentTab) {
       currentTab = {
@@ -373,16 +395,14 @@ export function convertToFormioWithLayout(
   let fieldsBuffer: any[] = [];
 
   for (const field of apiFields) {
-    // Skip fields that shouldn't be rendered
     if (!field || !field.fieldtype || field?.label === "Connections") continue;
     if (field.hidden === true) continue;
 
-    // Only skip consecutive breaks if they're the same type AND consecutive
     if (lastFieldType.endsWith(" Break") && field.fieldtype === lastFieldType) {
       continue;
     }
     lastFieldType = field.fieldtype;
-    // Skip hidden system fields
+
     if (field.fieldtype === "Button" || field.hidden === 1) continue;
 
     if (field.fieldtype === "Tab Break") {
@@ -396,7 +416,6 @@ export function convertToFormioWithLayout(
         tabs.push(currentTab);
       }
 
-      // Start new tab
       currentTab = {
         label: field.label || `Tab ${tabs.length + 1}`,
         key: field.fieldname || `tab_${tabs.length + 1}`,
@@ -411,7 +430,6 @@ export function convertToFormioWithLayout(
         fieldsBuffer = [];
       }
 
-      // Close previous structures
       if (currentColumns && currentSection) {
         currentSection.components.push(currentColumns);
         currentColumns = null;
@@ -420,21 +438,15 @@ export function convertToFormioWithLayout(
         currentTab.components.push(currentSection);
       }
 
-      // Ensure we have a current tab
       ensureCurrentTab();
 
-      // Build panel base
       const panelKey =
         field.fieldname ||
         `section_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
-      // If the section is collapsible, set the title (panel header) to an inline-styled HTML string.
-      // If Form.io sanitizes the title HTML, it will fall back to plain text — in that case the title
-      // will still be present and the collapse icon will remain inline with it.
       if (field.collapsible) {
         currentSection = {
           type: "panel",
-          // inline-styled HTML for the title — no external CSS needed
           title: field.label
             ? `<span style="font-weight:600; font-size:1.05rem; line-height:1.2;">${field.label}</span>`
             : "",
@@ -444,10 +456,9 @@ export function convertToFormioWithLayout(
           tableView: false,
           collapsible: true,
           collapsed: !!field.collapsed,
-          customClass: "formio-section-panel", // keeps a hook if you ever want CSS
+          customClass: "formio-section-panel",
         };
 
-        // Add optional description as an htmlelement inside the panel body (keeps icon+title inline)
         if (field.description) {
           currentSection.components.push({
             type: "htmlelement",
@@ -458,11 +469,9 @@ export function convertToFormioWithLayout(
           });
         }
       } else {
-        // Non-collapsible: create a panel with an empty title (so the injected htmlelement
-        // visually matches other headers) and then inject a styled htmlelement as the first child.
         currentSection = {
           type: "panel",
-          title: "", // leave title empty to avoid duplicate header area
+          title: "",
           key: panelKey,
           components: [],
           input: false,
@@ -497,7 +506,6 @@ export function convertToFormioWithLayout(
       currentColumns = null;
       fieldsBuffer = [];
     } else if (field.fieldtype === "Column Break") {
-      // Ensure we have structures to work with
       ensureCurrentTab();
 
       if (!currentSection) {
@@ -524,7 +532,6 @@ export function convertToFormioWithLayout(
           tableView: false,
         };
 
-        // Create first column and move buffered fields into it
         const firstColumn = {
           components: [...fieldsBuffer],
           width: 6,
@@ -534,10 +541,9 @@ export function convertToFormioWithLayout(
           size: "md",
         };
         currentColumns.columns.push(firstColumn);
-        fieldsBuffer = []; // Clear buffer
+        fieldsBuffer = [];
       }
 
-      // Add new column for fields after this Column Break
       currentColumns.columns.push({
         components: [],
         width: 6,
@@ -549,35 +555,54 @@ export function convertToFormioWithLayout(
       currentColumnIndex = currentColumns.columns.length - 1;
     } else {
       const fieldValue = employeeData[field?.fieldname] || "";
-      // Regular field - map it to FormIO
       const mapped = mapFieldToFormio(field, fieldValue);
+      if (!mapped) continue;
 
-      if (!mapped) continue; // Skip if mapping failed
-
-      // Ensure we have a structure to put the field in
       ensureCurrentTab();
 
       if (currentColumns && currentColumns.columns.length > 0) {
-        // Put field inside current column
         currentColumns.columns[currentColumnIndex].components.push(mapped);
       } else if (currentSection) {
         fieldsBuffer.push(mapped);
       } else {
-        // Put field directly in tab
         currentTab.components.push(mapped);
       }
     }
   }
 
-  // Flush remaining open structures
+  // Flush remaining structures
   closeCurrentStructures();
   if (currentTab) {
     tabs.push(currentTab);
   }
 
+  // ✅ Helper: detect if a tab or section actually contains inputs
+  const hasInputs = (components: any[]): boolean =>
+    components?.some((comp) => {
+      if (comp.input) return true;
+      if (comp.components && hasInputs(comp.components)) return true;
+      if (
+        comp.columns &&
+        comp.columns.some((col: any) => hasInputs(col.components))
+      )
+        return true;
+      return false;
+    });
+
+  // ✅ Remove empty sections (panels without inputs)
+  tabs.forEach((tab) => {
+    tab.components = tab.components.filter(
+      (comp: any) =>
+        comp.type !== "panel" || (comp.components && hasInputs(comp.components))
+    );
+  });
+
+  // ✅ Remove empty tabs (those without any inputs)
+  const filteredTabs = tabs.filter((tab) => hasInputs(tab.components));
+
   // If no tabs were created, create a single general tab
-  if (tabs.length === 0) {
-    tabs.push({
+  if (filteredTabs.length === 0) {
+    filteredTabs.push({
       label: "General",
       key: "general",
       components: [],
@@ -586,13 +611,13 @@ export function convertToFormioWithLayout(
     });
   }
 
-  // Create the final FormIO schema
+  // ✅ Final schema
   const schema = {
     type: "form",
     display: "form",
     components:
-      tabs.length === 1
-        ? tabs[0].components // If only one tab, don't wrap in tabs component
+      filteredTabs.length === 1
+        ? filteredTabs[0].components
         : [
             {
               label: "Tabs",
@@ -600,7 +625,7 @@ export function convertToFormioWithLayout(
               type: "tabs",
               input: false,
               tableView: false,
-              components: tabs,
+              components: filteredTabs,
             },
           ],
   };

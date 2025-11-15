@@ -340,7 +340,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             : []),
 
           {
-            label: "Request Type",
+            label: "Request Type <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "Request Type",
             key: "request_type",
             type: "select",
             input: true,
@@ -446,7 +447,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           },
 
           {
-            label: "From Date",
+            label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "From Date",
             key: "from_date",
             type: "datetime",
             input: true,
@@ -459,9 +461,14 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             onChange: handleFromDateChange,
             disabled: selectedRequestType === "Clockin",
             redrawOn: "request_type",
+            validate: {
+              required: true,
+              custom: forActionType === 'create' ? "if (input && moment(input).isBefore(moment().startOf('day'))) { return 'From Date cannot be before today'; } return true;" : "return true;"
+            },
           },
           {
-            label: "To Date",
+            label: "To Date <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "To Date",
             key: "to_date",
             type: "datetime",
             input: true,
@@ -471,13 +478,18 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             customClass: "mb-4",
             enableTime: false,
             disabled: selectedRequestType === "Short Attendance Request",
-            validate: { required: true },
+            validate: {
+              required: true,
+              custom: "if (data.from_date && input && moment(input).isBefore(moment(data.from_date))) { return 'To Date cannot be before From Date'; } return true;"
+            },
             defaultValue: defaultAttendanceData?.to_date || selectedDate,
             customConditional:
               "show = !['Clockin'].includes(data.request_type || '');",
+              
           },
           {
-            label: "From Time",
+            label: "From Time <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "From Time",
             key: "custom_from_time",
             type: "datetime",
             input: true,
@@ -510,7 +522,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             },
           },
           {
-            label: "To Time",
+            label: "To Time <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "To Time",
             key: "custom_to_time",
             type: "datetime",
             input: true,
@@ -622,7 +635,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             },
           },
           {
-            label: "Location",
+            label: "Location <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "Location",
             key: "custom_location",
             type: "select",
             input: true,

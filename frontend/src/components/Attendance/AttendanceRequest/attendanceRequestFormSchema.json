@@ -31,7 +31,8 @@
           "defaultValue": ""
         },
         {
-          "label": "Employee",
+          "label": "Employee <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Employee",
           "key": "employee",
           "type": "select",
           "input": true,
@@ -83,7 +84,8 @@
           "applyMaskOn": "change"
         },
         {
-          "label": "Request Type",
+          "label": "Request Type <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Request Type",
           "key": "request_type",
           "type": "select",
           "input": true,
@@ -114,7 +116,8 @@
           }
         },
         {
-    "label": "From Date",
+    "label": "From Date <span style='color:red;margin-left:3px;'> *</span>",
+    "errorLabel": "From Date",
     "key": "from_date",
     "type": "datetime",
     "input": true,
@@ -134,7 +137,8 @@
     "redrawOn": "request_type"
   },
   {
-    "label": "To Date",
+    "label": "To Date <span style='color:red;margin-left:3px;'> *</span>",
+    "errorLabel": "To Date",
     "key": "to_date",
     "type": "datetime",
     "input": true,
@@ -155,7 +159,8 @@
     "redrawOn": "from_date"
   },
         {
-          "label": "From Time",
+           "label": "From Time <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "From Time",
           "key": "custom_from_time",
           "type": "datetime",
           "input": true,
@@ -179,7 +184,8 @@
           }
         },
         {
-          "label": "To Time",
+          "label": "To Time <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "To Time",
           "key": "custom_to_time",
           "type": "datetime",
           "input": true,
@@ -284,7 +290,8 @@
           "lazyLoad": false
         },
         {
-          "label": "Location",
+          "label": "Location <span style='color:red;margin-left:3px;'> *</span>",
+          "errorLabel": "Location",
           "key": "custom_location",
           "type": "select",
           "input": true,

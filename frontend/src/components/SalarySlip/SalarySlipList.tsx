@@ -16,6 +16,7 @@ import {
 import SalarySlipPDFModal from "./SalarySlipPDFModal"
 import { useScreenSize } from "../../hooks/useScreenSize"
 import { FaRegEye } from "react-icons/fa"
+import CardTable from "../shared/CardTable"
 
 const SalarySlipsList = () => {
   const navigate = useNavigate()
@@ -177,81 +178,73 @@ const SalarySlipsList = () => {
           htmlContent={modalHtmlContent}
         />
       )}
-
-      <FrappeListView
-        key={filtersKey}
-        doctype="Salary Slip"
-        ItemComponent={(props) => (
-          <SalarySlipItem
-            {...props}
-            maskSalary={maskSalary}
-            onDownloadType1={handleDownloadType1}
-            onDownloadType2={handleDownloadType2}
-            onDownloadType3={handleDownloadType3}
-            onDownloadType4={handleDownloadType4}
-            onViewPDF={handleGoToSalarySlip}
-            isDownloading={isDownloading}
-          />
-        )}
-        isSearch={true}
-        pageSize={10}
-        defaultFields={["name", "employee","employee_name", "start_date", "end_date", "gross_pay", "net_pay", "status", "posting_date"]}
-        searchFields={["employee", "status", "posting_date"]}
-        infiniteScroll={true}
-        defaultFilters={filters as any}
-        PreListComponent={() => (
-          <>
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <div className="flex-1 max-w-xs">
-                <select
-                  id="yearFilter"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  className="my-form-input"
-                >
-                  <option value="">All Years</option>
-                  {years.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                onClick={() => setMaskSalary((prev) => !prev)}
-                className="my-btn-secondary"
-                title={maskSalary ? "Show amounts" : "Hide amounts"}
-              >
-                {maskSalary ? (
-                  <>
-                    <span className="text-sm font-medium text-gray-700">Show Amounts</span>
-                    <BsToggleOff className="w-6 h-6 text-gray-400" />
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-medium text-gray-700">Hide Amounts</span>
-                    <BsToggleOn className="w-6 h-6 text-primary" />
-                  </>
-                )}
-              </button>
-            </div>
-
-            {isDesktop && (
-              <div className="bg-gray-50 border border-gray-200 rounded-t-lg">
-                <div className="flex items-center justify-between">
-                  <div className="my-table-header-text flex-1 min-w-0">Employee</div>
-                  <div className="my-table-header-text flex-1 min-w-0 text-center">Start Date</div>
-                  <div className="my-table-header-text flex-1 min-w-0 text-center">End Date</div>
-                  <div className="my-table-header-text flex-1 min-w-0 text-center">Gross Pay</div>
-                  <div className="my-table-header-text flex-1 min-w-0 text-center">Net Pay</div>
-                  <div className="my-table-header-text w-24 text-center">Actions</div>
+            <>
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <div className="flex-1 max-w-xs">
+                  <select
+                    id="yearFilter"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="my-form-input"
+                  >
+                    <option value="">All Years</option>
+                    {years.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-            )}
-          </>
-        )}
-      />
+
+                <button
+                  onClick={() => setMaskSalary((prev) => !prev)}
+                  className="my-btn-secondary"
+                  title={maskSalary ? "Show amounts" : "Hide amounts"}
+                >
+                  {maskSalary ? (
+                    <>
+                      <span className="text-sm font-medium text-gray-700">Show Amounts</span>
+                      <BsToggleOff className="w-6 h-6 text-gray-400" />
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sm font-medium text-gray-700">Hide Amounts</span>
+                      <BsToggleOn className="w-6 h-6 text-primary" />
+                    </>
+                  )}
+                </button>
+              </div> 
+              
+            </>
+      <CardTable 
+         
+         titles={[
+          "Employee", "Start Date", "End Date", "Gross Pay", "Net Pay", "Actions"
+        ]}
+      >
+        <FrappeListView
+          key={filtersKey}
+          doctype="Salary Slip"
+          ItemComponent={(props) => (
+            <SalarySlipItem
+              {...props}
+              maskSalary={maskSalary}
+              onDownloadType1={handleDownloadType1}
+              onDownloadType2={handleDownloadType2}
+              onDownloadType3={handleDownloadType3}
+              onDownloadType4={handleDownloadType4}
+              onViewPDF={handleGoToSalarySlip}
+              isDownloading={isDownloading}
+            />
+          )}
+          isSearch={false}
+          pageSize={10}
+          defaultFields={["name", "employee", "start_date", "end_date", "gross_pay", "net_pay", "status", "posting_date"]}
+          searchFields={["employee", "status", "posting_date"]}
+          infiniteScroll={true}
+          defaultFilters={filters as any}
+        />
+      </CardTable>
     </div>
   )
 }
@@ -272,7 +265,7 @@ const DownloadMenu = ({ itemName, isDownloading, onType1, onType2, onType3, onTy
   return (
     <div ref={menuRef} className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => {setOpen(!open);}}
         disabled={isDownloading}
         className="my-btn-icon disabled:cursor-not-allowed"
         title="Download Options"
@@ -345,17 +338,17 @@ const SalarySlipItemDesktop = ({
 
   return (
     <div className="my-data-row">
-      <div className="flex items-center justify-between">
-        <span className="my-data-cell flex-1 font-medium truncate">{item.employee_name}</span>
-        <div className="my-data-cell flex-1 text-center">{formatToIndianDate(item.start_date)}</div>
-        <div className="my-data-cell flex-1 text-center">{formatToIndianDate(item.end_date)}</div>
-        <div className="my-data-cell flex-1 text-center">
+      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+        <span className="text-sm font-medium text-gray-700 text-start truncate">{item.employee}</span>
+        <div className="text-sm font-medium text-gray-700 text-start truncate">{formatToIndianDate(item.start_date)}</div>
+        <div className="text-sm font-medium text-gray-700 text-start truncate">{formatToIndianDate(item.end_date)}</div>
+        <div className="text-sm font-medium text-gray-700 text-start truncate">
           {maskSalary ? <span className="blur-sm text-gray-400">₹XX,XXX</span> : formatCurrency(item.gross_pay)}
         </div>
-        <div className="my-data-cell flex-1 text-center">
+        <div className="text-sm font-medium text-gray-700 text-start truncate">
           {maskSalary ? <span className="blur-sm text-gray-400">₹XX,XXX</span> : formatCurrency(item.net_pay)}
         </div>
-        <div className="my-data-cell w-24 flex items-center justify-center gap-2">
+        <div className="flex items-center justify-start gap-2 text-sm font-medium text-gray-700 text-start ">
           <DownloadMenu
             itemName={item.name}
             isDownloading={isDownloading}

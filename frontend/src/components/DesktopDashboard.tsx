@@ -302,12 +302,20 @@ export default function DesktopDashboard() {
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              Welcome, {currentEmployee?.employee_name || "Temp User"}!
-            </h1>
-            <p className="text-xs text-gray-600">
-              Here's your dashboard for today.
-            </p>
+            {(currentEmployee?.employee_name || currentUserIsAdmin) ?
+            <>
+              <h1 className="text-xl font-bold text-gray-900">
+                  Welcome, {currentEmployee?.employee_name || currentUser?.username}!
+              </h1>
+              <p className="text-xs text-gray-600">
+                Here's your dashboard for today.
+              </p>
+            </>
+            :   <>
+                <div className="w-52 h-6 my-2 rounded-lg bg-gray-300 animate-pulse"></div>
+                <div className="w-32 h-4 my-1 rounded-lg bg-gray-300 animate-pulse"></div>
+                </>
+            }
           </div>
           <div className="relative">
             <input
