@@ -5,9 +5,10 @@ import { useNavigate } from "react-router";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 
 export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
-    const { data: employee  } = useCurrentEmployee();
-    const employeeId = employee?.name;
-  console.log("currentEmployee1234567890", employeeId)
+  const { data: employee } = useCurrentEmployee();
+  const employeeId = employee?.name;
+  const navigate = useNavigate();
+
   const {
     id,
     name,
@@ -18,25 +19,26 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
     totalChildren = 0,
     showExpand = true,
   } = data;
-  const navigate = useNavigate();
 
   return (
     <div className="relative">
       <Handle
         type="target"
         position={Position.Top}
-        style={{ background: "transparent", border: "none", width: "1px", height: "1px" }}
+        style={{
+          background: "transparent",
+          border: "none",
+          width: "1px",
+          height: "1px",
+        }}
       />
 
       <div
         className="min-w-[160px] px-4 py-3 bg-white border border-gray-300 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg cursor-pointer"
         onClick={() => {
-          // Redirect to the clicked employee profile
           if (employeeId === id) {
-            // Agar current user ki ID match karti hai
             navigate(`/webapp/organizational-chart?employee=${id}`);
           } else {
-            // Agar different user par click hua hai
             navigate(`/webapp/employee-profile/${id}`);
           }
         }}
@@ -82,7 +84,12 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
       <Handle
         type="source"
         position={Position.Bottom}
-        style={{ background: "transparent", border: "none", width: "1px", height: "1px" }}
+        style={{
+          background: "transparent",
+          border: "none",
+          width: "1px",
+          height: "1px",
+        }}
       />
     </div>
   );

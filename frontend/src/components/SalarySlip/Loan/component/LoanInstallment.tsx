@@ -1,3 +1,4 @@
+import CardTable from "../../../shared/CardTable";
 import { Installment } from "../Type/loan";
 
 interface LoanInstallmentsProps {
@@ -17,44 +18,80 @@ export default function LoanInstallments({ installments }: LoanInstallmentsProps
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat("en-IN").format(num);
   };
+  const titles = [
+    "",
+    "Loan Name",
+    "Loan Type",
+    "Loan Amount",
+    "Rate of Interest",
+    "Standard Interest",
+    "EMI Type",
+    "Installments",
+    "Start Date",
+    "End Month",
+    "Status",
+  ];
+
+  const columnWidths = [
+    "3rem",
+    "1.5fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+  ];
 
   return (
     <div>
       <h3 className="font-semibold mb-4 text-gray-900">Loans Breakup Details</h3>
-      <div className="overflow-x-auto border rounded">
-        {/* CHANGED: Using .my-table-header and .my-table-header-text */}
-        <div className="my-table-header grid grid-cols-9 rounded-t">
-          <div className="my-table-header-text">Installment</div>
-          <div className="my-table-header-text">Installment Month</div>
-          <div className="my-table-header-text">Opening Balance</div>
-          <div className="my-table-header-text">Installment Amount</div>
-          <div className="my-table-header-text">Interest (1)</div>
-          <div className="my-table-header-text">Loans EMI</div>
-          <div className="my-table-header-text">Standard Interest (2)</div>
-          <div className="my-table-header-text">Principal Balance</div>
-          <div className="my-table-header-text">Perquisites</div>
-        </div>
-
-        <div className="text-sm divide-y divide-gray-200">
-          {installments.map((installment, index) => (
-            // CHANGED: Using .my-data-row and .my-data-cell
+      <CardTable titles={titles} columnWidths={columnWidths}>
+      <div className="text-sm divide-y divide-gray-200">
+        {installments.length > 0 ? (
+          installments.map((installment, index) => (
             <div
               key={installment.id || index}
-              className="my-data-row grid grid-cols-9"
+              className="my-data-row grid gap-4 px-6 py-2"
+              style={{ gridTemplateColumns: columnWidths.join(" ") }}
             >
-              <div className="my-data-cell">{index + 1}</div>
-              <div className="my-data-cell">{installment.payment_date}</div>
-              <div className="my-data-cell">{formatCurrency(installment.balance_loan_amount + installment.principal_amount)}</div>
-              <div className="my-data-cell">{formatCurrency(installment.total_payment)}</div>
-              <div className="my-data-cell">{formatNumber(installment.interest_amount)}</div>
-              <div className="my-data-cell">{formatCurrency(installment.total_payment)}</div>
-              <div className="my-data-cell">{formatNumber(installment.interest_amount)}</div>
-              <div className="my-data-cell">{formatCurrency(installment.principal_amount)}</div>
-              <div className="my-data-cell">-</div>
+              <div className=" ">{index + 1}</div>
+              <div className=" ">{installment.payment_date}</div>
+              <div className=" ">
+                {formatCurrency(
+                  installment.balance_loan_amount + installment.principal_amount
+                )}
+              </div>
+              <div className=" ">
+                {formatCurrency(installment.total_payment)}
+              </div>
+              <div className=" ">
+                {formatNumber(installment.interest_amount)}
+              </div>
+              <div className=" ">
+                {formatCurrency(installment.total_payment)}
+              </div>
+              <div className=" ">
+                {formatNumber(installment.interest_amount)}
+              </div>
+              <div className=" ">
+                {formatCurrency(installment.principal_amount)}
+              </div>
+              <div className=" ">0</div>
+              <div className=" ">0</div>
+              <div className=" ">0</div>
             </div>
-          ))}
-        </div>
+          ))
+        ) : (
+          <div className="text-center text-gray-500 py-4">
+            No installments available.
+          </div>
+        )}
       </div>
+    </CardTable>
     </div>
   );
 }

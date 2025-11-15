@@ -40,8 +40,18 @@ const BenefitCard = ({
           className={`w-full  grid grid-cols-6 items-center gap-4 px-6 min-h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
         >
           <div className="font-medium">{data?.employee_name}</div>
-          <div className="font-medium">
+          <div className=" text-start relative group inline-block overflow-visible">
             <StatusBadge status={status?.label} />
+                                {/* Tooltip */}
+                                <div
+                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
+               opacity-0 invisible group-hover:opacity-100 group-hover:visible
+               transition-all duration-150 ease-out pointer-events-none
+               bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
+               shadow-lg z-50"
+                    >
+                      {data?.employee_name}
+                    </div>
           </div>
           <div className="text-start">{data?.earning_component}</div>
           <div className=" text-start">{formattedClaimDate}</div>
