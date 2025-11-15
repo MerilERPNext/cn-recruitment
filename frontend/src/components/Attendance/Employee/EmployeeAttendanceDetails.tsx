@@ -106,10 +106,10 @@ const EmployeeAttendanceDetails = ({
           ["employee", "=", currentEmployee.employee],
           ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
           ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
+          ["docstatus", "!=", 2],
         ]
       : []
   );
-
   const hasExistingRequest =
     attendanceRequests && attendanceRequests.length > 0;
 
@@ -186,7 +186,7 @@ const EmployeeAttendanceDetails = ({
     });
     setShowEditModal(true);
   };
-   
+
   const renderHeader = () => {
     let headerTitle = "Attendance Details";
 
@@ -300,10 +300,10 @@ const EmployeeAttendanceDetails = ({
       return renderLoadingState();
     }
 
-    if(data?.status.toLowerCase()==="holiday" && data?.title){
-      return(
+    if (data?.status.toLowerCase() === "holiday" && data?.title) {
+      return (
         <p className="text-sm my-4 text-gray-700 text-center">{data.title}</p>
-      )
+      );
     }
     return (
       <div className="flex-grow overflow-y-auto p-4">
