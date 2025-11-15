@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import {
@@ -222,6 +222,59 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       setFormSchema(filteredSchema);
     }
   }, [reqValidationmutation?.data, propSchema]);
+
+  const initialSubmissionSet = useRef(false);
+
+  const initialSubmission = useMemo(
+    () => ({
+      data: {
+        from_date: defaultAttendanceData?.from_date || selectedDate,
+        to_date: defaultAttendanceData?.to_date || selectedDate,
+        request_type: defaultAttendanceData?.custom_request_type,
+        employee: defaultAttendanceData?.employee || "",
+        company: "",
+        custom_from_time: defaultAttendanceData?.custom_from_time
+          ? new Date(
+              `1970-01-01T${normalizeTime(
+                defaultAttendanceData.custom_from_time
+              )}`
+            )
+          : "",
+        custom_to_time: defaultAttendanceData?.custom_to_time
+          ? new Date(
+              `1970-01-01T${normalizeTime(
+                defaultAttendanceData.custom_to_time
+              )}`
+            )
+          : "",
+        custom__request_reason:
+          defaultAttendanceData?.custom__request_reason || "",
+        custom_location: defaultAttendanceData?.custom_location || "",
+        select_shift: defaultAttendanceData?.shift || "",
+        overnight_out_duty: false,
+        message: defaultAttendanceData?.explanation || "",
+        attachments: defaultAttendanceData?.custom_attachment
+          ? [
+              {
+                name: defaultAttendanceData.custom_attachment.split("/").pop(),
+                url: defaultAttendanceData.custom_attachment,
+              },
+            ]
+          : [],
+        isForOthers: isForOthers,
+        currentEmployeeId: currentEmployee?.employee || "",
+        currentUserId: currentEmployee?.user_id || "",
+      },
+    }),
+    // only recompute if these meaningful inputs change:
+    [
+      defaultAttendanceData,
+      selectedDate,
+      currentEmployee?.employee,
+      currentEmployee?.user_id,
+      isForOthers,
+    ]
+  );
 
   // Update hidden fields when isForOthers or currentEmployee changes
   useEffect(() => {
@@ -478,57 +531,80 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           ) : null}
           <Form
             form={formSchema}
-            submission={{
-              data: {
-                from_date: defaultAttendanceData?.from_date || selectedDate,
-                to_date: defaultAttendanceData?.to_date || selectedDate,
-                request_type: defaultAttendanceData?.custom_request_type,
-                employee: defaultAttendanceData?.employee || "",
-                company: "",
-                custom_from_time: defaultAttendanceData?.custom_from_time
-                  ? new Date(
-                      `1970-01-01T${normalizeTime(
-                        defaultAttendanceData.custom_from_time
-                      )}`
-                    )
-                  : "",
-                custom_to_time: defaultAttendanceData?.custom_to_time
-                  ? new Date(
-                      `1970-01-01T${normalizeTime(
-                        defaultAttendanceData.custom_to_time
-                      )}`
-                    )
-                  : "",
-                custom__request_reason:
-                  defaultAttendanceData?.custom__request_reason || "",
-                custom_location: defaultAttendanceData?.custom_location || "",
-                select_shift: defaultAttendanceData?.shift || "",
-                overnight_out_duty: false,
-                message: defaultAttendanceData?.explanation || "",
-                attachments: defaultAttendanceData?.custom_attachment
-                  ? [
-                      {
-                        name: defaultAttendanceData.custom_attachment
-                          .split("/")
-                          .pop(),
-                        url: defaultAttendanceData.custom_attachment,
-                      },
-                    ]
-                  : [],
-                isForOthers: isForOthers,
-                currentEmployeeId: currentEmployee?.employee || "",
-                currentUserId: currentEmployee?.user_id || "",
-              },
-            }}
+            // submission={{
+            //   data: {
+            //     from_date: defaultAttendanceData?.from_date || selectedDate,
+            //     to_date: defaultAttendanceData?.to_date || selectedDate,
+            //     request_type: defaultAttendanceData?.custom_request_type,
+            //     employee: defaultAttendanceData?.employee || "",
+            //     company: "",
+            //     custom_from_time: defaultAttendanceData?.custom_from_time
+            //       ? new Date(
+            //           `1970-01-01T${normalizeTime(
+            //             defaultAttendanceData.custom_from_time
+            //           )}`
+            //         )
+            //       : "",
+            //     custom_to_time: defaultAttendanceData?.custom_to_time
+            //       ? new Date(
+            //           `1970-01-01T${normalizeTime(
+            //             defaultAttendanceData.custom_to_time
+            //           )}`
+            //         )
+            //       : "",
+            //     custom__request_reason:
+            //       defaultAttendanceData?.custom__request_reason || "",
+            //     custom_location: defaultAttendanceData?.custom_location || "",
+            //     select_shift: defaultAttendanceData?.shift || "",
+            //     overnight_out_duty: false,
+            //     message: defaultAttendanceData?.explanation || "",
+            //     attachments: defaultAttendanceData?.custom_attachment
+            //       ? [
+            //           {
+            //             name: defaultAttendanceData.custom_attachment
+            //               .split("/")
+            //               .pop(),
+            //             url: defaultAttendanceData.custom_attachment,
+            //           },
+            //         ]
+            //       : [],
+            //     isForOthers: isForOthers,
+            //     currentEmployeeId: currentEmployee?.employee || "",
+            //     currentUserId: currentEmployee?.user_id || "",
+            //   },
+            // }}
             onSubmit={handleSubmit}
             options={{
               builder: { styles: false },
               submitButton: false,
               noAlerts: true,
+              clearOnSubmit: false,
+              keepAlive: true,
             }}
             onChange={handleFormChange}
             onFormReady={(instance: FormioFormInstance) => {
               formAddressInstance.current = instance;
+              if (!initialSubmissionSet.current) {
+                try {
+                  // use setSubmission to initialize the form once
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (instance as any).setSubmission?.(initialSubmission);
+                  initialSubmissionSet.current = true;
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                } catch (err) {
+                  // fallback if setSubmission not available
+                  try {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (instance as any).submission = initialSubmission;
+                    initialSubmissionSet.current = true;
+                  } catch (e) {
+                    console.warn(
+                      "Could not set initial submission on form instance",
+                      e
+                    );
+                  }
+                }
+              }
 
               // Disable dataSrc behavior on company field
               const companyComponent = instance.getComponent("company");
