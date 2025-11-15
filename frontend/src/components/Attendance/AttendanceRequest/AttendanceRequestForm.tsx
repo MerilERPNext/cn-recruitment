@@ -340,7 +340,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             : []),
 
           {
-            label: "Request Type *",
+            label: "Request Type <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "Request Type",
             key: "request_type",
             type: "select",
             input: true,
@@ -446,7 +447,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           },
 
           {
-            label: "From Date *",
+            label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "From Date",
             key: "from_date",
             type: "datetime",
             input: true,
@@ -465,7 +467,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             },
           },
           {
-            label: "To Date *",
+            label: "To Date <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "To Date",
             key: "to_date",
             type: "datetime",
             input: true,
@@ -485,7 +488,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               
           },
           {
-            label: "From Time *",
+            label: "From Time <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "From Time",
             key: "custom_from_time",
             type: "datetime",
             input: true,
@@ -518,7 +522,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             },
           },
           {
-            label: "To Time *",
+            label: "To Time <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "To Time",
             key: "custom_to_time",
             type: "datetime",
             input: true,
@@ -630,7 +635,8 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             },
           },
           {
-            label: "Location *",
+            label: "Location <span style='color:red;margin-left:3px;'> *</span>",
+            errorLabel: "Location",
             key: "custom_location",
             type: "select",
             input: true,

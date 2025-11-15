@@ -107,7 +107,8 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
               {
                 type: "datetime",
                 key: "fromDate",
-                label: "From Date",
+                label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
+                errorLabel: "From Date",
                 input: true,
                 format: "dd/MM/yyyy",
                 enableDate: true,
@@ -122,7 +123,8 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
               {
                 type: "datetime",
                 key: "toDate",
-                label: "To Date",
+                label: "To Date <span style='color:red;margin-left:3px;'> *</span>",
+                errorLabel: "To Date",
                 input: true,
                 format: "dd/MM/yyyy",
                 enableDate: true,
@@ -137,7 +139,8 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
       {
         type: "select",
         key: "shiftType",
-        label: "Shift Type",
+        label: "Shift Type <span style='color:red;margin-left:3px;'> *</span>",
+        errorLabel: "Shift Type",
         input: true,
         placeholder: "Select shift type",
         data: {
@@ -151,7 +154,8 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
       {
         type: "textarea",
         key: "reason",
-        label: "Reason",
+        label: "Reason <span style='color:red;margin-left:3px;'> *</span>",
+                errorLabel: "Reason",
         placeholder: "Enter reason",
         input: true,
         validate: { required: true },
