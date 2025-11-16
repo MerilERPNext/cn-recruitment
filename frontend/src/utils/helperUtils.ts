@@ -225,3 +225,117 @@ export const mapFiltersToConditions = (
     return [key, "=", value];
   });
 };
+
+//Badge status color
+// badgeHelpers.ts
+export type BadgeSize = "sm" | "md" | "lg";
+
+export interface BadgePropsFromHelper {
+  backgroundColor: string; // tailwind bg-*
+  textColor: string; // tailwind text-*
+  size?: BadgeSize;
+}
+
+/**
+ * For status strings like "Open", "Closed", "In Progress", etc.
+ */
+export const getBadgePropsByStatus = (
+  status?: string
+): BadgePropsFromHelper => {
+  if (!status) {
+    return {
+      backgroundColor: "bg-gray-100",
+      textColor: "text-gray-600",
+      size: "sm",
+    };
+  }
+
+  switch (status.toLowerCase()) {
+    case "open":
+    case "pending":
+      return {
+        backgroundColor: "bg-[#ffeaea]",
+        textColor: "text-red-500",
+        size: "sm",
+      };
+
+    case "closed":
+    case "done":
+    case "completed":
+      return {
+        backgroundColor: "bg-[#eaffea]", 
+        textColor: "text-green-600",
+        size: "sm",
+      };
+
+    case "in progress":
+    case "progress":
+      return {
+        backgroundColor: "bg-blue-100",
+        textColor: "text-blue-600",
+        size: "sm",
+      };
+
+    case "on hold":
+      return {
+        backgroundColor: "bg-yellow-100",
+        textColor: "text-yellow-700",
+        size: "sm",
+      };
+
+    default:
+      return {
+        backgroundColor: "bg-gray-100",
+        textColor: "text-gray-600",
+        size: "sm",
+      };
+  }
+};
+
+/**
+ * For priority strings like "Low", "Medium", "High", "Urgent"
+ */
+export const getBadgePropsByPriority = (
+  priority?: string
+): BadgePropsFromHelper => {
+  if (!priority) {
+    return {
+      backgroundColor: "bg-gray-100",
+      textColor: "text-gray-600",
+      size: "sm",
+    };
+  }
+
+  switch (priority.toLowerCase()) {
+    case "low":
+      return {
+        backgroundColor: "bg-green-100",
+        textColor: "text-green-600",
+        size: "sm",
+      };
+    case "medium":
+      return {
+        backgroundColor: "bg-yellow-100",
+        textColor: "text-yellow-600",
+        size: "sm",
+      };
+    case "high":
+      return {
+        backgroundColor: "bg-orange-100",
+        textColor: "text-orange-600",
+        size: "sm",
+      };
+    case "urgent":
+      return {
+        backgroundColor: "bg-red-100",
+        textColor: "text-red-600",
+        size: "sm",
+      };
+    default:
+      return {
+        backgroundColor: "bg-gray-100",
+        textColor: "text-gray-600",
+        size: "sm",
+      };
+  }
+};

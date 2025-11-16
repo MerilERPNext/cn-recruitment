@@ -22,6 +22,8 @@ import {
   useGetLeaveBalance,
 } from "../../hooks/useLeaves";
 import { LeaveFieldFlags } from "../../types/leaves";
+import Button from "../shared/atoms/Button";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -55,7 +57,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const { triggerRefetch } = useLeaveRequestRefresh();
   const { defaults } = useRequestLeaveModal();
-
+  const { isDesktop } = useScreenSize();
   const createLeaveMutation = useCreateFrappeDocument({
     onSuccess: (newDoc) => {
       setTimeout(() => {
@@ -532,12 +534,23 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           />
         </div>
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <button
+          {/* <button
             onClick={handleSubmit}
             className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Submit Request
-          </button>
+          </button> */}
+          <Button
+            fullWidth
+            size="lg"
+            variant="contain"
+            bgColor={"blue-600"}
+            textColor="white"
+            className="hover:bg-blue-700"
+            onClick={handleSubmit}
+          >
+            Submit Request
+          </Button>
         </div>
       </div>
     </div>

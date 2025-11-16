@@ -1,7 +1,8 @@
 import React from "react";
-import { ExternalLink, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import FrappeListView from "../ListView";
 import DOMPurify from "dompurify";
+import { ViewAll } from "../shared/atoms/ViewAll";
 
 interface ToDo {
   priority: string;
@@ -83,8 +84,8 @@ const MyToDoItem: React.FC<{
 
   return (
     <div className="flex items-center p-2 rounded-lg bg-gray-100 gap-3 mb-2">
-      <div className="w-8 h-8 bg-purple-100 rounded flex items-center justify-center flex-shrink-0">
-        <FileText className="w-4 h-4 text-purple-600" />
+      <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
+        <FileText className="w-4 h-4 text-blue-500" />
       </div>
       <div className="flex w-full">
         <div className="flex w-full items-center gap-2 mb-1 flex-wrap">
@@ -119,14 +120,8 @@ const TasksAwaiting: React.FC = () => {
   return (
     <div className="bg-white rounded-lg p-6 mb-2 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="card-header-title">Tasks Awaiting You</h2>
-        <button
-          onClick={handleTodoClick}
-          className="card-header-action flex items-center gap-1 hover:text-blue-600 hover:underline"
-        >
-          <span>Visit Todo</span>
-          <ExternalLink size={16} />
-        </button>
+        <h3 className="section-title">Tasks Awaiting You</h3>
+        <ViewAll title="Visit Todo" onClick={handleTodoClick} />
       </div>
 
       <div className="overflow-y-auto h-[25rem]">

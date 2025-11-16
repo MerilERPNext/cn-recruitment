@@ -79,9 +79,9 @@ export default {
         hairline: 100,
       },
       fontFamily: {
-        brand: ["Source Sans Pro", "sans-serif"],
-        sans: ["Source Sans Pro", "sans-serif"],
-        serif: ["Source Sans Pro", "sans-serif"],
+        brand: ["Inter", "Source Sans Pro", "sans-serif"],
+        sans: ["Inter", "Source Sans Pro", "sans-serif"],
+        serif: ["Inter", "Source Sans Pro", "sans-serif"],
         inconsolata: ["Inconsolata"],
         source: [
           "source-code-pro",

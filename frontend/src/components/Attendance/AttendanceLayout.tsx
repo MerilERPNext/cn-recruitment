@@ -15,6 +15,7 @@ import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { SidebarProvider, useSidebar } from "./SidebarContext";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
+import Button from "../shared/atoms/Button";
 
 const AttendanceLayoutContent: React.FC = () => {
   const { data: userId } = useLoggedInUser();
@@ -167,7 +168,7 @@ const AttendanceLayoutContent: React.FC = () => {
   const ActionsButton = () => {
     return (
       <div className="relative" ref={actionsDropdownRef}>
-        <button
+        {/* <button
           onClick={() => setShowActionsDropdown(!showActionsDropdown)}
           className="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
         >
@@ -177,7 +178,20 @@ const AttendanceLayoutContent: React.FC = () => {
               showActionsDropdown ? "rotate-180" : ""
             }`}
           />
-        </button>
+        </button> */}
+        <Button
+          onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+          size="lg"
+          bgColor="blue-600"
+          className="hover:bg-blue-700"
+        >
+          + Request Forms
+          <ChevronDown
+            className={`w-4 h-4 transition-transform duration-200 ${
+              showActionsDropdown ? "rotate-180" : ""
+            }`}
+          />
+        </Button>
 
         {/* Actions Dropdown - Positioned to the top of the button */}
         {showActionsDropdown && (

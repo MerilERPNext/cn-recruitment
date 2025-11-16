@@ -1,6 +1,7 @@
 import React from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
+import { ViewAll } from "../shared/atoms/ViewAll";
 
 interface CNMicroapp {
   name: string;
@@ -60,8 +61,9 @@ const MicroAppInDashboard: React.FC = () => {
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900">Admin Apps</h3>
-        <span className="text-blue-600 text-sm cursor-pointer">View All</span>
+        <h3 className="section-title">Admin Apps</h3>
+        {/* <span className="text-blue-600 text-sm cursor-pointer">View All</span> */}
+        <ViewAll title="View All" />
       </div>
       <div>
         <FrappeListView

@@ -10,6 +10,7 @@ import CardTable from "../../shared/CardTable";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router-dom";
+import { ViewAll } from "../../shared/atoms/ViewAll";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -97,13 +98,11 @@ const AttendanceRequest = ({
                 {/* Pending */}
 
                 <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-800 pb-1">
-                    My Attendance Requests
-                  </h2>
+                  <h2 className="module-title pb-1">My Attendance Requests</h2>
 
                   <div className="flex items-center space-x-3 pb-1">
                     <FilterDropdowns /> {/* Add the dropdown here */}
-                    <button
+                    {/* <button
                       onClick={() => {
                         navigate(
                           "/webapp/attendance/attendance-request/pendings"
@@ -112,7 +111,15 @@ const AttendanceRequest = ({
                       className="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
                     >
                       View All
-                    </button>
+                    </button> */}
+                    <ViewAll
+                      title="View All"
+                      onClick={() => {
+                        navigate(
+                          "/webapp/attendance/attendance-request/pendings"
+                        );
+                      }}
+                    />
                   </div>
                 </div>
                 <CardTable

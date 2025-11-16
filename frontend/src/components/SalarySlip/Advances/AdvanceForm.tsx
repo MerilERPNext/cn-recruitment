@@ -14,6 +14,7 @@ import {
 
 // ✅ Import JSON schema
 import advanceFormJson from "../Advances/AdvanceFormio.json";
+import Button from "../../shared/atoms/Button";
 
 interface AdvanceFormProps {
   user?: any;
@@ -176,18 +177,27 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
       {/* Footer */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3">
         <div className="max-w-3xl mx-auto flex space-x-3">
-          <button
+          <Button
             onClick={handleCancel}
-            className="flex-1 py-3 px-6 rounded-lg border border-gray-300 text-gray-700"
+            size="md"
+            variant="outline"
+            bgColor="gray-300"
+            className="flex-1 border text-gray-700 py-3"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSubmit}
-            className="flex-1 py-3 px-6 rounded-lg bg-black text-white hover:bg-gray-800"
+            size="md"
+            variant="contain"
+            bgColor={isDesktop ? "blue-600" : "black"}
+            textColor="white"
+            className={`flex-1 ${
+              isDesktop ? "hover:bg-blue-700 py-3" : "hover:bg-gray-800"
+            }`}
           >
             Submit
-          </button>
+          </Button>
         </div>
       </div>
     </div>

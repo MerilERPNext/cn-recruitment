@@ -6,7 +6,10 @@ import {
   useQuery,
   useInfiniteQuery,
 } from "@tanstack/react-query";
-import { useCustomApiQuery, useCustomApiInfiniteQuery } from "../hooks/useCustomApi";
+import {
+  useCustomApiQuery,
+  useCustomApiInfiniteQuery,
+} from "../hooks/useCustomApi";
 import {
   Search,
   Filter,
@@ -170,7 +173,10 @@ const DataListView = <T extends BaseItem>({
   }, [filtersString, enableUrlParams]);
 
   // Memoize stringified defaultFilters to avoid complex dependency
-  const defaultFiltersString = useMemo(() => JSON.stringify(defaultFilters), [defaultFilters]);
+  const defaultFiltersString = useMemo(
+    () => JSON.stringify(defaultFilters),
+    [defaultFilters]
+  );
 
   useEffect(() => {
     setFilters(defaultFilters || {});
@@ -185,7 +191,10 @@ const DataListView = <T extends BaseItem>({
   }, [searchTerm]);
 
   // Memoize stringified filters to avoid complex dependency
-  const currentFiltersString = useMemo(() => JSON.stringify(filters), [filters]);
+  const currentFiltersString = useMemo(
+    () => JSON.stringify(filters),
+    [filters]
+  );
 
   // Reset to first page when search or filters change
   useEffect(() => {
@@ -260,7 +269,9 @@ const DataListView = <T extends BaseItem>({
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const infiniteQueryResult = customAPI ? customApiInfiniteResult : fetchFunctionInfiniteResult;
+  const infiniteQueryResult = customAPI
+    ? customApiInfiniteResult
+    : fetchFunctionInfiniteResult;
 
   // Traditional pagination query - always call both hooks but enable conditionally
   const customApiPaginationResult = useCustomApiQuery<T>(
@@ -274,7 +285,8 @@ const DataListView = <T extends BaseItem>({
       pageParam: (currentPage - 1) * (queryParams.pageSize || 20),
     },
     {
-      enabled: !infiniteScroll && !loadMorePagination && !isLoading && !!customAPI,
+      enabled:
+        !infiniteScroll && !loadMorePagination && !isLoading && !!customAPI,
       refetchOnWindowFocus: false,
     }
   );
@@ -286,12 +298,19 @@ const DataListView = <T extends BaseItem>({
         ...queryParams,
         pageParam: (currentPage - 1) * (queryParams.pageSize || 20),
       }),
-    enabled: !infiniteScroll && !loadMorePagination && !isLoading && !!fetchFunction && !customAPI,
+    enabled:
+      !infiniteScroll &&
+      !loadMorePagination &&
+      !isLoading &&
+      !!fetchFunction &&
+      !customAPI,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const paginationQueryResult = customAPI ? customApiPaginationResult : fetchFunctionPaginationResult;
+  const paginationQueryResult = customAPI
+    ? customApiPaginationResult
+    : fetchFunctionPaginationResult;
 
   // Load more pagination query - always call both hooks but enable conditionally
   const customApiLoadMoreResult = useCustomApiQuery<T>(
@@ -322,7 +341,9 @@ const DataListView = <T extends BaseItem>({
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const loadMoreQueryResult = customAPI ? customApiLoadMoreResult : fetchFunctionLoadMoreResult;
+  const loadMoreQueryResult = customAPI
+    ? customApiLoadMoreResult
+    : fetchFunctionLoadMoreResult;
 
   // Refetch functionality
   const refetch = useCallback(async () => {

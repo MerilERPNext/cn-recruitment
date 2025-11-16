@@ -12,6 +12,7 @@ interface ButtonProps {
   size?: ButtonSize;
   disabled?: boolean;
   fullWidth?: boolean;
+  className?: string;
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
@@ -24,6 +25,7 @@ const Button: React.FC<ButtonProps> = ({
   size = "sm",
   disabled = false,
   fullWidth = false,
+  className = "",
   onClick,
 }) => {
   const sizeClasses = {
@@ -59,6 +61,7 @@ const Button: React.FC<ButtonProps> = ({
         ${variantClasses[variant]}
         ${disabled ? "cursor-not-allowed" : ""}
         transition-colors duration-150
+        ${className}
       `}
     >
       {icon && <span>{icon}</span>}

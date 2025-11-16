@@ -22,10 +22,7 @@ import {
 } from "../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { useLoggedInUser } from "../hooks/useLoggedInUser";
-import {
-  formatTimeSafe,
-  formatTo24HourTime,
-} from "../utils/helperUtils";
+import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
 import {
   compareAsc,
   compareDesc,
@@ -99,17 +96,16 @@ export default function DesktopDashboard() {
     });
   };
 
-
-
   const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
   const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
   const filters = {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const {
-    data: homeSummary,
-  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
+  const { data: homeSummary } = useHomeSummaryDetails(
+    currentEmployee?.user_id || "",
+    encodedFilters
+  );
 
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
@@ -322,15 +318,15 @@ export default function DesktopDashboard() {
               type="text"
               placeholder="Search members..."
               onClick={() => navigate("/webapp/search-members")}
-              className="w-full pl-10 pr-4 py-1 min-w-[28rem] cursor-pointer bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
+              className="w-full pl-10 pr-4 py-2 min-w-[28rem] cursor-pointer bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-800 placeholder-gray-500"
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
           </div>
 
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate("/webapp/notification-log")}
-              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="relative p-2 hover:bg-blue-50 rounded-lg transition-colors"
             >
               <NotificationBell />
             </button>
@@ -370,7 +366,7 @@ export default function DesktopDashboard() {
               ) : (
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-blue-50 rounded-lg p-2 transition-colors"
                 >
                   <div>
                     <p className="text-sm font-medium text-gray-900 text-right">
@@ -473,7 +469,7 @@ export default function DesktopDashboard() {
                         }
                         setShowProfileDropdown(false);
                       }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                     >
                       <User className="w-4 h-4" />
                       View Full Profile
@@ -484,7 +480,7 @@ export default function DesktopDashboard() {
                         onClick={() => {
                           window.location.href = "/app/home";
                         }}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                       >
                         <Dock className="w-4 h-4" />
                         Switch to Desk
@@ -493,7 +489,7 @@ export default function DesktopDashboard() {
                     <button
                       onClick={handleReset}
                       disabled={mutation.isPending}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                     >
                       {mutation.isPending ? (
                         "Sending..."
@@ -539,7 +535,7 @@ export default function DesktopDashboard() {
           )}
 
           {/* Hero Banner */}
-          <div className="bg-gray-200 mb-2 to-teal-500 rounded-lg p-6 text-gray-800 relative overflow-hidden">
+          <div className="bg-blue-200 mb-2 to-teal-500 rounded-lg p-6 text-gray-800 relative overflow-hidden">
             <div className="relative z-0">
               <h2 className="text-xl font-bold mb-2">Keep Up the Rhythm!</h2>
               <p className="text-gray-500">
@@ -555,8 +551,8 @@ export default function DesktopDashboard() {
             {/* Announcements */}
             <div className="bg-white rounded-lg mb-2 p-6 shadow-sm">
               <div className="text-center">
-                <p className=" text-sm mb-2 tracking-wide text-left font-semibold text-gray-900">
-                  TOTAL HOURS WORKED
+                <p className="section-title mb-2 text-left">
+                  Total hours worked
                 </p>
                 <p className="text-xl font-bold mb-1">{getTotalTime()}</p>
                 <p className="text-blue-600 text-sm mb-6">8h 30m target</p>
@@ -583,9 +579,7 @@ export default function DesktopDashboard() {
                   {getWorkPercentage()}% completed
                 </p>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Daily Timings
-              </h3>
+              <h3 className="section-title mb-4">Daily Timings</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg border border-gray-200">
                   <div className="flex items-center gap-3">
@@ -665,23 +659,17 @@ export default function DesktopDashboard() {
           {/* Second Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 mb-2 gap-2">
             <div className="grid grid-cols-1 gap-2">
-              {/* Total Hours Worked */}
-              <div className="bg-white text-blue-600 p-6 rounded-lg shadow-sm">
+              <div className="bg-white p-6 rounded-lg shadow-sm">
                 <div className="text-center">
-                  <p className=" text-sm mb-2 tracking-wide text-left font-semibold text-gray-900">
-                    ANNOUNCEMENTS
-                  </p>
+                  <h3 className="section-title mb-2 text-left">
+                    Announcements
+                  </h3>
                   <div className="text-gray-500">Coming Soon...</div>
                 </div>
               </div>
 
-              {/* Check In/Out Buttons */}
-
-              {/* Helpdesk */}
               <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-4">
-                  Helpdesk / Todo's
-                </h3>
+                <h3 className="section-title mb-4">Helpdesk / Todo's</h3>
                 <div className="flex flex-row w-full gap-4">
                   <div className="flex w-full flex-col gap-2 bg-gray-100 p-2 rounded-lg hover:bg-gray-200 ">
                     <div className="bg-blue-200 w-full p-2 rounded-lg ">
@@ -717,7 +705,7 @@ export default function DesktopDashboard() {
             {/* Requests Cards*/}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="font-semibold text-gray-900">Requests</h3>
+                <h3 className="section-title">Requests</h3>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

@@ -12,6 +12,7 @@ import NavigationTabs, { Tab } from "../NavigationTab";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import FormDialog from "../shared/FormDialog";
+import Button from "../shared/atoms/Button";
 
 type TabName =
   | "leave-balance"
@@ -145,8 +146,8 @@ const LeaveAppInner: React.FC = () => {
                   onClick={() => handleSubTabChange(subTab)}
                   className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                     activeSubTab === subTab
-                      ? "bg-black text-white shadow-sm"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-gray-600 hover:text-blue-700 hover:bg-gray-50"
                   }`}
                 >
                   {subTab}
@@ -166,7 +167,7 @@ const LeaveAppInner: React.FC = () => {
           <div className="max-w-4xl mx-auto flex">
             <button
               onClick={() => openModal()}
-              className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
             >
               + Request Leave
             </button>
@@ -186,12 +187,14 @@ const LeaveAppInner: React.FC = () => {
   );
 
   const actionButton = !isHolidaysActive ? (
-    <button
+    <Button
+      bgColor="blue-600"
+      size="lg"
+      className="hover:bg-blue-700"
       onClick={() => openModal()}
-      className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
     >
       + Request Leave
-    </button>
+    </Button>
   ) : null;
 
   const desktopLayout = (

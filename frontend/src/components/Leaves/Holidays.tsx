@@ -14,6 +14,7 @@ import { HolidayCardSkeletonList } from "./LeaveSkeletons";
 import { Holiday } from "../../types/leaves";
 import { processHolidays } from "./holidayHelper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { ViewAll } from "../shared/atoms/ViewAll";
 
 interface HolidayCardProps {
   holiday: Holiday;
@@ -205,19 +206,16 @@ const Holidays: React.FC = () => {
     <div className="p-4 min-h-full pb-24">
       <section className="mb-8">
         <div className="mb-4 flex justify-between items-center">
-          <h2 className="text-lg font-semibold ">Upcoming Regular Holidays</h2>
+          <h2 className="module-title ">Upcoming Regular Holidays</h2>
           {isDesktop && allRegular.length !== 0 && (
-            <button
-              type="button"
+            <ViewAll
+              title="View All"
               onClick={() =>
                 navigate("/webapp/leave-app/leaves/holidays/all", {
                   state: { type: "regular", holidays: allRegular },
                 })
               }
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              View All
-            </button>
+            />
           )}
         </div>
 
@@ -244,7 +242,7 @@ const Holidays: React.FC = () => {
                 state: { type: "regular", holidays: allRegular },
               })
             }
-            className="flex-1 w-full py-3 my-2 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 w-full py-3 my-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
           >
             View All
           </button>
@@ -254,21 +252,16 @@ const Holidays: React.FC = () => {
       <section>
         <div className="mb-4">
           <div className="mb-4 flex justify-between items-center ">
-            <h2 className="text-lg font-semibold ">
-              Upcoming Optional Holidays
-            </h2>
+            <h2 className="module-title">Upcoming Optional Holidays</h2>
             {isDesktop && allOptional.length !== 0 && (
-              <button
-                type="button"
+              <ViewAll
+                title="View All"
                 onClick={() =>
                   navigate("/webapp/leave-app/leaves/holidays/all", {
                     state: { type: "optional", holidays: allOptional },
                   })
                 }
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                View All
-              </button>
+              />
             )}
           </div>
 
@@ -312,7 +305,7 @@ const Holidays: React.FC = () => {
                 state: { type: "optional", holidays: allOptional },
               })
             }
-            className="flex-1 w-full my-2 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 w-full my-2 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
           >
             View All
           </button>

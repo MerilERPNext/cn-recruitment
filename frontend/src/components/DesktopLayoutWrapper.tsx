@@ -45,7 +45,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
     useCurrentEmployeeAllDetails(userId || "");
 
   const { data: currentUser } = useCurrentUser();
-  const canRedirectToDesk = currentUser?.roles?.some(role => ['System User', 'Payroll Manager', "System Manager"].includes(role.role));
+  const canRedirectToDesk = currentUser?.roles?.some((role) =>
+    ["System User", "Payroll Manager", "System Manager"].includes(role.role)
+  );
   // logout logic
   const logoutHandler = async () => {
     try {
@@ -58,7 +60,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const loginUserEmail = currentUser?.email || "";
   const mutation = useRequestPasswordReset();
   const handleReset = () => {
-    const email = loginUserEmail; 
+    const email = loginUserEmail;
     mutation.mutate(email, {
       onSuccess: (data) => {
         toast("Password reset email sent successfully!");
@@ -181,15 +183,15 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                 type="text"
                 placeholder="Search members..."
                 onClick={() => navigate(ROUTES.SEARCH_MEMBERS)}
-                className="w-full pl-10 pr-4 py-1 min-w-[28rem] cursor-pointer bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
+                className="w-full pl-10 pr-4 py-2 min-w-[28rem] cursor-pointer bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
               />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
             </div>
           )}
           <div className="flex items-center gap-4">
             <button
               onClick={handleNotificationClick}
-              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="relative p-2 hover:bg-blue-50 rounded-lg transition-colors"
             >
               <NotificationBell />
             </button>
@@ -228,7 +230,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
               ) : (
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-blue-50 rounded-lg p-2 transition-colors"
                 >
                   <div>
                     <p className="text-sm font-medium text-gray-900 text-right">
@@ -293,7 +295,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                         }
                         setShowProfileDropdown(false);
                       }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                     >
                       <User className="w-4 h-4" />
                       My Profile
@@ -301,9 +303,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     {canRedirectToDesk && (
                       <button
                         onClick={() => {
-                         window.location.href = "/app/home";
+                          window.location.href = "/app/home";
                         }}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                       >
                         <Dock className="w-4 h-4" />
                         Switch to Desk
@@ -312,7 +314,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     <button
                       onClick={handleReset}
                       disabled={mutation.isPending}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                     >
                       {mutation.isPending ? (
                         "Sending..."

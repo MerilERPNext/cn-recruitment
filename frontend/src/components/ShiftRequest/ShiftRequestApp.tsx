@@ -8,6 +8,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
+import Button from "../shared/atoms/Button";
 
 type TabName =
   | "My Shift Assignment"
@@ -47,12 +48,15 @@ const ShiftRequestApp: React.FC = () => {
 
   useEffect(() => {
     // for handling copy/pasting link when model is open with requestId as query param from largescreen to small screen
-    if(location.pathname === "/webapp/shift-request/all-shifts-dashboard"){
+    if (location.pathname === "/webapp/shift-request/all-shifts-dashboard") {
       const queryParams = new URLSearchParams(location.search);
-        const requestId = queryParams.get("requestId");
-       if(requestId){
-        navigate(`/webapp/shift-request/shift-change-request?requestId=${requestId}`, { replace: true });
-       }
+      const requestId = queryParams.get("requestId");
+      if (requestId) {
+        navigate(
+          `/webapp/shift-request/shift-change-request?requestId=${requestId}`,
+          { replace: true }
+        );
+      }
     }
     if (location.pathname === "/webapp/shift-request") {
       const savedTab = localStorage.getItem("activeTab") as TabName | null;
@@ -125,12 +129,14 @@ const ShiftRequestApp: React.FC = () => {
 
   // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
   const actionButton = (
-    <button
+    <Button
+      bgColor="blue-600"
+      size="lg"
+      className="hover:bg-blue-700"
       onClick={handleShiftForm}
-      className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
     >
       + Request Shift Change
-    </button>
+    </Button>
   );
 
   const desktopLayout = (

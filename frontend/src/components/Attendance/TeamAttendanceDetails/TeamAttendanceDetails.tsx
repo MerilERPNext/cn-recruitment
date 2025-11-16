@@ -7,6 +7,7 @@ import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "./ApprovalCard";
 import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { ViewAll } from "../../shared/atoms/ViewAll";
 
 const ALL_STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -110,12 +111,10 @@ const TeamAttendanceDetails = () => {
           {/* Pending */}
 
           <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 pb-1">
-              Team Attendance Requests
-            </h2>
+            <h2 className="module-title pb-1">Team Attendance Requests</h2>
             <div className="flex items-center space-x-3 pb-1">
               <FilterDropdowns />
-              <button
+              {/* <button
                 onClick={() => {
                   navigate(
                     "/webapp/attendance/team-attendance-requests/pendings"
@@ -124,7 +123,15 @@ const TeamAttendanceDetails = () => {
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
                 View All
-              </button>
+              </button> */}
+              <ViewAll
+                title="View All"
+                onClick={() => {
+                  navigate(
+                    "/webapp/attendance/team-attendance-requests/pendings"
+                  );
+                }}
+              />
             </div>
           </div>
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>

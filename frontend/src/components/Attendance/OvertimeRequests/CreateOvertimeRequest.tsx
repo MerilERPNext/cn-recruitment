@@ -15,6 +15,7 @@ import { CustomError } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import overtimeRequestSchema from "./overtimeRequestSchema.json";
 import DOMPurify from "dompurify";
+import Button from "../../shared/atoms/Button";
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
   onCancel?: () => void;
@@ -31,7 +32,6 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
   const formInstance = useRef<any>(null);
   const { setRefetchAttendance } = useGlobalStore();
-
   const handleSubmit = async () => {
     try {
       const submission = await formInstance.current?.submit();
@@ -80,7 +80,9 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
               "Request Failed.";
             console.error(e);
             const cleanString = DOMPurify.sanitize(errorMessage || "");
-            toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
+            toast.error(
+              <span dangerouslySetInnerHTML={{ __html: cleanString }} />
+            );
           },
         }
       );
@@ -164,19 +166,24 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
         {/* Footer */}
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <button
+          <Button
             onClick={() => {
               handleSubmit();
             }}
             disabled={mutation?.isPending}
-            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            fullWidth
+            size="lg"
+            variant="contain"
+            bgColor={"blue-600"}
+            textColor="white"
+            className="hover:bg-blue-700 font-medium"
           >
             {mutation?.isPending ? (
               <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
             ) : (
               "Submit Request"
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

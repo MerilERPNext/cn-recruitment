@@ -6,6 +6,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import ExpenseFormModal from "./ExpenseFormModal";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import ExpenseAdvanceForm from "./ExpenseAdvance/ExpenseAdvanceForm";
+import Button from "../shared/atoms/Button";
 
 type TabName = "Expenses" | "Team" | "Advances";
 
@@ -135,12 +136,14 @@ const ExpensesApp: React.FC = () => {
       {!isFormActive && !isTeamRequests && !isTeamRequestsAll && (
         <div className="sticky mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
           <div className="max-w-4xl mx-auto flex space-x-4">
-            <button
+            <Button
+              bgColor="blue-600"
+              size="lg"
               onClick={handleAddNew}
-              className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              className="hover:bg-blue-700 flex-1"
             >
               {activeTab === "Expenses" ? "+ Add Expense" : "+ Add Advance"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -150,12 +153,20 @@ const ExpensesApp: React.FC = () => {
   // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
   const actionButton =
     !isFormActive && !isTeamRequests && !isTeamRequestsAll ? (
-      <button
+      // <button
+      //   onClick={handleAddNew}
+      //   className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
+      // >
+      //   {activeTab === "Expenses" ? "+ Add Expense" : "+ Add Advance"}
+      // </button>
+      <Button
+        bgColor="blue-600"
+        size="lg"
         onClick={handleAddNew}
-        className="py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-lg"
+        className="hover:bg-blue-700"
       >
         {activeTab === "Expenses" ? "+ Add Expense" : "+ Add Advance"}
-      </button>
+      </Button>
     ) : null;
 
   const desktopLayout = (

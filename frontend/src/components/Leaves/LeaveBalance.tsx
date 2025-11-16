@@ -169,7 +169,9 @@ const LeaveBalance: React.FC = () => {
                   className="rounded-xl p-4 mb-4 md:mb-0 bg-white"
                 >
                   <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
-                    <span className="text-left text-black">{leave?.type}</span>
+                    <span className="text-left module-title">
+                      {leave?.type}
+                    </span>
                     {leave?.visibility_flags?.show_carry_over && (
                       <span className="text-sm text-green-800">
                         {leave.carry_over} Carry Forwarded
@@ -222,7 +224,7 @@ const LeaveBalance: React.FC = () => {
           <div className="w-full mt-6 px-4 md:hidden">
             <button
               type="button"
-              className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
               onClick={() => openModal()}
             >
               + Request Leave

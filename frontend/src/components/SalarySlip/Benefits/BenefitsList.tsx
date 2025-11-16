@@ -8,6 +8,7 @@ import FrappeListView from "../../ListView";
 import BenefitCard from "./BenifitCard";
 import CardTable from "../../shared/CardTable";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
+import Button from "../../shared/atoms/Button";
 
 const BenefitsList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -58,12 +59,14 @@ const BenefitsList: React.FC = () => {
             </>
           )}
         </button>
-        <button
+
+        <Button
+          bgColor="blue-600"
+          className="hover:bg-blue-700 py-3 text-[1rem] px-4 font-medium"
           onClick={handleRequestBenefit}
-          className="my-btn-primary flex items-center gap-2 whitespace-nowrap"
         >
           Request Benefit
-        </button>
+        </Button>
       </div>
       <CardTable
         titles={[

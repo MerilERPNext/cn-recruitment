@@ -14,6 +14,7 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import LayoutHeader from "../../shared/LayoutHeader"; // Keep for mobile layout wrapper
 import HeaderBar from "../../HeaderBar"; // Keep for desktop layout wrapper
+import { ViewAll } from "../../shared/atoms/ViewAll";
 
 // --- SHARED CONSTANTS ---
 const EXPENSE_STATUS_OPTIONS = [
@@ -126,45 +127,43 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
 };
 
 const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
-          </div>
-          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+  <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+    <div className="px-4 py-2">
+      <div className="flex items-center justify-between gap-1">
+        <div>
+          <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+          <div className="h-3 w-24 bg-gray-300 rounded"></div>
         </div>
+        <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
       </div>
     </div>
-  );
+  </div>
+);
 // --- END SHARED SUB-COMPONENTS ---
 
-
 interface ExpenseListBaseProps {
-    listType: 'dashboard' | 'all';
-    title: string;
-    showViewAllButton?: boolean;
-    showMobileHeader?: boolean;
-    showPagination?: boolean;
-    queryKeySuffix: string;
-    pageSize: number;
+  listType: "dashboard" | "all";
+  title: string;
+  showViewAllButton?: boolean;
+  showMobileHeader?: boolean;
+  showPagination?: boolean;
+  queryKeySuffix: string;
+  pageSize: number;
 }
 
-
 const ExpenseListBase: React.FC<ExpenseListBaseProps> = ({
-    listType,
-    title,
-    showViewAllButton = false,
-    showPagination = false,
-    queryKeySuffix,
-    pageSize,
+  listType,
+  title,
+  showViewAllButton = false,
+  showPagination = false,
+  queryKeySuffix,
+  pageSize,
 }) => {
   const { isDesktop } = useScreenSize();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
     []
@@ -263,7 +262,8 @@ const ExpenseListBase: React.FC<ExpenseListBaseProps> = ({
         value={selectedStatus}
         onChange={handleStatusChange}
         // Use a less intrusive styling for the dashboard filter
-        className={listType === 'dashboard' 
+        className={
+          listType === "dashboard"
             ? "px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             : "border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100" // Use the 'AllExpensesList' styling
         }
@@ -282,72 +282,72 @@ const ExpenseListBase: React.FC<ExpenseListBaseProps> = ({
     employee: currentEmployee?.name,
     ...(selectedStatus && { status: selectedStatus }),
   };
-  
+
   // Conditionally render the header based on listType and desktop status
   const renderHeader = () => {
-      if (listType === 'all') {
-          return (
-             <>
-                 {/* Mobile Header */}
-                 <LayoutHeader
-                    tab={title}
-                    onBack={() => {
-                      navigate(-1);
-                    }}
-                    children={<FilterDropdowns />}
-                 />
-                 {/* Desktop Header */}
-                 {isDesktop && (
-                    <HeaderBar
-                      title={title}
-                      onBack={() => navigate(-1)}
-                      rightSlot={
-                        <div className="flex items-center space-x-3">
-                          <FilterDropdowns />
-                        </div>
-                      }
-                    ></HeaderBar>
-                 )}
-             </>
-          );
-      } else { // 'dashboard' view
-        return (
-          <div className="flex justify-between items-center mb-2 border-b-1 border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 pb-1">{title}</h2>
-            <div className="flex items-center gap-3 pb-1">
-              <FilterDropdowns />
-              {showViewAllButton && (
-                <button
-                  onClick={() => {
-                    navigate("/webapp/expenses-app/expenses-list/view-all");
-                  }}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  View All
-                </button>
-              )}
-            </div>
+    if (listType === "all") {
+      return (
+        <>
+          {/* Mobile Header */}
+          <LayoutHeader
+            tab={title}
+            onBack={() => {
+              navigate(-1);
+            }}
+            children={<FilterDropdowns />}
+          />
+          {/* Desktop Header */}
+          {isDesktop && (
+            <HeaderBar
+              title={title}
+              onBack={() => navigate(-1)}
+              rightSlot={
+                <div className="flex items-center space-x-3">
+                  <FilterDropdowns />
+                </div>
+              }
+            ></HeaderBar>
+          )}
+        </>
+      );
+    } else {
+      // 'dashboard' view
+      return (
+        <div className="flex justify-between items-center mb-2 border-b-1 border-gray-200">
+          <h2 className="module-title pb-1">{title}</h2>
+          <div className="flex items-center gap-3 pb-1">
+            <FilterDropdowns />
+            {showViewAllButton && (
+              <ViewAll
+                title="View All"
+                onClick={() => {
+                  navigate("/webapp/expenses-app/expenses-list/view-all");
+                }}
+              />
+            )}
           </div>
-        );
-      }
-  }
-
+        </div>
+      );
+    }
+  };
 
   return (
     // Conditional styling for the main container
-    <div 
-        className={listType === 'dashboard' 
-            ? "relative flex size-full flex-col group/design-root md:p-6" 
-            : "flex flex-col h-full min-h-screen" // AllExpensesList mobile view fix
-        }
-        style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
+    <div
+      className={
+        listType === "dashboard"
+          ? "relative flex size-full flex-col group/design-root md:p-6"
+          : "flex flex-col h-full min-h-screen" // AllExpensesList mobile view fix
+      }
+      style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
       {/* Header Section with Title, Filter, and View All Button */}
       {renderHeader()}
 
       {/* Main Content Area */}
-      <div 
-        className={listType === 'dashboard' 
+      <div
+        className={
+          listType === "dashboard"
             ? "flex-1 overflow-auto" // Dashboard list style
             : "flex-1 bg-white overflow-y-auto px-0 md:px-4 md:pt-2 pt-0 mb-20" // All Expenses List style
         }

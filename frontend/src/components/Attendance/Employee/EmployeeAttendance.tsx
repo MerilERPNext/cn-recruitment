@@ -29,6 +29,7 @@ import Cardtable from "./EmployeeAttendence/CardTable";
 import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
 import { Plus } from "lucide-react";
+import { ViewAll } from "../../shared/atoms/ViewAll";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -222,7 +223,7 @@ const EmployeeAttendance = () => {
           <div className="bg-white p-4 border-b-1 border-gray-200 rounded-bl-lg rounded-br-lg">
             <div className="flex gap-2">
               <button
-                className="w-full flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+                className="w-full flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
                 onClick={() => {
                   setOpenDrawer(!openDrawer);
                   // setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
@@ -240,15 +241,17 @@ const EmployeeAttendance = () => {
         {/* My Attendance Requests */}
         <div className="pb-20 px-2 bg-white mt-2 rounded-lg">
           <div className="flex justify-between items-center w-full p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1 ">
-              My Attendance Requests
-            </h3>
-            <p
+            <h3 className="module-title mb-1 ">My Attendance Requests</h3>
+            {/* <p
               onClick={() => navigate("/webapp/attendance/attendance-request")}
               className="text-sm text-blue-500 cursor-pointer"
             >
               View All
-            </p>
+            </p> */}
+            <ViewAll
+              title="View All"
+              onClick={() => navigate("/webapp/attendance/attendance-request")}
+            />
           </div>
           <CardTable
             titles={[

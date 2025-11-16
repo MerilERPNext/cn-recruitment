@@ -18,7 +18,7 @@ import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import { ShiftDetailView } from "./ShiftDetailView";
 import getShiftStatus from "../../utils/getShiftStatus";
-
+import { ViewAll } from "../shared/atoms/ViewAll";
 
 export const StatusBadge = ({ status }: { status: string }) => {
   const baseStyle = "px-2 py-1 rounded-2xl text-xs inline-block";
@@ -61,15 +61,8 @@ const CardHeader = ({
   onSeeAll: () => void;
 }) => (
   <div className="flex justify-between items-center mb-4">
-    <h2 className="my-card-header-title">{title}</h2>
-    <button
-      onClick={onSeeAll}
-      className="my-card-header-action"
-      title="See All"
-    >
-      <span>View All</span>
-      <ExternalLink size={16} />
-    </button>
+    <h2 className="section-title">{title}</h2>
+    <ViewAll title="View All" onClick={onSeeAll} />
   </div>
 );
 
@@ -276,29 +269,28 @@ const AllMyShiftRequestsList = () => {
 export default function AllShiftsDashboard() {
   const navigate = useNavigate();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
-  
+
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
 
   const handleRequestClick = useCallback(
-  (request: any) => {
-    if (request?.todo_id) {
-      setSearchParams({ requestId: request.todo_id });
-    }
-  },
-  [setSearchParams]
-);
+    (request: any) => {
+      if (request?.todo_id) {
+        setSearchParams({ requestId: request.todo_id });
+      }
+    },
+    [setSearchParams]
+  );
 
   const handleCloseModal = useCallback(() => {
     navigate(-1);
   }, [navigate]);
 
-    const handleActionComplete = useCallback(() => {
-      setSearchParams({});
-      // Trigger refetch after action
-      setRefetchApprovalList(true);
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    // Trigger refetch after action
+    setRefetchApprovalList(true);
   }, [setSearchParams]);
-
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);

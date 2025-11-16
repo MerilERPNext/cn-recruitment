@@ -9,6 +9,8 @@ import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
 import DOMPurify from "dompurify";
 import benefitRequestFormSchema from "./benefitRequestFormSchema.json";
+import Button from "../../shared/atoms/Button";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 interface BenefitRequestFormProps {
   isOpen: boolean;
@@ -28,6 +30,7 @@ export default function BenefitRequestForm({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
   const mutation = useNewBenifitRequest();
+  const { isDesktop } = useScreenSize();
   const handleSubmit = async () => {
     const submission = await formRef.current?.submit();
 
@@ -112,14 +115,21 @@ export default function BenefitRequestForm({
           />
         </div>
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <button
+          <Button
             onClick={() => {
               handleSubmit();
             }}
-            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            fullWidth
+            size="lg"
+            variant="contain"
+            bgColor={isDesktop ? "blue-600" : "black"}
+            textColor="white"
+            className={`${
+              isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
+            } font-medium`}
           >
             Submit Request
-          </button>
+          </Button>
         </div>
       </div>
     </div>

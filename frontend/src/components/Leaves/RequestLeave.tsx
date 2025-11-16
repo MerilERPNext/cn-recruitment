@@ -23,6 +23,8 @@ import { LeaveFieldFlags } from "../../types/leaves";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import Button from "../shared/atoms/Button";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -52,7 +54,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     currentEmployee?.name,
     today
   );
-
+  const { isDesktop } = useScreenSize();
   const queryClient = useQueryClient();
   const { defaults } = useRequestLeaveModal();
   const editLeaveMutation = useEditApprovedLeave();
@@ -550,20 +552,30 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       </div>
       <div className="border-t border-gray-200 py-4 px-4">
         {!defaults?.isEdit ? (
-          <button
+          <Button
             onClick={handleSubmit}
-            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            fullWidth
+            size="lg"
+            variant="contain"
+            bgColor={"blue-600"}
+            textColor="white"
+            className="hover:bg-blue-700"
           >
             {createLeaveMutation.isPending ? "Processing..." : "Submit Request"}
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             onClick={handleUpdate}
-            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            fullWidth
+            size="lg"
+            variant="contain"
+            bgColor={isDesktop ? "blue-600" : "black"}
+            textColor="white"
             disabled={editLeaveMutation.isPending}
+            className="hover:bg-blue-700"
           >
             {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
-          </button>
+          </Button>
         )}
       </div>
     </div>

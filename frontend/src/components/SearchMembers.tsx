@@ -1,15 +1,42 @@
 import HeaderBar from "./HeaderBar";
 import SearchCard from "./Employee/SearchCard";
 import { useNavigate } from "react-router-dom";
-import {  useEmployees } from "../hooks/useEmployee";
+import { useEmployees } from "../hooks/useEmployee";
 import { useEffect, useState } from "react";
 import useDebounce from "../hooks/useDebounce";
 import { Employee } from "../types/employee";
 import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
+import { Search } from "lucide-react";
+import { useScreenSize } from "../hooks/useScreenSize";
+import { IoChevronBackOutline } from "react-icons/io5";
+
+const EmployeeCardSkeleton = () => {
+  return (
+    <div className="w-full animate-pulse">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4 shadow-sm">
+        <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-gray-200 flex-shrink-0" />
+        <div className="flex flex-col min-w-0 w-full gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="h-4 sm:h-5 bg-gray-200 rounded w-3/4 sm:w-1/2" />
+            <div className="h-4 sm:h-5 bg-gray-200 rounded w-16 sm:w-20" />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-2 text-sm text-gray-600 mt-1">
+            <div className="h-3 sm:h-4 bg-gray-200 rounded w-32 sm:w-40" />
+            <span className="sm:mx-3 mx-1 hidden sm:block text-gray-300">
+              •
+            </span>
+            <div className="h-3 sm:h-4 bg-gray-200 rounded w-24 sm:w-32" />
+          </div>
+        </div>
+        <div className="h-6 w-6 sm:h-7 sm:w-7 bg-gray-200 rounded-full" />
+      </div>
+    </div>
+  );
+};
 
 const SearchMembersApp = () => {
   const [recentSearches, setRecentSearches] = useState<Employee[]>([]);
-  
+  const { isDesktop } = useScreenSize();
   const [searchQuery, setSearchQuery] = useState("");
   const query = useDebounce(searchQuery, 350);
 
@@ -58,9 +85,10 @@ const SearchMembersApp = () => {
   const employeeList = () => {
     if (isLoading)
       return (
-        <div className="flex flex-col items-center py-10 text-gray-500">
-          <div className="h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span className="mt-3 text-sm">Loading…</span>
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <EmployeeCardSkeleton key={i} />
+          ))}
         </div>
       );
 
@@ -75,7 +103,6 @@ const SearchMembersApp = () => {
       return recentSearches.length > 0 ? (
         <SearchCard
           employees={recentSearches}
-          
           onRemove={removeItemsFromLocal}
           showRemove
         />
@@ -85,11 +112,7 @@ const SearchMembersApp = () => {
     }
 
     return employees && employees.length > 0 ? (
-      <SearchCard
-        employees={employees}
-        
-        onRemove={removeItemsFromLocal}
-      />
+      <SearchCard employees={employees} onRemove={removeItemsFromLocal} />
     ) : (
       <div className="text-center text-gray-500 py-6">No employees found</div>
     );
@@ -98,22 +121,38 @@ const SearchMembersApp = () => {
   return (
     <DesktopLayoutWrapper title="Search Members">
       <div className="min-h-screen bg-white flex flex-col">
-        <HeaderBar title="Search Members" onBack={() => navigate(-1)} />
+        {!isDesktop && (
+          <HeaderBar title="Search Members" onBack={() => navigate(-1)} />
+        )}
 
         <main className="flex-grow w-full">
-          <div className="mx-auto min-w-3xl px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
-            <input
-              id="member-search"
-              type="text"
-              value={searchQuery}
-              onChange={onSearchInputChange}
-              placeholder="Search members…"
-              className="w-full h-11 sm:h-12 rounded-lg border border-gray-300 bg-gray-50 px-3 sm:px-4 text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              inputMode="search"
-              autoComplete="off"
-            />
+          <div className="mx-auto max-w-3xl px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
+            <div className="flex items-center gap-2">
+              {isDesktop && (
+                <button
+                  onClick={() => navigate(-1)}
+                  className="flex items-center justify-center h-11 sm:h-12 w-11 sm:w-12 rounded-xl border border-gray-300 bg-gray-50 hover:bg-gray-100 "
+                  aria-label="Go back"
+                >
+                  <IoChevronBackOutline className="w-6 h-6 text-gray-700" />
+                </button>
+              )}
 
-            <div className="mt-4 sm:mt-6 ">{employeeList()}</div>
+              <div className="flex-1 flex bg-gray-50 items-center gap-2 rounded-xl border border-gray-300 px-3 sm:px-4 h-11 sm:h-12 shadow-sm focus-within:ring-2 focus-within:ring-blue-400 transition">
+                <Search className="text-gray-600 w-5 h-5" aria-hidden="true" />
+                <input
+                  id="member-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={onSearchInputChange}
+                  placeholder="Search members…"
+                  className="flex-1 bg-transparent text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:outline-none"
+                  inputMode="search"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+            <div className="mt-4 sm:mt-6">{employeeList()}</div>
           </div>
         </main>
       </div>
