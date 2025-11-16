@@ -24,7 +24,7 @@ export type ApiAdvance =  {
 
 // UI shape (your old Advance type)
 export interface UiAdvance {
-  employee_name: ReactNode;
+  employee_name: string;
   name: string;
   amount: number;
   numberOfDeductions: number;
