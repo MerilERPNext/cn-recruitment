@@ -11,7 +11,6 @@ import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
 import AllAttendanceRequest from "./components/Attendance/AttendanceRequest/AllAttendanceRequests";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
-import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
@@ -97,7 +96,7 @@ const ExpensesList = lazyWithRetry(
 const AllExpensesList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseClaim/AllExpenseList"),
   "AllExpensesList"
-  );
+);
 const TeamExpense = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseClaim/TeamExpense"),
   "TeamExpense"
@@ -297,10 +296,6 @@ const MyShiftRequestsRoute = lazyWithRetry(
       default: module.MyShiftRequestsRoute,
     })),
   "MyShiftRequestsRoute"
-);
-const PendingTeamLeaves = lazyWithRetry(
-  () => import("./components/Leaves/PendingTeamLeaves"),
-  "PendingTeamLeaves"
 );
 const LoansPage = lazyWithRetry(
   () => import("./components/SalarySlip/Loan/LoanMain"),
@@ -633,20 +628,6 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
-
-      {
-        path: "leave-requests/pending",
-        element: <PendingTeamLeaves />,
-      },
-      //my requests view all
-      {
-        path: "requests/pendings",
-        element: <AllLeaveRequest />,
-      },
-      {
-        path: "requests/actioned",
-        element: <AllLeaveRequest />,
-      },
       {
         path: "compensatory-request",
         element: <CompensatoryRequest />,
