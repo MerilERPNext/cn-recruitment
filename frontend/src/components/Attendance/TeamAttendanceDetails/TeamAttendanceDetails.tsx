@@ -7,13 +7,12 @@ import ApprovalList from "../../shared/ApprovalList";
 import ApprovalCard from "./ApprovalCard";
 import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { ViewAll } from "../../shared/atoms/ViewAll";
+import CustomDropdown from "../../shared/CustomDropdown";
 
-const ALL_STATUS_OPTIONS = [
+const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
   { label: "Approved", value: "Approved" },
   { label: "Rejected", value: "Rejected" },
-  { label: "Cancelled", value: "Cancelled" },
 ];
 
 const TeamAttendanceDetails = () => {
@@ -45,40 +44,29 @@ const TeamAttendanceDetails = () => {
 
   const handleActionComplete = useCallback(() => {
     setSearchParams({});
-    // Trigger refetch of both lists after action
     setRefetchApprovalList(true);
   }, [setSearchParams]);
 
-  // Handler for the dropdown change
   const handleStatusChange = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>) => {
       setSelectedStatus(event.target.value);
-      setRefetchApprovalList(true); // Trigger refetch
+      setRefetchApprovalList(true);
     },
     []
   );
 
-  // Filter component
   const FilterDropdowns = () => (
     <div className="flex items-center gap-2">
-      <select
+      <CustomDropdown
         value={selectedStatus}
         onChange={handleStatusChange}
-        className="border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100"
-      >
-        {ALL_STATUS_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        options={STATUS_OPTIONS}
+      />
     </div>
   );
 
-  // 2. Logic for Bulk Approval changes
   const isBulkSelectEnabled = selectedStatus === "Pending";
 
-  // 3. Conditional titles/widths for CardTable
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
@@ -108,30 +96,10 @@ const TeamAttendanceDetails = () => {
     <>
       <div className="bg-white min-h-screen">
         <div className="bg-white px-2">
-          {/* Pending */}
-
           <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
             <h2 className="module-title pb-1">Team Attendance Requests</h2>
             <div className="flex items-center space-x-3 pb-1">
               <FilterDropdowns />
-              {/* <button
-                onClick={() => {
-                  navigate(
-                    "/webapp/attendance/team-attendance-requests/pendings"
-                  );
-                }}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                View All
-              </button> */}
-              <ViewAll
-                title="View All"
-                onClick={() => {
-                  navigate(
-                    "/webapp/attendance/team-attendance-requests/pendings"
-                  );
-                }}
-              />
             </div>
           </div>
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
@@ -143,7 +111,9 @@ const TeamAttendanceDetails = () => {
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 status={selectedStatus}
                 pageSize={10}
-                showPagination={false}
+                showPagination={true}
+                infiniteScroll={false}
+                loadMorePagination={true}
                 renderCardContent={(item) => (
                   <ApprovalCard
                     isSelected={item?.isSelected}

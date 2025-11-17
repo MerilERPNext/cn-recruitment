@@ -9,7 +9,6 @@ import { lazyWithRetry } from "./utils/lazyWithRetry";
 import SearchMembers from "./components/SearchMembers";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
-import AllAttendanceRequest from "./components/Attendance/AttendanceRequest/AllAttendanceRequests";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
@@ -136,11 +135,6 @@ const MyLeaveRequest = lazyWithRetry(
 const TeamLeaveRequest = lazyWithRetry(
   () => import("./components/Leaves/TeamLeaveRequest"),
   "TeamLeaveRequest"
-);
-const AllPendingRequests = lazyWithRetry(
-  () =>
-    import("./components/Attendance/TeamAttendanceDetails/AllPendingRequests"),
-  "AllPendingRequests"
 );
 const AttendanceSummary = lazyWithRetry(
   () => import("./components/Attendance/AttendanceSummary"),
@@ -582,21 +576,9 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "team-attendance", element: <TeamAttendance /> },
       { path: "attendance-request", element: <AttendanceRequest /> },
-      {
-        path: "attendance-request/pendings",
-        element: <AllAttendanceRequest />,
-      },
-      {
-        path: "attendance-request/actioned",
-        element: <AllAttendanceRequest />,
-      },
       { path: "team-attendance-requests", element: <TeamAttendanceDetails /> },
       { path: "planned-overtime-requests", element: <OvertimeRequests /> },
 
-      {
-        path: "team-attendance-requests/pendings",
-        element: <AllPendingRequests />,
-      },
       {
         path: "planned-overtime-requests/pendings",
         element: <AllOvertimePendingRequests />,
