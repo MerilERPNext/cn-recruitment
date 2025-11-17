@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import CardTable from "../../shared/CardTable";
 import { useNavigate, useSearchParams } from "react-router";
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
@@ -7,6 +7,13 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
+import CustomDropdown from "../../shared/CustomDropdown";
+
+const STATUS_OPTIONS = [
+  { label: "Pending", value: "Open" },
+  { label: "Approved", value: "Approved" },
+  { label: "Rejected", value: "Rejected" },
+];
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
@@ -15,13 +22,12 @@ const MyOvertimeRequests = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
-  const defaultFilters = useMemo(
-    () => ({
-      reference_type: "Planned Overtime Request",
-      employee: currentEmployee?.employee,
-    }),
-    [currentEmployee]
-  );
+  const [selectedStatus, setSelectedStatus] = useState("Open");
+
+  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(event.target.value);
+    setRefetchMyRequestsList(true);
+  };
 
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
@@ -48,16 +54,29 @@ const MyOvertimeRequests = () => {
     setSearchParams({});
   }, [setSearchParams]);
 
+  const FilterDropdowns = () => (
+    <div className="flex items-center gap-2">
+      <CustomDropdown
+        value={selectedStatus}
+        onChange={handleStatusChange}
+        options={STATUS_OPTIONS}
+      />
+    </div>
+  );
+
   return (
     <div>
       <div className="bg-white min-h-screen">
         <div className="bg-white px-2 mt-4">
           <div>
-            <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
+            <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200 px-2">
               <h2 className="module-title pb-1">My Overtime Requests</h2>
+              <div className="flex items-center space-x-3 pb-1">
+                <FilterDropdowns />
+              </div>
             </div>
             <CardTable
-              columnWidths={["10%", "30%", "10%", "10%", "33%"]}
+              columnWidths={["1fr", "2fr", "1fr", "1fr", "1fr"]}
               titles={[
                 "Allocated To",
                 "Description",
@@ -75,9 +94,9 @@ const MyOvertimeRequests = () => {
                     params: {
                       doctype: "Planned Overtime Request",
                       employee: currentEmployee?.employee,
+                      status: selectedStatus,
                     },
                   }}
-                  defaultFilters={defaultFilters}
                   ItemComponent={(props: {
                     item: MyPlannedAttendanceRequest;
                   }) => {
@@ -94,12 +113,12 @@ const MyOvertimeRequests = () => {
                   refetchTrigger={refetchMyRequestsList}
                   isSearch={false}
                   isFilter={false}
-                  // pageSize={5}
+                  pageSize={10}
                   showRefreshButton={false}
                   orderBy="modified desc"
                   infiniteScroll={false}
                   loadMorePagination={true}
-                  showPagination={false}
+                  showPagination={true}
                 />
               ) : null}
             </CardTable>
