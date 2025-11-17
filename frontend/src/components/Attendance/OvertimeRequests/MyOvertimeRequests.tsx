@@ -1,19 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useState, useCallback } from "react";
 import CardTable from "../../shared/CardTable";
 import { useNavigate, useSearchParams } from "react-router";
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
-import ApprovalList from "../../shared/ApprovalList";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
-import OvertimeApprovalCard from "./OvertimeApprovalCard";
-import { ViewAll } from "../../shared/atoms/ViewAll";
 
-const OvertimeRequests = () => {
-  const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
@@ -27,12 +22,6 @@ const OvertimeRequests = () => {
     }),
     [currentEmployee]
   );
-
-  const handleApprovalRefetchComplete = useCallback(() => {
-    setRefetchApprovalList(false);
-    // Also trigger my requests list refetch when approval list completes
-    setRefetchMyRequestsList(true);
-  }, []);
 
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
@@ -57,101 +46,15 @@ const OvertimeRequests = () => {
 
   const handleActionComplete = useCallback(() => {
     setSearchParams({});
-    // Trigger refetch after action
-    setRefetchApprovalList(true);
   }, [setSearchParams]);
 
   return (
     <div>
       <div className="bg-white min-h-screen">
-        <div className="bg-white px-2">
-          {/* Pending */}
-
-          <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-            <h2 className="module-title pb-1">
-              Pending Planned Overtime Requests
-            </h2>
-            {/* <button
-              onClick={() => {
-                navigate(
-                  "/webapp/attendance/planned-overtime-requests/pendings"
-                );
-              }}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              View All
-            </button> */}
-            <ViewAll
-              title="View All"
-              onClick={() => {
-                navigate(
-                  "/webapp/attendance/planned-overtime-requests/pendings"
-                );
-              }}
-            />
-          </div>
-
-          <CardTable
-            titles={[
-              "Select",
-              "Employee",
-              "Description",
-              "Due Date",
-              "Status",
-              "Actions",
-            ]}
-            columnWidths={["5%", "10%", "35%", "8%", "8%", "20%"]}
-          >
-            {currentUser?.name ? (
-              <ApprovalList
-                doctype={"Planned Overtime Request"}
-                pageSize={3}
-                showPagination={false}
-                refetch={refetchApprovalList}
-                setRefetch={setRefetchApprovalList}
-                status="Open"
-                onApprovalRefetchComplete={handleApprovalRefetchComplete}
-                renderCardContent={(item) => (
-                  <OvertimeApprovalCard
-                    isSelected={item?.isSelected}
-                    onToggleSelect={item?.onToggleSelect}
-                    data={item?.data}
-                    onAction={item?.onAction}
-                    onClick={(request: MyPlannedAttendanceRequest) =>
-                      handleRequestClick(request)
-                    }
-                    loadingAction={item?.loadingAction}
-                  />
-                )}
-              />
-            ) : null}
-          </CardTable>
-        </div>
-        {/* Employee Requests */}
         <div className="bg-white px-2 mt-4">
           <div>
             <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-              <h2 className="module-title pb-1">
-                My Planned Overtime Requests
-              </h2>
-              {/* <button
-                onClick={() => {
-                  navigate(
-                    "/webapp/attendance/planned-overtime-requests/my-overtime-requests"
-                  );
-                }}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                View All
-              </button> */}
-              <ViewAll
-                title="View All"
-                onClick={() => {
-                  navigate(
-                    "/webapp/attendance/planned-overtime-requests/my-overtime-requests"
-                  );
-                }}
-              />
+              <h2 className="module-title pb-1">My Overtime Requests</h2>
             </div>
             <CardTable
               columnWidths={["10%", "30%", "10%", "10%", "33%"]}
@@ -215,4 +118,4 @@ const OvertimeRequests = () => {
   );
 };
 
-export default OvertimeRequests;
+export default MyOvertimeRequests;

@@ -62,7 +62,8 @@ const AttendanceLayoutContent: React.FC = () => {
       { label: "Team Attendance", key: "team-attendance" },
       { label: "My Attendance Requests", key: "attendance-request" },
       { label: "Team Attendance Requests", key: "team-attendance-requests" },
-      { label: "Planned Overtime Requests", key: "planned-overtime-requests" },
+      { label: "My Overtime Requests", key: "my-overtime-requests" },
+      { label: "Team Overtime Requests", key: "team-overtime-requests" },
     ],
     []
   );
