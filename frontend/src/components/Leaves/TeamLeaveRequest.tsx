@@ -5,6 +5,7 @@ import CardTable from "../shared/CardTable";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { LeaveDetailView } from "./LeaveDetails";
 import LeaveApprovalCard from "./LeaveApprovalCard";
+import { ViewAll } from "../shared/atoms/ViewAll";
 
 const TODO_STATUS_OPTIONS = [
   { label: "Pending", value: "Open" }, // Default option
@@ -95,22 +96,18 @@ const TeamLeaveRequest = () => {
         <div className="bg-white px-2">
           {/* Pending: HEADER ROW */}
           <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 pb-1">
-              Team Leave Requests
-            </h2>
+            <h2 className="module-title pb-1">Team Leave Requests</h2>
 
             {/* 💡 REVISED Dropdown Group: Moved to the right-hand side 💡 */}
             <div className="flex items-center space-x-3 pb-1">
               <FilterDropdowns />
 
-              <button
-                onClick={() => {
-                  navigate("/webapp/leave-app/leave-requests/pending");
-                }}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                View All
-              </button>
+              <ViewAll
+                title="View All"
+                onClick={() =>
+                  navigate("/webapp/leave-app/leave-requests/pending")
+                }
+              />
             </div>
             {/* End REVISED Dropdown Group */}
           </div>

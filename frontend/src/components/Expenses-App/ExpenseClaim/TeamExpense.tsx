@@ -5,13 +5,24 @@ import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
+import { ViewAll } from "../../shared/atoms/ViewAll";
+import CustomDropdown from "../../shared/CustomDropdown";
+
+interface Option {
+  value: string;
+  label: string;
+}
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("Draft");
   const navigate = useNavigate();
-
+  const options: Option[] = [
+    { value: "Draft", label: "Pending" },
+    { value: "Approved", label: "Approved" },
+    { value: "Rejected", label: "Rejected" },
+  ];
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
@@ -52,28 +63,20 @@ const TeamExpense = () => {
       <div className="bg-white min-h-screen">
         <div className="bg-white px-2 md:p-6">
           <div className="flex justify-between items-center mb-2 border-b-1 border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 pb-1">
-              Team Claims
-            </h2>
+            <h2 className="module-title pb-1">Team Claims</h2>
             <div className="flex items-center gap-3 pb-1">
-              <select
+              <CustomDropdown
+                options={options}
                 value={statusFilter}
                 onChange={handleStatusFilterChange}
-                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="Draft">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
+              />
 
-              <button
+              <ViewAll
+                title="View All"
                 onClick={() => {
                   navigate("/webapp/expenses-app/team-requests/all");
                 }}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                View All
-              </button>
+              />
             </div>
           </div>
           <CardTable

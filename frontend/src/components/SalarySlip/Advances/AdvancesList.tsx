@@ -53,7 +53,6 @@ const AdvancesList: React.FC = () => {
         openingBalance: r.balance_amount,
         installmentAmount: r.payment_amount,
         principalBalance: r.deducted,
-
       })),
     }));
   };
@@ -99,133 +98,125 @@ const AdvancesList: React.FC = () => {
     "Status",
   ];
 
-  const columnWidths = [
-    "1.5fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-  ];
-
+  const columnWidths = ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
-    <div className="w-full max-w-[100vw] mx-auto py-0">
-      {/* Header Actions */}
-      <div className="mb-6 w-full px-0">
-        <div className="flex items-center justify-end gap-4">
-          {/* Toggle Button */}
-          <button
-            onClick={() => setMaskAmounts(!maskAmounts)}
-            className="my-btn-secondary flex items-center gap-2"
-            title={maskAmounts ? "Show amounts" : "Hide amounts"}
-          >
-            {maskAmounts ? (
-              <>
-                <span className="text-sm font-medium text-gray-700">
-                  Show Amounts
-                </span>
-                <BsToggleOff className="w-6 h-6 text-gray-400" />
-              </>
-            ) : (
-              <>
-                <span className="text-sm font-medium text-gray-700">
-                  Hide Amounts
-                </span>
-                <BsToggleOn className="w-6 h-6 text-primary" />
-              </>
-            )}
-          </button>
-
-          {/* Create Advance Button */}
-          <button
-            onClick={handleCreateAdvance}
-            className="my-btn-primary flex items-center gap-2 whitespace-nowrap"
-          >
-            Create Advance
-          </button>
-        </div>
-      </div>
-
-      {/* Table Wrapper */}
-      <CardTable titles={titles} columnWidths={columnWidths}>
-        <div className="divide-y divide-gray-200 text-sm bg-white">
-          {formattedData.map((advance, index) => (
-            <div
-              key={`${advance.name}-${index}`}
-              className="my-data-row grid gap-4 px-6 py-3 cursor-pointer"
-              style={{
-                gridTemplateColumns: columnWidths.join(" "),
-                alignItems: "center",
-              }}
-              onClick={() => handleViewInstallments(advance)}
+      <div className="w-full max-w-[100vw] mx-auto py-0">
+        {/* Header Actions */}
+        <div className="mb-6 w-full px-0">
+          <div className="flex items-center justify-end gap-4">
+            {/* Toggle Button */}
+            <button
+              onClick={() => setMaskAmounts(!maskAmounts)}
+              className="my-btn-secondary flex items-center gap-2"
+              title={maskAmounts ? "Show amounts" : "Hide amounts"}
             >
-              {/* Advance Name */}
-              <div className="  font-medium">{advance.name}</div>
-
-              {/* Amount */}
-              <div className="  text-start">
-                {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">
-                    ₹XX,XXX
+              {maskAmounts ? (
+                <>
+                  <span className="text-sm font-medium text-gray-700">
+                    Show Amounts
                   </span>
-                ) : (
-                  <span className="font-medium">
-                    {formatCurrency(advance.amount)}
+                  <BsToggleOff className="w-6 h-6 text-gray-400" />
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-gray-700">
+                    Hide Amounts
                   </span>
-                )}
-              </div>
+                  <BsToggleOn className="w-6 h-6 text-primary" />
+                </>
+              )}
+            </button>
 
-              {/* Deductions */}
-              <div className="  text-start">
-                {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">
-                    ₹XX,XXX
-                  </span>
-                ) : (
-                  <span className="font-medium">
-                    {advance.numberOfDeductions}
-                  </span>
-                )}
-              </div>
+            {/* Create Advance Button */}
+            <button
+              onClick={handleCreateAdvance}
+              className="my-btn-primary flex items-center gap-2 whitespace-nowrap"
+            >
+              Create Advance
+            </button>
+          </div>
+        </div>
 
-              {/* Start Date */}
-              <div className="  text-start">
-                {formatToIndianDate(advance.startDate)}
-              </div>
+        {/* Table Wrapper */}
+        <CardTable titles={titles} columnWidths={columnWidths}>
+          <div className="divide-y divide-gray-200 text-sm bg-white">
+            {formattedData.map((advance, index) => (
+              <div
+                key={`${advance.name}-${index}`}
+                className="my-data-row grid gap-4 px-6 py-3 cursor-pointer"
+                style={{
+                  gridTemplateColumns: columnWidths.join(" "),
+                  alignItems: "center",
+                }}
+                onClick={() => handleViewInstallments(advance)}
+              >
+                {/* Advance Name */}
+                <div className="  font-medium">{advance.name}</div>
 
-              {/* End Date */}
-              <div className="  text-start">
-                {formatToIndianDate(advance.endDate)}
-              </div>
+                {/* Amount */}
+                <div className="  text-start">
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none text-gray-400">
+                      ₹XX,XXX
+                    </span>
+                  ) : (
+                    <span className="font-medium">
+                      {formatCurrency(advance.amount)}
+                    </span>
+                  )}
+                </div>
 
-              {/* Status with Tooltip */}
-              <div className="  text-start relative group inline-block overflow-visible">
-                <StatusBadge status={advance.advanceStatus} />
-                <div
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
+                {/* Deductions */}
+                <div className="  text-start">
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none text-gray-400">
+                      ₹XX,XXX
+                    </span>
+                  ) : (
+                    <span className="font-medium">
+                      {advance.numberOfDeductions}
+                    </span>
+                  )}
+                </div>
+
+                {/* Start Date */}
+                <div className="  text-start">
+                  {formatToIndianDate(advance.startDate)}
+                </div>
+
+                {/* End Date */}
+                <div className="  text-start">
+                  {formatToIndianDate(advance.endDate)}
+                </div>
+
+                {/* Status with Tooltip */}
+                <div className="  text-start relative group inline-block overflow-visible">
+                  <StatusBadge status={advance.advanceStatus} />
+                  <div
+                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
                    opacity-0 invisible group-hover:opacity-100 group-hover:visible
                    transition-all duration-150 ease-out pointer-events-none
                    bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
                    shadow-lg z-50"
-                >
-                 {advance.employee_name}  
+                  >
+                    {advance.employee_name}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {/* Empty State */}
-          {formattedData.length === 0 && (
-            <div className="text-center py-12 px-4 text-gray-500">
-              No advances found.
-            </div>
-          )}
-        </div>
-      </CardTable>
+            {/* Empty State */}
+            {formattedData.length === 0 && (
+              <div className="text-center py-12 px-4 text-gray-500">
+                No advances found.
+              </div>
+            )}
+          </div>
+        </CardTable>
+      </div>
     </div>
-  </div>
   );
 
   const MobileLayout = () => (
@@ -279,17 +270,17 @@ const AdvancesList: React.FC = () => {
               </div>
               <div className=" text-start relative group inline-block overflow-visible">
                 <StatusBadge status={advance.advanceStatus} />
-                
-                                         {/* Tooltip */}
-                                         <div
-                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
+
+                {/* Tooltip */}
+                <div
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
                opacity-0 invisible group-hover:opacity-100 group-hover:visible
                transition-all duration-150 ease-out pointer-events-none
                bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
                shadow-lg z-50"
-                    >
-                      {advance.employee_name}
-                    </div>
+                >
+                  {advance.employee_name}
+                </div>
               </div>
             </div>
             <div className="mt-0 pt-3">

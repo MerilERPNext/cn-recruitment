@@ -71,9 +71,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Attendance Overview
-          </h3>
+          <h3 className="module-title">Attendance Overview</h3>
           <p className="text-sm text-gray-600">Monthly attendance summary</p>
         </div>
         <div className="text-right">
@@ -133,7 +131,9 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
 
         {/* Statistics */}
         {/* Attendance Summary Cards */}
-        <div className={`grid gap-3 ${isDesktop ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        <div
+          className={`grid gap-3 ${isDesktop ? "grid-cols-2" : "grid-cols-3"}`}
+        >
           {/* Present Summary Card */}
           <SummaryCard
             icon={CheckCircle}

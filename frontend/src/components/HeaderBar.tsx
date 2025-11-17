@@ -29,7 +29,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           </button>
         )}
         {title && (
-          <h1 className="w-full text-lg justify-center text-center font-semibold text-gray-800">
+          <h1 className="w-full justify-center text-center module-title">
             {title}
           </h1>
         )}

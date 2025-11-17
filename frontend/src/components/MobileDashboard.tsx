@@ -486,7 +486,7 @@ const MobileDashboard: React.FC = () => {
               onClick={() =>
                 handleCheckInOut(isCurrentlyCheckedIn ? "checkOut" : "checkIn")
               }
-              className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
               disabled={checkInCheckOutPending || !employeeShift?.shift}
             >
               {checkInCheckOutPending || isRefetching ? (
@@ -504,7 +504,7 @@ const MobileDashboard: React.FC = () => {
               onClick={() =>
                 handleClockInOut(isCurrentlyCheckedIn ? "clockOut" : "clockIn")
               }
-              className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-gray-700 transition-colors"
               disabled={clockInCheckOutPending || !employeeShift?.shift}
             >
               {clockInCheckOutPending || isRefetching ? (

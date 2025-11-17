@@ -2,9 +2,7 @@
 import { useMemo, useState, useCallback } from "react";
 import CardTable from "../../shared/CardTable";
 import { useNavigate, useSearchParams } from "react-router";
-import {
-  MyPlannedAttendanceRequest,
-} from "../../../types/attendance";
+import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import ApprovalList from "../../shared/ApprovalList";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -12,6 +10,7 @@ import DataListView from "../../DataListView";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
 import OvertimeApprovalCard from "./OvertimeApprovalCard";
+import { ViewAll } from "../../shared/atoms/ViewAll";
 
 const OvertimeRequests = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -43,25 +42,24 @@ const OvertimeRequests = () => {
   const requestId = searchParams.get("requestId");
 
   const handleRequestClick = useCallback(
-  (request: any) => {
-    console.log("Request clicked:", request);
-    if (request?.todo_id) {
-      setSearchParams({ requestId: request.todo_id });
-    }
-  },
-  [setSearchParams]
-);
+    (request: any) => {
+      console.log("Request clicked:", request);
+      if (request?.todo_id) {
+        setSearchParams({ requestId: request.todo_id });
+      }
+    },
+    [setSearchParams]
+  );
 
   const handleCloseModal = useCallback(() => {
     navigate(-1);
   }, [navigate]);
 
-    const handleActionComplete = useCallback(() => {
-      setSearchParams({});
-      // Trigger refetch after action
-      setRefetchApprovalList(true);
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    // Trigger refetch after action
+    setRefetchApprovalList(true);
   }, [setSearchParams]);
-
 
   return (
     <div>
@@ -70,10 +68,10 @@ const OvertimeRequests = () => {
           {/* Pending */}
 
           <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 pb-1">
+            <h2 className="module-title pb-1">
               Pending Planned Overtime Requests
             </h2>
-            <button
+            {/* <button
               onClick={() => {
                 navigate(
                   "/webapp/attendance/planned-overtime-requests/pendings"
@@ -82,7 +80,15 @@ const OvertimeRequests = () => {
               className="text-blue-600 hover:text-blue-800 font-medium"
             >
               View All
-            </button>
+            </button> */}
+            <ViewAll
+              title="View All"
+              onClick={() => {
+                navigate(
+                  "/webapp/attendance/planned-overtime-requests/pendings"
+                );
+              }}
+            />
           </div>
 
           <CardTable
@@ -111,7 +117,9 @@ const OvertimeRequests = () => {
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}
                     onAction={item?.onAction}
-                    onClick={(request: MyPlannedAttendanceRequest) =>  handleRequestClick(request) }
+                    onClick={(request: MyPlannedAttendanceRequest) =>
+                      handleRequestClick(request)
+                    }
                     loadingAction={item?.loadingAction}
                   />
                 )}
@@ -123,10 +131,10 @@ const OvertimeRequests = () => {
         <div className="bg-white px-2 mt-4">
           <div>
             <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800 pb-1">
+              <h2 className="module-title pb-1">
                 My Planned Overtime Requests
               </h2>
-              <button
+              {/* <button
                 onClick={() => {
                   navigate(
                     "/webapp/attendance/planned-overtime-requests/my-overtime-requests"
@@ -135,7 +143,15 @@ const OvertimeRequests = () => {
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
                 View All
-              </button>
+              </button> */}
+              <ViewAll
+                title="View All"
+                onClick={() => {
+                  navigate(
+                    "/webapp/attendance/planned-overtime-requests/my-overtime-requests"
+                  );
+                }}
+              />
             </div>
             <CardTable
               columnWidths={["10%", "30%", "10%", "10%", "33%"]}
@@ -165,7 +181,9 @@ const OvertimeRequests = () => {
                     return (
                       <MyRequestCard
                         request={props?.item}
-                        onClick={(request: MyPlannedAttendanceRequest) => handleRequestClick(request)}
+                        onClick={(request: MyPlannedAttendanceRequest) =>
+                          handleRequestClick(request)
+                        }
                       />
                     );
                   }}

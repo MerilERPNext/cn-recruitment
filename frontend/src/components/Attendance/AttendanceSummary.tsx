@@ -161,7 +161,7 @@ const AttendanceSummary = () => {
             <div className="flex-1 space-y-6">
               {/* Today's Team Summary */}
               <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-                <h2 className="text-xl font-semibold">Today's Team Summary</h2>
+                <h2 className="module-title">Today's Team Summary</h2>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                   {teamSummaryData.map((data, index) => (
                     <SummaryCard
@@ -182,7 +182,7 @@ const AttendanceSummary = () => {
 
             {/* Right Column: Settings */}
             <div className="w-1/3 ml-6 bg-white border border-gray-200 rounded-xl p-4">
-              <h2 className="text-xl font-semibold mb-4">Settings</h2>
+              <h2 className="module-title mb-4">Settings</h2>
               <div className="space-y-4">
                 {settingsData.map((setting, index) => {
                   const Icon = setting.icon;

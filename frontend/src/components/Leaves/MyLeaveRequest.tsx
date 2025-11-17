@@ -12,6 +12,7 @@ import {
   useRevokeApprovedLeave,
 } from "../../hooks/useLeaves";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
+import { ViewAll } from "../shared/atoms/ViewAll";
 
 // 1. Status options based on the common leave application statuses
 const LEAVE_STATUS_OPTIONS = [
@@ -55,13 +56,10 @@ const MyLeaveRequests = ({
     currentEmployee?.name || ""
   );
 
-  // State for the selected status filter
   const [selectedStatus, setSelectedStatus] = useState("Open");
 
-  // Handler for the dropdown change
   const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedStatus(event.target.value);
-    // Trigger a refetch/reload of the list when the filter changes
     setRefetchAttendance(true);
   };
 
@@ -149,30 +147,18 @@ const MyLeaveRequests = ({
       <div>
         <div className="bg-white h-full md:px-4 md:pt-2">
           <div className="bg-white px-2">
-            {/* 3. REVISED HEADER ROW to include the dropdown */}
             <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800 pb-1">
-                My Leave Requests
-              </h2>
-
-              {/* Dropdown Group */}
+              <h2 className="module-title pb-1">My Leave Requests</h2>
               <div className="flex items-center space-x-3 pb-1">
-                {/* Filter Dropdown */}
                 <FilterDropdowns />
-                {/* End Filter Dropdown */}
-
-                <button
+                <ViewAll
+                  title="View All"
                   onClick={() =>
                     navigate("/webapp/leave-app/requests/pendings")
                   }
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  View All
-                </button>
+                />
               </div>
-              {/* End Dropdown Group */}
             </div>
-            {/* End REVISED HEADER ROW */}
 
             {isEmployeeLoading ? (
               <CardSkeleton />
@@ -195,7 +181,6 @@ const MyLeaveRequests = ({
                     customAPI={{
                       method:
                         "cn_leave_shift_managment.api.get_open_approval_todos",
-                      // 4. Pass the dynamically constructed parameters
                       params: apiParams,
                     }}
                     ItemComponent={(props: { item: MyLeaveRequestType }) => (

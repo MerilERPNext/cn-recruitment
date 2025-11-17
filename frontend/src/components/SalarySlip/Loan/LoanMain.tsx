@@ -9,6 +9,7 @@ import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile";
 import { useLoan } from "../../../hooks/useLoan";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import Button from "../../shared/atoms/Button";
 
 export default function LoansPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,12 +59,14 @@ export default function LoansPage() {
           <h1 className="text-2xl font-semibold text-gray-900">
             Loans For FY25-26
           </h1>
-          <button
+
+          <Button
+            bgColor="blue-600"
+            className="hover:bg-blue-700 py-3 text-[1rem] px-4 font-medium"
             onClick={() => setIsDialogOpen(true)}
-            className="px-4 py-2 text-white bg-blue-600 border border-blue-600 rounded-md hover:bg-blue-700 transition-colors"
           >
             Create Loans
-          </button>
+          </Button>
         </div>
 
         {/* Search */}

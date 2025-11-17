@@ -178,3 +178,18 @@
   }
 }
 /* Removes scrollbar from the profile form */
+
+/* styles accross app */
+.section-title {
+  font-size: 1rem; /* 16px */
+  font-weight: 500; /* Medium */
+  color: #1f2937; /* Tailwind's gray-800 */
+  text-transform: capitalize;
+}
+.module-title {
+  font-size: 1.125rem;
+  /* font-size: 2.125rem; */
+  font-weight: 600;
+  color: #111827;
+  text-transform: capitalize;
+}

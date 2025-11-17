@@ -9,6 +9,8 @@ import { CustomError } from "../../../../types/attendance";
 import DOMPurify from "dompurify";
 import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 import createLoanFormSchema from "./createLoanSchema.json";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
+import Button from "../../../shared/atoms/Button";
 
 interface CreateLoanDialogProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ export default function CreateLoanDialog({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || ""
   );
+  const { isDesktop } = useScreenSize();
   const mutation = useCreateNewLoanApplication();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
@@ -104,14 +107,21 @@ export default function CreateLoanDialog({
           />
         </div>
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <button
+          <Button
             onClick={() => {
               handleSubmit();
             }}
-            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            fullWidth
+            size="lg"
+            variant="contain"
+            bgColor={isDesktop ? "blue-600" : "black"}
+            textColor="white"
+            className={`${
+              isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
+            } font-medium`}
           >
             Submit Request
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -101,7 +101,6 @@ const EmployeeProfile: React.FC = () => {
       { key: "employment-history", label: "Employment History" },
       { key: "employee-holidays", label: "Employee Holidays" },
       { key: "employee-documents", label: "Employee Documents" },
-
     ],
     []
   );
@@ -113,7 +112,7 @@ const EmployeeProfile: React.FC = () => {
       "ORG-chart": <TwoLevelOrgChart />,
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
       "employee-holidays": <ShowHolidays />,
-      "employee-documents": <DocumentLibrary/>,
+      "employee-documents": <DocumentLibrary />,
     }),
     [user]
   );
@@ -230,13 +229,13 @@ const EmployeeProfile: React.FC = () => {
                   </button>
                 </div>
                 <div className="text-center mt-6">
-                  <h1 className="text-2xl font-bold text-gray-900">
+                  <h1 className="text-2xl font-bold text-gray-900 truncate">
                     {user?.employee_name}
                   </h1>
-                  <p className="text-blue-600 font-medium mt-1">
+                  <p className="text-blue-600 font-medium mt-1 truncate">
                     {user?.designation}
                   </p>
-                  <p className="text-gray-500 text-sm mt-1">
+                  <p className="text-gray-500 text-sm mt-1 truncate">
                     ID: {user?.employee}
                   </p>
                 </div>
@@ -269,8 +268,8 @@ const EmployeeProfile: React.FC = () => {
                       onClick={() => setActiveTab(tab.key)}
                       className={`w-full text-left px-5 py-4 rounded-xl text-sm font-medium transition-all duration-200 ${
                         activeTab === tab.key
-                          ? "bg-black text-white shadow-lg shadow-black/20"
-                          : "text-gray-700 hover:bg-gray-100 hover:shadow-sm"
+                          ? "bg-blue-600 text-white "
+                          : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                       }`}
                     >
                       {tab.label}

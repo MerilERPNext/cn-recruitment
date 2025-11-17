@@ -892,7 +892,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
                 className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                  !isForOthers ? "bg-black text-white" : ""
+                  !isForOthers ? "bg-blue-600 text-white" : ""
                 }`}
                 onClick={() => setIsForOthers(false)}
               >
@@ -900,7 +900,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
               </button>
               <button
                 className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                  isForOthers ? "bg-black text-white" : ""
+                  isForOthers ? "bg-blue-600 text-white" : ""
                 }`}
                 onClick={() => setIsForOthers(true)}
               >
@@ -973,7 +973,7 @@ const AttendanceRequestForm: React.FC<AttndanceRequestFormProps> = ({
           <div className="max-w-4xl mx-auto">
             <button
               onClick={() => formAddressInstance.current?.submit()}
-              className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors flex items-center justify-center"
+              className="flex-1 w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors flex items-center justify-center"
             >
               {mutation.isPending ? (
                 <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>

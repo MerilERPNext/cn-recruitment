@@ -1,7 +1,7 @@
 import AttendanceLegend from "./AttendanceLegend";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight } from "lucide-react";
+import { ViewAll } from "../../../shared/atoms/ViewAll";
 
 const ListView = () => {
   const { isDesktop } = useScreenSize();
@@ -17,7 +17,7 @@ const ListView = () => {
           <AttendanceLegend />
         </div>
       )}
-      <button
+      {/* <button
         className="text-gray-500 px-2 mt-4 flex gap-1 justify-center items-center"
         onClick={() => {
           navigate("/webapp/attendance/emp-attendance/all");
@@ -25,7 +25,14 @@ const ListView = () => {
       >
         List View
         <ArrowUpRight className="h-5 w-5" />
-      </button>
+      </button> */}
+      <ViewAll
+        title="List View"
+        className="text-gray-500 px-2 mt-4 flex gap-1 justify-center items-center"
+        onClick={() => {
+          navigate("/webapp/attendance/emp-attendance/all");
+        }}
+      />
     </div>
   );
 };

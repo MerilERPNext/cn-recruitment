@@ -15,9 +15,10 @@ import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import DOMPurify from "dompurify";
 import { AttendanceRequest } from "../../../types/attendance";
-
+import { useScreenSize } from "../../../hooks/useScreenSize";
 // Import the JSON schema
 import defaultFormSchema from "./attendanceRequestFormSchema.json";
+import Button from "../../shared/atoms/Button";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -130,7 +131,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     (propSchema || defaultFormSchema) as FormSchema
   );
   const [isSchemaLoading, setIsSchemaLoading] = useState(false);
-
+  const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
@@ -513,7 +514,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
                 className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                  !isForOthers ? "bg-black text-white" : ""
+                  !isForOthers ? "bg-blue-600 text-white" : ""
                 }`}
                 onClick={() => setIsForOthers(false)}
               >
@@ -521,7 +522,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               </button>
               <button
                 className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                  isForOthers ? "bg-black text-white" : ""
+                  isForOthers ? "bg-blue-600 text-white" : ""
                 }`}
                 onClick={() => setIsForOthers(true)}
               >
@@ -666,7 +667,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         {/* Submit Bar */}
         <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
           <div className="max-w-4xl mx-auto">
-            <button
+            {/* <button
               onClick={() => formAddressInstance.current?.submit()}
               className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors flex items-center justify-center"
             >
@@ -675,7 +676,25 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               ) : (
                 "Submit"
               )}
-            </button>
+            </button> */}
+
+            <Button
+              onClick={() => formAddressInstance.current?.submit()}
+              fullWidth
+              size="lg"
+              variant="contain"
+              bgColor={isDesktop ? "blue-600" : "black"}
+              textColor="white"
+              className={`flex-1 ${
+                isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
+              } font-medium`}
+            >
+              {mutation.isPending ? (
+                <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+              ) : (
+                "Submit"
+              )}
+            </Button>
           </div>
         </div>
       </div>

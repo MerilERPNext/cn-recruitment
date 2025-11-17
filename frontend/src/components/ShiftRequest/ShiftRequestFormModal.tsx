@@ -2,14 +2,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { toast } from "react-hot-toast";
-
-import { useCreateShiftRequest, useUpdateShiftRequest } from "../../hooks/useShift";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import {
+  useCreateShiftRequest,
+  useUpdateShiftRequest,
+} from "../../hooks/useShift";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 
-import type { ShiftRequestFormData, FormioSubmission, ShiftRequest } from "../../types/shift";
+import type {
+  ShiftRequestFormData,
+  FormioSubmission,
+  ShiftRequest,
+} from "../../types/shift";
 import { Formio } from "formiojs";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import defaultFormSchema from "./ShiftRequestFormSchema.json";
+import Button from "../shared/atoms/Button";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -24,7 +32,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   onClose,
   defaultShiftRequestData,
   schema: propSchema,
-  forActionType
+  forActionType,
 }) => {
   const formRef = useRef<any>(null);
   const { setRefetchAttendance } = useGlobalStore();
@@ -42,18 +50,17 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   const isLoading = employeeLoading;
   const error = employeeError;
-
-
+  const { isDesktop } = useScreenSize();
   const handleSubmitonSuccess = () => {
     onClose?.();
     setTimeout(() => {
       setRefetchAttendance(true);
     }, 1000);
-  }
+  };
 
   const handleSubmitionError = (message: string, error: any) => {
     console.error(message, error);
-  }
+  };
 
   const handleSubmit = async () => {
     if (!formRef.current) {
@@ -91,12 +98,19 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
       };
 
       if (forActionType === "edit" && defaultShiftRequestData?.name) {
-        updateShiftRequest({ doctype: defaultShiftRequestData.doctype, name: defaultShiftRequestData.name, data: payload }, {
-          onSuccess: handleSubmitonSuccess,
-          onError: (error: any) => {
-            handleSubmitionError("Error updating shift request:", error);
+        updateShiftRequest(
+          {
+            doctype: defaultShiftRequestData.doctype,
+            name: defaultShiftRequestData.name,
+            data: payload,
           },
-        });
+          {
+            onSuccess: handleSubmitonSuccess,
+            onError: (error: any) => {
+              handleSubmitionError("Error updating shift request:", error);
+            },
+          }
+        );
       } else {
         createShiftRequest(payload, {
           onSuccess: handleSubmitonSuccess,
@@ -117,7 +131,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
       setFormSchema(propSchema);
     }
   }, [propSchema]);
-
 
   if (isLoading) {
     return (
@@ -229,10 +242,13 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             }}
             submission={{
               data: {
-                fromDate: defaultShiftRequestData?.from_date || new Date().toISOString(),
-                toDate: defaultShiftRequestData?.to_date || new Date().toISOString(),
-                shiftType: defaultShiftRequestData?.shift_type || ""
-              }
+                fromDate:
+                  defaultShiftRequestData?.from_date ||
+                  new Date().toISOString(),
+                toDate:
+                  defaultShiftRequestData?.to_date || new Date().toISOString(),
+                shiftType: defaultShiftRequestData?.shift_type || "",
+              },
             }}
             options={{
               builder: { styles: false },
@@ -253,18 +269,27 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
       <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
         <div className="max-w-4xl mx-auto flex space-x-4">
-          <button
+          <Button
             onClick={onClose}
-            className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            size="md"
+            variant="outline"
+            bgColor="gray-300"
+            className="flex-1 border text-gray-700 hover:bg-gray-50 font-medium py-3"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSubmit}
-            className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            size="md"
+            variant="contain"
+            bgColor={isDesktop ? "blue-600" : "black"}
+            textColor="white"
+            className={`flex-1 ${
+              isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800 py-3"
+            } font-medium`}
           >
             Submit Request
-          </button>
+          </Button>
         </div>
       </div>
     </div>

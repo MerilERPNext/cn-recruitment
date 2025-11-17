@@ -257,7 +257,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Team Requests",
-          icon: DollarSign,
+          icon: Users,
           href: "/webapp/expenses-app/team-requests",
         },
         {
@@ -460,7 +460,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         `}
       </style>
       <aside
-        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${
+        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${
           isExpanded ? "w-64" : "w-20"
         }`}
         style={{
@@ -512,24 +512,24 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               let parentItemClasses = "";
               if (isExpanded) {
                 if (isAnySubItemActive) {
-                  parentItemClasses = "bg-gray-100 text-gray-900";
+                  parentItemClasses = "bg-blue-50 text-blue-600";
                 } else if (isItemDirectlyActive && !hasSubItems) {
-                  parentItemClasses = "bg-gray-900 text-white";
+                  parentItemClasses = "bg-blue-600 text-white";
                 } else if (isDropdownOpen) {
-                  parentItemClasses = "bg-gray-100 text-gray-900";
+                  parentItemClasses = "bg-blue-50 text-blue-600";
                 } else {
                   parentItemClasses =
-                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
+                    "text-gray-600 hover:bg-blue-50 hover:text-blue-600";
                 }
               } else {
                 if (
                   isAnySubItemActive ||
                   (isItemDirectlyActive && !hasSubItems)
                 ) {
-                  parentItemClasses = "bg-gray-900 text-white";
+                  parentItemClasses = "bg-blue-600 text-white";
                 } else {
                   parentItemClasses =
-                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
+                    "text-gray-600 hover:bg-blue-50 hover:text-blue-600";
                 }
               }
 
@@ -569,8 +569,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       onClick={handleTodoClick}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                         isItemDirectlyActive
-                          ? "bg-gray-900 text-white hover:text-white"
-                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          ? "bg-blue-600 text-white hover:text-white"
+                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -593,8 +593,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       onClick={handleHelpDeskClick}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                         isItemDirectlyActive
-                          ? "bg-gray-900 text-white hover:text-white"
-                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          ? "bg-blue-600 text-white hover:text-white"
+                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -617,8 +617,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       to={item.path}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
                         isItemDirectlyActive
-                          ? "bg-gray-900 text-white hover:text-white"
-                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          ? "bg-blue-600 text-white hover:text-white"
+                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -663,8 +663,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     }
                                     className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap ${
                                       isSubActive || isSubDropdownOpen
-                                        ? "bg-gray-100 text-gray-900"
-                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                        ? "bg-blue-50 text-blue-600"
+                                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
                                     }`}
                                   >
                                     <div className="flex items-center space-x-2">
@@ -693,8 +693,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     to={subItem.href || "#"}
                                     className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
                                       isSubActive
-                                        ? "bg-gray-900 text-white hover:text-white"
-                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                        ? "bg-blue-600 text-white hover:text-white"
+                                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
                                     }`}
                                   >
                                     <div className="flex items-center space-x-2">
@@ -728,8 +728,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                               to={subSubItem.href}
                                               className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
                                                 isSubSubActive
-                                                  ? "bg-gray-900 text-white hover:text-white"
-                                                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                                                  ? "bg-blue-600 text-white hover:text-white"
+                                                  : "text-gray-400 hover:bg-blue-50 hover:text-blue-600"
                                               }`}
                                             >
                                               <div className="flex items-center space-x-2">

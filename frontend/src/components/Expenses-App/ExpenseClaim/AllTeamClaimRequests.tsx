@@ -76,7 +76,7 @@ const AllTeamClaimRequests = () => {
           <button onClick={() => navigate(-1)}>
             <IoChevronBackOutline />
           </button>
-          <h4 className="font-semibold">Team Expense Claim Requests</h4>
+          <h4 className="module-title">Team Expense Claim Requests</h4>
           <div className="flex items-center gap-3">
             <select
               value={statusFilter}

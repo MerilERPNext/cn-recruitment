@@ -50,7 +50,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
         aria-hidden
       />
 
-      <div className="relative z-10 w-full max-w-3xl rounded-lg bg-white p-6 shadow-lg">
+      <div className="relative z-10 w-full max-w-xl rounded-lg bg-white p-6 shadow-lg">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Expense Claim: {id}</h3>
           <button
