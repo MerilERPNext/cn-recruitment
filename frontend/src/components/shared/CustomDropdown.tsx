@@ -1,3 +1,4 @@
+// import { Funnel } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 
 interface Option {
@@ -78,6 +79,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
             d="M19 9l-7 7-7-7"
           />
         </svg>
+        {/* <Funnel size={18} /> */}
       </button>
 
       {isOpen && (
