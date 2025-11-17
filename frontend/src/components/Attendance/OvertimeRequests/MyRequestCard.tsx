@@ -45,8 +45,7 @@ export function MyRequestCard({
   };
 
   const status = getStatus(request?.status);
- const parsedDate =
-  request?.due_date
+  const parsedDate = request?.due_date
     ? parse(String(request.due_date), "dd-MM-yyyy", new Date())
     : null;
 

@@ -38,7 +38,6 @@ const TeamOvertimeRequests = () => {
 
   const handleRequestClick = useCallback(
     (request: MyPlannedAttendanceRequest) => {
-      console.log("Request clicked:", request);
       if (request?.todo_id) {
         setSearchParams({ requestId: request.todo_id });
       }
