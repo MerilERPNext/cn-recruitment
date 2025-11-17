@@ -15,6 +15,7 @@ import Modal from "./commonModal";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
+import Button from "../../shared/atoms/Button";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -130,12 +131,20 @@ const AdvancesList: React.FC = () => {
             </button>
 
             {/* Create Advance Button */}
-            <button
+            {/* <button
               onClick={handleCreateAdvance}
               className="my-btn-primary flex items-center gap-2 whitespace-nowrap"
             >
               Create Advance
-            </button>
+            </button> */}
+            <Button
+              bgColor="blue-600"
+              size="md"
+              onClick={handleCreateAdvance}
+              className="hover:bg-blue-700 py-[0.65rem] font-semibold"
+            >
+              Create Advance
+            </Button>
           </div>
         </div>
 

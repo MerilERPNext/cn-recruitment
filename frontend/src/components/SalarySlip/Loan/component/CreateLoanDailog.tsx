@@ -9,7 +9,6 @@ import { CustomError } from "../../../../types/attendance";
 import DOMPurify from "dompurify";
 import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 import createLoanFormSchema from "./createLoanSchema.json";
-import { useScreenSize } from "../../../../hooks/useScreenSize";
 import Button from "../../../shared/atoms/Button";
 
 interface CreateLoanDialogProps {
@@ -26,7 +25,6 @@ export default function CreateLoanDialog({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || ""
   );
-  const { isDesktop } = useScreenSize();
   const mutation = useCreateNewLoanApplication();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
@@ -114,11 +112,9 @@ export default function CreateLoanDialog({
             fullWidth
             size="lg"
             variant="contain"
-            bgColor={isDesktop ? "blue-600" : "black"}
+            bgColor={"blue-600"}
             textColor="white"
-            className={`${
-              isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
-            } font-medium`}
+            className={"hover:bg-blue-700 font-medium"}
           >
             Submit Request
           </Button>

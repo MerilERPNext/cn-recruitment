@@ -17,6 +17,7 @@ import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 import ExpenseBreakupModal from "./ExpenseBreakupModal";
 import { SquarePen, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
+import Button from "../../shared/atoms/Button";
 
 interface ExpenseClaim {
   id: string;
@@ -620,23 +621,29 @@ const ExpenseAdvanceForm: React.FC<{
       </div>
 
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
-        <button
+        <Button
+          fullWidth
+          variant="outline"
+          size="lg"
           onClick={
             onClose
               ? onClose
               : () => navigate("/webapp/expenses-app/advance-expense-list")
           }
-          className="flex-1 py-3 px-6 rounded-lg font-medium border border-gray-300 text-gray-700 hover:bg-gray-100"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+
+        <Button
+          fullWidth
+          size="lg"
           onClick={handleSubmit}
           disabled={submitting}
-          className="flex-1 py-3 px-6 rounded-lg font-medium bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+          bgColor="blue-600"
+          className="hover:bg-blue-700"
         >
           {submitting ? "Submitting..." : "Submit"}
-        </button>
+        </Button>
       </div>
       {/* Expense Claim Modal */}
       <ExpenseBreakupModal

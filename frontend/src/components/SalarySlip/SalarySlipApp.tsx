@@ -5,6 +5,7 @@ import NavigationTabs, { Tab } from "../NavigationTab";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import CreateLoanDialog from "./Loan/component/CreateLoanDailog";
+import Button from "../shared/atoms/Button";
 
 type TabName =
   | "Salary Slip"
@@ -125,7 +126,7 @@ const SalarySlipApp: React.FC = () => {
               <button
                 className={`flex-1 py-2 rounded-lg font-medium transition ${
                   viewMode === "annual"
-                    ? "bg-black text-white"
+                    ? "bg-blue-600 text-white"
                     : "bg-gray-100 text-gray-700"
                 }`}
                 onClick={() => setViewMode("annual")}
@@ -135,7 +136,7 @@ const SalarySlipApp: React.FC = () => {
               <button
                 className={`flex-1 py-2 rounded-lg font-medium transition ${
                   viewMode === "monthly"
-                    ? "bg-black text-white"
+                    ? "bg-blue-600 text-white"
                     : "bg-gray-100 text-gray-700"
                 }`}
                 onClick={() => setViewMode("monthly")}
@@ -153,13 +154,15 @@ const SalarySlipApp: React.FC = () => {
         {/* ✅ Loan Footer Button */}
         {activeTab === "Loan" && (
           <footer className="fixed bottom-0 left-0 w-full border-t bg-white shadow-md p-2">
-            <button
-              className="w-full bg-black text-white rounded-lg p-3 hover:bg-gray-900 transition-colors"
+            <Button
+              fullWidth
+              size="lg"
+              bgColor="blue-600"
+              className="hover:bg-blue-700"
               onClick={() => setIsLoanDialogOpen(true)}
-              aria-label="Create Loan"
             >
               + Create Loan
-            </button>
+            </Button>
           </footer>
         )}
 

@@ -11,6 +11,7 @@ import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router-dom";
 import { ViewAll } from "../../shared/atoms/ViewAll";
+import Button from "../../shared/atoms/Button";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -184,12 +185,15 @@ const AttendanceRequest = ({
       {!isDesktop && showAttendanceRequest && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
-            <button
-              className="flex justify-center gap-2 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            <Button
+              bgColor="blue-600"
+              size="lg"
+              fullWidth
+              className="hover:bg-blue-700"
               onClick={() => setShowForm(!showForm)}
             >
               <Plus /> <span>Add Attendance Request</span>
-            </button>
+            </Button>
           </div>
         </div>
       )}
