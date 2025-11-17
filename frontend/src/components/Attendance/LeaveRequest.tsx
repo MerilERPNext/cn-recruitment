@@ -23,7 +23,6 @@ import {
 } from "../../hooks/useLeaves";
 import { LeaveFieldFlags } from "../../types/leaves";
 import Button from "../shared/atoms/Button";
-import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -57,7 +56,6 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const { triggerRefetch } = useLeaveRequestRefresh();
   const { defaults } = useRequestLeaveModal();
-  const { isDesktop } = useScreenSize();
   const createLeaveMutation = useCreateFrappeDocument({
     onSuccess: (newDoc) => {
       setTimeout(() => {
@@ -267,7 +265,8 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "fromDate",
-                label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
+                label:
+                  "From Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "From Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -290,7 +289,8 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "toDate",
-                label: "To Date <span style='color:red;margin-left:3px;'> *</span>",
+                label:
+                  "To Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "To Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -534,12 +534,6 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           />
         </div>
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          {/* <button
-            onClick={handleSubmit}
-            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-          >
-            Submit Request
-          </button> */}
           <Button
             fullWidth
             size="lg"

@@ -7,7 +7,7 @@ interface Option {
 
 interface CustomDropdownProps {
   value: string;
-  onChange: (event: { target: { value: string } }) => void;
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   className?: string;
 }
 
@@ -40,7 +40,12 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   }, []);
 
   const handleSelect = (optionValue: string): void => {
-    onChange({ target: { value: optionValue } });
+    const syntheticEvent = {
+      target: { value: optionValue },
+      currentTarget: { value: optionValue },
+    } as React.ChangeEvent<HTMLSelectElement>;
+
+    onChange(syntheticEvent);
     setIsOpen(false);
   };
 

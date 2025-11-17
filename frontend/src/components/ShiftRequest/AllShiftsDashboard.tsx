@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from "react";
-import { ExternalLink } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ApprovalList from "../shared/ApprovalList";
 import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";

@@ -1,7 +1,6 @@
 import AttendanceLegend from "./AttendanceLegend";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight } from "lucide-react";
 import { ViewAll } from "../../../shared/atoms/ViewAll";
 
 const ListView = () => {
