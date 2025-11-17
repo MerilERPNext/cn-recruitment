@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import DataListView from "../../DataListView";
-import AttndanceRequestForm from "./AttendanceRequestForm";
 import { useCallback, useState } from "react";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -12,6 +11,7 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router-dom";
 import LayoutHeader from "../../shared/LayoutHeader";
 import HeaderBar from "../../HeaderBar";
+import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
 
 const ALL_STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -105,7 +105,7 @@ const AllAttendanceRequest = ({
       )}
 
       {showForm ? (
-        <AttndanceRequestForm
+        <AttendanceRequestFormV2
           onClose={() => {
             setShowForm(false);
           }}

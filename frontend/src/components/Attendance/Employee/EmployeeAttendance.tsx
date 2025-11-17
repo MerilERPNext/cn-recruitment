@@ -6,7 +6,6 @@ import {
 } from "../../../hooks/useAttendance";
 import { AttendanceRecord } from "../../../types/attendance";
 import { useNavigate } from "react-router";
-import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm";
 import { endOfMonth, format, startOfMonth, parse } from "date-fns";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -30,6 +29,7 @@ import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
 import { Plus } from "lucide-react";
 import { ViewAll } from "../../shared/atoms/ViewAll";
+import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -276,7 +276,7 @@ const EmployeeAttendance = () => {
           </CardTable>
         </div>
         {showReqAttendanceCorrection && (
-          <AttndanceRequestForm
+          <AttendanceRequestFormV2
             onClose={() => {
               setShowReqAttendanceCorrection(false);
             }}

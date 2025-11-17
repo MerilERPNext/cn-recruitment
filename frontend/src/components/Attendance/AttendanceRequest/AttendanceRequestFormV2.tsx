@@ -532,48 +532,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           ) : null}
           <Form
             form={formSchema}
-            // submission={{
-            //   data: {
-            //     from_date: defaultAttendanceData?.from_date || selectedDate,
-            //     to_date: defaultAttendanceData?.to_date || selectedDate,
-            //     request_type: defaultAttendanceData?.custom_request_type,
-            //     employee: defaultAttendanceData?.employee || "",
-            //     company: "",
-            //     custom_from_time: defaultAttendanceData?.custom_from_time
-            //       ? new Date(
-            //           `1970-01-01T${normalizeTime(
-            //             defaultAttendanceData.custom_from_time
-            //           )}`
-            //         )
-            //       : "",
-            //     custom_to_time: defaultAttendanceData?.custom_to_time
-            //       ? new Date(
-            //           `1970-01-01T${normalizeTime(
-            //             defaultAttendanceData.custom_to_time
-            //           )}`
-            //         )
-            //       : "",
-            //     custom__request_reason:
-            //       defaultAttendanceData?.custom__request_reason || "",
-            //     custom_location: defaultAttendanceData?.custom_location || "",
-            //     select_shift: defaultAttendanceData?.shift || "",
-            //     overnight_out_duty: false,
-            //     message: defaultAttendanceData?.explanation || "",
-            //     attachments: defaultAttendanceData?.custom_attachment
-            //       ? [
-            //           {
-            //             name: defaultAttendanceData.custom_attachment
-            //               .split("/")
-            //               .pop(),
-            //             url: defaultAttendanceData.custom_attachment,
-            //           },
-            //         ]
-            //       : [],
-            //     isForOthers: isForOthers,
-            //     currentEmployeeId: currentEmployee?.employee || "",
-            //     currentUserId: currentEmployee?.user_id || "",
-            //   },
-            // }}
             onSubmit={handleSubmit}
             options={{
               builder: { styles: false },

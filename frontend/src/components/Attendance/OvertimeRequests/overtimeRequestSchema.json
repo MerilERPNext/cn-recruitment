@@ -74,7 +74,7 @@
       "label": "Attachment",
       "storage": "customBase64",
       "input": true,
-      "validate": { "required": true },
+      "validate": { "required": "data.show_attachment" },
       "conditional": {
         "show": true,
         "when": "show_attachment",
