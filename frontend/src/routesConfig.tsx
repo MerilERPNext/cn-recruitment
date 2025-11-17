@@ -9,10 +9,7 @@ import { lazyWithRetry } from "./utils/lazyWithRetry";
 import SearchMembers from "./components/SearchMembers";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
-import AllAttendanceRequest from "./components/Attendance/AttendanceRequest/AllAttendanceRequests";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
-import AllLeaveRequest from "./components/Leaves/AllLeaveRequests";
-import MyOvertimePendingRequests from "./components/Attendance/OvertimeRequests/MyOvertimePendingRequests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import AllTeamClaimRequests from "./components/Expenses-App/ExpenseClaim/AllTeamClaimRequests";
@@ -97,7 +94,7 @@ const ExpensesList = lazyWithRetry(
 const AllExpensesList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseClaim/AllExpenseList"),
   "AllExpensesList"
-  );
+);
 const TeamExpense = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseClaim/TeamExpense"),
   "TeamExpense"
@@ -137,11 +134,6 @@ const MyLeaveRequest = lazyWithRetry(
 const TeamLeaveRequest = lazyWithRetry(
   () => import("./components/Leaves/TeamLeaveRequest"),
   "TeamLeaveRequest"
-);
-const AllPendingRequests = lazyWithRetry(
-  () =>
-    import("./components/Attendance/TeamAttendanceDetails/AllPendingRequests"),
-  "AllPendingRequests"
 );
 const AttendanceSummary = lazyWithRetry(
   () => import("./components/Attendance/AttendanceSummary"),
@@ -298,24 +290,17 @@ const MyShiftRequestsRoute = lazyWithRetry(
     })),
   "MyShiftRequestsRoute"
 );
-const PendingTeamLeaves = lazyWithRetry(
-  () => import("./components/Leaves/PendingTeamLeaves"),
-  "PendingTeamLeaves"
-);
 const LoansPage = lazyWithRetry(
   () => import("./components/SalarySlip/Loan/LoanMain"),
   "LoansPage"
 );
-const OvertimeRequests = lazyWithRetry(
-  () => import("./components/Attendance/OvertimeRequests/OvertimeRequests"),
+const MyOvertimeRequests = lazyWithRetry(
+  () => import("./components/Attendance/OvertimeRequests/MyOvertimeRequests"),
   "OvertimeRequests"
 );
-const AllOvertimePendingRequests = lazyWithRetry(
-  () =>
-    import(
-      "./components/Attendance/OvertimeRequests/AllOvertimePendingRequests"
-    ),
-  "AllOvertimePendingRequests"
+const TeamOvertimeRequests = lazyWithRetry(
+  () => import("./components/Attendance/OvertimeRequests/TeamOvertimeRequests"),
+  "OvertimeRequests"
 );
 const LoanMainComponent = lazyWithRetry(
   () => import("./components/SalarySlip/Loan/component/DetailsPageForMobile"),
@@ -587,29 +572,9 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "team-attendance", element: <TeamAttendance /> },
       { path: "attendance-request", element: <AttendanceRequest /> },
-      {
-        path: "attendance-request/pendings",
-        element: <AllAttendanceRequest />,
-      },
-      {
-        path: "attendance-request/actioned",
-        element: <AllAttendanceRequest />,
-      },
       { path: "team-attendance-requests", element: <TeamAttendanceDetails /> },
-      { path: "planned-overtime-requests", element: <OvertimeRequests /> },
-
-      {
-        path: "team-attendance-requests/pendings",
-        element: <AllPendingRequests />,
-      },
-      {
-        path: "planned-overtime-requests/pendings",
-        element: <AllOvertimePendingRequests />,
-      },
-      {
-        path: "planned-overtime-requests/my-overtime-requests",
-        element: <MyOvertimePendingRequests />,
-      },
+      { path: "my-overtime-requests", element: <MyOvertimeRequests /> },
+      { path: "team-overtime-requests", element: <TeamOvertimeRequests /> },
       {
         path: "attendance-policies",
         element: <AttendancePolicies />,
@@ -633,20 +598,6 @@ export const routesConfig: AppRoute[] = [
       },
       { path: "leaves/holidays", element: <Holidays /> },
       { path: "leaves/holidays/all", element: <HolidaysFull /> },
-
-      {
-        path: "leave-requests/pending",
-        element: <PendingTeamLeaves />,
-      },
-      //my requests view all
-      {
-        path: "requests/pendings",
-        element: <AllLeaveRequest />,
-      },
-      {
-        path: "requests/actioned",
-        element: <AllLeaveRequest />,
-      },
       {
         path: "compensatory-request",
         element: <CompensatoryRequest />,

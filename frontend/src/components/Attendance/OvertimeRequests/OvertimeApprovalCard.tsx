@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -13,6 +12,7 @@ type ApprovalCardProps = {
   refetch?: () => void;
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
+  isBulkSelectEnabled?: boolean;
 };
 const OvertimeApprovalCard = ({
   isSelected = false,
@@ -22,6 +22,7 @@ const OvertimeApprovalCard = ({
   onAction,
   onClick,
   loadingAction,
+  isBulkSelectEnabled,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const actions = data?.custom_doctype_actions
@@ -77,22 +78,24 @@ const OvertimeApprovalCard = ({
   };
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const gridTemplateColumns = "5% 10% 35% 8% 8% 25%";
+  const gridTemplateColumns = isBulkSelectEnabled
+    ? "5% 10% 35% 8% 8% 20%" // With checkbox
+    : "12% 40% 10% 10% 20%"; // Without checkbox
 
   const getStatus = (status: string) => {
     if (status === "Open") {
       return {
-        label: "Open",
+        label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-600",
       };
-    } else if (status === "Closed") {
+    } else if (status === "Approved") {
       return {
-        label: "Closed",
+        label: "Approved",
         statusColor: "bg-green-100 text-green-600",
       };
-    } else if (status === "Cancelled") {
+    } else if (status === "Rejected") {
       return {
-        label: "Cancelled",
+        label: "Rejected",
         statusColor: "bg-red-100 text-red-600",
       };
     }
@@ -110,28 +113,27 @@ const OvertimeApprovalCard = ({
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
-          {/* Checkbox */}
-          <div className="flex items-center justify-start">
-            <input
-              type="checkbox"
-              className="accent-blue-500"
-              checked={isSelected}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleSelect?.(data?.todo_id)}
-              disabled={
-                isDisabled ||
-                actionsWithForm?.includes("Approve") ||
-                actionsWithForm?.includes("Reject")
-              }
-            />
-          </div>
+          {isBulkSelectEnabled && (
+            <div className="flex items-center justify-start">
+              <input
+                type="checkbox"
+                className="accent-blue-500"
+                checked={isSelected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => onToggleSelect?.(data?.todo_id)}
+                disabled={
+                  isDisabled ||
+                  actionsWithForm?.includes("Approve") ||
+                  actionsWithForm?.includes("Reject")
+                }
+              />
+            </div>
+          )}
 
-          {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
             {data?.reference_document?.employee}
           </div>
 
-          {/* Description */}
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>
@@ -140,7 +142,6 @@ const OvertimeApprovalCard = ({
             {formatDate(data?.due_date)}
           </div>
 
-          {/* Status + Actions */}
           <div className="flex items-center justify-start">
             <Badge
               size="sm"
@@ -150,6 +151,7 @@ const OvertimeApprovalCard = ({
           </div>
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
+              data?.reference_document?.status === "Open" &&
               actions.map((action: string) => (
                 <Button
                   key={action}
@@ -185,18 +187,20 @@ const OvertimeApprovalCard = ({
           }}
         >
           <div className="p-4 flex items-start gap-3 w-full">
-            <input
-              type="checkbox"
-              className="mt-1 accent-blue-500"
-              checked={isSelected}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleSelect?.(data?.todo_id)}
-              disabled={
-                isDisabled ||
-                actionsWithForm?.includes("Approve") ||
-                actionsWithForm?.includes("Reject")
-              }
-            />
+            {isBulkSelectEnabled && (
+              <input
+                type="checkbox"
+                className="mt-1 accent-blue-500"
+                checked={isSelected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => onToggleSelect?.(data?.todo_id)}
+                disabled={
+                  isDisabled ||
+                  actionsWithForm?.includes("Approve") ||
+                  actionsWithForm?.includes("Reject")
+                }
+              />
+            )}
 
             <div className="w-full">
               <div className="flex items-start justify-between">
@@ -206,14 +210,11 @@ const OvertimeApprovalCard = ({
                   </p>
 
                   <div className="flex gap-2">
-                    {/* Display From Date */}
                     {data?.due_date && (
                       <p className="text-sm text-gray-500">
                         Due Date - {formatDate(data?.due_date)}
                       </p>
                     )}
-
-                    {/* Display To Date */}
                   </div>
                   <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                     <span className="font-semibold">Description:</span>{" "}
@@ -222,16 +223,16 @@ const OvertimeApprovalCard = ({
                     />
                   </p>
                 </div>
-
                 <Badge
                   size="sm"
-                  label={data?.status}
-                  backgroundColor="bg-yellow-100 text-yellow-600"
+                  label={status?.label as string}
+                  backgroundColor={status?.statusColor}
                 />
               </div>
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length > 0 &&
+                  data?.reference_document?.status === "Open" &&
                   actions.map((action: string) => (
                     <Button
                       key={action}

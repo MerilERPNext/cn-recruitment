@@ -192,9 +192,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/attendance/team-attendance-requests",
         },
         {
-          name: "Planned Overtime",
+          name: "My Overtime",
           icon: TimerIcon,
-          href: "/webapp/attendance/planned-overtime-requests",
+          href: "/webapp/attendance/my-overtime-requests",
+        },
+        {
+          name: "Team Overtime",
+          icon: Users,
+          href: "/webapp/attendance/team-overtime-requests",
         },
         {
           name: "All Shifts",
@@ -556,7 +561,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       </div>
                       {isExpanded && (
                         <ChevronRight
-                          className={`h-4 w-4 transition-transform duration-200 ${
+                          className={`h-4 w-4 transition-transform duration-200  ${
                             isDropdownOpen || isAnySubItemActive
                               ? "rotate-90"
                               : ""
@@ -661,7 +666,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     onClick={() =>
                                       handleSubItemClick(subItem.name, true)
                                     }
-                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap ${
+                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${
                                       isSubActive || isSubDropdownOpen
                                         ? "bg-blue-50 text-blue-600"
                                         : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
@@ -670,7 +675,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     <div className="flex items-center space-x-2">
                                       <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <span
-                                        className={`font-medium transition-all duration-300 whitespace-nowrap ${
+                                        className={`font-medium transition-all duration-300 whitespace-nowrap  ${
                                           isExpanded
                                             ? "opacity-100 translate-x-0"
                                             : "opacity-0 -translate-x-2"

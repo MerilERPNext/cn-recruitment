@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import DataListView from "../DataListView";
 import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -12,18 +11,17 @@ import {
   useRevokeApprovedLeave,
 } from "../../hooks/useLeaves";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
-import { ViewAll } from "../shared/atoms/ViewAll";
+import CustomDropdown from "../shared/CustomDropdown";
 
-// 1. Status options based on the common leave application statuses
-const LEAVE_STATUS_OPTIONS = [
+const STATUS_OPTIONS = [
   { label: "Pending", value: "Open" },
   { label: "Approved", value: "Approved" },
-  { label: "Cancelled", value: "Cancelled" },
+  { label: "Rejected", value: "Rejected" },
 ];
 
 const MyLeaveRequests = ({
-  pageSize = 14,
-  showPagination = false,
+  pageSize = 10,
+  showPagination = true,
 }: {
   pageSize?: number;
   showPagination?: boolean;
@@ -50,7 +48,6 @@ const MyLeaveRequests = ({
     fromDate: undefined,
     toDate: undefined,
   });
-  const navigate = useNavigate();
   const { mutate: revokeLeave } = useRevokeApprovedLeave();
   const { data: buttonStatus } = useGetButtonsStatus(
     currentEmployee?.name || ""
@@ -118,27 +115,19 @@ const MyLeaveRequests = ({
     </div>
   );
 
-  // Conditionally construct the API parameters object
   const apiParams = {
     doctype: "Leave Application",
     employee: currentEmployee?.name,
-    // Add the status filter parameter only if a status is selected
     ...(selectedStatus && { status: selectedStatus }),
   };
 
   const FilterDropdowns = () => (
     <div className="flex items-center gap-2">
-      <select
+      <CustomDropdown
         value={selectedStatus}
         onChange={handleStatusChange}
-        className="border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100"
-      >
-        {LEAVE_STATUS_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        options={STATUS_OPTIONS}
+      />
     </div>
   );
 
@@ -151,12 +140,6 @@ const MyLeaveRequests = ({
               <h2 className="module-title pb-1">My Leave Requests</h2>
               <div className="flex items-center space-x-3 pb-1">
                 <FilterDropdowns />
-                <ViewAll
-                  title="View All"
-                  onClick={() =>
-                    navigate("/webapp/leave-app/requests/pendings")
-                  }
-                />
               </div>
             </div>
 

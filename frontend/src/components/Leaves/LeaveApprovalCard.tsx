@@ -78,7 +78,7 @@ const LeaveApprovalCard = ({
   };
 
   const getStatus = (status: string) => {
-    if (status === "Pending" || status === "Open") {
+    if (status === "Open") {
       return {
         label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-600",
@@ -88,9 +88,9 @@ const LeaveApprovalCard = ({
         label: "Approved",
         statusColor: "bg-green-100 text-green-600",
       };
-    } else if (status === "Cancelled") {
+    } else if (status === "Rejected") {
       return {
-        label: "Cancelled",
+        label: "Rejected",
         statusColor: "bg-red-100 text-red-600",
       };
     }
@@ -101,8 +101,8 @@ const LeaveApprovalCard = ({
   };
   const status = getStatus(data?.reference_document?.status);
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1.5fr 1fr 1fr 1fr 1fr 1fr";
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1.5fr"
+    : "1.5fr 1fr 1fr 1fr 1fr 1.5fr";
   return (
     <>
       {isDesktop ? (
