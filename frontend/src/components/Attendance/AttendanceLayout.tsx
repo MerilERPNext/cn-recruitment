@@ -8,7 +8,6 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { ChevronDown } from "lucide-react";
 import LeaveRequest from "../Attendance/LeaveRequest";
-import AttndanceRequestForm from "../Attendance/AttendanceRequest/AttendanceRequestForm";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
@@ -147,7 +146,7 @@ const AttendanceLayoutContent: React.FC = () => {
       {showAttendanceRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <AttndanceRequestForm
+            <AttendanceRequestFormV2
               onClose={() => setShowAttendanceRequest(false)}
             />
           </div>

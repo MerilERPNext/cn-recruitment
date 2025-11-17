@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import DataListView from "../../DataListView";
-import AttndanceRequestForm from "./AttendanceRequestForm";
 import { useState, useCallback } from "react";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -10,6 +9,8 @@ import CardTable from "../../shared/CardTable";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CustomDropdown from "../../shared/CustomDropdown";
+import Button from "../../shared/atoms/Button";
+import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -72,7 +73,7 @@ const AttendanceRequest = ({
   return (
     <>
       {showForm ? (
-        <AttndanceRequestForm
+        <AttendanceRequestFormV2
           onClose={() => {
             setShowForm(false);
           }}
@@ -151,12 +152,15 @@ const AttendanceRequest = ({
       {!isDesktop && showAttendanceRequest && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
-            <button
-              className="flex justify-center gap-2 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            <Button
+              bgColor="blue-600"
+              size="lg"
+              fullWidth
+              className="hover:bg-blue-700"
               onClick={() => setShowForm(!showForm)}
             >
               <Plus /> <span>Add Attendance Request</span>
-            </button>
+            </Button>
           </div>
         </div>
       )}

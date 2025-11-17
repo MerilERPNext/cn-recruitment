@@ -190,11 +190,9 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
             onClick={handleSubmit}
             size="md"
             variant="contain"
-            bgColor={isDesktop ? "blue-600" : "black"}
+            bgColor="blue-600"
             textColor="white"
-            className={`flex-1 ${
-              isDesktop ? "hover:bg-blue-700 py-3" : "hover:bg-gray-800"
-            }`}
+            className={"flex-1 hover:bg-blue-700 py-3"}
           >
             Submit
           </Button>

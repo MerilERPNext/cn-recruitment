@@ -2,7 +2,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { toast } from "react-hot-toast";
-import { useScreenSize } from "../../hooks/useScreenSize";
 import {
   useCreateShiftRequest,
   useUpdateShiftRequest,
@@ -50,7 +49,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   const isLoading = employeeLoading;
   const error = employeeError;
-  const { isDesktop } = useScreenSize();
   const handleSubmitonSuccess = () => {
     onClose?.();
     setTimeout(() => {
@@ -282,11 +280,9 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             onClick={handleSubmit}
             size="md"
             variant="contain"
-            bgColor={isDesktop ? "blue-600" : "black"}
+            bgColor={"blue-600"}
             textColor="white"
-            className={`flex-1 ${
-              isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800 py-3"
-            } font-medium`}
+            className={"hover:bg-blue-700 flex-1 font-medium"}
           >
             Submit Request
           </Button>

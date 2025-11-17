@@ -93,12 +93,15 @@ const FlowApp: React.FC = () => {
       {showInitiateButton && (
         <div className="sticky z-10 mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
           <div className="max-w-4xl mx-auto flex space-x-4">
-            <button
+            <Button
+              fullWidth
               onClick={handleInitiate}
-              className="flex-1 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+              size="lg"
+              bgColor="blue-600"
+              className="hover:bg-blue-700"
             >
               Initiate
-            </button>
+            </Button>
           </div>
         </div>
       )}

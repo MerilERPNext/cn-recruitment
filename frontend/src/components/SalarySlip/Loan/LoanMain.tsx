@@ -61,8 +61,9 @@ export default function LoansPage() {
           </h1>
 
           <Button
+            size="md"
             bgColor="blue-600"
-            className="hover:bg-blue-700 py-3 text-[1rem] px-4 font-medium"
+            className="hover:bg-blue-700 py-[0.65rem] px-4 font-medium"
             onClick={() => setIsDialogOpen(true)}
           >
             Create Loans
