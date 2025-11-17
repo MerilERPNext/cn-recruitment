@@ -1,5 +1,5 @@
 import { format, isValid, parse } from "date-fns";
-import { RequestCardProps } from "../../../types/attendance";
+import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
@@ -8,10 +8,11 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 export function MyRequestCard({
   request,
   onClick,
-}: any & {
+}: {
+  request: MyPlannedAttendanceRequest;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
-  onClick?: (request: RequestCardProps["request"]) => void;
+  onClick?: (request: MyPlannedAttendanceRequest) => void;
 }) {
   const { isDesktop } = useScreenSize();
 
@@ -44,9 +45,11 @@ export function MyRequestCard({
   };
 
   const status = getStatus(request?.status);
-  const parsedDate = request?.due_date
-    ? parse(request.due_date, "dd-MM-yyyy", new Date())
+ const parsedDate =
+  request?.due_date
+    ? parse(String(request.due_date), "dd-MM-yyyy", new Date())
     : null;
+
   const formattedDate =
     parsedDate && isValid(parsedDate)
       ? format(parsedDate, "dd/MM/yyyy")

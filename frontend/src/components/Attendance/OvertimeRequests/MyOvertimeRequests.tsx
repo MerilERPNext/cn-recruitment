@@ -37,7 +37,7 @@ const MyOvertimeRequests = () => {
   const requestId = searchParams.get("requestId");
 
   const handleRequestClick = useCallback(
-    (request: any) => {
+    (request: MyPlannedAttendanceRequest) => {
       console.log("Request clicked:", request);
       if (request?.todo_id) {
         setSearchParams({ requestId: request.todo_id });
