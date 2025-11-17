@@ -15,6 +15,7 @@ import { ApprovalStage } from "../../../types/expenseAdvance";
 import LayoutHeader from "../../shared/LayoutHeader"; // Keep for mobile layout wrapper
 import HeaderBar from "../../HeaderBar"; // Keep for desktop layout wrapper
 import { ViewAll } from "../../shared/atoms/ViewAll";
+import CustomDropdown from "../../shared/CustomDropdown";
 
 // --- SHARED CONSTANTS ---
 const EXPENSE_STATUS_OPTIONS = [
@@ -258,22 +259,12 @@ const ExpenseListBase: React.FC<ExpenseListBaseProps> = ({
 
   const FilterDropdowns = () => (
     <div className="flex items-center gap-2">
-      <select
+      <CustomDropdown
         value={selectedStatus}
         onChange={handleStatusChange}
-        // Use a less intrusive styling for the dashboard filter
-        className={
-          listType === "dashboard"
-            ? "px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            : "border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100" // Use the 'AllExpensesList' styling
-        }
-      >
-        {EXPENSE_STATUS_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        options={EXPENSE_STATUS_OPTIONS}
+        className={listType === "dashboard" ? "inline-block" : "inline-block"}
+      />
     </div>
   );
 
