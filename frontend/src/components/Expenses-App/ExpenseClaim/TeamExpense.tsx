@@ -8,12 +8,21 @@ import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
 import { ViewAll } from "../../shared/atoms/ViewAll";
 import CustomDropdown from "../../shared/CustomDropdown";
 
+interface Option {
+  value: string;
+  label: string;
+}
+
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("Draft");
   const navigate = useNavigate();
-
+  const options: Option[] = [
+    { value: "Draft", label: "Pending" },
+    { value: "Approved", label: "Approved" },
+    { value: "Rejected", label: "Rejected" },
+  ];
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
@@ -57,6 +66,7 @@ const TeamExpense = () => {
             <h2 className="module-title pb-1">Team Claims</h2>
             <div className="flex items-center gap-3 pb-1">
               <CustomDropdown
+                options={options}
                 value={statusFilter}
                 onChange={handleStatusFilterChange}
               />

@@ -263,7 +263,7 @@ export const getBadgePropsByStatus = (
     case "done":
     case "completed":
       return {
-        backgroundColor: "bg-[#eaffea]", 
+        backgroundColor: "bg-[#eaffea]",
         textColor: "text-green-600",
         size: "sm",
       };

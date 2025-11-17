@@ -10,21 +10,17 @@ interface CustomDropdownProps {
   value: string;
   onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   className?: string;
+  options: Option[];
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
   value,
   onChange,
   className,
+  options,
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const options: Option[] = [
-    { value: "Draft", label: "Pending" },
-    { value: "Approved", label: "Approved" },
-    { value: "Rejected", label: "Rejected" },
-  ];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
