@@ -7,6 +7,8 @@ import FrappeListView from "../../ListView";
 import AdvanceDetailModal from "./AdvanceDetailModal";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -15,11 +17,13 @@ const STATUS_OPTIONS = [
 ];
 
 const AdvanceExpenseList = () => {
-  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("Pending");
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
     null
   );
   const { isDesktop } = useScreenSize();
+  const { data: currentEmployee } = useCurrentEmployee();
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedStatus(event.target.value);
@@ -116,6 +120,7 @@ const AdvanceExpenseList = () => {
             onItemClick={(item) => openDetailModal(item.name)}
             isSearch={false}
             defaultFilters={{
+              employee: currentEmployee?.name || "",
               custom_type: "Reimbursement / Expense Advance",
               ...(selectedStatus ? { status: selectedStatus } : {}),
             }}
@@ -134,6 +139,8 @@ const AdvanceExpenseList = () => {
             orderBy="creation desc"
             showPagination={true}
             infiniteScroll={true}
+            refetchTrigger={refetchAttendance}
+            onRefetchComplete={() => setRefetchAttendance(false)}
           />
         </CardTable>
       </div>
