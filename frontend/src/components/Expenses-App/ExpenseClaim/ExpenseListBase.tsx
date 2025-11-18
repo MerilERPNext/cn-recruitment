@@ -88,6 +88,11 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
+  const formattedSanctionedAmount = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(item?.reference_document?.total_sanctioned_amount ?? 0);
+
   const formattedDate = item?.reference_document?.creation
     ? new Date(item?.reference_document?.creation).toLocaleDateString("en-US", {
         month: "short",
@@ -99,10 +104,11 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
   return (
     <div
       className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr" }}
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
     >
       <span>{item?.reference_document?.custom_expense_category || " - "}</span>
       <span>{formattedAmount || " - "}</span>
+      <span>{formattedSanctionedAmount || " - "}</span>
       <span>{formattedDate || " - "}</span>
       <div className="w-fit">
         <Tooltip
@@ -348,10 +354,11 @@ const ExpenseListBase: React.FC<ExpenseListBaseProps> = ({
             titles={[
               "Expense Category",
               "Claimed Amount",
+              "Sanctioned Amount",
               "Claim Date",
               "Status",
             ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr"]}
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
           >
             <DataListView
               queryKey={["expense-claims", queryKeySuffix, selectedStatus]} // Unique query key using suffix and status
