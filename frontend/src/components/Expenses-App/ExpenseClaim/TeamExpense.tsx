@@ -5,7 +5,6 @@ import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
-import { ViewAll } from "../../shared/atoms/ViewAll";
 import CustomDropdown from "../../shared/CustomDropdown";
 
 interface Option {
@@ -32,7 +31,6 @@ const TeamExpense = () => {
   const requestId = searchParams.get("requestId");
 
   const handleRequestClick = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (request: any) => {
       if (request?.todo_id) {
         setSearchParams({ requestId: request.todo_id });
@@ -61,21 +59,14 @@ const TeamExpense = () => {
   return (
     <>
       <div className="bg-white min-h-screen">
-        <div className="bg-white px-2 md:p-6">
+        <div className="bg-white px-0 md:p-6">
           <div className="flex justify-between items-center mb-2 border-b-1 border-gray-200">
-            <h2 className="module-title pb-1">Team Claims</h2>
+            <h2 className="module-title pb-1">Team Expense Claims</h2>
             <div className="flex items-center gap-3 pb-1">
               <CustomDropdown
                 options={options}
                 value={statusFilter}
                 onChange={handleStatusFilterChange}
-              />
-
-              <ViewAll
-                title="View All"
-                onClick={() => {
-                  navigate("/webapp/expenses-app/team-requests/all");
-                }}
               />
             </div>
           </div>
@@ -102,14 +93,15 @@ const TeamExpense = () => {
                 refetch={refetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
-                showPagination={false}
+                showPagination={true}
+                infiniteScroll={false}
+                loadMorePagination={true}
                 renderCardContent={(item) => (
                   <ExpenseApprovalCard
                     isSelected={item?.isSelected}
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}
                     onAction={item?.onAction}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onClick={(request: any) => handleRequestClick(request)}
                     loadingAction={item?.loadingAction}
                     showCheckbox={statusFilter === "Draft"}
