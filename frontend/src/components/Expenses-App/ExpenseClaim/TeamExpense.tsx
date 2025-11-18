@@ -94,8 +94,8 @@ const TeamExpense = () => {
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
                 showPagination={true}
-                infiniteScroll={false}
-                loadMorePagination={true}
+                infiniteScroll={true}
+                loadMorePagination={false}
                 renderCardContent={(item) => (
                   <ExpenseApprovalCard
                     isSelected={item?.isSelected}

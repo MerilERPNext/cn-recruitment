@@ -250,12 +250,12 @@ const ExpensesList: React.FC = () => {
               refetchTrigger={refetchAttendance}
               isSearch={false}
               isFilter={false}
-              pageSize={10}
               showRefreshButton={false}
               orderBy="modified desc"
-              infiniteScroll={false}
-              loadMorePagination={true}
+              pageSize={10}
+              infiniteScroll={true}
               showPagination={true}
+              loadMorePagination={false}
             />
           </CardTable>
         )}

@@ -63,20 +63,20 @@ const AdvanceExpenseList = () => {
         <StatusBadge status={item.status} />
       </div>
 
-      <p className="text-xs text-gray-600">
+      <p className="text-sm text-gray-600">
         <span className="font-medium">Employee:</span> {item.employee_name}
       </p>
 
-      <p className="text-xs text-gray-600">
+      <p className="text-sm text-gray-600">
         <span className="font-medium">Date:</span>{" "}
         {formatToIndianDate(item.posting_date)}
       </p>
 
-      <p className="text-xs text-gray-600">
+      <p className="text-sm text-gray-600">
         <span className="font-medium">Company:</span> {item.company}
       </p>
 
-      <p className="text-xs text-gray-600">
+      <p className="text-sm text-gray-600">
         <span className="font-medium">Department:</span> {item.department}
       </p>
     </div>
@@ -133,7 +133,7 @@ const AdvanceExpenseList = () => {
             pageSize={10}
             orderBy="creation desc"
             showPagination={true}
-            infiniteScroll={false}
+            infiniteScroll={true}
           />
         </CardTable>
       </div>

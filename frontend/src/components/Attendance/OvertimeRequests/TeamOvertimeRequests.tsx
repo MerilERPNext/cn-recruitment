@@ -90,12 +90,12 @@ const TeamOvertimeRequests = () => {
               <ApprovalList
                 doctype={"Planned Overtime Request"}
                 pageSize={10}
-                showPagination={true}
                 refetch={refetchApprovalList}
                 setRefetch={setRefetchApprovalList}
                 status={selectedStatus}
-                infiniteScroll={false}
-                loadMorePagination={true}
+                infiniteScroll={true}
+                showPagination={true}
+                loadMorePagination={false}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 renderCardContent={(item) => (
                   <OvertimeApprovalCard
