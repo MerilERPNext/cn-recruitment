@@ -64,7 +64,8 @@ const EmployeeAttendanceDetails = ({
   }, [propDate, dateParam]);
 
   // If this is a leave record (custom_auto_created === 1), fetch leave details
-  const isLeaveRecord = data?.custom_auto_created === 1;
+  const isLeaveRecord =
+    data?.custom_auto_created === 1 || status === "on-leave";
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -189,10 +190,9 @@ const EmployeeAttendanceDetails = ({
 
   const renderHeader = () => {
     let headerTitle = "Attendance Details";
-
     if (status === "holiday") {
       headerTitle = "Holiday Details";
-    } else if (data?.custom_auto_created === 1) {
+    } else if (data?.custom_auto_created === 1 || status === "on-leave") {
       headerTitle = "Leave Details";
     }
     return (
@@ -274,7 +274,7 @@ const EmployeeAttendanceDetails = ({
     return (
       <div>
         <LeaveDetailsCard data={leaveDetails} />
-        {renderLeaveDetailsActions()}
+        {data?.custom_auto_created === 1 ? renderLeaveDetailsActions() : null}
       </div>
     );
   };
