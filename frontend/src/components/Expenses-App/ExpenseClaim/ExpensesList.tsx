@@ -86,13 +86,18 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
       })
     : " - ";
 
+     const formattedSanctionedAmount = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(item?.reference_document?.total_sanctioned_amount ?? 0);
   return (
     <div
       className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr" }}
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
     >
       <span>{item?.reference_document?.custom_expense_category || " - "}</span>
       <span>{formattedAmount}</span>
+      <span>{formattedSanctionedAmount || " - "}</span>
       <span>{formattedDate}</span>
 
       <Tooltip
@@ -229,8 +234,8 @@ const ExpensesList: React.FC = () => {
       <div className="bg-white h-full px-0 md:pt-2 pt-0 mb-20">
         {currentEmployee?.name && (
           <CardTable
-            titles={["Category", "Claimed Amount", "Date", "Status"]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr"]}
+            titles={["Category", "Claimed Amount", "Sanctioned Amount", "Date", "Status"]}
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
           >
             <DataListView
               queryKey={["expense-claims-all", selectedStatus]}

@@ -59,7 +59,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const { defaults } = useRequestLeaveModal();
   const editLeaveMutation = useEditApprovedLeave();
   const { triggerRefetch } = useLeaveRequestRefresh();
-
+  console.log(defaults);
   const handleUpdate = useCallback(async () => {
     if (!currentEmployee?.name) {
       toast.error("Employee data not loaded.");
@@ -299,7 +299,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "fromDate",
-                label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
+                label:
+                  "From Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "From Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -324,7 +325,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "toDate",
-                label: "To Date <span style='color:red;margin-left:3px;'> *</span>",
+                label:
+                  "To Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "To Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -474,7 +476,18 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       {
         type: "file",
         key: "custom_attachment",
-        defaultValue: defaults?.custom_attachment ?? [],
+        defaultValue: defaults?.custom_attachment
+          ? [
+              {
+                //name: defaults.custom_attachment.split('/').pop() || 'attachment',
+                name: defaults.custom_attachment,
+                url: defaults.custom_attachment,
+                storage: "url",
+                type: "application/octet-stream",
+                size: 0,
+              },
+            ]
+          : [],
         label: "Attachment",
         input: true,
         storage: "customBase64",
