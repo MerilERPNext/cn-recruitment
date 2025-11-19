@@ -72,8 +72,9 @@
       "type": "file",
       "key": "attachment",
       "label": "Attachment",
-      "storage": "customBase64",
       "input": true,
+      "storage": "base64",
+      "multiple": true,
       "validate": { "required": "data.show_attachment" },
       "conditional": {
         "show": true,

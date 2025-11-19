@@ -34,7 +34,13 @@ interface Expense {
   amount?: number;
   merchant?: string;
   invoice_number?: string;
-  attach_receipt?: string | { url: string }[] | null;
+  attach_receipt?:
+    | {
+        name: string;
+        size: number;
+        url: string;
+      }[]
+    | string;
   [key: string]: any;
 }
 
@@ -742,7 +748,13 @@ const AddExpenseForm: React.FC = () => {
     setEditingExpenseId(expense.uid);
     const copy = { ...expense };
     if (expense.attach_receipt && typeof expense.attach_receipt === "string") {
-      copy.attach_receipt = [{ url: expense.attach_receipt }];
+      copy.attach_receipt = [
+        {
+          name: expense.attach_receipt,
+          size: 4000,
+          url: expense.attach_receipt,
+        },
+      ];
     }
 
     setDynamicFormData(copy);
