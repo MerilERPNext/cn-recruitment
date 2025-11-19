@@ -16,6 +16,7 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import overtimeRequestSchema from "./overtimeRequestSchema.json";
 import DOMPurify from "dompurify";
 import Button from "../../shared/atoms/Button";
+import { useFileUploader } from "../../../hooks/useFileUploader";
 
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
@@ -32,6 +33,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+  const { uploadFiles } = useFileUploader();
 
   const mutation = useCreatePlannedOvertimeRequest();
   const { data: plannedOvertimeRequestAttachments } =
@@ -41,7 +43,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const initialSubmissionData = useMemo(
     () => ({
       data: {
-        show_attachment: !!plannedOvertimeRequestAttachments,
+        show_attachment: !plannedOvertimeRequestAttachments,
       },
     }),
     [plannedOvertimeRequestAttachments]
@@ -86,18 +88,25 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         {
           employee: currentEmployee?.employee || "",
           overtime_details: formattedOvertimeDetails || [],
-          attachment:
-            data?.attachment && data?.attachment?.length > 0
-              ? data?.attachment?.[0].url
-              : "",
+          // attachment:
+          //   data?.attachment && data?.attachment?.length > 0
+          //     ? data?.attachment?.[0].url
+          //     : "",
         },
         {
-          onSuccess: () => {
+          onSuccess: async (data: any) => {
+            if (submission?.data?.attachment?.length > 0) {
+              await uploadFiles(
+                submission.data.attachment,
+                data.doctype,
+                data.name
+              );
+            }
+            onCancel?.();
+
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 1000);
-            toast.success("Request submitted successfully.");
-            onCancel?.();
           },
           onError: (e: CustomError) => {
             const errorMessage =
