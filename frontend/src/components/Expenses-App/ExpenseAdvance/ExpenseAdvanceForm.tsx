@@ -47,12 +47,10 @@ const ExpenseAdvanceForm: React.FC<{
   const mutation = useCreateNewAdvance();
   const [submitting, setSubmitting] = useState(false);
 
-  // Expense Claims State
   const [expenseClaims, setExpenseClaims] = useState<ExpenseClaim[]>([]);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
 
-  // 1. New state to hold the expense item being edited
   const [expenseToEdit, setExpenseToEdit] = useState<ExpenseClaim | null>(null);
 
   const getLabelWithAsterisk = (label: string, required?: boolean) => {
@@ -69,7 +67,6 @@ const ExpenseAdvanceForm: React.FC<{
         return;
       }
 
-      // Prepare expense claims for submission
       const preparedExpenseClaims = expenseClaims.map(({ id, ...claim }) => {
         const filteredClaim = Object.fromEntries(
           Object.entries(claim).filter(
@@ -77,7 +74,6 @@ const ExpenseAdvanceForm: React.FC<{
           )
         );
 
-        // Format dates
         if (filteredClaim.expense_date) {
           filteredClaim.expense_date = format(
             new Date(filteredClaim.expense_date),
@@ -158,18 +154,16 @@ const ExpenseAdvanceForm: React.FC<{
     toast.success("Expense claim added successfully!");
   };
 
-  // 2. New function to handle updating an existing expense
   const handleUpdateExpense = (updatedExpense: ExpenseClaim) => {
     setExpenseClaims((prev) =>
       prev.map((exp) => (exp.id === updatedExpense.id ? updatedExpense : exp))
     );
     toast.success("Expense claim updated successfully!");
-    // Close modal and reset editing state
+
     setIsExpenseModalOpen(false);
     setExpenseToEdit(null);
   };
 
-  // 3. New function to set the expense to edit and open the modal
   const handleEditExpense = (expense: ExpenseClaim) => {
     setExpenseToEdit(expense);
     setIsExpenseModalOpen(true);
@@ -217,7 +211,6 @@ const ExpenseAdvanceForm: React.FC<{
       components: [
         {
           components: [
-            // 🔹 Row 1: Advance Type + Posting Date
             {
               type: "columns",
               key: "row1",
@@ -252,7 +245,6 @@ const ExpenseAdvanceForm: React.FC<{
               ],
             },
 
-            // 🔹 Row 2: Employee + Company
             {
               type: "columns",
               key: "row2",
@@ -286,7 +278,6 @@ const ExpenseAdvanceForm: React.FC<{
               ],
             },
 
-            // 🔹 Row 3: Currency + Exchange Rate
             {
               type: "columns",
               key: "row3",
@@ -329,7 +320,6 @@ const ExpenseAdvanceForm: React.FC<{
                 },
               ],
             },
-            // 🔹 Row 4: Project + Cost Center (conditionally show)
             ...(showProject || showCostCenter
               ? [
                   {
@@ -405,7 +395,6 @@ const ExpenseAdvanceForm: React.FC<{
                 ]
               : []),
 
-            // 🔹 Advance Amount + Purpose
             {
               type: "number",
               key: "advance_amount",
@@ -447,14 +436,7 @@ const ExpenseAdvanceForm: React.FC<{
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">
-      <HeaderBar
-        title="New Expense Advance"
-        onBack={
-          onClose
-            ? onClose
-            : () => navigate("/webapp/expenses-app/advance-expense-list")
-        }
-      />
+      <HeaderBar title="New Expense Advance" onBack={() => navigate(-1)} />
 
       <div className="flex-1 overflow-y-auto p-4">
         {expenseAdvanceSchema ? (
@@ -464,13 +446,11 @@ const ExpenseAdvanceForm: React.FC<{
             options={{ submitButton: false, noAlerts: true }}
           />
         ) : (
-          // You can put any loading spinner or message here
           <div className="flex items-center justify-center p-10 border border-dashed rounded-lg">
             <p className="text-gray-500">Loading form settings...</p>
           </div>
         )}
 
-        {/* Add Expense Claims Section */}
         {true && (
           <div className="mt-8 border-t pt-6">
             <div className="flex items-center justify-between mb-4">
@@ -480,7 +460,6 @@ const ExpenseAdvanceForm: React.FC<{
               <button
                 onClick={() => {
                   setIsExpenseModalOpen(true);
-                  // 4. Clear expenseToEdit when adding a new expense
                   setExpenseToEdit(null);
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -490,7 +469,6 @@ const ExpenseAdvanceForm: React.FC<{
               </button>
             </div>
 
-            {/* Expense Claims Table */}
             {expenseClaims.length > 0 && (
               <div className="mt-4">
                 <div className="flex justify-between items-center mb-3">
@@ -645,23 +623,18 @@ const ExpenseAdvanceForm: React.FC<{
           {submitting ? "Submitting..." : "Submit"}
         </Button>
       </div>
-      {/* Expense Claim Modal */}
       <ExpenseBreakupModal
         isOpen={isExpenseModalOpen}
         onClose={() => {
           setIsExpenseModalOpen(false);
-          // 6. Reset expenseToEdit when closing the modal
           setExpenseToEdit(null);
         }}
-        // 7. Pass the correct handler based on whether we are editing or adding
         onSave={expenseToEdit ? handleUpdateExpense : handleAddExpense}
-        // 8. Pass the expense to edit as initial data
         initialData={expenseToEdit}
       />
     </div>
   );
 
-  // ✅ Render modal only for desktop
   if (isDesktop) {
     return (
       <DesktopLayoutWrapper title="New Expense Advance">
@@ -670,7 +643,6 @@ const ExpenseAdvanceForm: React.FC<{
     );
   }
 
-  // ✅ Mobile: Normal view
   return <div className="h-screen bg-white">{FormContent}</div>;
 };
 
