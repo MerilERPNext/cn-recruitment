@@ -106,13 +106,13 @@ export function TeamExpenseDetailView({
     for (const dateFormat of possibleFormats) {
       const parsedDate = parse(date, dateFormat, new Date());
       if (isValid(parsedDate)) {
-        return format(parsedDate, "yyyy-MM-dd");
+        return format(parsedDate, "dd-MM-yyyy");
       }
     }
 
     const d = new Date(date);
     if (isValid(d)) {
-      return format(d, "yyyy-MM-dd");
+      return format(d, "dd-MM-yyyy");
     }
 
     return "--/--/----";
@@ -473,7 +473,6 @@ export function TeamExpenseDetailView({
                   className="mb-4 p-4 border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start gap-3">
-                    {/* Checkbox - disabled if claim is not editable */}
                     <input
                       type="checkbox"
                       checked={item.selected}
@@ -486,15 +485,17 @@ export function TeamExpenseDetailView({
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs text-gray-500 uppercase">
+                              EXPENSE DATE:
+                            </span>
                             <span className="text-sm font-medium text-gray-900">
                               {formatDate(item.expense_date || item.creation)}
                             </span>
-                            <span className="text-lg font-bold text-gray-900">
-                              {formatINR(item.amount)} INR
-                            </span>
                           </div>
+                          <span className="text-lg font-bold text-gray-900">
+                            {formatINR(item.amount)} INR
+                          </span>
                         </div>
-                        {/* Show status badge for processed items */}
                         {(item.custom_approval_staus === "Approved" ||
                           item.custom_approval_staus === "Rejected") && (
                           <Badge
@@ -503,22 +504,110 @@ export function TeamExpenseDetailView({
                           />
                         )}
                       </div>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="">
+                          <p className="text-xs text-gray-500 uppercase mb-1">
+                            EXPENSE TYPE
+                          </p>
+                          <p className="text-sm font-medium text-gray-800">
+                            {item.expense_type}
+                          </p>
+                        </div>
+                        {item.custom_invoice_number && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              INVOICE
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_invoice_number}
+                            </p>
+                          </div>
+                        )}
 
-                      <div className="mb-3">
-                        <p className="text-xs text-gray-500 uppercase mb-1">
-                          EXPENSE TYPE
-                        </p>
-                        <p className="text-sm font-medium text-gray-800">
-                          {item.expense_type}
-                        </p>
+                        {item.custom_mercent && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              MERCHANT
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_mercent}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_from_location && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              FROM LOCATION
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_from_location}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_to_location && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              TO LOCATION
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_to_location}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_vehicle_type && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              VEHICLE TYPE
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_vehicle_type}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_units && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              UNITS
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_units}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_start_datetime && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              START DATE
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {formatDate(item.custom_start_datetime)}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_end_datetime && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              END DATE
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {formatDate(item.custom_end_datetime)}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
+                      {/* Description */}
                       {item.description && (
                         <div className="mb-3">
                           <p className="text-xs text-gray-500 uppercase mb-1">
                             DESCRIPTION
                           </p>
-
                           <div
                             className="text-sm text-gray-700 [&_p]:m-0 [&_p]:mb-1 [&_p:last-child]:mb-0"
                             dangerouslySetInnerHTML={{
@@ -528,6 +617,7 @@ export function TeamExpenseDetailView({
                         </div>
                       )}
 
+                      {/* Base and Sanctioned Amount */}
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <p className="text-xs text-gray-500 mb-1">
@@ -547,6 +637,7 @@ export function TeamExpenseDetailView({
                         </div>
                       </div>
 
+                      {/* Documents */}
                       {item.custom_attach_receipt && (
                         <div className="mb-3">
                           <p className="text-xs text-gray-500 uppercase mb-1">
@@ -563,7 +654,7 @@ export function TeamExpenseDetailView({
                         </div>
                       )}
 
-                      {/* Sanctioned amount input - disabled if claim is not editable */}
+                      {/* Sanctioned Amount Input */}
                       <div className="mb-3">
                         <label className="text-xs text-gray-500 uppercase mb-1 block">
                           SANCTIONED AMOUNT (INR) *
@@ -581,7 +672,7 @@ export function TeamExpenseDetailView({
                         />
                       </div>
 
-                      {/* Comment textarea - disabled if claim is not editable */}
+                      {/* Comment Textarea */}
                       <div className="mb-3">
                         <label className="text-xs text-gray-500 uppercase mb-1 block">
                           COMMENT (Required for Reject)
@@ -598,7 +689,7 @@ export function TeamExpenseDetailView({
                         />
                       </div>
 
-                      {/* Action buttons - only show if claim is editable */}
+                      {/* Action Buttons */}
                       {isClaimEditable && (
                         <div className="flex gap-2">
                           <Button
