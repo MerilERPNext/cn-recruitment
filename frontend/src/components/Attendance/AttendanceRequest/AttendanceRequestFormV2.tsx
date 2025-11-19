@@ -19,6 +19,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 // Import the JSON schema
 import defaultFormSchema from "./attendanceRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -418,15 +419,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     };
 
     const handleError = (error: CustomError) => {
-      const errorMessage =
-        error?.response?.data?.exception
-          ?.split(":")
-          .slice(1)
-          .join(":")
-          .trim() || "Something went wrong!!";
-      const cleanString = DOMPurify.sanitize(errorMessage || "");
-      toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
-      console.error(error);
+        const formatedError = errorResponseFormater(error, "Submission failed. Please try again.");
+        toast.error(formatedError);
+        console.error(error);
     };
 
     if (forActionType && forActionType === "edit" && defaultAttendanceData) {

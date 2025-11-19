@@ -63,7 +63,6 @@ export const useCreateShiftRequest = () => {
     },
     onError: (error: Error) => {
       console.error("Error submitting shift request:", error);
-      toast.error("Failed to submit shift request. Please try again.");
     },
   });
 };

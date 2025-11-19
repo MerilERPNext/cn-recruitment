@@ -18,6 +18,7 @@ import ExpenseBreakupModal from "./ExpenseBreakupModal";
 import { SquarePen, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 interface ExpenseClaim {
   id: string;
@@ -132,17 +133,9 @@ const ExpenseAdvanceForm: React.FC<{
           }, 1000);
         },
         onError: (error: any) => {
-          const errorMessage =
-            error?.response?.data?.exception
-              ?.split(":")
-              .slice(1)
-              .join(":")
-              .trim() || "Something went wrong!!";
-
-          const cleanString = DOMPurify.sanitize(errorMessage || "");
-          toast.error(
-            <span dangerouslySetInnerHTML={{ __html: cleanString }} />
-          );
+          const formatedError = errorResponseFormater(error, "Somthing went wrong!!");
+          toast.error(formatedError);
+          console.error(error);
         },
         onSettled: () => setSubmitting(false),
       });

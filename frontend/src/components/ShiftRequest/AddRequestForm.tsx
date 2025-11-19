@@ -11,6 +11,7 @@ import HeaderBar from "../HeaderBar";
 import type { ShiftRequestFormData, FormioSubmission } from "../../types/shift";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import Button from "../shared/atoms/Button";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -71,8 +72,10 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
           }, 1000);
           navigate("/webapp/shift-request/shift-list");
         },
-        onError: () => {
-          console.error("Failed to submit shift request.");
+        onError: (error) => {
+           const formatedError = errorResponseFormater(error, "Failed to submit Shift Request.");
+            toast.error(formatedError);
+            console.error(error);
         },
       });
     } catch (error: any) {
