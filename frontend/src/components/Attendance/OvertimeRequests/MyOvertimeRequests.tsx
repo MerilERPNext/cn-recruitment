@@ -115,9 +115,9 @@ const MyOvertimeRequests = () => {
                   pageSize={10}
                   showRefreshButton={false}
                   orderBy="modified desc"
-                  infiniteScroll={false}
-                  loadMorePagination={true}
                   showPagination={true}
+                  infiniteScroll={true}
+                  loadMorePagination={false}
                 />
               ) : null}
             </CardTable>

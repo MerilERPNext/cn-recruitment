@@ -134,9 +134,9 @@ const AttendanceRequest = ({
                       pageSize={pageSize}
                       showRefreshButton={false}
                       orderBy="modified desc"
-                      infiniteScroll={false}
-                      loadMorePagination={true}
                       showPagination={showPagination}
+                      infiniteScroll={true}
+                      loadMorePagination={false}
                     />
                   ) : (
                     <></>

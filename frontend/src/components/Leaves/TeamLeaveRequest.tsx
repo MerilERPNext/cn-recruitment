@@ -101,8 +101,8 @@ const TeamLeaveRequest = () => {
                 pageSize={10}
                 status={selectedStatus}
                 showPagination={true}
-                infiniteScroll={false}
-                loadMorePagination={true}
+                infiniteScroll={true}
+                loadMorePagination={false}
                 renderCardContent={(item) => (
                   <LeaveApprovalCard
                     isSelected={item?.isSelected}

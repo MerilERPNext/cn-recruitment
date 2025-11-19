@@ -112,8 +112,8 @@ const TeamAttendanceDetails = () => {
                 status={selectedStatus}
                 pageSize={10}
                 showPagination={true}
-                infiniteScroll={false}
-                loadMorePagination={true}
+                infiniteScroll={true}
+                loadMorePagination={false}
                 renderCardContent={(item) => (
                   <ApprovalCard
                     isSelected={item?.isSelected}

@@ -1,146 +1,154 @@
-import React, { useEffect, useState } from "react";
-import { useScreenSize } from "../../../hooks/useScreenSize";
+import CardTable from "../../shared/CardTable";
+import { StatusBadge } from "../../SalarySlip/Advances/StatusBadge";
+import { useState } from "react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { formatCurrency } from "../../../utils/currencyFormatter";
-import { StatusBadge } from "../../SalarySlip/Advances/StatusBadge";
-import { useCurrentEmployee } from "../../../hooks/useEmployee";
-import { useExpenseAdvances } from "../../../hooks/useEmployeeAdvances";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import FrappeListView from "../../ListView";
 import AdvanceDetailModal from "./AdvanceDetailModal";
+import CustomDropdown from "../../shared/CustomDropdown";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
-const AdvanceExpenseList: React.FC = () => {
-  const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployee();
-  const { data: advancesApiData, refetch } = useExpenseAdvances(
-    currentEmployee?.name || ""
-  );
+const STATUS_OPTIONS = [
+  { label: "Pending", value: "Pending" },
+  { label: "Approved", value: "Approved" },
+  { label: "Rejected", value: "Rejected" },
+];
 
-  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  useEffect(() => {
-    if (refetchAttendance) {
-      refetch();
-      setRefetchAttendance(false);
-    }
-  }, [refetchAttendance, refetch, setRefetchAttendance]);
-
-  const advancesData = advancesApiData?.data || [];
-
-  // State for selected advance ID to open the modal
+const AdvanceExpenseList = () => {
+  const [selectedStatus, setSelectedStatus] = useState("Pending");
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
     null
   );
+  const { isDesktop } = useScreenSize();
+  const { data: currentEmployee } = useCurrentEmployee();
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
-  // Handler functions for the detail modal
+  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(event.target.value);
+  };
   const openDetailModal = (id: string) => setSelectedAdvanceId(id);
   const closeDetailModal = () => setSelectedAdvanceId(null);
 
-  // NOTE: The summarizeBreakups utility is removed as adv.expenses is not available.
+  const FilterDropdowns = () => (
+    <div className="flex items-center gap-2">
+      <CustomDropdown
+        value={selectedStatus}
+        onChange={handleStatusChange}
+        options={STATUS_OPTIONS}
+      />
+    </div>
+  );
 
-  const DesktopLayout = () => (
-    <div className="min-h-screen max-w-[100vw] overflow-x-hidden md:p-6">
-      <div className="w-full max-w-[100vw] mx-auto py-0">
-        <div className="px-0">
-          <div className="rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="my-table-header">
-              {/* REVERT: Back to 6 columns */}
-              <div className="grid grid-cols-6 gap-4"> 
-                <div className="my-table-header-text">Employee</div>
-                <div className="my-table-header-text">Posting Date</div>
-                <div className="my-table-header-text">Company</div>
-                <div className="my-table-header-text">Department</div>
-                <div className="my-table-header-text">Advance Amount</div>
-                <div className="my-table-header-text">Status</div>
-              </div>
-            </div>
+  const DesktopRow = ({ item }: any) => (
+    <div
+      className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+    >
+      <span>{item.employee_name}</span>
+      <span>{formatToIndianDate(item.posting_date)}</span>
+      <span>{item.company}</span>
+      <span>{item.department}</span>
+      <span>{formatCurrency(item.advance_amount)}</span>
 
-            <div className="divide-y divide-gray-200">
-              {advancesData.map((adv) => (
-                <div
-                  key={adv.name} 
-                  onClick={() => openDetailModal(adv.name)}
-                  role="button"
-                  tabIndex={0}
-                  // REVERT: Back to 6 columns
-                  className="my-data-row grid grid-cols-6 gap-4 cursor-pointer py-2 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="my-data-cell">{adv.employee_name}</div>
-                  <div className="my-data-cell">
-                    {formatToIndianDate(adv.posting_date)}
-                  </div>
-                  <div className="my-data-cell">{adv.company}</div>
-                  <div className="my-data-cell">{adv.department}</div>
-                  {/* REMOVED: Breakup Summary column/cell */}
-                  <div className="my-data-cell">
-                    {formatCurrency(adv.advance_amount)}
-                  </div>
-                  <div className="my-data-cell">
-                    <StatusBadge status={adv.status} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {advancesData.length === 0 && (
-          <div className="text-center py-12 px-4">
-            <p className="text-gray-500">No advances found.</p>
-          </div>
-        )}
+      <div className="flex justify-start">
+        <StatusBadge status={item.status} />
       </div>
     </div>
   );
 
-  const MobileLayout = () => (
-    <div className="min-h-screen w-full bg-gray-50 space-y-3">
-      {advancesData.map((adv) => (
-        <div
-          key={adv.name}
-          onClick={() => openDetailModal(adv.name)}
-          role="button"
-          tabIndex={0}
-          className="my-content-card bg-white shadow rounded-lg p-4 hover:shadow-md transition-shadow"
-        >
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              Advance Amount: {formatCurrency(adv.advance_amount)}
-            </div>
-            <StatusBadge status={adv.status} />
-          </div>
-          {/* REMOVED: Breakup Summary line */}
-          <div className="text-sm text-gray-600">
-            Employee: {adv.employee_name}
-          </div>
-          <div className="text-sm text-gray-600">
-            Posting Date: {formatToIndianDate(adv.posting_date)}
-          </div>
-          <div className="text-sm text-gray-600">Company: {adv.company}</div>
-          <div className="text-sm text-gray-600">
-            Department: {adv.department}
-          </div>
-        </div>
-      ))}
+  const MobileRow = ({ item }: any) => (
+    <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 mb-3">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-semibold text-gray-900">
+          {formatCurrency(item.advance_amount)}
+        </h3>
+        <StatusBadge status={item.status} />
+      </div>
 
-      {advancesData.length === 0 && (
-        <div className="text-center py-12 px-4">
-          <p className="text-gray-500">No advances found.</p>
-        </div>
-      )}
+      <p className="text-sm text-gray-600">
+        <span className="font-medium">Employee:</span> {item.employee_name}
+      </p>
+
+      <p className="text-sm text-gray-600">
+        <span className="font-medium">Date:</span>{" "}
+        {formatToIndianDate(item.posting_date)}
+      </p>
+
+      <p className="text-sm text-gray-600">
+        <span className="font-medium">Company:</span> {item.company}
+      </p>
+
+      <p className="text-sm text-gray-600">
+        <span className="font-medium">Department:</span> {item.department}
+      </p>
     </div>
   );
 
+  const RowComponent = isDesktop ? DesktopRow : MobileRow;
+
   return (
-    <>
-      {isDesktop ? <DesktopLayout /> : <MobileLayout />}
-      
-      {/* The modal correctly fetches the details when opened */}
+    <div
+      className="relative flex size-full flex-col md:p-6"
+      style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
+    >
+      <div className="flex justify-between items-center mb-2 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800 pb-1">
+          My Advance Expenses
+        </h2>
+
+        <div className="flex items-center space-x-3 pb-1">
+          <FilterDropdowns />
+        </div>
+      </div>
+      <div className=" rounded-lg bg-white h-full px-0 md:pt-2 pt-0 mb-20">
+        <CardTable
+          titles={[
+            "Employee",
+            "Posting Date",
+            "Company",
+            "Department",
+            "Advance Amount",
+            "Status",
+          ]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+        >
+          <FrappeListView
+            doctype="Employee Advance"
+            ItemComponent={RowComponent}
+            onItemClick={(item) => openDetailModal(item.name)}
+            isSearch={false}
+            defaultFilters={{
+              employee: currentEmployee?.name || "",
+              custom_type: "Reimbursement / Expense Advance",
+              ...(selectedStatus ? { status: selectedStatus } : {}),
+            }}
+            defaultFields={[
+              "name",
+              "employee_name",
+              "posting_date",
+              "company",
+              "department",
+              "advance_amount",
+              "paid_amount",
+              "pending_amount",
+              "status",
+            ]}
+            pageSize={10}
+            orderBy="creation desc"
+            showPagination={true}
+            infiniteScroll={true}
+            refetchTrigger={refetchAttendance}
+            onRefetchComplete={() => setRefetchAttendance(false)}
+          />
+        </CardTable>
+      </div>
+
       {selectedAdvanceId && (
-        <AdvanceDetailModal 
-          id={selectedAdvanceId} 
-          onClose={closeDetailModal} 
-        />
+        <AdvanceDetailModal id={selectedAdvanceId} onClose={closeDetailModal} />
       )}
-    </>
+    </div>
   );
 };
 
