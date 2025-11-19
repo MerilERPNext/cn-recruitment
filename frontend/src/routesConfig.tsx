@@ -94,9 +94,14 @@ const TeamExpense = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseClaim/TeamExpense"),
   "TeamExpense"
 );
-const AdvanceExpenseList = lazyWithRetry(
-  () => import("./components/Expenses-App/ExpenseAdvance/AdvanceExpenseList"),
-  "AdvanceExpenseList"
+const MyAdvanceExpenseList = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpenseAdvance/MyAdvanceExpenseList"),
+  "MyAdvanceExpenseList"
+);
+const TeamAdvanceExpenseList = lazyWithRetry(
+  () =>
+    import("./components/Expenses-App/ExpenseAdvance/TeamAdvanceExpenseList"),
+  "TeamAdvanceExpenseList"
 );
 const ExpenseAdvanceForm = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseAdvance/ExpenseAdvanceForm"),
@@ -519,7 +524,8 @@ export const routesConfig: AppRoute[] = [
       { path: "expenses-list", element: <ExpensesList /> },
       { path: "add-expense", element: <AddExpenseForm /> },
       { path: "team-requests", element: <TeamExpense /> },
-      { path: "advance-expense-list", element: <AdvanceExpenseList /> },
+      { path: "my-advance-expense", element: <MyAdvanceExpenseList /> },
+      { path: "team-advance-expense", element: <TeamAdvanceExpenseList /> },
     ],
   },
 

@@ -54,6 +54,7 @@ import {
 } from "date-fns";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { ViewAll } from "./shared/atoms/ViewAll";
 
 const statusStyles = {
   unpaid: {
@@ -111,24 +112,21 @@ const MobileDashboard: React.FC = () => {
     fetchLocation();
   }, []);
 
-  // Update current time every minute for real-time progress calculation
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Update every minute
+    }, 60000);
 
     return () => clearInterval(timer);
   }, []);
-  // Get unread notifications count
   const { data: unreadCount = 0 } = useUnreadNoticesCount();
   const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
-  // Get current user data
+
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
 
-  // Enhanced employee state with fallback
   const employeeState = useEmployeeWithFallback();
   const { data: canShowClockIn } = useCanShowClockIn(
     currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
@@ -150,7 +148,6 @@ const MobileDashboard: React.FC = () => {
     time: ["between", [start, end]],
   };
 
-  // this is for the logo
   const { data: CompanyLogo } = useCompanyLogo();
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
@@ -162,16 +159,8 @@ const MobileDashboard: React.FC = () => {
         )
       : CompanyLogo?.[0];
 
-  // logo setkarna compnay and emplyee name cuurect compnay ka
   const logoToShow = matchedCompany?.company_logo || "logo not found";
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  // const today = new Date().toISOString().split("T")[0];
-  // const { data: leaveBalance } = useGetLeaveBalance(
-  //   currentEmployee?.employee,
-  //   today
-  // );
-
-  // This works for both check in/check out and clockin and clock out  -- START
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -212,7 +201,6 @@ const MobileDashboard: React.FC = () => {
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
-  // This works for both check in/check out and clockin and clock out -- END
   type CustomError = Error & {
     response?: { data?: { message?: { error: string } } };
   };
@@ -310,7 +298,6 @@ const MobileDashboard: React.FC = () => {
       return "--:--";
     }
 
-    // Calculate total worked time by pairing check-ins and check-outs
     let totalMinutes = 0;
     const sortedLogs = [...homeSummary].sort((a, b) =>
       compareAsc(
@@ -325,7 +312,6 @@ const MobileDashboard: React.FC = () => {
       if (log.log_type === "IN") {
         currentCheckIn = log;
       } else if (log.log_type === "OUT" && currentCheckIn) {
-        // Calculate time between check-in and check-out
         const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
         const checkOutTime = parseISO(log.time.replace(" ", "T"));
         totalMinutes += differenceInMinutes(checkOutTime, checkInTime);
@@ -333,7 +319,6 @@ const MobileDashboard: React.FC = () => {
       }
     }
 
-    // If still checked in, add time from last check-in to now
     if (currentCheckIn && isCurrentlyCheckedIn) {
       const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
       totalMinutes += differenceInMinutes(currentTime, checkInTime);
@@ -341,7 +326,6 @@ const MobileDashboard: React.FC = () => {
 
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    // Format as HH:mm with leading zeros
     return `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")}`;
@@ -352,7 +336,6 @@ const MobileDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-4 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
-          {/* Left: Logo/Profile button */}
           <button className="flex items-center hover:bg-black/5 transition-colors w-10 h-10 rounded-xl overflow-hidden ">
             <img
               src={typeof logoToShow === "string" ? logoToShow : ""}
@@ -361,9 +344,7 @@ const MobileDashboard: React.FC = () => {
             />
           </button>
 
-          {/* Right: Notification + Avatar */}
           <div className="flex items-center gap-3">
-            {/* Notification Button */}
             <button
               onClick={handleNotificationClick}
               className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -376,7 +357,6 @@ const MobileDashboard: React.FC = () => {
               )}
             </button>
 
-            {/* Profile Avatar */}
             <div
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer border border-gray-400"
               onClick={() => {
@@ -403,7 +383,6 @@ const MobileDashboard: React.FC = () => {
             type="text"
             placeholder="Search members..."
             onClick={() => navigate("/webapp/search-members")}
-            // onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             className="w-full pl-10 pr-4 py-3 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -411,7 +390,6 @@ const MobileDashboard: React.FC = () => {
       </div>
 
       <div className="px-4 py-3 flex-1 overflow-y-auto">
-        {/* Employee Data Error Handling */}
         {!employeeState.isLoading && !employeeState.hasValidData && (
           <EmployeeFallback
             message={
@@ -459,7 +437,6 @@ const MobileDashboard: React.FC = () => {
                 ? formatTimeSafe(employeeShift?.end_time)
                 : "--:--"}
             </p>{" "}
-            {/* <p className="text-sm font-bold text-gray-900">{todayAttendance?.[0]?.shift}</p> */}
           </div>
           <div className="text-center bg-gray-200 border-1 border-gray-300  px-2 py-2 rounded-lg">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
@@ -480,7 +457,6 @@ const MobileDashboard: React.FC = () => {
             </p>
             <p className="text-2xl font-bold text-gray-900">{getTotalTime()}</p>
           </div>
-          {/* Check In / Check Out */}
           {currentEmployee?.custom_allow_mobile_checkin ? (
             <button
               onClick={() =>
@@ -498,7 +474,6 @@ const MobileDashboard: React.FC = () => {
               )}
             </button>
           ) : null}
-          {/* Clock In / Clock Out */}
           {canShowClockIn?.can_show ? (
             <button
               onClick={() =>
@@ -518,7 +493,6 @@ const MobileDashboard: React.FC = () => {
           ) : null}
         </div>
 
-        {/* Quick Links */}
         <div className="mb-5">
           <h3 className="text-lg font-bold mb-3">Quick Links</h3>
 
@@ -585,7 +559,7 @@ const MobileDashboard: React.FC = () => {
               </span>
             </Link>
 
-              <Link
+            <Link
               to="/webapp/performance-app"
               className="flex flex-col items-center group"
             >
@@ -623,16 +597,14 @@ const MobileDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Attendance Summary */}
         <div className="mb-4 sm:mb-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold">Attendance</h3>
-            <Link
-              to="/webapp/attendance"
-              className="text-blue-500 text-sm font-semibold hover:text-blue-700 transition-colors"
-            >
-              View Details
-            </Link>
+
+            <ViewAll
+              title="View Details"
+              onClick={() => navigate("/webapp/attendance")}
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -677,36 +649,16 @@ const MobileDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Leave Balance */}
-
-        {/* {leaveBalance && (
-          <LeaveProgress
-            leaveData={leaveBalance.leave_balance.reduce(
-              (acc, leave) => ({
-                ...acc,
-                [leave.type]: {
-                  allocated_leaves: leave.entitled,
-                  balance_leaves: leave.balance,
-                },
-              }),
-              {} as LeaveData
-            )}
-          />
-        )} */}
-
-        {/* Pending Expense Claims */}
         {expenseData?.length > 0 && (
           <div className="rounded-xl  border border-gray-100 mb-4 sm:mb-5">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-gray-900">
                 Unpaid Expense Claims
               </h3>
-              <Link
-                to="/webapp/expenses-app"
-                className="text-blue-500 text-sm font-semibold hover:text-blue-600"
-              >
-                View All
-              </Link>
+              <ViewAll
+                title="View Claims"
+                onClick={() => navigate("/webapp/expenses-app")}
+              />
             </div>
 
             <div className="space-y-3">
@@ -721,7 +673,6 @@ const MobileDashboard: React.FC = () => {
                     statusStyles[
                       item.status?.toLowerCase() as keyof typeof statusStyles
                     ] || statusStyles.draft;
-                  // const StatusIcon = statusIcons[statusKey] || statusIcons.draft;
 
                   return (
                     <div
@@ -765,47 +716,3 @@ const MobileDashboard: React.FC = () => {
 };
 
 export default MobileDashboard;
-
-// const LeaveProgress = ({ leaveData }: LeaveProgressProps) => {
-//   return (
-//     <div className="rounded-xl mb-4 sm:mb-5">
-//       <div className="flex justify-between items-center mb-4">
-//         <h3 className="text-lg font-bold text-gray-900">Leave Balance</h3>
-//         <Link
-//           to="/webapp/leave-app"
-//           className="text-blue-500 text-sm font-semibold hover:text-blue-600"
-//         >
-//           View All
-//         </Link>
-//       </div>
-//       <div className="space-y-4">
-//         {Object.entries(leaveData).map(
-//           ([leaveType, { allocated_leaves, balance_leaves }]) => {
-//             const percentage =
-//               allocated_leaves > 0
-//                 ? (balance_leaves / allocated_leaves) * 100
-//                 : 0;
-
-//             return (
-//               <div key={leaveType}>
-//                 <div className="flex justify-between items-center mb-2">
-//                   <span className="text-gray-700 font-medium">{leaveType}</span>
-//                   <span className="text-lg font-bold text-gray-900">
-//                     {balance_leaves.toString().padStart(2, "0")} /{" "}
-//                     {allocated_leaves.toString().padStart(2, "0")}
-//                   </span>
-//                 </div>
-//                 <div className="w-full bg-gray-200 rounded-lg h-2 overflow-hidden">
-//                   <div
-//                     className={`bg-blue-600 h-full rounded-lg transition duration-500`}
-//                     style={{ width: `${percentage}%` }}
-//                   />
-//                 </div>
-//               </div>
-//             );
-//           }
-//         )}
-//       </div>
-//     </div>
-//   );
-// };

@@ -1,24 +1,25 @@
 import React from "react";
-import { X } from "lucide-react"; // Renamed XIcon to X for Lucide consistency
+import { X } from "lucide-react";
 import { StatusBadge } from "../../SalarySlip/Advances/StatusBadge";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { useFrappeDocument } from "../../../hooks/useFrappeQuery"; // Assuming this is the correct hook
-
+import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
+import { ApprovalStage } from "../../../types/expenseAdvance";
+import ApprovalStagesProgress from "../ExpenseClaim/ApprovalStagesProgress";
 
 interface AdvanceDetailModalProps {
-  id: string; // The name of the Employee Advance document
+  id: string;
   onClose: () => void;
+  selectedStages: ApprovalStage[];
 }
 
 const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   id,
   onClose,
+  selectedStages,
 }) => {
-  // Use the established hook pattern for fetching a single document
   const raw = useFrappeDocument("Employee Advance", id as string);
 
-  // Safely extract data, loading, and error states
   const advanceDetails = raw.data as any | undefined;
   const isLoading = raw.isLoading;
   const error = raw.error;
@@ -26,9 +27,14 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   if (!id) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        {/* Modal Header */}
+    <div
+      className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full max-w-xl rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center p-5 border-b">
           <h3 className="text-lg font-semibold text-gray-800">
             Advance Details: {id}
@@ -42,7 +48,6 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Content */}
         <div className="p-6 overflow-y-auto flex-1">
           {isLoading ? (
             <p className="text-gray-500 text-center py-10">
@@ -54,12 +59,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
             </p>
           ) : (
             <>
-              {/* === MAIN ADVANCE DETAILS (Grid View) === */}
-              <h4 className="text-md font-semibold mb-3 border-b pb-2">
-                Advance Information
-              </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-6 mb-6 text-sm">
-                {/* Row 1 */}
                 <p>
                   <strong className="text-gray-600">Employee:</strong>{" "}
                   {`${advanceDetails.employee_name}: ${advanceDetails.employee}`}
@@ -69,7 +69,6 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                   {formatToIndianDate(advanceDetails.posting_date)}
                 </p>
 
-                {/* Row 2 */}
                 <p>
                   <strong className="text-gray-600">Company:</strong>{" "}
                   {advanceDetails.company}
@@ -78,26 +77,27 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                   <strong className="text-gray-600">Department:</strong>{" "}
                   {advanceDetails.department}
                 </p>
-                <p>
-                  <strong className="text-gray-600">Designation:</strong>{" "}
-                  {advanceDetails.custom_designation || "—"}
-                </p>
-
-                {/* Row 3 */}
 
                 <p className="flex items-center gap-2">
                   <strong className="text-gray-600">Status:</strong>
                   <StatusBadge status={advanceDetails.status} />
                 </p>
 
-                {/* Row 4 (Financials) */}
                 <p className="text-base font-bold text-blue-700">
                   <strong className="text-gray-600">Amount:</strong>{" "}
                   {formatCurrency(advanceDetails.advance_amount)}
                 </p>
               </div>
 
-              {/* === BREAKUP ITEMS (Table View) === */}
+              {Array.isArray(selectedStages) && selectedStages.length > 0 && (
+                <div className="mb-4 pt-2">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                    Approval Stages
+                  </h4>
+                  <ApprovalStagesProgress stages={selectedStages} />
+                </div>
+              )}
+
               <div className="mt-6 border-t pt-4">
                 <h4 className="text-md font-semibold mb-3">
                   Expense Breakup Items ({advanceDetails.expenses?.length || 0})
@@ -123,7 +123,6 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                       advanceDetails.expenses.length > 0 ? (
                         advanceDetails.expenses.map(
                           (item: any, index: number) => {
-
                             return (
                               <tr
                                 key={item.name || index}

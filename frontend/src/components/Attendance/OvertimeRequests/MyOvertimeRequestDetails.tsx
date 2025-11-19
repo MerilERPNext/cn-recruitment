@@ -180,7 +180,7 @@ export function MyOvertimeDetails({
       onMouseDown={onClose}
     >
       <div
-        className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
