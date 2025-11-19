@@ -26,12 +26,23 @@ const AdvanceApprovalCard = ({
   showCheckbox = true,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
-  const actionsWithForm = data?.custom_doctype_actions_with_form
-    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
-    : [];
+    const actions = (() => {
+    try {
+      return data?.custom_doctype_actions ? JSON.parse(data.custom_doctype_actions) : [];
+    } catch (e) {
+      console.error('Failed to parse custom_doctype_actions:', e);
+      return [];
+    }
+  })();
+  const actionsWithForm = (() => {
+    try {
+      const str = data?.custom_doctype_actions_with_form?.replace(/'/g, '"');
+      return str ? JSON.parse(str) : [];
+    } catch (e) {
+      console.error('Failed to parse custom_doctype_actions_with_form:', e);
+      return [];
+    }
+  })();
 
   const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();

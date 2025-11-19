@@ -52,9 +52,15 @@ export default function TeamAdvanceDetailView({
   if (!data?.reference_document) return null;
 
   const ref = data.reference_document;
-  const actions = data.custom_doctype_actions
-    ? JSON.parse(data.custom_doctype_actions)
-    : [];
+  const actions = (() => {
+    if (!data.custom_doctype_actions) return [];
+    try {
+      return JSON.parse(data.custom_doctype_actions);
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions:", e);
+      return [];
+    }
+  })();
   const status = getStatus(ref.status);
 
   const handleAction = useCallback(
@@ -98,7 +104,9 @@ export default function TeamAdvanceDetailView({
               className="border-t border-gray-200 hover:bg-gray-50 transition-colors"
             >
               <td className="px-4 py-2">{item.expense_type || "-"}</td>
-              <td className="px-4 py-2">{formatDate(item.expense_date) || "-"}</td>
+              <td className="px-4 py-2">
+                {formatDate(item.expense_date) || "-"}
+              </td>
               <td className="px-4 py-2">{item.custom_mercent || "-"}</td>
               <td className="px-4 py-2">{item.custom_invoice_number || "-"}</td>
 
@@ -145,7 +153,8 @@ export default function TeamAdvanceDetailView({
 
           <div className="text-xs text-gray-600 space-y-1">
             <p>
-              <span className="font-medium">Date:</span> {formatDate(item.expense_date)}
+              <span className="font-medium">Date:</span>{" "}
+              {formatDate(item.expense_date)}
             </p>
             <p>
               <span className="font-medium">Merchant:</span>{" "}
