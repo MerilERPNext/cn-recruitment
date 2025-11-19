@@ -95,7 +95,7 @@ const App: React.FC = () => {
                     "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
                 }}
               >
-                {({ message }:{ message: any }) => (
+                {({ message }:{ message: React.ReactNode }) => (
                   <>
                     {t.type === "success" ? (
                       <CheckCircle2
@@ -108,8 +108,7 @@ const App: React.FC = () => {
                         strokeWidth={2}
                       />
                     )}
-                    { typeof message==="string" ? (message):
-                      (message?.props?.children  || t?.message  || "Could not catch error message Somthing went wrong. please try again")
+                    { message
                     }
                     {t.type !== "loading" && (
                       <button

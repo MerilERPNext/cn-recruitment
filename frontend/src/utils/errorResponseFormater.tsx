@@ -7,7 +7,7 @@ export const errorResponseFormater = (
   let err = null;
 
   if (!error) {
-    return <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fallback) as unknown as string }} />;
+    return <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fallback) }} />;
   }
 
   try {
@@ -26,8 +26,9 @@ export const errorResponseFormater = (
           ?.split(":")
           .slice(1)
           .join(":")
-          .trim() || err?.response?.data?.message?.error;
+          .trim() || error?.response?.data?.message?.error;
   } catch {
+    console.error("Failed to parse error message:", error);
     err = fallback;
   }
   
