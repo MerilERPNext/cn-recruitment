@@ -10,7 +10,6 @@ import {
   useProjects,
 } from "../../../hooks/useEmployeeAdvances";
 import toast from "react-hot-toast";
-import DOMPurify from "dompurify";
 import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
@@ -55,6 +54,22 @@ const ExpenseAdvanceForm: React.FC<{
 
   const getLabelWithAsterisk = (label: string, required?: boolean) => {
     return required ? `${label} <span style="color:red">&nbsp;*</span>` : label;
+  };
+
+  const extractError = (error: any) => {
+    try {
+      if (error?.response?.data) {
+        const data = error.response.data;
+        if (data.message) return data.message;
+        if (data.exception) {
+          return data.exception.split("Error:").pop()?.trim();
+        }
+      }
+      if (error?.message) return error.message;
+      return "Something went wrong!";
+    } catch {
+      return "Something went wrong!";
+    }
   };
 
   const handleSubmit = async () => {
@@ -127,18 +142,10 @@ const ExpenseAdvanceForm: React.FC<{
             setRefetchAttendance(true);
           }, 1000);
         },
-        onError: (error: any) => {
-          const errorMessage =
-            error?.response?.data?.exception
-              ?.split(":")
-              .slice(1)
-              .join(":")
-              .trim() || "Something went wrong!!";
 
-          const cleanString = DOMPurify.sanitize(errorMessage || "");
-          toast.error(
-            <span dangerouslySetInnerHTML={{ __html: cleanString }} />
-          );
+        onError: (error: any) => {
+          const msg = extractError(error);
+          toast.error(msg);
         },
         onSettled: () => setSubmitting(false),
       });
@@ -553,7 +560,7 @@ const ExpenseAdvanceForm: React.FC<{
                               : "-"}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
-                            {expense.amount || "-"}
+                            {expense.custom_amount_in_other_currency || "-"}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {expense.custom_mercent || "-"}

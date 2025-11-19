@@ -517,7 +517,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 id: initialData?.id || crypto.randomUUID(),
                 expense_type: combinedData.expense_type,
                 expense_date: combinedData.expense_date,
-                amount: combinedData.amount,
+                custom_amount_in_other_currency: combinedData.amount,
                 custom_mercent: combinedData.merchant,
                 custom_invoice_number: combinedData.invoice_number,
                 custom_attach_receipt: finalAttachValue,
