@@ -12,6 +12,7 @@ interface ExpenseBreakupModalProps {
   onClose: () => void;
   onSave: (expense: any) => void;
   initialData?: any;
+  advanceType: string | null;
 }
 
 const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
@@ -19,6 +20,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
   onClose,
   onSave,
   initialData,
+  advanceType,
 }) => {
   const [formKey, setFormKey] = useState(0);
   const [formData, setFormData] = useState<any>(initialData || {});
@@ -244,10 +246,12 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 dataSrc: "url",
 
                 data: {
-                  url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}`,
+                  url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}&advance_type=${encodeURIComponent(
+                    advanceType || ""
+                  )}`,
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
-                selectValues: "message[0]",
+                selectValues: "message",
                 defaultValue: "INR",
                 template: "<span>{{ item }}</span>",
                 valueProperty: "",

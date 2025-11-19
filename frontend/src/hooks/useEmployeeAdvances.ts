@@ -3,6 +3,7 @@ import {
   createAdvance,
   getAdvances,
   getAdvancesAmount,
+  getAdvancesTypes,
   getAllAdvancesTypes,
   getCostCenters,
   getCurrencies,
@@ -103,10 +104,20 @@ export const useExpenseTypes = () => {
   });
 };
 
-export const useExpenseTableFieldSettings = (employeeId: string | null) => {
+export const useExpenseTableFieldSettings = (
+  employeeId: string | null,
+  subAdvanceType: string | null
+) => {
   return useQuery({
-    queryKey: ["expense-table-field-settings", employeeId],
-    queryFn: () => getExpenseTableFieldSettings(employeeId!),
-    enabled: !!employeeId,
+    queryKey: ["expense-table-field-settings", employeeId, subAdvanceType],
+    queryFn: () => getExpenseTableFieldSettings(employeeId!, subAdvanceType!),
+    enabled: !!employeeId && !!subAdvanceType,
+  });
+};
+
+export const useAdvanceTypes = () => {
+  return useQuery({
+    queryKey: ["advance-types"],
+    queryFn: getAdvancesTypes,
   });
 };

@@ -8,6 +8,7 @@ import {
   useCreateNewAdvance,
   useExpenseTableFieldSettings,
   useProjects,
+  useAdvanceTypes,
 } from "../../../hooks/useEmployeeAdvances";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -36,8 +37,19 @@ const ExpenseAdvanceForm: React.FC<{
   const { setRefetchAttendance } = useGlobalStore();
 
   const { data: currentEmployee } = useCurrentEmployee();
+  const employeeId = currentEmployee?.name || "";
+  const employeeCompany = currentEmployee?.company || "";
+
+  const { data: advanceTypesData } = useAdvanceTypes();
+
+  const [subAdvanceType, setSubAdvanceType] = useState<string | null>(null);
+  const [selectedAdvanceType, setSelectedAdvanceType] = useState<string | null>(
+    null
+  );
+
   const { data: fieldSettings } = useExpenseTableFieldSettings(
-    currentEmployee?.name || ""
+    employeeId || null,
+    subAdvanceType
   );
 
   const postingDate = new Date().toISOString().split("T")[0];
@@ -77,7 +89,12 @@ const ExpenseAdvanceForm: React.FC<{
       const submission = await formRef.current?.submit();
       const formData = submission?.data;
 
-      if (!formData || !formData.purpose || !formData.advance_amount) {
+      if (
+        !formData ||
+        !formData.purpose ||
+        !formData.advance_amount ||
+        !formData.advance_type // 🆕 ensure sub advance type selected
+      ) {
         toast.error("Please fill all required fields.");
         return;
       }
@@ -113,10 +130,11 @@ const ExpenseAdvanceForm: React.FC<{
 
       const payload = {
         custom_type: advanceType,
-        employee: currentEmployee?.name,
-        company: currentEmployee?.company,
+        employee: employeeId,
+        company: employeeCompany,
         posting_date: formData.posting_date || postingDate,
         purpose: formData.purpose,
+        advance_type: formData.advance_type,
         advance_amount: formData.advance_amount,
         currency: formData.currency,
         exchange_rate: formData.exchange_rate,
@@ -137,7 +155,7 @@ const ExpenseAdvanceForm: React.FC<{
       mutation.mutate(payload, {
         onSuccess: () => {
           toast.success("Expense Advance submitted successfully!");
-          navigate("/webapp/expenses-app/advance-expense-list");
+          navigate("/webapp/expenses-app/my-advance-expense");
           setTimeout(() => {
             setRefetchAttendance(true);
           }, 1000);
@@ -197,19 +215,25 @@ const ExpenseAdvanceForm: React.FC<{
     );
   };
 
+  // 🧠 HELPER: Extract values that depend on fieldSettings safely
   const expenseAdvanceSchema = useMemo(() => {
-    if (!fieldSettings) return null;
+    // 🔄 NO early return now: we want form to show even before fieldSettings arrives
+    const showProject = fieldSettings?.show_project;
+    const projectMandatory = fieldSettings?.project_mandatory;
 
-    const showProject = fieldSettings.show_project;
-    const projectMandatory = fieldSettings.project_mandatory;
-
-    const showCostCenter = fieldSettings.show_cost_center;
-    const costCenterMandatory = fieldSettings.cost_center_mandatory;
+    const showCostCenter = fieldSettings?.show_cost_center;
+    const costCenterMandatory = fieldSettings?.cost_center_mandatory;
 
     const allowedCurrencies =
-      fieldSettings.allowed_currencies?.map((cur) => ({
+      fieldSettings?.allowed_currencies?.map((cur: string) => ({
         label: cur,
         value: cur,
+      })) || [];
+
+    const subAdvanceTypeOptions =
+      advanceTypesData?.map((item: string) => ({
+        label: item,
+        value: item,
       })) || [];
 
     return {
@@ -251,6 +275,38 @@ const ExpenseAdvanceForm: React.FC<{
                 },
               ],
             },
+            {
+              type: "columns",
+              key: "row_sub_advance_type",
+              columns: [
+                {
+                  width: 6,
+                  components: [
+                    {
+                      type: "select",
+                      key: "advance_type",
+                      label:
+                        'Sub Advance Type <span style="color:red">&nbsp;*</span>',
+                      html: true,
+                      input: true,
+                      placeholder: "Select Sub Advance Type",
+                      dataSrc: "values",
+                      data: {
+                        values: subAdvanceTypeOptions,
+                      },
+                      validate: {
+                        required: true,
+                        customMessage: "Sub Advance Type is required",
+                      },
+                    },
+                  ],
+                },
+                {
+                  width: 6,
+                  components: [],
+                },
+              ],
+            },
 
             {
               type: "columns",
@@ -264,7 +320,7 @@ const ExpenseAdvanceForm: React.FC<{
                       key: "employee",
                       label: "Employee",
                       input: true,
-                      defaultValue: currentEmployee?.name || "",
+                      defaultValue: employeeId,
                       disabled: true,
                     },
                   ],
@@ -277,7 +333,7 @@ const ExpenseAdvanceForm: React.FC<{
                       key: "company",
                       label: "Company",
                       input: true,
-                      defaultValue: currentEmployee?.company || "",
+                      defaultValue: employeeCompany,
                       disabled: true,
                     },
                   ],
@@ -327,6 +383,7 @@ const ExpenseAdvanceForm: React.FC<{
                 },
               ],
             },
+
             ...(showProject || showCostCenter
               ? [
                   {
@@ -346,7 +403,6 @@ const ExpenseAdvanceForm: React.FC<{
                                     projectMandatory
                                   ),
                                   html: true,
-
                                   input: true,
                                   placeholder: "Select project",
                                   data: {
@@ -402,6 +458,7 @@ const ExpenseAdvanceForm: React.FC<{
                 ]
               : []),
 
+            // Advance Amount
             {
               type: "number",
               key: "advance_amount",
@@ -415,6 +472,8 @@ const ExpenseAdvanceForm: React.FC<{
                 customMessage: "Advance Amount must be at least 1",
               },
             },
+
+            // Purpose
             {
               type: "textarea",
               key: "purpose",
@@ -436,9 +495,11 @@ const ExpenseAdvanceForm: React.FC<{
     fieldSettings,
     projects,
     costCenters,
-    currentEmployee,
+    employeeId,
+    employeeCompany,
     advanceType,
     postingDate,
+    advanceTypesData,
   ]);
 
   const FormContent = (
@@ -450,6 +511,17 @@ const ExpenseAdvanceForm: React.FC<{
           <Form
             form={expenseAdvanceSchema}
             onFormReady={(instance: any) => (formRef.current = instance)}
+            onChange={(submission: any) => {
+              const newSubType = submission?.data?.advance_type || null;
+
+              setSubAdvanceType((prev) =>
+                prev === newSubType ? prev : newSubType
+              );
+
+              if (newSubType !== selectedAdvanceType) {
+                setSelectedAdvanceType(newSubType);
+              }
+            }}
             options={{ submitButton: false, noAlerts: true }}
           />
         ) : (
@@ -458,151 +530,152 @@ const ExpenseAdvanceForm: React.FC<{
           </div>
         )}
 
-        {true && (
-          <div className="mt-8 border-t pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">
-                Advance Break Up
-              </h3>
-              <button
-                onClick={() => {
-                  setIsExpenseModalOpen(true);
-                  setExpenseToEdit(null);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus size={20} />
-                Advance Break Up
-              </button>
-            </div>
+        <div className="mt-8 border-t pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Advance Break Up
+            </h3>
+            <button
+              onClick={() => {
+                if (!selectedAdvanceType) {
+                  toast.error("Please select Sub Advance Type first");
+                  return;
+                }
+                setIsExpenseModalOpen(true);
+                setExpenseToEdit(null);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus size={20} />
+              Advance Break Up
+            </button>
+          </div>
 
-            {expenseClaims.length > 0 && (
-              <div className="mt-4">
-                <div className="flex justify-between items-center mb-3">
-                  <p className="text-sm text-gray-600">
-                    {expenseClaims.length} expense advance breakup(s) added
-                  </p>
-                  {selectedExpenses.length > 0 && (
-                    <button
-                      onClick={handleDeleteSelected}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                    >
-                      <Trash2 size={16} />
-                      Delete Selected ({selectedExpenses.length})
-                    </button>
-                  )}
-                </div>
+          {expenseClaims.length > 0 && (
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-3">
+                <p className="text-sm text-gray-600">
+                  {expenseClaims.length} expense advance breakup(s) added
+                </p>
+                {selectedExpenses.length > 0 && (
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                    Delete Selected ({selectedExpenses.length})
+                  </button>
+                )}
+              </div>
 
-                <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="w-12 px-4 py-3 text-left">
+              <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="w-12 px-4 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          onChange={(e) =>
+                            setSelectedExpenses(
+                              e.target.checked
+                                ? expenseClaims.map((e) => e.id)
+                                : []
+                            )
+                          }
+                          checked={
+                            selectedExpenses.length === expenseClaims.length &&
+                            expenseClaims.length > 0
+                          }
+                          className="rounded border-gray-300"
+                        />
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expense Type
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expense Date
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Merchant
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Invoice No.
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {expenseClaims.map((expense) => (
+                      <tr
+                        key={expense.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-4 py-3">
                           <input
                             type="checkbox"
-                            onChange={(e) =>
-                              setSelectedExpenses(
-                                e.target.checked
-                                  ? expenseClaims.map((e) => e.id)
-                                  : []
-                              )
-                            }
-                            checked={
-                              selectedExpenses.length ===
-                                expenseClaims.length && expenseClaims.length > 0
-                            }
+                            checked={selectedExpenses.includes(expense.id)}
+                            onChange={() => handleCheckboxChange(expense.id)}
                             className="rounded border-gray-300"
                           />
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Expense Type
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Expense Date
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Merchant
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Invoice No.
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.expense_type}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.expense_date
+                            ? format(
+                                new Date(expense.expense_date),
+                                "dd-MM-yyyy"
+                              )
+                            : "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.custom_amount_in_other_currency || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.custom_mercent || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {expense.custom_invoice_number || "-"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleEditExpense(expense)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors mr-3"
+                            title="Edit expense"
+                          >
+                            <SquarePen size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteExpense(expense.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                            title="Delete expense"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {expenseClaims.map((expense) => (
-                        <tr
-                          key={expense.id}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-4 py-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedExpenses.includes(expense.id)}
-                              onChange={() => handleCheckboxChange(expense.id)}
-                              className="rounded border-gray-300"
-                            />
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {expense.expense_type}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {expense.expense_date
-                              ? format(
-                                  new Date(expense.expense_date),
-                                  "dd-MM-yyyy"
-                                )
-                              : "-"}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {expense.custom_amount_in_other_currency || "-"}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {expense.custom_mercent || "-"}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {expense.custom_invoice_number || "-"}
-                          </td>
-                          <td className="px-4 py-3">
-                            {/* 5. Add Edit button */}
-                            <button
-                              onClick={() => handleEditExpense(expense)}
-                              className="text-blue-600 hover:text-blue-800 transition-colors mr-3"
-                              title="Edit expense"
-                            >
-                              <SquarePen size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteExpense(expense.id)}
-                              className="text-red-600 hover:text-red-800 transition-colors"
-                              title="Delete expense"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
+            </div>
+          )}
 
-            {expenseClaims.length === 0 && (
-              <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                <p className="text-gray-500">No advance break up added yet</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Click "Add New Advance" to add your first advance break up
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+          {expenseClaims.length === 0 && (
+            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+              <p className="text-gray-500">No advance break up added yet</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Click "Add New Advance" to add your first advance break up
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
@@ -613,7 +686,7 @@ const ExpenseAdvanceForm: React.FC<{
           onClick={
             onClose
               ? onClose
-              : () => navigate("/webapp/expenses-app/advance-expense-list")
+              : () => navigate("/webapp/expenses-app/my-advance-expense")
           }
         >
           Cancel
@@ -630,6 +703,7 @@ const ExpenseAdvanceForm: React.FC<{
           {submitting ? "Submitting..." : "Submit"}
         </Button>
       </div>
+
       <ExpenseBreakupModal
         isOpen={isExpenseModalOpen}
         onClose={() => {
@@ -638,6 +712,7 @@ const ExpenseAdvanceForm: React.FC<{
         }}
         onSave={expenseToEdit ? handleUpdateExpense : handleAddExpense}
         initialData={expenseToEdit}
+        advanceType={selectedAdvanceType}
       />
     </div>
   );
