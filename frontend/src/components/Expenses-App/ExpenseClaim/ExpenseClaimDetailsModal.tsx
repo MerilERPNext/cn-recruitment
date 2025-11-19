@@ -51,7 +51,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
       />
 
       <div className="relative z-10 w-full max-w-xl rounded-lg bg-white p-6 shadow-lg">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-5 pb-4 border-b">
           <h3 className="text-lg font-semibold">Expense Claim: {id}</h3>
           <button
             onClick={onClose}

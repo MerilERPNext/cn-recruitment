@@ -27,7 +27,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white w-full max-w-xl rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Modal Header */}
         <div className="flex justify-between items-center p-5 border-b">
           <h3 className="text-lg font-semibold text-gray-800">
@@ -54,10 +54,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
             </p>
           ) : (
             <>
-              {/* === MAIN ADVANCE DETAILS (Grid View) === */}
-              <h4 className="text-md font-semibold mb-3 border-b pb-2">
-                Advance Information
-              </h4>
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-6 mb-6 text-sm">
                 {/* Row 1 */}
                 <p>

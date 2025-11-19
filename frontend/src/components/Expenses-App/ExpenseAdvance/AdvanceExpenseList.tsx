@@ -17,7 +17,7 @@ const STATUS_OPTIONS = [
 ];
 
 const AdvanceExpenseList = () => {
-  const [selectedStatus, setSelectedStatus] = useState("Pending");
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
     null
   );
