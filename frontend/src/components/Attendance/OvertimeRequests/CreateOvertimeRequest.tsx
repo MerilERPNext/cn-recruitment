@@ -43,7 +43,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const initialSubmissionData = useMemo(
     () => ({
       data: {
-        show_attachment: !plannedOvertimeRequestAttachments,
+        show_attachment: !!plannedOvertimeRequestAttachments,
       },
     }),
     [plannedOvertimeRequestAttachments]
