@@ -41,7 +41,7 @@ import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import { LeaveRequestRefreshProvider } from "./Leaves/LeaveRequestRefreshContext";
 import { RequestLeaveModalProvider } from "./Leaves/RequestLeaveModalContext";
 import LeaveRequest from "./Attendance/LeaveRequest";
@@ -52,6 +52,7 @@ import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
 import { useRequestPasswordReset } from "../hooks/useResetPassword";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -86,12 +87,12 @@ export default function DesktopDashboard() {
     const email = loginUserEmail; // can be replaced with logged-in user's email
     mutation.mutate(email, {
       onSuccess: (data) => {
-        toast("Password reset email sent successfully!");
+        toast.success("Password reset email sent successfully!");
         console.log("Response:", data);
       },
       onError: (error: any) => {
-        toast("Failed to send password reset email!");
-        console.error(error);
+         const formatedError = errorResponseFormater(error, "Failed to send password reset email!");
+         toast.error(formatedError);
       },
     });
   };

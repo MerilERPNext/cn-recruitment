@@ -16,6 +16,7 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import overtimeRequestSchema from "./overtimeRequestSchema.json";
 import DOMPurify from "dompurify";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 
 interface RequestOvertimeProps {
@@ -109,14 +110,8 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             }, 1000);
           },
           onError: (e: CustomError) => {
-            const errorMessage =
-              e?.response?.data?.exception?.split(":")[1] ||
-              e?.response?.data?.message?.error ||
-              "Request Failed.";
-            const cleanString = DOMPurify.sanitize(errorMessage || "");
-            toast.error(
-              <span dangerouslySetInnerHTML={{ __html: cleanString }} />
-            );
+            const formatedError = errorResponseFormater(e, "Request Failed");
+            toast.error(formatedError);
             console.error(e);
           },
         }

@@ -10,6 +10,7 @@ import DOMPurify from "dompurify";
 import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 import createLoanFormSchema from "./createLoanSchema.json";
 import Button from "../../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 
 interface CreateLoanDialogProps {
   isOpen: boolean;
@@ -47,15 +48,9 @@ export default function CreateLoanDialog({
         toast.success("Added Loan Request successfully!");
       },
       onError: (error: CustomError) => {
-        const errorMessage =
-          error?.response?.data?.exception
-            ?.split(":")
-            .slice(1)
-            .join(":")
-            .trim() || "Something went wrong!!";
-        const cleanString = DOMPurify.sanitize(errorMessage || "");
-        toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
-        console.error(error);
+         const formatedError = errorResponseFormater(error, "Submission failed. Please try again.");
+          toast.error(formatedError);
+          console.error(error);
       },
     });
 

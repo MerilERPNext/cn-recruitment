@@ -17,6 +17,7 @@ import { Formio } from "formiojs";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import defaultFormSchema from "./ShiftRequestFormSchema.json";
 import Button from "../shared/atoms/Button";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -106,6 +107,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             onSuccess: handleSubmitonSuccess,
             onError: (error: any) => {
               handleSubmitionError("Error updating shift request:", error);
+              const formatedError = errorResponseFormater(error, "Error updating shift request");
+              toast.error(formatedError);
             },
           }
         );
@@ -114,6 +117,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
           onSuccess: handleSubmitonSuccess,
           onError: (error: any) => {
             handleSubmitionError("Error creating shift request:", error);
+            const formatedError = errorResponseFormater(error, "Error creating shift request");
+            toast.error(formatedError);
           },
         });
       }

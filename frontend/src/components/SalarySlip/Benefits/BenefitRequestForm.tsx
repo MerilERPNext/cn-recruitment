@@ -10,6 +10,7 @@ import { CustomError } from "../../../types/attendance";
 import DOMPurify from "dompurify";
 import benefitRequestFormSchema from "./benefitRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 interface BenefitRequestFormProps {
   isOpen: boolean;
@@ -51,15 +52,9 @@ export default function BenefitRequestForm({
         toast.success("Added Benifit Request successfully!");
       },
       onError: (error: CustomError) => {
-        const errorMessage =
-          error?.response?.data?.exception
-            ?.split(":")
-            .slice(1)
-            .join(":")
-            .trim() || "Something went wrong!!";
-        const cleanString = DOMPurify.sanitize(errorMessage || "");
-        toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
-        console.error(error);
+         const formatedError = errorResponseFormater(error, "Somthing went wrong!!");
+          toast.error(formatedError);
+          console.error(error);
       },
     });
   };

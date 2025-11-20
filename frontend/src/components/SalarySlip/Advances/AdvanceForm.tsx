@@ -15,6 +15,7 @@ import {
 // ✅ Import JSON schema
 import advanceFormJson from "../Advances/AdvanceFormio.json";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 interface AdvanceFormProps {
   user?: any;
@@ -95,19 +96,9 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
           setTimeout(() => setRefetchAttendance(true), 2000);
         },
         onError: (error: any) => {
-          const errorMessage =
-            error?.response?.data?.exception
-              ?.split(":")
-              .slice(1)
-              .join(":")
-              .trim() || "Something went wrong!";
-          toast.error(
-            <span
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(errorMessage),
-              }}
-            />
-          );
+           const formatedError = errorResponseFormater(error, "Submission failed. Please try again.");
+            toast.error(formatedError);
+            console.error(error);
         },
       });
     } catch (err) {
