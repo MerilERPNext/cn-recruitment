@@ -3,6 +3,8 @@ import { FileText } from "lucide-react";
 import FrappeListView from "../ListView";
 import DOMPurify from "dompurify";
 import { ViewAll } from "../shared/atoms/ViewAll";
+import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
+import { getDueStatus } from "./DueStatus";
 
 interface ToDo {
   priority: string;
@@ -98,8 +100,8 @@ const MyToDoItem: React.FC<{
           </span>
           <div className="flex items-center justify-between w-full pr-8">
             {item.date && (
-              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                Due on {item.date}
+              <span className={`flex items-center gap-1 text-xs bg-${getDueStatus(item.date).color}-100 text-${getDueStatus(item.date).color}-600 px-2 rounded`}>
+             {getDueStatus(item.date).icon} <span>{getDueStatus(item.date).status}: {formatDateDDMonthYYYY(item.date)}</span>  
               </span>
             )}
             <div className="flex gap-2">
@@ -130,7 +132,8 @@ const TasksAwaiting: React.FC = () => {
           ItemComponent={MyToDoItem}
           isSearch={false}
           pageSize={15}
-          orderBy="date"
+          orderBy="date desc"
+          
           defaultFilters={{ status: "Open" }}
           defaultFields={[
             "name",

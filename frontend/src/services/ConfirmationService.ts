@@ -11,9 +11,19 @@ export const ConfirmationService = async () => {
   };
   
 
-// export const generateSalarySlip = async (): Promise<any> => {
-//   const result = await FrappeAPI.callMethod(
-//     "recruitment.payroll_api.generate_salary_slip"
-//   );
-//   return result;
-// };
+  export const ConfirmationEmployeeServic = async () => {
+    const response = await FrappeAPI.getDocumentList("Employee Confirmation", {
+      fields: ["*"],
+    }) as { status: string; data: any[] };
+  
+    return response.data;   // 👈 Yahi sahi return hai
+  };
+  
+export const ConfirmationEmployeeService = async () => {
+    const res = await FrappeAPI.getDocumentList("Employee Confirmation", {
+      fields: ["*"],
+    });
+    return {
+      data: res.data,
+    };
+  };

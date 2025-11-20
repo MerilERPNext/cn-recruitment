@@ -8,7 +8,7 @@ export interface ApiRepayment {
 }
 
 export type ApiAdvance =  {
-  employee_name: any;
+  employee_name: string;
   amount: number;
   advance_account: string;
   employee: string;

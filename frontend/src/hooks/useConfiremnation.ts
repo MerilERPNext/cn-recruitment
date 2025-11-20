@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ConfirmationService } from "../services/ConfirmationService";
+import { ConfirmationEmployeeService, ConfirmationService } from "../services/ConfirmationService";
 
 
 export const useConfirmation = () => {
@@ -7,5 +7,12 @@ export const useConfirmation = () => {
       queryKey: ["confirmation"],
       queryFn: ConfirmationService,
       placeholderData: [], // prevents undefined
+    });
+  };
+
+  export const useConfirmationEmployee = () => {
+    return useQuery({
+      queryKey: ["confirmation-employee"],
+      queryFn: ConfirmationEmployeeService,
     });
   };
