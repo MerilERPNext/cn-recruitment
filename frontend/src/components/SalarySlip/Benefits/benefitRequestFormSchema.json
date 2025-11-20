@@ -90,8 +90,8 @@
           "key": "attachments",
           "type": "file",
           "input": true,
-          "multiple": false,
-          "storage": "customBase64",
+          "multiple": true,
+          "storage": "customfiles",
           "filePattern": ".pdf,.doc,.docx,.jpg,.jpeg,.png",
           "tooltip": "Upload receipts or supporting documents.",
           "validate": {

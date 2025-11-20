@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useNewBenifitRequest } from "../../../hooks/useBenifits";
@@ -7,10 +7,10 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
-import DOMPurify from "dompurify";
 import benefitRequestFormSchema from "./benefitRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import { useFileUploader } from "../../../hooks/useFileUploader";
 
 interface BenefitRequestFormProps {
   isOpen: boolean;
@@ -27,6 +27,10 @@ export default function BenefitRequestForm({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || ""
   );
+  const [attachments, setAttachments] = useState<File[]>([]);
+
+  const { uploadFiles } = useFileUploader();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
   const mutation = useNewBenifitRequest();
@@ -43,18 +47,25 @@ export default function BenefitRequestForm({
       earning_component: submission?.data?.earning_component,
       custom_note_by_employee: submission?.data?.custom_note_by_employee,
       claimed_amount: submission?.data?.claimed_amount,
-      attachments: submission?.data?.attachments?.[0]?.url,
+      // attachments: submission?.data?.attachments?.[0]?.url,
     };
     mutation.mutate(submissionData as Record<string, unknown>, {
-      onSuccess: () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      onSuccess: async (data: any) => {
+        if (attachments?.length > 0) {
+          await uploadFiles(attachments, data.doctype, data.name);
+        }
         onClose();
         onSuccess();
         toast.success("Added Benifit Request successfully!");
       },
       onError: (error: CustomError) => {
-         const formatedError = errorResponseFormater(error, "Somthing went wrong!!");
-          toast.error(formatedError);
-          console.error(error);
+        const formatedError = errorResponseFormater(
+          error,
+          "Somthing went wrong!!"
+        );
+        toast.error(formatedError);
+        console.error(error);
       },
     });
   };
@@ -90,8 +101,17 @@ export default function BenefitRequestForm({
 
         {/* Dialog Content */}
         <div className="flex-1 min-h-0 overflow-y-auto pb-20 px-6">
+          {/* Currently the Max amount Eligible field isn't working properly because of a api issue */}
           <Form
             form={benefitRequestFormSchema}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onChange={(submission: any) => {
+              if (submission?.changed?.component?.key === "attachments")
+                setAttachments([
+                  ...attachments,
+                  ...(submission?.data?.attachment || []),
+                ]);
+            }}
             submission={{
               data: {
                 currentEmployeeId: currentEmployee?.employee || "",
