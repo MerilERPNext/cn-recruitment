@@ -32,4 +32,14 @@ const formatDashedDate = (date: string): string => {
   return "--/--/----";
 };
 
+export function formatDateDDMonthYYYY(dateString: string) {
+  const date = new Date(dateString);
+
+  const day = date.getDate();
+  const month = date.toLocaleString("en-US", { month: "short" });
+  const year = date.getFullYear();
+
+  return `${day} ${month} ${year}`;
+}
 export { formatEndDate, formatDashedDate };
+

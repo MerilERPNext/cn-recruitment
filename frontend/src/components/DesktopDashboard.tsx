@@ -17,6 +17,8 @@ import {
   RotateCcwKey,
 } from "lucide-react";
 import {
+  useCanShowClockIn,
+  useClockInOutService,
   useGetEmployeeShift,
   useHomeSummaryDetails,
 } from "../hooks/useAttendance";
@@ -77,6 +79,8 @@ export default function DesktopDashboard() {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee, isLoading: currentEmpIsLoading } =
     useCurrentEmployeeAllDetails(userId || "");
+
+    
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
@@ -103,10 +107,16 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const { data: homeSummary } = useHomeSummaryDetails(
-    currentEmployee?.user_id || "",
-    encodedFilters
-  );
+  const {
+    data: homeSummary,
+    refetch: refetchHomeSummary,
+    isRefetching,
+  } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
+     const { data: canShowClockIn } = useCanShowClockIn(
+        currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
+      );
+          const { mutate: clockInCheckOutMutation, isPending: clockInCheckOutPending } =
+            useClockInOutService();
 
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
@@ -203,6 +213,8 @@ export default function DesktopDashboard() {
       }
     }
 
+  
+  
     // If still checked in, add time from last check-in to now
     if (currentCheckIn && isCurrentlyCheckedIn) {
       const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
@@ -214,6 +226,50 @@ export default function DesktopDashboard() {
     return `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")}`;
+  };
+  //checking checkout 
+ 
+
+  const handleClockInOut = (type: string) => {
+    if (type === "clockIn") {
+      clockInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Clock In",
+        },
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+            toast.success("Successfully clocked in!");
+          },
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Clocking in"
+            );
+          },
+        }
+      );
+    } else {
+      clockInCheckOutMutation(
+        {
+          employee: currentEmployee?.employee,
+          shift: employeeShift?.shift,
+          action: "Clock Out",
+        },
+        {
+          onSuccess: () => {
+            refetchHomeSummary();
+            toast.success("Successfully clocked out!");
+          },
+          onError: (e: CustomError) => {
+            toast.error(
+              e?.response?.data?.message?.error || "Error while Clocking out"
+            );
+          },
+        }
+      );
+    }
   };
 
   const getWorkPercentage = () => {
@@ -653,7 +709,58 @@ export default function DesktopDashboard() {
                     </div>
                   </div>
                 </div>
+             
               </div>
+                 {/* checking checkout */}
+                 <div className="flex flex-row gap-4 mt-4">
+                    <div className="flex w-full gap-4">
+                
+  
+                      {canShowClockIn?.can_show && (
+                        <button
+                          onClick={() =>
+                            handleClockInOut(
+                              isCurrentlyCheckedIn ? "clockOut" : "clockIn"
+                            )
+                          }
+                          className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                          disabled={
+                            clockInCheckOutPending ||
+                            !employeeShift?.shift ||
+                            isRefetching
+                          }
+                        >
+                          {clockInCheckOutPending || isRefetching ? (
+                            <span className="flex items-center justify-center">
+                              <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
+                              Processing...
+                            </span>
+                          ) : isCurrentlyCheckedIn ? (
+                            "Clock Out"
+                          ) : (
+                            "Clock In"
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {/* Current Status Indicator */}
+                    <div className="flex items-center justify-center w-full gap-2 text-sm bg-red-100 rounded py-1">
+                      
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                        }`}
+                      ></div>
+                      <span
+                        className={
+                          isCurrentlyCheckedIn ? "text-green-600" : "text-red-600 "
+                        }
+                      >
+                        Currently{" "}
+                        {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
+                      </span>
+                    </div>
+                  </div>
             </div>
           </div>
 

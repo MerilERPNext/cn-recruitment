@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BellDot } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -7,6 +8,7 @@ import {
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
+import { useSeparationEmployee } from "../../../hooks/useSeparation";
 
 const Separation = () => {
   const { data: userId } = useLoggedInUser();
@@ -30,7 +32,7 @@ const Separation = () => {
     definition_name,
     l
   );
-
+const {data: employeeSeparationData} = useSeparationEmployee()
   const handleTriggerChat = () => {
     if (
       typeof window !== "undefined" &&
@@ -43,12 +45,16 @@ const Separation = () => {
   };
 
   return (
+    <div>
+      {employeeSeparationData?.data?.map((item: any) => ( 
+        
+     
     <div className="flex flex-col min-h-screen p-6 gap-4 bg-white">
       {/*list view of separation */}
       <div className="flex justify-between rounded items-center p-3 border bg-blue-50 border-blue-300">
         <span className="flex flex-row gap-2 items-center justify-center ">
           <BellDot className="w-4 h-4 text-red-500" />
-          <p className="text-[11px]">Draft request for separation</p>
+          <p className="text-[11px]">{item.custom_status} request for separation</p>
         </span>
         <div className="space-x-2">
           <button className="border px-4 py-2 rounded bg-white text-black font-semibold text-[12px] hover:bg-gray-100 ">
@@ -87,17 +93,19 @@ const Separation = () => {
 
           {/* Button */}
           <div className="flex justify-center py-6">
-            <Button
+            {item.docstatus !== 0 && item.docstatus!== 1 && <Button
               onClick={handleTriggerChat}
               size="md"
               bgColor="blue-500"
               className="hover:bg-blue-600"
             >
               INITIATE SEPARATION
-            </Button>
+            </Button>}
           </div>
         </div>
       </div>
+    </div>
+   ))}
     </div>
   );
 };
