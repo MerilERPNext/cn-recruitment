@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import "../../../formio.custom.css";
 import {
   useCreatePlannedOvertimeRequest,
@@ -14,7 +14,6 @@ import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import overtimeRequestSchema from "./overtimeRequestSchema.json";
-import DOMPurify from "dompurify";
 import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
@@ -27,7 +26,7 @@ interface RequestOvertimeProps {
 const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const formInstance = useRef<any>(null);
   const initialSubmissionSet = useRef(false);
-
+  const [attachments, setAttachments] = useState<File[]>([]);
   const { setRefetchAttendance } = useGlobalStore();
 
   const { data: currentUser } = useCurrentUser();
@@ -44,7 +43,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const initialSubmissionData = useMemo(
     () => ({
       data: {
-        show_attachment: !!plannedOvertimeRequestAttachments,
+        show_attachment: !plannedOvertimeRequestAttachments,
       },
     }),
     [plannedOvertimeRequestAttachments]
@@ -84,7 +83,6 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           message: entry?.message,
         })
       );
-
       mutation.mutate(
         {
           employee: currentEmployee?.employee || "",
@@ -96,13 +94,10 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         },
         {
           onSuccess: async (data: any) => {
-            if (submission?.data?.attachment?.length > 0) {
-              await uploadFiles(
-                submission.data.attachment,
-                data.doctype,
-                data.name
-              );
+            if (attachments?.length > 0) {
+              await uploadFiles(attachments, data.doctype, data.name);
             }
+            setAttachments([]);
             onCancel?.();
 
             setTimeout(() => {
@@ -128,6 +123,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onCancel?.();
+          setAttachments([]);
         }
       }}
     >
@@ -141,6 +137,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             onClick={(e) => {
               e.stopPropagation();
               onCancel?.();
+              setAttachments([]);
             }}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
             aria-label="Close"
@@ -153,6 +150,13 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           <Form
             form={overtimeRequestSchema}
+            onChange={(submission: any) => {
+              if (submission?.changed?.component?.key === "attachment")
+                setAttachments([
+                  ...attachments,
+                  ...(submission?.data?.attachment || []),
+                ]);
+            }}
             /** CRITICAL FIX: Do NOT pass submission prop */
             onFormReady={(instance: any) => {
               formInstance.current = instance;

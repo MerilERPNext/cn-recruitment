@@ -332,8 +332,10 @@
           "key": "attachments",
           "type": "file",
           "input": true,
-          "multiple": false,
-          "storage": "customBase64",
+          "multiple": true,
+          "storage": "customfiles",
+          "fileReader": false,
+          "privateDownload": false,
           "filePattern": ".pdf,.doc,.docx,.jpg,.jpeg,.png",
           "tooltip": "Upload receipts or supporting documents.",
           "validate": {

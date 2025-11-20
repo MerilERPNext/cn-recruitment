@@ -13,13 +13,13 @@ import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import DOMPurify from "dompurify";
 import { AttendanceRequest } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 // Import the JSON schema
 import defaultFormSchema from "./attendanceRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import { useFileUploader } from "../../../hooks/useFileUploader";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -126,6 +126,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 }) => {
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const { uploadFiles } = useFileUploader();
 
   const [isForOthers, setIsForOthers] = useState(false);
   const [formSchema, setFormSchema] = useState<FormSchema>(
@@ -419,9 +421,12 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     };
 
     const handleError = (error: CustomError) => {
-        const formatedError = errorResponseFormater(error, "Submission failed. Please try again.");
-        toast.error(formatedError);
-        console.error(error);
+      const formatedError = errorResponseFormater(
+        error,
+        "Submission failed. Please try again."
+      );
+      toast.error(formatedError);
+      console.error(error);
     };
 
     if (forActionType && forActionType === "edit" && defaultAttendanceData) {
@@ -432,7 +437,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           data: requestBody as Record<string, unknown>,
         },
         {
-          onSuccess: () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onSuccess: async (data: any) => {
+            if (attachments?.length > 0) {
+              await uploadFiles(attachments, data.doctype, data.name);
+            }
             handleSuccess("Updated Attendance Request successfully!");
           },
           onError: handleError,
@@ -440,7 +449,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       );
     } else {
       mutation.mutate(requestBody as Record<string, unknown>, {
-        onSuccess: () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onSuccess: async (data: any) => {
+          if (attachments?.length > 0) {
+            await uploadFiles(attachments, data.doctype, data.name);
+          }
           handleSuccess("Added Attendance Request successfully!");
         },
         onError: handleError,
@@ -451,7 +464,12 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   // Handle form change
   const handleFormChange = (submission: FormChangeSubmission) => {
     // Track employee selection
-
+    if (submission?.changed?.component?.key === "attachments")
+      setAttachments([
+        ...attachments,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...((submission?.data?.attachments as any) || []),
+      ]);
     // Auto-sync from_date to to_date for certain request types
     if (submission?.changed?.component?.key === "from_date") {
       const formInstance = formAddressInstance.current;

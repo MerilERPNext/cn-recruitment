@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { base64ToFile } from "../utils/helperUtils";
 import toast from "react-hot-toast";
 import { useFileUpload } from "./useFrappeQuery";
 
@@ -26,13 +25,19 @@ export const useFileUploader = (): {
 
     await Promise.all(
       fileObjs.map(async (fileObj) => {
-        const file = base64ToFile(fileObj);
+        const file = fileObj.file; // <-- GET THE REAL FILE
+
+        if (!file) {
+          console.error("No file object inside Form.io fileObj:", fileObj);
+          return null;
+        }
         try {
           const res = await uploadMutation.mutateAsync({
             file,
             doctype,
             docName,
           });
+
           console.log(`File "${file.name}" uploaded successfully.`);
           return res;
         } catch (err) {

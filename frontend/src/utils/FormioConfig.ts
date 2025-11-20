@@ -69,3 +69,30 @@ const customProvider = {
 
 // @ts-expect-error: formiojs types issue
 Formio.Providers.addProviders("storage", customProvider);
+
+const customFileStorageProvider = {
+  customfiles: function fileStorage() {
+    return {
+      title: "CustomFiles",
+      name: "customfiles",
+
+      uploadFile: async (file: File) => {
+        return {
+          storage: "customfiles",
+          name: file.name || "",
+          originalName: file.name,
+          size: file.size,
+          type: file.type,
+          file: file,
+        };
+      },
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      downloadFile: async (fileObject: any) => {
+        return fileObject.file || fileObject;
+      },
+    };
+  },
+};
+// @ts-expect-error: formiojs types issue
+Formio.Providers.addProviders("storage", customFileStorageProvider);
