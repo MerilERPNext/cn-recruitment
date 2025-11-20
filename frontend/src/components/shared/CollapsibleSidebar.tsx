@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import type React from "react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -101,10 +100,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const handleTodoClick = () => {
     window.open(ROUTES.TODO, "_blank");
   };
-
-  // const handleHelpDeskClick = () => {
-  //   window.open(ROUTES.HELP_DESK, "_blank");
-  // };
 
   const handleHelpDeskClick = () => {
     if (!currentUser?.roles) {
@@ -266,9 +261,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/expenses-app/team-requests",
         },
         {
-          name: "Advance Expenses",
+          name: "My Advances",
           icon: ArrowUpDown,
-          href: "/webapp/expenses-app/advance-expense-list",
+          href: "/webapp/expenses-app/my-advance-expense",
+        },
+        {
+          name: "Team Advances",
+          icon: ArrowUpDown,
+          href: "/webapp/expenses-app/team-advance-expense",
         },
       ],
     },
@@ -367,12 +367,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         );
       }
 
-      // Check for exact match first
       if (location.pathname === path) {
         return true;
       }
 
-      // Then check for prefix match with proper boundary
       if (location.pathname.startsWith(path)) {
         const remainingPath = location.pathname.substring(path.length);
         return remainingPath === "" || remainingPath.startsWith("/");
@@ -435,7 +433,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const handleMouseLeave = () => {
     setIsExpanded(false);
 
-    // Don't close dropdown if there's an active subItem that should keep it open
     const activeParent = navigationItems.find((item) =>
       item.subItems?.some((subItem) => isSubItemActive(subItem))
     );

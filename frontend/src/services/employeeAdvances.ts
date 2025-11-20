@@ -142,7 +142,9 @@ export const getCostCenters = async (): Promise<{ data: CostCenterType[] }> => {
   };
 };
 
-export const getExpenseTypes = async (): Promise<{ data: ExpenseType[] } | null> => {
+export const getExpenseTypes = async (): Promise<{
+  data: ExpenseType[];
+} | null> => {
   const res = await FrappeAPI.getDocumentList("Expense Claim Type", {
     fields: ["name"],
     orderBy: "creation desc",
@@ -151,7 +153,7 @@ export const getExpenseTypes = async (): Promise<{ data: ExpenseType[] } | null>
   return {
     data: res.data as ExpenseType[],
   };
-}
+};
 
 export const getExpenseTypeFields = async (
   expenseType: string
@@ -166,19 +168,25 @@ export const getExpenseTypeFields = async (
   );
 
   return result as { data: ExpenseTypeField[] } | null;
-}
+};
 
 export const getExpenseTableFieldSettings = async (
-  employeeId: string
+  employeeId: string,
+  subAdvanceType: string
 ): Promise<ExpenseTableFieldSettings> => {
-  if (!employeeId) throw new Error("Employee ID is required");
-
   const result = await FrappeAPI.callMethod(
     "chatnext_expense_trips.employee_advance.get_expense_table_field_settings",
     {
       employee: employeeId,
+      advance_type: subAdvanceType,
     }
   );
 
   return result as ExpenseTableFieldSettings;
+};
+
+export const getAdvancesTypes = async (): Promise<any> => {
+  return await FrappeAPI.callMethod(
+    "chatnext_expense_trips.employee_advance.get_advance_type"
+  );
 };

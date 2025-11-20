@@ -339,3 +339,23 @@ export const getBadgePropsByPriority = (
       };
   }
 };
+
+export function base64ToFile(base64Obj: {
+  name: string;
+  type: string;
+  url: string;
+}): File {
+  const { name, type, url } = base64Obj;
+
+  // Split the base64 string (data:[mime];base64,[data])
+  const arr = url.split(",");
+  const bstr = atob(arr[1]);
+  const n = bstr.length;
+  const u8arr = new Uint8Array(n);
+
+  for (let i = 0; i < n; i++) {
+    u8arr[i] = bstr.charCodeAt(i);
+  }
+
+  return new File([u8arr], name, { type });
+}
