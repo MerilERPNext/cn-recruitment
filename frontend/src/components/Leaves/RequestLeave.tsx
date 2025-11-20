@@ -25,6 +25,7 @@ import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Button from "../shared/atoms/Button";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -59,7 +60,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const { defaults } = useRequestLeaveModal();
   const editLeaveMutation = useEditApprovedLeave();
   const { triggerRefetch } = useLeaveRequestRefresh();
-
+  console.log(defaults);
   const handleUpdate = useCallback(async () => {
     if (!currentEmployee?.name) {
       toast.error("Employee data not loaded.");
@@ -117,26 +118,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
-      let errorMsg = "Submission failed. Please try again.";
-
-      try {
-        const raw = err?.response?.data?._server_messages;
-        if (raw) {
-          const messages = JSON.parse(raw);
-          if (Array.isArray(messages) && messages.length > 0) {
-            const firstMessage = JSON.parse(messages[0]);
-            if (firstMessage?.message) {
-              errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse server error message:", e);
-      }
-
-      toast.error(errorMsg);
-    },
-  });
+       const formatedError = errorResponseFormater(err, "Submission failed. Please try again.");
+       toast.error(formatedError);
+       console.error(err);
+  },});
 
   const [formData, setFormData] = useState<FormSubmissionData>({});
   const [leaveDays, setLeaveDays] = useState<number | null>(null);
@@ -299,7 +284,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "fromDate",
-                label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
+                label:
+                  "From Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "From Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -324,7 +310,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "toDate",
-                label: "To Date <span style='color:red;margin-left:3px;'> *</span>",
+                label:
+                  "To Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "To Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -474,7 +461,18 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       {
         type: "file",
         key: "custom_attachment",
-        defaultValue: defaults?.custom_attachment ?? [],
+        defaultValue: defaults?.custom_attachment
+          ? [
+              {
+                //name: defaults.custom_attachment.split('/').pop() || 'attachment',
+                name: defaults.custom_attachment,
+                url: defaults.custom_attachment,
+                storage: "url",
+                type: "application/octet-stream",
+                size: 0,
+              },
+            ]
+          : [],
         label: "Attachment",
         input: true,
         storage: "customBase64",

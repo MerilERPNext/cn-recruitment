@@ -1,9 +1,9 @@
 import { format, isValid, parse } from "date-fns";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import Badge from "../shared/Badge";
-import Button from "../shared/atoms/Button";
+import Badge from "../../shared/Badge";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import Button from "../../shared/atoms/Button";
 
-type LeaveApprovalCardProps = {
+type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -12,9 +12,10 @@ type LeaveApprovalCardProps = {
   refetch?: () => void;
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
-  isBulkSelectEnabled: boolean;
+  showCheckbox?: boolean;
 };
-const LeaveApprovalCard = ({
+
+const AdvanceApprovalCard = ({
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -22,15 +23,26 @@ const LeaveApprovalCard = ({
   onAction,
   onClick,
   loadingAction,
-  isBulkSelectEnabled,
-}: LeaveApprovalCardProps) => {
+  showCheckbox = true,
+}: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
-  const actionsWithForm = data?.custom_doctype_actions_with_form
-    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
-    : [];
+    const actions = (() => {
+    try {
+      return data?.custom_doctype_actions ? JSON.parse(data.custom_doctype_actions) : [];
+    } catch (e) {
+      console.error('Failed to parse custom_doctype_actions:', e);
+      return [];
+    }
+  })();
+  const actionsWithForm = (() => {
+    try {
+      const str = data?.custom_doctype_actions_with_form?.replace(/'/g, '"');
+      return str ? JSON.parse(str) : [];
+    } catch (e) {
+      console.error('Failed to parse custom_doctype_actions_with_form:', e);
+      return [];
+    }
+  })();
 
   const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();
@@ -50,7 +62,6 @@ const LeaveApprovalCard = ({
           bg: "red-100",
           text: "red-600",
         };
-
         break;
       default:
         styles = {
@@ -77,8 +88,12 @@ const LeaveApprovalCard = ({
     return "--/--/----";
   };
 
+  const gridTemplateColumns = showCheckbox
+    ? "0.5fr 1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr"
+    : "1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr";
+
   const getStatus = (status: string) => {
-    if (status === "Open") {
+    if (status === "Pending" || status === "Open" || status === "Draft") {
       return {
         label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-600",
@@ -99,10 +114,13 @@ const LeaveApprovalCard = ({
       statusColor: "bg-gray-100 text-gray-600",
     };
   };
-  const status = getStatus(data?.reference_document?.status);
-  const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1.5fr"
-    : "1.5fr 1fr 1fr 1fr 1fr 1.5fr";
+
+  const status = getStatus(data?.status);
+  const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(data?.reference_document?.advance_amount ?? 0);
+
   return (
     <>
       {isDesktop ? (
@@ -111,8 +129,7 @@ const LeaveApprovalCard = ({
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
-          {/* Checkbox */}
-          {isBulkSelectEnabled && (
+          {showCheckbox && (
             <div className="flex items-center justify-start">
               <input
                 type="checkbox"
@@ -129,17 +146,17 @@ const LeaveApprovalCard = ({
             </div>
           )}
 
-          {/* Allocated To */}
           <div className="truncate text-gray-900 font-medium text-sm text-start">
             {data?.reference_document?.employee_name}
           </div>
-          {/* Date */}
-          <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.reference_document?.from_date)}
+
+          <div className="text-gray-700 truncate text-sm text-start">
+            {data?.reference_document?.department}
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.reference_document?.to_date)}
+            {totalClaimedAmount}
           </div>
+
           <div className="text-gray-700 text-sm text-start">
             {formatDate(data?.due_date)}
           </div>
@@ -154,7 +171,8 @@ const LeaveApprovalCard = ({
           </div>
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
-              data?.reference_document?.status === "Open" &&
+              data?.status !== "Approved" &&
+              data?.status !== "Rejected" &&
               actions.map((action: string) => (
                 <Button
                   key={action}
@@ -190,7 +208,7 @@ const LeaveApprovalCard = ({
           }}
         >
           <div className="p-4 flex items-start gap-3 w-full">
-            {isBulkSelectEnabled && (
+            {showCheckbox && (
               <input
                 type="checkbox"
                 className="mt-1 accent-blue-500"
@@ -211,49 +229,45 @@ const LeaveApprovalCard = ({
                   <p className="text-md font-bold">
                     {data?.reference_document?.employee_name}
                   </p>
-                  <p className="text-sm text-gray-500">{data?.todo_id} </p>
                 </div>
+
                 <Badge
                   size="sm"
-                  label={status?.label as string}
+                  label={data?.status === "Draft" ? "Pending" : data?.status}
                   backgroundColor={status?.statusColor}
                 />
               </div>
-              <div className="my-2 py-2">
-                <div className="flex justify-between w-full ">
-                  {/* Display From Date */}
-                  {data?.reference_document?.from_date && (
-                    <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
-                      <span>From</span>
-                      <span className="text-black font-semibold">
-                        {formatDate(data?.reference_document?.from_date)}
-                      </span>
-                    </p>
-                  )}
-
-                  {/* Display To Date */}
-                  {data?.reference_document?.to_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-center">
-                      <span>To</span>
-                      <span className="text-black font-semibold">
-                        {formatDate(data?.reference_document?.to_date)}
-                      </span>
-                    </p>
-                  )}
-                  {data?.due_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-end">
-                      <span>Due</span>
-                      <span className="text-black font-semibold">
-                        {formatDate(data?.due_date)}
-                      </span>
-                    </p>
-                  )}
+              <div className="flex flex-col items-start justify-between bg-gray-100 mt-1 rounded-md p-1">
+                <div className="flex justify-between items-center w-full">
+                  <p className="w-1/2 truncate font-semibold text-gray-600">
+                    Category
+                  </p>
+                  <p className="w-1/2 truncate text-end">
+                    {data?.reference_document?.custom_expense_category}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center w-full">
+                  <p className="w-1/2 truncate font-semibold text-gray-600">
+                    Advance Amount
+                  </p>
+                  <p className="w-1/2 truncate text-end">
+                    {totalClaimedAmount}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center w-full">
+                  <p className="w-1/2 truncate font-semibold text-gray-600">
+                    Due Date
+                  </p>
+                  <p className="w-1/2 truncate text-end">
+                    {formatDate(data?.due_date)}
+                  </p>
                 </div>
               </div>
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length > 0 &&
-                  data?.reference_document?.status === "Open" &&
+                  data?.status !== "Approved" &&
+                  data?.status !== "Rejected" &&
                   actions.map((action: string) => (
                     <Button
                       key={action}
@@ -287,4 +301,4 @@ const LeaveApprovalCard = ({
   );
 };
 
-export default LeaveApprovalCard;
+export default AdvanceApprovalCard;

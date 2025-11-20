@@ -88,14 +88,14 @@ const App: React.FC = () => {
                       : "4px solid #EF4444",
                   boxShadow:
                     "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                  minWidth: "250px",
+                  minWidth: "260px",
                   padding: "1rem",
                   borderRadius: "0.5rem",
                   transition:
                     "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
                 }}
               >
-                {({ message }) => (
+                {({ message }:{ message: React.ReactNode }) => (
                   <>
                     {t.type === "success" ? (
                       <CheckCircle2
@@ -108,12 +108,7 @@ const App: React.FC = () => {
                         strokeWidth={2}
                       />
                     )}
-                    {
-                      typeof message === "string" && /<\/?[a-z][\s\S]*>/i.test(message) ? (
-                        <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message || "") }} />
-                      ) : (
-                        <span>{message}</span>
-                      )
+                    { message
                     }
                     {t.type !== "loading" && (
                       <button
@@ -128,7 +123,6 @@ const App: React.FC = () => {
               </ToastBar>
             )}
           </Toaster>
-
           <MandatoryPoliciesHandler />
 
           <div

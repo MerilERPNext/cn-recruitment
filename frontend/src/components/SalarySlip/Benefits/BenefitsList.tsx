@@ -62,7 +62,8 @@ const BenefitsList: React.FC = () => {
 
         <Button
           bgColor="blue-600"
-          className="hover:bg-blue-700 py-3 text-[1rem] px-4 font-medium"
+          size="md"
+          className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4 font-medium"
           onClick={handleRequestBenefit}
         >
           Request Benefit

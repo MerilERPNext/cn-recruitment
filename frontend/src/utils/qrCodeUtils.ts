@@ -58,7 +58,7 @@ export const generateVCardQRCodeURL = (employee: EmployeeIdCard, size: number = 
 export const formatDate = (dateString: string): string => {
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'

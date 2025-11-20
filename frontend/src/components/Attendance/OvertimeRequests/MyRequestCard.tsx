@@ -1,5 +1,5 @@
 import { format, isValid, parse } from "date-fns";
-import { RequestCardProps } from "../../../types/attendance";
+import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
@@ -8,47 +8,53 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 export function MyRequestCard({
   request,
   onClick,
-}: // eslint-disable-next-line @typescript-eslint/no-explicit-any
-any & {
+}: {
+  request: MyPlannedAttendanceRequest;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
-  onClick?: (request: RequestCardProps["request"]) => void;
+  onClick?: (request: MyPlannedAttendanceRequest) => void;
 }) {
   const { isDesktop } = useScreenSize();
+
   const getStatus = (status: string) => {
-    if (status === "Open") {
-      return {
-        label: "Open",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Pending") {
-      return {
-        label: "Pending",
-        statusColor: "bg-orange-100 text-orange-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
+    switch (status) {
+      case "Open":
+        return {
+          label: "Pending",
+          statusColor: "bg-yellow-100 text-yellow-600",
+        };
+
+      case "Approved":
+        return {
+          label: "Approved",
+          statusColor: "bg-green-100 text-green-600",
+        };
+
+      case "Rejected":
+        return {
+          label: "Rejected",
+          statusColor: "bg-red-100 text-red-600",
+        };
+
+      default:
+        return {
+          label: status || "Unknown",
+          statusColor: "bg-gray-100 text-gray-600",
+        };
     }
   };
 
   const status = getStatus(request?.status);
   const parsedDate = request?.due_date
-    ? parse(request.due_date, "dd-MM-yyyy", new Date())
+    ? parse(String(request.due_date), "dd-MM-yyyy", new Date())
     : null;
+
   const formattedDate =
     parsedDate && isValid(parsedDate)
       ? format(parsedDate, "dd/MM/yyyy")
       : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(request?.description || "");
-  const gridTemplateColumns = "10% 30% 10% 10% 33%";
+  const gridTemplateColumns = "1fr 2fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (

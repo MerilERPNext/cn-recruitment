@@ -19,7 +19,8 @@ import { ROUTES } from "../constants/routes";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
 import { useRequestPasswordReset } from "../hooks/useResetPassword";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -63,12 +64,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
     const email = loginUserEmail;
     mutation.mutate(email, {
       onSuccess: (data) => {
-        toast("Password reset email sent successfully!");
+        toast.success("Password reset email sent successfully!");
         console.log("Response:", data);
       },
       onError: (error: any) => {
-        toast("Failed to send password reset email!");
-        console.error(error);
+        const formatedError = errorResponseFormater(error, "Failed to send password reset email!");
+        toast.error(formatedError);
       },
     });
   };

@@ -15,6 +15,7 @@ import {
 // ✅ Import JSON schema
 import advanceFormJson from "../Advances/AdvanceFormio.json";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 interface AdvanceFormProps {
   user?: any;
@@ -95,19 +96,9 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
           setTimeout(() => setRefetchAttendance(true), 2000);
         },
         onError: (error: any) => {
-          const errorMessage =
-            error?.response?.data?.exception
-              ?.split(":")
-              .slice(1)
-              .join(":")
-              .trim() || "Something went wrong!";
-          toast.error(
-            <span
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(errorMessage),
-              }}
-            />
-          );
+           const formatedError = errorResponseFormater(error, "Submission failed. Please try again.");
+            toast.error(formatedError);
+            console.error(error);
         },
       });
     } catch (err) {
@@ -190,11 +181,9 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
             onClick={handleSubmit}
             size="md"
             variant="contain"
-            bgColor={isDesktop ? "blue-600" : "black"}
+            bgColor="blue-600"
             textColor="white"
-            className={`flex-1 ${
-              isDesktop ? "hover:bg-blue-700 py-3" : "hover:bg-gray-800"
-            }`}
+            className={"flex-1 hover:bg-blue-700 py-3"}
           >
             Submit
           </Button>

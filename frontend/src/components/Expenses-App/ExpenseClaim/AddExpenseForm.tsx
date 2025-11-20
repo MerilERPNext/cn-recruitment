@@ -34,7 +34,13 @@ interface Expense {
   amount?: number;
   merchant?: string;
   invoice_number?: string;
-  attach_receipt?: string | { url: string }[] | null;
+  attach_receipt?:
+    | {
+        name: string;
+        size: number;
+        url: string;
+      }[]
+    | string;
   [key: string]: any;
 }
 
@@ -49,6 +55,7 @@ const AddExpenseForm: React.FC = () => {
   const dynamicFormRef = useRef<any>(null);
   const [formKey, setFormKey] = useState<number>(0);
   const [vehicleType, setVehicleType] = useState<string | null>(null);
+  const [previousCategory, setPreviousCategory] = useState<string | null>(null);
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     try {
@@ -105,44 +112,34 @@ const AddExpenseForm: React.FC = () => {
   const { isMobile } = useScreenSize();
   const navigate = useNavigate();
 
+  // FIXED: Simplified useEffect for type changes only
   useEffect(() => {
     const expenseType =
       mainFormData?.expenseType || mainFormData?.expense_type || null;
 
-    if (!expenseType) {
-      setDynamicFormData({});
-      setDynamicFields([]);
-      setCalcParams(undefined);
-      setFormKey((k) => k + 1);
-      try {
-        dynamicFormRef.current?.reset();
-      } catch (e) {
-        console.error(e);
-      }
-      return;
-    }
-
+    // Skip during editing
     if (editingExpenseId) {
       return;
     }
 
-    setDynamicFormData({});
-    setDynamicFields([]);
-    setCalcParams(undefined);
-    setFormKey((k) => k + 1);
+    // Only reset if we have a type (type selected scenario)
+    if (expenseType) {
+      setDynamicFormData({});
+      setCalcParams(undefined);
+      setFormKey((k) => k + 1);
 
-    if (
-      dynamicFormRef.current &&
-      typeof dynamicFormRef.current.reset === "function"
-    ) {
-      dynamicFormRef.current.reset();
+      if (
+        dynamicFormRef.current &&
+        typeof dynamicFormRef.current.reset === "function"
+      ) {
+        try {
+          dynamicFormRef.current.reset();
+        } catch (e) {
+          console.error(e);
+        }
+      }
     }
-  }, [
-    mainFormData?.expenseType,
-    mainFormData?.expense_type,
-    mainFormData?.expenseCategory,
-    editingExpenseId,
-  ]);
+  }, [mainFormData?.expenseType, mainFormData?.expense_type, editingExpenseId]);
 
   useEffect(() => {
     try {
@@ -367,7 +364,6 @@ const AddExpenseForm: React.FC = () => {
                 html: true,
               };
             }
-
             return {
               type: "textfield",
               key: field?.fieldname,
@@ -427,7 +423,6 @@ const AddExpenseForm: React.FC = () => {
             ) {
               const expenseClaimType =
                 mainFormData?.expenseType || mainFormData?.expense_type || "";
-
               const url = expenseClaimType
                 ? `/api/method/chatnext_expense_trips.expense_claim.get_allowed_currencies_for_expense_claim_type?expense_claim_type=${encodeURIComponent(
                     String(expenseClaimType)
@@ -461,6 +456,9 @@ const AddExpenseForm: React.FC = () => {
               field?.fieldname === "vehicle_type" ||
               field?.options === "Daily Allowance Vehicle Category"
             ) {
+              const claimType =
+                mainFormData?.expenseType || mainFormData?.expense_type || "";
+              const employeeName = currentEmployee?.name || "";
               return {
                 type: "select",
                 key: field?.fieldname,
@@ -470,16 +468,21 @@ const AddExpenseForm: React.FC = () => {
                     : field?.label,
                 dataSrc: "url",
                 data: {
-                  url: `/api/resource/Daily%20Allowance%20Vehicle%20Category`,
+                  // url: `/api/resource/Daily%20Allowance%20Vehicle%20Category`,
+                  url: `/api/method/chatnext_expense_trips.expense_claim.get_applicable_vehicle_types?employee=${employeeName}&claim_type=${claimType}`,
                 },
-                selectValues: "data",
+                // selectValues: "data",
+                selectValues: "message",
                 valueProperty: "name",
-                template: "<span>{{ item.name }}</span>",
+                // template: "<span>{{ item.name }}</span>",
+                template: "<span>{{ item.vehicle_category }}</span>",
                 validate: {
                   required: field?.required,
                   customMessage: `${field?.label} is required`,
                 },
                 input: true,
+                refreshOn: "expenseType",
+                clearOnRefresh: true,
                 html: true,
               };
             }
@@ -646,14 +649,35 @@ const AddExpenseForm: React.FC = () => {
     };
   }, [isSharePanelOpen]);
 
-  // NEW: Reset checkbox when sidebar closes
+  // FIXED: Reset checkbox when sidebar closes
   useEffect(() => {
     if (!isSharePanelOpen) {
-      // Uncheck the checkbox in the form data
-      setDynamicFormData((prev: any) => ({
-        ...prev,
-        shareExpenseCheckbox: false,
-      }));
+      setDynamicFormData((prev: any) => {
+        const updated = {
+          ...prev,
+          shareExpenseCheckbox: false,
+        };
+
+        // Force the dynamic form to update
+        if (dynamicFormRef.current) {
+          try {
+            setTimeout(() => {
+              if (dynamicFormRef.current && dynamicFormRef.current.submission) {
+                dynamicFormRef.current.submission = {
+                  data: {
+                    ...dynamicFormRef.current.submission.data,
+                    shareExpenseCheckbox: false,
+                  },
+                };
+              }
+            }, 0);
+          } catch (e) {
+            console.error("Failed to update form submission:", e);
+          }
+        }
+
+        return updated;
+      });
     }
   }, [isSharePanelOpen]);
 
@@ -722,10 +746,15 @@ const AddExpenseForm: React.FC = () => {
 
   const handleEdit = (expense: Expense) => {
     setEditingExpenseId(expense.uid);
-
     const copy = { ...expense };
     if (expense.attach_receipt && typeof expense.attach_receipt === "string") {
-      copy.attach_receipt = [{ url: expense.attach_receipt }];
+      copy.attach_receipt = [
+        {
+          name: expense.attach_receipt,
+          size: 4000,
+          url: expense.attach_receipt,
+        },
+      ];
     }
 
     setDynamicFormData(copy);
@@ -763,6 +792,35 @@ const AddExpenseForm: React.FC = () => {
               form={formSchema}
               submission={{ data: mainFormData }}
               onChange={(change: any) => {
+                const newCategory = change.data.expenseCategory;
+
+                // FIXED: Category changed - clear type and reset
+                if (
+                  previousCategory &&
+                  newCategory &&
+                  previousCategory !== newCategory
+                ) {
+                  change.data.expenseType = null;
+
+                  setDynamicFormData({});
+                  setDynamicFields([]);
+                  setCalcParams(undefined);
+                  setFormKey((k) => k + 1);
+
+                  try {
+                    if (dynamicFormRef.current?.reset) {
+                      dynamicFormRef.current.reset();
+                    }
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }
+
+                // Update previous category tracker
+                if (newCategory) {
+                  setPreviousCategory(newCategory);
+                }
+
                 setMainFormData(change.data);
               }}
               onSubmit={handleSubmit}
@@ -993,7 +1051,7 @@ const AddExpenseForm: React.FC = () => {
                     setExpenses((prev) => [...prev, newExpense]);
                   }
 
-                  // NEW: Uncheck checkbox and close drawer on save
+                  // FIXED: Uncheck checkbox and close drawer on save
                   setIsSharePanelOpen(false);
 
                   setEditingExpenseId(null);
@@ -1037,7 +1095,6 @@ const AddExpenseForm: React.FC = () => {
                       if (debounceRef.current) {
                         window.clearTimeout(debounceRef.current);
                       }
-
                       const rawUnits =
                         dynamicFormData?.units ??
                         dynamicFormData?.no_of_units ??
@@ -1169,7 +1226,6 @@ const AddExpenseForm: React.FC = () => {
                   Delete Selected
                 </button>
               </div>
-
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-white border border-gray-200">
                   <thead>
@@ -1270,7 +1326,6 @@ const AddExpenseForm: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-
               <div className="flex justify-end mt-4">
                 <button
                   className="bg-blue-500 text-white font-bold px-6 py-2 rounded hover:bg-blue-600 mr-4"

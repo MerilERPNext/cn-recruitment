@@ -10,7 +10,7 @@ import { CustomError } from "../../../types/attendance";
 import DOMPurify from "dompurify";
 import benefitRequestFormSchema from "./benefitRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
-import { useScreenSize } from "../../../hooks/useScreenSize";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 interface BenefitRequestFormProps {
   isOpen: boolean;
@@ -30,7 +30,6 @@ export default function BenefitRequestForm({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
   const mutation = useNewBenifitRequest();
-  const { isDesktop } = useScreenSize();
   const handleSubmit = async () => {
     const submission = await formRef.current?.submit();
 
@@ -53,15 +52,9 @@ export default function BenefitRequestForm({
         toast.success("Added Benifit Request successfully!");
       },
       onError: (error: CustomError) => {
-        const errorMessage =
-          error?.response?.data?.exception
-            ?.split(":")
-            .slice(1)
-            .join(":")
-            .trim() || "Something went wrong!!";
-        const cleanString = DOMPurify.sanitize(errorMessage || "");
-        toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
-        console.error(error);
+         const formatedError = errorResponseFormater(error, "Somthing went wrong!!");
+          toast.error(formatedError);
+          console.error(error);
       },
     });
   };
@@ -122,11 +115,9 @@ export default function BenefitRequestForm({
             fullWidth
             size="lg"
             variant="contain"
-            bgColor={isDesktop ? "blue-600" : "black"}
+            bgColor={"blue-600"}
             textColor="white"
-            className={`${
-              isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
-            } font-medium`}
+            className={"hover:bg-blue-700 font-medium"}
           >
             Submit Request
           </Button>

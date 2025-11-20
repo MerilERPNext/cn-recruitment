@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import "../../../formio.custom.css";
 import {
   useCreatePlannedOvertimeRequest,
@@ -16,84 +16,40 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import overtimeRequestSchema from "./overtimeRequestSchema.json";
 import DOMPurify from "dompurify";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import { useFileUploader } from "../../../hooks/useFileUploader";
+
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
   onCancel?: () => void;
 }
 
 const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
+  const formInstance = useRef<any>(null);
+  const initialSubmissionSet = useRef(false);
+
+  const { setRefetchAttendance } = useGlobalStore();
+
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+  const { uploadFiles } = useFileUploader();
+
   const mutation = useCreatePlannedOvertimeRequest();
   const { data: plannedOvertimeRequestAttachments } =
     usePlannedOvertimeRequestAttachments(currentEmployee?.employee || "");
 
-  const formInstance = useRef<any>(null);
-  const { setRefetchAttendance } = useGlobalStore();
-  const handleSubmit = async () => {
-    try {
-      const submission = await formInstance.current?.submit();
-      const data = submission?.data;
-      const formattedOvertimeDetails = data?.overtime_details?.map(
-        (entry: any) => ({
-          shift_date: isValidDate(entry.start_date)
-            ? formatDate(entry.start_date)
-            : entry.start_date,
-          start_date: isValidDate(entry.start_date)
-            ? formatDate(entry.start_date)
-            : entry.start_date,
-          end_date: isValidDate(entry.end_date)
-            ? formatDate(entry.end_date)
-            : entry.end_date,
-          start_time: format(new Date(entry?.start_time), "HH:mm:ss"),
+  /** Memoized initial value to avoid rerender resets */
+  const initialSubmissionData = useMemo(
+    () => ({
+      data: {
+        show_attachment: !!plannedOvertimeRequestAttachments,
+      },
+    }),
+    [plannedOvertimeRequestAttachments]
+  );
 
-          end_time: format(new Date(entry?.end_time), "HH:mm:ss"),
-          message: entry?.message,
-        })
-      );
-
-      mutation.mutate(
-        {
-          employee: currentEmployee?.employee || "",
-          overtime_details: formattedOvertimeDetails || [],
-          attachment:
-            data?.attachment && data?.attachment?.length > 0
-              ? data?.attachment?.[0].url
-              : "",
-        },
-        {
-          onSuccess: () => {
-            setTimeout(() => {
-              setRefetchAttendance(true);
-            }, 1000);
-            toast.success("Request submitted successfully.");
-            if (onCancel) {
-              onCancel();
-            }
-          },
-          onError: (e: CustomError) => {
-            const errorMessage =
-              e?.response?.data?.exception?.split(":")[1] ||
-              e?.response?.data?.message?.error ||
-              "Request Failed.";
-            console.error(e);
-            const cleanString = DOMPurify.sanitize(errorMessage || "");
-            toast.error(
-              <span dangerouslySetInnerHTML={{ __html: cleanString }} />
-            );
-          },
-        }
-      );
-    } catch (err) {
-      // If form is invalid, prevent API call
-      toast.error("Please fill in all required fields.");
-      console.warn("Form submission error -", err);
-    }
-  };
-
-  // Utility to check and format ISO dates
   const isValidDate = (dateString: string) => {
     try {
       const parsed = parseISO(dateString);
@@ -106,6 +62,66 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const formatDate = (dateString: string) => {
     return format(parseISO(dateString), "yyyy-MM-dd");
   };
+
+  const handleSubmit = async () => {
+    try {
+      const submission = await formInstance.current?.submit(); // returns all form data
+      const data = submission?.data;
+
+      const formattedOvertimeDetails = data?.overtime_details?.map(
+        (entry: any) => ({
+          shift_date: isValidDate(entry.start_date)
+            ? formatDate(entry.start_date)
+            : entry.start_date,
+          start_date: isValidDate(entry.start_date)
+            ? formatDate(entry.start_date)
+            : entry.start_date,
+          end_date: isValidDate(entry.end_date)
+            ? formatDate(entry.end_date)
+            : entry.end_date,
+          start_time: format(new Date(entry?.start_time), "HH:mm:ss"),
+          end_time: format(new Date(entry?.end_time), "HH:mm:ss"),
+          message: entry?.message,
+        })
+      );
+
+      mutation.mutate(
+        {
+          employee: currentEmployee?.employee || "",
+          overtime_details: formattedOvertimeDetails || [],
+          // attachment:
+          //   data?.attachment && data?.attachment?.length > 0
+          //     ? data?.attachment?.[0].url
+          //     : "",
+        },
+        {
+          onSuccess: async (data: any) => {
+            if (submission?.data?.attachment?.length > 0) {
+              await uploadFiles(
+                submission.data.attachment,
+                data.doctype,
+                data.name
+              );
+            }
+            onCancel?.();
+
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 1000);
+          },
+          onError: (e: CustomError) => {
+            const formatedError = errorResponseFormater(e, "Request Failed");
+            toast.error(formatedError);
+            console.error(e);
+          },
+        }
+      );
+    } catch (err) {
+      toast.error("Please fill in all required fields.");
+      console.warn("Form submission error -", err);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 max-w-full overflow-hidden"
@@ -124,9 +140,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              if (onCancel) {
-                onCancel();
-              }
+              onCancel?.();
             }}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
             aria-label="Close"
@@ -139,19 +153,20 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           <Form
             form={overtimeRequestSchema}
-            submission={{
-              data: {
-                show_attachment: !!plannedOvertimeRequestAttachments,
-              },
-            }}
+            /** CRITICAL FIX: Do NOT pass submission prop */
             onFormReady={(instance: any) => {
               formInstance.current = instance;
+              if (!initialSubmissionSet.current) {
+                instance?.setSubmission?.(initialSubmissionData);
+                initialSubmissionSet.current = true;
+              }
             }}
             options={{
               builder: { styles: false },
               submitButton: false,
               alerts: false,
               disableOnSubmit: true,
+              clearOnSubmit: false,
               formClass: "space-y-6",
               rowClass: "flex flex-col md:flex-row md:space-x-4",
               labelClass: "mb-1 font-medium text-gray-700",
@@ -167,9 +182,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         {/* Footer */}
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
           <Button
-            onClick={() => {
-              handleSubmit();
-            }}
+            onClick={handleSubmit}
             disabled={mutation?.isPending}
             fullWidth
             size="lg"
