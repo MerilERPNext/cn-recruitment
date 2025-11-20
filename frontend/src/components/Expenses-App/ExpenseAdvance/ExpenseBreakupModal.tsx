@@ -251,8 +251,8 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                   )}`,
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
-                selectValues: "message",
-                defaultValue: "INR",
+                selectValues: "message[0]",
+                // defaultValue: "INR",
                 template: "<span>{{ item }}</span>",
                 valueProperty: "",
                 validate: {
