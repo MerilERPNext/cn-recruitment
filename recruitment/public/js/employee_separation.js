@@ -109,20 +109,158 @@ async function set_actual_last_working_date(frm) {
 }
 
 
-// frappe.ui.form.on('Employee Separation', {
-//     onload_post_render(frm) {
-//         if (frm.doc.name && !frm.__form_conversations_loaded) {
-//             frm.__form_conversations_loaded = true;
-//             frappe.call({
-//                 method: "recruitment.customizations.employee_separation.employee_separation.get_dynamic_conversation_html",
-//                 args: { docname: frm.doc.name },
-//                 callback: function (r) {
-//                     if (r.message) {
-//                         frm.fields_dict['custom_form_details'].html(r.message);
-//                     }
-//                 }
-//             });
-//         }
-//     }
-// });
+frappe.ui.form.on('Employee Separation', {
+    async onload_post_render(frm) {
+        if (frm.doc.name && !frm.__form_conversations_loaded) {
+            frm.__form_conversations_loaded = true;
 
+            let r = await frappe.call({
+                method: "nextai.api.chatnext.form_conversation.get_all_from_doc",
+                args: {
+                    doctype: "Employee Separation",
+                    docname: frm.doc.name
+                }
+            });
+
+            if (r.message && Array.isArray(r.message)) {
+                const users = [...new Set(r.message.map(item => item.user).filter(u => u))];
+
+                const userNameMap = {};
+                await Promise.all(users.map(async (user) => {
+                    try {
+                        let res = await frappe.db.get_value("User", user, "full_name");
+                        userNameMap[user] = (res && res.message && res.message.full_name) || "Unknown";
+                    } catch (e) {
+                        userNameMap[user] = "Unknown";
+                    }
+                }));
+
+                let html = `
+                <style>
+                .frappe-table-wrapper {
+                    overflow-x: auto;
+                    margin-bottom: 20px;
+                    border: 1px solid #ddd;
+                    box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
+                    background-color: #fff;
+                    padding: 10px;
+                    font-family: "Open Sans", Arial, sans-serif;
+                    font-size: 14px;
+                }
+                .frappe-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 14px;
+                    border: 1px solid #ddd;
+                    background-color: #fff;
+                }
+                .frappe-table th, .frappe-table td {
+                    padding: 12px 15px;
+                    border: 1px solid #ddd;
+                    text-align: left;
+                    vertical-align: top;
+                }
+                .frappe-table thead {
+                    background-color: #f5f6f7;
+                    color: #555;
+                    font-weight: 600;
+                }
+                .frappe-table tbody tr:hover {
+                    background-color: #f1f7fb;
+                }
+                .form-header {
+                    font-weight: 600;
+                    font-size: 15px;
+                    margin-bottom: 8px;
+                    color: #333;
+                    cursor: pointer;
+                    user-select: none;
+                }
+                .form-meta {
+                    font-size: 12px;
+                    color: #777;
+                    margin-bottom: 12px;
+                }
+                .form-details {
+                    display: none;
+                    margin-top: 10px;
+                }
+                </style>
+
+                <script>
+                function toggleFormDetails(id) {
+                    var el = document.getElementById(id);
+                    if (el.style.display === "none" || el.style.display === "") {
+                        var allDetails = document.getElementsByClassName('form-details');
+                        for (var i = 0; i < allDetails.length; i++) {
+                            allDetails[i].style.display = 'none';
+                        }
+                        el.style.display = "block";
+                    } else {
+                        el.style.display = "none";
+                    }
+                }
+                </script>`;
+
+                r.message.forEach(function(item, idx) {
+                    let container_id = "form-details-" + (idx + 1);
+
+                    let parsedMessage;
+                    try {
+                        parsedMessage = JSON.parse(item.message);
+                    } catch (e) {
+                        parsedMessage = null;
+                    }
+                    if (!parsedMessage) return;
+
+                    let components = (parsedMessage.form && parsedMessage.form.components) || [];
+                    let submission = parsedMessage.submission_data || {};
+                    let user_name = userNameMap[item.user] || "Unknown";
+
+                    html += `
+                    <div class="frappe-table-wrapper">
+                        <div class="form-header" onclick="toggleFormDetails('${container_id}')">
+                            Form Submission #${idx + 1} &mdash; Submitted by: ${user_name} | Created: ${item.creation}
+                        </div>
+                        <div id="${container_id}" class="form-details">
+                            <table class="frappe-table">
+                                <thead>
+                                    <tr><th>Question</th><th>Answer</th></tr>
+                                </thead>
+                                <tbody>`;
+
+                    let rows_count = 0;
+                    components.forEach(function(comp) {
+                        let question = comp.label;
+                        let key = comp.key;
+                        if (!question || !key) return;
+
+                        let answer = submission[key];
+                        if (answer === null || answer === undefined || answer === true || answer === false || answer === 'submit') return;
+
+                        let answerStr;
+                        if (typeof answer === "object" && !Array.isArray(answer)) {
+                            let checked = Object.entries(answer).filter(([k,v]) => v).map(([k]) => k);
+                            answerStr = checked.length ? checked.join(", ") : "None";
+                        } else {
+                            answerStr = String(answer);
+                        }
+
+                        html += `<tr><td>${question}</td><td>${answerStr}</td></tr>`;
+                        rows_count++;
+                    });
+
+                    if (rows_count === 0) {
+                        html += `<tr><td colspan="2" style="text-align:center; color:#999;">No answers found in this form submission</td></tr>`;
+                    }
+
+                    html += `</tbody></table></div></div>`;
+                });
+
+                frm.fields_dict['custom_form_details'].html(html);
+            } else {
+                frm.fields_dict['custom_form_details'].html('<p style="color:#999; text-align:center;">No form submissions found.</p>');
+            }
+        }
+    }
+});
