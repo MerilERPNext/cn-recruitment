@@ -203,7 +203,7 @@ const EmpAttendanceRequestCard = ({
         createPortal(
           <AttendanceRequestFormV2
             onClose={() => setEdit(false)}
-            defaultAttendanceData={data?.reference_document}
+            defaultAttendanceData={data}
             forActionType="edit"
           />,
           document.body

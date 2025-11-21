@@ -76,6 +76,11 @@ export interface MyAttendanceRequest {
   reference_name: string;
   status: string;
   can_edit?: boolean;
+  attachments?: [
+    {
+      file_url: string;
+    }
+  ];
 }
 
 export type OvertimeDetail = {
