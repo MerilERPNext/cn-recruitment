@@ -31,13 +31,11 @@ const CompensatoryRequestCard = ({
   const handlePay = (e: React.MouseEvent) => {
     e.stopPropagation();
     payCompOff(item.name, {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onSuccess: (response: any) => {
         toast.success(
           `Payment request successful: ${response.message || item.name}`
         );
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onError: (error: any) => {
         toast.error(
           `Payment request failed: ${error.message || "Unknown error"}`
@@ -51,7 +49,7 @@ const CompensatoryRequestCard = ({
 
     if (key === "issued" && (docstatus === 0 || docstatus === 1)) {
       return {
-        label: "Pending",
+        label: "Issued",
         statusColor: "bg-yellow-100 text-yellow-800",
       };
     }
@@ -121,7 +119,7 @@ const CompensatoryRequestCard = ({
           <button
             onClick={handlePay}
             disabled={isPending}
-            className="bg-black text-white px-4 rounded-lg text-sm py-1"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-lg text-sm py-1"
           >
             {isPending ? "Processing..." : "Pay"}
           </button>

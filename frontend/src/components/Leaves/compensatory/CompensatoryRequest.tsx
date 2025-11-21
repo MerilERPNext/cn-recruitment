@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../../hooks/useEmployee";
 import { MyLeaveRequestSkeleton } from "../LeaveSkeletons";
@@ -9,6 +9,13 @@ import CompensatoryRequestCard, {
 } from "./CompensatoryRequestCard";
 import CompOffDetailsModal from "./CompOffDetailsModal";
 import { useGetCompOffList } from "../../../hooks/useLeaves";
+import CustomDropdown from "../../shared/CustomDropdown";
+
+const STATUS_OPTIONS = [
+  { label: "Issued", value: "Issued" },
+  { label: "Allocated", value: "Allocated" },
+  { label: "Expired", value: "Expired" },
+];
 
 const CompensatoryRequest: React.FC = () => {
   const {
@@ -21,6 +28,7 @@ const CompensatoryRequest: React.FC = () => {
     isLoading: isEmployeeLoading,
     error: employeeError,
   } = useEmployeeByUserId(userId);
+  const [selectedStatus, setSelectedStatus] = useState("Issued");
 
   const [selectedRequest, setSelectedRequest] =
     useState<CompensatoryRequestItem | null>(null);
@@ -29,6 +37,22 @@ const CompensatoryRequest: React.FC = () => {
   const { data, isLoading, isError, error } = useGetCompOffList(
     currentEmployee?.name
   );
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    if (selectedStatus === "Expired") {
+      return data.filter(
+        (item: CompensatoryRequestItem) => item.custom_status === "Expired"
+      );
+    }
+    return data.filter(
+      (item: CompensatoryRequestItem) => item.custom_status === selectedStatus
+    );
+  }, [data, selectedStatus]);
+
+  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(event.target.value);
+  };
 
   const handleCardClick = (item: CompensatoryRequestItem) => {
     if (!isDesktop) {
@@ -61,15 +85,22 @@ const CompensatoryRequest: React.FC = () => {
 
   if (isError) return <p>Error: {(error as Error).message}</p>;
 
-  if (!data || data.length === 0) {
-    return (
-      <div className="p-4 text-center text-gray-600">No Comp Offs found</div>
-    );
-  }
-
   return (
-    <div className="space-y-3 pb-10 md:pb-20 px-2 md:px-4 md:py-2">
-      {isDesktop ? (
+    <div className="bg-white px-4 md:py-2 pb-10 md:pb-20">
+      <div className="flex justify-between pt-4 mb-2 border-b border-gray-200">
+        <h2 className="module-title pb-1">Compensatory Requests</h2>
+        <div className="flex items-center pb-1">
+          <CustomDropdown
+            value={selectedStatus}
+            onChange={handleStatusChange}
+            options={STATUS_OPTIONS}
+          />
+        </div>
+      </div>
+
+      {filteredData.length === 0 ? (
+        <div className="p-4 text-center text-gray-600">No Comp Offs found</div>
+      ) : isDesktop ? (
         <CardTable
           titles={[
             "Request Type",
@@ -81,7 +112,7 @@ const CompensatoryRequest: React.FC = () => {
           ]}
           columnWidths={["1fr", "1fr", "1fr", "2.5fr", "1fr", "1fr"]}
         >
-          {data.map((item) => (
+          {filteredData.map((item) => (
             <CompensatoryRequestCard
               key={item.name}
               item={item}
@@ -91,7 +122,7 @@ const CompensatoryRequest: React.FC = () => {
         </CardTable>
       ) : (
         <div className="space-y-2">
-          {data.map((item) => (
+          {filteredData.map((item) => (
             <CompensatoryRequestCard
               key={item.name}
               item={item}

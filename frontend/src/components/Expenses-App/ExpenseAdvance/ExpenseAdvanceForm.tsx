@@ -69,22 +69,6 @@ const ExpenseAdvanceForm: React.FC<{
     return required ? `${label} <span style="color:red">&nbsp;*</span>` : label;
   };
 
-  const extractError = (error: any) => {
-    try {
-      if (error?.response?.data) {
-        const data = error.response.data;
-        if (data.message) return data.message;
-        if (data.exception) {
-          return data.exception.split("Error:").pop()?.trim();
-        }
-      }
-      if (error?.message) return error.message;
-      return "Something went wrong!";
-    } catch {
-      return "Something went wrong!";
-    }
-  };
-
   const handleSubmit = async () => {
     try {
       const submission = await formRef.current?.submit();
@@ -94,7 +78,7 @@ const ExpenseAdvanceForm: React.FC<{
         !formData ||
         !formData.purpose ||
         !formData.advance_amount ||
-        !formData.advance_type // 🆕 ensure sub advance type selected
+        !formData.advance_type
       ) {
         toast.error("Please fill all required fields.");
         return;
@@ -138,7 +122,7 @@ const ExpenseAdvanceForm: React.FC<{
         custom_advance_type: formData.advance_type,
         advance_amount: formData.advance_amount,
         currency: formData.currency,
-        exchange_rate: formData.exchange_rate,
+        exchange_rate: 1,
         project: formData.project,
         cost_center: formData.cost_center,
         expenses: preparedExpenseClaims,
@@ -163,7 +147,7 @@ const ExpenseAdvanceForm: React.FC<{
         },
 
         onError: (error: any) => {
-          const msg = extractError(error);
+          const msg = errorResponseFormater(error);
           toast.error(msg);
         },
         onSettled: () => setSubmitting(false),
@@ -216,20 +200,12 @@ const ExpenseAdvanceForm: React.FC<{
     );
   };
 
-  // 🧠 HELPER: Extract values that depend on fieldSettings safely
   const expenseAdvanceSchema = useMemo(() => {
-    // 🔄 NO early return now: we want form to show even before fieldSettings arrives
     const showProject = fieldSettings?.show_project;
     const projectMandatory = fieldSettings?.project_mandatory;
 
     const showCostCenter = fieldSettings?.show_cost_center;
     const costCenterMandatory = fieldSettings?.cost_center_mandatory;
-
-    const allowedCurrencies =
-      fieldSettings?.allowed_currencies?.map((cur: string) => ({
-        label: cur,
-        value: cur,
-      })) || [];
 
     const subAdvanceTypeOptions =
       advanceTypesData?.map((item: string) => ({
@@ -255,6 +231,7 @@ const ExpenseAdvanceForm: React.FC<{
                       key: "custom_type",
                       label: "Advance Type",
                       input: true,
+                      hidden: true,
                       defaultValue: advanceType,
                       disabled: true,
                     },
@@ -264,13 +241,18 @@ const ExpenseAdvanceForm: React.FC<{
                   width: 6,
                   components: [
                     {
-                      type: "datetime",
-                      key: "posting_date",
-                      label: "Posting Date",
+                      type: "number",
+                      key: "exchange_rate",
+                      label: getLabelWithAsterisk("Exchange Rate", true),
+                      html: true,
                       input: true,
-                      enableTime: false,
-                      format: "dd-MM-yyyy",
-                      defaultValue: postingDate,
+                      hidden: true,
+                      defaultValue: 1,
+                      validate: {
+                        required: true,
+                        min: 1,
+                        customMessage: "Exchange Rate must be at least 1",
+                      },
                     },
                   ],
                 },
@@ -287,10 +269,10 @@ const ExpenseAdvanceForm: React.FC<{
                       type: "select",
                       key: "advance_type",
                       label:
-                        'Sub Advance Type <span style="color:red">&nbsp;*</span>',
+                        'Advance Type <span style="color:red">&nbsp;*</span>',
                       html: true,
                       input: true,
-                      placeholder: "Select Sub Advance Type",
+                      placeholder: "Select Advance Type",
                       dataSrc: "values",
                       data: {
                         values: subAdvanceTypeOptions,
@@ -304,7 +286,17 @@ const ExpenseAdvanceForm: React.FC<{
                 },
                 {
                   width: 6,
-                  components: [],
+                  components: [
+                    {
+                      type: "datetime",
+                      key: "posting_date",
+                      label: "Posting Date",
+                      input: true,
+                      enableTime: false,
+                      format: "dd-MM-yyyy",
+                      defaultValue: postingDate,
+                    },
+                  ],
                 },
               ],
             },
@@ -359,8 +351,16 @@ const ExpenseAdvanceForm: React.FC<{
                         required: true,
                         customMessage: "Currency is required",
                       },
-                      data: { values: allowedCurrencies },
-                      // defaultValue: "INR",
+                      dataSrc: "url",
+
+                      data: {
+                        url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}&advance_type=${encodeURIComponent(
+                          selectedAdvanceType || ""
+                        )}&_t=${Date.now()}`, // break cache
+                      },
+                      selectValues: "message[0]",
+                      valueProperty: "",
+                      template: "<span>{{ item }}</span>",
                     },
                   ],
                 },
@@ -369,15 +369,15 @@ const ExpenseAdvanceForm: React.FC<{
                   components: [
                     {
                       type: "number",
-                      key: "exchange_rate",
-                      label: getLabelWithAsterisk("Exchange Rate", true),
+                      key: "advance_amount",
+                      label: getLabelWithAsterisk("Advance Amount", true),
                       html: true,
                       input: true,
-                      defaultValue: 1,
+                      placeholder: "Enter amount",
                       validate: {
                         required: true,
                         min: 1,
-                        customMessage: "Exchange Rate must be at least 1",
+                        customMessage: "Advance Amount must be at least 1",
                       },
                     },
                   ],
@@ -459,21 +459,6 @@ const ExpenseAdvanceForm: React.FC<{
                 ]
               : []),
 
-            // Advance Amount
-            {
-              type: "number",
-              key: "advance_amount",
-              label: getLabelWithAsterisk("Advance Amount", true),
-              html: true,
-              input: true,
-              placeholder: "Enter amount",
-              validate: {
-                required: true,
-                min: 1,
-                customMessage: "Advance Amount must be at least 1",
-              },
-            },
-
             // Purpose
             {
               type: "textarea",
@@ -501,6 +486,7 @@ const ExpenseAdvanceForm: React.FC<{
     advanceType,
     postingDate,
     advanceTypesData,
+    selectedAdvanceType,
   ]);
 
   const FormContent = (
@@ -521,6 +507,11 @@ const ExpenseAdvanceForm: React.FC<{
 
               if (newSubType !== selectedAdvanceType) {
                 setSelectedAdvanceType(newSubType);
+                if (formRef.current) {
+                  const currencyField =
+                    formRef.current.getComponent("currency");
+                  if (currencyField) currencyField.refresh();
+                }
               }
             }}
             options={{ submitButton: false, noAlerts: true }}
@@ -533,13 +524,16 @@ const ExpenseAdvanceForm: React.FC<{
 
         <div className="mt-8 border-t pt-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-1">
               Advance Break Up
+              {fieldSettings?.expense_table_mandatory && (
+                <span className="text-red-500">*</span>
+              )}
             </h3>
             <button
               onClick={() => {
                 if (!selectedAdvanceType) {
-                  toast.error("Please select Sub Advance Type first");
+                  toast.error("Please select Advance Type first");
                   return;
                 }
                 setIsExpenseModalOpen(true);
@@ -600,12 +594,6 @@ const ExpenseAdvanceForm: React.FC<{
                         Amount
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Merchant
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Invoice No.
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -638,12 +626,7 @@ const ExpenseAdvanceForm: React.FC<{
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {expense.custom_amount_in_other_currency || "-"}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {expense.custom_mercent || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {expense.custom_invoice_number || "-"}
-                        </td>
+
                         <td className="px-4 py-3">
                           <button
                             onClick={() => handleEditExpense(expense)}

@@ -187,15 +187,27 @@ export default function TeamAdvanceDetailView({
     <div className="border-t bg-white p-4 flex flex-col md:flex-row gap-3">
       {actions.map((action: string) => {
         const isLoading = currentAction === action && mutation.isPending;
-        const isApprove = action.toLowerCase() === "approve";
+        const buttonType = action.toLowerCase().trim();
 
         return (
           <Button
             key={action}
             disabled={isLoading}
             onClick={() => handleAction(action)}
-            bgColor={isApprove ? "green-100" : "red-100"}
-            textColor={isApprove ? "green-600" : "red-600"}
+            bgColor={
+              buttonType === "approve"
+                ? "green-100"
+                : buttonType === "reject"
+                ? "red-100"
+                : "gray-200"
+            }
+            textColor={
+              buttonType === "approve"
+                ? "green-600"
+                : buttonType === "reject"
+                ? "red-600"
+                : "gray-600"
+            }
             fullWidth
             size="md"
           >
