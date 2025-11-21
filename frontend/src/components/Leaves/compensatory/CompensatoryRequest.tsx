@@ -38,13 +38,8 @@ const CompensatoryRequest: React.FC = () => {
     currentEmployee?.name
   );
 
-  const filteredData = useMemo(() => {
+    const filteredData = useMemo(() => {
     if (!data) return [];
-    if (selectedStatus === "Expired") {
-      return data.filter(
-        (item: CompensatoryRequestItem) => item.custom_status === "Expired"
-      );
-    }
     return data.filter(
       (item: CompensatoryRequestItem) => item.custom_status === selectedStatus
     );
