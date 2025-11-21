@@ -127,7 +127,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const { uploadFiles } = useFileUploader();
+  const { uploadFiles,loading:uploadFileLoading } = useFileUploader();
 
   const [isForOthers, setIsForOthers] = useState(false);
   const [formSchema, setFormSchema] = useState<FormSchema>(
@@ -666,7 +666,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
               } font-medium`}
             >
-              {mutation.isPending ? (
+              {mutation.isPending || uploadFileLoading ? (
                 <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
               ) : (
                 "Submit"

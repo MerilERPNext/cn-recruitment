@@ -33,7 +33,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
-  const { uploadFiles } = useFileUploader();
+  const { uploadFiles ,loading:uploadFileLoading} = useFileUploader();
 
   const mutation = useCreatePlannedOvertimeRequest();
   const { data: plannedOvertimeRequestAttachments } =
@@ -195,7 +195,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             textColor="white"
             className="hover:bg-blue-700 font-medium"
           >
-            {mutation?.isPending ? (
+            {mutation?.isPending || uploadFileLoading? (
               <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
             ) : (
               "Submit Request"

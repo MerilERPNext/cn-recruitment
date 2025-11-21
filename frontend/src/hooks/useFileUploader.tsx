@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { useFileUpload } from "./useFrappeQuery";
 
@@ -9,8 +9,10 @@ export const useFileUploader = (): {
     docName: string,
     onComplete?: () => void
   ) => Promise<void>;
+  loading: boolean;
 } => {
   const uploadMutation = useFileUpload();
+  const [loading, setLoading] = useState(false);
 
   const uploadFiles = async (
     fileObjs: any[],
@@ -23,33 +25,38 @@ export const useFileUploader = (): {
       return;
     }
 
-    await Promise.all(
-      fileObjs.map(async (fileObj) => {
-        const file = fileObj.file; // <-- GET THE REAL FILE
+    setLoading(true);
 
-        if (!file) {
-          console.error("No file object inside Form.io fileObj:", fileObj);
-          return null;
-        }
-        try {
-          const res = await uploadMutation.mutateAsync({
-            file,
-            doctype,
-            docName,
-          });
+    try {
+      await Promise.all(
+        fileObjs.map(async (fileObj) => {
+          const file = fileObj.file; // <-- GET THE REAL FILE
 
-          console.log(`File "${file.name}" uploaded successfully.`);
-          return res;
-        } catch (err) {
-          toast.error(`File "${file.name}" upload failed.`);
-          console.error(err);
-          return null;
-        }
-      })
-    );
+          if (!file) {
+            console.error("No file object inside Form.io fileObj:", fileObj);
+            return null;
+          }
+          try {
+            const res = await uploadMutation.mutateAsync({
+              file,
+              doctype,
+              docName,
+            });
 
-    onComplete?.();
+            console.log(`File "${file.name}" uploaded successfully.`);
+            return res;
+          } catch (err) {
+            toast.error(`File "${file.name}" upload failed.`);
+            console.error(err);
+            return null;
+          }
+        })
+      );
+    } finally {
+      setLoading(false);
+      onComplete?.();
+    }
   };
 
-  return { uploadFiles };
+  return { uploadFiles, loading };
 };

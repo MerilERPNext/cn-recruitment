@@ -293,12 +293,13 @@ export function MyOvertimeDetails({
                   )
                 )}
               </div>
-              {data?.reference_document?.attachment ? (
+              {data?.attachments && data?.attachments?.length>0 ? (
                 <div className="py-4">
                   <p className="text-sm  mb-2 font-bold">Attachment</p>
-                  <FileRenderer
-                    filePath={data?.reference_document?.attachment || ""}
-                  />
+                  {data?.attachments?.map((item)=>  <FileRenderer
+                    filePath={item?.file_url || ""}
+                  />)}
+                
                 </div>
               ) : null}
             </div>
