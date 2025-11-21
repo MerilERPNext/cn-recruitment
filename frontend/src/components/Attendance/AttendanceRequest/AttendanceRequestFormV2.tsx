@@ -226,7 +226,17 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       setFormSchema(filteredSchema);
     }
   }, [reqValidationmutation?.data, propSchema]);
-
+  const normalizeTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+    try {
+      // Parse and format to HH:mm:ss
+      const [h, m, s] = timeStr.split(":");
+      const seconds = s ? s.split(".")[0].padStart(2, "0") : "00";
+      return `${h.padStart(2, "0")}:${m.padStart(2, "0")}:${seconds}`;
+    } catch {
+      return null;
+    }
+  };
   const initialSubmissionSet = useRef(false);
 
   const initialSubmission = useMemo(
@@ -307,18 +317,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       currentEmployeeIdComponent?.redraw();
     }
   }, [isForOthers, currentEmployee]);
-
-  const normalizeTime = (timeStr?: string) => {
-    if (!timeStr) return null;
-    try {
-      // Parse and format to HH:mm:ss
-      const [h, m, s] = timeStr.split(":");
-      const seconds = s ? s.split(".")[0].padStart(2, "0") : "00";
-      return `${h.padStart(2, "0")}:${m.padStart(2, "0")}:${seconds}`;
-    } catch {
-      return null;
-    }
-  };
 
   const formatTime = (date: Date | string | undefined): string | undefined => {
     if (!date) return undefined;
