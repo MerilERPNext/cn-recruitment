@@ -67,7 +67,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         )}
       </div>
 
-      <p className="text-sm text-gray-500">Submitted on {formattedDate}</p>
+      <p className="text-sm text-gray-500">
+        <span className="font-bold">Claimed Date:</span> {formattedDate}
+      </p>
     </div>
   );
 };
@@ -86,7 +88,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
       })
     : " - ";
 
-     const formattedSanctionedAmount = new Intl.NumberFormat("en-IN", {
+  const formattedSanctionedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
   }).format(item?.reference_document?.total_sanctioned_amount ?? 0);
@@ -234,7 +236,13 @@ const ExpensesList: React.FC = () => {
       <div className="bg-white h-full px-0 md:pt-2 pt-0 mb-20">
         {currentEmployee?.name && (
           <CardTable
-            titles={["Category", "Claimed Amount", "Sanctioned Amount", "Date", "Status"]}
+            titles={[
+              "Expense Category",
+              "Claimed Amount",
+              "Sanctioned Amount",
+              "Claimed Date",
+              "Status",
+            ]}
             columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
           >
             <DataListView

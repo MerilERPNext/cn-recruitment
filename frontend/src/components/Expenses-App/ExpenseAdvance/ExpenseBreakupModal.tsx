@@ -44,8 +44,6 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
       description: storedData.description,
       expense_date: storedData.expense_date,
       currency: storedData.custom_currency,
-      invoice_number: storedData.custom_invoice_number,
-      merchant: storedData.custom_mercent,
       units: storedData.custom_units,
       vehicle_type: storedData.custom_vehicle_type,
       from_location: storedData.custom_from_location,
@@ -252,7 +250,6 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message[0]",
-                // defaultValue: "INR",
                 template: "<span>{{ item }}</span>",
                 valueProperty: "",
                 validate: {
@@ -348,7 +345,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
     }
     try {
       const res = await fetch(
-        `/api/method/chatnext_expense_trips.expense_claim.get_expense_type_fields?expense_type=${encodeURIComponent(
+        `/api/method/chatnext_expense_trips.expense_claim.advance_get_expense_type_fields?expense_type=${encodeURIComponent(
           expenseType
         )}`
       );
@@ -356,7 +353,11 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
       const fields = data.message?.fields || [];
       const dynamicComponents = mapFieldsToFormio(fields);
 
-      const isReadonly = data.message?.is_amount_readonly ?? false;
+      const isReadonly = Boolean(data.message?.is_amount_readonly);
+      setFormData((prev: any) => ({
+        ...prev,
+        __is_amount_readonly: isReadonly,
+      }));
 
       const dynamicComponentsWithReadonly = dynamicComponents.map(
         (comp: any) => {
@@ -367,12 +368,30 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
         }
       );
 
+      const twoColumnRows = [];
+      for (let i = 0; i < dynamicComponentsWithReadonly.length; i += 2) {
+        twoColumnRows.push({
+          type: "columns",
+          key: `row_${i}`,
+          columns: [
+            {
+              width: 6,
+              components: [dynamicComponentsWithReadonly[i]],
+            },
+            {
+              width: 6,
+              components: dynamicComponentsWithReadonly[i + 1]
+                ? [dynamicComponentsWithReadonly[i + 1]]
+                : [],
+            },
+          ],
+        });
+      }
       setFormSchema({
         display: "form",
         components: [
           ...initialSchema.components,
-          ...dynamicComponentsWithReadonly,
-
+          ...twoColumnRows,
           {
             type: "container",
             key: "buttonContainer",
@@ -410,7 +429,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-2xl rounded-lg shadow-xl overflow-visible p-4">
+      <div className="bg-white w-full max-w-xl rounded-lg shadow-xl overflow-visible p-4">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="font-semibold text-lg">{modalTitle}</h2>
           <button
@@ -448,6 +467,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
               }
 
               if (
+                formData?.__is_amount_readonly === true &&
                 newExpenseType &&
                 ((units !== null && units !== undefined) || vehicleType)
               ) {
@@ -522,8 +542,6 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 expense_type: combinedData.expense_type,
                 expense_date: combinedData.expense_date,
                 custom_amount_in_other_currency: combinedData.amount,
-                custom_mercent: combinedData.merchant,
-                custom_invoice_number: combinedData.invoice_number,
                 custom_attach_receipt: finalAttachValue,
                 custom_units: combinedData.units,
                 custom_currency: combinedData.currency,
