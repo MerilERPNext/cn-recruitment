@@ -51,7 +51,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
       />
 
       <div className="relative z-10 w-full max-w-xl rounded-lg bg-white p-6 shadow-lg">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-5 pb-4 border-b">
           <h3 className="text-lg font-semibold">Expense Claim: {id}</h3>
           <button
             onClick={onClose}
@@ -100,7 +100,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
               </p>
 
               <p className="text-sm text-gray-700">
-                <strong>Created On:</strong>{" "}
+                <strong>Claimed Date:</strong>{" "}
                 {data?.creation
                   ? new Date(data.creation).toLocaleString("en-IN", {
                       dateStyle: "medium",
@@ -108,11 +108,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   : "—"}
               </p>
 
-              {/* NEW: Placeholder for alignment */}
               <div className="hidden md:block"></div>
             </div>
 
-            {/* MODIFIED: Use the passed selectedStages prop for the progress bar */}
             {Array.isArray(selectedStages) && selectedStages.length > 0 && (
               <div className="mb-4 pt-2">
                 <h4 className="text-sm font-semibold text-gray-700 mb-2">
@@ -121,7 +119,6 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                 <ApprovalStagesProgress stages={selectedStages} />
               </div>
             )}
-            {/* END MODIFIED: Approval Stages Progress Bar Section */}
 
             {Array.isArray(data?.custom_participants) &&
               data.custom_participants.length > 0 && (
@@ -193,6 +190,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                       <th className="px-4 py-2 border-b text-right">
                         Sanctioned Amount
                       </th>
+                      <th className="px-4 py-2 border-b text-center">
+                        Attachment
+                      </th>
                     </tr>
                   </thead>
 
@@ -236,6 +236,22 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
                             <td className="px-4 py-2 border-b text-right align-top">
                               {formatINR(item.sanctioned_amount)}
+                            </td>
+                            <td className="px-4 py-2 border-b text-center align-top">
+                              {item.custom_attach_receipt ? (
+                                <a
+                                  href={item.custom_attach_receipt}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 underline text-sm"
+                                >
+                                  View File
+                                </a>
+                              ) : (
+                                <span className="text-gray-400 text-sm">
+                                  No File
+                                </span>
+                              )}
                             </td>
                           </tr>
                         );

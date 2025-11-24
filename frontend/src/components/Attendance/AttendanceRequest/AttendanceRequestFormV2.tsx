@@ -13,12 +13,13 @@ import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import DOMPurify from "dompurify";
-import { AttendanceRequest } from "../../../types/attendance";
+import { MyAttendanceRequest } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 // Import the JSON schema
 import defaultFormSchema from "./attendanceRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import { useFileUploader } from "../../../hooks/useFileUploader";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -111,7 +112,7 @@ interface AttendanceRequestFormV2Props {
   selectedDate?: Date | string;
   schema?: FormSchema;
   schemaUrl?: string;
-  defaultAttendanceData?: AttendanceRequest | null;
+  defaultAttendanceData?: MyAttendanceRequest | null;
   forActionType?: "create" | "edit";
 }
 
@@ -125,6 +126,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 }) => {
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const { uploadFiles,loading:uploadFileLoading } = useFileUploader();
 
   const [isForOthers, setIsForOthers] = useState(false);
   const [formSchema, setFormSchema] = useState<FormSchema>(
@@ -223,45 +226,63 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       setFormSchema(filteredSchema);
     }
   }, [reqValidationmutation?.data, propSchema]);
-
+  const normalizeTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+    try {
+      // Parse and format to HH:mm:ss
+      const [h, m, s] = timeStr.split(":");
+      const seconds = s ? s.split(".")[0].padStart(2, "0") : "00";
+      return `${h.padStart(2, "0")}:${m.padStart(2, "0")}:${seconds}`;
+    } catch {
+      return null;
+    }
+  };
   const initialSubmissionSet = useRef(false);
-
   const initialSubmission = useMemo(
     () => ({
       data: {
-        from_date: defaultAttendanceData?.from_date || selectedDate,
-        to_date: defaultAttendanceData?.to_date || selectedDate,
-        request_type: defaultAttendanceData?.custom_request_type,
-        employee: defaultAttendanceData?.employee || "",
+        from_date:
+          defaultAttendanceData?.reference_document?.from_date || selectedDate,
+        to_date:
+          defaultAttendanceData?.reference_document?.to_date || selectedDate,
+        request_type:
+          defaultAttendanceData?.reference_document?.custom_request_type,
+        employee: defaultAttendanceData?.reference_document?.employee || "",
         company: "",
-        custom_from_time: defaultAttendanceData?.custom_from_time
+        custom_from_time: defaultAttendanceData?.reference_document
+          ?.custom_from_time
           ? new Date(
               `1970-01-01T${normalizeTime(
-                defaultAttendanceData.custom_from_time
+                defaultAttendanceData?.reference_document.custom_from_time
               )}`
             )
           : "",
-        custom_to_time: defaultAttendanceData?.custom_to_time
+        custom_to_time: defaultAttendanceData?.reference_document
+          ?.custom_to_time
           ? new Date(
               `1970-01-01T${normalizeTime(
-                defaultAttendanceData.custom_to_time
+                defaultAttendanceData?.reference_document?.custom_to_time
               )}`
             )
           : "",
         custom__request_reason:
-          defaultAttendanceData?.custom__request_reason || "",
-        custom_location: defaultAttendanceData?.custom_location || "",
-        select_shift: defaultAttendanceData?.shift || "",
+          defaultAttendanceData?.reference_document?.custom__request_reason ||
+          "",
+        custom_location:
+          defaultAttendanceData?.reference_document?.custom_location || "",
+        select_shift: defaultAttendanceData?.reference_document?.shift || "",
         overnight_out_duty: false,
-        message: defaultAttendanceData?.explanation || "",
-        attachments: defaultAttendanceData?.custom_attachment
-          ? [
-              {
-                name: defaultAttendanceData.custom_attachment.split("/").pop(),
-                url: defaultAttendanceData.custom_attachment,
-              },
-            ]
-          : [],
+        message: defaultAttendanceData?.reference_document?.explanation || "",
+        attachments:
+          defaultAttendanceData?.attachments &&
+          defaultAttendanceData?.attachments?.length > 0
+            ? defaultAttendanceData?.attachments?.map((item) => {
+                return {
+                  name: item?.file_url?.split("/").pop(),
+                  url: item?.file_url,
+                };
+              })
+            : [],
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
         currentUserId: currentEmployee?.user_id || "",
@@ -304,18 +325,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       currentEmployeeIdComponent?.redraw();
     }
   }, [isForOthers, currentEmployee]);
-
-  const normalizeTime = (timeStr?: string) => {
-    if (!timeStr) return null;
-    try {
-      // Parse and format to HH:mm:ss
-      const [h, m, s] = timeStr.split(":");
-      const seconds = s ? s.split(".")[0].padStart(2, "0") : "00";
-      return `${h.padStart(2, "0")}:${m.padStart(2, "0")}:${seconds}`;
-    } catch {
-      return null;
-    }
-  };
 
   const formatTime = (date: Date | string | undefined): string | undefined => {
     if (!date) return undefined;
@@ -418,14 +427,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     };
 
     const handleError = (error: CustomError) => {
-      const errorMessage =
-        error?.response?.data?.exception
-          ?.split(":")
-          .slice(1)
-          .join(":")
-          .trim() || "Something went wrong!!";
-      const cleanString = DOMPurify.sanitize(errorMessage || "");
-      toast.error(<span dangerouslySetInnerHTML={{ __html: cleanString }} />);
+      const formatedError = errorResponseFormater(
+        error,
+        "Submission failed. Please try again."
+      );
+      toast.error(formatedError);
       console.error(error);
     };
 
@@ -433,11 +439,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       updateAttendanceRequest(
         {
           doctype: "Attendance Request",
-          name: defaultAttendanceData.name,
+          name: defaultAttendanceData?.reference_document.name,
           data: requestBody as Record<string, unknown>,
         },
         {
-          onSuccess: () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onSuccess: async (data: any) => {
+            if (attachments?.length > 0) {
+              await uploadFiles(attachments, data.doctype, data.name);
+            }
             handleSuccess("Updated Attendance Request successfully!");
           },
           onError: handleError,
@@ -445,7 +455,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       );
     } else {
       mutation.mutate(requestBody as Record<string, unknown>, {
-        onSuccess: () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onSuccess: async (data: any) => {
+          if (attachments?.length > 0) {
+            await uploadFiles(attachments, data.doctype, data.name);
+          }
           handleSuccess("Added Attendance Request successfully!");
         },
         onError: handleError,
@@ -456,7 +470,12 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   // Handle form change
   const handleFormChange = (submission: FormChangeSubmission) => {
     // Track employee selection
-
+    if (submission?.changed?.component?.key === "attachments")
+      setAttachments([
+        ...attachments,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...((submission?.data?.attachments as any) || []),
+      ]);
     // Auto-sync from_date to to_date for certain request types
     if (submission?.changed?.component?.key === "from_date") {
       const formInstance = formAddressInstance.current;
@@ -532,48 +551,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           ) : null}
           <Form
             form={formSchema}
-            // submission={{
-            //   data: {
-            //     from_date: defaultAttendanceData?.from_date || selectedDate,
-            //     to_date: defaultAttendanceData?.to_date || selectedDate,
-            //     request_type: defaultAttendanceData?.custom_request_type,
-            //     employee: defaultAttendanceData?.employee || "",
-            //     company: "",
-            //     custom_from_time: defaultAttendanceData?.custom_from_time
-            //       ? new Date(
-            //           `1970-01-01T${normalizeTime(
-            //             defaultAttendanceData.custom_from_time
-            //           )}`
-            //         )
-            //       : "",
-            //     custom_to_time: defaultAttendanceData?.custom_to_time
-            //       ? new Date(
-            //           `1970-01-01T${normalizeTime(
-            //             defaultAttendanceData.custom_to_time
-            //           )}`
-            //         )
-            //       : "",
-            //     custom__request_reason:
-            //       defaultAttendanceData?.custom__request_reason || "",
-            //     custom_location: defaultAttendanceData?.custom_location || "",
-            //     select_shift: defaultAttendanceData?.shift || "",
-            //     overnight_out_duty: false,
-            //     message: defaultAttendanceData?.explanation || "",
-            //     attachments: defaultAttendanceData?.custom_attachment
-            //       ? [
-            //           {
-            //             name: defaultAttendanceData.custom_attachment
-            //               .split("/")
-            //               .pop(),
-            //             url: defaultAttendanceData.custom_attachment,
-            //           },
-            //         ]
-            //       : [],
-            //     isForOthers: isForOthers,
-            //     currentEmployeeId: currentEmployee?.employee || "",
-            //     currentUserId: currentEmployee?.user_id || "",
-            //   },
-            // }}
             onSubmit={handleSubmit}
             options={{
               builder: { styles: false },
@@ -689,7 +666,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
               } font-medium`}
             >
-              {mutation.isPending ? (
+              {mutation.isPending || uploadFileLoading ? (
                 <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
               ) : (
                 "Submit"

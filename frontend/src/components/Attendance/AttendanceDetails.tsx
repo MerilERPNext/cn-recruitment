@@ -273,14 +273,15 @@ export function AttendanceDetailView({
               <div dangerouslySetInnerHTML={{ __html: cleanExplaination }} />
             </div>
           </div>
-          {data?.reference_document?.custom_attachment ? (
-            <div className="py-4">
-              <p className="text-sm  mb-2 font-bold">Attachment</p>
-              <FileRenderer
-                filePath={data?.reference_document?.custom_attachment || ""}
-              />
-            </div>
-          ) : null}
+        {data?.attachments && data?.attachments?.length>0 ? (
+                <div className="py-4">
+                  <p className="text-sm  mb-2 font-bold">Attachment</p>
+                  {data?.attachments?.map((item:{file_url:string})=>  <FileRenderer
+                    filePath={item?.file_url || ""}
+                  />)}
+                
+                </div>
+              ) : null}
         </div>
 
         {/* Actions */}

@@ -20,6 +20,7 @@ import type {
   UpdateDocumentResult,
   DeleteDocumentResult,
 } from "../types/frappe";
+import { profileService } from "../services/profileService";
 
 // Utility to check if error is permission-related
 const isPermissionError = (error: unknown): error is PermissionError => {
@@ -229,5 +230,25 @@ export const useDeleteFrappeDocument = (
     mutationFn: ({ doctype, name }) =>
       frappeService.deleteDocument(doctype, name),
     ...options,
+  });
+};
+
+export const useFileUpload = () => {
+  return useMutation({
+    mutationKey: ["uploadFile"],
+    mutationFn: ({
+      file,
+      doctype,
+      docName,
+    }: {
+      file: File;
+      doctype?: string;
+      docName?: string;
+    }) => {
+      return profileService.uploadFile(file, doctype, docName);
+    },
+    onError: (error) => {
+      console.error("Error uploading file:", error);
+    },
   });
 };

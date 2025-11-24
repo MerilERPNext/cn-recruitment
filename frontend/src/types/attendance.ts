@@ -76,6 +76,11 @@ export interface MyAttendanceRequest {
   reference_name: string;
   status: string;
   can_edit?: boolean;
+  attachments?: [
+    {
+      file_url: string;
+    }
+  ];
 }
 
 export type OvertimeDetail = {
@@ -116,6 +121,9 @@ export type PlannedOvertimeRequest = {
 };
 
 export interface MyPlannedAttendanceRequest {
+  attachments?:[
+    {file_url:string}
+  ]
   due_date: string | number | Date;
   reference_document: PlannedOvertimeRequest;
   custom_doctype_actions: string;
@@ -129,6 +137,7 @@ export interface MyPlannedAttendanceRequest {
   reference_name: string;
   status: string;
   date?: string;
+  description?: string;
 }
 export interface AttendanceRequestValidations {
   attendance_adjustment_requests: number;

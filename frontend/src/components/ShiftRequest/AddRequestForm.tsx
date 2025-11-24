@@ -10,6 +10,8 @@ import HeaderBar from "../HeaderBar";
 
 import type { ShiftRequestFormData, FormioSubmission } from "../../types/shift";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
+import Button from "../shared/atoms/Button";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -70,8 +72,10 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
           }, 1000);
           navigate("/webapp/shift-request/shift-list");
         },
-        onError: () => {
-          console.error("Failed to submit shift request.");
+        onError: (error) => {
+           const formatedError = errorResponseFormater(error, "Failed to submit Shift Request.");
+            toast.error(formatedError);
+            console.error(error);
         },
       });
     } catch (error: any) {
@@ -107,7 +111,8 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
               {
                 type: "datetime",
                 key: "fromDate",
-                label: "From Date <span style='color:red;margin-left:3px;'> *</span>",
+                label:
+                  "From Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "From Date",
                 input: true,
                 format: "dd/MM/yyyy",
@@ -123,7 +128,8 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
               {
                 type: "datetime",
                 key: "toDate",
-                label: "To Date <span style='color:red;margin-left:3px;'> *</span>",
+                label:
+                  "To Date <span style='color:red;margin-left:3px;'> *</span>",
                 errorLabel: "To Date",
                 input: true,
                 format: "dd/MM/yyyy",
@@ -155,7 +161,7 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
         type: "textarea",
         key: "reason",
         label: "Reason <span style='color:red;margin-left:3px;'> *</span>",
-                errorLabel: "Reason",
+        errorLabel: "Reason",
         placeholder: "Enter reason",
         input: true,
         validate: { required: true },
@@ -178,12 +184,15 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
       </div>
 
       <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 z-50">
-        <button
+        <Button
+          fullWidth
           onClick={handleSubmit}
-          className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          size="lg"
+          bgColor="blue-600"
+          className="hover:bg-blue-700"
         >
           Submit Request
-        </button>
+        </Button>
       </div>
     </div>
   );

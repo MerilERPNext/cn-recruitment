@@ -68,13 +68,17 @@
         }
       ]
     },
+
     {
       "type": "file",
       "key": "attachment",
       "label": "Attachment",
-      "storage": "customBase64",
       "input": true,
-      "validate": { "required": true },
+      "multiple": true,
+      "storage": "customfiles",
+      "fileReader": false,
+      "privateDownload": false,
+      "validate": { "required": "data.show_attachment" },
       "conditional": {
         "show": true,
         "when": "show_attachment",

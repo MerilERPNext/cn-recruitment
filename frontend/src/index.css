@@ -397,3 +397,8 @@ code {
   margin: 8px 0 12px;
   color: #111;
 }
+
+/* Hide the 'Size' column in header and rows */
+.formio-component-attachments .col-md-2 {
+  display: none !important;
+}

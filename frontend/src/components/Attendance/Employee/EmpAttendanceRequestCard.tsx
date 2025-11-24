@@ -56,9 +56,9 @@ const EmpAttendanceRequestCard = ({
         label: "Approved",
         statusColor: "bg-green-100 text-green-800",
       };
-    } else if (status === "cancelled" || status === "rejected") {
+    } else if (status === "rejected") {
       return {
-        label: status === "cancelled" ? "Cancelled" : "Rejected",
+        label: "Rejected",
         statusColor: "bg-red-100 text-red-800",
       };
     } else {
@@ -146,15 +146,17 @@ const EmpAttendanceRequestCard = ({
           </div>
         </div>
       ) : (
-        <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
+        <div className="w-full px-1 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
           <div className=" flex items-start justify-between gap-4 w-full">
-            <div className="flex gap-1 flex-col justify-around w-full">
+            <div className="flex gap-1 flex-col justify-around w-full pb-2">
               <div className="flex items-center gap-2">
-                <p className="whitespace-nowrap">
-                  {" "}
-                  {data?.reference_document?.custom_request_type}
-                </p>
-                <div className="p-2 w-full ">
+                <div className="flex items-center justify-between w-full py-2">
+                  <div className="flex items-center gap-2">
+                    <p className="whitespace-nowrap">
+                      {data?.reference_document?.custom_request_type}
+                    </p>
+                  </div>
+
                   <Badge
                     size="sm"
                     backgroundColor={status?.statusColor}
@@ -201,7 +203,7 @@ const EmpAttendanceRequestCard = ({
         createPortal(
           <AttendanceRequestFormV2
             onClose={() => setEdit(false)}
-            defaultAttendanceData={data?.reference_document}
+            defaultAttendanceData={data}
             forActionType="edit"
           />,
           document.body

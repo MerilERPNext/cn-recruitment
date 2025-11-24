@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import type React from "react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -102,10 +101,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     window.open(ROUTES.TODO, "_blank");
   };
 
-  // const handleHelpDeskClick = () => {
-  //   window.open(ROUTES.HELP_DESK, "_blank");
-  // };
-
   const handleHelpDeskClick = () => {
     if (!currentUser?.roles) {
       window.open(ROUTES.HELP_DESK, "_blank");
@@ -192,9 +187,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/attendance/team-attendance-requests",
         },
         {
-          name: "Planned Overtime",
+          name: "My Overtime",
           icon: TimerIcon,
-          href: "/webapp/attendance/planned-overtime-requests",
+          href: "/webapp/attendance/my-overtime-requests",
+        },
+        {
+          name: "Team Overtime",
+          icon: Users,
+          href: "/webapp/attendance/team-overtime-requests",
         },
         {
           name: "All Shifts",
@@ -261,9 +261,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/expenses-app/team-requests",
         },
         {
-          name: "Advance Expenses",
+          name: "My Advances",
           icon: ArrowUpDown,
-          href: "/webapp/expenses-app/advance-expense-list",
+          href: "/webapp/expenses-app/my-advance-expense",
+        },
+        {
+          name: "Team Advances",
+          icon: ArrowUpDown,
+          href: "/webapp/expenses-app/team-advance-expense",
         },
       ],
     },
@@ -362,12 +367,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         );
       }
 
-      // Check for exact match first
       if (location.pathname === path) {
         return true;
       }
 
-      // Then check for prefix match with proper boundary
       if (location.pathname.startsWith(path)) {
         const remainingPath = location.pathname.substring(path.length);
         return remainingPath === "" || remainingPath.startsWith("/");
@@ -430,7 +433,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const handleMouseLeave = () => {
     setIsExpanded(false);
 
-    // Don't close dropdown if there's an active subItem that should keep it open
     const activeParent = navigationItems.find((item) =>
       item.subItems?.some((subItem) => isSubItemActive(subItem))
     );
@@ -556,7 +558,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       </div>
                       {isExpanded && (
                         <ChevronRight
-                          className={`h-4 w-4 transition-transform duration-200 ${
+                          className={`h-4 w-4 transition-transform duration-200  ${
                             isDropdownOpen || isAnySubItemActive
                               ? "rotate-90"
                               : ""
@@ -661,7 +663,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     onClick={() =>
                                       handleSubItemClick(subItem.name, true)
                                     }
-                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap ${
+                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${
                                       isSubActive || isSubDropdownOpen
                                         ? "bg-blue-50 text-blue-600"
                                         : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
@@ -670,7 +672,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     <div className="flex items-center space-x-2">
                                       <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <span
-                                        className={`font-medium transition-all duration-300 whitespace-nowrap ${
+                                        className={`font-medium transition-all duration-300 whitespace-nowrap  ${
                                           isExpanded
                                             ? "opacity-100 translate-x-0"
                                             : "opacity-0 -translate-x-2"

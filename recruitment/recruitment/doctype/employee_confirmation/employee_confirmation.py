@@ -22,4 +22,39 @@ class EmployeeConfirmation(Document):
 			employee.custom_probation_period = probation_period
 			employee.save()
 
+	def validate(self):
+		draft_exists = frappe.db.exists(
+			"Employee Confirmation",
+			{
+				"employee": self.employee,
+				"docstatus": 0,
+				"name": ["!=", self.name]
+			}
+		)
+		if draft_exists:
+			frappe.throw("There is already a pending confirmation request for this employee. Please complete or cancel it before creating a new one.")
+
+		active_exists = frappe.get_all(
+			"Employee Confirmation",
+			filters={
+				"employee": self.employee,
+				"docstatus": 1,
+				"status": ["!=", "Probation Extended"],
+				"name": ["!=", self.name]
+			},
+			fields=["name"]
+		)
+		if active_exists:
+			frappe.throw("This employee has already been confirmed. You cannot create another confirmation at this time.")
+
+		probation_extended_exists = frappe.db.exists(
+			"Employee Confirmation",
+			{
+				"employee": self.employee,
+				"docstatus": 1,
+				"status": "Probation Extended"
+			}
+		)
+		if probation_extended_exists:
+			pass  
 

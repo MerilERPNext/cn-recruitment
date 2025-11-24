@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { format, isValid, parse } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   useExpenseApproval,
   useExpenseSingleItemApproval,
@@ -14,6 +14,7 @@ import {
 import Badge from "../../shared/Badge";
 import Button from "../../shared/atoms/Button";
 import toast from "react-hot-toast";
+import DOMPurify from "dompurify";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -63,13 +64,10 @@ export function TeamExpenseDetailView({
   }, [ref?.expenses]);
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
-  const [processingItemId, setProcessingItemId] = useState<string | null>(null);
-
-  const allItemsProcessed = expenseItems.every(
-    (item) =>
-      item.custom_approval_staus === "Approved" ||
-      item.custom_approval_staus === "Rejected"
-  );
+  const [processingItem, setProcessingItem] = useState<{
+    id: string;
+    action: "Approve" | "Reject";
+  } | null>(null);
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open" || status === "Draft") {
@@ -97,6 +95,9 @@ export function TeamExpenseDetailView({
   const statusSource = data?.status || ref?.approval_status || "";
   const status = getStatus(statusSource);
 
+  // Check if claim is editable - only if status is Open, Pending, or Draft
+  const isClaimEditable = ["Open", "Pending", "Draft"].includes(statusSource);
+
   const formatDate = (date: string): string => {
     if (!date) return "--/--/----";
 
@@ -105,13 +106,13 @@ export function TeamExpenseDetailView({
     for (const dateFormat of possibleFormats) {
       const parsedDate = parse(date, dateFormat, new Date());
       if (isValid(parsedDate)) {
-        return format(parsedDate, "yyyy-MM-dd");
+        return format(parsedDate, "dd-MM-yyyy");
       }
     }
 
     const d = new Date(date);
     if (isValid(d)) {
-      return format(d, "yyyy-MM-dd");
+      return format(d, "dd-MM-yyyy");
     }
 
     return "--/--/----";
@@ -156,16 +157,22 @@ export function TeamExpenseDetailView({
     itemId: string,
     action: "Approve" | "Reject"
   ) => {
+    if (!isClaimEditable) {
+      toast.error("This claim cannot be modified in its current status");
+      return;
+    }
+
     const item = expenseItems.find((i) => i.id === itemId);
 
     if (!item) return;
 
-    if (!item.comment.trim()) {
-      toast.error("Comment is required for approval/rejection");
+    // Only require comment for Reject action
+    if (action === "Reject" && !item.comment.trim()) {
+      toast.error("Comment is required for rejection");
       return;
     }
 
-    setProcessingItemId(itemId);
+    setProcessingItem({ id: itemId, action });
 
     try {
       await singleMutation.mutateAsync({
@@ -214,11 +221,16 @@ export function TeamExpenseDetailView({
     } catch (error) {
       console.error("Action failed", error);
     } finally {
-      setProcessingItemId(null);
+      setProcessingItem(null);
     }
   };
 
   const handleBulkAction = async (action: "Approve" | "Reject") => {
+    if (!isClaimEditable) {
+      toast.error("This claim cannot be modified in its current status");
+      return;
+    }
+
     const selectedItems = expenseItems.filter((item) => item.selected);
 
     if (selectedItems.length === 0) {
@@ -226,10 +238,15 @@ export function TeamExpenseDetailView({
       return;
     }
 
-    const missingComments = selectedItems.some((item) => !item.comment.trim());
-    if (missingComments) {
-      toast.error("All selected items must have comments");
-      return;
+    // Only check for comments when rejecting
+    if (action === "Reject") {
+      const missingComments = selectedItems.some(
+        (item) => !item.comment.trim()
+      );
+      if (missingComments) {
+        toast.error("All selected items must have comments for rejection");
+        return;
+      }
     }
 
     setCurrentAction(action);
@@ -291,15 +308,49 @@ export function TeamExpenseDetailView({
     }
   };
 
-  const approvedItems = expenseItems.filter(
-    (item) => item.custom_approval_staus === "Approved"
-  );
-  const nonReimbursableAmount = 0;
-  const totalToBeReimbursed = approvedItems.reduce(
-    (sum, item) => sum + item.sanctionedAmount,
-    0
-  );
-  const totalAmount = totalToBeReimbursed;
+  // Calculate totals dynamically using useMemo - recalculates whenever expenseItems changes
+  const {
+    // approvedItems,
+    totalToBeReimbursed,
+    totalAmount,
+    nonReimbursableAmount,
+  } = useMemo(() => {
+    const approved = expenseItems.filter(
+      (item) => item.custom_approval_staus === "Approved"
+    );
+
+    // const rejected = expenseItems.filter(
+    //   (item) => item.custom_approval_staus === "Rejected"
+    // );
+
+    const nonReimbursable = 0;
+
+    let totalReimbursed;
+
+    if (approved.length > 0) {
+      totalReimbursed = approved.reduce(
+        (sum, item) => sum + item.sanctionedAmount,
+        0
+      );
+    } else {
+      const itemsToCount = expenseItems.filter(
+        (item) => item.custom_approval_staus !== "Rejected"
+      );
+      totalReimbursed = itemsToCount.reduce(
+        (sum, item) => sum + item.sanctionedAmount,
+        0
+      );
+    }
+
+    const total = totalReimbursed;
+
+    return {
+      approvedItems: approved,
+      totalToBeReimbursed: totalReimbursed,
+      totalAmount: total,
+      nonReimbursableAmount: nonReimbursable,
+    };
+  }, [expenseItems]);
 
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
@@ -314,21 +365,13 @@ export function TeamExpenseDetailView({
   const allSelected =
     expenseItems.length > 0 && expenseItems.every((item) => item.selected);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isItemEditable = (item: any) => {
-    return (
-      item.custom_approval_staus !== "Approved" &&
-      item.custom_approval_staus !== "Rejected"
-    );
-  };
-
   return (
     <div
-      className="fixed inset-0 z-50  flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
     >
       <div
-        className="w-full  h-full md:h-auto md:max-w-xl md:max-h-[90vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[90vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
@@ -371,48 +414,40 @@ export function TeamExpenseDetailView({
           </div>
         </div>
 
-        {/* **UPDATED: Hide bulk actions if all items are processed** */}
-        {!allItemsProcessed &&
-          statusSource !== "Approved" &&
-          statusSource !== "Rejected" && (
-            <div className="px-6 py-3 border-b bg-white flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={toggleSelectAll}
-                className="w-4 h-4 rounded border-gray-300"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Select All
-              </span>
-              <div className="flex gap-2 ml-auto">
-                <Button
-                  onClick={() => handleBulkAction("Approve")}
-                  disabled={
-                    bulkMutation.isPending || currentAction === "Approve"
-                  }
-                  size="sm"
-                  bgColor="green-100"
-                  textColor="green-600"
-                >
-                  {currentAction === "Approve"
-                    ? "Processing..."
-                    : "Bulk Approve"}
-                </Button>
-                <Button
-                  onClick={() => handleBulkAction("Reject")}
-                  disabled={
-                    bulkMutation.isPending || currentAction === "Reject"
-                  }
-                  size="sm"
-                  bgColor="red-100"
-                  textColor="red-600"
-                >
-                  {currentAction === "Reject" ? "Processing..." : "Bulk Reject"}
-                </Button>
-              </div>
+        {/* Bulk actions - only show if claim is editable */}
+        {isClaimEditable && (
+          <div className="px-6 py-3 border-b bg-white flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              className="w-4 h-4 rounded border-gray-300"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Select All
+            </span>
+            <div className="flex gap-2 ml-auto">
+              <Button
+                onClick={() => handleBulkAction("Approve")}
+                disabled={bulkMutation.isPending || currentAction === "Approve"}
+                size="sm"
+                bgColor="green-100"
+                textColor="green-600"
+              >
+                {currentAction === "Approve" ? "Processing..." : "Bulk Approve"}
+              </Button>
+              <Button
+                onClick={() => handleBulkAction("Reject")}
+                disabled={bulkMutation.isPending || currentAction === "Reject"}
+                size="sm"
+                bgColor="red-100"
+                textColor="red-600"
+              >
+                {currentAction === "Reject" ? "Processing..." : "Bulk Reject"}
+              </Button>
             </div>
-          )}
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -431,21 +466,18 @@ export function TeamExpenseDetailView({
 
           {expenseItems.length > 0 ? (
             expenseItems.map((item) => {
-              const itemEditable = isItemEditable(item);
               const itemStatus = getStatus(item.custom_approval_staus || "");
-
               return (
                 <div
                   key={item.id}
                   className="mb-4 p-4 border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start gap-3">
-                    {/* **UPDATED: Disable checkbox if item is not editable** */}
                     <input
                       type="checkbox"
                       checked={item.selected}
                       onChange={() => toggleSelection(item.id)}
-                      disabled={!itemEditable}
+                      disabled={!isClaimEditable}
                       className="mt-1 w-4 h-4 rounded border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
 
@@ -453,43 +485,139 @@ export function TeamExpenseDetailView({
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs text-gray-500 uppercase">
+                              EXPENSE DATE:
+                            </span>
                             <span className="text-sm font-medium text-gray-900">
                               {formatDate(item.expense_date || item.creation)}
                             </span>
-                            <span className="text-lg font-bold text-gray-900">
-                              {formatINR(item.amount)} INR
-                            </span>
                           </div>
+                          <span className="text-lg font-bold text-gray-900">
+                            {formatINR(item.amount)} INR
+                          </span>
                         </div>
-                        {/* **NEW: Show item-level status badge** */}
-                        {!itemEditable && (
+                        {(item.custom_approval_staus === "Approved" ||
+                          item.custom_approval_staus === "Rejected") && (
                           <Badge
                             label={itemStatus?.label as string}
                             backgroundColor={itemStatus?.statusColor}
                           />
                         )}
                       </div>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="">
+                          <p className="text-xs text-gray-500 uppercase mb-1">
+                            EXPENSE TYPE
+                          </p>
+                          <p className="text-sm font-medium text-gray-800">
+                            {item.expense_type}
+                          </p>
+                        </div>
+                        {item.custom_invoice_number && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              INVOICE
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_invoice_number}
+                            </p>
+                          </div>
+                        )}
 
-                      <div className="mb-3">
-                        <p className="text-xs text-gray-500 uppercase mb-1">
-                          EXPENSE TYPE
-                        </p>
-                        <p className="text-sm font-medium text-gray-800">
-                          {item.expense_type}
-                        </p>
+                        {item.custom_mercent && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              MERCHANT
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_mercent}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_from_location && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              FROM LOCATION
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_from_location}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_to_location && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              TO LOCATION
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_to_location}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_vehicle_type && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              VEHICLE TYPE
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_vehicle_type}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_units && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              UNITS
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {item.custom_units}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_start_datetime && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              START DATE
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {formatDate(item.custom_start_datetime)}
+                            </p>
+                          </div>
+                        )}
+
+                        {item.custom_end_datetime && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase mb-1">
+                              END DATE
+                            </p>
+                            <p className="text-sm font-medium text-gray-800">
+                              {formatDate(item.custom_end_datetime)}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
+                      {/* Description */}
                       {item.description && (
                         <div className="mb-3">
                           <p className="text-xs text-gray-500 uppercase mb-1">
                             DESCRIPTION
                           </p>
-                          <p className="text-sm text-gray-700">
-                            {item.description}
-                          </p>
+                          <div
+                            className="text-sm text-gray-700 [&_p]:m-0 [&_p]:mb-1 [&_p:last-child]:mb-0"
+                            dangerouslySetInnerHTML={{
+                              __html: DOMPurify.sanitize(item.description),
+                            }}
+                          />
                         </div>
                       )}
 
+                      {/* Base and Sanctioned Amount */}
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <p className="text-xs text-gray-500 mb-1">
@@ -509,6 +637,7 @@ export function TeamExpenseDetailView({
                         </div>
                       </div>
 
+                      {/* Documents */}
                       {item.custom_attach_receipt && (
                         <div className="mb-3">
                           <p className="text-xs text-gray-500 uppercase mb-1">
@@ -525,7 +654,7 @@ export function TeamExpenseDetailView({
                         </div>
                       )}
 
-                      {/* **UPDATED: Disable sanctioned amount input if not editable** */}
+                      {/* Sanctioned Amount Input */}
                       <div className="mb-3">
                         <label className="text-xs text-gray-500 uppercase mb-1 block">
                           SANCTIONED AMOUNT (INR) *
@@ -536,44 +665,42 @@ export function TeamExpenseDetailView({
                           onChange={(e) =>
                             updateSanctionedAmount(item.id, e.target.value)
                           }
-                          disabled={!itemEditable}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          disabled={!isClaimEditable}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                           step="0.01"
                           min="0"
                         />
                       </div>
 
-                      {/* **UPDATED: Disable comment textarea if not editable** */}
+                      {/* Comment Textarea */}
                       <div className="mb-3">
                         <label className="text-xs text-gray-500 uppercase mb-1 block">
-                          COMMENT *
+                          COMMENT (Required for Reject)
                         </label>
                         <textarea
                           value={item.comment}
                           onChange={(e) =>
                             updateComment(item.id, e.target.value)
                           }
-                          placeholder="Add your comment here (required for approve/reject)..."
-                          disabled={!itemEditable}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          placeholder="Add your comment here (required for rejection)..."
+                          disabled={!isClaimEditable}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                           rows={3}
                         />
                       </div>
 
-                      {/* **UPDATED: Show action buttons only if item is editable** */}
-                      {itemEditable && (
+                      {/* Action Buttons */}
+                      {isClaimEditable && (
                         <div className="flex gap-2">
                           <Button
                             onClick={() => handleItemAction(item.id, "Approve")}
-                            disabled={
-                              processingItemId === item.id ||
-                              !item.comment.trim()
-                            }
+                            disabled={processingItem?.id === item.id}
                             size="sm"
                             bgColor="green-100"
                             textColor="green-600"
                           >
-                            {processingItemId === item.id ? (
+                            {processingItem?.id === item.id &&
+                            processingItem?.action === "Approve" ? (
                               <span className="inline-block w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
                             ) : (
                               "Approve"
@@ -581,15 +708,13 @@ export function TeamExpenseDetailView({
                           </Button>
                           <Button
                             onClick={() => handleItemAction(item.id, "Reject")}
-                            disabled={
-                              processingItemId === item.id ||
-                              !item.comment.trim()
-                            }
+                            disabled={processingItem?.id === item.id}
                             size="sm"
                             bgColor="red-100"
                             textColor="red-600"
                           >
-                            {processingItemId === item.id ? (
+                            {processingItem?.id === item.id &&
+                            processingItem?.action === "Reject" ? (
                               <span className="inline-block w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
                             ) : (
                               "Reject"

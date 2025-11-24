@@ -180,7 +180,7 @@ export function MyOvertimeDetails({
       onMouseDown={onClose}
     >
       <div
-        className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -293,12 +293,13 @@ export function MyOvertimeDetails({
                   )
                 )}
               </div>
-              {data?.reference_document?.attachment ? (
+              {data?.attachments && data?.attachments?.length>0 ? (
                 <div className="py-4">
                   <p className="text-sm  mb-2 font-bold">Attachment</p>
-                  <FileRenderer
-                    filePath={data?.reference_document?.attachment || ""}
-                  />
+                  {data?.attachments?.map((item)=>  <FileRenderer
+                    filePath={item?.file_url || ""}
+                  />)}
+                
                 </div>
               ) : null}
             </div>

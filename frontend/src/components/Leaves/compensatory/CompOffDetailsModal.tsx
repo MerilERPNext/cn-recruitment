@@ -18,14 +18,12 @@ const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({
 
   const handlePay = () => {
     payCompOff(compOff.name, {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onSuccess: (response: any) => {
         onClose();
         toast.success(
           `Payment request successful: ${response.message || compOff.name}`
         );
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onError: (error: any) => {
         toast.error(
           `Payment request failed: ${error.message || "Unknown error"}`
@@ -55,7 +53,7 @@ const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({
             <span
               className={`px-2 py-1 text-xs font-medium rounded-xl ${
                 compOff.custom_status?.toLowerCase() === "issued"
-                  ? "bg-blue-100 text-blue-800"
+                  ? "bg-yellow-100 text-yellow-800"
                   : compOff.custom_status?.toLowerCase() === "allocated"
                   ? "bg-green-100 text-green-800"
                   : "bg-red-100 text-red-800"

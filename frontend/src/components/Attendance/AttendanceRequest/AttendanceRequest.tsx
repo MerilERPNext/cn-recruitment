@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import DataListView from "../../DataListView";
-import AttndanceRequestForm from "./AttendanceRequestForm";
 import { useState, useCallback } from "react";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -9,19 +8,19 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { useNavigate } from "react-router-dom";
-import { ViewAll } from "../../shared/atoms/ViewAll";
+import CustomDropdown from "../../shared/CustomDropdown";
+import Button from "../../shared/atoms/Button";
+import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
   { label: "Approved", value: "Approved" },
   { label: "Rejected", value: "Rejected" },
-  { label: "Cancelled", value: "Cancelled" },
 ];
 
 const AttendanceRequest = ({
   pageSize = 10,
-  showPagination = false,
+  showPagination = true,
   showAttendanceRequest = true,
 }: {
   pageSize?: number;
@@ -33,14 +32,11 @@ const AttendanceRequest = ({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
-  // 2. Add state for selected status
   const [selectedStatus, setSelectedStatus] = useState("Pending");
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const [showForm, setShowForm] = useState(false);
-  const navigate = useNavigate();
 
-  // Use useCallback to memoize the onRefetchComplete handler
   const handleRefetchComplete = useCallback(() => {
     setRefetchAttendance(false);
   }, [setRefetchAttendance]);
@@ -59,33 +55,25 @@ const AttendanceRequest = ({
     </div>
   );
 
-  // Handler for the dropdown change
   const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedStatus(event.target.value);
-    setRefetchAttendance(true); // Trigger refetch on filter change
+    setRefetchAttendance(true);
   };
 
-  // 3. Create the Dropdown Component
   const FilterDropdowns = () => (
     <div className="flex items-center gap-2">
-      <select
+      <CustomDropdown
         value={selectedStatus}
         onChange={handleStatusChange}
-        className="border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100"
-      >
-        {STATUS_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        options={STATUS_OPTIONS}
+      />
     </div>
   );
 
   return (
     <>
       {showForm ? (
-        <AttndanceRequestForm
+        <AttendanceRequestFormV2
           onClose={() => {
             setShowForm(false);
           }}
@@ -95,31 +83,11 @@ const AttendanceRequest = ({
           <div className="bg-white h-full px-4 pt-2">
             <div className="bg-white">
               <div className="bg-white px-2">
-                {/* Pending */}
-
                 <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
                   <h2 className="module-title pb-1">My Attendance Requests</h2>
 
                   <div className="flex items-center space-x-3 pb-1">
-                    <FilterDropdowns /> {/* Add the dropdown here */}
-                    {/* <button
-                      onClick={() => {
-                        navigate(
-                          "/webapp/attendance/attendance-request/pendings"
-                        );
-                      }}
-                      className="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
-                    >
-                      View All
-                    </button> */}
-                    <ViewAll
-                      title="View All"
-                      onClick={() => {
-                        navigate(
-                          "/webapp/attendance/attendance-request/pendings"
-                        );
-                      }}
-                    />
+                    <FilterDropdowns />
                   </div>
                 </div>
                 <CardTable
@@ -166,9 +134,9 @@ const AttendanceRequest = ({
                       pageSize={pageSize}
                       showRefreshButton={false}
                       orderBy="modified desc"
-                      infiniteScroll={false}
-                      loadMorePagination={true}
                       showPagination={showPagination}
+                      infiniteScroll={true}
+                      loadMorePagination={false}
                     />
                   ) : (
                     <></>
@@ -184,12 +152,15 @@ const AttendanceRequest = ({
       {!isDesktop && showAttendanceRequest && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
-            <button
-              className="flex justify-center gap-2 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            <Button
+              bgColor="blue-600"
+              size="lg"
+              fullWidth
+              className="hover:bg-blue-700"
               onClick={() => setShowForm(!showForm)}
             >
               <Plus /> <span>Add Attendance Request</span>
-            </button>
+            </Button>
           </div>
         </div>
       )}

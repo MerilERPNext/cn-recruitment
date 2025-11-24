@@ -11,18 +11,18 @@ interface ExpenseBreakupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (expense: any) => void;
-  // 1. New prop for initial data when editing
   initialData?: any;
+  advanceType: string | null;
 }
 
 const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialData, // 2. Destructure initialData
+  initialData,
+  advanceType,
 }) => {
   const [formKey, setFormKey] = useState(0);
-  // 3. Initialize formData with initialData if available
   const [formData, setFormData] = useState<any>(initialData || {});
   const [calcParams, setCalcParams] = useState<any>();
   const formioInstanceRef = useRef<any>(null);
@@ -43,23 +43,14 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
       amount: storedData.amount,
       description: storedData.description,
       expense_date: storedData.expense_date,
-
-      // Mapped Custom Fields (These were missing in your Edit modal)
       currency: storedData.custom_currency,
-      invoice_number: storedData.custom_invoice_number,
-      merchant: storedData.custom_mercent,
       units: storedData.custom_units,
-
-      // Mapped Datetime/Location fields
       vehicle_type: storedData.custom_vehicle_type,
       from_location: storedData.custom_from_location,
       to_location: storedData.custom_to_location,
       start_datetime: storedData.custom_start_datetime,
       end_datetime: storedData.custom_end_datetime,
       location: storedData.custom_location,
-
-      // File/Attachment Field: Transform stored URL back into Form.io's file array structure
-      // This is crucial for the file component to display the existing file.
       attach_receipt: storedData.custom_attach_receipt
         ? [
             {
@@ -68,7 +59,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                   storedData.custom_attach_receipt.lastIndexOf("/") + 1
                 ) || "Attached File",
               originalName: "Attached File",
-              size: 1, // Must be a number > 0 for Form.io to render the file list entry
+              size: 1,
               type: "application/octet-stream",
               url: storedData.custom_attach_receipt,
               data: storedData.custom_attach_receipt,
@@ -78,39 +69,30 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
         : [],
     };
 
-    // Filter out undefined values to prevent Form.io issues
     return Object.fromEntries(
       Object.entries(formReadyData).filter(([, value]) => value !== undefined)
     );
   };
 
-  // 4. Effect to reset form state when the modal opens/initialData changes
   useEffect(() => {
     if (isOpen) {
-      // Set initial data for the Form.io component using the mapping function
       const remappedData = mapStoredDataToForm(initialData);
       setFormData(remappedData);
 
-      // Force a re-render of the Form.io component by changing the key
       setFormKey((prev) => prev + 1);
 
-      // Reset ref-based state for recalculation logic on edit
       lastExpenseType.current = initialData?.expense_type || null;
       lastCalculatedUnits.current = null;
 
       if (initialData?.expense_type) {
-        // If we have an expense type from initial data, fetch its fields
-        // This will also handle setting the readonly state for 'amount'
         fetchExpenseTypeFields(initialData.expense_type);
       } else {
-        // Otherwise, reset to initial schema (only expense_type select)
         setFormSchema(initialSchema);
       }
     }
   }, [isOpen, initialData]);
 
   useEffect(() => {
-    // Only run if we have new data AND the amount field is readonly
     if (calcData) {
       const amount =
         (calcData as any)?.amount ??
@@ -138,11 +120,9 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
     }
   }, [calcData, calcParams]);
 
-  // CORRECT: Your mapping function was already fixed, ensure it stays this way
   const mapFieldsToFormio = (fields: any[]) =>
     fields
       .map((field) => {
-        // Add a red asterisk (*) for required fields
         const labelWithAsterisk = field.required
           ? `${field.label} <span style="color:red">&nbsp;*</span>`
           : field.label;
@@ -197,7 +177,6 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
               html: true,
             };
           case "Data":
-            // Treat 'units' as 'number' if it's supposed to be calculated
             if (field.fieldname === "units") {
               return {
                 type: "number",
@@ -209,10 +188,9 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                   customMessage: `${field?.label} is required`,
                 },
                 html: true,
-                description: field.description, // Keep description if available
+                description: field.description,
               };
             }
-            // Treat 'units' as 'number' if it's supposed to be calculated
             return {
               type: "textfield",
               key: field.fieldname,
@@ -266,11 +244,12 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 dataSrc: "url",
 
                 data: {
-                  url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}`,
+                  url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}&advance_type=${encodeURIComponent(
+                    advanceType || ""
+                  )}`,
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message[0]",
-                defaultValue: "INR",
                 template: "<span>{{ item }}</span>",
                 valueProperty: "",
                 validate: {
@@ -293,11 +272,13 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 label: labelWithAsterisk,
                 dataSrc: "url",
                 data: {
-                  url: `/api/resource/Daily%20Allowance%20Vehicle%20Category`,
+                  url: `/api/method/chatnext_expense_trips.expense_claim.get_applicable_vehicle_types?employee=${employeeId}&claim_type=${
+                    formData?.expense_type || ""
+                  }`,
                 },
-                selectValues: "data",
-                valueProperty: "name",
-                template: "<span>{{ item.name }}</span>",
+                selectValues: "message",
+                valueProperty: "vehicle_category",
+                template: "<span>{{ item.vehicle_category }}</span>",
                 validate: {
                   required: !!field.required,
                   customMessage: `${field?.label} is required`,
@@ -306,8 +287,6 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 input: true,
               };
             }
-
-            // Generic Link field handling
             return {
               type: "select",
               key: field.fieldname,
@@ -366,7 +345,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
     }
     try {
       const res = await fetch(
-        `/api/method/chatnext_expense_trips.expense_claim.get_expense_type_fields?expense_type=${encodeURIComponent(
+        `/api/method/chatnext_expense_trips.expense_claim.advance_get_expense_type_fields?expense_type=${encodeURIComponent(
           expenseType
         )}`
       );
@@ -374,7 +353,11 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
       const fields = data.message?.fields || [];
       const dynamicComponents = mapFieldsToFormio(fields);
 
-      const isReadonly = data.message?.is_amount_readonly ?? false;
+      const isReadonly = Boolean(data.message?.is_amount_readonly);
+      setFormData((prev: any) => ({
+        ...prev,
+        __is_amount_readonly: isReadonly,
+      }));
 
       const dynamicComponentsWithReadonly = dynamicComponents.map(
         (comp: any) => {
@@ -385,12 +368,30 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
         }
       );
 
+      const twoColumnRows = [];
+      for (let i = 0; i < dynamicComponentsWithReadonly.length; i += 2) {
+        twoColumnRows.push({
+          type: "columns",
+          key: `row_${i}`,
+          columns: [
+            {
+              width: 6,
+              components: [dynamicComponentsWithReadonly[i]],
+            },
+            {
+              width: 6,
+              components: dynamicComponentsWithReadonly[i + 1]
+                ? [dynamicComponentsWithReadonly[i + 1]]
+                : [],
+            },
+          ],
+        });
+      }
       setFormSchema({
         display: "form",
         components: [
           ...initialSchema.components,
-          ...dynamicComponentsWithReadonly,
-
+          ...twoColumnRows,
           {
             type: "container",
             key: "buttonContainer",
@@ -415,24 +416,20 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
 
   const handleClose = () => {
     lastExpenseType.current = null;
-    // 5. Reset the form schema and data state
     setFormSchema(initialSchema);
     setFormData({});
-    // Do NOT increment formKey here, as it's handled in the useEffect
-    // setFormKey((prev) => prev + 1);
     onClose();
   };
 
   if (!isOpen) return null;
 
-  // 6. Update modal title based on whether we are editing or adding
   const modalTitle = initialData
     ? "Edit Expense Advance Breakup"
     : "Add Expense Advance Breakup";
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-2xl rounded-lg shadow-xl overflow-visible p-4">
+      <div className="bg-white w-full max-w-xl rounded-lg shadow-xl overflow-visible p-4">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="font-semibold text-lg">{modalTitle}</h2>
           <button
@@ -448,7 +445,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
           <Form
             key={formKey}
             form={formSchema}
-            submission={{ data: formData }} // Use formData which is set via useEffect
+            submission={{ data: formData }}
             onFormReady={(formio: any) => {
               formioInstanceRef.current = formio;
             }}
@@ -460,7 +457,6 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
 
               setFormData(change.data);
 
-              // Handle expense type change
               if (
                 newExpenseType &&
                 newExpenseType !== lastExpenseType.current
@@ -470,8 +466,8 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 fetchExpenseTypeFields(newExpenseType);
               }
 
-              // 🔹 Trigger recalculation whenever units OR vehicle_type changes
               if (
+                formData?.__is_amount_readonly === true &&
                 newExpenseType &&
                 ((units !== null && units !== undefined) || vehicleType)
               ) {
@@ -479,7 +475,6 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 (window as any)._calcTimer = setTimeout(() => {
                   const lastParams = lastCalculatedUnits.current;
 
-                  // Recalculate only if something changed
                   if (
                     !lastParams ||
                     lastParams.units !== numericUnits ||
@@ -500,6 +495,12 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                   }
                 }, 700);
               }
+
+              if (formioInstanceRef.current) {
+                const vehicleField =
+                  formioInstanceRef.current.getComponent("vehicle_type");
+                if (vehicleField) vehicleField.refresh();
+              }
             }}
             onSubmit={(submission: any) => {
               const combinedData = submission.data;
@@ -511,20 +512,16 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 Array.isArray(combinedData.attach_receipt) &&
                 combinedData.attach_receipt.length > 0
               ) {
-                // Case 1: New file uploaded or existing file kept. Extract the URL/data string.
                 attachReceiptValue =
                   combinedData.attach_receipt[0]?.data ||
                   combinedData.attach_receipt[0]?.url ||
                   null;
               }
 
-              // Fallback logic (Core fix from previous step)
               if (!attachReceiptValue && initialData?.custom_attach_receipt) {
-                // Case 3: User clicked Save without changing the file. Preserve the original file link.
                 attachReceiptValue = initialData.custom_attach_receipt;
               }
 
-              // Apply the formatting function to the datetime fields before mapping
               const startDatetime = formatMySQLDatetime(
                 combinedData.start_datetime
               );
@@ -533,7 +530,6 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
               );
               let finalAttachValue = attachReceiptValue;
 
-              // We check for the 'file_url' key which exists in the metadata object.
               if (
                 typeof attachReceiptValue === "object" &&
                 attachReceiptValue !== null
@@ -541,15 +537,11 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 finalAttachValue = attachReceiptValue.file_url || null;
               }
 
-              // Mapped all potential fields to the submission object
               const mappedExpense = {
-                // 7. Crucial: Keep the original ID if editing, or generate a new one if adding
                 id: initialData?.id || crypto.randomUUID(),
                 expense_type: combinedData.expense_type,
                 expense_date: combinedData.expense_date,
-                amount: combinedData.amount,
-                custom_mercent: combinedData.merchant,
-                custom_invoice_number: combinedData.invoice_number,
+                custom_amount_in_other_currency: combinedData.amount,
                 custom_attach_receipt: finalAttachValue,
                 custom_units: combinedData.units,
                 custom_currency: combinedData.currency,
@@ -557,11 +549,10 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 custom_vehicle_type: combinedData.vehicle_type,
                 custom_from_location: combinedData.from_location,
                 custom_to_location: combinedData.to_location,
-                custom_start_datetime: startDatetime, // Use the formatted value
-                custom_end_datetime: endDatetime, // Use the formatted value
+                custom_start_datetime: startDatetime,
+                custom_end_datetime: endDatetime,
                 custom_location: combinedData.location,
               };
-              // 9. Call onSave with the mapped expense (it will either update or add in the main form)
               onSave(mappedExpense);
 
               handleClose();

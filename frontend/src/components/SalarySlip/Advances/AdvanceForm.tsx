@@ -4,7 +4,6 @@ import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import HeaderBar from "../../HeaderBar";
 import { X } from "lucide-react";
-import DOMPurify from "dompurify";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import {
@@ -15,6 +14,8 @@ import {
 // ✅ Import JSON schema
 import advanceFormJson from "../Advances/AdvanceFormio.json";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import { useFileUploader } from "../../../hooks/useFileUploader";
 
 interface AdvanceFormProps {
   user?: any;
@@ -25,7 +26,8 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const formAdvanceInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
-
+   const [attachments, setAttachments] = useState<File[]>([]);
+  const { uploadFiles } = useFileUploader();
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string>();
   const [postingDate] = useState<string>(
     new Date().toISOString().split("T")[0]
@@ -89,25 +91,18 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
       };
 
       mutation.mutate(submissionData, {
-        onSuccess: () => {
+        onSuccess: async(data: any) => {
+            if (attachments?.length > 0) {
+              await uploadFiles(attachments, data.doctype, data.name);
+            }
           toast.success("Advance Request submitted successfully!");
           onClose?.();
           setTimeout(() => setRefetchAttendance(true), 2000);
         },
         onError: (error: any) => {
-          const errorMessage =
-            error?.response?.data?.exception
-              ?.split(":")
-              .slice(1)
-              .join(":")
-              .trim() || "Something went wrong!";
-          toast.error(
-            <span
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(errorMessage),
-              }}
-            />
-          );
+           const formatedError = errorResponseFormater(error, "Submission failed. Please try again.");
+            toast.error(formatedError);
+            console.error(error);
         },
       });
     } catch (err) {
@@ -121,6 +116,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     if (formAdvanceInstance.current) {
       formAdvanceInstance.current.resetValue();
     }
+    setAttachments([]);
     setSelectedAdvanceType(undefined);
     onClose?.();
   }, [onClose]);
@@ -167,8 +163,14 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                 submission.data.custom_advance_type &&
                 submission.data.custom_advance_type !== selectedAdvanceType
               ) {
-                setSelectedAdvanceType(submission.data.custom_advance_type);
+                setSelectedAdvanceType(submission.data.custom_advance_type);;
               }
+              if (submission?.changed?.component?.key === "attachments")
+                setAttachments([
+                  ...attachments,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ...((submission?.data?.attachments as any) || []),
+                ]);
             }}
           />
         </div>
@@ -190,11 +192,9 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
             onClick={handleSubmit}
             size="md"
             variant="contain"
-            bgColor={isDesktop ? "blue-600" : "black"}
+            bgColor="blue-600"
             textColor="white"
-            className={`flex-1 ${
-              isDesktop ? "hover:bg-blue-700 py-3" : "hover:bg-gray-800"
-            }`}
+            className={"flex-1 hover:bg-blue-700 py-3"}
           >
             Submit
           </Button>
