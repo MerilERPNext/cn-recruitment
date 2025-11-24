@@ -9,6 +9,15 @@ export const ConfirmationService = async () => {
   
     return response?.data ?? []; // always return array
   };
+
+  export const SeparationService = async () => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_open_approval_todos",
+      { doctype: "Employee Separation" }
+    ) as { status: string; data: any[] };
+  
+    return response?.data ?? []; // always return array
+  };
   
 
   export const ConfirmationEmployeeServic = async () => {

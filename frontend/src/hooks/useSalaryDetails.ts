@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   getBenefitPayslipHTML,
   getTDSPayslipHTML,
   getSalarySlipHTML,
   getOffCyclePayslipHTML,
+  PrintFormatMenuOptionsService,
 } from "../services/salaryDetailsService"
 import { PermissionError } from "../types/interview"
 
@@ -62,3 +63,11 @@ export const useDownloadSalarySlipPDF = (options: { onSuccess?: (data: any) => v
 }
 
 export { isPermissionError }
+
+export const usePrintFormatMenuOptions = (employee_name: string, name: string) => {
+  return useQuery({
+    queryKey: ["print-format-menu-options", name, employee_name],
+    queryFn: () => PrintFormatMenuOptionsService(employee_name, name),
+    placeholderData: [], // prevents undefined
+  });
+};
