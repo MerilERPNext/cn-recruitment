@@ -374,6 +374,12 @@ const NewGoalPlan = lazyWithRetry(
   "NewGoalPlan"
 );
 
+const PerformanceReviewApp = lazyWithRetry(
+  () => import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
+  "PerformanceReviewApp"
+);
+
+
 // Loading component for Suspense fallbacks
 // eslint-disable-next-line react-refresh/only-export-components
 const LoadingSpinner = () => (
@@ -652,6 +658,7 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "overview", element: <Overview /> },
       { path: "new-goal-plan", element: <NewGoalPlan /> },
+      { path: "performance-review", element: <PerformanceReviewApp /> },
     ],
   },
   {

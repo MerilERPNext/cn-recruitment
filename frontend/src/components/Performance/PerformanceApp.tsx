@@ -6,11 +6,14 @@ import DesktopLayoutWrapper from '../DesktopLayoutWrapper';
 import HeaderBar from '../HeaderBar';
 type TabName =
     "Overview"
-    | "New Goal Plan";
+    | "New Goal Plan"
+    | "Performance Review";
+
 
 const tabRoutes: Record<TabName, string> = {
     Overview: "/webapp/performance-app/overview",
     "New Goal Plan": "/webapp/performance-app/new-goal-plan",
+    "Performance Review": "/webapp/performance-app/performance-review",
 };
 
 
