@@ -1,4 +1,4 @@
-import { BenefitClaimResponse } from "../types/employeeBenifit";
+import { BenefitClaim, BenefitClaimResponse } from "../types/employeeBenifit";
 import FrappeAPI from "../utils/frappeAPI";
 
 export type PayrollData = {
@@ -48,7 +48,7 @@ export const getClaimBenifitMaxAmount = async (
 
 export const createBenifitRequest = async (
   body: Record<string, unknown>
-): Promise<boolean> => {
+): Promise<BenefitClaim> => {
   try {
     const response = await FrappeAPI.createDocument(
       "Employee Benefit Claim",
@@ -56,7 +56,7 @@ export const createBenifitRequest = async (
     );
 
     // Return true if response is not null/undefined
-    return !!response;
+    return response  as BenefitClaim;
   } catch (error) {
     console.error(
       "📡 Error while Adding Employee Benefit Claim Application in:",

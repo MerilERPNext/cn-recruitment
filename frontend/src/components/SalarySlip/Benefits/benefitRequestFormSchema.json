@@ -69,13 +69,28 @@
           "data": {
             "url": "/api/method/cn_indian_payroll.cn_indian_payroll.overrides.benefit_claim.get_max_amount?employee={{data.currentEmployeeId}}&earning_component={{data.earning_component}}"
           },
-          "valueProperty": "message",
-          "selectValues": "message",
+          "valueProperty": "",
+          "selectValues": "message[0]",
           "refreshOn": "earning_component",
           "clearOnRefresh": true,
           "lazyLoad": false,
           "customConditional": "show = !!data.earning_component;",
-          "defaultValue": 0
+         "logic": [
+                  {
+                    "name": "autoSelectFromAPI",
+                    "trigger": {
+                      "type": "event",
+                      "event": "change"
+                    },
+                    "actions": [
+                      {
+                        "type": "customAction",
+                        "customAction": "if (instance?.defaultDownloadedResources?.value) { instance.setValue(instance?.defaultDownloadedResources?.value); }"
+                      }
+                    ]
+                  }
+                ]
+
         },
         {
           "type": "textarea",
@@ -85,13 +100,16 @@
           "placeholder": "Add a note...",
           "rows": 4
         },
-        {
+       {
           "label": "Attachments",
           "key": "attachments",
           "type": "file",
           "input": true,
           "multiple": true,
+          "size": "false",
           "storage": "customfiles",
+          "fileReader": false,
+          "privateDownload": false,
           "filePattern": ".pdf,.doc,.docx,.jpg,.jpeg,.png",
           "tooltip": "Upload receipts or supporting documents.",
           "validate": {
