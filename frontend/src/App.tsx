@@ -9,7 +9,6 @@ import {
 } from "react-router-dom";
 import "./App.css";
 import "./utils/FormioConfig";
-import DOMPurify from "dompurify";
 
 import { AppRoute, routesConfig } from "./routesConfig";
 import ResponsiveDashboard from "./components/ResponsiveDashboard";

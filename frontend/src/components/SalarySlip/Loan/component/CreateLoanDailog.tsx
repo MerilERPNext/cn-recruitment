@@ -6,7 +6,6 @@ import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCreateNewLoanApplication } from "../../../../hooks/useLoan";
 import toast from "react-hot-toast";
 import { CustomError } from "../../../../types/attendance";
-import DOMPurify from "dompurify";
 import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 import createLoanFormSchema from "./createLoanSchema.json";
 import Button from "../../../shared/atoms/Button";

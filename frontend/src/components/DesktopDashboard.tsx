@@ -55,6 +55,7 @@ import useLogout from "../hooks/useLogout";
 import { useRequestPasswordReset } from "../hooks/useResetPassword";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
+import { CustomError } from "../types/attendance";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
