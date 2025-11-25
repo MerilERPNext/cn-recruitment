@@ -1,0 +1,332 @@
+{
+  "title": "Add Goals / Key Result Areas",
+  "name": "goalsKeyResultAreas",
+  "path": "goals-key-result-areas",
+  "display": "form",
+  "components": [
+    {
+      "type": "panel",
+      "key": "goalsKraDetails",
+      "label": "Goals / Key Result Areas Details",
+      "hideLabel": true,
+      "customClass": "py-6 px-8 bg-white rounded-lg",
+      "components": [
+        {
+          "label": "Goals / Key Result Areas Title",
+          "key": "title",
+          "type": "textfield",
+          "input": true,
+          "placeholder": "Enter Goals / Key Result Areas Title Here",
+          "validate": {
+            "required": true
+          },
+          "customClass": "w-full mb-4"
+        },
+        {
+          "label": "Goals / Key Result Areas Description",
+          "key": "description",
+          "type": "textarea",
+          "placeholder": "Enter Description Here",
+          "validate": {
+            "required": true
+          },
+          "customClass": "w-full mb-4"
+        },
+        {
+          "type": "columns",
+          "key": "dateColumns",
+          "customClass": "mb-4",
+          "columns": [
+            {
+              "width": 6,
+              "components": [
+                {
+                  "label": "Start Date",
+                  "key": "startDate",
+                  "type": "datetime",
+                  "widget": "calendar",
+                  "format": "dd-MM-yyyy",
+                  "validate": {
+                    "required": true
+                  },
+                  "input": true,
+                  "customClass": "w-full mb-4"
+                }
+              ]
+            },
+            {
+              "width": 6,
+              "components": [
+                {
+                  "label": "End Date",
+                  "key": "endDate",
+                  "type": "datetime",
+                  "widget": "calendar",
+                  "format": "dd-MM-yyyy",
+                  "validate": {
+                    "required": true
+                  },
+                  "input": true,
+                  "customClass": "w-full mb-4"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "columns",
+          "key": "weightAchColumns",
+          "customClass": "mb-4",
+          "columns": [
+            {
+              "width": 6,
+              "components": [
+                {
+                  "label": "Weightage %",
+                  "key": "weightage",
+                  "type": "number",
+                  "input": true,
+                  "placeholder": "Enter Weightage",
+                  "validate": {
+                    "required": true,
+                    "min": 0,
+                    "max": 100
+                  },
+                  "customClass": "w-full mb-1"
+                },
+                {
+                  "type": "htmlelement",
+                  "tag": "p",
+                  "content": "<i style='color:#6b7280;font-size:13px;'>Remaining Weightage : 100.00</i>",
+                  "customClass": "text-gray-500 mb-4"
+                }
+              ]
+            },
+            {
+              "width": 6,
+              "components": [
+                {
+                  "label": "Achievement",
+                  "key": "achievement",
+                  "type": "number",
+                  "input": true,
+                  "defaultValue": 0,
+                  "validate": {
+                    "required": true
+                  },
+                  "customClass": "w-full mb-4"
+                },
+                {
+                  "label": "Scorecard Pillar",
+                  "key": "scorecardPillar",
+                  "type": "select",
+                  "input": true,
+                  "placeholder": "Select Scorecard Pillar",
+                  "customClass": "w-full mb-4",
+                  "validate": {
+                    "required": true
+                  },
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/resource/Scorecard%20Pillar?fields=[\"name\",\"scorecard_pillar_name\"]"
+                  },
+                  "selectValues": "data",
+                  "valueProperty": "name",
+                  "template": "{{ item.scorecard_pillar_name }}",
+                  "searchEnabled": true,
+                  "lazyLoad": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Goals / Key Result Areas Status",
+          "key": "status",
+          "type": "select",
+          "input": true,
+          "placeholder": "Not Started",
+          "validate": {
+            "required": true
+          },
+          "data": {
+            "values": [
+              {
+                "label": "Not Started",
+                "value": "not_started"
+              },
+              {
+                "label": "In Progress",
+                "value": "in_progress"
+              },
+              {
+                "label": "Completed",
+                "value": "completed"
+              }
+            ]
+          },
+          "customClass": "w-full mb-4"
+        },
+        {
+          "type": "editgrid",
+          "key": "subGoals",
+          "label": "Sub Goals",
+          "addAnother": " Add Subs Goal",
+          "customClass": "mt-6",
+          "hideHeader": true,
+          "removeRow": "Remove",
+          "rowDrafts": false,
+          "components": [
+            {
+              "type": "panel",
+              "key": "subGoalPanel",
+              "label": "Sub Goal",
+              "customClass": "py-4 px-6 bg-gray-50 rounded-lg mb-4",
+              "components": [
+                {
+                  "label": "Sub Goal Title",
+                  "type": "textfield",
+                  "key": "subGoalTitle",
+                  "input": true,
+                  "validate": {
+                    "required": true
+                  },
+                  "placeholder": "Enter Sub Goal Title Here",
+                  "customClass": "w-full mb-4"
+                },
+                {
+                  "label": "Sub Goal Description",
+                  "key": "subGoalDesc",
+                  "type": "textarea",
+                  "placeholder": "Enter Description Here",
+                  "validate": {
+                    "required": true
+                  },
+                  "customClass": "w-full mb-4"
+                },
+                {
+                  "type": "columns",
+                  "key": "subGoalDates",
+                  "customClass": "mb-4",
+                  "columns": [
+                    {
+                      "width": 6,
+                      "components": [
+                        {
+                          "label": "Start Date",
+                          "key": "subStartDate",
+                          "type": "datetime",
+                          "widget": "calendar",
+                          "format": "dd-MM-yyyy",
+                          "validate": {
+                            "required": true
+                          },
+                          "input": true,
+                          "customClass": "w-full mb-4"
+                        }
+                      ]
+                    },
+                    {
+                      "width": 6,
+                      "components": [
+                        {
+                          "label": "End Date",
+                          "key": "subEndDate",
+                          "type": "datetime",
+                          "widget": "calendar",
+                          "format": "dd-MM-yyyy",
+                          "validate": {
+                            "required": true
+                          },
+                          "input": true,
+                          "customClass": "w-full mb-4"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "columns",
+                  "key": "subGoalMetrics",
+                  "customClass": "mb-4",
+                  "columns": [
+                    {
+                      "width": 6,
+                      "components": [
+                        {
+                          "label": "Achieved",
+                          "key": "subAchieved",
+                          "type": "number",
+                          "input": true,
+                          "placeholder": "Enter Achieved Value",
+                          "validate": {
+                            "required": true
+                          },
+                          "customClass": "w-full mb-4"
+                        }
+                      ]
+                    },
+                    {
+                      "width": 6,
+                      "components": [
+                        {
+                          "label": "Weightage %",
+                          "key": "subWeightage",
+                          "type": "number",
+                          "input": true,
+                          "placeholder": "Enter Weightage",
+                          "validate": {
+                            "required": true
+                          },
+                          "customClass": "w-full mb-4"
+                        },
+                        {
+                          "label": "Achievement",
+                          "key": "subAchievement",
+                          "type": "number",
+                          "input": true,
+                          "defaultValue": 0,
+                          "validate": {
+                            "required": true
+                          },
+                          "customClass": "w-full mb-4"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "Sub Goal Status",
+                  "key": "subStatus",
+                  "type": "select",
+                  "input": true,
+                  "placeholder": "Not Started",
+                  "validate": {
+                    "required": true
+                  },
+                  "data": {
+                    "values": [
+                      {
+                        "label": "Not Started",
+                        "value": "not_started"
+                      },
+                      {
+                        "label": "In Progress",
+                        "value": "in_progress"
+                      },
+                      {
+                        "label": "Completed",
+                        "value": "completed"
+                      }
+                    ]
+                  },
+                  "customClass": "w-full mb-4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
