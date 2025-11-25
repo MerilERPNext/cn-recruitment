@@ -795,4 +795,321 @@ const FrappeListView = <T extends BaseItem>({
   );
 };
 
+
+interface BaseItem {
+  name: string;
+  id?: string | number;
+  [key: string]: any;
+}
+
+interface FilterField {
+  fieldname: string;
+  label: string;
+  fieldtype: "Select" | "Link" | "Data" | "Int" | "Float" | "Check" | "Date" | "Datetime";
+  options?: string[];
+}
+interface StaticListViewProps<T extends BaseItem> {
+  data: T[];
+  ItemComponent: (index: number, item: any, isLast: boolean) => React.ReactNode;
+  PreListComponent?: React.ComponentType<any>;
+  PostListComponent?: React.ComponentType<any>;
+  SkeletonComponent?: React.ComponentType;
+
+  isSearch?: boolean;
+  isFilter?: boolean;
+  isLoading?: boolean;
+
+  pageSize?: number;
+  loadMorePagination?: boolean;
+  infiniteScroll?: boolean;
+
+  filterFields?: FilterField[];
+  searchFields?: string[];
+
+  listTitle?: string;
+  showRefreshButton?: boolean;
+
+  onItemClick?: (item: T) => void;
+  onRefresh?: () => void;
+
+  getItemKey?: (item: T, index: number) => string;
+}
+
+export const StaticListView = <T extends BaseItem>({
+  data,
+  ItemComponent,
+  PreListComponent,
+  PostListComponent,
+  SkeletonComponent,
+
+  isSearch = false,
+  isFilter = false,
+  pageSize = 20,
+
+  searchFields = [],
+  filterFields = [],
+
+  infiniteScroll = false,
+  loadMorePagination = false,
+
+  isLoading = false,
+  onItemClick,
+  showRefreshButton = false,
+  onRefresh,
+  getItemKey,
+}: StaticListViewProps<T>) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  // Filtering
+  const filteredData = useMemo(() => {
+    let result = [...data];
+
+    // Search filter
+    if (debouncedSearch && searchFields.length > 0) {
+      const s = debouncedSearch.toLowerCase();
+      result = result.filter((item) =>
+        searchFields.some(
+          (field) => item[field]?.toString().toLowerCase().includes(s)
+        )
+      );
+    }
+
+    // Custom filters
+    Object.entries(filters).forEach(([key, val]) => {
+      if (val !== "" && val !== undefined && val !== null) {
+        result = result.filter((item) => {
+          if (typeof val === "boolean") return item[key] === val;
+          return item[key]?.toString() === val.toString();
+        });
+      }
+    });
+
+    return result;
+  }, [data, debouncedSearch, filters]);
+
+  // Pagination output
+  const paginatedData = useMemo(() => {
+    if (infiniteScroll || loadMorePagination) {
+      return filteredData;
+    }
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize, infiniteScroll, loadMorePagination]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!infiniteScroll) return;
+
+    const sentinel = document.getElementById("static-listview-sentinel");
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setCurrentPage((p) => p + 1);
+      }
+    });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [infiniteScroll]);
+
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+
+  const renderPagination = () =>
+    infiniteScroll ? null : loadMorePagination ? (
+      <div className="flex justify-center py-4">
+        {paginatedData.length < filteredData.length && (
+          <button
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="px-4 py-2 text-sm border rounded-md bg-white hover:bg-gray-100"
+          >
+            Load More
+          </button>
+        )}
+      </div>
+    ) : (
+      <div className="flex justify-between items-center p-4">
+        <span className="text-sm text-gray-600">
+          Showing {(currentPage - 1) * pageSize + 1} –{" "}
+          {Math.min(currentPage * pageSize, filteredData.length)} of{" "}
+          {filteredData.length}
+        </span>
+
+        <div className="flex items-center gap-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+          >
+            <ChevronLeft />
+          </button>
+
+          <span className="text-sm">{currentPage}</span>
+
+          <button
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+          >
+            <ChevronRight />
+          </button>
+        </div>
+      </div>
+    );
+
+  return (
+    <div>
+      {/* HEADER */}
+      <div className="flex gap-2 mb-3">
+        {isSearch && (
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 h-4 text-gray-400" />
+            <input
+              className="w-full pl-10 pr-3 py-2 border rounded-md"
+              placeholder="Search…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        )}
+
+        {isFilter && filterFields.length > 0 && (
+          <button
+            onClick={() => setShowFilters(true)}
+            className="px-3 py-2 border rounded-md bg-white"
+          >
+            <Filter size={16} />
+          </button>
+        )}
+
+        {showRefreshButton && (
+          <button
+            disabled={isLoading}
+            onClick={() => onRefresh?.()}
+            className="px-3 py-2 border rounded-md bg-white"
+          >
+            <RefreshCw className={isLoading ? "animate-spin" : ""} size={16} />
+          </button>
+        )}
+      </div>
+
+      {/* FILTERS PANEL */}
+      {showFilters && (
+        <div className="p-4 rounded-md border bg-gray-50 mb-4">
+          {filterFields.map((f) => (
+            <div key={f.fieldname} className="mb-3">
+              <label className="block text-sm mb-1">{f.label}</label>
+
+              {f.fieldtype === "Select" ? (
+                <select
+                  value={filters[f.fieldname] || ""}
+                  onChange={(e) =>
+                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
+                  }
+                  className="w-full border px-3 py-2 rounded-md"
+                >
+                  <option value="">All</option>
+                  {f.options?.map((op) => (
+                    <option key={op} value={op}>
+                      {op}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={filters[f.fieldname] || ""}
+                  onChange={(e) =>
+                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
+                  }
+                  className="w-full border px-3 py-2 rounded-md"
+                />
+              )}
+            </div>
+          ))}
+
+          <button
+            onClick={() => setShowFilters(false)}
+            className="w-full py-2 bg-blue-600 text-white rounded-md"
+          >
+            Apply Filters
+          </button>
+        </div>
+      )}
+
+      {/* PRE-LIST */}
+      {PreListComponent && (
+        <PreListComponent
+          data={paginatedData}
+          filteredData={filteredData}
+          currentPage={currentPage}
+          totalPages={totalPages}
+        />
+      )}
+
+      {/* LIST */}
+      {isLoading ? (
+        SkeletonComponent ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonComponent key={i} />
+          ))
+        ) : (
+          <div className="flex justify-center py-8">
+            <Loader2 className="animate-spin" />
+          </div>
+        )
+      ) : paginatedData.length === 0 ? (
+        <div className="py-12 text-center text-gray-500">No items found</div>
+      ) : (
+        <>
+          {(isLoading ? [] : paginatedData).map((item, index) => {
+  const isPaginationActive = infiniteScroll || loadMorePagination || pageSize > 0;
+
+  const isLast = isPaginationActive
+    ? index === paginatedData.length - 1
+    : index === filteredData.length - 1;
+
+  const key = getItemKey
+    ? getItemKey(item, index)
+    : item.name || item.id || index;
+
+  return (
+    <div
+      key={key}
+      onClick={() => onItemClick?.(item)}
+      className={onItemClick ? "cursor-pointer" : ""}
+    >
+      {ItemComponent(index, item, isLast)}
+    </div>
+  );
+})}
+
+          {infiniteScroll && <div id="static-listview-sentinel" />}
+        </>
+      )}
+
+      {/* POST-LIST */}
+      {PostListComponent && (
+        <PostListComponent
+          data={paginatedData}
+          filteredData={filteredData}
+          currentPage={currentPage}
+          totalPages={totalPages}
+        />
+      )}
+
+      {/* PAGINATION */}
+      {renderPagination()}
+    </div>
+  );
+};
+
 export default FrappeListView;

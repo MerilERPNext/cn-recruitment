@@ -1,5 +1,6 @@
 import axios from "axios"
 import html2pdf from "html2pdf.js"
+import FrappeAPI from "../utils/frappeAPI"
 
 /**
  * Generate PDF from HTML string
@@ -88,3 +89,14 @@ export const getOffCyclePayslipHTML = async (salarySlipName: string) => {
     salarySlipName,
   )
 }
+
+ export const PrintFormatMenuOptionsService = async (employee_name: string, name: string) => {
+    const response = await FrappeAPI.callMethod(
+      "cn_indian_payroll.cn_indian_payroll.overrides.api.get_eligible_payslips",
+      { employee: name,
+        salary_slip_id: employee_name,
+      }
+    ) ;
+  
+    return response; // always return array
+  };

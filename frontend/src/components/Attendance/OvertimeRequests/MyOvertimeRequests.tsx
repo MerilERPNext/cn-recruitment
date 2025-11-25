@@ -8,6 +8,7 @@ import DataListView from "../../DataListView";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
 import CustomDropdown from "../../shared/CustomDropdown";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Open" },
@@ -17,6 +18,8 @@ const STATUS_OPTIONS = [
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -31,6 +34,7 @@ const MyOvertimeRequests = () => {
 
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
+    setRefetchAttendance(false);
   }, []);
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -109,7 +113,7 @@ const MyOvertimeRequests = () => {
                     );
                   }}
                   onRefetchComplete={handleMyRequestsRefetchComplete}
-                  refetchTrigger={refetchMyRequestsList}
+                  refetchTrigger={refetchMyRequestsList || refetchAttendance}
                   isSearch={false}
                   isFilter={false}
                   pageSize={10}

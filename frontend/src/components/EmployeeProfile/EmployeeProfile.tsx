@@ -26,6 +26,7 @@ import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import toast from "react-hot-toast";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import DocumentLibrary from "../Library/Library";
+import Tooltip from "../shared/Tooltip";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -152,7 +153,9 @@ const EmployeeProfile: React.FC = () => {
             <h1 className="mt-4 text-xl font-semibold">
               {user?.employee_name}
             </h1>
-            <p className="text-gray-500 mt-1">{user?.designation}</p>
+             <Tooltip content={user?.designation}>
+                <p className="text-gray-500 mt-1">{user?.designation?.slice(0, 20)}</p>
+              </Tooltip>
             <p className="text-gray-400 text-sm">
               Employee ID: {user?.employee}
             </p>
@@ -232,9 +235,13 @@ const EmployeeProfile: React.FC = () => {
                   <h1 className="text-2xl font-bold text-gray-900 truncate">
                     {user?.employee_name}
                   </h1>
-                  <p className="text-blue-600 font-medium mt-1 truncate">
-                    {user?.designation}
+                  <Tooltip content={user?.designation}>
+
+                  <p className="text-blue-600 font-medium mt-1 truncate text-wrap">
+                       {user?.designation?.slice(0, 20)}
+
                   </p>
+                  </Tooltip>
                   <p className="text-gray-500 text-sm mt-1 truncate">
                     ID: {user?.employee}
                   </p>

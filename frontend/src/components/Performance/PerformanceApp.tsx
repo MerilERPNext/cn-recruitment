@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useScreenSize } from '../../hooks/useScreenSize';
 import DesktopLayoutWrapper from '../DesktopLayoutWrapper';
 import HeaderBar from '../HeaderBar';
+import { GoalModelProvider } from './GoalModelContext';
 type TabName =
     "Overview"
     | "New Goal Plan"
@@ -75,7 +76,7 @@ const PerformanceApp: React.FC = () => {
     );
 
     const desktopLayout = (
-        <DesktopLayoutWrapper title="Performance" >
+        <DesktopLayoutWrapper title="Performance">
             <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto relative">
                     <Outlet />
@@ -84,8 +85,7 @@ const PerformanceApp: React.FC = () => {
         </DesktopLayoutWrapper>
     );
 
-    return isDesktop ? desktopLayout : mobileLayout;
-
+    return <GoalModelProvider> {isDesktop ? desktopLayout : mobileLayout} </GoalModelProvider>;
 }
 
 export default PerformanceApp
