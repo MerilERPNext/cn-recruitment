@@ -1,16 +1,39 @@
 import React from 'react';
 
-const OverviewCard: React.FC<{data: any, icon: React.JSX.Element}> = ({data, icon}) => {
+interface GoalPlanCardProps {
+  title: string;
+  data: number | string;
+  icon: React.JSX.Element;
+  description?: string;
+}
+
+const GoalPlanCard: React.FC<GoalPlanCardProps> = ({ title, data = "_", icon, description }) => {
   return (
-    <div className='bg-white rounded-xl shadow-sm w-full lg:h-52 h-40 lg:p-8 p-5 border flex justify-between hover:shadow-lg transition-shadow duration-200'>
-        <div className='h-full'>
-            <h2 className="text-gray-400 text-lg font-semibold">{data.title}</h2>
-               <span className='xl:text-5xl text-4xl lg:mt-8 mt-4 block font-bold'>{data.static}</span>
-                <p className='text-base mt-2 text-gray-400'>{data.description}</p>
+    <div className='group bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ease-in-out w-full flex justify-between items-start'>
+      
+      <div className='flex flex-col justify-between h-full space-y-4'>
+        <div>
+          <h2 className="text-gray-500 text-xs font-bold uppercase tracking-wider">
+            {title}
+          </h2>
+          <span className='text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight mt-2 block'>
+            {data}
+          </span>
         </div>
-        {icon }
+        
+        {description && (
+          <p className='text-sm font-medium text-gray-400 group-hover:text-gray-500 transition-colors'>
+            {description}
+          </p>
+        )}
+      </div>
+
+      <div className='flex items-center justify-center p-3 bg-gray-50 rounded-xl text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors duration-300'>
+        {icon}
+      </div>
+      
     </div>
   );
 };
 
-export default OverviewCard;
+export default GoalPlanCard;
