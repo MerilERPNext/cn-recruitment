@@ -11,6 +11,7 @@ import {
   useBenefitClaimPDF,
   useDownloadSalarySlipPDF,
   useOffCyclePaySlipPDF,
+  usePrintFormatMenuOptions,
   useTDSPRintViewPDF,
 } from "../../hooks/useSalaryDetails";
 import SalarySlipPDFModal from "./SalarySlipPDFModal";
@@ -31,6 +32,8 @@ const SalarySlipsList = () => {
     name: string;
     date: string;
   } | null>(null);
+  
+
 
   // Hook 1 - Regular Salary Slip
   const { mutate: downloadType1 } = useDownloadSalarySlipPDF({
@@ -280,9 +283,13 @@ const DownloadMenu = ({
   onType2,
   onType3,
   onType4,
+  onShowPrintFormatMenu,
 }: any) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLButtonElement | null>(null);
+  const printFormatMenuRef = onShowPrintFormatMenu.data;
+
+
 
   return (
     <div className="relative">
@@ -305,24 +312,28 @@ const DownloadMenu = ({
         className="w-60 p-2"
       >
         {[
-          { label: "Regular Payslip", fn: onType1 },
-          { label: "TDS Sheet", fn: onType2 },
-          { label: "Benefit Payslip", fn: onType3 },
-          { label: "Off Cycle Payslip", fn: onType4 },
+       { label: "Regular Payslip", fn: onType1, key: "regular_payslip_exists" },
+       { label: "TDS Sheet", fn: onType2, key: "tds_payslip_exists" },
+       { label: "Benefit Payslip", fn: onType3, key: "benefit_payslip_exists" },
+       { label: "Off Cycle Payslip", fn: onType4, key: "off_payslip_exists" },
         ].map((item, i) => (
-          <div key={i} className="flex justify-between items-center p-2">
-            <button
-              onClick={(e) => {
-                setOpen(false);
-                item.fn(e, itemName);
-              }}
-              className="flex items-center gap-2 text-sm hover:bg-blue-100 px-3 py-2 rounded-md w-full text-left"
-            >
-              <span className="p-2 border rounded"><FaRegEye className="w-4 h-4 text-blue-500" /></span>
-              {item.label}
-            </button>
-          </div>
-        ))}
+  printFormatMenuRef?.[item.key] === 1 && (
+    <div key={i} className="flex justify-between items-center ">
+      <button
+        onClick={(e) => {
+          setOpen(false);
+          item.fn(e, itemName);
+        }}
+        className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
+      >
+        <span className="p-2 border rounded">
+          <FaRegEye className="w-4 h-4 text-blue-500" />
+        </span>
+        {item.label}
+      </button>
+    </div>
+  )
+))}
       </ContextualPopup>
     </div>
   );
@@ -352,6 +363,12 @@ const SalarySlipItemDesktop = ({
       date.getMonth() + 1
     ).padStart(2, "0")}-${date.getFullYear()}`;
   };
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const printFormatMenuRef = usePrintFormatMenuOptions(
+    item.name,
+    item.employee
+  );
+  console.log("printFormatMenuRef in Item:",printFormatMenuRef);
 
   return (
     <div className="my-data-row">
@@ -397,6 +414,7 @@ const SalarySlipItemDesktop = ({
             onType3={onDownloadType3}
             onType4={onDownloadType4}
             onViewPDF={onViewPDF}
+            onShowPrintFormatMenu={printFormatMenuRef}
           />
         </div>
       </div>
