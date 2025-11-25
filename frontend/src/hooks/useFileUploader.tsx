@@ -4,7 +4,7 @@ import { useFileUpload } from "./useFrappeQuery";
 
 export const useFileUploader = (): {
   uploadFiles: (
-    fileObjs: any[],
+    fileObjs: File[],
     doctype: string,
     docName: string,
     onComplete?: () => void
@@ -15,6 +15,7 @@ export const useFileUploader = (): {
   const [loading, setLoading] = useState(false);
 
   const uploadFiles = async (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fileObjs: any[],
     doctype: string,
     docName: string,

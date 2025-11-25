@@ -33,7 +33,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
-  const { uploadFiles ,loading:uploadFileLoading} = useFileUploader();
+  const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
   const mutation = useCreatePlannedOvertimeRequest();
   const { data: plannedOvertimeRequestAttachments } =
@@ -95,14 +95,15 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         {
           onSuccess: async (data: any) => {
             if (attachments?.length > 0) {
-              await uploadFiles(attachments, data.doctype, data.name);
-            }
-            setAttachments([]);
-            onCancel?.();
+              await uploadFiles(attachments, data.doctype, data.name, () => {
+                setAttachments([]);
+                onCancel?.();
 
-            setTimeout(() => {
-              setRefetchAttendance(true);
-            }, 1000);
+                setTimeout(() => {
+                  setRefetchAttendance(true);
+                }, 1000);
+              });
+            }
           },
           onError: (e: CustomError) => {
             const formatedError = errorResponseFormater(e, "Request Failed");
@@ -195,7 +196,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             textColor="white"
             className="hover:bg-blue-700 font-medium"
           >
-            {mutation?.isPending || uploadFileLoading? (
+            {mutation?.isPending || uploadFileLoading ? (
               <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
             ) : (
               "Submit Request"
