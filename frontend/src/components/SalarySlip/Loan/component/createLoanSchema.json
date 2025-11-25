@@ -15,11 +15,11 @@
         {
           "type": "select",
           "key": "loan_product",
-          "label": "Loan Product <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Loan Product",
           "errorLabel": "Loan Product",
           "placeholder": "Select Loan Product",
           "validate": {
-            "required": true
+         
           },
           "input": true,
           "dataSrc": "url",
@@ -35,10 +35,10 @@
         {
           "type": "number",
           "key": "loan_amount",
-          "label": "Loan Amount (INR) <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Loan Amount (INR)  <span style='color:red;margin-left:3px;'> *</span>",
           "errorLabel": "Loan Amount (INR)",
           "validate": {
-            "required": true,
+            "required" : true,
             "min": 1
           },
           "input": true
@@ -54,7 +54,7 @@
                 {
                   "type": "select",
                   "key": "repayment_method",
-                  "label": "Repayment Method <span style='color:red;margin-left:3px;'> *</span>",
+                  "label": "Repayment Method   <span style='color:red;margin-left:3px;'> *</span>",
                   "errorLabel": "Repayment Method",
                   "input": true,
                   "defaultValue": "Repay Over Number of Periods",
@@ -83,7 +83,7 @@
                 {
                   "type": "number",
                   "key": "repayment_amount",
-                  "label": "Monthly Repayment Amount <span style='color:red;margin-left:3px;'> *</span>",
+                  "label": "Monthly Repayment Amount   <span style='color:red;margin-left:3px;'> *</span>",
                   "errorLabel": "Monthly Repayment Amount",
                   "input": true,
                   "customConditional": "show = ['Repay Fixed Amount per Period'].includes(data.repayment_method || '');",
@@ -95,7 +95,7 @@
                 {
                   "type": "number",
                   "key": "repayment_periods",
-                  "label": "Repayment Period in Months <span style='color:red;margin-left:3px;'> *</span>",
+                  "label": "Repayment Period in Months   <span style='color:red;margin-left:3px;'> *</span>",
                   "errorLabel": "Repayment Period in Months",
                   "input": true,
                   "customConditional": "show = ['Repay Over Number of Periods'].includes(data.repayment_method || '');",
@@ -113,10 +113,10 @@
         {
           "type": "textarea",
           "key": "description",
-          "label": "Reason <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Reason",
           "errorLabel": "Reason",
           "validate": {
-            "required": true
+         
           },
           "input": true,
           "placeholder": "Enter reason"

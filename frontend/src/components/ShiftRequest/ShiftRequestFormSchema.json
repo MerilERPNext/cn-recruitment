@@ -14,7 +14,7 @@
                         {
                             "type": "datetime",
                             "key": "fromDate",
-                            "label": "From Date <span style='color:red;margin-left:3px;'> *</span>",
+                            "label": "From Date",
                             "errorLabel": "From Date",
                             "input": true,
                             "format": "dd/MM/yyyy",
@@ -22,7 +22,6 @@
                             "enableTime": false,
                             "defaultValue": "",
                             "validate": {
-                                "required": true
                             }
                         }
                     ]
@@ -32,7 +31,7 @@
                         {
                             "type": "datetime",
                             "key": "toDate",
-                            "label": "To Date <span style='color:red;margin-left:3px;'>*</span>",
+                            "label": "To Date",
                             "errorLabel": "To Date",
                             "input": true,
                             "format": "dd/MM/yyyy",
@@ -40,7 +39,6 @@
                             "enableTime": false,
                             "defaultValue": "",
                             "validate": {
-                                "required": true
                             }
                         }
                     ]
@@ -50,7 +48,7 @@
         {
             "type": "select",
             "key": "shiftType",
-            "label": "Shift Type <span style='color:red;margin-left:3px;'>*</span>",
+            "label": "Shift Type",
             "errorLabel": "Shift Type",
             "input": true,
             "placeholder": "Select shift type",
@@ -62,19 +60,17 @@
             "template": "<span>{{ item.name }}</span>",
             "selectValues": "data",
             "validate": {
-                "required": true
             },
             "defaultValue": ""
         },
         {
             "type": "textarea",
             "key": "reason",
-            "label": "Reason <span style='color:red;margin-left:3px;'>*</span>",
+            "label": "Reason",
             "errorLabel": "Reason",
             "placeholder": "Enter reason",
             "input": true,
             "validate": {
-                "required": true
             }
         }
     ]

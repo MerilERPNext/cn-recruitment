@@ -1,5 +1,5 @@
 {
-  "title": "Advance Request",
+  "title": "Advance Request", 
   "name": "advanceRequest",
   "path": "advance-request",
   "display": "form",
@@ -13,13 +13,13 @@
       "customClass": "bg-white rounded-lg",
       "components": [
         {
-          "label": "Advance Type <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Advance Type",
           "errorLabel": "Advance Type",
           "key": "custom_advance_type",
           "type": "select",
           "input": true,
           "placeholder": "Select advance type",
-          "validate": { "required": true },
+          "validate": { },
           "dataSrc": "url",
           "data": {
             "url": "/api/resource/Advance Type?fields=[\"name\"]"
@@ -52,24 +52,24 @@
 
         },
         {
-          "label": "Advance Amount <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Advance Amount",
           "errorLabel": "Advance Amount",
           "key": "advance_amount",
           "type": "currency",
           "input": true,
           "placeholder": "0.00",
-          "validate": { "required": true, "min": 1 },
+          "validate": {  "min": 1 },
           "currency": "INR",
           "customClass": "mb-4"
         },
         {
-          "label": "Repayment Type <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Repayment Type",
           "errorLabel": "Repayment Type",
           "key": "custom_repayment_type",
           "type": "select",
           "input": true,
           "placeholder": "Select repayment type",
-          "validate": { "required": true },
+          "validate": { },
           "data": {
             "values": [
               { "label": "One Time", "value": "One Time" },
@@ -94,7 +94,7 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Repayment Start Date <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Repayment Start Date",
           "errorLabel": "Repayment Start Date",
           "key": "custom_repayment_start_date",
           "type": "datetime",
@@ -102,40 +102,40 @@
           "enableTime": false,
           "format": "yyyy-MM-dd",
           "placeholder": "Select start date",
-          "validate": { "required": true },
+          "validate": { },
           "customConditional": "show = data.custom_repayment_type === 'One Time' || data.custom_repayment_type === 'Recurring';",
           "customClass": "mb-4"
         },
         {
-          "label": "Repayment Period (Months) <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Repayment Period (Months)",
           "errorLabel": "Repayment Period (Months)",
           "key": "repayment_periods",
           "type": "number",
           "input": true,
           "placeholder": "Number of months",
-          "validate": { "required": true, "min": 1, "max": 36 },
+          "validate": {  "min": 1, "max": 36 },
           "customConditional": "show = data.custom_repayment_type === 'Recurring' && data.repayment_method === 'Repay Over Number of Periods';",
           "customClass": "mb-4"
         },
         {
-          "label": "Monthly Repayment Amount <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Monthly Repayment Amount",
           "errorLabel": "Monthly Repayment Amount",
           "key": "repayment_amount",
           "type": "number",
           "input": true,
           "placeholder": "0.00",
-          "validate": { "required": true, "min": 1 },
+          "validate": {  "min": 1 },
           "customConditional": "show = data.custom_repayment_type === 'Recurring' && data.repayment_method === 'Repay Fixed Amount per Period';",
           "customClass": "mb-4"
         },
         {
-          "label": "Purpose <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Purpose",
           "errorLabel": "Purpose",
           "key": "purpose",
           "type": "textarea",
           "input": true,
           "placeholder": "Describe the purpose of advance",
-          "validate": { "required": true },
+          "validate": { },
           "rows": 4,
           "customClass": "mb-4"
         },

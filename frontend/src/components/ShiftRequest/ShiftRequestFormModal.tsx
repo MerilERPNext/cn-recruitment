@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { toast } from "react-hot-toast";
 import {
@@ -18,6 +18,8 @@ import { useGlobalStore } from "../../hooks/useGlobalStore";
 import defaultFormSchema from "./ShiftRequestFormSchema.json";
 import Button from "../shared/atoms/Button";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useRequiredFields } from "../../hooks/useRequiredFields";
+import { SchemaComponent } from "../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -128,6 +130,76 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     }
   };
 
+    const { data: requiredFields } = useRequiredFields("Shift Request");
+    const requiredFieldMap = useMemo(() => {
+      if (!requiredFields?.fields) return {};
+      const map: Record<string, boolean> = {};
+      requiredFields.fields.forEach((f) => {
+        if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+      });
+      return map;
+    }, [requiredFields]);
+    
+    console.log("requiredFieldMap", requiredFieldMap);
+
+    /**
+   * Helper: deep clone schema and apply required flags + label postfix for required fields
+   */
+  const toSnakeCase = (str: string) =>
+  str
+    .replace(/([a-z])([A-Z])/g, "$1_$2")
+    .replace(/\s+/g, "_")
+    .toLowerCase();
+
+const transformSchemaWithRequired = (
+  baseSchema: FormSchema,
+  requiredMap: Record<string, boolean>
+): FormSchema => {
+  if (!baseSchema) return baseSchema;
+
+  const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
+
+  // Detect if this form is shiftType (adjust according to your schema)
+  const applyToComponents = (components?: SchemaComponent[]) => {
+    if (!components) return;
+
+    components.forEach((comp) => {
+      if (!comp) return;
+
+      let key = comp.key;
+      if (typeof key === "string") {
+        key = toSnakeCase(key);
+      }
+
+      if (key && requiredMap[key]) {
+        if (!comp.validate) comp.validate = {};
+        comp.validate.required = true;
+
+        if (typeof comp.label === "string") {
+          const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
+          if (!comp.label.includes(asteriskHtml)) {
+            comp.label = `${comp.label} ${asteriskHtml}`;
+          }
+        }
+      }
+
+      // Recurse inside nested components
+      if (comp.components) applyToComponents(comp.components);
+      if (comp.columns) {
+        comp.columns.forEach((col: any) => applyToComponents(col.components));
+      }
+      if (comp.rows) {
+        comp.rows.forEach((row: any[]) =>
+          row.forEach((cell: any) => applyToComponents(cell.components))
+        );
+      }
+    });
+  };
+
+  applyToComponents(cloned.components);
+  return cloned;
+};
+  
   // Update schema when propSchema changes
   useEffect(() => {
     if (propSchema) {
@@ -135,6 +207,11 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     }
   }, [propSchema]);
 
+  const validatedSchema = useMemo(() => {
+    return transformSchemaWithRequired(formSchema, requiredFieldMap);
+  }, [formSchema, requiredFieldMap]);
+
+  
   if (isLoading) {
     return (
       <div className="bg-gray-50 flex flex-col font-sans">
@@ -172,74 +249,13 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-gray-50 flex flex-col font-sans">
-        <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-red-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-red-800">
-                  Unable to Load Form Data
-                </h3>
-                <div className="mt-2 text-sm text-red-700">
-                  <p>
-                    There was an error loading the required data for this form.
-                    This could be due to:
-                  </p>
-                  <ul className="list-disc list-inside mt-1 space-y-1">
-                    <li>Network connectivity issues</li>
-                    <li>Missing employee information</li>
-                    <li>Server temporarily unavailable</li>
-                  </ul>
-                  <p className="mt-2">
-                    Please try again or contact support if the problem persists.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
-          <div className="max-w-4xl mx-auto flex space-x-4">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-            >
-              Close
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="flex-1 py-3 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-gray-50 flex flex-col font-sans">
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <Form
-            form={formSchema}
+            form={validatedSchema}
             onFormReady={(instance: Formio) => {
               formRef.current = instance;
             }}
