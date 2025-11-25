@@ -6,11 +6,14 @@ interface Option {
   label: string;
 }
 
+type Position = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
 interface CustomDropdownProps {
   value: string;
   onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   className?: string;
   options: Option[];
+  position?: Position;
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -18,9 +21,16 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   onChange,
   className,
   options,
+  position = "bottom-left",
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const positionCss = {
+    "top-left": "bottom-[calc(100%+10px)] right-0 ",
+    "top-right": "bottom-[calc(100%+10px)] left-0 ",
+    "bottom-left": "top-full right-0",
+    "bottom-right": "top-full left-0 "
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,7 +89,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-full min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+        <div className={`absolute right-0 mt-2 w-full min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${positionCss[position]}`}>
           {options.map((option) => (
             <button
               key={option.value}
