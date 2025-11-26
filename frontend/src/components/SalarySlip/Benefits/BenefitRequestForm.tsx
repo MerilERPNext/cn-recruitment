@@ -12,6 +12,8 @@ import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import CircularLoader from "../../shared/atoms/CircularLoader";
+import { FormSchema, SchemaComponent } from "../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
+import { useRequiredFields } from "../../../hooks/useRequiredFields";
 
 interface BenefitRequestFormProps {
   isOpen: boolean;
@@ -43,6 +45,69 @@ const [attachments,setAttachments] = useState<File[]>([])
       },
     };
   }, [currentEmployee]);
+
+   const { data: requiredFields } = useRequiredFields("Employee Benefit Claim");
+      const requiredFieldMap = useMemo(() => {
+        if (!requiredFields?.fields) return {};
+        const map: Record<string, boolean> = {};
+        requiredFields.fields.forEach((f) => {
+          if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+        });
+        return map;
+      }, [requiredFields]);
+    
+      console.log("requiredFieldMap", requiredFieldMap);
+  
+      const transformSchemaWithRequired = (
+          baseSchema: FormSchema,
+          requiredMap: Record<string, boolean>
+        ): FormSchema => {
+          if (!baseSchema) return baseSchema;
+          // deep clone
+          const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
+      
+          const applyToComponents = (components?: SchemaComponent[]) => {
+            if (!components) return;
+            components.forEach((comp) => {
+              const key = comp.key;
+              if (key && requiredMap[key]) {
+                // ensure validate exists
+                if (!comp.validate) comp.validate = {};
+                // set required flag
+                comp.validate.required = true;
+      
+                // Append red asterisk to label (avoid duplicating)
+                if (typeof comp.label === "string") {
+                  const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
+                  if (!comp.label.includes(asteriskHtml)) {
+                    // Some labels may include HTML already; we append the asterisk HTML
+                    comp.label = `${comp.label} ${asteriskHtml}`;
+                  }
+                }
+              }
+              // recurse into nested components (like panels, columns, containers)
+              if (comp.components && Array.isArray(comp.components)) {
+                applyToComponents(comp.components);
+              }
+              // some schema use nested components in 'columns' or 'rows' etc - handle common cases
+              if (comp.columns && Array.isArray(comp.columns)) {
+                comp.columns.forEach((col: any) => applyToComponents(col.components));
+              }
+              if (comp.rows && Array.isArray(comp.rows)) {
+                comp.rows.forEach((row: any[]) =>
+                  row.forEach((cell: any) => applyToComponents(cell.components))
+                );
+              }
+            });
+          };
+      
+          applyToComponents(cloned.components);
+          return cloned;
+        };
+
+  const transformedSchema = useMemo(() => {
+        return transformSchemaWithRequired(benefitRequestFormSchema as FormSchema, requiredFieldMap);
+      }, [requiredFieldMap]);
 
   // Form submission handler
   const handleSubmit = async () => {
@@ -108,7 +173,7 @@ const [attachments,setAttachments] = useState<File[]>([])
         {/* Body */}
         <div className="flex-1 overflow-y-auto pb-20 px-6">
           <Form
-            form={benefitRequestFormSchema}
+            form={transformedSchema}
             submission={initialSubmission}
             options={{
               submitButton: false,

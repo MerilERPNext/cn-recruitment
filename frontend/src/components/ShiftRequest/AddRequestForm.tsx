@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import { useNavigate } from "react-router";
 import { toast } from "react-hot-toast";
@@ -12,6 +12,9 @@ import type { ShiftRequestFormData, FormioSubmission } from "../../types/shift";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import Button from "../shared/atoms/Button";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useRequiredFields } from "../../hooks/useRequiredFields";
+import defaultFormSchema from "./ShiftRequestFormSchema.json";
+import { FormSchema, SchemaComponent } from "../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -28,6 +31,79 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
   const { data: employeeDetails } = useCurrentEmployee();
 
   const handleBack = () => navigate(-1);
+
+   const { data: requiredFields } = useRequiredFields("Shift Request");
+        const requiredFieldMap = useMemo(() => {
+          if (!requiredFields?.fields) return {};
+          const map: Record<string, boolean> = {};
+          requiredFields.fields.forEach((f) => {
+            if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+          });
+          return map;
+        }, [requiredFields]);
+      
+        console.log("requiredFieldMap", requiredFieldMap);
+  
+   const toSnakeCase = (str: string) =>
+    str
+      .replace(/([a-z])([A-Z])/g, "$1_$2")
+      .replace(/\s+/g, "_")
+      .toLowerCase();
+  
+  const transformSchemaWithRequired = (
+    baseSchema: FormSchema,
+    requiredMap: Record<string, boolean>
+  ): FormSchema => {
+    if (!baseSchema) return baseSchema;
+  
+    const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
+  
+    // Detect if this form is shiftType (adjust according to your schema)
+    const applyToComponents = (components?: SchemaComponent[]) => {
+      if (!components) return;
+  
+      components.forEach((comp) => {
+        if (!comp) return;
+  
+        let key = comp.key;
+        if (typeof key === "string") {
+          key = toSnakeCase(key);
+        }
+  
+        if (key && requiredMap[key]) {
+          if (!comp.validate) comp.validate = {};
+          comp.validate.required = true;
+  
+          if (typeof comp.label === "string") {
+            const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
+            if (!comp.label.includes(asteriskHtml)) {
+              comp.label = `${comp.label} ${asteriskHtml}`;
+            }
+          }
+        }
+  
+        // Recurse inside nested components
+        if (comp.components) applyToComponents(comp.components);
+        if (comp.columns) {
+          comp.columns.forEach((col: any) => applyToComponents(col.components));
+        }
+        if (comp.rows) {
+          comp.rows.forEach((row: any[]) =>
+            row.forEach((cell: any) => applyToComponents(cell.components))
+          );
+        }
+      });
+    };
+  
+    applyToComponents(cloned.components);
+    return cloned;
+  };
+
+
+    const validatedFormSchema = useMemo(()=>transformSchemaWithRequired(
+      defaultFormSchema,
+      requiredFieldMap
+    ),[requiredFieldMap]);
 
   const handleSubmit = async () => {
     if (!formRef.current) {
@@ -95,79 +171,6 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
       <div className="text-red-600">Error loading shifts: {error.message}</div>
     );
 
-  const formSchema = {
-    title: "Request Shift Change",
-    name: "requestShiftChange",
-    path: "request-shift-change",
-    display: "form",
-    components: [
-      {
-        type: "columns" as const,
-        key: "dateRange",
-        label: "Date Range",
-        columns: [
-          {
-            components: [
-              {
-                type: "datetime",
-                key: "fromDate",
-                label:
-                  "From Date <span style='color:red;margin-left:3px;'> *</span>",
-                errorLabel: "From Date",
-                input: true,
-                format: "dd/MM/yyyy",
-                enableDate: true,
-                enableTime: false,
-                defaultValue: new Date().toISOString(),
-                validate: { required: true },
-              },
-            ],
-          },
-          {
-            components: [
-              {
-                type: "datetime",
-                key: "toDate",
-                label:
-                  "To Date <span style='color:red;margin-left:3px;'> *</span>",
-                errorLabel: "To Date",
-                input: true,
-                format: "dd/MM/yyyy",
-                enableDate: true,
-                enableTime: false,
-                defaultValue: new Date().toISOString(),
-                validate: { required: true },
-              },
-            ],
-          },
-        ],
-      },
-      {
-        type: "select",
-        key: "shiftType",
-        label: "Shift Type <span style='color:red;margin-left:3px;'> *</span>",
-        errorLabel: "Shift Type",
-        input: true,
-        placeholder: "Select shift type",
-        data: {
-          values: shiftTypes?.data.map((s) => ({
-            label: s?.name,
-            value: s?.name,
-          })),
-        },
-        validate: { required: true },
-      },
-      {
-        type: "textarea",
-        key: "reason",
-        label: "Reason <span style='color:red;margin-left:3px;'> *</span>",
-        errorLabel: "Reason",
-        placeholder: "Enter reason",
-        input: true,
-        validate: { required: true },
-      },
-    ],
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -175,7 +178,7 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
 
       <div className="flex-1 p-4 overflow-y-auto">
         <Form
-          form={formSchema}
+          form={validatedFormSchema}
           options={{ submitButton: false }}
           onFormReady={(instance: any) => {
             formRef.current = instance;

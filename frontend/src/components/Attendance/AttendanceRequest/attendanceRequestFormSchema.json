@@ -31,7 +31,7 @@
           "defaultValue": ""
         },
         {
-          "label": "Employee <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Employee",
           "errorLabel": "Employee",
           "key": "employee",
           "type": "select",
@@ -115,8 +115,9 @@
             ]
           }
         },
+        
         {
-          "label": "From Date <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "From Date",
           "errorLabel": "From Date",
           "key": "from_date",
           "type": "datetime",
@@ -130,13 +131,13 @@
           "customClass": "mb-4",
           "enableTime": false,
           "validate": {
-            "required": true
+          
           },
           "disabled": false,
           "redrawOn": "request_type"
         },
         {
-          "label": "To Date <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "To Date",
           "errorLabel": "To Date",
           "key": "to_date",
           "type": "datetime",
@@ -149,7 +150,7 @@
           "customClass": "mb-4",
           "enableTime": false,
           "validate": {
-            "required": true
+          
           },
           "customConditional": "show = !['Clockin'].includes(data.request_type || '');",
           "calculateValue": "value = data.request_type === 'Short Attendance Request' ? data.from_date : value",
@@ -157,7 +158,7 @@
           "redrawOn": "from_date"
         },
         {
-          "label": "From Time <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "From Time",
           "errorLabel": "From Time",
           "key": "custom_from_time",
           "type": "datetime",
@@ -168,7 +169,7 @@
           "placeholder": "hh:mm",
           "customClass": "mb-4",
           "validate": {
-            "required": true,
+       
             "customMessage": "From Time is required",
             "custom": "valid = ['Clockin', 'Short Attendance Request', 'On Duty', 'Attendance Adjustment', 'Out Duty'].includes(data.request_type) ? !!input : true;"
           },
@@ -193,7 +194,7 @@
           "placeholder": "hh:mm",
           "customClass": "mb-4",
           "validate": {
-            "required": true,
+        
             "customMessage": "To Time is required",
             "custom": "valid = ['Short Attendance Request', 'On Duty', 'Attendance Adjustment', 'Out Duty'].includes(data.request_type) ? !!input : true;"
           },
@@ -297,7 +298,6 @@
           "customClass": "mb-4",
           "customConditional": "show = ['Clockin', 'Attendance Adjustment'].includes(data.request_type || '');",
           "validate": {
-            "required": true,
             "customMessage": "Location is required",
             "custom": "valid = ['Clockin', 'Attendance Adjustment'].includes(data.request_type) ? !!input : true;"
           },

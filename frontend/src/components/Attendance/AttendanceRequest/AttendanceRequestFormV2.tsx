@@ -20,6 +20,7 @@ import defaultFormSchema from "./attendanceRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
+import { useRequiredFields } from "../../../hooks/useRequiredFields";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -62,7 +63,7 @@ interface FormioFormInstance {
   element?: HTMLElement;
 }
 
-interface FormSchema {
+export interface FormSchema {
   title: string;
   name: string;
   path: string;
@@ -70,7 +71,7 @@ interface FormSchema {
   components: SchemaComponent[];
 }
 
-interface SchemaComponent {
+export interface SchemaComponent {
   type: string;
   key: string;
   label?: string;
@@ -83,6 +84,8 @@ interface SchemaComponent {
   valueProperty?: string;
   selectValues?: string;
   refreshOn?: string;
+  // allow other unknown properties like validate
+  [key: string]: any;
 }
 
 interface RequestTypeOption {
@@ -127,7 +130,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const { uploadFiles,loading:uploadFileLoading } = useFileUploader();
+  const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
   const [isForOthers, setIsForOthers] = useState(false);
   const [formSchema, setFormSchema] = useState<FormSchema>(
@@ -147,6 +150,68 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const mutation = useCreateNewAttendanceRequest();
   const { mutate: updateAttendanceRequest } = useUpdateAttendanceRequest();
 
+  const { data: requiredFields } = useRequiredFields("Attendance Request");
+  const requiredFieldMap = useMemo(() => {
+    if (!requiredFields?.fields) return {};
+    const map: Record<string, boolean> = {};
+    requiredFields.fields.forEach((f) => {
+      if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+    });
+    return map;
+  }, [requiredFields]);
+
+  console.log("requiredFieldMap", requiredFieldMap);
+
+  /**
+   * Helper: deep clone schema and apply required flags + label postfix for required fields
+   */
+  const transformSchemaWithRequired = (
+    baseSchema: FormSchema,
+    requiredMap: Record<string, boolean>
+  ): FormSchema => {
+    if (!baseSchema) return baseSchema;
+    // deep clone
+    const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
+
+    const applyToComponents = (components?: SchemaComponent[]) => {
+      if (!components) return;
+      components.forEach((comp) => {
+        const key = comp.key;
+        if (key && requiredMap[key]) {
+          // ensure validate exists
+          if (!comp.validate) comp.validate = {};
+          // set required flag
+          comp.validate.required = true;
+
+          // Append red asterisk to label (avoid duplicating)
+          if (typeof comp.label === "string") {
+            const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
+            if (!comp.label.includes(asteriskHtml)) {
+              // Some labels may include HTML already; we append the asterisk HTML
+              comp.label = `${comp.label} ${asteriskHtml}`;
+            }
+          }
+        }
+        // recurse into nested components (like panels, columns, containers)
+        if (comp.components && Array.isArray(comp.components)) {
+          applyToComponents(comp.components);
+        }
+        // some schema use nested components in 'columns' or 'rows' etc - handle common cases
+        if (comp.columns && Array.isArray(comp.columns)) {
+          comp.columns.forEach((col: any) => applyToComponents(col.components));
+        }
+        if (comp.rows && Array.isArray(comp.rows)) {
+          comp.rows.forEach((row: any[]) =>
+            row.forEach((cell: any) => applyToComponents(cell.components))
+          );
+        }
+      });
+    };
+
+    applyToComponents(cloned.components);
+    return cloned;
+  };
+
   // Fetch schema from backend if schemaUrl is provided
   useEffect(() => {
     if (schemaUrl && !propSchema) {
@@ -154,8 +219,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       fetch(schemaUrl)
         .then((res) => res.json())
         .then((data) => {
-          setFormSchema(data.message || data);
-          setIsSchemaLoading(false);
+          const src = data.message || data;
+          try {
+            const transformed = transformSchemaWithRequired(
+              src,
+              requiredFieldMap
+            );
+            setFormSchema(transformed);
+          } catch (e) {
+            setFormSchema(src);
+          } finally {
+            setIsSchemaLoading(false);
+          }
         })
         .catch((error) => {
           console.error("Failed to fetch schema:", error);
@@ -163,28 +238,45 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           setIsSchemaLoading(false);
         });
     }
-  }, [schemaUrl, propSchema]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schemaUrl, propSchema, requiredFieldMap]);
 
   // Update schema when propSchema changes
   useEffect(() => {
     if (propSchema) {
-      setFormSchema(propSchema);
+      try {
+        setFormSchema(transformSchemaWithRequired(propSchema, requiredFieldMap));
+      } catch {
+        setFormSchema(propSchema);
+      }
     }
-  }, [propSchema]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propSchema, requiredFieldMap]);
+
+  // If requiredFieldMap changes and we already have a formSchema in state, re-apply required flags
+  useEffect(() => {
+    try {
+      setFormSchema((prev) => {
+        if (!prev) return prev;
+        return transformSchemaWithRequired(prev, requiredFieldMap);
+      });
+    } catch (e) {
+      // ignore transform errors
+      console.warn("Failed to reapply required fields to existing schema", e);
+    }
+  }, [requiredFieldMap]);
 
   // Filter request types based on API conditions and remove dataSrc from company field
   useEffect(() => {
     if (reqValidationmutation?.data) {
       const baseSchema = propSchema || defaultFormSchema;
-      const filteredSchema = JSON.parse(
-        JSON.stringify(baseSchema)
-      ) as FormSchema; // Deep clone
+      const filteredSchema = JSON.parse(JSON.stringify(baseSchema)) as FormSchema; // Deep clone
 
       // Find the request_type field in the schema
       const panel = filteredSchema.components?.[0];
       if (panel?.components) {
         const requestTypeField = panel.components.find(
-          (comp: SchemaComponent) => comp.key === "request_type"
+          (comp: SchemaComponent) => comp.key === "custom_request_type"
         );
 
         if (requestTypeField?.data?.values) {
@@ -199,8 +291,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 case "Short Attendance Request":
                   return reqValidationmutation.data.short_leave_requests;
                 case "Attendance Adjustment":
-                  return reqValidationmutation.data
-                    .attendance_adjustment_requests;
+                  return reqValidationmutation.data.attendance_adjustment_requests;
                 default:
                   return false;
               }
@@ -223,9 +314,20 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         }
       }
 
-      setFormSchema(filteredSchema);
+      try {
+        const transformed = transformSchemaWithRequired(
+          filteredSchema,
+          requiredFieldMap
+        );
+        setFormSchema(transformed);
+      } catch {
+        setFormSchema(filteredSchema);
+      }
     }
-  }, [reqValidationmutation?.data, propSchema]);
+    // include requiredFieldMap so required flags are respected after filtering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reqValidationmutation?.data, propSchema, requiredFieldMap]);
+
   const normalizeTime = (timeStr?: string) => {
     if (!timeStr) return null;
     try {
@@ -644,17 +746,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         {/* Submit Bar */}
         <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
           <div className="max-w-4xl mx-auto">
-            {/* <button
-              onClick={() => formAddressInstance.current?.submit()}
-              className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors flex items-center justify-center"
-            >
-              {mutation.isPending ? (
-                <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-              ) : (
-                "Submit"
-              )}
-            </button> */}
-
             <Button
               onClick={() => formAddressInstance.current?.submit()}
               fullWidth

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
@@ -10,6 +10,8 @@ import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 import createLoanFormSchema from "./createLoanSchema.json";
 import Button from "../../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
+import { useRequiredFields } from "../../../../hooks/useRequiredFields";
+import { FormSchema, SchemaComponent } from "../../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 
 interface CreateLoanDialogProps {
   isOpen: boolean;
@@ -28,6 +30,70 @@ export default function CreateLoanDialog({
   const mutation = useCreateNewLoanApplication();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
+
+  const { data: requiredFields } = useRequiredFields("Loan Application");
+    const requiredFieldMap = useMemo(() => {
+      if (!requiredFields?.fields) return {};
+      const map: Record<string, boolean> = {};
+      requiredFields.fields.forEach((f) => {
+        if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+      });
+      return map;
+    }, [requiredFields]);
+  
+    console.log("requiredFieldMap", requiredFieldMap);
+
+    const transformSchemaWithRequired = (
+        baseSchema: FormSchema,
+        requiredMap: Record<string, boolean>
+      ): FormSchema => {
+        if (!baseSchema) return baseSchema;
+        // deep clone
+        const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
+    
+        const applyToComponents = (components?: SchemaComponent[]) => {
+          if (!components) return;
+          components.forEach((comp) => {
+            const key = comp.key;
+            if (key && requiredMap[key]) {
+              // ensure validate exists
+              if (!comp.validate) comp.validate = {};
+              // set required flag
+              comp.validate.required = true;
+    
+              // Append red asterisk to label (avoid duplicating)
+              if (typeof comp.label === "string") {
+                const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
+                if (!comp.label.includes(asteriskHtml)) {
+                  // Some labels may include HTML already; we append the asterisk HTML
+                  comp.label = `${comp.label} ${asteriskHtml}`;
+                }
+              }
+            }
+            // recurse into nested components (like panels, columns, containers)
+            if (comp.components && Array.isArray(comp.components)) {
+              applyToComponents(comp.components);
+            }
+            // some schema use nested components in 'columns' or 'rows' etc - handle common cases
+            if (comp.columns && Array.isArray(comp.columns)) {
+              comp.columns.forEach((col: any) => applyToComponents(col.components));
+            }
+            if (comp.rows && Array.isArray(comp.rows)) {
+              comp.rows.forEach((row: any[]) =>
+                row.forEach((cell: any) => applyToComponents(cell.components))
+              );
+            }
+          });
+        };
+    
+        applyToComponents(cloned.components);
+        return cloned;
+      };
+    
+    const transformedSchema = useMemo(() => {
+      return transformSchemaWithRequired(createLoanFormSchema as FormSchema, requiredFieldMap);
+    }, [requiredFieldMap]);
+
   const handleSubmit = async () => {
     const submission = await formRef.current?.submit();
     const formData = submission?.data;
@@ -88,7 +154,7 @@ export default function CreateLoanDialog({
         {/* Dialog Content */}
         <div className="flex-1 min-h-0 overflow-y-auto pb-20">
           <Form
-            form={createLoanFormSchema}
+            form={transformedSchema}
             options={{
               submitButton: false,
             }}
