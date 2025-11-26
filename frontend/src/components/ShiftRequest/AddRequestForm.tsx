@@ -4,7 +4,7 @@ import { Form } from "@tsed/react-formio";
 import { useNavigate } from "react-router";
 import { toast } from "react-hot-toast";
 
-import { useShiftTypes, useCreateShiftRequest } from "../../hooks/useShift";
+import { useCreateShiftRequest } from "../../hooks/useShift";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import HeaderBar from "../HeaderBar";
 
@@ -14,7 +14,10 @@ import Button from "../shared/atoms/Button";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
 import defaultFormSchema from "./ShiftRequestFormSchema.json";
-import { FormSchema, SchemaComponent } from "../Attendance/AttendanceRequest/AttendanceRequestFormV2";
+import {
+  FormSchema,
+  SchemaComponent,
+} from "../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -26,62 +29,62 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
   const navigate = useNavigate();
   const formRef = useRef<any>(null);
 
-  const { data: shiftTypes, isLoading, error } = useShiftTypes();
   const { mutate: createShiftRequest } = useCreateShiftRequest();
   const { data: employeeDetails } = useCurrentEmployee();
 
   const handleBack = () => navigate(-1);
 
-   const { data: requiredFields } = useRequiredFields("Shift Request");
-        const requiredFieldMap = useMemo(() => {
-          if (!requiredFields?.fields) return {};
-          const map: Record<string, boolean> = {};
-          requiredFields.fields.forEach((f) => {
-            if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
-          });
-          return map;
-        }, [requiredFields]);
-      
-        console.log("requiredFieldMap", requiredFieldMap);
-  
-   const toSnakeCase = (str: string) =>
+  const { data: requiredFields } = useRequiredFields("Shift Request");
+  const requiredFieldMap = useMemo(() => {
+    if (!requiredFields?.fields) return {};
+    const map: Record<string, boolean> = {};
+    requiredFields.fields.forEach((f) => {
+      if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+    });
+    return map;
+  }, [requiredFields]);
+
+  console.log("requiredFieldMap", requiredFieldMap);
+
+  const toSnakeCase = (str: string) =>
     str
       .replace(/([a-z])([A-Z])/g, "$1_$2")
       .replace(/\s+/g, "_")
       .toLowerCase();
-  
+
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
     requiredMap: Record<string, boolean>
   ): FormSchema => {
     if (!baseSchema) return baseSchema;
-  
+
     const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
-  
+
     // Detect if this form is shiftType (adjust according to your schema)
     const applyToComponents = (components?: SchemaComponent[]) => {
       if (!components) return;
-  
+
       components.forEach((comp) => {
         if (!comp) return;
-  
+
         let key = comp.key;
         if (typeof key === "string") {
           key = toSnakeCase(key);
         }
-  
+
         if (key && requiredMap[key]) {
           if (!comp.validate) comp.validate = {};
           comp.validate.required = true;
-  
+
           if (typeof comp.label === "string") {
-            const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
+            const asteriskHtml =
+              "<span style='color:red;margin-left:3px;'> *</span>";
             if (!comp.label.includes(asteriskHtml)) {
               comp.label = `${comp.label} ${asteriskHtml}`;
             }
           }
         }
-  
+
         // Recurse inside nested components
         if (comp.components) applyToComponents(comp.components);
         if (comp.columns) {
@@ -94,16 +97,15 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
         }
       });
     };
-  
+
     applyToComponents(cloned.components);
     return cloned;
   };
 
-
-    const validatedFormSchema = useMemo(()=>transformSchemaWithRequired(
-      defaultFormSchema,
-      requiredFieldMap
-    ),[requiredFieldMap]);
+  const validatedFormSchema = useMemo(
+    () => transformSchemaWithRequired(defaultFormSchema, requiredFieldMap),
+    [requiredFieldMap]
+  );
 
   const handleSubmit = async () => {
     if (!formRef.current) {
@@ -149,9 +151,12 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
           navigate("/webapp/shift-request/shift-list");
         },
         onError: (error) => {
-           const formatedError = errorResponseFormater(error, "Failed to submit Shift Request.");
-            toast.error(formatedError);
-            console.error(error);
+          const formatedError = errorResponseFormater(
+            error,
+            "Failed to submit Shift Request."
+          );
+          toast.error(formatedError);
+          console.error(error);
         },
       });
     } catch (error: any) {
@@ -164,13 +169,6 @@ const ShiftChangeForm: React.FC<ShiftRequestFormModalProps> = ({ onClose }) => {
       }
     }
   };
-
-  if (isLoading) return <div>Loading shifts…</div>;
-  if (error)
-    return (
-      <div className="text-red-600">Error loading shifts: {error.message}</div>
-    );
-
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">

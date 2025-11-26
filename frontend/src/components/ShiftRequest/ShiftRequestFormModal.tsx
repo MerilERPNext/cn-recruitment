@@ -77,6 +77,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
       if (!employeeDetails) {
         toast.error("Employee details not loaded. Try again.");
+        console.log(error, "Employee details not fetched.");
         return;
       }
 
@@ -109,7 +110,10 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             onSuccess: handleSubmitonSuccess,
             onError: (error: any) => {
               handleSubmitionError("Error updating shift request:", error);
-              const formatedError = errorResponseFormater(error, "Error updating shift request");
+              const formatedError = errorResponseFormater(
+                error,
+                "Error updating shift request"
+              );
               toast.error(formatedError);
             },
           }
@@ -119,7 +123,10 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
           onSuccess: handleSubmitonSuccess,
           onError: (error: any) => {
             handleSubmitionError("Error creating shift request:", error);
-            const formatedError = errorResponseFormater(error, "Error creating shift request");
+            const formatedError = errorResponseFormater(
+              error,
+              "Error creating shift request"
+            );
             toast.error(formatedError);
           },
         });
@@ -130,76 +137,77 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     }
   };
 
-    const { data: requiredFields } = useRequiredFields("Shift Request");
-    const requiredFieldMap = useMemo(() => {
-      if (!requiredFields?.fields) return {};
-      const map: Record<string, boolean> = {};
-      requiredFields.fields.forEach((f) => {
-        if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
-      });
-      return map;
-    }, [requiredFields]);
-    
-    console.log("requiredFieldMap", requiredFieldMap);
+  const { data: requiredFields } = useRequiredFields("Shift Request");
+  const requiredFieldMap = useMemo(() => {
+    if (!requiredFields?.fields) return {};
+    const map: Record<string, boolean> = {};
+    requiredFields.fields.forEach((f) => {
+      if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+    });
+    return map;
+  }, [requiredFields]);
 
-    /**
+  console.log("requiredFieldMap", requiredFieldMap);
+
+  /**
    * Helper: deep clone schema and apply required flags + label postfix for required fields
    */
   const toSnakeCase = (str: string) =>
-  str
-    .replace(/([a-z])([A-Z])/g, "$1_$2")
-    .replace(/\s+/g, "_")
-    .toLowerCase();
+    str
+      .replace(/([a-z])([A-Z])/g, "$1_$2")
+      .replace(/\s+/g, "_")
+      .toLowerCase();
 
-const transformSchemaWithRequired = (
-  baseSchema: FormSchema,
-  requiredMap: Record<string, boolean>
-): FormSchema => {
-  if (!baseSchema) return baseSchema;
+  const transformSchemaWithRequired = (
+    baseSchema: FormSchema,
+    requiredMap: Record<string, boolean>
+  ): FormSchema => {
+    if (!baseSchema) return baseSchema;
 
-  const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
+    const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
 
-  // Detect if this form is shiftType (adjust according to your schema)
-  const applyToComponents = (components?: SchemaComponent[]) => {
-    if (!components) return;
+    // Detect if this form is shiftType (adjust according to your schema)
+    const applyToComponents = (components?: SchemaComponent[]) => {
+      if (!components) return;
 
-    components.forEach((comp) => {
-      if (!comp) return;
+      components.forEach((comp) => {
+        if (!comp) return;
 
-      let key = comp.key;
-      if (typeof key === "string") {
-        key = toSnakeCase(key);
-      }
+        let key = comp.key;
+        if (typeof key === "string") {
+          key = toSnakeCase(key);
+        }
 
-      if (key && requiredMap[key]) {
-        if (!comp.validate) comp.validate = {};
-        comp.validate.required = true;
+        if (key && requiredMap[key]) {
+          if (!comp.validate) comp.validate = {};
+          comp.validate.required = true;
 
-        if (typeof comp.label === "string") {
-          const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
-          if (!comp.label.includes(asteriskHtml)) {
-            comp.label = `${comp.label} ${asteriskHtml}`;
+          if (typeof comp.label === "string") {
+            const asteriskHtml =
+              "<span style='color:red;margin-left:3px;'> *</span>";
+            if (!comp.label.includes(asteriskHtml)) {
+              comp.label = `${comp.label} ${asteriskHtml}`;
+            }
           }
         }
-      }
 
-      // Recurse inside nested components
-      if (comp.components) applyToComponents(comp.components);
-      if (comp.columns) {
-        comp.columns.forEach((col: any) => applyToComponents(col.components));
-      }
-      if (comp.rows) {
-        comp.rows.forEach((row: any[]) =>
-          row.forEach((cell: any) => applyToComponents(cell.components))
-        );
-      }
-    });
+        // Recurse inside nested components
+        if (comp.components) applyToComponents(comp.components);
+        if (comp.columns) {
+          comp.columns.forEach((col: any) => applyToComponents(col.components));
+        }
+        if (comp.rows) {
+          comp.rows.forEach((row: any[]) =>
+            row.forEach((cell: any) => applyToComponents(cell.components))
+          );
+        }
+      });
+    };
+
+    applyToComponents(cloned.components);
+    return cloned;
   };
 
-  applyToComponents(cloned.components);
-  return cloned;
-};
-  
   // Update schema when propSchema changes
   useEffect(() => {
     if (propSchema) {
@@ -211,7 +219,6 @@ const transformSchemaWithRequired = (
     return transformSchemaWithRequired(formSchema, requiredFieldMap);
   }, [formSchema, requiredFieldMap]);
 
-  
   if (isLoading) {
     return (
       <div className="bg-gray-50 flex flex-col font-sans">
@@ -248,7 +255,6 @@ const transformSchemaWithRequired = (
       </div>
     );
   }
-
 
   return (
     <div className="bg-gray-50 flex flex-col font-sans">
