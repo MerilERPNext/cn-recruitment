@@ -37,165 +37,165 @@ export const EditAttendance = ({
   // Only build form after data is available
   const attendanceForm = data?.[0]
     ? {
-        display: "form",
-        components: [
-          {
-            type: "panel",
-            key: "attendance_assignments",
-            label: "Attendance Assignments",
-            hideLabel: true,
-            customClass: "border-0",
-            components: [
-              {
-                label: "Employee",
-                key: "employee",
-                type: "textfield",
-                input: true,
-                disabled: true,
-                customClass: "mb-4",
-                defaultValue: employeeName || "",
-              },
-              {
-                label: "Attendance Date",
-                key: "attendance_date",
-                type: "datetime",
-                input: true,
-                disabled: true,
-                widget: { type: "calendar" },
-                format: "dd-MM-yyyy",
-                defaultValue: data[0].attendance_date,
-                placeholder: "dd-mm-yyyy",
-                customClass: "mb-4",
-                enableTime: false,
-              },
-              {
-                label: "Shift",
-                key: "shift",
-                type: "textfield",
-                input: true,
-                disabled: true,
-                customClass: "mb-4",
-                defaultValue: data[0].shift || "",
-              },
-              {
-                type: "columns",
-                key: "in_out_time_row",
-                customClass: "mb-4",
-                columns: [
-                  {
-                    components: [
-                      {
-                        label: "In Time",
-                        key: "in_time",
-                        type: "datetime",
-                        input: true,
-                        enableDate: false,
+      display: "form",
+      components: [
+        {
+          type: "panel",
+          key: "attendance_assignments",
+          label: "Attendance Assignments",
+          hideLabel: true,
+          customClass: "border-0",
+          components: [
+            {
+              label: "Employee",
+              key: "employee",
+              type: "textfield",
+              input: true,
+              disabled: true,
+              customClass: "mb-4",
+              defaultValue: employeeName || "",
+            },
+            {
+              label: "Attendance Date",
+              key: "attendance_date",
+              type: "datetime",
+              input: true,
+              disabled: true,
+              widget: { type: "calendar" },
+              format: "dd-MM-yyyy",
+              defaultValue: data[0].attendance_date,
+              placeholder: "dd-mm-yyyy",
+              customClass: "mb-4",
+              enableTime: false,
+            },
+            {
+              label: "Shift",
+              key: "shift",
+              type: "textfield",
+              input: true,
+              disabled: true,
+              customClass: "mb-4",
+              defaultValue: data[0].shift || "",
+            },
+            {
+              type: "columns",
+              key: "in_out_time_row",
+              customClass: "mb-4",
+              columns: [
+                {
+                  components: [
+                    {
+                      label: "In Time",
+                      key: "in_time",
+                      type: "datetime",
+                      input: true,
+                      enableDate: false,
+                      enableTime: true,
+                      format: "HH:mm:ss",
+                      placeholder: "hh:mm",
+                      defaultValue: data[0].in_time,
+                      widget: {
+                        type: "calendar",
+                        time_24hr: true,
+                        noCalendar: true,
                         enableTime: true,
-                        format: "HH:mm:ss",
-                        placeholder: "hh:mm",
-                        defaultValue: data[0].in_time,
-                        widget: {
-                          type: "calendar",
-                          time_24hr: true,
-                          noCalendar: true,
-                          enableTime: true,
-                          dateFormat: "H:i",
-                        },
+                        dateFormat: "H:i",
                       },
-                    ],
-                  },
-                  {
-                    components: [
-                      {
-                        label: "Out Time",
-                        key: "out_time",
-                        type: "datetime",
-                        input: true,
-                        enableDate: false,
-                        enableTime: true,
-                        format: "HH:mm:ss",
-                        placeholder: "hh:mm",
-                        widget: {
-                          type: "calendar",
-                          time_24hr: true,
-                          noCalendar: true,
-                          enableTime: true,
-                          dateFormat: "H:i",
-                        },
-                        defaultValue: data[0].out_time,
-                      },
-                    ],
-                  },
-                ],
-              },
-
-              {
-                label: "Status",
-                key: "status",
-                type: "select",
-                input: true,
-                placeholder: "Select Status",
-                customClass: "mb-4",
-                defaultValue: data[0].status || "",
-                validate: { required: true },
-                data: {
-                  values: [
-                    {
-                      label: "Present",
-                      value: "Present",
-                    },
-                    {
-                      label: "Absent",
-                      value: "Absent",
-                    },
-                    {
-                      label: "On Leave",
-                      value: "On Leave",
-                    },
-                    {
-                      label: "Half Day",
-                      value: "Half Day",
-                    },
-                    {
-                      label: "Work From Home",
-                      value: "Work From Home",
                     },
                   ],
                 },
-              },
+                {
+                  components: [
+                    {
+                      label: "Out Time",
+                      key: "out_time",
+                      type: "datetime",
+                      input: true,
+                      enableDate: false,
+                      enableTime: true,
+                      format: "HH:mm:ss",
+                      placeholder: "hh:mm",
+                      widget: {
+                        type: "calendar",
+                        time_24hr: true,
+                        noCalendar: true,
+                        enableTime: true,
+                        dateFormat: "H:i",
+                      },
+                      defaultValue: data[0].out_time,
+                    },
+                  ],
+                },
+              ],
+            },
 
-              {
-                label: "Working Hours",
-                key: "working_hours",
-                type: "number",
-                input: true,
-                disabled: true,
-                customClass: "mb-4",
-                defaultValue: data[0].working_hours || 0,
-                step: "0.01",
+            {
+              label: "Status",
+              key: "status",
+              type: "select",
+              input: true,
+              placeholder: "Select Status",
+              customClass: "mb-4",
+              defaultValue: data[0].status || "",
+              validate: { required: true },
+              data: {
+                values: [
+                  {
+                    label: "Present",
+                    value: "Present",
+                  },
+                  {
+                    label: "Absent",
+                    value: "Absent",
+                  },
+                  {
+                    label: "On Leave",
+                    value: "On Leave",
+                  },
+                  {
+                    label: "Half Day",
+                    value: "Half Day",
+                  },
+                  {
+                    label: "Work From Home",
+                    value: "Work From Home",
+                  },
+                ],
               },
-              {
-                label: "Department",
-                key: "department",
-                type: "textfield",
-                input: true,
-                disabled: true,
-                customClass: "mb-4",
-                defaultValue: data[0].department || "",
-              },
-              {
-                label: "Company",
-                key: "company",
-                type: "textfield",
-                input: true,
-                disabled: true,
-                customClass: "mb-4",
-                defaultValue: data[0].company || "",
-              },
-            ],
-          },
-        ],
-      }
+            },
+
+            {
+              label: "Working Hours",
+              key: "working_hours",
+              type: "number",
+              input: true,
+              disabled: true,
+              customClass: "mb-4",
+              defaultValue: data[0].working_hours || 0,
+              step: "0.01",
+            },
+            {
+              label: "Department",
+              key: "department",
+              type: "textfield",
+              input: true,
+              disabled: true,
+              customClass: "mb-4",
+              defaultValue: data[0].department || "",
+            },
+            {
+              label: "Company",
+              key: "company",
+              type: "textfield",
+              input: true,
+              disabled: true,
+              customClass: "mb-4",
+              defaultValue: data[0].company || "",
+            },
+          ],
+        },
+      ],
+    }
     : null;
 
   const formatTime = (date: Date | string | undefined): string | undefined => {
@@ -229,7 +229,7 @@ export const EditAttendance = ({
             onClose();
           },
           onError() {
-            toast.success("Failed while updating attendance.");
+            toast.error("Failed while updating attendance.");
           },
         }
       );
