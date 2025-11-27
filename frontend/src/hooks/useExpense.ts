@@ -18,6 +18,7 @@ import {
   CalculateExpenseParams,
   CalculateExpenseResponse,
 } from "../types/expenseAdvance";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 export const useExpenseTypes = (
   filters?: FilterCondition[]
@@ -252,6 +253,40 @@ export function useExpenseSingleItemApproval() {
     onError: (error) => {
       handleError(error);
       console.error("Single item approval/rejection failed:", error);
+    },
+  });
+}
+
+//edit expense
+
+type ExpenseItem = Record<string, any>;
+type ParticipantItem = Record<string, any>;
+
+export type UpdateExpensePayload = {
+  expense_claim_name: string;
+  expenses: ExpenseItem[];
+  participants: ParticipantItem[];
+};
+
+export function useUpdateExpense() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: UpdateExpensePayload) =>
+      expenseService.updateExpense(
+        params.expense_claim_name,
+        params.expenses,
+        params.participants
+      ),
+    onSuccess: () => {
+      toast.dismiss();
+      toast.success("Expense claim updated successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["expense-claims"],
+      });
+    },
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err));
     },
   });
 }

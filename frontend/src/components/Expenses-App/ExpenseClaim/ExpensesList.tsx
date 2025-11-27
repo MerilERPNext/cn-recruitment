@@ -10,6 +10,8 @@ import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import CustomDropdown from "../../shared/CustomDropdown";
+import { SquarePen } from "lucide-react";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Draft" },
@@ -75,6 +77,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 };
 
 const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
+  const { data: currentUser } = useCurrentUser();
   const formattedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -95,13 +98,12 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
   return (
     <div
       className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 0.5fr" }}
     >
       <span>{item?.reference_document?.custom_expense_category || " - "}</span>
       <span>{formattedAmount}</span>
       <span>{formattedSanctionedAmount || " - "}</span>
       <span>{formattedDate}</span>
-
       <Tooltip
         content={
           item?.reference_document?.status === "Draft"
@@ -119,6 +121,13 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
             : item?.reference_document?.status}
         </span>
       </Tooltip>
+
+      {currentUser?.name?.toLowerCase() ===
+        item?.send_back_user?.toLowerCase() && (
+        <button>
+          <SquarePen size={18} className="text-gray-500 hover:text-blue-600" />
+        </button>
+      )}
     </div>
   );
 };
@@ -242,8 +251,9 @@ const ExpensesList: React.FC = () => {
               "Sanctioned Amount",
               "Claimed Date",
               "Status",
+              "Actions",
             ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "0.5fr"]}
           >
             <DataListView
               queryKey={["expense-claims-all", selectedStatus]}

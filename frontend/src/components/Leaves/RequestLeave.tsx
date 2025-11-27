@@ -119,10 +119,14 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
-       const formatedError = errorResponseFormater(err, "Submission failed. Please try again.");
-       toast.error(formatedError);
-       console.error(err);
-  },});
+      const formatedError = errorResponseFormater(
+        err,
+        "Submission failed. Please try again."
+      );
+      toast.error(formatedError);
+      console.error(err);
+    },
+  });
 
   const [formData, setFormData] = useState<FormSubmissionData>({});
   const [leaveDays, setLeaveDays] = useState<number | null>(null);
