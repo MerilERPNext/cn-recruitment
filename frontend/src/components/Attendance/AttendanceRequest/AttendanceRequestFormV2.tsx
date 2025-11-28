@@ -85,6 +85,7 @@ export interface SchemaComponent {
   selectValues?: string;
   refreshOn?: string;
   // allow other unknown properties like validate
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -185,7 +186,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
           // Append red asterisk to label (avoid duplicating)
           if (typeof comp.label === "string") {
-            const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
+            const asteriskHtml =
+              "<span style='color:red;margin-left:3px;'> *</span>";
             if (!comp.label.includes(asteriskHtml)) {
               // Some labels may include HTML already; we append the asterisk HTML
               comp.label = `${comp.label} ${asteriskHtml}`;
@@ -198,11 +200,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         }
         // some schema use nested components in 'columns' or 'rows' etc - handle common cases
         if (comp.columns && Array.isArray(comp.columns)) {
-          comp.columns.forEach((col: any) => applyToComponents(col.components));
+          comp.columns.forEach((col: { components: SchemaComponent[] }) =>
+            applyToComponents(col.components)
+          );
         }
         if (comp.rows && Array.isArray(comp.rows)) {
-          comp.rows.forEach((row: any[]) =>
-            row.forEach((cell: any) => applyToComponents(cell.components))
+          comp.rows.forEach((row) =>
+            row.forEach((cell: { components: SchemaComponent[] }) =>
+              applyToComponents(cell.components)
+            )
           );
         }
       });
@@ -227,6 +233,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             );
             setFormSchema(transformed);
           } catch (e) {
+            console.log(e);
             setFormSchema(src);
           } finally {
             setIsSchemaLoading(false);
@@ -245,7 +252,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   useEffect(() => {
     if (propSchema) {
       try {
-        setFormSchema(transformSchemaWithRequired(propSchema, requiredFieldMap));
+        setFormSchema(
+          transformSchemaWithRequired(propSchema, requiredFieldMap)
+        );
       } catch {
         setFormSchema(propSchema);
       }
@@ -270,13 +279,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   useEffect(() => {
     if (reqValidationmutation?.data) {
       const baseSchema = propSchema || defaultFormSchema;
-      const filteredSchema = JSON.parse(JSON.stringify(baseSchema)) as FormSchema; // Deep clone
+      const filteredSchema = JSON.parse(
+        JSON.stringify(baseSchema)
+      ) as FormSchema; // Deep clone
 
       // Find the request_type field in the schema
       const panel = filteredSchema.components?.[0];
       if (panel?.components) {
         const requestTypeField = panel.components.find(
-          (comp: SchemaComponent) => comp.key === "custom_request_type"
+          (comp: SchemaComponent) => comp.key === "request_type"
         );
 
         if (requestTypeField?.data?.values) {
@@ -291,7 +302,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 case "Short Attendance Request":
                   return reqValidationmutation.data.short_leave_requests;
                 case "Attendance Adjustment":
-                  return reqValidationmutation.data.attendance_adjustment_requests;
+                  return reqValidationmutation.data
+                    .attendance_adjustment_requests;
                 default:
                   return false;
               }
