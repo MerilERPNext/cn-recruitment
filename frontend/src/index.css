@@ -402,3 +402,62 @@ code {
 .formio-component-attachments .col-md-2 {
   display: none !important;
 }
+
+
+.formio-component-goalFlexRow > .formio-component {
+  flex: 1 1 200px !important;
+  min-width: 200px;
+  max-width: 400px;
+  margin-right: 16px;
+}
+
+.row.formio-component.formio-component-columns.formio-component-columns.formio-component-label-hidden.pmake-flex{
+  flex-direction: row !important;
+  gap: 16px !important;
+  margin: 0 !important;
+}
+
+.pmake-hide-add-remove tfoot,.pmake-hide-add-remove .formio-button-remove-row{
+  display: none !important;
+}
+
+.pmake-hide-add-remove td:nth-of-type(2), th{
+  display: none !important;
+}
+
+.pmake-hide-add-remove .row.formio-component.formio-component-columns.formio-component-goalColumns.formio-component-label-hidden{
+  margin: 0px !important;
+  padding: 0px !important;
+}
+
+.pmake-hide-add-remove .row.formio-component.formio-component-columns.formio-component-subgoalColumns.formio-component-label-hidden{
+  margin: 0px !important;
+  padding: 0px !important;
+}
+
+.pmake-hide-add-remove td[ref="datagrid-subgoals"]{
+  border: 2px solid red !important;
+}
+
+.p-grid-cols-4{
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+
+@media (max-width: 768px) {
+  .p-grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+.pmake-hide-add-remove table.datagrid-table.table-bordered {
+ border-collapse: separate !important;
+ border: none !important;
+}
+
+.pmake-hide-add-remove table.datagrid-table.table-bordered tr td{
+  border: 2px solid #ddd !important;
+  border-radius: 5px;
+}
+

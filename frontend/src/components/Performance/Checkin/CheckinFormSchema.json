@@ -1,0 +1,261 @@
+{
+  "display": "form",
+  "components": [
+    {
+      "type": "datagrid",
+      "key": "goals",
+      "label": "Goals",
+      "addAnother": false,
+      "removeRow": false,
+      "customClass": "pmake-hide-add-remove",
+      "components": [
+        {
+          "type": "container",
+          "key": "goalRow",
+          "label": "Goal Row",
+          "components": [
+            {
+              "type": "columns",
+              "key": "goalColumns",
+              "hideLabel": true,
+              "customClass": "gap-4 p-grid-cols-4",
+              "columns": [
+                {
+                  "width": 25,
+                  "components": [
+                    {
+                      "type": "textfield",
+                      "key": "name",
+                      "label": "Title",
+                      "disabled": true,
+                      "input": true
+                    }
+                  ]
+                },
+                {
+                  "width": 25,
+                  "components": [
+                    {
+                      "type": "number",
+                      "key": "weightage",
+                      "label": "Weightage",
+                      "disabled": true,
+                      "input": true
+                    }
+                  ]
+                },
+                {
+                  "width": 25,
+                  "components": [
+                    {
+                      "type": "number",
+                      "key": "achievement",
+                      "label": "Achievement",
+                      "input": true,
+                      "validate": {
+                        "required": true
+                      }
+                    }
+                  ]
+                },
+                {
+                  "width": 25,
+                  "components": [
+                    {
+                      "type": "select",
+                      "key": "status",
+                      "label": "Status",
+                      "input": true,
+                      "validate": {
+                        "required": true
+                      },
+                      "data": {
+                        "values": [
+                          {
+                            "label": "Not Started",
+                            "value": "not_started"
+                          },
+                          {
+                            "label": "In Progress",
+                            "value": "in_progress"
+                          },
+                          {
+                            "label": "Completed",
+                            "value": "completed"
+                          },
+                          {
+                            "label": "On Hold",
+                            "value": "on_hold"
+                          },
+                          {
+                            "label": "Delayed",
+                            "value": "delayed"
+                          },
+                          {
+                            "label": "At Risk",
+                            "value": "at_risk"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "textarea",
+              "key": "comment",
+              "label": "Comment",
+              "rows": 3,
+              "input": true,
+              "customConditional": "show = !!(instance.options && instance.options.commentConfig && instance.options.commentConfig.enable_comments && instance.options.commentConfig.goal_comments);",
+              "validate": {
+                "custom": "if (instance.options && instance.options.commentConfig && instance.options.commentConfig.goal_comments_mandatory && !input) { return 'Goal comment is required.'; } return true;"
+              },
+              "attrs": [
+                {
+                  "attr": "data-required-asterisk",
+                  "value": "value = (instance.options && instance.options.commentConfig && instance.options.commentConfig.goal_comments_mandatory) ? '*' : '';"
+                }
+              ]
+            },
+            {
+              "type": "datagrid",
+              "key": "subgoals",
+              "label": "Subgoals",
+              "addAnother": false,
+              "removeRow": false,
+              "customClass": "pl-4 sm:pl-8",
+              "initEmpty": true,
+              "customConditional": "show = row.subgoals && Array.isArray(row.subgoals) && row.subgoals.length > 0 && row.subgoals.some(s => s && Object.keys(s).length > 0);",
+              "components": [
+                {
+                  "type": "container",
+                  "key": "subgoalRow",
+                  "components": [
+                    {
+                      "type": "columns",
+                      "key": "subgoalColumns",
+                      "hideLabel": true,
+                      "customClass": "gap-4 p-grid-cols-4",
+                      "columns": [
+                        {
+                          "width": 25,
+                          "components": [
+                            {
+                              "type": "textfield",
+                              "key": "title",
+                              "label": "Title",
+                              "disabled": true,
+                              "input": true
+                            }
+                          ]
+                        },
+                        {
+                          "width": 25,
+                          "components": [
+                            {
+                              "type": "number",
+                              "key": "weightage",
+                              "label": "Weightage",
+                              "disabled": true,
+                              "input": true
+                            }
+                          ]
+                        },
+                        {
+                          "width": 25,
+                          "components": [
+                            {
+                              "type": "number",
+                              "key": "achievement",
+                              "label": "Achievement",
+                              "input": true,
+                              "validate": {
+                                "required": true
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "width": 25,
+                          "components": [
+                            {
+                              "type": "select",
+                              "key": "status",
+                              "label": "Status",
+                              "input": true,
+                              "validate": {
+                                "required": true
+                              },
+                              "data": {
+                                "values": [
+                                  {
+                                    "label": "Not Started",
+                                    "value": "not_started"
+                                  },
+                                  {
+                                    "label": "In Progress",
+                                    "value": "in_progress"
+                                  },
+                                  {
+                                    "label": "Completed",
+                                    "value": "completed"
+                                  },
+                                  {
+                                    "label": "On Hold",
+                                    "value": "on_hold"
+                                  },
+                                  {
+                                    "label": "Delayed",
+                                    "value": "delayed"
+                                  },
+                                  {
+                                    "label": "At Risk",
+                                    "value": "at_risk"
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "textarea",
+                      "key": "comment",
+                      "label": "Comment",
+                      "rows": 2,
+                      "input": true,
+                      "customConditional": "show = !!(instance.options && instance.options.commentConfig && instance.options.commentConfig.enable_comments && instance.options.commentConfig.sub_goal_comments);",
+                      "validate": {
+                        "custom": "if (instance.options && instance.options.commentConfig && instance.options.commentConfig.sub_goal_comments_mandatory && !input) { return 'Subgoal comment is required.'; } return true;"
+                      },
+                      "attrs": [
+                        {
+                          "attr": "data-required-asterisk",
+                          "value": "value = (instance.options && instance.options.commentConfig && instance.options.commentConfig.sub_goal_comments_mandatory) ? '*' : '';"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "textarea",
+      "key": "overall_comment",
+      "label": "Overall Comment",
+      "rows": 2,
+      "input": true,
+      "customConditional": "show = !!(instance.options && instance.options.commentConfig && instance.options.commentConfig.enable_comments && instance.options.commentConfig.overall_comments);",
+      "validate": {
+        "custom": "if (instance.options && instance.options.commentConfig && instance.options.commentConfig.overall_comments_mandatory && !input) { return 'Overall comment is required.'; } return true;"
+      }
+    }
+  ]
+}

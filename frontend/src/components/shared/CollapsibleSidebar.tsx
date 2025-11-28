@@ -27,6 +27,7 @@ import {
   ChartNoAxesCombined,
   Telescope,
   Goal,
+  Milestone,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -308,6 +309,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "New Goal Plan",
           icon: Goal,
           href: "/webapp/performance-app/new-goal-plan",
+        },
+        {
+          name: "Team Goal Plan",
+          icon: Milestone,
+          href: "/webapp/performance-app/team-goal-plan",
         },
       ],
     },

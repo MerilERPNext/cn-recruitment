@@ -6,11 +6,12 @@ import { useScreenSize } from '../../../hooks/useScreenSize';
 import GoalPendingMobileCard from './GoalPendingMobileCard';
 import CreateGoalDialog from './CreateGoalDialog';
 import { useCurrentEmployeeIdCard } from '../../../hooks/useEmployee';
-import { useGetAllGoalPlans, useGetGoalPlanDetails } from '../../../hooks/useGoal';
+import { useGetAllGoalPlans, useGetCheckInButtonVisibility, useGoalDetails } from '../../../hooks/useGoal';
 import { useGoalModel } from '../GoalModelContext';
 import CustomDropdown from '../../shared/CustomDropdown';
 import { createPortal } from 'react-dom';
 import { GoalPlanId } from '../../../types/goal';
+import { useNavigate } from 'react-router-dom';
 
 // CARD ICONS
 const Icons = [
@@ -42,7 +43,6 @@ const SkeletonTable = () => (
   </div>
 );
 
-// New component to handle the "Inner" loading state (Cards + Table only)
 const ContentSkeleton = () => (
   <div className="space-y-8">
     <div className='grid xl:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-8 gap-4'>
@@ -65,19 +65,30 @@ const NewGoalPlan: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const { setGoalPlanId, selectedGoalPlanId } = useGoalModel();
   const { isLoading, data: currentEmployeeIdCard } = useCurrentEmployeeIdCard();
   const { data: GoalPlanIds, isLoading: goalsLoading } = useGetAllGoalPlans(currentEmployeeIdCard?.id || "");
-
-  const { setGoalPlanId, selectedGoalPlanId } = useGoalModel();
-  const { data: goalPlan, isLoading: goalPlanLoading } = useGetGoalPlanDetails(selectedGoalPlanId || "");
-
+  const { data: goalPlan, isLoading: goalPlanLoading } = useGoalDetails(selectedGoalPlanId || "");
+ 
   const options = useMemo(() => {
+    if(!GoalPlanIds || GoalPlanIds.length==0) return [];
+    setGoalPlanId(GoalPlanIds[0].name);
     return GoalPlanIds?.map((goal: GoalPlanId) => ({
       label: goal.name,
       value: goal.name
     })) || [];
   }, [GoalPlanIds]);
 
+
+    const navigate = useNavigate();
+  
+    const handleCheckin = ()=>{
+      if(!selectedGoalPlanId) return;
+      navigate(`/webapp/performance-app/checkin/${selectedGoalPlanId}`);
+    }
+
+  const { data: CheckinButtonVisibility } = useGetCheckInButtonVisibility(selectedGoalPlanId, currentEmployeeIdCard?.id || "");
+  
   // INITIAL LOADING STATE (Page Load)
   // This shows when we are fetching the list of plans initially
   if (isLoading || goalsLoading) {
@@ -120,7 +131,23 @@ const NewGoalPlan: React.FC = () => {
   return (
     <div className='w-full min-h-screen bg-gray-50/50 sm:px-8 px-4 pt-8 pb-12'>
       <div className="w-full">
-        
+
+        {CheckinButtonVisibility?.show_checkin && 
+          <div className="mb-6 p-4 bg-white border border-green-200 rounded-lg shadow-sm flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div>
+              <h3 className="text-lg font-medium text-green-800 mb-1">Check-In Available</h3>
+              <p className="text-green-700 text-sm">
+                {CheckinButtonVisibility.checkin_description} (Due: {new Date(CheckinButtonVisibility.due_date).toLocaleDateString()})
+              </p>
+            </div>
+            <button
+              className='px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200'
+              onClick={handleCheckin}
+            >
+              Check-In Now
+            </button>
+          </div>
+        }  
         {/* Header / Controls */}
         <label className="text-xs font-bold text-gray-500 tracking-wider mb-2 ml-1">
           Select Goal Plan
@@ -170,7 +197,7 @@ const NewGoalPlan: React.FC = () => {
             <div className='grid xl:grid-cols-3 sm:grid-cols-2 grid-cols-1 sm:gap-8 gap-4'>
               <GoalPlanCard title="Total Goals" data={goalPlan?.total_goals} icon={Icons[0]} description='+2 from last month' />
               <GoalPlanCard title="Total Sub Goals" data={goalPlan?.total_subgoals} icon={Icons[1]}  description='Tasks within goals' />
-              <GoalPlanCard title="Average Achievement" data={goalPlan?.avg_achievement} icon={Icons[2]} description='Progress across all goals' />
+              <GoalPlanCard title="Average Achievement" data={goalPlan?.average_achievement} icon={Icons[2]} description='Progress across all goals' />
             </div>
 
             {/* Table Container */}

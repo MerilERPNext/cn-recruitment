@@ -390,6 +390,16 @@ const AddExpensePage = () => {
   );
 };
 
+const TeamGoalPlan = lazyWithRetry(
+  () => import("./components/Performance/TeamGoalPlan/TeamGoalPlan"),
+  "TeamGoalPlan"
+);
+
+const Checkin = lazyWithRetry(
+  () => import("./components/Performance/Checkin/Checkin"),
+  "Checkin"
+);
+
 // Loading component for Suspense fallbacks
 // eslint-disable-next-line react-refresh/only-export-components
 const LoadingSpinner = () => (
@@ -668,6 +678,8 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "overview", element: <Overview /> },
       { path: "new-goal-plan", element: <NewGoalPlan /> },
+      { path: "team-goal-plan", element: <TeamGoalPlan /> },
+      { path: "checkin/:goalPlanId", element: <Checkin /> },
     ],
   },
   {
