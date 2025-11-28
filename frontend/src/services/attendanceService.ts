@@ -515,6 +515,16 @@ export const attendanceService = {
       }
     );
   },
+  attendanceRequestAttachments: async (empId: string,date:string,request_type:string) => {
+    return FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.check_attachment_mandatory",
+      {
+        employee: empId,
+        date:date,
+        request_type:request_type
+      }
+    );
+  },
 
   createPlannedOvertimeRequest: async (
     body: Record<string, unknown>
