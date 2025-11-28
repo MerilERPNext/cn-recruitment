@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { leaveService } from "../services/leaveService";
+import {
+  AttendancePolicyResponse,
+  leaveService,
+} from "../services/leaveService";
 import { CompOffResponse } from "../types/leaves";
 
 import type {
@@ -280,3 +283,26 @@ export function useEditApprovedLeave() {
     },
   });
 }
+
+//get attendance policy
+
+export const useGetAttendancePolicyForDate = (
+  employee?: string | number,
+  targetDate?: string
+) => {
+  return useQuery<AttendancePolicyResponse>({
+    queryKey: ["attendance-policy-for-date", employee, targetDate],
+    queryFn: () => {
+      if (!employee || !targetDate) {
+        throw new Error("employee and targetDate are required");
+      }
+      return leaveService.getAttendancePolicyForDate(
+        String(employee),
+        targetDate
+      );
+    },
+    enabled: !!employee && !!targetDate,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+};

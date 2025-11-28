@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import {
+  useGetAttendancePolicyForDate,
   useGetHolidays,
   useGetLeaveBalance,
   useMyLeaveRequests,
@@ -112,6 +113,14 @@ const Holidays: React.FC = () => {
     isLoading: isLeaveRequestsLoading,
     refetch,
   } = useMyLeaveRequests(currentEmployee?.name);
+
+  const dateForPolicy = new Date().toISOString().split("T")[0];
+  const { data: attendancePolicy } = useGetAttendancePolicyForDate(
+    currentEmployee?.name,
+    dateForPolicy
+  );
+
+  console.log("Attendance Policy:", attendancePolicy);
 
   useEffect(() => {
     const unsubscribe = setRefetch(refetch);
@@ -253,7 +262,7 @@ const Holidays: React.FC = () => {
         <div className="mb-4">
           <div className="mb-4 flex justify-between items-center ">
             <h2 className="module-title">Upcoming Optional Holidays</h2>
-            {isDesktop && allOptional.length !== 0 && (
+            {attendancePolicy && isDesktop && allOptional.length !== 0 && (
               <ViewAll
                 title="View All"
                 onClick={() =>
@@ -265,20 +274,28 @@ const Holidays: React.FC = () => {
             )}
           </div>
 
-          <div className="flex justify-between text-center border py-2 rounded-lg">
-            <p className="w-full">
-              Total:{" "}
-              <span className="font-semibold">{optionalBalance?.entitled}</span>
-            </p>
-            <p className="border-x-2 w-full">
-              Availed:{" "}
-              <span className="font-semibold">{optionalBalance?.availed}</span>
-            </p>
-            <p className="w-full">
-              Remaining:{" "}
-              <span className="font-semibold">{optionalBalance?.balance}</span>
-            </p>
-          </div>
+          {attendancePolicy && (
+            <div className="flex justify-between text-center border py-2 rounded-lg">
+              <p className="w-full">
+                Total:{" "}
+                <span className="font-semibold">
+                  {optionalBalance?.entitled}
+                </span>
+              </p>
+              <p className="border-x-2 w-full">
+                Availed:{" "}
+                <span className="font-semibold">
+                  {optionalBalance?.availed}
+                </span>
+              </p>
+              <p className="w-full">
+                Remaining:{" "}
+                <span className="font-semibold">
+                  {optionalBalance?.balance}
+                </span>
+              </p>
+            </div>
+          )}
         </div>
 
         {upcomingOptional.length === 0 ? (
@@ -287,17 +304,24 @@ const Holidays: React.FC = () => {
           </p>
         ) : (
           <>
-            {displayedOptional.map((h) => (
-              <HolidayCard
-                key={`${h.date}-${h.holiday_name}`}
-                holiday={h}
-                showApply={true}
-                statusLabel={getHolidayStatus(h.date)}
-              />
-            ))}
+            {attendancePolicy ? (
+              displayedOptional.map((h) => (
+                <HolidayCard
+                  key={`${h.date}-${h.holiday_name}`}
+                  holiday={h}
+                  showApply={true}
+                  statusLabel={getHolidayStatus(h.date)}
+                />
+              ))
+            ) : (
+              <p className="w-full text-center mt-5 text-red-500 flex item-start justify-center gap-1">
+                ! Please contact HR to assign an attendance policy to view
+                optional holidays.
+              </p>
+            )}
           </>
         )}
-        {!isDesktop && allOptional.length !== 0 && (
+        {attendancePolicy && !isDesktop && allOptional.length !== 0 && (
           <button
             type="button"
             onClick={() =>

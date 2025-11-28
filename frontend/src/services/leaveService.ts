@@ -10,6 +10,10 @@ import { HolidayApiResponse } from "../types/leaves";
 import type { LeaveDetailsResponse, HolidayGroup } from "../types/leaves";
 import { CompOffResponse } from "../types/leaves";
 
+export type AttendancePolicyResponse = {
+  message: string;
+};
+
 export const leaveService = {
   getMyLeaveRequests: async (employeeId: string): Promise<LeaveRequest[]> => {
     const result = await FrappeAPI.getDocumentList("Leave Application", {
@@ -231,5 +235,22 @@ export const leaveService = {
         new_values: formattedValues,
       }
     );
+  },
+
+  //get attendance policy
+
+  getAttendancePolicyForDate: async (
+    employee: string | number,
+    targetDate: string
+  ): Promise<AttendancePolicyResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_attendance_policy_for_date",
+      {
+        employee: String(employee),
+        target_date: targetDate,
+      }
+    );
+
+    return response as AttendancePolicyResponse;
   },
 };
