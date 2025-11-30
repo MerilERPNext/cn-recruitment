@@ -1,7 +1,7 @@
 import React from "react";
 import CardTable from "../../shared/CardTable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import Tooltip from "../../shared/Tooltip";
@@ -10,8 +10,9 @@ import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import CustomDropdown from "../../shared/CustomDropdown";
-import { SquarePen } from "lucide-react";
+import { SquarePen, Users } from "lucide-react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import Button from "../../shared/atoms/Button";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Draft" },
@@ -146,6 +147,7 @@ const ExpensesList: React.FC = () => {
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee } = useCurrentEmployee();
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     if ((location.state as any)?.refresh) {
@@ -238,6 +240,16 @@ const ExpensesList: React.FC = () => {
         </h2>
 
         <div className="flex items-center space-x-3 pb-1">
+          <Button
+            onClick={() => navigate("/webapp/expenses-app/shared-expenses")}
+            icon={<Users size={16} />}
+            size="md"
+            variant="outline"
+            bgColor="blue-500"
+            className="hover:bg-blue-100 rounded-xl"
+          >
+            Shared
+          </Button>
           <FilterDropdowns />
         </div>
       </div>

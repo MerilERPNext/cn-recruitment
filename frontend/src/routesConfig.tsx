@@ -13,6 +13,7 @@ import NotificationList from "./components/Notification/Notification";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
+import SharedExpenses from "./components/Expenses-App/ExpenseClaim/SharedExpenses";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -547,6 +548,7 @@ export const routesConfig: AppRoute[] = [
       { path: "team-requests", element: <TeamExpense /> },
       { path: "my-advance-expense", element: <MyAdvanceExpenseList /> },
       { path: "team-advance-expense", element: <TeamAdvanceExpenseList /> },
+      { path: "shared-expenses", element: <SharedExpenses /> },
     ],
   },
 

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Employee } from "../../../types/employee";
 import SearchableSelect from "../../shared/SearchableSelect";
+import { searchEmployeesByQuery } from "../../../utils/searchEmployees";
 
 export interface ParticipantRow {
   employee_type?: string;
@@ -562,6 +563,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                           onChange={(value) => updateRow(i, { name: value })}
                           placeholder="Search employee..."
                           disabled={false}
+                          onSearch={searchEmployeesByQuery}
                         />
                       ) : (
                         <input
