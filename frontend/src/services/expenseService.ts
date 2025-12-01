@@ -223,4 +223,60 @@ export const expenseService = {
       payload
     );
   },
+
+  //update line item status
+  updateLineItem: async (
+    claimId: string,
+    itemName: string,
+    sanctionedAmount: number
+  ): Promise<any> => {
+    try {
+      const payload = {
+        claim_id: claimId,
+        line_items: [
+          {
+            name: itemName,
+            sanctioned_amount: sanctionedAmount,
+          },
+        ],
+      };
+
+      const response = await FrappeAPI.callMethod(
+        "chatnext_expense_trips.expense_claim.update_sanctioned_amount",
+        payload
+      );
+      return response;
+    } catch (error) {
+      console.error("Error while updating expense line item:", error);
+      throw error;
+    }
+  },
+
+  //update reject comment
+  updateExpenseComment: async (
+    referenceDoctype: string,
+    referenceName: string,
+    content: string,
+    comment_email: string
+  ): Promise<any> => {
+    try {
+      const payload = {
+        reference_doctype: referenceDoctype,
+        reference_name: referenceName,
+        content: content,
+        comment_email: comment_email,
+        comment_by: "",
+      };
+
+      const response = await FrappeAPI.callMethod(
+        "frappe.desk.form.utils.add_comment",
+        payload
+      );
+
+      return response;
+    } catch (error) {
+      console.error("Error while adding comment:", error);
+      throw error;
+    }
+  },
 };

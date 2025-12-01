@@ -1,12 +1,14 @@
 import { X } from "lucide-react";
 import { format, isValid, parse } from "date-fns";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  useExpenseApproval,
-  useExpenseSingleItemApproval,
+  useExpenseLineItemUpdate,
+  useExpenseCommentUpdate,
 } from "../../../hooks/useExpense";
+import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+
 import {
   ErrorView,
   LoadingView,
@@ -15,6 +17,7 @@ import Badge from "../../shared/Badge";
 import Button from "../../shared/atoms/Button";
 import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -30,9 +33,11 @@ export function TeamExpenseDetailView({
   onAction?: () => void;
   label?: string;
 }) {
-  const bulkMutation = useExpenseApproval();
-  const singleMutation = useExpenseSingleItemApproval();
+  const updateMutation = useExpenseLineItemUpdate();
+  const mutation = useApprovalListActions();
+  const commentMutation = useExpenseCommentUpdate();
   const { setRefetchAttendance } = useGlobalStore();
+  const { data: user } = useCurrentUser();
 
   const {
     data: fetchedData,
@@ -47,6 +52,70 @@ export function TeamExpenseDetailView({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [expenseItems, setExpenseItems] = useState<any[]>([]);
+  const [savingItem, setSavingItem] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [showActionWarning, setShowActionWarning] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [rejectionComment, setRejectionComment] = useState<string>("");
+  const [showCommentModal, setShowCommentModal] = useState(false);
+
+  const handleClose = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedWarning(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setShowUnsavedWarning(false);
+    setHasUnsavedChanges(false);
+    onClose();
+  };
+
+  const handleCancelClose = () => {
+    setShowUnsavedWarning(false);
+  };
+
+  const handleSaveItem = async (itemId: string) => {
+    if (!isClaimEditable) {
+      toast.error("This claim cannot be modified in its current status");
+      return;
+    }
+
+    const item = expenseItems.find((i) => i.id === itemId);
+    if (!item) return;
+
+    setSavingItem(itemId);
+
+    try {
+      await updateMutation.mutateAsync({
+        claimId,
+        itemName: item.name,
+        sanctionedAmount: item.sanctionedAmount,
+      });
+
+      setExpenseItems((prev) =>
+        prev.map((i) =>
+          i.id === itemId
+            ? { ...i, sanctioned_amount: item.sanctionedAmount }
+            : i
+        )
+      );
+
+      setHasUnsavedChanges(false);
+
+      setTimeout(() => {
+        setRefetchAttendance(true);
+      }, 2000);
+    } catch (error) {
+      console.error("Save failed", error);
+    } finally {
+      setSavingItem(null);
+    }
+  };
 
   useEffect(() => {
     if (ref?.expenses && Array.isArray(ref.expenses)) {
@@ -55,7 +124,6 @@ export function TeamExpenseDetailView({
         ref.expenses.map((item: any, index: number) => ({
           ...item,
           id: item.name || index,
-          selected: false,
           sanctionedAmount: item.sanctioned_amount || item.amount || 0,
           comment: "",
         }))
@@ -63,11 +131,114 @@ export function TeamExpenseDetailView({
     }
   }, [ref?.expenses]);
 
-  const [currentAction, setCurrentAction] = useState<string | null>(null);
-  const [processingItem, setProcessingItem] = useState<{
-    id: string;
-    action: "Approve" | "Reject";
-  } | null>(null);
+  const handleAction = useCallback(
+    async (action: string) => {
+      if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
+        setShowCommentModal(true);
+        setPendingAction(action);
+        return;
+      }
+
+      if (hasUnsavedChanges) {
+        setPendingAction(action);
+        setShowActionWarning(true);
+        return;
+      }
+
+      performAction(action);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hasUnsavedChanges, rejectionComment]
+  );
+
+  const performAction = async (action: string) => {
+    setCurrentAction(action);
+
+    try {
+      if (mutation?.isPending) return;
+
+      const response = await mutation?.mutateAsync({
+        action,
+        name: data?.todo_id || "",
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const responseWithSession = response as unknown as { session?: any };
+
+      if (
+        (data?.custom_approval_type === "Approval Matrix" &&
+          responseWithSession?.session) ||
+        (data?.custom_approval_type === "Multi Actions" &&
+          data?.custom_open_chatnext_assistant_on_action)
+      ) {
+        if (window.trigger_chatnext_assistant) {
+          window.trigger_chatnext_assistant(true, responseWithSession?.session);
+        }
+      } else {
+        setTimeout(() => {
+          setRefetchAttendance(true);
+        }, 2000);
+      }
+
+      if (onAction) {
+        onAction();
+      }
+
+      if (action.toLowerCase() === "reject") {
+        setRejectionComment("");
+      }
+
+      setCurrentAction(null);
+    } catch (error) {
+      setCurrentAction(null);
+      console.error("Action failed", error);
+    }
+  };
+
+  const handleConfirmAction = () => {
+    setShowActionWarning(false);
+    setHasUnsavedChanges(false);
+    if (pendingAction) {
+      performAction(pendingAction);
+      setPendingAction(null);
+    }
+  };
+
+  const handleCancelAction = () => {
+    setShowActionWarning(false);
+    setPendingAction(null);
+  };
+
+  const handleSaveComment = async () => {
+    if (!rejectionComment.trim()) {
+      toast.error("Please enter a comment");
+      return;
+    }
+
+    try {
+      await commentMutation.mutateAsync({
+        referenceDoctype: ref?.doctype || "Expense Claim",
+        referenceName: claimId,
+        content: rejectionComment,
+        comment_email: user?.name || "",
+      });
+
+      setShowCommentModal(false);
+
+      if (pendingAction) {
+        performAction(pendingAction);
+        setPendingAction(null);
+        setRejectionComment("");
+      }
+    } catch (error) {
+      console.error("Failed to save comment", error);
+    }
+  };
+
+  const handleCancelComment = () => {
+    setShowCommentModal(false);
+    setPendingAction(null);
+  };
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open" || status === "Draft") {
@@ -94,8 +265,6 @@ export function TeamExpenseDetailView({
 
   const statusSource = data?.status || ref?.approval_status || "";
   const status = getStatus(statusSource);
-
-  // Check if claim is editable - only if status is Open, Pending, or Draft
   const isClaimEditable = ["Open", "Pending", "Draft"].includes(statusSource);
 
   const formatDate = (date: string): string => {
@@ -121,27 +290,19 @@ export function TeamExpenseDetailView({
   const formatINR = (value?: number | null) =>
     typeof value === "number" ? value.toFixed(2) : "0.00";
 
-  const toggleSelection = (itemId: string) => {
-    setExpenseItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, selected: !item.selected } : item
-      )
-    );
-  };
-
-  const toggleSelectAll = () => {
-    const allSelected = expenseItems.every((item) => item.selected);
-    setExpenseItems((prev) =>
-      prev.map((item) => ({ ...item, selected: !allSelected }))
-    );
-  };
-
   const updateSanctionedAmount = (itemId: string, value: string) => {
     const numValue = parseFloat(value) || 0;
     setExpenseItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, sanctionedAmount: numValue } : item
-      )
+      prev.map((item) => {
+        if (item.id === itemId) {
+          const hasChanged = numValue !== item.sanctioned_amount;
+          if (hasChanged && !hasUnsavedChanges) {
+            setHasUnsavedChanges(true);
+          }
+          return { ...item, sanctionedAmount: numValue };
+        }
+        return item;
+      })
     );
   };
 
@@ -153,204 +314,72 @@ export function TeamExpenseDetailView({
     );
   };
 
-  const handleItemAction = async (
-    itemId: string,
-    action: "Approve" | "Reject"
-  ) => {
-    if (!isClaimEditable) {
-      toast.error("This claim cannot be modified in its current status");
-      return;
-    }
-
-    const item = expenseItems.find((i) => i.id === itemId);
-
-    if (!item) return;
-
-    // Only require comment for Reject action
-    if (action === "Reject" && !item.comment.trim()) {
-      toast.error("Comment is required for rejection");
-      return;
-    }
-
-    setProcessingItem({ id: itemId, action });
-
-    try {
-      await singleMutation.mutateAsync({
-        claimId,
-        itemName: item.name,
-        sanctionedAmount: item.sanctionedAmount,
-        comments: item.comment,
-        status: action,
-      });
-
-      setExpenseItems((prev) =>
-        prev.map((i) =>
-          i.id === itemId
-            ? {
-                ...i,
-                custom_approval_staus:
-                  action === "Approve" ? "Approved" : "Rejected",
-              }
-            : i
-        )
-      );
-
-      setTimeout(() => {
-        setRefetchAttendance(true);
-      }, 2000);
-
-      const updatedItems = expenseItems.map((i) =>
-        i.id === itemId
-          ? {
-              ...i,
-              custom_approval_staus:
-                action === "Approve" ? "Approved" : "Rejected",
-            }
-          : i
-      );
-
-      const allProcessed = updatedItems.every(
-        (item) =>
-          item.custom_approval_staus === "Approved" ||
-          item.custom_approval_staus === "Rejected"
-      );
-
-      if (allProcessed && onAction) {
-        onAction();
-      }
-    } catch (error) {
-      console.error("Action failed", error);
-    } finally {
-      setProcessingItem(null);
-    }
-  };
-
-  const handleBulkAction = async (action: "Approve" | "Reject") => {
-    if (!isClaimEditable) {
-      toast.error("This claim cannot be modified in its current status");
-      return;
-    }
-
-    const selectedItems = expenseItems.filter((item) => item.selected);
-
-    if (selectedItems.length === 0) {
-      toast.error("Please select at least one item");
-      return;
-    }
-
-    // Only check for comments when rejecting
-    if (action === "Reject") {
-      const missingComments = selectedItems.some(
-        (item) => !item.comment.trim()
-      );
-      if (missingComments) {
-        toast.error("All selected items must have comments for rejection");
-        return;
-      }
-    }
-
-    setCurrentAction(action);
-
-    try {
-      const payload = {
-        claim_id: claimId,
-        line_items: selectedItems.map((item) => ({
-          name: item.name,
-          sanctioned_amount:
-            action === "Approve" ? item.sanctionedAmount : undefined,
-          comments: item.comment,
-          status: action,
-        })),
-      };
-
-      await bulkMutation.mutateAsync(payload);
-
-      setExpenseItems((prev) =>
-        prev.map((item) =>
-          selectedItems.find((si) => si.id === item.id)
-            ? {
-                ...item,
-                custom_approval_staus:
-                  action === "Approve" ? "Approved" : "Rejected",
-                selected: false,
-              }
-            : item
-        )
-      );
-
-      setTimeout(() => {
-        setRefetchAttendance(true);
-      }, 2000);
-
-      const updatedItems = expenseItems.map((item) =>
-        selectedItems.find((si) => si.id === item.id)
-          ? {
-              ...item,
-              custom_approval_staus:
-                action === "Approve" ? "Approved" : "Rejected",
-            }
-          : item
-      );
-
-      const allProcessed = updatedItems.every(
-        (item) =>
-          item.custom_approval_staus === "Approved" ||
-          item.custom_approval_staus === "Rejected"
-      );
-
-      if (allProcessed && onAction) {
-        onAction();
-      }
-    } catch (error) {
-      console.error("Bulk action failed", error);
-    } finally {
-      setCurrentAction(null);
-    }
-  };
-
-  // Calculate totals dynamically using useMemo - recalculates whenever expenseItems changes
-  const {
-    // approvedItems,
-    totalToBeReimbursed,
-    totalAmount,
-    nonReimbursableAmount,
-  } = useMemo(() => {
-    const approved = expenseItems.filter(
-      (item) => item.custom_approval_staus === "Approved"
-    );
-
-    // const rejected = expenseItems.filter(
-    //   (item) => item.custom_approval_staus === "Rejected"
-    // );
-
-    const nonReimbursable = 0;
-
-    let totalReimbursed;
-
-    if (approved.length > 0) {
-      totalReimbursed = approved.reduce(
-        (sum, item) => sum + item.sanctionedAmount,
-        0
-      );
-    } else {
-      const itemsToCount = expenseItems.filter(
-        (item) => item.custom_approval_staus !== "Rejected"
-      );
-      totalReimbursed = itemsToCount.reduce(
-        (sum, item) => sum + item.sanctionedAmount,
-        0
-      );
-    }
-
-    const total = totalReimbursed;
-
-    return {
-      approvedItems: approved,
-      totalToBeReimbursed: totalReimbursed,
-      totalAmount: total,
-      nonReimbursableAmount: nonReimbursable,
+  const getActionStyles = (action: string): { bg: string; text: string } => {
+    const parsedAction = action.toLowerCase().trim();
+    let styles = {
+      bg: "gray-100",
+      text: "gray-600",
     };
-  }, [expenseItems]);
+    switch (parsedAction) {
+      case "approve":
+        styles = {
+          bg: "green-100",
+          text: "green-600",
+        };
+        break;
+      case "reject":
+        styles = {
+          bg: "red-100",
+          text: "red-600",
+        };
+        break;
+      default:
+        styles = {
+          bg: "gray-200",
+          text: "gray-600",
+        };
+        break;
+    }
+    return styles;
+  };
+
+  const actions = data?.custom_doctype_actions
+    ? JSON.parse(data?.custom_doctype_actions)
+    : [];
+
+  const { totalToBeReimbursed, totalAmount, nonReimbursableAmount } =
+    useMemo(() => {
+      const approved = expenseItems.filter(
+        (item) => item.custom_approval_staus === "Approved"
+      );
+
+      const nonReimbursable = 0;
+
+      let totalReimbursed;
+
+      if (approved.length > 0) {
+        totalReimbursed = approved.reduce(
+          (sum, item) => sum + item.sanctionedAmount,
+          0
+        );
+      } else {
+        const itemsToCount = expenseItems.filter(
+          (item) => item.custom_approval_staus !== "Rejected"
+        );
+        totalReimbursed = itemsToCount.reduce(
+          (sum, item) => sum + item.sanctionedAmount,
+          0
+        );
+      }
+
+      const total = totalReimbursed;
+
+      return {
+        totalToBeReimbursed: totalReimbursed,
+        totalAmount: total,
+        nonReimbursableAmount: nonReimbursable,
+      };
+    }, [expenseItems]);
 
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
@@ -362,13 +391,10 @@ export function TeamExpenseDetailView({
 
   if (!data?.todo_id) return null;
 
-  const allSelected =
-    expenseItems.length > 0 && expenseItems.every((item) => item.selected);
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onMouseDown={onClose}
+      onMouseDown={handleClose}
     >
       <div
         className="w-full h-full md:h-auto md:max-w-xl md:max-h-[90vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
@@ -386,8 +412,32 @@ export function TeamExpenseDetailView({
               <p className="text-sm text-gray-500">{claimId}</p>
             </div>
           </div>
+          {actions?.length > 0 && status?.label === "Pending" && (
+            <div className="ml-auto flex gap-2">
+              {actions.map((action: string) => {
+                const isLoading =
+                  currentAction === action && mutation.isPending;
+                return (
+                  <Button
+                    key={action}
+                    disabled={isLoading}
+                    onClick={() => handleAction(action)}
+                    size="sm"
+                    bgColor={getActionStyles(action).bg}
+                    textColor={getActionStyles(action).text}
+                  >
+                    {isLoading ? (
+                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      action
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
             aria-label="Close"
           >
@@ -401,6 +451,7 @@ export function TeamExpenseDetailView({
               label={status?.label as string}
               backgroundColor={status?.statusColor}
             />
+
             {data?.due_date && (
               <span className="text-sm text-gray-600">
                 Due in{" "}
@@ -413,41 +464,6 @@ export function TeamExpenseDetailView({
             )}
           </div>
         </div>
-
-        {/* Bulk actions - only show if claim is editable */}
-        {isClaimEditable && (
-          <div className="px-6 py-3 border-b bg-white flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              onChange={toggleSelectAll}
-              className="w-4 h-4 rounded border-gray-300"
-            />
-            <span className="text-sm font-medium text-gray-700">
-              Select All
-            </span>
-            <div className="flex gap-2 ml-auto">
-              <Button
-                onClick={() => handleBulkAction("Approve")}
-                disabled={bulkMutation.isPending || currentAction === "Approve"}
-                size="sm"
-                bgColor="green-100"
-                textColor="green-600"
-              >
-                {currentAction === "Approve" ? "Processing..." : "Bulk Approve"}
-              </Button>
-              <Button
-                onClick={() => handleBulkAction("Reject")}
-                disabled={bulkMutation.isPending || currentAction === "Reject"}
-                size="sm"
-                bgColor="red-100"
-                textColor="red-600"
-              >
-                {currentAction === "Reject" ? "Processing..." : "Bulk Reject"}
-              </Button>
-            </div>
-          </div>
-        )}
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -473,14 +489,6 @@ export function TeamExpenseDetailView({
                   className="mb-4 p-4 border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={item.selected}
-                      onChange={() => toggleSelection(item.id)}
-                      disabled={!isClaimEditable}
-                      className="mt-1 w-4 h-4 rounded border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -602,7 +610,6 @@ export function TeamExpenseDetailView({
                         )}
                       </div>
 
-                      {/* Description */}
                       {item.description && (
                         <div className="mb-3">
                           <p className="text-xs text-gray-500 uppercase mb-1">
@@ -617,7 +624,6 @@ export function TeamExpenseDetailView({
                         </div>
                       )}
 
-                      {/* Base and Sanctioned Amount */}
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <p className="text-xs text-gray-500 mb-1">
@@ -637,7 +643,6 @@ export function TeamExpenseDetailView({
                         </div>
                       </div>
 
-                      {/* Documents */}
                       {item.custom_attach_receipt && (
                         <div className="mb-3">
                           <p className="text-xs text-gray-500 uppercase mb-1">
@@ -654,7 +659,6 @@ export function TeamExpenseDetailView({
                         </div>
                       )}
 
-                      {/* Sanctioned Amount Input */}
                       <div className="mb-3">
                         <label className="text-xs text-gray-500 uppercase mb-1 block">
                           SANCTIONED AMOUNT (INR) *
@@ -672,7 +676,6 @@ export function TeamExpenseDetailView({
                         />
                       </div>
 
-                      {/* Comment Textarea */}
                       <div className="mb-3">
                         <label className="text-xs text-gray-500 uppercase mb-1 block">
                           COMMENT (Required for Reject)
@@ -689,35 +692,19 @@ export function TeamExpenseDetailView({
                         />
                       </div>
 
-                      {/* Action Buttons */}
                       {isClaimEditable && (
                         <div className="flex gap-2">
                           <Button
-                            onClick={() => handleItemAction(item.id, "Approve")}
-                            disabled={processingItem?.id === item.id}
+                            onClick={() => handleSaveItem(item.id)}
+                            disabled={savingItem === item.id}
                             size="sm"
-                            bgColor="green-100"
-                            textColor="green-600"
+                            bgColor="blue-100"
+                            textColor="blue-600"
                           >
-                            {processingItem?.id === item.id &&
-                            processingItem?.action === "Approve" ? (
-                              <span className="inline-block w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                            {savingItem === item.id ? (
+                              <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                             ) : (
-                              "Approve"
-                            )}
-                          </Button>
-                          <Button
-                            onClick={() => handleItemAction(item.id, "Reject")}
-                            disabled={processingItem?.id === item.id}
-                            size="sm"
-                            bgColor="red-100"
-                            textColor="red-600"
-                          >
-                            {processingItem?.id === item.id &&
-                            processingItem?.action === "Reject" ? (
-                              <span className="inline-block w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              "Reject"
+                              "Save"
                             )}
                           </Button>
                         </div>
@@ -758,6 +745,122 @@ export function TeamExpenseDetailView({
             </div>
           </div>
         </div>
+
+        {showCommentModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Comment Required
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please add a comment before rejecting this expense claim.
+              </p>
+              <div className="mb-4">
+                <label className="text-xs text-gray-500 uppercase mb-1 block">
+                  COMMENT *
+                </label>
+                <textarea
+                  value={rejectionComment}
+                  onChange={(e) => setRejectionComment(e.target.value)}
+                  placeholder="Enter your rejection comment..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  rows={4}
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={handleCancelComment}
+                  size="sm"
+                  bgColor="gray-100"
+                  textColor="gray-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveComment}
+                  size="sm"
+                  bgColor="blue-100"
+                  textColor="blue-600"
+                  disabled={
+                    !rejectionComment.trim() || commentMutation.isPending
+                  }
+                >
+                  {commentMutation.isPending ? (
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    "Save & Continue"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showUnsavedWarning && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Unsaved Changes
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                You have unsaved changes to the sanctioned amount. Are you sure
+                you want to leave? Your changes will be discarded.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={handleCancelClose}
+                  size="sm"
+                  bgColor="gray-100"
+                  textColor="gray-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmClose}
+                  size="sm"
+                  bgColor="red-100"
+                  textColor="red-600"
+                >
+                  Discard Changes
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showActionWarning && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Unsaved Changes
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                You have unsaved changes to the sanctioned amount. Please save
+                your changes before performing this action, or proceed to
+                discard them.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={handleCancelAction}
+                  size="sm"
+                  bgColor="gray-100"
+                  textColor="gray-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmAction}
+                  size="sm"
+                  bgColor="red-100"
+                  textColor="red-600"
+                >
+                  Proceed Anyway
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

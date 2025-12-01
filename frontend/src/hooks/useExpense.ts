@@ -290,3 +290,68 @@ export function useUpdateExpense() {
     },
   });
 }
+
+//update expense line item
+export function useExpenseLineItemUpdate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      claimId,
+      itemName,
+      sanctionedAmount,
+    }: {
+      claimId: string;
+      itemName: string;
+      sanctionedAmount: number;
+    }) => expenseService.updateLineItem(claimId, itemName, sanctionedAmount),
+    onSuccess: () => {
+      toast.success("Line item updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
+      queryClient.invalidateQueries({ queryKey: ["todo"] });
+      queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
+    },
+    onError: (error) => {
+      handleError(error);
+      console.error("Line item update failed:", error);
+    },
+  });
+}
+
+//updateExpense comment
+export function useExpenseCommentUpdate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      referenceDoctype,
+      referenceName,
+      content,
+      comment_email,
+    }: {
+      referenceDoctype: string;
+      referenceName: string;
+      content: string;
+      comment_email: string;
+    }) =>
+      expenseService.updateExpenseComment(
+        referenceDoctype,
+        referenceName,
+        content,
+        comment_email
+      ),
+
+    onSuccess: () => {
+      toast.success("Comment added successfully!");
+      queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
+      queryClient.invalidateQueries({ queryKey: ["todo"] });
+      queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
+    },
+
+    onError: (error) => {
+      handleError(error);
+      console.error("Comment update failed:", error);
+    },
+  });
+}

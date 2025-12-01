@@ -4,13 +4,12 @@ const ExpenseFieldSkeleton: React.FC<{ columns?: number }> = ({
 }) => {
   return (
     <div className="mt-4 space-y-4 animate-pulse">
-      <div className="h-6 bg-gray-200 rounded w-1/3" />
+      {/* <div className="h-6 bg-gray-200 rounded w-1/3" /> */}
       <div className={`grid grid-cols-1 md:grid-cols-${columns} gap-4`}>
-        {Array.from({ length: columns * 3 }).map((_, i) => (
+        {Array.from({ length: columns * 6 }).map((_, i) => (
           <div key={i} className="h-12 bg-gray-200 rounded" />
         ))}
       </div>
-      <div className="h-10 bg-gray-200 rounded w-24" />
     </div>
   );
 };

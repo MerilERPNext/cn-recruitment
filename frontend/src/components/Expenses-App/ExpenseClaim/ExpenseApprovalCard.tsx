@@ -1,21 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onAction: (action: string, data: any) => void;
   refetch?: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
-  showCheckbox?: boolean; // Add this new optional prop
+  showCheckbox?: boolean;
 };
 
 const ExpenseApprovalCard = ({
@@ -29,6 +31,16 @@ const ExpenseApprovalCard = ({
   showCheckbox = true,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
+  const commentMutation = useExpenseCommentUpdate();
+  const { data: user } = useCurrentUser();
+
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [rejectionComment, setRejectionComment] = useState("");
+  const [pendingActionData, setPendingActionData] = useState<{
+    action: string;
+    data: any;
+  } | null>(null);
+
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -113,6 +125,54 @@ const ExpenseApprovalCard = ({
     currency: "INR",
   }).format(data?.reference_document?.total_claimed_amount ?? 0);
 
+  const handleActionClick = (action: string, actionData: any) => {
+    if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
+      setPendingActionData({ action, data: actionData });
+      setShowCommentModal(true);
+    } else {
+      onAction(action, actionData);
+      if (action.toLowerCase() === "reject") {
+        setRejectionComment("");
+      }
+    }
+  };
+
+  const handleSaveComment = async () => {
+    if (!rejectionComment.trim()) {
+      toast.error("Please enter a comment");
+      return;
+    }
+
+    const referenceDoctype =
+      data?.reference_document?.doctype || "Expense Claim";
+    const referenceName =
+      data?.reference_document?.name || data?.reference_name || "";
+
+    try {
+      await commentMutation.mutateAsync({
+        referenceDoctype,
+        referenceName,
+        content: rejectionComment,
+        comment_email: user?.name || "",
+      });
+
+      setShowCommentModal(false);
+
+      if (pendingActionData) {
+        onAction(pendingActionData.action, pendingActionData.data);
+        setPendingActionData(null);
+        setRejectionComment("");
+      }
+    } catch (error) {
+      console.error("Failed to save comment", error);
+    }
+  };
+
+  const handleCancelComment = () => {
+    setShowCommentModal(false);
+    setPendingActionData(null);
+  };
+
   return (
     <>
       {isDesktop ? (
@@ -153,7 +213,6 @@ const ExpenseApprovalCard = ({
             {formatDate(data?.due_date)}
           </div>
 
-          {/* Status + Actions */}
           <div className="flex items-center justify-start">
             <Badge
               size="sm"
@@ -171,7 +230,7 @@ const ExpenseApprovalCard = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    onAction(action, data);
+                    handleActionClick(action, data);
                   }}
                   bgColor={getActionStyles(action).bg}
                   textColor={getActionStyles(action).text}
@@ -266,7 +325,7 @@ const ExpenseApprovalCard = ({
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        onAction(action, data);
+                        handleActionClick(action, data);
                       }}
                       fullWidth
                       bgColor={getActionStyles(action).bg}
@@ -285,6 +344,64 @@ const ExpenseApprovalCard = ({
                     </Button>
                   ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCommentModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCancelComment();
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Comment Required
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please add a comment before rejecting this expense claim.
+            </p>
+            <div className="mb-4">
+              <label className="text-xs text-gray-500 uppercase mb-1 block">
+                COMMENT *
+              </label>
+              <textarea
+                value={rejectionComment}
+                onChange={(e) => setRejectionComment(e.target.value)}
+                placeholder="Enter your rejection comment..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                rows={4}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={handleCancelComment}
+                size="sm"
+                bgColor="gray-100"
+                textColor="gray-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveComment}
+                size="sm"
+                bgColor="blue-100"
+                textColor="blue-600"
+                disabled={!rejectionComment.trim() || commentMutation.isPending}
+              >
+                {commentMutation.isPending ? (
+                  <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "Save & Continue"
+                )}
+              </Button>
             </div>
           </div>
         </div>
