@@ -283,7 +283,7 @@ const DownloadMenu = ({
   onType2,
   onType3,
   onType4,
-  onShowPrintFormatMenu,
+  onShowPrintFormatMenu = {},
 }: any) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLButtonElement | null>(null);
@@ -368,7 +368,6 @@ const SalarySlipItemDesktop = ({
     item.name,
     item.employee
   );
-  console.log("printFormatMenuRef in Item:",printFormatMenuRef);
 
   return (
     <div className="my-data-row">
@@ -444,6 +443,11 @@ const SalarySlipItemMobile = ({
       date.getMonth() + 1
     ).padStart(2, "0")}-${date.getFullYear()}`;
   };
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const printFormatMenuRef = usePrintFormatMenuOptions(
+    item.name,
+    item.employee
+  );
 
   return (
     <div className="border rounded-lg mb-3 bg-white">
@@ -463,6 +467,7 @@ const SalarySlipItemMobile = ({
           onType3={onDownloadType3}
           onType4={onDownloadType4}
           onViewPDF={onViewPDF}
+          onShowPrintFormatMenu={printFormatMenuRef}
         />
       </div>
       <div className="text-sm text-gray-600 p-4">

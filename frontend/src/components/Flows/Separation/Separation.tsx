@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import image from "../../../assets/welcome-sep.svg";
+import { useConfirmationAndseparation } from "../../../hooks/useConfiremnation";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
@@ -7,24 +9,26 @@ import {
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import SeparationApprovalTracker from "./Component/ApprovalTracker";
-import { useSeparation } from "../../../hooks/useConfiremnation";
+
 
 const Separation = () => {
   const { data: userId } = useLoggedInUser();
   const { data: employee_name } = useCurrentEmployeeAllDetails(userId || "");
   const doctype_name = "Employee";
+  const doctype = "Employee Separation";
   const document_name = employee_name?.name || "";
   const { data: definitionName } = useDifinitaionNameForSeparation();
-  const confirmationCreationData = useSeparation();
+  const confirmationCreationData = useConfirmationAndseparation(doctype);
   const item = confirmationCreationData?.data?.[0];
-  function getFunnelData(funnelName: string) {
+  function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-          (item: { funnel_name: string }) => item.funnel_name === funnelName
+          (item: any) =>
+            item?.trigger_category?.name === trigger_category
         )
       : [];
   }
-  const separationData = getFunnelData("Separation funnel");
+  const separationData = getFunnelData("Separation");
   const definition_name = separationData?.[0]?.name || "";
   const l = "true";
   const { data } = useChatAssistant(
