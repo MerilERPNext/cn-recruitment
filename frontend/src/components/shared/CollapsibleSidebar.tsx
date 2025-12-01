@@ -309,6 +309,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Goal,
           href: "/webapp/performance-app/new-goal-plan",
         },
+        {
+          name: "Performance Review",
+          icon: ChartNoAxesCombined,
+          href: "/webapp/performance-app/performance-review",
+        },
       ],
     },
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import img from "../../../assets/pngegg.png";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import {
@@ -6,7 +7,7 @@ import {
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import {
-  useConfirmation,
+  useConfirmationAndseparation,
   // useConfirmationEmployee,
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
@@ -16,21 +17,20 @@ const ConfirmationWorkflow = () => {
   const { data: userId } = useLoggedInUser();
   const { data: employee_name } = useCurrentEmployeeAllDetails(userId || "");
   const doctype_name = "Employee";
+  const doctype = "Employee Confirmation";
   const document_name = employee_name?.name || "";
   const { data: definitionName } = useDifinitaionNameForSeparation();
-  function getFunnelData(funnelName: string) {
+  function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-          (item: { funnel_name: string }) => item.funnel_name === funnelName
+          (item: any) =>
+            item?.trigger_category?.name === trigger_category
         )
       : [];
   }
-  const confirmationCreationData = useConfirmation();
+  const confirmationCreationData = useConfirmationAndseparation(doctype);
   const item = confirmationCreationData?.data?.[0];
-  // const { data: confirmationListData } = useConfirmationEmployee();
-  console.log(item, "asdasdasdasdconfirmationCreationData");
-  //   const separationData = getFunnelData("Separation");
-  const confirmationData = getFunnelData("Initiate Confirmation tool");
+  const confirmationData = getFunnelData("Confirmation");
   const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
 

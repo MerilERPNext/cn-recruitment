@@ -7,11 +7,14 @@ import HeaderBar from '../HeaderBar';
 import { GoalModelProvider } from './GoalModelContext';
 type TabName =
     "Overview"
-    | "New Goal Plan";
+    | "New Goal Plan"
+    | "Performance Review";
+
 
 const tabRoutes: Record<TabName, string> = {
     Overview: "/webapp/performance-app/overview",
     "New Goal Plan": "/webapp/performance-app/new-goal-plan",
+    "Performance Review": "/webapp/performance-app/performance-review",
 };
 
 
