@@ -8,6 +8,7 @@ import {
   usePostExpenseClaim,
   useCalculateExpenseAmount,
   useGetUnitPrice,
+  useUpdateExpense,
 } from "../../../hooks/useExpense";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -23,6 +24,12 @@ import { Employee } from "../../../types/employee";
 export interface EmployeeOption {
   name: string;
   employee_name?: string;
+}
+
+interface AddExpenseFormProps {
+  initialExpense?: Expense | null;
+  expense_claim_name?: string | null;
+  isEditingFromDetailsPage?: boolean;
 }
 
 interface Expense {
@@ -50,7 +57,11 @@ const LOCAL_KEYS = {
   EXPENSES: "add_expense_expenses",
 };
 
-const AddExpenseForm: React.FC = () => {
+const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
+  initialExpense,
+  expense_claim_name,
+  isEditingFromDetailsPage = false,
+}) => {
   const formRef = useRef<any>(null);
   const dynamicFormRef = useRef<any>(null);
   const [formKey, setFormKey] = useState<number>(0);
@@ -95,6 +106,8 @@ const AddExpenseForm: React.FC = () => {
   );
   const { mutate: submitExpenseClaim, isPending } = usePostExpenseClaim();
 
+  const { mutate: updateExpense, isPending: isUpdating } = useUpdateExpense();
+
   const [calcParams, setCalcParams] = useState<
     CalculateExpenseParams | undefined
   >(undefined);
@@ -112,17 +125,43 @@ const AddExpenseForm: React.FC = () => {
   const { isMobile } = useScreenSize();
   const navigate = useNavigate();
 
-  // FIXED: Simplified useEffect for type changes only
+  useEffect(() => {
+    if (!initialExpense) return;
+    setEditingExpenseId(initialExpense.uid);
+    const copy: any = { ...initialExpense };
+    console.log("initialExpense", initialExpense);
+
+    if (typeof copy.custom_attach_receipt === "string") {
+      copy.attach_receipt = [
+        {
+          name: copy.custom_attach_receipt.split("/").pop() || "attachment",
+          size: 4000,
+          url: copy.custom_attach_receipt,
+          storage: "url",
+          originalName:
+            copy.custom_attach_receipt.split("/").pop() || "attachment",
+        },
+      ];
+    }
+
+    setDynamicFormData(copy);
+    setMainFormData({
+      expenseCategory: initialExpense.expenseCategory,
+      expenseType: initialExpense.expenseType,
+    });
+    setShowCategoryAndType(true);
+    setFormKey((k) => k + 1);
+    clearFailedStatus(initialExpense.uid);
+  }, [initialExpense]);
+
   useEffect(() => {
     const expenseType =
       mainFormData?.expenseType || mainFormData?.expense_type || null;
 
-    // Skip during editing
     if (editingExpenseId) {
       return;
     }
 
-    // Only reset if we have a type (type selected scenario)
     if (expenseType) {
       setDynamicFormData({});
       setCalcParams(undefined);
@@ -310,7 +349,7 @@ const AddExpenseForm: React.FC = () => {
                 field?.required === true
                   ? `${field?.label} <span style="color:red">&nbsp;*</span>`
                   : field?.label,
-              format: "yyyy-MM-dd HH:mm",
+              format: "dd-MM-yyyy HH:mm",
               enableTime: true,
               enableDate: true,
               placeholder: "Select date and time",
@@ -468,13 +507,10 @@ const AddExpenseForm: React.FC = () => {
                     : field?.label,
                 dataSrc: "url",
                 data: {
-                  // url: `/api/resource/Daily%20Allowance%20Vehicle%20Category`,
                   url: `/api/method/chatnext_expense_trips.expense_claim.get_applicable_vehicle_types?employee=${employeeName}&claim_type=${claimType}`,
                 },
-                // selectValues: "data",
                 selectValues: "message",
                 valueProperty: "name",
-                // template: "<span>{{ item.name }}</span>",
                 template: "<span>{{ item.vehicle_category }}</span>",
                 validate: {
                   required: field?.required,
@@ -649,7 +685,6 @@ const AddExpenseForm: React.FC = () => {
     };
   }, [isSharePanelOpen]);
 
-  // FIXED: Reset checkbox when sidebar closes
   useEffect(() => {
     if (!isSharePanelOpen) {
       setDynamicFormData((prev: any) => {
@@ -658,7 +693,6 @@ const AddExpenseForm: React.FC = () => {
           shareExpenseCheckbox: false,
         };
 
-        // Force the dynamic form to update
         if (dynamicFormRef.current) {
           try {
             setTimeout(() => {
@@ -769,6 +803,14 @@ const AddExpenseForm: React.FC = () => {
     clearFailedStatus(expense.uid);
   };
 
+  const submitButtonLabel = isCalculating
+    ? "Calculating..."
+    : isUpdating
+    ? "Updating..."
+    : isEditingFromDetailsPage || editingExpenseId
+    ? "Update"
+    : "Save";
+
   return (
     <>
       {!isMobile && (
@@ -794,7 +836,6 @@ const AddExpenseForm: React.FC = () => {
               onChange={(change: any) => {
                 const newCategory = change.data.expenseCategory;
 
-                // FIXED: Category changed - clear type and reset
                 if (
                   previousCategory &&
                   newCategory &&
@@ -816,7 +857,6 @@ const AddExpenseForm: React.FC = () => {
                   }
                 }
 
-                // Update previous category tracker
                 if (newCategory) {
                   setPreviousCategory(newCategory);
                 }
@@ -844,8 +884,7 @@ const AddExpenseForm: React.FC = () => {
                     if (isMobile) {
                       return [
                         ...dynamicFields.map((comp) => comp),
-                        // Checkbox before Save button (mobile)
-                        ...(isShareAllowed
+                        ...(isShareAllowed && !isEditingFromDetailsPage
                           ? [
                               {
                                 type: "checkbox",
@@ -862,7 +901,7 @@ const AddExpenseForm: React.FC = () => {
                         {
                           type: "button",
                           action: "submit",
-                          label: isCalculating ? "Calculating..." : "Save",
+                          label: submitButtonLabel,
                           theme: "primary",
                           key: "submitButton",
                           customClass: "mt-4",
@@ -871,7 +910,6 @@ const AddExpenseForm: React.FC = () => {
                       ];
                     }
 
-                    // Desktop layout
                     return [
                       {
                         type: "columns",
@@ -889,13 +927,13 @@ const AddExpenseForm: React.FC = () => {
                           },
                         ],
                       },
-                      // Checkbox and button row for desktop
+
                       {
                         type: "columns",
                         key: "actionsRow",
                         customClass: "mt-4",
                         columns: [
-                          ...(isShareAllowed
+                          ...(isShareAllowed && !isEditingFromDetailsPage
                             ? [
                                 {
                                   width: 6,
@@ -927,9 +965,7 @@ const AddExpenseForm: React.FC = () => {
                               {
                                 type: "button",
                                 action: "submit",
-                                label: isCalculating
-                                  ? "Calculating..."
-                                  : "Save",
+                                label: submitButtonLabel,
                                 theme: "primary",
                                 key: "submitButton",
                                 disabled: isCalculating,
@@ -1041,6 +1077,41 @@ const AddExpenseForm: React.FC = () => {
                     amount: amountFromApi ?? combinedData.amount ?? undefined,
                   };
 
+                  if (isEditingFromDetailsPage) {
+                    const participants = dynamicFormData?.participants
+                      ? dynamicFormData.participants.map((p: any) => ({
+                          name: p.name,
+                          employee_type: p.employee_type || p.employeetype,
+                          employee: p.employee,
+                          employee_name: p.employee_name || p.employeename,
+                          guest_name: p.guest_name || p.guestname,
+                          percentage: p.percentage,
+                          allocated_amount: p.allocated_amount || p.amount,
+                        }))
+                      : [];
+                    console.log("expenseClaimName:", expense_claim_name);
+                    updateExpense(
+                      {
+                        expense_claim_name: expense_claim_name || "",
+                        expenses: [newExpense],
+                        participants: participants,
+                      },
+                      {
+                        onSuccess: () => {
+                          setEditingExpenseId(null);
+                          formRef.current?.reset();
+                          dynamicFormRef.current?.reset();
+                          setShowCategoryAndType(false);
+                          setMainFormData({});
+                          setDynamicFormData({});
+                          setDynamicFields([]);
+                          navigate("/webapp/expenses-app/expenses-list");
+                        },
+                      }
+                    );
+                    return;
+                  }
+
                   if (editingExpenseId) {
                     setExpenses((prev) =>
                       prev.map((e) =>
@@ -1051,9 +1122,7 @@ const AddExpenseForm: React.FC = () => {
                     setExpenses((prev) => [...prev, newExpense]);
                   }
 
-                  // FIXED: Uncheck checkbox and close drawer on save
                   setIsSharePanelOpen(false);
-
                   setEditingExpenseId(null);
                   formRef.current?.reset();
                   dynamicFormRef.current?.reset();
@@ -1066,7 +1135,6 @@ const AddExpenseForm: React.FC = () => {
                 onChange={(change: any) => {
                   setDynamicFormData(change.data);
 
-                  // Handle share checkbox state
                   if (change.data?.shareExpenseCheckbox !== undefined) {
                     setIsSharePanelOpen(change.data.shareExpenseCheckbox);
                   }
@@ -1120,66 +1188,69 @@ const AddExpenseForm: React.FC = () => {
                   }
                 }}
               />
-              {displayParticipants && displayParticipants.length > 0 && (
-                <div className="mt-4 border rounded p-3 bg-white shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium">Participants</div>
-                    <div className="text-xs text-gray-500">
-                      {displayParticipants.length}{" "}
-                      {displayParticipants.length === 1
-                        ? "participant"
-                        : "participants"}
+
+              {!isEditingFromDetailsPage &&
+                displayParticipants &&
+                displayParticipants.length > 0 && (
+                  <div className="mt-4 border rounded p-3 bg-white shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-sm font-medium">Participants</div>
+                      <div className="text-xs text-gray-500">
+                        {displayParticipants.length}{" "}
+                        {displayParticipants.length === 1
+                          ? "participant"
+                          : "participants"}
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-xs text-gray-600">
+                            <th className="px-2 py-1">#</th>
+                            <th className="px-2 py-1">Type</th>
+                            <th className="px-2 py-1">Employee Name</th>
+                            <th className="px-2 py-1">Percentage</th>
+                            <th className="px-2 py-1">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {displayParticipants.map((p: any, idx: number) => (
+                            <tr key={idx} className="border-t">
+                              <td className="px-2 py-2 align-top">{idx + 1}</td>
+                              <td className="px-2 py-2 align-top">
+                                {p.employee_type ?? "-"}
+                              </td>
+                              <td className="px-2 py-2 align-top">
+                                {console.log(p.employee)}
+                                {p.employee
+                                  ? p.employee
+                                  : p.guest_name
+                                  ? p.guest_name
+                                  : "-"}
+                                {p.employee_label && (
+                                  <div className="text-xs text-gray-500">
+                                    {p.employee_label}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-2 py-2 align-top">
+                                {p.percentage !== undefined &&
+                                p.percentage !== null
+                                  ? `${p.percentage}%`
+                                  : "-"}
+                              </td>
+                              <td className="px-2 py-2 align-top">
+                                {p.amount !== undefined && p.amount !== null
+                                  ? `INR ${Number(p.amount).toFixed(2)}`
+                                  : "-"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-xs text-gray-600">
-                          <th className="px-2 py-1">#</th>
-                          <th className="px-2 py-1">Type</th>
-                          <th className="px-2 py-1">Employee / Name</th>
-                          <th className="px-2 py-1">Percentage</th>
-                          <th className="px-2 py-1">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {displayParticipants.map((p: any, idx: number) => (
-                          <tr key={idx} className="border-t">
-                            <td className="px-2 py-2 align-top">{idx + 1}</td>
-                            <td className="px-2 py-2 align-top">
-                              {p.employee_type ?? "-"}
-                            </td>
-                            <td className="px-2 py-2 align-top">
-                              {p.employee
-                                ? p.employee
-                                : p.guest_name
-                                ? p.guest_name
-                                : "-"}
-                              {p.employee_label ? (
-                                <div className="text-xs text-gray-500">
-                                  {p.employee_label}
-                                </div>
-                              ) : null}
-                            </td>
-                            <td className="px-2 py-2 align-top">
-                              {p.percentage !== undefined &&
-                              p.percentage !== null
-                                ? `${p.percentage}%`
-                                : "-"}
-                            </td>
-                            <td className="px-2 py-2 align-top">
-                              {p.amount !== undefined && p.amount !== null
-                                ? `INR ${Number(p.amount).toFixed(2)}`
-                                : "-"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                )}
             </div>
           )}
 
@@ -1201,7 +1272,7 @@ const AddExpenseForm: React.FC = () => {
                     </svg>
                     <div className="flex-1">
                       <h3 className="text-sm font-medium text-red-800">
-                        Submission Failed for {failedExpenseUids.size} item(s)
+                        Submission Failed for {failedExpenseUids.size} items
                       </h3>
                       <p className="mt-1 text-sm text-red-700">
                         The highlighted expense items below failed to submit.
@@ -1212,6 +1283,7 @@ const AddExpenseForm: React.FC = () => {
                   </div>
                 </div>
               )}
+
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Expense List</h2>
                 <button
@@ -1226,6 +1298,7 @@ const AddExpenseForm: React.FC = () => {
                   Delete Selected
                 </button>
               </div>
+
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-white border border-gray-200">
                   <thead>
@@ -1326,6 +1399,7 @@ const AddExpenseForm: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+
               <div className="flex justify-end mt-4">
                 <button
                   className="bg-blue-500 text-white font-bold px-6 py-2 rounded hover:bg-blue-600 mr-4"
@@ -1339,7 +1413,6 @@ const AddExpenseForm: React.FC = () => {
                 >
                   Add More
                 </button>
-
                 <button
                   className="bg-green-600 text-white font-bold px-6 py-2 rounded hover:bg-green-700"
                   disabled={expenses.length === 0 || isPending}
@@ -1358,10 +1431,10 @@ const AddExpenseForm: React.FC = () => {
           isOpen={isSharePanelOpen}
           onClose={() => setIsSharePanelOpen(false)}
           expenseAmount={Number(
-            (editingExpenseId
+            editingExpenseId
               ? expenses.find((x) => x.uid === editingExpenseId)?.amount ??
-                dynamicFormData?.amount
-              : dynamicFormData?.amount) ?? 0
+                  dynamicFormData?.amount
+              : dynamicFormData?.amount ?? 0
           )}
           editingExpenseId={editingExpenseId}
           expenses={expenses}
@@ -1381,7 +1454,7 @@ const AddExpenseForm: React.FC = () => {
               );
             } else {
               setDynamicFormData((prev: any) => ({
-                ...(prev || {}),
+                ...prev,
                 participants: formattedParticipants,
               }));
             }

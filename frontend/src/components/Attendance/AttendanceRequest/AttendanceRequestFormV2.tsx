@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import {
+  useAttendanceRequestAttachments,
   useCreateNewAttendanceRequest,
   useGetUserRoles,
   useReqValidationsForAttendanceRequest,
@@ -20,6 +21,7 @@ import defaultFormSchema from "./attendanceRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
+import { useRequiredFields } from "../../../hooks/useRequiredFields";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -62,7 +64,7 @@ interface FormioFormInstance {
   element?: HTMLElement;
 }
 
-interface FormSchema {
+export interface FormSchema {
   title: string;
   name: string;
   path: string;
@@ -70,7 +72,7 @@ interface FormSchema {
   components: SchemaComponent[];
 }
 
-interface SchemaComponent {
+export interface SchemaComponent {
   type: string;
   key: string;
   label?: string;
@@ -83,6 +85,9 @@ interface SchemaComponent {
   valueProperty?: string;
   selectValues?: string;
   refreshOn?: string;
+  // allow other unknown properties like validate
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
 interface RequestTypeOption {
@@ -95,6 +100,7 @@ interface FormChangeSubmission {
     component?: {
       key?: string;
     };
+    value: string | Date | boolean | number,
   };
   data?: AttendanceFormData;
 }
@@ -127,7 +133,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const { setRefetchAttendance } = useGlobalStore();
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const { uploadFiles,loading:uploadFileLoading } = useFileUploader();
+  const [fromDateChanged, setFromDateChanged] = useState<string>("");
+  const [requestTypeChanged, setRequestTypeChanged] = useState<string>("");
+  const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
   const [isForOthers, setIsForOthers] = useState(false);
   const [formSchema, setFormSchema] = useState<FormSchema>(
@@ -143,9 +151,75 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const reqValidationmutation = useReqValidationsForAttendanceRequest(
     currentEmployee?.employee as string
   );
-
+  const { data: attendanceRequestAttachmentsMandatory } =
+    useAttendanceRequestAttachments(currentEmployee?.employee || "", fromDateChanged, requestTypeChanged);
   const mutation = useCreateNewAttendanceRequest();
   const { mutate: updateAttendanceRequest } = useUpdateAttendanceRequest();
+
+  const { data: requiredFields } = useRequiredFields("Attendance Request");
+  const requiredFieldMap = useMemo(() => {
+    if (!requiredFields?.fields) return {};
+    const map: Record<string, boolean> = {};
+    requiredFields.fields.forEach((f) => {
+      if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+    });
+    return map;
+  }, [requiredFields]);
+
+  /**
+   * Helper: deep clone schema and apply required flags + label postfix for required fields
+   */
+  const transformSchemaWithRequired = (
+    baseSchema: FormSchema,
+    requiredMap: Record<string, boolean>
+  ): FormSchema => {
+    if (!baseSchema) return baseSchema;
+    // deep clone
+    const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
+
+    const applyToComponents = (components?: SchemaComponent[]) => {
+      if (!components) return;
+      components.forEach((comp) => {
+        const key = comp.key;
+        if (key && requiredMap[key]) {
+          // ensure validate exists
+          if (!comp.validate) comp.validate = {};
+          // set required flag
+          comp.validate.required = true;
+
+          // Append red asterisk to label (avoid duplicating)
+          if (typeof comp.label === "string") {
+            const asteriskHtml =
+              "<span style='color:red;margin-left:3px;'> *</span>";
+            if (!comp.label.includes(asteriskHtml)) {
+              // Some labels may include HTML already; we append the asterisk HTML
+              comp.label = `${comp.label} ${asteriskHtml}`;
+            }
+          }
+        }
+        // recurse into nested components (like panels, columns, containers)
+        if (comp.components && Array.isArray(comp.components)) {
+          applyToComponents(comp.components);
+        }
+        // some schema use nested components in 'columns' or 'rows' etc - handle common cases
+        if (comp.columns && Array.isArray(comp.columns)) {
+          comp.columns.forEach((col: { components: SchemaComponent[] }) =>
+            applyToComponents(col.components)
+          );
+        }
+        if (comp.rows && Array.isArray(comp.rows)) {
+          comp.rows.forEach((row) =>
+            row.forEach((cell: { components: SchemaComponent[] }) =>
+              applyToComponents(cell.components)
+            )
+          );
+        }
+      });
+    };
+
+    applyToComponents(cloned.components);
+    return cloned;
+  };
 
   // Fetch schema from backend if schemaUrl is provided
   useEffect(() => {
@@ -154,8 +228,19 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       fetch(schemaUrl)
         .then((res) => res.json())
         .then((data) => {
-          setFormSchema(data.message || data);
-          setIsSchemaLoading(false);
+          const src = data.message || data;
+          try {
+            const transformed = transformSchemaWithRequired(
+              src,
+              requiredFieldMap
+            );
+            setFormSchema(transformed);
+          } catch (e) {
+            console.error(e);
+            setFormSchema(src);
+          } finally {
+            setIsSchemaLoading(false);
+          }
         })
         .catch((error) => {
           console.error("Failed to fetch schema:", error);
@@ -163,14 +248,35 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           setIsSchemaLoading(false);
         });
     }
-  }, [schemaUrl, propSchema]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schemaUrl, propSchema, requiredFieldMap]);
 
   // Update schema when propSchema changes
   useEffect(() => {
     if (propSchema) {
-      setFormSchema(propSchema);
+      try {
+        setFormSchema(
+          transformSchemaWithRequired(propSchema, requiredFieldMap)
+        );
+      } catch {
+        setFormSchema(propSchema);
+      }
     }
-  }, [propSchema]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propSchema, requiredFieldMap]);
+
+  // If requiredFieldMap changes and we already have a formSchema in state, re-apply required flags
+  useEffect(() => {
+    try {
+      setFormSchema((prev) => {
+        if (!prev) return prev;
+        return transformSchemaWithRequired(prev, requiredFieldMap);
+      });
+    } catch (e) {
+      // ignore transform errors
+      console.warn("Failed to reapply required fields to existing schema", e);
+    }
+  }, [requiredFieldMap]);
 
   // Filter request types based on API conditions and remove dataSrc from company field
   useEffect(() => {
@@ -223,9 +329,20 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         }
       }
 
-      setFormSchema(filteredSchema);
+      try {
+        const transformed = transformSchemaWithRequired(
+          filteredSchema,
+          requiredFieldMap
+        );
+        setFormSchema(transformed);
+      } catch {
+        setFormSchema(filteredSchema);
+      }
     }
-  }, [reqValidationmutation?.data, propSchema]);
+    // include requiredFieldMap so required flags are respected after filtering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reqValidationmutation?.data, propSchema, requiredFieldMap]);
+
   const normalizeTime = (timeStr?: string) => {
     if (!timeStr) return null;
     try {
@@ -252,18 +369,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         custom_from_time: defaultAttendanceData?.reference_document
           ?.custom_from_time
           ? new Date(
-              `1970-01-01T${normalizeTime(
-                defaultAttendanceData?.reference_document.custom_from_time
-              )}`
-            )
+            `1970-01-01T${normalizeTime(
+              defaultAttendanceData?.reference_document.custom_from_time
+            )}`
+          )
           : "",
         custom_to_time: defaultAttendanceData?.reference_document
           ?.custom_to_time
           ? new Date(
-              `1970-01-01T${normalizeTime(
-                defaultAttendanceData?.reference_document?.custom_to_time
-              )}`
-            )
+            `1970-01-01T${normalizeTime(
+              defaultAttendanceData?.reference_document?.custom_to_time
+            )}`
+          )
           : "",
         custom__request_reason:
           defaultAttendanceData?.reference_document?.custom__request_reason ||
@@ -273,15 +390,16 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         select_shift: defaultAttendanceData?.reference_document?.shift || "",
         overnight_out_duty: false,
         message: defaultAttendanceData?.reference_document?.explanation || "",
+        show_attachment: attendanceRequestAttachmentsMandatory?.is_mandatory,
         attachments:
           defaultAttendanceData?.attachments &&
-          defaultAttendanceData?.attachments?.length > 0
+            defaultAttendanceData?.attachments?.length > 0
             ? defaultAttendanceData?.attachments?.map((item) => {
-                return {
-                  name: item?.file_url?.split("/").pop(),
-                  url: item?.file_url,
-                };
-              })
+              return {
+                name: item?.file_url?.split("/").pop(),
+                url: item?.file_url,
+              };
+            })
             : [],
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
@@ -295,6 +413,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       currentEmployee?.employee,
       currentEmployee?.user_id,
       isForOthers,
+      attendanceRequestAttachmentsMandatory
     ]
   );
 
@@ -469,6 +588,14 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
   // Handle form change
   const handleFormChange = (submission: FormChangeSubmission) => {
+    if (submission?.changed?.component?.key === "from_date") {
+      setFromDateChanged(submission.changed.value.toString() || "")
+      return;
+    }
+    if (submission?.changed?.component?.key === "request_type") {
+      setRequestTypeChanged(submission.changed.value.toString() || "")
+      return;
+    }
     // Track employee selection
     if (submission?.changed?.component?.key === "attachments")
       setAttachments([
@@ -532,17 +659,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           {userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                  !isForOthers ? "bg-blue-600 text-white" : ""
-                }`}
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-blue-600 text-white" : ""
+                  }`}
                 onClick={() => setIsForOthers(false)}
               >
                 Self
               </button>
               <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                  isForOthers ? "bg-blue-600 text-white" : ""
-                }`}
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-blue-600 text-white" : ""
+                  }`}
                 onClick={() => setIsForOthers(true)}
               >
                 For Others
@@ -607,11 +732,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                   rootEl as HTMLElement
                 ).querySelectorAll
                   ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
-                      "input.flatpickr-input"
-                    )
+                    "input.flatpickr-input"
+                  )
                   : document.querySelectorAll<FlatpickrInput>(
-                      "input.flatpickr-input"
-                    );
+                    "input.flatpickr-input"
+                  );
 
                 flatInputs.forEach((input) => {
                   const handler = () => {
@@ -644,17 +769,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         {/* Submit Bar */}
         <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
           <div className="max-w-4xl mx-auto">
-            {/* <button
-              onClick={() => formAddressInstance.current?.submit()}
-              className="flex-1 w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors flex items-center justify-center"
-            >
-              {mutation.isPending ? (
-                <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-              ) : (
-                "Submit"
-              )}
-            </button> */}
-
             <Button
               onClick={() => formAddressInstance.current?.submit()}
               fullWidth
@@ -662,9 +776,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               variant="contain"
               bgColor={isDesktop ? "blue-600" : "black"}
               textColor="white"
-              className={`flex-1 ${
-                isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
-              } font-medium`}
+              className={`flex-1 ${isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
+                } font-medium`}
             >
               {mutation.isPending || uploadFileLoading ? (
                 <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>

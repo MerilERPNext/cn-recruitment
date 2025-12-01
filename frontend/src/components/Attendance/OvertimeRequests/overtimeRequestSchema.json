@@ -13,23 +13,24 @@
       "type": "datagrid",
       "key": "overtime_details",
       "label": "Overtime Requests",
+      "errorLabel": "Overtime Requests",
       "addAnother": "New Row",
       "customClass": "border-0",
       "components": [
         {
           "type": "datetime",
           "key": "start_date",
-          "label": "Start Date <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Start Date",
           "errorLabel": "Start Date",
           "format": "dd-MM-yyyy",
           "enableTime": false,
-          "validate": { "required": true },
+         
           "input": true
         },
         {
           "type": "datetime",
           "key": "start_time",
-          "label": "Start Time <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Start Time",
           "errorLabel": "Start Time",
           "enableDate": false,
           "enableTime": true,
@@ -40,17 +41,17 @@
         {
           "type": "datetime",
           "key": "end_date",
-          "label": "End Date <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "End Date",
           "errorLabel": "End Date",
           "format": "dd-MM-yyyy",
           "enableTime": false,
-          "validate": { "required": true },
+         
           "input": true
         },
         {
           "type": "datetime",
           "key": "end_time",
-          "label": "End Time <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "End Time",
           "errorLabel": "End Time",
           "enableDate": false,
           "enableTime": true,
@@ -61,9 +62,9 @@
         {
           "type": "textfield",
           "key": "message",
-          "label": "Message <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Message",
           "errorLabel": "Message",
-          "validate": { "required": true },
+         
           "input": true
         }
       ]
@@ -78,7 +79,6 @@
       "storage": "customfiles",
       "fileReader": false,
       "privateDownload": false,
-      "validate": { "required": "data.show_attachment" },
       "conditional": {
         "show": true,
         "when": "show_attachment",

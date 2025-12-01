@@ -26,6 +26,7 @@ import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Button from "../shared/atoms/Button";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useRequiredFields } from "../../hooks/useRequiredFields";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -118,10 +119,14 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
-       const formatedError = errorResponseFormater(err, "Submission failed. Please try again.");
-       toast.error(formatedError);
-       console.error(err);
-  },});
+      const formatedError = errorResponseFormater(
+        err,
+        "Submission failed. Please try again."
+      );
+      toast.error(formatedError);
+      console.error(err);
+    },
+  });
 
   const [formData, setFormData] = useState<FormSubmissionData>({});
   const [leaveDays, setLeaveDays] = useState<number | null>(null);
@@ -168,7 +173,18 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     formData.fromDate || "",
     formData.toDate || ""
   );
+  
+  const { data: requiredFields } = useRequiredFields("Leave Application");
+  const requiredFieldMap = useMemo(() => {
+  if (!requiredFields?.fields) return {};
+  const map: Record<string, boolean> = {};
+  requiredFields.fields.forEach(f => {
+    if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+  });
+  return map;
+}, [requiredFields]);
 
+console.log("requiredFieldMap", requiredFieldMap);
   const {
     data: reasons,
     isLoading: isReasonLoading,
@@ -284,8 +300,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               {
                 type: "datetime",
                 key: "fromDate",
-                label:
-                  "From Date <span style='color:red;margin-left:3px;'> *</span>",
+                label: requiredFieldMap["from_date"] ? "From Date <span style='color:red;margin-left:3px;'> *</span>" : "From Date",
                 errorLabel: "From Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -293,7 +308,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 defaultValue: defaults?.fromDate
                   ? `${defaults.fromDate}T00:00:00`
                   : "",
-                validate: { required: true },
+                validate: { required: requiredFieldMap["from_date"] },
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
@@ -311,7 +326,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 type: "datetime",
                 key: "toDate",
                 label:
-                  "To Date <span style='color:red;margin-left:3px;'> *</span>",
+                requiredFieldMap["to_date"] ?  "To Date <span style='color:red;margin-left:3px;'> *</span>" : "To Date",
                 errorLabel: "To Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -319,7 +334,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 defaultValue: defaults?.toDate
                   ? `${defaults.toDate}T00:00:00`
                   : "",
-                validate: { required: true },
+                validate: { required: requiredFieldMap["to_date"] },
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
@@ -336,7 +351,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           {
             type: "checkbox",
             key: "halfDay",
-            label: "Half-Day Leave",
+            errorLabel: "Half-Day Leave",
+            label: (!!mandatory.half_day) ?  "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>" : "Half-Day Leave",
             defaultValue: defaults?.halfDay,
             input: true,
             labelPosition: "bottom",
@@ -370,7 +386,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                       {
                         type: "datetime",
                         key: "half_day_date",
-                        label: "Half-Day Date",
+                        errorLabel: "Half-Day Date",
+                        label: (!!mandatory.half_day_date) ?  "Half-Day Date <span style='color:red;margin-left:3px;'> *</span>" : "Half-Day Date",
                         placeholder: "DD-MM-YYYY",
                         enableDate: true,
                         enableTime: false,
@@ -398,7 +415,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                       {
                         type: "datetime",
                         key: "custom_second_half_day_date",
-                        label: "Second Half-Day Date",
+                        errorLabel: "Second Half-Day Date",
+                        label: (!!mandatory.custom_second_half_day_date) ?  "Second Half-Day Date <span style='color:red;margin-left:3px;'> *</span>" : "Second Half-Day Date",
                         placeholder: "DD-MM-YYYY",
                         enableDate: true,
                         enableTime: false,
@@ -432,22 +450,24 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       {
         type: "textarea",
         key: "description",
-        label: "Message",
+        label: requiredFieldMap["description"] ? "Message <span style='color:red;margin-left:3px;'> *</span>" : "Message",
+        errorLabel: "Message",
         defaultValue: defaults?.description ?? "",
         placeholder: "Enter the message for leave",
         rows: 3,
-        validate: { required: !!mandatory.description, minLength: 3 },
+        validate: { required: !!mandatory.description || requiredFieldMap["description"], minLength: 3 },
         input: true,
         customClass: "px-2 my-3",
       },
       {
         type: "select",
         key: "custom_reason",
-        label: "Reason",
+        label: requiredFieldMap["custom_reason"] ? "Reason <span style='color:red;margin-left:3px;'> *</span>" : "Reason",
+        errorLabel: "Reason",
         placeholder: "Select a reason",
         defaultValue: defaults?.custom_reason ?? "",
         input: true,
-        validate: { required: !!mandatory.custom_reason },
+        validate: { required: !!mandatory.custom_reason || requiredFieldMap["custom_reason"] },
         data: {
           values:
             reasons?.map((r) => ({
@@ -473,10 +493,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               },
             ]
           : [],
-        label: "Attachment",
+        label: requiredFieldMap["custom_attachment"] ? "Attachment <span style='color:red;margin-left:3px;'> *</span>" : "Attachment",
+        errorLabel: "Attachment",
         input: true,
         storage: "customBase64",
-        validate: { required: !!mandatory.custom_attachment },
+        validate: { required: !!mandatory.custom_attachment || requiredFieldMap["custom_attachment"] },
         fileTypes: [
           { label: "Documents", value: ".pdf,.doc,.docx" },
           { label: "Images", value: ".jpg,.jpeg,.png" },
@@ -508,6 +529,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     handleFromDateChange,
     formData.fromDate,
     formData.toDate,
+    requiredFieldMap
   ]);
 
   return (

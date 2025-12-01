@@ -601,6 +601,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                         const parsed = v === "" ? null : parseFloat(v);
                         updateRow(i, { percentage: parsed });
                       }}
+                      onFocus={(e) => e.target.select()} // Add this line
                       disabled={mode !== "percentage"}
                       placeholder="0.00"
                       className={`w-full p-1 border rounded text-sm ${
@@ -619,6 +620,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                           ? row.amount
                           : ""
                       }
+                      onFocus={(e) => e.target.select()} // Add this line
                       onChange={(e) => {
                         const v = e.target.value;
                         const parsed = v === "" ? null : parseFloat(v);

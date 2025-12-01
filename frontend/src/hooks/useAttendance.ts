@@ -373,6 +373,17 @@ export const usePlannedOvertimeRequestAttachments = (employee: string) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+export const useAttendanceRequestAttachments = (employee: string,date:string,request_type:string) => {
+  return useQuery<any>({
+    queryKey: ["attendance-request-attachments-allowed", date, employee, request_type],
+    queryFn: () => {
+      console.log(employee, date, request_type, "--------------------------------")
+      return attendanceService.attendanceRequestAttachments(employee,date,request_type);
+    },
+    enabled: !!employee && !!request_type && !!date,
+    staleTime: 5 * 60 * 1000,
+  });
+};
 
 type ActionOnAttendanceRequestVariables = {
   todo_ids: string | string[];

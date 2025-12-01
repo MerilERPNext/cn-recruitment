@@ -1,5 +1,5 @@
 import React from "react";
-import { XIcon } from "lucide-react";
+import { SquarePen, XIcon } from "lucide-react";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
 import {
   ApprovalStage,
@@ -9,6 +9,7 @@ import {
 } from "../../../types/expenseAdvance";
 import Badge from "../../shared/Badge";
 import ApprovalStagesProgress from "./ApprovalStagesProgress";
+import { useNavigate } from "react-router-dom";
 
 interface ExpenseClaimModalProps {
   id: string | null;
@@ -24,7 +25,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   selectedStages,
 }) => {
   const raw = useFrappeDocument("Expense Claim", id as string);
-
+  const navigate = useNavigate();
   const data = raw.data as ExpenseClaim | undefined;
   const isLoading = raw.isLoading;
   const error = raw.error;
@@ -182,16 +183,20 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                 <table className="min-w-full border border-gray-200 text-sm text-left">
                   <thead className="bg-gray-100 text-gray-700">
                     <tr>
-                      <th className="px-4 py-2 border-b">Expense Claim Type</th>
-                      <th className="px-4 py-2 border-b">Approval Status</th>
-                      <th className="px-4 py-2 border-b text-right">
+                      <th className="px-4 py-2 border">Expense Claim Type</th>
+                      <th className="px-4 py-2 border ">Expense Date</th>
+                      <th className="px-4 py-2 border">Approval Status</th>
+                      <th className="px-4 py-2 border text-right">
                         Claimed Amount
                       </th>
-                      <th className="px-4 py-2 border-b text-right">
+                      <th className="px-4 py-2 border text-right">
                         Sanctioned Amount
                       </th>
-                      <th className="px-4 py-2 border-b text-center">
+                      <th className="px-4 py-2 border text-center">
                         Attachment
+                      </th>
+                      <th className="px-4 py-2 border-b text-center">
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -215,6 +220,17 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                           >
                             <td className="px-4 py-2 border-b align-top">
                               {item.expense_type ?? "—"}
+                            </td>
+                            <td className="px-4 py-2 border-b align-top">
+                              {/* {formatDateString(item.expense_date) ?? "—"} */}
+                              {item.expense_date
+                                ? new Date(item.expense_date).toLocaleString(
+                                    "en-IN",
+                                    {
+                                      dateStyle: "medium",
+                                    }
+                                  )
+                                : "—"}
                             </td>
 
                             <td className="px-4 py-2 border-b align-top">
@@ -252,6 +268,46 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                                   No File
                                 </span>
                               )}
+                            </td>
+                            <td className="flex justify-center">
+                              <button
+                                onClick={() => {
+                                  navigate("/webapp/expenses-app/add-expense", {
+                                    state: {
+                                      expense_claim_name: id,
+                                      expense: {
+                                        uid: item.name,
+                                        name: item.name,
+                                        expenseCategory:
+                                          data?.custom_expense_category,
+                                        expenseType: item.expense_type,
+                                        description: item?.description,
+                                        expense_date: item.expense_date,
+                                        currency: item.custom_currency,
+                                        amount: item.amount,
+                                        merchant: item.custom_mercent,
+                                        invoice_number:
+                                          item.custom_invoice_number,
+                                        vehicle_type: item.custom_vehicle_type,
+                                        custom_attach_receipt:
+                                          item.custom_attach_receipt,
+                                        participants: data?.custom_participants,
+                                        from_location:
+                                          item.custom_from_location,
+                                        to_location: item.custom_to_location,
+                                        start_datetime:
+                                          item.custom_start_datetime,
+                                        end_datetime: item.custom_end_datetime,
+                                        location: item.custom_location,
+                                        units: item?.custom_units,
+                                      },
+                                    },
+                                  });
+                                }}
+                                className="text-gray-500 hover:text-blue-600"
+                              >
+                                <SquarePen size={18} />
+                              </button>
                             </td>
                           </tr>
                         );

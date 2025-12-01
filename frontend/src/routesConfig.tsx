@@ -4,6 +4,7 @@ import { Navigate } from "react-router";
 import { useScreenSize } from "./hooks/useScreenSize";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
+import { useLocation } from "react-router-dom";
 
 // Keep critical components as static imports for better UX
 import SearchMembers from "./components/SearchMembers";
@@ -379,6 +380,20 @@ const PerformanceReviewApp = lazyWithRetry(
   "PerformanceReviewApp"
 );
 
+// eslint-disable-next-line react-refresh/only-export-components
+const AddExpensePage = () => {
+  const location = useLocation();
+  const initialExpense = (location.state as any)?.expense || null;
+  const expense_claim_name =
+    (location.state as any)?.expense_claim_name || null;
+  return (
+    <AddExpenseForm
+      initialExpense={initialExpense}
+      expense_claim_name={expense_claim_name}
+      isEditingFromDetailsPage={Boolean(initialExpense)}
+    />
+  );
+};
 
 // Loading component for Suspense fallbacks
 // eslint-disable-next-line react-refresh/only-export-components
@@ -528,7 +543,7 @@ export const routesConfig: AppRoute[] = [
     element: <ExpensesApp />,
     children: [
       { path: "expenses-list", element: <ExpensesList /> },
-      { path: "add-expense", element: <AddExpenseForm /> },
+      { path: "add-expense", element: <AddExpensePage /> },
       { path: "team-requests", element: <TeamExpense /> },
       { path: "my-advance-expense", element: <MyAdvanceExpenseList /> },
       { path: "team-advance-expense", element: <TeamAdvanceExpenseList /> },
