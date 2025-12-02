@@ -279,10 +279,22 @@ export function useUpdateExpense() {
         params.participants
       ),
     onSuccess: () => {
+      const allQueries = queryClient.getQueryCache().getAll();
+      console.log(
+        "All queries in cache:",
+        allQueries.map((q) => q.queryKey)
+      );
       toast.dismiss();
       toast.success("Expense claim updated successfully");
+
       queryClient.invalidateQueries({
-        queryKey: ["expense-claims"],
+        queryKey: ["document", "Expense Claim"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          "custom-api-infinite",
+          "cn_leave_shift_managment.api.get_open_approval_todos",
+        ],
       });
     },
     onError: (err: any) => {
@@ -307,10 +319,8 @@ export function useExpenseLineItemUpdate() {
     }) => expenseService.updateLineItem(claimId, itemName, sanctionedAmount),
     onSuccess: () => {
       toast.success("Line item updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+
       queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
-      queryClient.invalidateQueries({ queryKey: ["todo"] });
-      queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
     },
     onError: (error) => {
       handleError(error);

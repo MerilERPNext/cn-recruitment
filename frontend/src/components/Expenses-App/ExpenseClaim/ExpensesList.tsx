@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import CardTable from "../../shared/CardTable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -13,6 +14,7 @@ import CustomDropdown from "../../shared/CustomDropdown";
 import { SquarePen, Users } from "lucide-react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import Button from "../../shared/atoms/Button";
+import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Draft" },
@@ -50,12 +52,14 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   return (
     <div className="rounded-xl my-1 border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
       <div className="flex justify-between items-start">
-        <p className="text-xl font-bold text-gray-900">
-          {formattedAmount}
+        <div className="flex flex-col">
+          <span className=" text-sm text-gray-500">Expense category</span>
           {item?.reference_document?.custom_expense_category && (
-            <span> ({item?.reference_document?.custom_expense_category})</span>
+            <span className="font-semibold text-base text-gray-900">
+              {item?.reference_document?.custom_expense_category}
+            </span>
           )}
-        </p>
+        </div>
 
         {item?.reference_document?.status && (
           <span
@@ -70,8 +74,12 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         )}
       </div>
 
-      <p className="text-sm text-gray-500">
-        <span className="font-bold">Claimed Date:</span> {formattedDate}
+      <p className="flex justify-between text-sm text-gray-500">
+        <span className="font-semibold">Claimed Date:</span> {formattedDate}
+      </p>
+      <p className="flex justify-between text-sm text-gray-500">
+        <span className="font-semibold">Claimed Amount:</span>{" "}
+        <span className="font-semibold text-gray-900">{formattedAmount}</span>
       </p>
     </div>
   );
@@ -92,41 +100,74 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
       })
     : " - ";
 
+  const formattedExpenseDate = item?.reference_document?.expenses[0]
+    ?.expense_date
+    ? new Date(
+        item?.reference_document?.expenses[0]?.expense_date
+      ).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : " - ";
+
   const formattedSanctionedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
   }).format(item?.reference_document?.total_sanctioned_amount ?? 0);
+
+  const navigate = useNavigate();
+  const expenseClaim = item?.reference_document;
+  const expenseItem = expenseClaim?.expenses?.[0];
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click from opening modal
+    if (!expenseClaim?.name || !expenseItem?.name) return;
+
+    const navigationState = buildExpenseNavigationState(
+      expenseClaim,
+      expenseItem
+    );
+    navigate("/webapp/expenses-app/add-expense", { state: navigationState });
+  };
+
   return (
     <div
       className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 0.5fr" }}
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 0.5fr" }}
     >
-      <span>{item?.reference_document?.custom_expense_category || " - "}</span>
+      <span>{expenseClaim?.custom_expense_category || " - "}</span>
       <span>{formattedAmount}</span>
       <span>{formattedSanctionedAmount || " - "}</span>
+      <span>{formattedExpenseDate}</span>
       <span>{formattedDate}</span>
-      <Tooltip
-        content={
-          item?.reference_document?.status === "Draft"
-            ? item?.reference_document?.custom_assigned_user
-            : ""
-        }
-      >
-        <span
-          className={`px-2 py-1 rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
-            item?.reference_document?.status
-          )}`}
+      <div>
+        <Tooltip
+          content={
+            item?.reference_document?.status === "Draft"
+              ? item?.reference_document?.custom_assigned_user ||
+                item?.allocated_to
+              : ""
+          }
         >
-          {item?.reference_document?.status === "Draft"
-            ? "Pending"
-            : item?.reference_document?.status}
-        </span>
-      </Tooltip>
+          <span
+            className={`px-2 py-1 rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
+              item?.reference_document?.status
+            )}`}
+          >
+            {item?.reference_document?.status === "Draft"
+              ? "Pending"
+              : item?.reference_document?.status}
+          </span>
+        </Tooltip>
+      </div>
 
       {currentUser?.name?.toLowerCase() ===
         item?.send_back_user?.toLowerCase() && (
-        <button>
-          <SquarePen size={18} className="text-gray-500 hover:text-blue-600" />
+        <button
+          onClick={handleEditClick}
+          className="text-gray-500 hover:text-blue-600"
+        >
+          <SquarePen size={18} />
         </button>
       )}
     </div>
@@ -142,6 +183,9 @@ const ExpensesList: React.FC = () => {
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
     []
   );
+  const [selectedSendBackUser, setSelectedSendBackUser] = React.useState<
+    string | null
+  >(null);
 
   const [selectedStatus, setSelectedStatus] = React.useState("Draft");
 
@@ -154,18 +198,28 @@ const ExpensesList: React.FC = () => {
       queryClient.invalidateQueries({
         queryKey: ["expense-claims"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["expense-claims-all"],
+      });
       window.history.replaceState({}, "", window.location.pathname);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
 
-  const openModal = (id: string, stages: ApprovalStage[]) => {
+  const openModal = (
+    id: string,
+    stages: ApprovalStage[],
+    sendBackUser: string
+  ) => {
     setSelectedStages(stages);
     setTimeout(() => setSelectedId(id), 0);
+    setSelectedSendBackUser(sendBackUser);
   };
 
   const closeModal = () => {
     setSelectedId(null);
     setSelectedStages([]);
+    setSelectedSendBackUser(null);
   };
 
   const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -176,10 +230,11 @@ const ExpensesList: React.FC = () => {
   const RowWrapper = ({ item }: any) => {
     const id = item?.reference_document?.name;
     const stages = item?.approval_stages_status || [];
+    const sendBackUser = item?.send_back_user || null;
 
     return (
       <div
-        onClick={() => id && openModal(id, stages)}
+        onClick={() => id && openModal(id, stages, sendBackUser)}
         className="cursor-pointer"
       >
         <ExpensesTableRow item={item} />
@@ -190,10 +245,11 @@ const ExpensesList: React.FC = () => {
   const ItemWrapper = ({ item }: any) => {
     const id = item?.reference_document?.name;
     const stages = item?.approval_stages_status || [];
+    const sendBackUser = item?.send_back_user || null;
 
     return (
       <div
-        onClick={() => id && openModal(id, stages)}
+        onClick={() => id && openModal(id, stages, sendBackUser)}
         className="cursor-pointer"
       >
         <ExpensesItem item={item} />
@@ -261,11 +317,12 @@ const ExpensesList: React.FC = () => {
               "Expense Category",
               "Claimed Amount",
               "Sanctioned Amount",
+              "Expense Date",
               "Claimed Date",
               "Status",
               "Actions",
             ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "0.5fr"]}
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "0.5fr"]}
           >
             <DataListView
               queryKey={["expense-claims-all", selectedStatus]}
@@ -302,6 +359,7 @@ const ExpensesList: React.FC = () => {
           onClose={closeModal}
           getStatusBadgeClasses={getStatusBadgeClasses}
           selectedStages={selectedStages}
+          selectedSendBackUser={selectedSendBackUser}
         />
       )}
     </div>

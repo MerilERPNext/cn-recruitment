@@ -306,13 +306,13 @@ export function TeamExpenseDetailView({
     );
   };
 
-  const updateComment = (itemId: string, value: string) => {
-    setExpenseItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, comment: value } : item
-      )
-    );
-  };
+  // const updateComment = (itemId: string, value: string) => {
+  //   setExpenseItems((prev) =>
+  //     prev.map((item) =>
+  //       item.id === itemId ? { ...item, comment: value } : item
+  //     )
+  //   );
+  // };
 
   const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();
@@ -483,6 +483,15 @@ export function TeamExpenseDetailView({
           {expenseItems.length > 0 ? (
             expenseItems.map((item) => {
               const itemStatus = getStatus(item.custom_approval_staus || "");
+
+              //changes in the sactioned amount
+              const originalSanctionedAmount =
+                typeof item.sanctioned_amount === "number"
+                  ? item.sanctioned_amount
+                  : item.amount || 0;
+
+              const isItemDirty =
+                item.sanctionedAmount !== originalSanctionedAmount;
               return (
                 <div
                   key={item.id}
@@ -676,7 +685,7 @@ export function TeamExpenseDetailView({
                         />
                       </div>
 
-                      <div className="mb-3">
+                      {/* <div className="mb-3">
                         <label className="text-xs text-gray-500 uppercase mb-1 block">
                           COMMENT (Required for Reject)
                         </label>
@@ -690,9 +699,9 @@ export function TeamExpenseDetailView({
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                           rows={3}
                         />
-                      </div>
+                      </div> */}
 
-                      {isClaimEditable && (
+                      {isClaimEditable && isItemDirty && (
                         <div className="flex gap-2">
                           <Button
                             onClick={() => handleSaveItem(item.id)}
@@ -700,6 +709,7 @@ export function TeamExpenseDetailView({
                             size="sm"
                             bgColor="blue-100"
                             textColor="blue-600"
+                            className="px-4"
                           >
                             {savingItem === item.id ? (
                               <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />

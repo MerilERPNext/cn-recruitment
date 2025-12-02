@@ -93,14 +93,22 @@ const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
         year: "numeric",
       })
     : " - ";
+  const expenseDate = item?.expenses[0]?.expense_date
+    ? new Date(item.posting_date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : " - ";
 
   return (
     <div
       className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
-      style={{ gridTemplateColumns: "1.5fr 1fr 1fr 1fr 0.7fr 0.7fr" }}
+      style={{ gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr 0.7fr 0.7fr" }}
     >
       <span>{item.employee_name || "-"}</span>
       <span>{postingDate}</span>
+      <span>{expenseDate}</span>
 
       <span
         className={`px-2 py-1 rounded-2xl w-fit text-xs font-medium text-center ${getStatusBadgeClasses(
@@ -176,12 +184,21 @@ const SharedExpenses: React.FC = () => {
             titles={[
               "Shared By",
               "Posting Date",
+              "Expense Date",
               "Status",
               "Sanctioned Amount",
               "% Share",
               "Allocated Amount",
             ]}
-            columnWidths={["1.5fr", "1fr", "1fr", "1fr", "0.7fr", "0.7fr"]}
+            columnWidths={[
+              "1.5fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "0.7fr",
+              "0.7fr",
+            ]}
           >
             <DataListView
               queryKey={["shared-expenses", currentEmployee?.name]}

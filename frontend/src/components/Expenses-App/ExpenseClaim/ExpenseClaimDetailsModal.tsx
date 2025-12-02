@@ -10,12 +10,15 @@ import {
 import Badge from "../../shared/Badge";
 import ApprovalStagesProgress from "./ApprovalStagesProgress";
 import { useNavigate } from "react-router-dom";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 
 interface ExpenseClaimModalProps {
   id: string | null;
   onClose: () => void;
   getStatusBadgeClasses?: (status: string) => string;
   selectedStages: ApprovalStage[];
+  selectedSendBackUser?: string | null;
 }
 
 const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
@@ -23,12 +26,16 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   onClose,
   getStatusBadgeClasses,
   selectedStages,
+  selectedSendBackUser,
 }) => {
   const raw = useFrappeDocument("Expense Claim", id as string);
   const navigate = useNavigate();
   const data = raw.data as ExpenseClaim | undefined;
   const isLoading = raw.isLoading;
   const error = raw.error;
+  const { data: currentUser } = useCurrentUser();
+
+  const isSendedBack = currentUser?.name === selectedSendBackUser;
 
   const formatINR = (value?: number | null) =>
     typeof value === "number"
@@ -195,9 +202,11 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                       <th className="px-4 py-2 border text-center">
                         Attachment
                       </th>
-                      <th className="px-4 py-2 border-b text-center">
-                        Actions
-                      </th>
+                      {isSendedBack && (
+                        <th className="px-4 py-2 border-b text-center">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
 
@@ -269,46 +278,25 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                                 </span>
                               )}
                             </td>
-                            <td className="flex justify-center">
-                              <button
-                                onClick={() => {
-                                  navigate("/webapp/expenses-app/add-expense", {
-                                    state: {
-                                      expense_claim_name: id,
-                                      expense: {
-                                        uid: item.name,
-                                        name: item.name,
-                                        expenseCategory:
-                                          data?.custom_expense_category,
-                                        expenseType: item.expense_type,
-                                        description: item?.description,
-                                        expense_date: item.expense_date,
-                                        currency: item.custom_currency,
-                                        amount: item.amount,
-                                        merchant: item.custom_mercent,
-                                        invoice_number:
-                                          item.custom_invoice_number,
-                                        vehicle_type: item.custom_vehicle_type,
-                                        custom_attach_receipt:
-                                          item.custom_attach_receipt,
-                                        participants: data?.custom_participants,
-                                        from_location:
-                                          item.custom_from_location,
-                                        to_location: item.custom_to_location,
-                                        start_datetime:
-                                          item.custom_start_datetime,
-                                        end_datetime: item.custom_end_datetime,
-                                        location: item.custom_location,
-                                        units: item?.custom_units,
-                                      },
-                                    },
-                                  });
-                                }}
-                                className="text-gray-500 hover:text-blue-600"
-                              >
-                                <SquarePen size={18} />
-                              </button>
-                            </td>
+                            {isSendedBack && (
+                              <td className="flex justify-center">
+                                <button
+                                  onClick={() => {
+                                    const navigationState =
+                                      buildExpenseNavigationState(data, item);
+                                    navigate(
+                                      "/webapp/expenses-app/add-expense",
+                                      {
+                                        state: navigationState,
+                                      }
+                                    );
+                                  }}
+                                  className="text-gray-500 hover:text-blue-600"
+                                >
+                                  <SquarePen size={18} />
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         );
                       })
