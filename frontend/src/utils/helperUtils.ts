@@ -252,7 +252,7 @@ export const getBadgePropsByStatus = (
 
   switch (status.toLowerCase()) {
     case "open":
-    case "pending":
+    case "rejected":
       return {
         backgroundColor: "bg-[#ffeaea]",
         textColor: "text-red-500",
@@ -261,6 +261,7 @@ export const getBadgePropsByStatus = (
 
     case "closed":
     case "done":
+    case "approved":
     case "completed":
       return {
         backgroundColor: "bg-[#eaffea]",
@@ -277,6 +278,7 @@ export const getBadgePropsByStatus = (
       };
 
     case "on hold":
+    case "pending":
       return {
         backgroundColor: "bg-yellow-100",
         textColor: "text-yellow-700",

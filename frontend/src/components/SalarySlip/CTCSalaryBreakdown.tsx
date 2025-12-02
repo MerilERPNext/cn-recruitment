@@ -120,34 +120,31 @@ const CTCSalaryUI = () => {
   );
 
   const Header = () => (
-    <div className="flex justify-between items-center mb-8">
+    <div className="flex justify-between items-start mb-8">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Compensation</h1>
         <p className="text-gray-500 mt-1">Detailed breakdown of your salary structure</p>
       </div>
+
       <button
         onClick={toggleMoneyMask}
-        className="my-btn-secondary"
+        className="my-btn-secondary px-3 py-2 flex items-center gap-2"
         title={isMoneyMasked ? "Show amounts" : "Hide amounts"}
       >
         {isMoneyMasked ? (
           <>
-            <span className="text-sm font-medium text-gray-700">
-              Show Amounts
-            </span>
+            <span className="text-sm text-gray-700">Show Amounts</span>
             <BsToggleOff className="w-6 h-6 text-gray-400" />
           </>
         ) : (
           <>
-            <span className="text-sm font-medium text-gray-700">
-              Hide Amounts
-            </span>
+            <span className="text-sm text-gray-700">Hide Amounts</span>
             <BsToggleOn className="w-6 h-6 text-primary" />
           </>
         )}
       </button>
-
     </div>
+
   );
 
   return (

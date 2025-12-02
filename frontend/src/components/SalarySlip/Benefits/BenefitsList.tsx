@@ -37,7 +37,7 @@ const BenefitsList: React.FC = () => {
   );
   return (
     <div>
-      <div className="flex items-center justify-end gap-4 mb-2">
+      <div className="flex items-center justify-between md:justify-end gap-4 mb-2">
         <button
           onClick={() => setMaskAmounts(!maskAmounts)}
           className="my-btn-secondary"
@@ -86,7 +86,7 @@ const BenefitsList: React.FC = () => {
             return <BenefitCard data={props?.item} isMasked={maskAmounts} />;
           }}
           SkeletonComponent={CardSkeleton}
-          onItemClick={() => {}}
+          onItemClick={() => { }}
           infiniteScroll={true}
           isSearch={false}
           isFilter={false}

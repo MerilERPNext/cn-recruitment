@@ -9,6 +9,7 @@ import {
 } from "../../../hooks/useAttendance";
 import {
   AttendanceRecord,
+  AttendanceRequest,
   EmployeeCheckInLog,
 } from "../../../types/attendance";
 import { LeaveApplication } from "../../../types/leaves";
@@ -28,6 +29,8 @@ import RequestLeave from "../../Leaves/RequestLeave";
 import { useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
 import { LeaveDetailsCard } from "./LeaveDetailsCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
+import Badge from "../../shared/Badge";
+import { getBadgePropsByStatus } from "../../../utils/helperUtils";
 
 interface EmployeeAttendanceDetailsProps {
   date?: Date;
@@ -94,9 +97,9 @@ const EmployeeAttendanceDetails = ({
   const { data: empCheckIns, isLoading } = useAllEmployeeCheckIns(
     validDate
       ? [
-          ["time", "between", [start, end]],
-          ["employee", "=", currentEmployee?.employee],
-        ]
+        ["time", "between", [start, end]],
+        ["employee", "=", currentEmployee?.employee],
+      ]
       : []
   );
 
@@ -104,13 +107,14 @@ const EmployeeAttendanceDetails = ({
     1000,
     validDate && currentEmployee?.employee
       ? [
-          ["employee", "=", currentEmployee.employee],
-          ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
-          ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
-          ["docstatus", "!=", 2],
-        ]
+        ["employee", "=", currentEmployee.employee],
+        ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
+        ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
+        ["docstatus", "!=", 2],
+      ]
       : []
   );
+  console.log("attendanceRequests-------------------------------", attendanceRequests);
   const hasExistingRequest =
     attendanceRequests && attendanceRequests.length > 0;
 
@@ -244,6 +248,7 @@ const EmployeeAttendanceDetails = ({
 
   const renderCheckInsList = () => (
     <div className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold mb-1">Check-ins</h2>
       {empCheckIns?.map((record) => (
         <AttendanceCard key={record?.name} record={record} />
       ))}
@@ -284,7 +289,7 @@ const EmployeeAttendanceDetails = ({
       {empCheckIns && empCheckIns.length > 0
         ? renderCheckInsList()
         : renderEmptyState()}
-      {renderAbsentMessage()}
+      {hasExistingRequest || renderAbsentMessage()}
     </>
   );
   const renderMainContent = () => {
@@ -299,16 +304,26 @@ const EmployeeAttendanceDetails = ({
     if (isLoading) {
       return renderLoadingState();
     }
-
     if (data?.status.toLowerCase() === "holiday" && data?.title) {
       return (
-        <p className="text-sm my-4 text-gray-700 text-center">{data.title}</p>
+        <div className="p-2">
+
+          <div className="my-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+            <p className="text-sm font-semibold text-blue-800">
+              {data.title}
+            </p>
+          </div>
+        </div>
       );
     }
     return (
-      <div className="flex-grow overflow-y-auto p-4">
-        {renderRegularContent()}
-      </div>
+      <>
+        <div className="flex-grow overflow-y-auto p-4">
+          {renderRegularContent()}
+          <div className="border-t-2 border-gray-100 mt-6"></div>
+          {hasExistingRequest ? <AttendanceRequestInfo data={attendanceRequests?.[0]} /> : null}
+        </div>
+      </>
     );
   };
 
@@ -331,11 +346,10 @@ const EmployeeAttendanceDetails = ({
     return (
       <button
         disabled={isButtonDisabled}
-        className={`w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${
-          isButtonDisabled
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-black hover:bg-gray-800"
-        } text-white`}
+        className={`w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${isButtonDisabled
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-black hover:bg-gray-800"
+          } text-white`}
         onClick={() => setShowReqAttendanceCorrection(true)}
       >
         <Plus className="w-4 h-4 mr-2" />
@@ -427,10 +441,9 @@ const AttendanceCard = ({ record }: { record: EmployeeCheckInLog }) => {
         </h3>
         <span
           className={`text-sm font-medium px-2 py-1 rounded-lg
-            ${
-              record.log_type === "IN"
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
+            ${record.log_type === "IN"
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
             }`}
         >
           {record.log_type}
@@ -439,6 +452,129 @@ const AttendanceCard = ({ record }: { record: EmployeeCheckInLog }) => {
 
       <div className="text-sm text-gray-600 space-y-1">
         <p>{format(new Date(record.time), "hh:mm a, dd/MM/yyyy")}</p>
+      </div>
+    </div>
+  );
+};
+
+export const AttendanceRequestInfo = ({ data }: { data: AttendanceRequest }) => {
+  const formatDate = (dateString: string | number | Date) => {
+    try {
+      return format(new Date(dateString), "dd MMM yyyy");
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatTime = (timeString: string | undefined) => {
+    if (!timeString) return "-";
+    try {
+      return format(new Date(`1970-01-01T${timeString}`), "hh:mm a");
+    } catch {
+      return timeString;
+    }
+  };
+  const status = getBadgePropsByStatus(data.custom_status);
+
+  return (
+    <div className="mt-2 pt-2 ">
+      <h2 className="text-lg font-semibold mb-4">Attendance Request Info.</h2>
+      {/* Status Badge */}
+      {data.custom_status && (
+        <div className="flex justify-end mb-4">
+          <Badge label={data.custom_status} backgroundColor={status.backgroundColor} textColor={status.textColor} />
+        </div>
+      )}
+
+      {/* Main Info Grid */}
+      <div className="space-y-4">
+        {/* Request Type */}
+        {data.custom_request_type && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">Request Type</span>
+            <span className="text-sm text-gray-900 font-semibold">
+              {data.custom_request_type}
+            </span>
+          </div>
+        )}
+
+        {/* Employee */}
+        <div className="flex items-start justify-between py-2 border-b border-gray-100">
+          <span className="text-sm text-gray-500 font-medium">Employee</span>
+          <span className="text-sm text-gray-900 font-semibold text-right">
+            {data.employee_name} <br />
+            <span className="text-xs text-gray-500">{data.employee}</span>
+          </span>
+        </div>
+
+        {/* Department */}
+        {data.department && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">Department</span>
+            <span className="text-sm text-gray-900">{data.department}</span>
+          </div>
+        )}
+
+        {/* Company */}
+        {data.company && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">Company</span>
+            <span className="text-sm text-gray-900">{data.company}</span>
+          </div>
+        )}
+
+        {/* Date Range */}
+        <div className="flex items-start justify-between py-2 border-b border-gray-100">
+          <span className="text-sm text-gray-500 font-medium">Date</span>
+          <span className="text-sm text-gray-900 text-right">
+            {formatDate(data.from_date).toString()} - {formatDate(data.to_date).toString()}
+          </span>
+        </div>
+
+        {/* Time Range */}
+        <div className="flex items-start justify-between py-2 border-b border-gray-100">
+          <span className="text-sm text-gray-500 font-medium">Time</span>
+          <span className="text-sm text-gray-900 text-right">
+            {formatTime(data.custom_from_time)} - {formatTime(data.custom_to_time)}
+          </span>
+        </div>
+
+        {/* Location */}
+        {data.custom_location && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">Location</span>
+            <span className="text-sm text-gray-900">{data.custom_location}</span>
+          </div>
+        )}
+
+        {/* Reason */}
+        {data.reason && (
+          <div className="flex items-start justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-500 font-medium">Reason</span>
+            <span className="text-sm text-gray-900 font-medium">{data.reason}</span>
+          </div>
+        )}
+
+        {/* Explanation */}
+        {data.explanation && data.explanation.trim() && (
+          <div className="pt-3 mt-2 border-t border-gray-200">
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide block mb-2">
+              Explanation
+            </span>
+            <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+              {data.explanation.trim()}
+            </p>
+          </div>
+        )}
+        {/* Modified Date */}
+        {data.creation && (
+          <div className="flex items-start justify-between py-2">
+            <span className="text-sm text-gray-500 font-medium">Created On</span>
+            <span className="text-sm text-gray-900">
+              {formatDate(data.creation).toString()}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

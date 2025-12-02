@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { LeaveApplication } from "../../../types/leaves";
 import Badge from "../../shared/Badge";
+import { getBadgePropsByStatus } from "../../../utils/helperUtils";
 
 export const LeaveDetailsCard = ({ data }: { data: LeaveApplication }) => {
   const formatDate = (dateString: string) => {
@@ -12,13 +13,14 @@ export const LeaveDetailsCard = ({ data }: { data: LeaveApplication }) => {
   };
 
   const isHalfDay = data.half_day === 1;
+  const status = getBadgePropsByStatus(data.status);
 
   return (
     <div>
       {/* Status Badge */}
       {data.status && (
         <div className="flex justify-end mb-4">
-          <Badge label={data.status} />
+          <Badge label={data.status} backgroundColor={status.backgroundColor} textColor={status.textColor} />
         </div>
       )}
 
