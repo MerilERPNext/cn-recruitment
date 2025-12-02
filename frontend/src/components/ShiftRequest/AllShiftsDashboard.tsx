@@ -39,7 +39,7 @@ export const StatusBadge = ({ status }: { status: string }) => {
         statusStyles[status] || "bg-gray-100 text-gray-800"
       }`}
     >
-      {status}
+      {status==="Draft"?"Pending": status}
     </span>
   );
 };
