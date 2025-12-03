@@ -55,7 +55,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
 
     if (status === "draft") {
       return {
-        label: "Draft",
+        label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-800",
       };
     } else if (status === "approved") {
