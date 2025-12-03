@@ -115,7 +115,7 @@ const MyOvertimeRequests = () => {
                   onRefetchComplete={handleMyRequestsRefetchComplete}
                   refetchTrigger={refetchMyRequestsList || refetchAttendance}
                   isSearch={false}
-                  isFilter={false}
+                  isFilter={true}
                   pageSize={10}
                   showRefreshButton={false}
                   orderBy="modified desc"

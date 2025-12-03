@@ -3,6 +3,7 @@ import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
 import Button from "../../shared/atoms/Button";
+import Tooltip from "../../shared/Tooltip";
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -25,6 +26,7 @@ const OvertimeApprovalCard = ({
   isBulkSelectEnabled,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
+  console.log(data, "------------->>>>>>>>>>>>>>");
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -109,7 +111,7 @@ const OvertimeApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -143,11 +145,14 @@ const OvertimeApprovalCard = ({
           </div>
 
           <div className="flex items-center justify-start">
-            <Badge
-              size="sm"
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            />
+            <Tooltip content={data?.allocated_to}>
+
+              <Badge
+                size="sm"
+                label={status?.label as string}
+                backgroundColor={status?.statusColor}
+              />
+            </Tooltip>
           </div>
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
@@ -168,7 +173,7 @@ const OvertimeApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -223,11 +228,13 @@ const OvertimeApprovalCard = ({
                     />
                   </p>
                 </div>
-                <Badge
-                  size="sm"
-                  label={status?.label as string}
-                  backgroundColor={status?.statusColor}
-                />
+                <Tooltip content={data?.allocated_to}>
+                  <Badge
+                    size="sm"
+                    label={status?.label as string}
+                    backgroundColor={status?.statusColor}
+                  />
+                </Tooltip>
               </div>
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
@@ -249,7 +256,7 @@ const OvertimeApprovalCard = ({
                       }
                     >
                       {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

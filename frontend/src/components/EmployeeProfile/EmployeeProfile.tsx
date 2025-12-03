@@ -12,10 +12,10 @@ import defaultProfile from "../../assets/user.png";
 
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { NotebookPen, Pencil } from "lucide-react";
 import EmployeeProfileForm from "./EmployeeProfileForm";
-import NavigationTabs, { Tab } from "../NavigationTab";
+import { Tab } from "../NavigationTab";
 import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
 import Button from "../shared/atoms/Button";
@@ -107,6 +107,12 @@ const EmployeeProfile: React.FC = () => {
   );
   const [activeTab, setActiveTab] = useState<string>(tabs[0].key);
 
+  // Create refs for each section
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Create ref for the scrollable container (desktop layout)
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
   const tabContent: Record<string, React.ReactNode> = useMemo(
     () => ({
       "personal-info": <EmployeeProfileForm />,
@@ -117,6 +123,77 @@ const EmployeeProfile: React.FC = () => {
     }),
     [user]
   );
+
+  // Scroll to section when tab is clicked
+  const scrollToSection = useCallback((key: string) => {
+    const section = sectionRefs.current[key];
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
+
+  // Intersection Observer for scroll-spy
+  useEffect(() => {
+    const observerOptions = {
+      root: scrollContainerRef.current, // Use scroll container for desktop, null for mobile
+      rootMargin: "-100px 0px -66% 0px",
+      threshold: [0, 0.25, 0.5, 0.75, 1],
+    };
+
+    let currentIntersecting: { id: string; ratio: number }[] = [];
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      // Update the list of intersecting sections
+      entries.forEach((entry) => {
+        const sectionId = entry.target.getAttribute("data-section");
+        if (!sectionId) return;
+
+        if (entry.isIntersecting) {
+          // Add or update the section
+          const existingIndex = currentIntersecting.findIndex(
+            (item) => item.id === sectionId
+          );
+          if (existingIndex >= 0) {
+            currentIntersecting[existingIndex].ratio = entry.intersectionRatio;
+          } else {
+            currentIntersecting.push({
+              id: sectionId,
+              ratio: entry.intersectionRatio,
+            });
+          }
+        } else {
+          // Remove the section
+          currentIntersecting = currentIntersecting.filter(
+            (item) => item.id !== sectionId
+          );
+        }
+      });
+
+      // Find the section with the highest intersection ratio
+      if (currentIntersecting.length > 0) {
+        const mostVisible = currentIntersecting.reduce((prev, current) =>
+          current.ratio > prev.ratio ? current : prev
+        );
+        setActiveTab(mostVisible.id);
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      observerCallback,
+      observerOptions
+    );
+
+    // Observe all sections
+    Object.values(sectionRefs.current).forEach((section) => {
+      if (section) {
+        observer.observe(section);
+      }
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isDesktop]); // Re-run when layout changes
 
   const mobileLayout = (
     <div className="bg-white font-sans scroll-smooth">
@@ -153,9 +230,9 @@ const EmployeeProfile: React.FC = () => {
             <h1 className="mt-4 text-xl font-semibold">
               {user?.employee_name}
             </h1>
-             <Tooltip content={user?.designation}>
-                <p className="text-gray-500 mt-1">{user?.designation?.slice(0, 20)}</p>
-              </Tooltip>
+            <Tooltip content={user?.designation}>
+              <p className="text-gray-500 mt-1">{user?.designation?.slice(0, 20)}</p>
+            </Tooltip>
             <p className="text-gray-400 text-sm">
               Employee ID: {user?.employee}
             </p>
@@ -177,13 +254,37 @@ const EmployeeProfile: React.FC = () => {
             )}
           </div>
         </div>{" "}
+        {/* Horizontal Tabs */}
+        <div className="bg-white border-b sticky top-0 z-10">
+          <div className="flex overflow-x-auto scrollbar-hide px-4 py-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => scrollToSection(tab.key)}
+                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-blue-600"
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* All Sections Rendered */}
         <div className="bg-gray-100">
-          <NavigationTabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-          <div className="flex-grow">{tabContent[activeTab]}</div>
+          {tabs.map((tab) => (
+            <div
+              key={tab.key}
+              ref={(el) => {
+                sectionRefs.current[tab.key] = el;
+              }}
+              data-section={tab.key}
+              className="min-h-[400px] p-4"
+            >
+              {tabContent[tab.key]}
+            </div>
+          ))}
         </div>
       </div>
       <AttendanceAssignments
@@ -195,104 +296,97 @@ const EmployeeProfile: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Profile">
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] h-full bg-gray-50 p-6 gap-2">
-        {/* Profile Sidebar */}
-        <div className="overflow-y-auto scrollbar-hide bg-white border rounded-xl">
-          <div className=" h-full px-8">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              id="upload-image"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <div className="py-8 flex flex-col gap-2">
-              {/* Profile Header */}
-              <div className="flex flex-col items-center pb-6 bg-white shadow-sm rounded-xl">
-                <div className="relative">
-                  <div className="w-32 rounded-full ring-4 ring-white overflow-hidden">
-                    <img
-                      src={uploadedImage || user?.image || defaultProfile}
-                      alt="User avatar"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
+      <div className="flex flex-col h-full bg-gray-50 p-6 gap-4 w-full overflow-hidden">
+        {/* Profile Header */}
 
-                  <button
-                    onClick={handleImageClick}
-                    className="absolute bottom-2 -right-2 bg-blue-600 h-10 w-10 flex justify-center items-center p-1 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    aria-label="Upload new avatar"
-                  >
-                    {updateDocMutation.isPending || uploadMutation.isPending ? (
-                      <CircularLoader size="sm" color="white" />
-                    ) : (
-                      <Pencil size={16} />
-                    )}
-                  </button>
+        {/* All Sections Rendered */}
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+          <div className="bg-white border rounded-tl-lg rounded-tr-lg p-6">
+            <div className="flex items-center gap-6">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                id="upload-image"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full ring-4 ring-white overflow-hidden">
+                  <img
+                    src={uploadedImage || user?.image || defaultProfile}
+                    alt="User avatar"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
-                <div className="text-center mt-6">
-                  <h1 className="text-2xl font-bold text-gray-900 truncate">
-                    {user?.employee_name}
-                  </h1>
-                  <Tooltip content={user?.designation}>
-
-                  <p className="text-blue-600 font-medium mt-1 truncate text-wrap">
-                       {user?.designation?.slice(0, 20)}
-
-                  </p>
-                  </Tooltip>
-                  <p className="text-gray-500 text-sm mt-1 truncate">
-                    ID: {user?.employee}
-                  </p>
-                </div>
-                <div className="mt-2">
-                  {showAttendanceAssignment ? (
-                    <Button
-                      icon={<NotebookPen size={"1rem"} />}
-                      size="md"
-                      bgColor="blue-50"
-                      variant="contain"
-                      textColor="blue-600"
-                      fullWidth
-                      onClick={() => setIsAttendanceAssignmentsOpen(true)}
-                    >
-                      Attendance Assignment
-                    </Button>
+                <button
+                  onClick={handleImageClick}
+                  className="absolute bottom-0 -right-2 bg-blue-600 h-10 w-10 flex justify-center items-center p-1 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  aria-label="Upload new avatar"
+                >
+                  {updateDocMutation.isPending || uploadMutation.isPending ? (
+                    <CircularLoader size="sm" color="white" />
                   ) : (
-                    <></>
+                    <Pencil size={16} />
                   )}
-                </div>
+                </button>
               </div>
-              <div className="mt-2 bg-white rounded-xl shadow-sm py-6">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
-                  Profile Sections
-                </h3>
-                <nav className="space-y-2">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.key}
-                      onClick={() => setActiveTab(tab.key)}
-                      className={`w-full text-left px-5 py-4 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        activeTab === tab.key
-                          ? "bg-blue-600 text-white "
-                          : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </nav>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {user?.employee_name}
+                </h1>
+                <Tooltip content={user?.designation}>
+                  <p className="text-blue-600 font-medium mt-1">
+                    {user?.designation?.slice(0, 40)}
+                  </p>
+                </Tooltip>
+                <p className="text-gray-500 text-sm mt-1">
+                  ID: {user?.employee}
+                </p>
               </div>
+              {showAttendanceAssignment && (
+                <Button
+                  icon={<NotebookPen size={"1rem"} />}
+                  size="md"
+                  bgColor="blue-50"
+                  variant="contain"
+                  textColor="blue-600"
+                  onClick={() => setIsAttendanceAssignmentsOpen(true)}
+                >
+                  Attendance Assignment
+                </Button>
+              )}
             </div>
           </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="overflow-y-auto max-w-full border rounded-xl bg-white">
-          <div className="mx-auto">
-            <div className="min-h-[600px]">{tabContent[activeTab]}</div>
+          {/* Horizontal Tabs - Sticky inside scroll container */}
+          <div className="bg-white border-b sticky top-0 z-10">
+            <div className="flex overflow-x-auto scrollbar-hide px-6 py-3 tracking-wide">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => scrollToSection(tab.key)}
+                  className={`whitespace-nowrap px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-600 hover:text-blue-600"
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {tabs.map((tab) => (
+            <div
+              key={tab.key}
+              ref={(el) => {
+                sectionRefs.current[tab.key] = el;
+              }}
+              data-section={tab.key}
+              className="bg-white mb-4 min-h-[100px] p-6 w-full max-w-full" >
+              {tabContent[tab.key]}
+            </div>
+          ))}
         </div>
       </div>
       <AttendanceAssignments

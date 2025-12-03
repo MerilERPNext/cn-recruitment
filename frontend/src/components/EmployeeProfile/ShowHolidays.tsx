@@ -1,10 +1,12 @@
 import { format } from "date-fns"; // Import the format function
 import { useEmployeeHolidays } from "../../hooks/useEmployeeHolidays";
 import { useParams } from "react-router-dom";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const ShowHolidays = () => {
   const { id: employeeId } = useParams<{ id: string }>();
   const { data: holidays, isLoading, error } = useEmployeeHolidays(employeeId);
+  const { isDesktop } = useScreenSize();
 
   // Early returns to handle loading, error, and empty holidays states
   if (isLoading)
@@ -30,7 +32,18 @@ const ShowHolidays = () => {
 
   return (
     <div className="w-full bg-white rounded-lg p-4">
-      <ul className="space-y-4 h-screen rounded-lg">
+      {isDesktop && (
+        <div className="border-b border-gray-200 pb-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Employment Holidays
+          </h2>
+          <p className="text-gray-600">
+            Your employment holidays
+          </p>
+        </div>
+      )}
+
+      <ul className="space-y-4 h-auto rounded-lg">
         {holidays.map((holiday) => (
           <li
             key={`${holiday.date}-${holiday.holiday_name}`}

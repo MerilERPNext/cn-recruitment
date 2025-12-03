@@ -115,7 +115,7 @@ const ApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -183,7 +183,7 @@ const ApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -284,7 +284,7 @@ const ApprovalCard = ({
                       }
                     >
                       {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

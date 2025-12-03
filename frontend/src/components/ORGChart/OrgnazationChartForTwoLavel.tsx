@@ -94,7 +94,7 @@ const buildHierarchyWithGrandparent = (
         title: grandParent.title || "",
         hasChildren: true,
         isExpanded: true,
-        onToggleExpand: () => {},
+        onToggleExpand: () => { },
         showExpand: false,
         totalChildren: grandParent.children?.length || 0,
       },
@@ -123,7 +123,7 @@ const buildHierarchyWithGrandparent = (
         title: parent.title || "",
         hasChildren: true,
         isExpanded: true,
-        onToggleExpand: () => {},
+        onToggleExpand: () => { },
         showExpand: false,
         totalChildren: parent.children?.length || 0,
       },
@@ -155,7 +155,7 @@ const buildHierarchyWithGrandparent = (
       totalChildren,
       showExpand: false,
       isExpanded: true,
-      onToggleExpand: () => {},
+      onToggleExpand: () => { },
     },
   });
 
@@ -182,7 +182,7 @@ const buildHierarchyWithGrandparent = (
           totalChildren: child.children?.length || 0,
           showExpand: false,
           isExpanded: false,
-          onToggleExpand: () => {},
+          onToggleExpand: () => { },
         },
       });
 

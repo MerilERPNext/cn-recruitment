@@ -92,9 +92,9 @@ const EmployeeProfileForm: React.FC = () => {
   }
 
   return (
-    <div className="p-2">
+    <div className="w-full overflow-scroll p-4">
       <Form
-        className={"profile-form"}
+        className="profile-form w-full"
         form={schema}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onFormReady={(instance: any) => {
@@ -115,6 +115,7 @@ const EmployeeProfileForm: React.FC = () => {
           disableOnInit: mutation.isPending,
           formClass: mutation.isPending ? "form-disabled" : "space-y-6",
         }}
+
       />
       <div className="w-full bg-white py-2 ">
         <button

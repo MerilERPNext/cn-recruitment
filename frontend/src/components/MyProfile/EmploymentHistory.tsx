@@ -43,6 +43,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
     },
     {}
   );
+  if (!isLoading && !groupedHistory.length) return null
 
   return (
     <div className="address-form-container h-full">
@@ -111,9 +112,8 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                   {sortedItems.map((item) => (
                     <div
                       key={item.name}
-                      className={`${
-                        sortedItems.length === 1 ? "max-w-md w-full" : ""
-                      }`}
+                      className={`${sortedItems.length === 1 ? "max-w-md w-full" : ""
+                        }`}
                     >
                       <EmploymentHistoryCard
                         title={item.records}

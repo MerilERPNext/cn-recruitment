@@ -59,7 +59,7 @@ export function MyRequestCard({
     <>
       {isDesktop ? (
         <div
-          className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-gray-50 transition-colors text-center cursor-pointer border-b"
+          className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-blue-50 transition-colors text-center cursor-pointer border-b"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >

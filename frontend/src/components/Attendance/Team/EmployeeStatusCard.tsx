@@ -105,7 +105,7 @@ const EmployeeStatusCard = ({
   );
 
   return (
-    <div className="w-full p-3 border shadow-sm rounded-xl transition-all duration-200 bg-white border border-gray-100 mt-2">
+    <div className="w-full p-3 border shadow-sm rounded-xl transition-all duration-200 bg-white border border-gray-100 hover:bg-blue-50 transition-colors">
       <div className="flex flex-col sm:flex-row  gap-3 w-full">
         {/* Left Section - Avatar + Info */}
         <div className="flex items-start gap-3 flex-1 justify-center">
@@ -120,15 +120,14 @@ const EmployeeStatusCard = ({
               <h5 className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none">
                 {data?.employee_name}
               </h5>
-              { data?.shift ?
-              <Badge size="sm" label={"Shift " + data?.shift} />
-              : null
+              {data?.shift ?
+                <Badge size="sm" label={"Shift " + data?.shift} />
+                : null
               }
             </div>
             <p
-              className={`font-medium text-sm capitalize mt-1 ${
-                isDesktop ? "text-gray-700" : "text-gray-600"
-              }`}
+              className={`font-medium text-sm capitalize mt-1 ${isDesktop ? "text-gray-700" : "text-gray-600"
+                }`}
             >
               {data?.status}
             </p>

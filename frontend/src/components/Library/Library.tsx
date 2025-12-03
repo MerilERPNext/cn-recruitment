@@ -81,11 +81,10 @@ const DocumentLibrary = () => {
           // DESKTOP VIEW
           <div className="flex flex-col md:flex-row gap-2">
             <button
-              className={`px-5 py-2 rounded-md font-medium transition-all ${
-                activeTab === "awaiting"
+              className={`px-5 py-2 rounded-md font-medium transition-all ${activeTab === "awaiting"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
               onClick={() => setActiveTab("awaiting")}
             >
               My Documents{" "}
@@ -95,11 +94,10 @@ const DocumentLibrary = () => {
             </button>
 
             <button
-              className={`px-5 py-2 rounded-md font-medium transition-all ${
-                activeTab === "mydocs"
+              className={`px-5 py-2 rounded-md font-medium transition-all ${activeTab === "mydocs"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
               onClick={() => setActiveTab("mydocs")}
             >
               Awaiting My Acknowledgment{" "}
@@ -113,11 +111,10 @@ const DocumentLibrary = () => {
             </button>
 
             <button
-              className={`px-5 py-2 rounded-md font-medium transition-all ${
-                activeTab === "approved"
+              className={`px-5 py-2 rounded-md font-medium transition-all ${activeTab === "approved"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
               onClick={() => setActiveTab("approved")}
             >
               Documents Approved{" "}
@@ -156,13 +153,12 @@ const DocumentLibrary = () => {
                   </td>
                   <td className="py-4 px-6">
                     <span
-                      className={`text-sm font-medium px-3 py-1 whitespace-nowrap rounded-xl ${
-                        doc.status === "Approved"
+                      className={`text-sm font-medium px-3 py-1 whitespace-nowrap rounded-xl ${doc.status === "Approved"
                           ? "bg-green-100 text-green-700"
                           : doc.status === "Acknowledgement Required"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
                     >
                       {doc.status}
                     </span>
@@ -239,14 +235,12 @@ const DocumentLibrary = () => {
             </div>
             {showAcknowledgement && (
               <div
-                className={`border-t p-4 w-full transition-all duration-300 ${
-                  acknowledged ? "bg-green-100" : "bg-red-100"
-                }`}
+                className={`border-t p-4 w-full transition-all duration-300 ${acknowledged ? "bg-green-100" : "bg-red-100"
+                  }`}
               >
                 <p
-                  className={`font-medium transition-all duration-300 ${
-                    acknowledged ? "text-green-700" : "text-red-700"
-                  }`}
+                  className={`font-medium transition-all duration-300 ${acknowledged ? "text-green-700" : "text-red-700"
+                    }`}
                 >
                   {acknowledged
                     ? "Confirm Acknowledge Complete"
@@ -268,9 +262,8 @@ const DocumentLibrary = () => {
                     />
                     <label
                       htmlFor="acknowledgeCheckbox"
-                      className={`font-bold cursor-pointer ${
-                        acknowledged ? "text-green-700" : "text-gray-700"
-                      }`}
+                      className={`font-bold cursor-pointer ${acknowledged ? "text-green-700" : "text-gray-700"
+                        }`}
                     >
                       Acknowledgement Required
                     </label>
