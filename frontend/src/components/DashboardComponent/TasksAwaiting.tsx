@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { FileText } from "lucide-react";
 import FrappeListView from "../ListView";
 import DOMPurify from "dompurify";
 import { ViewAll } from "../shared/atoms/ViewAll";
 import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
 import { getDueStatus } from "./DueStatus";
+import useCurrentUser from "../../hooks/useCurrentUser";
 
 interface ToDo {
   priority: string;
@@ -17,26 +18,17 @@ interface ToDo {
   reference_name?: string;
   date?: string;
 }
-
-const MyToDoItem: React.FC<{
-  item: ToDo;
-  index?: number;
-  doctype: string;
-}> = ({ item }) => {
-  // Status condition with colors
+const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
   const getStatusBadge = (status?: string) => {
     if (!status) return null;
+    const s = status.toLowerCase();
 
-    let bg = "bg-gray-100";
-    let text = "text-gray-600";
+    const map: any = {
+      open: ["bg-red-100", "text-red-600"],
+      closed: ["bg-green-100", "text-green-600"],
+    };
 
-    if (status.toLowerCase() === "open") {
-      bg = "bg-red-100";
-      text = "text-red-600";
-    } else if (status.toLowerCase() === "closed") {
-      bg = "bg-green-100";
-      text = "text-green-600";
-    }
+    const [bg, text] = map[s] || ["bg-gray-100", "text-gray-600"];
 
     return (
       <span
@@ -47,33 +39,20 @@ const MyToDoItem: React.FC<{
     );
   };
 
-  // Priority color pills
   const getPriorityBadge = (priority?: string) => {
     if (!priority) return null;
 
-    let bg = "bg-gray-100";
-    let text = "text-gray-600";
+    const map: any = {
+      low: ["bg-green-100", "text-green-600"],
+      medium: ["bg-yellow-100", "text-yellow-600"],
+      high: ["bg-orange-100", "text-orange-600"],
+      urgent: ["bg-red-100", "text-red-600"],
+    };
 
-    switch (priority.toLowerCase()) {
-      case "low":
-        bg = "bg-green-100";
-        text = "text-green-600";
-        break;
-      case "medium":
-        bg = "bg-yellow-100";
-        text = "text-yellow-600";
-        break;
-      case "high":
-        bg = "bg-orange-100";
-        text = "text-orange-600";
-        break;
-      case "urgent":
-        bg = "bg-red-100";
-        text = "text-red-600";
-        break;
-      default:
-        break;
-    }
+    const [bg, text] = map[priority.toLowerCase()] || [
+      "bg-gray-100",
+      "text-gray-600",
+    ];
 
     return (
       <span
@@ -89,7 +68,8 @@ const MyToDoItem: React.FC<{
       <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
         <FileText className="w-4 h-4 text-blue-500" />
       </div>
-      <div className="flex w-full">
+
+      <div className="flex w-full flex-col">
         <div className="flex w-full items-center gap-2 mb-1 flex-wrap">
           <span className="text-xs font-medium">
             <div
@@ -98,12 +78,22 @@ const MyToDoItem: React.FC<{
               }}
             />
           </span>
+
           <div className="flex items-center justify-between w-full pr-8">
             {item.date && (
-              <span className={`flex items-center gap-1 text-xs bg-${getDueStatus(item.date).color}-100 text-${getDueStatus(item.date).color}-600 px-2 rounded`}>
-             {getDueStatus(item.date).icon} <span>{getDueStatus(item.date).status}: {formatDateDDMonthYYYY(item.date)}</span>  
+              <span
+                className={`flex items-center gap-1 text-xs bg-${
+                  getDueStatus(item.date).color
+                }-100 text-${getDueStatus(item.date).color}-600 px-2 rounded`}
+              >
+                {getDueStatus(item.date).icon}
+                <span>
+                  {getDueStatus(item.date).status}:{" "}
+                  {formatDateDDMonthYYYY(item.date)}
+                </span>
               </span>
             )}
+
             <div className="flex gap-2">
               {getPriorityBadge(item.priority)}
               {getStatusBadge(item.status)}
@@ -116,25 +106,103 @@ const MyToDoItem: React.FC<{
 };
 
 const TasksAwaiting: React.FC = () => {
-  const handleTodoClick = () => {
-    window.open(`/app/task_manager`);
+  const [fullData, setFullData] = useState<ToDo[]>([]);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const { data: currentEmployee } = useCurrentUser();
+
+  const handleTodoClick = () => window.open(`/app/task_manager`);
+
+  const generatePastelColor = (index: number) => {
+    const colors = [
+      "bg-blue-100 text-blue-700 ring-blue-300",
+      "bg-purple-100 text-purple-700 ring-purple-300",
+      "bg-green-100 text-green-700 ring-green-300",
+      "bg-pink-100 text-pink-700 ring-pink-300",
+      "bg-yellow-100 text-yellow-700 ring-yellow-300",
+      "bg-orange-100 text-orange-700  ring-orange-300",
+      "bg-cyan-100 text-cyan-700 ring-cyan-300",
+      "bg-red-100 text-red-700  ring-red-300",
+    ];
+    return colors[index % colors.length];
   };
+
+  const handleDataLoad = (items: ToDo[]) => {
+    if (fullData.length === 0 && items.length > 0) {
+      setFullData(items);
+    }
+  };
+
+  const filtered = useMemo(() => {
+    if (activeCategory === "All") return fullData;
+    return fullData.filter((item) => item.reference_type === activeCategory);
+  }, [activeCategory, fullData]);
+
+  const categoryCounts = useMemo(() => {
+    const grouped: Record<string, number> = {};
+
+    fullData.forEach((item) => {
+      if (item.status === "Open") {
+        const cat = item.reference_type || "Others";
+        grouped[cat] = (grouped[cat] || 0) + 1;
+      }
+    });
+
+    return grouped;
+  }, [fullData]);
+
+  const totalCount = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
+
   return (
     <div className="bg-white rounded-lg p-6 mb-2 shadow-sm">
       <div className="flex justify-between items-center mb-4">
         <h3 className="section-title">Tasks Awaiting You</h3>
         <ViewAll title="Visit Todo" onClick={handleTodoClick} />
       </div>
-      <div className="overflow-y-auto max-h-[69rem]">
 
+      <div className="flex overflow-x-auto gap-3 mb-4 p-2">
+        <button
+          onClick={() => setActiveCategory("All")}
+          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${
+            activeCategory === "All"
+              ? "bg-gray-900 text-white scale-105"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          } transition-all`}
+        >
+          All ({totalCount})
+        </button>
+
+        {Object.entries(categoryCounts).map(([cat, count], idx) => {
+          const isActive = activeCategory === cat;
+          const colors = generatePastelColor(idx);
+
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
+                isActive
+                  ? `scale-105 ring-2 ${colors}`
+                  : `${colors} opacity-70 hover:opacity-100`
+              }`}
+            >
+              {cat} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {fullData.length === 0 && (
         <FrappeListView
           doctype="ToDo"
-          ItemComponent={MyToDoItem}
+          ItemComponent={() => null}
           isSearch={false}
-          pageSize={15}
+          pageSize={500}
           orderBy="date desc"
-          
-          defaultFilters={{ status: "Open" }}
+          onDataLoad={handleDataLoad}
+          defaultFilters={{
+            status: "Open",
+            allocated_to: currentEmployee?.name || "",
+          }}
           defaultFields={[
             "name",
             "description",
@@ -145,9 +213,18 @@ const TasksAwaiting: React.FC = () => {
             "date",
             "priority",
           ]}
-          searchFields={["description", "owner", "status"]}
           showPagination={false}
         />
+      )}
+
+      <div className="max-h-[40rem] overflow-y-auto">
+        {filtered.map((item) => (
+          <MyToDoItem key={item.name} item={item} />
+        ))}
+
+        {filtered.length === 0 && (
+          <p className="text-gray-500 text-sm p-4">No tasks found.</p>
+        )}
       </div>
     </div>
   );

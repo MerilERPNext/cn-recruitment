@@ -84,11 +84,10 @@ export default function DesktopDashboard() {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
-  //reset password logic ends here
   const loginUserEmail = userId || "";
   const mutation = useRequestPasswordReset();
   const handleReset = () => {
-    const email = loginUserEmail; // can be replaced with logged-in user's email
+    const email = loginUserEmail;
     mutation.mutate(email, {
       onSuccess: (data) => {
         toast.success("Password reset email sent successfully!");
@@ -193,7 +192,6 @@ export default function DesktopDashboard() {
       return "00:00";
     }
 
-    // Calculate total worked time by pairing check-ins and check-outs
     let totalMinutes = 0;
     const sortedLogs = [...homeSummary].sort((a, b) =>
       compareAsc(
@@ -208,7 +206,6 @@ export default function DesktopDashboard() {
       if (log.log_type === "IN") {
         currentCheckIn = log;
       } else if (log.log_type === "OUT" && currentCheckIn) {
-        // Calculate time between check-in and check-out
         const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
         const checkOutTime = parseISO(log.time.replace(" ", "T"));
         totalMinutes += differenceInMinutes(checkOutTime, checkInTime);
@@ -216,7 +213,6 @@ export default function DesktopDashboard() {
       }
     }
 
-    // If still checked in, add time from last check-in to now
     if (currentCheckIn && isCurrentlyCheckedIn) {
       const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
       totalMinutes += differenceInMinutes(currentTime, checkInTime);
@@ -228,7 +224,6 @@ export default function DesktopDashboard() {
       .toString()
       .padStart(2, "0")}`;
   };
-  //checking checkout
 
   const handleClockInOut = (type: string) => {
     if (type === "clockIn") {
@@ -277,7 +272,6 @@ export default function DesktopDashboard() {
       return 0;
     }
 
-    // Calculate total worked time in minutes
     let totalWorkedMinutes = 0;
 
     if (homeSummary && homeSummary.length > 0) {
@@ -301,14 +295,12 @@ export default function DesktopDashboard() {
         }
       }
 
-      // If still checked in, add time from last check-in to now
       if (currentCheckIn && isCurrentlyCheckedIn) {
         const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
         totalWorkedMinutes += differenceInMinutes(currentTime, checkInTime);
       }
     }
 
-    // Calculate expected shift duration
     const shiftStart = parseISO(firstCheckIn.shift_start.replace(" ", "T"));
     const shiftEnd = parseISO(firstCheckIn.shift_end.replace(" ", "T"));
     const totalShiftMinutes = differenceInMinutes(shiftEnd, shiftStart);
@@ -317,7 +309,6 @@ export default function DesktopDashboard() {
       return 0;
     }
 
-    // Calculate percentage, but cap at 100%
     const percentage = Math.round(
       (totalWorkedMinutes / totalShiftMinutes) * 100
     );
@@ -611,6 +602,64 @@ export default function DesktopDashboard() {
               <div className="h-auto">
                 <TasksAwaiting />
               </div>
+              {/* Requests */}
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <h3 className="section-title mb-6">Requests</h3>
+
+                <div className="grid grid-cols-4 gap-4">
+                  {/* Apply Leave */}
+                  <div
+                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
+                    onClick={() => setShowLeaveRequest(true)}
+                  >
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
+                      <Calendar className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      Apply Leave
+                    </p>
+                  </div>
+
+                  {/* Attendance Request */}
+                  <div
+                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
+                    onClick={() => setShowAttendanceRequest(true)}
+                  >
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
+                      <FileText className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      Attendance Request
+                    </p>
+                  </div>
+
+                  {/* Overtime */}
+                  <div
+                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
+                    onClick={() => setShowOvertimeRequest(true)}
+                  >
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto flex items-center justify-center mb-3">
+                      <Timer className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      Planned Overtime Request
+                    </p>
+                  </div>
+
+                  {/* Shift Change */}
+                  <div
+                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
+                    onClick={handleShiftForm}
+                  >
+                    <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto flex items-center justify-center mb-3">
+                      <ArrowUpDown className="w-6 h-6 text-green-600" />
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      Request Shift Change
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="lg:col-span-3 flex flex-col gap-4">
@@ -766,19 +815,9 @@ export default function DesktopDashboard() {
                 </div>
               </div>
 
-              {/* Announcements */}
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <div className="text-center">
-                  <h3 className="section-title mb-2 text-left">
-                    Announcements
-                  </h3>
-                  <div className="text-gray-500">Coming Soon...</div>
-                </div>
-              </div>
-
               <div className="bg-white p-6 rounded-lg shadow-sm">
                 <h3 className="section-title mb-4">Helpdesk / ToDo's</h3>
-                <div className="flex flex-row w-full gap-4">
+                <div className="flex flex-col w-full gap-4">
                   {/* Helpdesk Card */}
                   <div className="flex w-full flex-col gap-2 bg-gray-100 p-2 rounded-lg hover:bg-gray-200">
                     <div className="bg-blue-200 w-full p-2 rounded-lg">
@@ -811,61 +850,14 @@ export default function DesktopDashboard() {
                 </div>
               </div>
 
-              {/* Requests */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="section-title mb-6">Requests</h3>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Apply Leave */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={() => setShowLeaveRequest(true)}
-                  >
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <Calendar className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Apply Leave
-                    </p>
-                  </div>
-
-                  {/* Attendance Request */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={() => setShowAttendanceRequest(true)}
-                  >
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <FileText className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Attendance Request
-                    </p>
-                  </div>
-
-                  {/* Overtime */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={() => setShowOvertimeRequest(true)}
-                  >
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <Timer className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Planned Overtime Request
-                    </p>
-                  </div>
-
-                  {/* Shift Change */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={handleShiftForm}
-                  >
-                    <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <ArrowUpDown className="w-6 h-6 text-green-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Request Shift Change
-                    </p>
+              {/* Announcements */}
+              <div className="bg-white p-6 rounded-lg shadow-sm min-h-[15rem] overflow-y-auto">
+                <div className="text-center">
+                  <h3 className="section-title mb-2 text-left">
+                    Announcements
+                  </h3>
+                  <div className="text-gray-500">
+                    <p>Coming Soon...</p>
                   </div>
                 </div>
               </div>
