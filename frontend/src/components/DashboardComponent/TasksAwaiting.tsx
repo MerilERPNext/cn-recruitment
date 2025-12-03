@@ -23,7 +23,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
     if (!status) return null;
     const s = status.toLowerCase();
 
-    const map: any = {
+    const map: Record<string, [string, string]> = {
       open: ["bg-red-100", "text-red-600"],
       closed: ["bg-green-100", "text-green-600"],
     };
@@ -42,7 +42,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
   const getPriorityBadge = (priority?: string) => {
     if (!priority) return null;
 
-    const map: any = {
+    const map: Record<string, [string, string]> = {
       low: ["bg-green-100", "text-green-600"],
       medium: ["bg-yellow-100", "text-yellow-600"],
       high: ["bg-orange-100", "text-orange-600"],
@@ -80,19 +80,20 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
           </span>
 
           <div className="flex items-center justify-between w-full pr-8">
-            {item.date && (
-              <span
-                className={`flex items-center gap-1 text-xs bg-${
-                  getDueStatus(item.date).color
-                }-100 text-${getDueStatus(item.date).color}-600 px-2 rounded`}
-              >
-                {getDueStatus(item.date).icon}
-                <span>
-                  {getDueStatus(item.date).status}:{" "}
-                  {formatDateDDMonthYYYY(item.date)}
-                </span>
-              </span>
-            )}
+            {item.date &&
+              (() => {
+                const dueStatus = getDueStatus(item.date);
+                return (
+                  <span
+                    className={`flex items-center gap-1 text-xs bg-${dueStatus.color}-100 text-${dueStatus.color}-600 px-2 rounded`}
+                  >
+                    {dueStatus.icon}
+                    <span>
+                      {dueStatus.status}: {formatDateDDMonthYYYY(item.date)}
+                    </span>
+                  </span>
+                );
+              })()}
 
             <div className="flex gap-2">
               {getPriorityBadge(item.priority)}
@@ -109,6 +110,7 @@ const TasksAwaiting: React.FC = () => {
   const [fullData, setFullData] = useState<ToDo[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const { data: currentEmployee } = useCurrentUser();
+  const currentEmployeeId = currentEmployee?.name;
 
   const handleTodoClick = () => window.open(`/app/task_manager`);
 
@@ -127,9 +129,7 @@ const TasksAwaiting: React.FC = () => {
   };
 
   const handleDataLoad = (items: ToDo[]) => {
-    if (fullData.length === 0 && items.length > 0) {
-      setFullData(items);
-    }
+    setFullData(items);
   };
 
   const filtered = useMemo(() => {
@@ -190,18 +190,18 @@ const TasksAwaiting: React.FC = () => {
           );
         })}
       </div>
-
-      {fullData.length === 0 && (
+      {/* {fullData.length === 0 &&(
+        
         <FrappeListView
           doctype="ToDo"
           ItemComponent={() => null}
           isSearch={false}
-          pageSize={500}
+          pageSize={100}
           orderBy="date desc"
           onDataLoad={handleDataLoad}
           defaultFilters={{
             status: "Open",
-            allocated_to: currentEmployee?.name || "",
+            allocated_to: currentEmployeeId || "",
           }}
           defaultFields={[
             "name",
@@ -212,6 +212,34 @@ const TasksAwaiting: React.FC = () => {
             "reference_name",
             "date",
             "priority",
+            "allocated_to",
+          ]}
+          showPagination={false}
+        />
+      )} */}
+
+      {currentEmployeeId && fullData.length === 0 && (
+        <FrappeListView
+          doctype="ToDo"
+          ItemComponent={() => null}
+          isSearch={false}
+          pageSize={100}
+          orderBy="date desc"
+          onDataLoad={handleDataLoad}
+          defaultFilters={{
+            status: "Open",
+            allocated_to: currentEmployeeId, // always correct now
+          }}
+          defaultFields={[
+            "name",
+            "description",
+            "owner",
+            "status",
+            "reference_type",
+            "reference_name",
+            "date",
+            "priority",
+            "allocated_to",
           ]}
           showPagination={false}
         />

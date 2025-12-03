@@ -89,9 +89,8 @@ export default function DesktopDashboard() {
   const handleReset = () => {
     const email = loginUserEmail;
     mutation.mutate(email, {
-      onSuccess: (data) => {
+      onSuccess: () => {
         toast.success("Password reset email sent successfully!");
-        console.log("Response:", data);
       },
       onError: (error: any) => {
         const formatedError = errorResponseFormater(
@@ -330,7 +329,7 @@ export default function DesktopDashboard() {
   );
 
   const currentUserIsAdmin = currentUser?.roles?.some(
-    (role) => "Administrator" == role.role
+    (role) => "Administrator" === role.role
   );
 
   return (
