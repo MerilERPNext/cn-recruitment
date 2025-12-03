@@ -125,8 +125,8 @@ const TasksAwaiting: React.FC = () => {
         <h3 className="section-title">Tasks Awaiting You</h3>
         <ViewAll title="Visit Todo" onClick={handleTodoClick} />
       </div>
+      <div className="overflow-y-auto max-h-[69rem]">
 
-      <div className="overflow-y-auto h-[25rem]">
         <FrappeListView
           doctype="ToDo"
           ItemComponent={MyToDoItem}
