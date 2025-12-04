@@ -97,15 +97,22 @@ const statusStyles = {
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
+  const [isLocationLoading, setIsLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
   useEffect(() => {
     async function fetchLocation() {
+      setIsLocationLoading(true);
+      setLocationError(null);
       try {
         const coords = await getDeviceLocation();
         setLocation(coords);
       } catch (err) {
-        console.log(err);
+        console.error("Failed to get location:", err);
+        setLocationError("Unable to get your location. Please enable location services.");
+      } finally {
+        setIsLocationLoading(false);
       }
     }
 
@@ -152,11 +159,11 @@ const MobileDashboard: React.FC = () => {
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(CompanyLogo) &&
-    CompanyLogo.length > 0 &&
-    currentEmployeeCompany
+      CompanyLogo.length > 0 &&
+      currentEmployeeCompany
       ? CompanyLogo.find(
-          (company) => company.company_name === currentEmployeeCompany
-        )
+        (company) => company.company_name === currentEmployeeCompany
+      )
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -174,30 +181,30 @@ const MobileDashboard: React.FC = () => {
 
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T"))
-          )
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -206,14 +213,20 @@ const MobileDashboard: React.FC = () => {
   };
 
   const handleCheckInOut = (type: string) => {
+    // Validate location before proceeding
+    if (!location?.latitude || !location?.longitude) {
+      toast.error("Location not available. Please wait for location to load or enable location services.");
+      return;
+    }
+
     if (type === "checkIn") {
       checkInCheckOutMutation(
         {
           employee: currentEmployee?.employee,
           shift: employeeShift?.shift,
           action: "Check In",
-          latitude: location?.latitude,
-          longitude: location?.longitude,
+          latitude: location.latitude,
+          longitude: location.longitude,
         },
         {
           onSuccess: () => {
@@ -232,8 +245,8 @@ const MobileDashboard: React.FC = () => {
           employee: currentEmployee?.employee,
           shift: employeeShift?.shift,
           action: "Check Out",
-          latitude: location?.latitude,
-          longitude: location?.longitude,
+          latitude: location.latitude,
+          longitude: location.longitude,
         },
         {
           onSuccess: () => {
@@ -458,21 +471,31 @@ const MobileDashboard: React.FC = () => {
             <p className="text-2xl font-bold text-gray-900">{getTotalTime()}</p>
           </div>
           {currentEmployee?.custom_allow_mobile_checkin ? (
-            <button
-              onClick={() =>
-                handleCheckInOut(isCurrentlyCheckedIn ? "checkOut" : "checkIn")
-              }
-              className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-              disabled={checkInCheckOutPending || !employeeShift?.shift}
-            >
-              {checkInCheckOutPending || isRefetching ? (
-                <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
-              ) : isCurrentlyCheckedIn ? (
-                "Check Out"
-              ) : (
-                "Check In"
+            <div className="w-full">
+              <button
+                onClick={() =>
+                  handleCheckInOut(isCurrentlyCheckedIn ? "checkOut" : "checkIn")
+                }
+                className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                disabled={checkInCheckOutPending || !employeeShift?.shift || isLocationLoading || !location}
+              >
+                {checkInCheckOutPending || isRefetching ? (
+                  <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+                ) : isLocationLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+                    Getting location...
+                  </span>
+                ) : isCurrentlyCheckedIn ? (
+                  "Check Out"
+                ) : (
+                  "Check In"
+                )}
+              </button>
+              {locationError && (
+                <p className="text-xs text-red-600 mt-1 text-center">{locationError}</p>
               )}
-            </button>
+            </div>
           ) : null}
           {canShowClockIn?.can_show ? (
             <button
@@ -495,7 +518,6 @@ const MobileDashboard: React.FC = () => {
 
         <div className="mb-5">
           <h3 className="text-lg font-bold mb-3">Quick Links</h3>
-
           <div className="grid grid-cols-3 gap-3 mb-4">
             <Link
               to="/webapp/leave-app"
@@ -671,7 +693,7 @@ const MobileDashboard: React.FC = () => {
                 }) => {
                   const styles =
                     statusStyles[
-                      item.status?.toLowerCase() as keyof typeof statusStyles
+                    item.status?.toLowerCase() as keyof typeof statusStyles
                     ] || statusStyles.draft;
 
                   return (
