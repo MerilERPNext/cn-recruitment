@@ -36,6 +36,9 @@ const MyMicroApp: React.FC<{
     }
   };
 
+  // Check if the icon is an SVG
+  const isSvg = item.icon?.toLowerCase().endsWith('.svg') || item.icon?.toLowerCase().includes('.svg?');
+
   return (
     <div
       onClick={handleClick}
@@ -45,7 +48,24 @@ const MyMicroApp: React.FC<{
         className={`w-12 h-12 ${color.bg} rounded-lg mx-auto mb-2 flex items-center justify-center`}
       >
         {item.icon ? (
-          <img src={item.icon} alt={item.title} className="w-6 h-6" />
+          isSvg ? (
+            <div
+              className={`w-6 h-6 ${color.text}`}
+              style={{
+                backgroundColor: 'currentColor',
+                maskImage: `url(${item.icon})`,
+                maskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskImage: `url(${item.icon})`,
+                WebkitMaskSize: 'contain',
+                WebkitMaskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center',
+              }}
+            />
+          ) : (
+            <img src={item.icon} alt={item.title} className="w-6 h-6" />
+          )
         ) : (
           <span className={`${color.text} font-bold text-lg`}>
             {item.title ? item.title.charAt(0).toUpperCase() : "A"}
