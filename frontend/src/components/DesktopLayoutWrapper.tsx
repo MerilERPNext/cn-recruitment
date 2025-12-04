@@ -68,13 +68,18 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
         console.log("Response:", data);
       },
       onError: (error: any) => {
-        const formatedError = errorResponseFormater(error, "Failed to send password reset email!");
+        const formatedError = errorResponseFormater(
+          error,
+          "Failed to send password reset email!"
+        );
         toast.error(formatedError);
       },
     });
   };
 
-  const currentUserIsAdmin = currentUser?.roles?.some(role => "Administrator"==role.role);
+  const currentUserIsAdmin = currentUser?.roles?.some(
+    (role) => "Administrator" == role.role
+  );
 
   // Handle click outside profile dropdown
   useEffect(() => {
@@ -167,14 +172,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       >
         {/* Header */}
         <div
-          className="bg-white border-b border-gray-200 px-8 py-3 flex items-center justify-between sticky top-0 z-10 flex-shrink-0"
+          className="bg-gradient-to-r from-blue-500 to-blue-300 border-b border-gray-200 px-8 py-3 flex items-center justify-between sticky top-0 z-10 flex-shrink-0"
           style={{ height: "73px" }}
         >
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              {getPageTitle()}
-            </h1>
-            <p className="text-xs text-gray-600">
+            <h1 className="text-xl font-bold text-gray-50">{getPageTitle()}</h1>
+            <p className="text-xs text-gray-200">
               Manage your {getPageTitle().toLowerCase()}
             </p>
           </div>
@@ -192,22 +195,22 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           <div className="flex items-center gap-4">
             <button
               onClick={handleNotificationClick}
-              className="relative p-2 hover:bg-blue-50 rounded-lg transition-colors"
+              className="relative p-2 hover:bg-blue-500 rounded-lg transition-colors"
             >
               <NotificationBell />
             </button>
 
             <div className="relative" ref={profileDropdownRef}>
-                {currentUserIsAdmin ? 
-               <button
+              {currentUserIsAdmin ? (
+                <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-blue-400 rounded-lg p-2 transition-colors"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-900 text-right">
+                    <p className="text-sm font-medium text-white text-right">
                       {currentUser?.username}
                     </p>
-                    <p className="text-xs text-gray-500 text-right">
+                    <p className="text-xs text-gray-50 text-right">
                       Employee ID: {currentEmployee?.employee}
                     </p>
                   </div>
@@ -219,11 +222,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                    className={`w-4 h-4 text-white transition-transform ${
                       showProfileDropdown ? "rotate-180" : ""
                     }`}
                   />
-                </button>:currentEmpIsLoading || !currentEmployee?.employee ? (
+                </button>
+              ) : currentEmpIsLoading || !currentEmployee?.employee ? (
                 <div className="flex w-30 animate-pulse gap-2 items-center">
                   <div className="h-4 bg-gray-300 rounded w-20  flex-1"></div>
                   <div className="h-6 w-6 bg-gray-300 rounded-full "></div>
@@ -231,14 +235,14 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
               ) : (
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-blue-50 rounded-lg p-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-900 text-right">
+                    <p className="text-sm font-medium text-white text-right">
                       {currentEmployee?.employee_name ||
                         currentEmployee?.first_name}
                     </p>
-                    <p className="text-xs text-gray-500 text-right">
+                    <p className="text-xs text-gray-50 text-right">
                       Employee ID: {currentEmployee?.employee}
                     </p>
                   </div>
@@ -250,7 +254,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                    className={`w-4 h-4 text-white transition-transform ${
                       showProfileDropdown ? "rotate-180" : ""
                     }`}
                   />

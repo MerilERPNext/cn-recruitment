@@ -479,7 +479,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       >
         <div className="flex flex-col h-full">
           <div
-            className="px-4 py-3 border-b border-gray-200"
+            className="px-4 bg-white py-3 border-b border-gray-200"
             style={{ height: "73px" }}
           >
             <div className="flex items-center  gap-3 h-full">
