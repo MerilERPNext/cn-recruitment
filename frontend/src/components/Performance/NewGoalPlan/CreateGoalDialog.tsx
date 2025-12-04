@@ -260,7 +260,7 @@ export default function CreateGoalDialog({
           weightage: sg.subWeightage,
           start_date: sg.subStartDate?.split?.("T")[0] ?? sg.subStartDate ?? "",
           end_date: sg.subEndDate?.split?.("T")[0] ?? sg.subEndDate ?? "",
-          achived: sg.subAchieved,
+          achieved: sg.subAchieved,
           achievement: sg.subAchievement,
           status: toTitleCase(sg.subStatus),
           target_type: targetTypeToSubmissionFormate(sg.target_type),

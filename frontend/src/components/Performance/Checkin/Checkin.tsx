@@ -95,7 +95,7 @@ const Checkin: React.FC = () => {
     }))
   };
 
-  console.log("formdata", formData);
+  // console.log("formdata", formData);
 
   const formRef = useRef<any>(null);
 
@@ -160,22 +160,21 @@ const Checkin: React.FC = () => {
             });
           }
         }
-
-        console.log("resut", result)
-        Checkin(result, {
-          onSuccess: () => {
-            toast.success("Checkin submitted successfully.");
-            navigate(-1);
-          },
-          onError: (error) => {
-            toast.error(errorResponseFormater(error, "Checkin submission failed. Please try again."));
-            console.error("Checkin submission error:", error);
-          }
-        });
-
         console.log("Prepared submission data:", result);
       });
 
+
+      console.log("resut", result)
+      Checkin(result, {
+        onSuccess: () => {
+          toast.success("Checkin submitted successfully.");
+          navigate(-1);
+        },
+        onError: (error) => {
+          toast.error(errorResponseFormater(error, "Checkin submission failed. Please try again."));
+          console.error("Checkin submission error:", error);
+        }
+      });
 
     } catch (err) {
       console.error("Submit error:", err);
