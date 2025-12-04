@@ -49,8 +49,10 @@
                   "validate": {
                     "required": true
                   },
+                  "defaultValue": "{{ (new Date()).toISOString() }}",
                   "input": true,
-                  "customClass": "w-full mb-4"
+                  "customClass": "w-full mb-4",
+                  "customDefaultValue": "value = new Date();"
                 }
               ]
             },
@@ -66,6 +68,7 @@
                   "validate": {
                     "required": true
                   },
+                  "customDefaultValue": "value = new Date();",
                   "input": true,
                   "customClass": "w-full mb-4"
                 }
@@ -162,6 +165,18 @@
               {
                 "label": "Completed",
                 "value": "completed"
+              },
+              {
+                "label": "On Hold",
+                "value": "on_hold"
+              },
+              {
+                "label": "Delayed",
+                "value": "delayed"
+              },
+              {
+                "label": "At Risk",
+                "value": "at_risk"
               }
             ]
           },
@@ -317,6 +332,18 @@
                       {
                         "label": "Completed",
                         "value": "completed"
+                      },
+                      {
+                        "label": "On Hold",
+                        "value": "on_hold"
+                      },
+                      {
+                        "label": "Delayed",
+                        "value": "delayed"
+                      },
+                      {
+                        "label": "At Risk",
+                        "value": "at_risk"
                       }
                     ]
                   },

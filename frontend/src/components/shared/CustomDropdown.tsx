@@ -62,7 +62,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className={`relative inline-block ${className || ""}`}
+      className={`relative inline-block max-h-sm ${className || ""}`}
     >
       <button
         type="button"
@@ -89,7 +89,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className={`absolute right-0 mt-2 w-full min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${positionCss[position]}`}>
+        <div className={`absolute right-0 mt-2 w-full max-h-[180px] no-scrollbar  overflow-y-auto min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${positionCss[position]}`}>
           {options.map((option) => (
             <button
               key={option.value}
