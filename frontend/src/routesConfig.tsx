@@ -381,6 +381,24 @@ const PerformanceReviewApp = lazyWithRetry(
   "PerformanceReviewApp"
 );
 
+const Review = lazyWithRetry(
+  () => import("./components/Performance/Review/Review"),
+  "Review"
+);
+
+const TeamReview = lazyWithRetry(
+  () => import("./components/Performance/TeamReview/TeamReview"),
+  "TeamReview"
+);
+
+const EmployeeReview = lazyWithRetry(
+  () => import("./components/Performance/EmployeeReview/EmployeeReview"),
+  "EmployeeReview"
+);
+
+
+
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -688,6 +706,9 @@ export const routesConfig: AppRoute[] = [
       { path: "team-goal-plan", element: <TeamGoalPlan /> },
       { path: "checkin/:goalPlanId", element: <Checkin /> },
       { path: "performance-review", element: <PerformanceReviewApp /> },
+      { path: "review", element: <Review /> },
+      { path: "team-review", element: <TeamReview /> },
+      { path: "employee-review", element: <EmployeeReview /> },
     ],
   },
   {

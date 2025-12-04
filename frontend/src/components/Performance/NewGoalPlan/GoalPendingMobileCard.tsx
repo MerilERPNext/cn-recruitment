@@ -49,8 +49,8 @@ const GoalPendingMobileCard: React.FC<{ data: GroupGoalItem }> = ({ data }) => {
 
                  {showEditModel &&
                  createPortal(
-                                <CreateGoalDialog actionType='Update' defaultData={data} isOpen={showEditModel} onClose={() => setShowEditModel(false)} />
-                                , document.body)
+                    <CreateGoalDialog actionType='Update' defaultData={data} isOpen={showEditModel} onClose={() => setShowEditModel(false)} />
+                    , document.body)
                     }
         </div>
     );

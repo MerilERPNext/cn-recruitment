@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import GoalPlanCard from './GoalPlanCard';
 import { Award, Flag, Goal, Plus, ClipboardCheck } from 'lucide-react';
 import GoalPendingApprovalTable from './GoalPendingApprovalTable';
@@ -6,12 +6,14 @@ import { useScreenSize } from '../../../hooks/useScreenSize';
 import GoalPendingMobileCard from './GoalPendingMobileCard';
 import CreateGoalDialog from './CreateGoalDialog';
 import { useCurrentEmployeeIdCard } from '../../../hooks/useEmployee';
-import { useGetAllGoalPlans, useGetCheckInButtonVisibility, useGoalDetails } from '../../../hooks/useGoal';
+import { useGetAllGoalPlans, useGetCheckInButtonVisibility, useGetGoalPlanFrameworkSettings, useGoalDetails } from '../../../hooks/useGoal';
 import { useGoalModel } from '../GoalModelContext';
 import CustomDropdown from '../../shared/CustomDropdown';
 import { createPortal } from 'react-dom';
 import { GoalPlanId } from '../../../types/goal';
 import { useNavigate } from 'react-router-dom';
+import GoalPeningRow from './GoalPeningRow';
+import { StaticListView } from '../../ListView';
 
 // CARD ICONS
 const Icons = [
@@ -69,15 +71,23 @@ const NewGoalPlan: React.FC = () => {
   const { isLoading, data: currentEmployeeIdCard } = useCurrentEmployeeIdCard();
   const { data: GoalPlanIds, isLoading: goalsLoading } = useGetAllGoalPlans(currentEmployeeIdCard?.id || "");
   const { data: goalPlan, isLoading: goalPlanLoading } = useGoalDetails(selectedGoalPlanId || "");
- 
+  const { data : goalPlanFrameworkSettings } = useGetGoalPlanFrameworkSettings(selectedGoalPlanId || "");
+  
   const options = useMemo(() => {
     if(!GoalPlanIds || GoalPlanIds.length==0) return [];
-    setGoalPlanId(GoalPlanIds[0].name);
+   
     return GoalPlanIds?.map((goal: GoalPlanId) => ({
       label: goal.name,
       value: goal.name
     })) || [];
   }, [GoalPlanIds]);
+
+
+
+  useEffect(() => {
+    if (!GoalPlanIds || GoalPlanIds.length === 0) return;
+    setGoalPlanId(GoalPlanIds[0]?.name || "");
+  }, [GoalPlanIds, setGoalPlanId]);
 
 
     const navigate = useNavigate();
@@ -88,7 +98,7 @@ const NewGoalPlan: React.FC = () => {
     }
 
   const { data: CheckinButtonVisibility } = useGetCheckInButtonVisibility(selectedGoalPlanId, currentEmployeeIdCard?.id || "");
-  
+
   // INITIAL LOADING STATE (Page Load)
   // This shows when we are fetching the list of plans initially
   if (isLoading || goalsLoading) {
@@ -165,7 +175,7 @@ const NewGoalPlan: React.FC = () => {
           </div>
 
           {/* Button is visible if a plan is selected OR if we are loading a selected plan */}
-          {(selectedGoalPlanId) && (
+          {selectedGoalPlanId && goalPlanFrameworkSettings?.allow_employees_to_add_goals && (
             <button
               className='px-5 py-2.5 nowrap whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2 disabled:opacity-70'
               onClick={() => setIsDialogOpen(true)}
@@ -217,7 +227,13 @@ const NewGoalPlan: React.FC = () => {
               {/* Pending Approval Table */}
               {isDesktop ? (
                 <div className="overflow-x-auto">
-                   <GoalPendingApprovalTable tableData={goalPlan?.goal_plan_items || []} />
+                   <GoalPendingApprovalTable tableData={goalPlan?.goal_plan_items || []} >
+                     <StaticListView
+                            data={goalPlan?.goal_plan_items}
+                            ItemComponent={(_, item, isLast)=> <GoalPeningRow  currentPage='Self' goalPlanFramworkSettings={goalPlanFrameworkSettings}  gtc="1fr 1fr 1fr 1fr 0.5fr" data={item} isLastItem={isLast} />}
+                            pageSize={20}
+                            />
+                   </GoalPendingApprovalTable>
                 </div>
               ) : (
                 <div className='flex flex-col gap-4'>
@@ -236,7 +252,7 @@ const NewGoalPlan: React.FC = () => {
           </div>
         )}
       </div>
-      {
+      {isDialogOpen &&
         createPortal(
         <CreateGoalDialog
           isOpen={isDialogOpen}

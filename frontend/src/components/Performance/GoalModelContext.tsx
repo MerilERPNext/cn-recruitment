@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
+import { useGetGoalPlanFrameworkSettings } from "../../hooks/useGoal";
 type RequestLeaveDefaults = {
   fromDate?: string;
   toDate?: string;
@@ -22,6 +23,7 @@ type GoalModelContextType = {
   showModal: boolean;
   openModal: (defaults?: RequestLeaveDefaults) => void;
   closeModal: () => void;
+  selectedGoalPlanFramworkSettings: any;
   defaults: RequestLeaveDefaults | null;
 };
 
@@ -43,10 +45,11 @@ export const GoalModelProvider: React.FC<{
   const setGoalPlanId = (id: string)=>{
     setSelectedGoalPlanId(id);
   }
+  const { data: selectedGoalPlanFramworkSettings } = useGetGoalPlanFrameworkSettings(selectedGoalPlanId);
 
   return (
     <GoalModelContext.Provider
-      value={{ selectedGoalPlanId, setGoalPlanId, showModal, openModal, closeModal, defaults }}
+      value={{ selectedGoalPlanId, setGoalPlanId, selectedGoalPlanFramworkSettings, showModal, openModal, closeModal, defaults }}
     >
       {children}
     </GoalModelContext.Provider>

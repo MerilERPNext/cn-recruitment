@@ -11,6 +11,7 @@ type TabName =
     | "Performance Review"
     | "Team Goal Plan"
     | "Checkin"
+    | "EmployeeReview"
     ;
 
 const tabRoutes: Record<TabName, string> = {
@@ -18,16 +19,18 @@ const tabRoutes: Record<TabName, string> = {
     "New Goal Plan": "/webapp/performance-app/new-goal-plan",
     "Performance Review": "/webapp/performance-app/performance-review",
     "Team Goal Plan": "/webapp/performance-app/team-goal-plan",
-    Checkin: '/webapp/performance-app/checkin'
+    Checkin: '/webapp/performance-app/checkin',
+    "EmployeeReview": "/webapp/performance-app/employee-review"
 };
 
-const Pages = ["Checkin"];
+const NoMobileLayutPage = ["Checkin", "EmployeeReview"];
+const NoDesktopLayoutPage = ["EmployeeReview"];
 
 const PerformanceApp: React.FC = () => {
     const { isDesktop } = useScreenSize();
     const [activeTab, setActiveTab] = useState<TabName>("Overview");
     const navigate = useNavigate();
-    const visibleheader = (Object.keys(tabRoutes) as TabName[]).filter((key) => !Pages.includes(key))
+    const visibleheader = (Object.keys(tabRoutes) as TabName[]).filter((key) => !NoMobileLayutPage.includes(key))
     const tabs: Tab[] = visibleheader.map((key) => ({
         key,
         label: key,
@@ -39,18 +42,22 @@ const PerformanceApp: React.FC = () => {
         navigate(tabRoutes[tab]);
     };
 
-    const showMobileHeader = !Pages.includes(activeTab);
+    const showMobileHeader = !NoMobileLayutPage.includes(activeTab);
 
     useEffect(() => {
-        const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-            location.pathname.startsWith(tabRoutes[tab])
-        );
+        const tabs = Object.keys(tabRoutes) as TabName[];
 
-        if (matchedTab) {
-            setActiveTab(matchedTab);
-        }
+        // 1. exact match
+        let matchedTab =
+            tabs.find(tab => location.pathname === tabRoutes[tab]) ||
+            // 2. prefix match
+            tabs.find(tab => location.pathname.startsWith(tabRoutes[tab]));
 
+        if (!matchedTab) matchedTab = "Overview";
+
+        setActiveTab(matchedTab);
     }, [location.pathname]);
+
 
     useEffect(() => {
         if (location.pathname === "/webapp/performance-app") {
@@ -85,13 +92,15 @@ const PerformanceApp: React.FC = () => {
     );
 
     const desktopLayout = (
-        <DesktopLayoutWrapper title="Performance">
-            <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto relative">
-                    <Outlet />
+        NoDesktopLayoutPage.includes(activeTab) ?
+            <Outlet /> :
+            <DesktopLayoutWrapper title="Performance">
+                <div className="flex flex-col h-full">
+                    <div className="flex-1 overflow-y-auto relative">
+                        <Outlet />
+                    </div>
                 </div>
-            </div>
-        </DesktopLayoutWrapper>
+            </DesktopLayoutWrapper>
     );
 
     return <GoalModelProvider> {isDesktop ? desktopLayout : mobileLayout} </GoalModelProvider>;

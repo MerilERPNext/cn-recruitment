@@ -66,3 +66,23 @@ export interface GoalPlanResponse {
   total_subgoals: number;
   goal_plan_items: GroupGoalItem[];
 }
+
+export interface GoalPlanFrameworkSettings {
+  auto_calculate_achievement_percentage: boolean;
+  allow_employees_to_add_goals: boolean;
+  allow_employees_to_edit_goals: boolean;
+  allow_approver_to_add_and_edit_goals: boolean;
+  allow_employee_and_approver_to_delete_goals: boolean;
+  allow_add_goals_from_previous_plans: boolean;
+  allow_edit_system_assigned_goals: boolean;
+
+  metric_options: {
+    name: string;
+    metric_name: string;
+  }[];
+
+  scorecard_pillar_options: {
+    name: string;
+    scorecard_pillar: string;
+  }[];
+}

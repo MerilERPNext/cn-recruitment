@@ -319,6 +319,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Milestone,
           href: "/webapp/performance-app/team-goal-plan",
         },
+        {
+          name: "Review",
+          icon: Milestone,
+          href: "/webapp/performance-app/review",
+        },
+         {
+          name: "Team Review",
+          icon: Milestone,
+          href: "/webapp/performance-app/team-review",
+        },
       ],
     },
 

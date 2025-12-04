@@ -230,13 +230,7 @@
                       "customConditional": "show = !!(instance.options && instance.options.commentConfig && instance.options.commentConfig.enable_comments && instance.options.commentConfig.sub_goal_comments);",
                       "validate": {
                         "custom": "if (instance.options && instance.options.commentConfig && instance.options.commentConfig.sub_goal_comments_mandatory && !input) { return 'Subgoal comment is required.'; } return true;"
-                      },
-                      "attrs": [
-                        {
-                          "attr": "data-required-asterisk",
-                          "value": "value = (instance.options && instance.options.commentConfig && instance.options.commentConfig.sub_goal_comments_mandatory) ? '*' : '';"
-                        }
-                      ]
+                      }
                     }
                   ]
                 }

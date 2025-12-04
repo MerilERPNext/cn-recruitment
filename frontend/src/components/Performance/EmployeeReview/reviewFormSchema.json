@@ -1,0 +1,28 @@
+{
+  "display": "form",
+  "components": [
+    {
+      "type": "starrating",
+      "key": "rating",
+      "label": "Rating",
+      "shape": "circle",
+      "errorLabel": "Rating",
+      "input": true
+    },
+    {
+      "type": "textarea",
+      "label": "Comment",
+      "key": "comment",
+      "errorLabel": "Comment",
+      "placeholder": "Enter your comments regarding thsi goal...",
+      "rows": 4,
+      "input": true
+    },
+    {
+      "type": "button",
+      "action": "submit",
+      "label": "Submit",
+      "theme": "primary"
+    }
+  ]
+}

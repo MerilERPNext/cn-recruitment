@@ -4,12 +4,12 @@ import { Award, Flag, Goal, ClipboardCheck } from 'lucide-react'; // Removed Plu
 import GoalPendingApprovalTable from '../NewGoalPlan/GoalPendingApprovalTable';
 import { useScreenSize } from '../../../hooks/useScreenSize';
 import GoalPendingMobileCard from '../NewGoalPlan/GoalPendingMobileCard';
-import CreateGoalDialog from '../NewGoalPlan/CreateGoalDialog';
-import { useGetAllGoalPlans, useGetCheckInButtonVisibility, useGetTeamGoalPlan, useGoalDetails } from '../../../hooks/useGoal';
+import { useGetAllGoalPlans, useGetCheckInButtonVisibility, useGetGoalPlanFrameworkSettings, useGetTeamGoalPlan, useGoalDetails } from '../../../hooks/useGoal';
 import CustomDropdown from '../../shared/CustomDropdown';
-import { createPortal } from 'react-dom';
 import RequestCheckinDialog from './RequestCkeckinDialog';
 import { useCurrentEmployeeIdCard } from '../../../hooks/useEmployee';
+import { StaticListView } from '../../ListView';
+import GoalPeningRow from '../NewGoalPlan/GoalPeningRow';
 // CARD ICONS
 const Icons = [
   <Flag className='w-12 h-12 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 p-2.5' />,
@@ -58,9 +58,8 @@ const ContentSkeleton = () => (
 
 // --- MAIN COMPONENT ---
 
-const NewGoalPlan: React.FC = () => {
+const TeamGOalPlan: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const [ReporteeGoalPlanId, setReporteeGoalPlanId] = useState<any>(null);
   const {
@@ -83,7 +82,7 @@ const NewGoalPlan: React.FC = () => {
   const { data: TeamGoalPlan, isLoading: loadingTeamGoalPlan } = useGetTeamGoalPlan(goalPlan ? goalPlan.goal_plan_framework : "");
 
   const isLoading = EmployeeLoading || goalPlanIdsLoading || teamGoalPlanLoading || loadingTeamGoalPlan;
-  console.log("Team Goal Plan Data: ", TeamGoalPlan);
+  // console.log("Team Goal Plan Data: ", TeamGoalPlan);
   // 2. Local State for Reportee Selection
   const [selectedReportee, setSelectedReportee] = useState<string>('');
   const [showChekcinRequestDialog, setShowCheckinRequestDialog] = useState<boolean>(false);
@@ -91,8 +90,10 @@ const NewGoalPlan: React.FC = () => {
   const selectedReporteesGoalPlan = useMemo(() => {
     if (!selectedReportee || !TeamGoalPlan) return null;
     return TeamGoalPlan.find((reporteeGoalPlan: any) => reporteeGoalPlan.employee === selectedReportee);
-  }, [selectedReportee]);
+  }, [selectedReportee, TeamGoalPlan]);
 
+  const { data: goalPlanFrameworkSettings } = useGetGoalPlanFrameworkSettings(ReporteeGoalPlanId || "");
+  console.log("goalPlanFrameworkSettings", goalPlanFrameworkSettings)
   // 3. Prepare Dropdown Options
   const goalOptions = useMemo(() => {
     if (!selectedReporteesGoalPlan) return [];
@@ -126,9 +127,9 @@ const NewGoalPlan: React.FC = () => {
 
   }, [selectedReportee]);
 
-  console.log("id, selec id", ReporteeGoalPlanId, selectedReportee)
+  // console.log("id, selec id", ReporteeGoalPlanId, selectedReportee)
   const { data } = useGetCheckInButtonVisibility(ReporteeGoalPlanId || "", selectedReportee || "");
-  console.log("Check-In Button Visibility Data:", data);
+  // console.log("Check-In Button Visibility Data:", data);
 
   // INITIAL LOADING STATE (Page Load)
   if (isLoading) {
@@ -212,6 +213,10 @@ const NewGoalPlan: React.FC = () => {
             <button
               onClick={() => setShowCheckinRequestDialog(true)}
               className='px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 ml-4 '>Request Checkin</button>}
+
+          {goalPlanFrameworkSettings?.allow_approver_to_add_and_edit_goals
+            && <button>Add Goal</button>
+          }
         </div>
 
         {/* MAIN CONTENT AREA LOGIC */}
@@ -251,7 +256,13 @@ const NewGoalPlan: React.FC = () => {
               {/* Pending Approval Table */}
               {isDesktop ? (
                 <div className="overflow-x-auto">
-                  <GoalPendingApprovalTable tableData={selectedReporteesGoalPlan?.goal_plan_items || []} />
+                  <GoalPendingApprovalTable tableData={selectedReporteesGoalPlan?.goal_plan_items || []} >
+                    <StaticListView
+                      data={selectedReporteesGoalPlan?.goal_plan_items}
+                      ItemComponent={(_, item, isLast) => <GoalPeningRow goalPlanName={ReporteeGoalPlanId} currentPage='Team' goalPlanFramworkSettings={goalPlanFrameworkSettings} gtc="1fr 1fr 1fr 1fr 0.5fr" data={item} isLastItem={isLast} />}
+                      pageSize={20}
+                    />
+                  </GoalPendingApprovalTable>
                 </div>
               ) : (
                 <div className='flex flex-col gap-4'>
@@ -270,17 +281,8 @@ const NewGoalPlan: React.FC = () => {
           </div>
         )}
       </div>
-      {
-        createPortal(
-          <CreateGoalDialog
-            isOpen={isDialogOpen}
-            onClose={() => setIsDialogOpen(false)}
-          />,
-          document.body
-        )
-      }
     </div>
   );
 };
 
-export default NewGoalPlan;
+export default TeamGOalPlan;

@@ -1,11 +1,8 @@
 import React from 'react';
 import CardTable from '../../shared/CardTable';
-import GoalPeningRow from './GoalPeningRow';
-import { StaticListView } from '../../ListView';
 
-const GoalPendingApprovalTable: React.FC<{ tableData: any[] }> = ({ tableData }) => {
+const GoalPendingApprovalTable: React.FC<{ tableData: any[], children: React.ReactNode }> = ({ tableData, children }) => {
     const isEmpty = !tableData || tableData.length === 0;
-     const gtc = "1fr 1fr 1fr 1fr 0.5fr";
     return (
         <div className="bg-white h-full px-4 pt-2 mb-32">
             <CardTable
@@ -25,11 +22,7 @@ const GoalPendingApprovalTable: React.FC<{ tableData: any[] }> = ({ tableData })
                             No pending approvals found.
                         </div>
                     ) : (
-                         <StaticListView
-                            data={tableData}
-                            ItemComponent={(_, item, isLast)=> <GoalPeningRow gtc={gtc} data={item} isLastItem={isLast} />}
-                            pageSize={20}
-                            />
+                        children
                     )}
                 </div>
             </CardTable>

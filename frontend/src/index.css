@@ -33,6 +33,7 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
@@ -166,6 +167,7 @@ code {
   font-weight: 500 !important;
   /* aspect-ratio: 1 !important; */
 }
+
 .react-datepicker__day-names {
   display: flex !important;
   width: 100% !important;
@@ -218,6 +220,7 @@ code {
   top: 10px !important;
   left: -4px !important;
 }
+
 .react-datepicker__aria-live {
   display: none !important;
 }
@@ -248,7 +251,8 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-direction: row; /* label left, toggle right */
+  flex-direction: row;
+  /* label left, toggle right */
 }
 
 /* Label styling */
@@ -261,7 +265,8 @@ code {
 /* Description text below */
 .custom-halfday-toggle .form-text {
   font-size: 0.75rem;
-  color: #6b7280; /* Tailwind gray-500 */
+  color: #6b7280;
+  /* Tailwind gray-500 */
   margin-top: 0.5rem;
   width: 100%;
 }
@@ -295,7 +300,8 @@ code {
 
 /* Checked state */
 .custom-halfday-toggle input[type="checkbox"]:checked {
-  background-color: #3b82f6; /* Tailwind blue-500 */
+  background-color: #3b82f6;
+  /* Tailwind blue-500 */
 }
 
 .custom-halfday-toggle input[type="checkbox"]:checked::before {
@@ -304,11 +310,15 @@ code {
 
 /* Utility for hiding scrollbars */
 .scrollbar-hide {
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* Internet Explorer 10+ */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
+  display: none;
+  /* Safari and Chrome */
 }
 
 /* custom file upload */
@@ -336,8 +346,9 @@ code {
   color: #333;
   width: 100%;
 }
+
 /* Make collapsible panel title visually match the h4 heading we inject */
-.formio-section-panel > .panel-heading,
+.formio-section-panel>.panel-heading,
 .formio-section-panel .panel-heading {
   display: flex !important;
   align-items: center !important;
@@ -351,8 +362,10 @@ code {
 .formio-section-panel .panel-heading .panel-title,
 .formio-section-panel .panel-heading .panel-title a,
 .formio-section-panel .panel-heading .panel-title span {
-  font-weight: 600 !important; /* make it bold */
-  font-size: 1.1rem !important; /* match your injected h4 */
+  font-weight: 600 !important;
+  /* make it bold */
+  font-size: 1.1rem !important;
+  /* match your injected h4 */
   color: #111 !important;
   margin: 0 !important;
   line-height: 1.2 !important;
@@ -372,21 +385,25 @@ code {
 /* Style the disabled select field */
 .formio-component-select select:disabled,
 .formio-component-select .form-control[disabled] {
-  background-color: #d1d5db; /* Light gray background */
-  cursor: not-allowed; /* Optional: make it clear that the field is disabled */
+  background-color: #d1d5db;
+  /* Light gray background */
+  cursor: not-allowed;
+  /* Optional: make it clear that the field is disabled */
 }
 
 /* Style the disabled dropdown */
-.formio-component-select
-  .choices__list--dropdown[aria-expanded="false"]:disabled,
+.formio-component-select .choices__list--dropdown[aria-expanded="false"]:disabled,
 .formio-component-select .choices__item[aria-disabled="true"] {
-  background-color: #d1d5db; /* Same light gray background */
-  cursor: not-allowed; /* Make it clear that the options are not clickable */
+  background-color: #d1d5db;
+  /* Same light gray background */
+  cursor: not-allowed;
+  /* Make it clear that the options are not clickable */
 }
 
 /* Make the input area in the dropdown look disabled */
 .formio-component-select .choices__input--cloned[disabled] {
-  background-color: #d1d5db; /* Light gray */
+  background-color: #d1d5db;
+  /* Light gray */
   cursor: not-allowed;
 }
 
@@ -404,42 +421,40 @@ code {
 }
 
 
-.formio-component-goalFlexRow > .formio-component {
+.formio-component-goalFlexRow>.formio-component {
   flex: 1 1 200px !important;
   min-width: 200px;
   max-width: 400px;
   margin-right: 16px;
 }
 
-.row.formio-component.formio-component-columns.formio-component-columns.formio-component-label-hidden.pmake-flex{
+.row.formio-component.formio-component-columns.formio-component-columns.formio-component-label-hidden.pmake-flex {
   flex-direction: row !important;
   gap: 16px !important;
   margin: 0 !important;
 }
 
-.pmake-hide-add-remove tfoot,.pmake-hide-add-remove .formio-button-remove-row{
+.pmake-hide-add-remove tfoot,
+.pmake-hide-add-remove .formio-button-remove-row {
   display: none !important;
 }
 
-.pmake-hide-add-remove td:nth-of-type(2), th{
+.pmake-hide-add-remove td:nth-of-type(2),
+.pmake-hide-add-remove th {
   display: none !important;
 }
 
-.pmake-hide-add-remove .row.formio-component.formio-component-columns.formio-component-goalColumns.formio-component-label-hidden{
+.pmake-hide-add-remove .row.formio-component.formio-component-columns.formio-component-goalColumns.formio-component-label-hidden {
   margin: 0px !important;
   padding: 0px !important;
 }
 
-.pmake-hide-add-remove .row.formio-component.formio-component-columns.formio-component-subgoalColumns.formio-component-label-hidden{
+.pmake-hide-add-remove .row.formio-component.formio-component-columns.formio-component-subgoalColumns.formio-component-label-hidden {
   margin: 0px !important;
   padding: 0px !important;
 }
 
-.pmake-hide-add-remove td[ref="datagrid-subgoals"]{
-  border: 2px solid red !important;
-}
-
-.p-grid-cols-4{
+.p-grid-cols-4 {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 16px !important;
@@ -452,12 +467,11 @@ code {
 }
 
 .pmake-hide-add-remove table.datagrid-table.table-bordered {
- border-collapse: separate !important;
- border: none !important;
+  border-collapse: separate !important;
+  border: none !important;
 }
 
-.pmake-hide-add-remove table.datagrid-table.table-bordered tr td{
+.pmake-hide-add-remove table.datagrid-table.table-bordered tr td {
   border: 2px solid #ddd !important;
   border-radius: 5px;
 }
-

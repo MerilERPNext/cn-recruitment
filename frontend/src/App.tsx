@@ -25,7 +25,10 @@ import {
   preloadAdjacentRoutes,
 } from "./utils/routePreloader";
 import { useCurrentUser } from "./hooks/useCurrentUser";
+import { registerCustomComponents } from "./formio/registerCustomComponents";
 
+
+registerCustomComponents();
 const App: React.FC = () => {
   const { data: currentUser, isLoading, } = useCurrentUser();
   const location = useLocation();
@@ -42,6 +45,8 @@ const App: React.FC = () => {
     );
 
   const navigate = useNavigate();
+
+
 
   useEffect(() => {
     if (isLoading) return;

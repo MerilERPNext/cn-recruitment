@@ -2,48 +2,61 @@ import { GoalPlanId } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const getAllGoalPlans = async (
-employeeId: string,
+  employeeId: string,
 ): Promise<GoalPlanId[]> => {
-    const response = await FrappeAPI.getMethod(
+  const response = await FrappeAPI.getMethod(
     "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.get_assigned_goal_plan",
     {
-        employee_id: employeeId
+      employee_id: employeeId
     }
-    );
-    return response as GoalPlanId[];
+  );
+
+  if ((response as GenericResponse).status === "error") {
+    throw new Error((response as GenericResponse).message);
+  }
+
+  return response as GoalPlanId[];
 };
 
 export const addGoalRequest = async (
-    body: Record<string, unknown>
-  ) => {
-    try {
-      const response =  await FrappeAPI.callMethod(
-        "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.add_goals_in_goal_plan",
-        body
-      );
+  body: Record<string, unknown>
+) => {
+  try {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.add_goals_in_goal_plan",
+      body
+    );
 
-      return response;
-    } catch (error) {
-      console.error("📡 Error while adding goal request in:", error);
-      throw error;
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
     }
-  };
 
-  export const updateGoalRequest = async (
-    body: Record<string, unknown>
-  ) => {
-    try {
-      const response =  await FrappeAPI.callMethod(
-        "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.update_goal_plan_items",
-        body
-      );
+    return response;
+  } catch (error) {
+    console.error("📡 Error while adding goal request in:", error);
+    throw error;
+  }
+};
 
-      return response;
-    } catch (error) {
-      console.error("📡 Error while Updating goal request in:", error);
-      throw error;
+export const updateGoalRequest = async (
+  body: Record<string, unknown>
+) => {
+  try {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.update_goal_plan_items",
+      body
+    );
+
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
     }
-  };
+
+    return response;
+  } catch (error) {
+    console.error("📡 Error while Updating goal request in:", error);
+    throw error;
+  }
+};
 
 
 export function groupByIsGroup(items: any[]) {
@@ -66,25 +79,31 @@ export function groupByIsGroup(items: any[]) {
   return result;
 }
 
-export const getGoalDetails = async(
+export const getGoalDetails = async (
   goalId: string) => {
-    try{
+  try {
     const response = await FrappeAPI.getMethod(
-     "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.get_goal_details",
-    {
+      "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.get_goal_details",
+      {
         goal_name: goalId
-    }
+      }
     );
 
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
+
     return response;
-  }catch(error){
-    console.warn("get goals Error: ", error)
+  } catch (error) {
+    console.warn("get goals Error: ", error);
+    throw error;
   }
 }
 
-export const getGoalPlanDetails = async({goal_plan_framework, is_self, user}:{
-  goal_plan_framework: string, is_self?: boolean, user?: string }) => {
-    try{
+export const getGoalPlanDetails = async ({ goal_plan_framework, is_self, user }: {
+  goal_plan_framework: string, is_self?: boolean, user?: string
+}) => {
+  try {
     const params: Record<string, unknown> = { goal_plan_framework };
 
     if (typeof is_self === "boolean") {
@@ -100,13 +119,18 @@ export const getGoalPlanDetails = async({goal_plan_framework, is_self, user}:{
       params
     );
 
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
+
     return response;
-  }catch(error){
-    console.warn("get goals Error: ", error)
+  } catch (error) {
+    console.warn("get goals Error: ", error);
+    throw error;
   }
 }
 
-export interface CheckInButtonVisibilityResponse  {
+export interface CheckInButtonVisibilityResponse {
   checkin_description: string;
   checkin_status: string;
   due_date: string;
@@ -114,9 +138,9 @@ export interface CheckInButtonVisibilityResponse  {
   show_request_checkin: boolean;
 }
 
-export const getCheckInButtonVisibility = async(
-  goal_plan: string, employee?: string, user?: string ) : Promise<CheckInButtonVisibilityResponse>  => {
-    try{
+export const getCheckInButtonVisibility = async (
+  goal_plan: string, employee?: string, user?: string): Promise<CheckInButtonVisibilityResponse> => {
+  try {
     const params: Record<string, unknown> = { goal_plan };
 
     if (typeof employee === "string") {
@@ -132,22 +156,30 @@ export const getCheckInButtonVisibility = async(
       params
     );
 
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
+
     return response as CheckInButtonVisibilityResponse;
-  }catch(error){
+  } catch (error) {
     console.warn("get goals Error: ", error)
     throw error;
   }
-  }
+}
 
 
-  export const RequestCheckin = async (
-    body : any
+export const RequestCheckin = async (
+  body: any
 ) => {
   try {
-    const response =  await FrappeAPI.callMethod(
+    const response = await FrappeAPI.callMethod(
       "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.request_checkin",
       body
     );
+
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
 
     return response;
   } catch (error) {
@@ -156,14 +188,18 @@ export const getCheckInButtonVisibility = async(
   }
 };
 
- export const Checkin = async (
-    body : any
+export const Checkin = async (
+  body: any
 ) => {
   try {
-    const response =  await FrappeAPI.callMethod(
+    const response = await FrappeAPI.callMethod(
       "cn_pms.cn_performance_management.doctype.goal_plan.goal_plan.employee_checkin",
       body
     );
+
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
 
     return response;
   } catch (error) {
@@ -181,10 +217,102 @@ export const getCheckinCommentConfig = async (
       { goal_plan }
     );
 
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
+
     return response;
   } catch (error) {
     console.warn("get checkin comment config Error: ", error);
+    throw error;
   }
 };
 
+export const getGoalPlanFrameworkSettings = async (
+  goal_plan: string,
+) => {
+  try {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.goal_framework_api.get_goal_plan_framework_settings",
+      { goal_plan_name: goal_plan }
+    );
+
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
+
+    return response;
+  } catch (error) {
+    console.error("get checkin comment config Error: ", error);
+    throw error;
+  }
+};
+
+export const getGoalAndSubgoalFieldConfigs = async (
+  goal_plan: string,
+) => {
+  try {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.goal_framework_api.get_goal_and_subgoal_field_configs",
+      { goal_plan_name: goal_plan }
+    );
+
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
+
+    return response;
+  } catch (error) {
+    console.error("get checkin comment config Error: ", error);
+    throw error;
+  }
+};
+
+type StatusType = "error" | "success";
+interface GenericResponse {
+  status: StatusType;
+  message: string;
+}
+export const getReviewRecordListView = async (
+  user: string,
+  tab: "Team" | "Self"
+) => {
+  try {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.review_record.review_record_list_view",
+      {
+        user: user,
+        tab: tab
+      }
+    );
+
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
+    return response;
+  } catch (error) {
+    console.error("get checkin comment config Error: ", error);
+    throw error;
+  }
+};
+
+export const getReviewRecordDetails = async (
+  user: string,
+  review_record_name: string
+) => {
+  try {
+    const response = await FrappeAPI.getMethod(
+      "cn_pms.cn_performance_management.api.review_record.get_review_record_details",
+      { user, review_record_name }
+    );
+
+    if ((response as GenericResponse).status === "error") {
+      throw new Error((response as GenericResponse).message);
+    }
+    return response;
+  } catch (error) {
+    console.error("get checkin comment config Error: ", error);
+    throw error;
+  }
+};
 

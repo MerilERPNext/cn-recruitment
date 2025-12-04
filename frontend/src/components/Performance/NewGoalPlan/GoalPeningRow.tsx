@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import DropdownMenu from '../../shared/DropDownMenu';
-import { ChevronDown, Edit, MoreVertical, Trash2 } from 'lucide-react';
-import type { GroupGoalItem, SubGoal } from '../../../types/goal';
+import { ChevronDown, Edit, Eye, MoreVertical, Trash2 } from 'lucide-react';
+import type { GoalPlanFrameworkSettings, GroupGoalItem, SubGoal } from '../../../types/goal';
 import SubGoalRow from './SubGoalRow';
 import CreateGoalDialog from './CreateGoalDialog';
 import { formatDashedDate } from '../../../utils/formatToIndianDate';
@@ -10,9 +10,12 @@ interface GoalPeningRowProps {
     gtc: string;
     data: GroupGoalItem;
     isLastItem: boolean;
+    goalPlanFramworkSettings: GoalPlanFrameworkSettings | undefined;
+    currentPage: "Self" | "Team";
+    goalPlanName?: string | null;
 }
 
-const GoalPeningRow: React.FC<GoalPeningRowProps> = ({ gtc, data, isLastItem }) => {
+const GoalPeningRow: React.FC<GoalPeningRowProps> = ({ gtc, data, isLastItem, goalPlanFramworkSettings, currentPage, goalPlanName }) => {
     const statusColors: Record<string, string> = {
         "Not Started": "bg-gray-200 text-gray-700",
         "In Progress": "bg-blue-100 text-blue-700",
@@ -23,6 +26,11 @@ const GoalPeningRow: React.FC<GoalPeningRowProps> = ({ gtc, data, isLastItem }) 
     };
     const [showEditModel, setShowEditModel] = useState(false);
     const [showSubGoals, setShowSubGoals] = useState(false);
+
+    const canEdit = true || currentPage=="Self" && goalPlanFramworkSettings?.allow_employees_to_edit_goals;
+    const canDelete = goalPlanFramworkSettings?.allow_employee_and_approver_to_delete_goals;
+    const [actionType, setActionType] = useState<"Update"|"View">("Update");
+
     return (
         <div className='flex flex-col'>
             <div className='grid grid-cols-4 items-center gap-4 px-4 bg-white py-2 border-b border-gray-200 hover:bg-gray-50 cursor-pointer '
@@ -46,9 +54,38 @@ const GoalPeningRow: React.FC<GoalPeningRowProps> = ({ gtc, data, isLastItem }) 
                     <DropdownMenu
                         placement={isLastItem && (!showSubGoals || data.subgoals.length==0) ? 'center-left' : 'bottom-left'}
                         items={[
-                            { label: "Edit", icon: <Edit className="h-4 w-4" />, onClick: () => setShowEditModel(true) },
-                            { label: "Delete", icon: <Trash2 className="h-4 w-4 text-red-500" />, onClick: () => console.log("Delete") },
-                        ]}
+                                // VIEW option (always visible — or add condition if needed)
+                                {
+                                    label: "View",
+                                    icon: <Eye className="h-4 w-4" />,
+                                    onClick: () => {setActionType("View");setShowEditModel(true)},
+                                },
+
+                                // EDIT option
+                                ...(canEdit
+                                    ? [
+                                        {
+                                            label: "Edit",
+                                            icon: <Edit className="h-4 w-4" />,
+                                            onClick: ()=> {setActionType("Update");setShowEditModel(true)},
+                                        },
+                                    ]
+                                    : []
+                                ),
+
+                                // DELETE option
+                                ...(canDelete
+                                    ? [
+                                        {
+                                            label: "Delete",
+                                            icon: <Trash2 className="h-4 w-4 text-red-500" />,
+                                            onClick: () => console.log("Delete"),
+                                        },
+                                    ]
+                                    : []
+                                ),
+                            ]}
+
                     >
                         <button className="p-2 border-1 rounded-lg hover:bg-gray-200">
                             <MoreVertical className="h-5 w-5" />
@@ -58,11 +95,11 @@ const GoalPeningRow: React.FC<GoalPeningRowProps> = ({ gtc, data, isLastItem }) 
             </div>
             <div >
                 {showSubGoals && data.subgoals.map((subgoal: SubGoal, index: Number) => (
-                    <SubGoalRow gtc={gtc} data={subgoal} isLastSubGoal={index === data.subgoals.length - 1}  />
+                    <SubGoalRow key={subgoal.name} gtc={gtc} data={subgoal} isLastSubGoal={index === data.subgoals.length - 1}  />
                 ))}
             </div>
             {showEditModel &&
-                <CreateGoalDialog  actionType='Update' defaultData={data} isOpen={showEditModel} onClose={() => setShowEditModel(false)} />
+                <CreateGoalDialog goalPlanName={goalPlanName} actionType={actionType} defaultData={data} isOpen={showEditModel} onClose={() => setShowEditModel(false)} />
             }
         </div>
     );

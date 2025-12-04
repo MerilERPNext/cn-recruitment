@@ -65,6 +65,7 @@
                   "type": "datetime",
                   "widget": "calendar",
                   "format": "dd-MM-yyyy",
+                  "defaultValue": "{{ (new Date()).toISOString() }}",
                   "validate": {
                     "required": true
                   },
@@ -109,7 +110,7 @@
               "width": 6,
               "components": [
                 {
-                  "label": "Achievement",
+                  "label": "Achievement %",
                   "key": "achievement",
                   "type": "number",
                   "input": true,
@@ -129,13 +130,12 @@
                   "validate": {
                     "required": true
                   },
-                  "dataSrc": "url",
+                  "dataSrc": "custom",
                   "data": {
-                    "url": "/api/resource/Scorecard%20Pillar?fields=[\"name\",\"scorecard_pillar_name\"]"
+                    "custom": "const opts = instance.root?.options?.goalPlanFrameworkSettings?.scorecard_pillar_options || []; return opts.map(o => ({ label: o.scorecard_pillar, value: o.name }));"
                   },
-                  "selectValues": "data",
-                  "valueProperty": "name",
-                  "template": "{{ item.scorecard_pillar_name }}",
+                  "template": "<span>{{ item.label }}</span>",
+                  "valueProperty": "value",
                   "searchEnabled": true,
                   "lazyLoad": false
                 }
@@ -233,41 +233,42 @@
                           "type": "datetime",
                           "widget": "calendar",
                           "format": "dd-MM-yyyy",
+                           "defaultValue": "{{ (new Date()).toISOString() }}",
                           "validate": {
                             "required": true
                           },
+                           "customDefaultValue": "value = new Date();",
                           "input": true,
                           "customClass": "w-full mb-4"
-                        }
-                      ]
-                    },
-                    {
-                      "width": 6,
-                      "components": [
+                        },
                         {
-                          "label": "End Date",
-                          "key": "subEndDate",
-                          "type": "datetime",
-                          "widget": "calendar",
-                          "format": "dd-MM-yyyy",
+                          "label": "Target",
+                          "key": "target",
+                          "type": "number",
+                          "placeholder": "Enter Target Value",
+                          "input": true,
                           "validate": {
                             "required": true
                           },
-                          "input": true,
                           "customClass": "w-full mb-4"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "columns",
-                  "key": "subGoalMetrics",
-                  "customClass": "mb-4",
-                  "columns": [
-                    {
-                      "width": 6,
-                      "components": [
+                        },
+                        {
+                          "label": "Metric",
+                          "key": "metric",
+                          "type": "select",
+                          "placeholder": "Select Metric",
+                          "input": true,
+                          "dataSrc": "custom",
+                          "data": {
+                            "custom": "const opts = instance.root?.options?.goalPlanFrameworkSettings?.metric_options || []; return opts.map(o => ({ label: o.metric_name, value: o.name }));"
+                          },
+                          "template": "<span>{{ item.label }}</span>",
+                          "valueProperty": "label",
+                          "validate": {
+                            "required": false
+                          },
+                          "customClass": "w-full mb-4"
+                        },
                         {
                           "label": "Achieved",
                           "key": "subAchieved",
@@ -285,6 +286,43 @@
                       "width": 6,
                       "components": [
                         {
+                          "label": "End Date",
+                          "key": "subEndDate",
+                          "type": "datetime",
+                          "widget": "calendar",
+                          "format": "dd-MM-yyyy",
+                          "defaultValue": "{{ (new Date()).toISOString() }}",
+                          "validate": {
+                            "required": true
+                          },
+                          "input": true,
+                           "customDefaultValue": "value = new Date();",
+                          "customClass": "w-full mb-4"
+                        },
+                        {
+                          "label": "Target Types",
+                          "key": "target_type",
+                          "type": "select",
+                          "placeholder": "Select Target Type",
+                          "input": true,
+                          "data": {
+                            "values": [
+                              {
+                                "label": "Is Equal To", 
+                                "value": "is_equal_to"
+                              },
+                              {
+                                "label": "Is Less than or equal to",
+                                "value": "is_less_than_or_equal_to"
+                              },
+                              {
+                                "label": "Is More than or equal to",
+                                "value": "is_more_than_or_equal_to"
+                              }
+                            ]
+                          }
+                        },
+                        {
                           "label": "Weightage %",
                           "key": "subWeightage",
                           "type": "number",
@@ -296,7 +334,7 @@
                           "customClass": "w-full mb-4"
                         },
                         {
-                          "label": "Achievement",
+                          "label": "Achievement %",
                           "key": "subAchievement",
                           "type": "number",
                           "input": true,

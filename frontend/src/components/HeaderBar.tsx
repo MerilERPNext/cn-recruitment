@@ -3,6 +3,7 @@ import { IoChevronBackOutline } from "react-icons/io5";
 
 interface HeaderBarProps {
   title?: string;
+  titleTag?: React.ReactElement;
   showBackButton?: boolean;
   onBack?: () => void;
   rightSlot?: React.ReactNode;
@@ -11,6 +12,7 @@ interface HeaderBarProps {
 
 const HeaderBar: React.FC<HeaderBarProps> = ({
   title = "",
+  titleTag,
   showBackButton = true,
   onBack,
   rightSlot,
@@ -28,7 +30,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             {leftIcon || <IoChevronBackOutline size={20} />}
           </button>
         )}
-        {title && (
+        {titleTag ? 
+        <div className="mx-auto"> {titleTag} </div>
+        :title && (
           <h1 className="w-full justify-center text-center module-title">
             {title}
           </h1>
