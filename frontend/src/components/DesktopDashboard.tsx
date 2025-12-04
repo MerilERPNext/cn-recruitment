@@ -345,15 +345,15 @@ export default function DesktopDashboard() {
         className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out`}
       >
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-300 border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
           <div>
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-xl font-bold text-white">
                   Welcome,{" "}
                   {currentEmployee?.employee_name || currentUser?.username}!
                 </h1>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-50">
                   Here's your dashboard for today.
                 </p>
               </>
@@ -377,7 +377,7 @@ export default function DesktopDashboard() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate("/webapp/notification-log")}
-              className="relative p-2 hover:bg-blue-50 rounded-lg transition-colors"
+              className="relative p-2 hover:bg-blue-500 rounded-lg transition-colors"
             >
               <NotificationBell />
             </button>
@@ -386,13 +386,13 @@ export default function DesktopDashboard() {
               {currentUserIsAdmin ? (
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-900 text-right">
+                    <p className="text-sm font-medium text-white text-right">
                       {currentUser?.username}
                     </p>
-                    <p className="text-xs text-gray-500 text-right">
+                    <p className="text-xs text-gray-50 text-right">
                       Employee ID: {currentEmployee?.employee}
                     </p>
                   </div>
@@ -404,7 +404,7 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                    className={`w-4 h-4 text-white transition-transform ${
                       showProfileDropdown ? "rotate-180" : ""
                     }`}
                   />
@@ -417,13 +417,13 @@ export default function DesktopDashboard() {
               ) : (
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-blue-50 rounded-lg p-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-900 text-right">
+                    <p className="text-sm font-medium text-white text-right">
                       {currentEmployee?.employee_name}
                     </p>
-                    <p className="text-xs text-gray-500 text-right">
+                    <p className="text-xs text-gray-50 text-right">
                       Employee ID: {currentEmployee?.employee}
                     </p>
                   </div>
@@ -435,7 +435,7 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                    className={`w-4 h-4 text-white transition-transform ${
                       showProfileDropdown ? "rotate-180" : ""
                     }`}
                   />
@@ -586,7 +586,7 @@ export default function DesktopDashboard() {
             )}
 
             {/* Hero Banner */}
-            <div className="bg-blue-200 mb-2 rounded-lg p-6 text-gray-800 overflow-hidden">
+            <div className="bg-teal-100 mb-2 rounded-lg p-6 text-gray-800 overflow-hidden">
               <div className="relative z-0">
                 <h2 className="text-xl font-bold mb-2">Keep Up the Rhythm!</h2>
                 <p className="text-gray-500">

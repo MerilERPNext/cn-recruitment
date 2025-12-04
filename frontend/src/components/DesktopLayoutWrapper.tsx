@@ -176,8 +176,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           style={{ height: "73px" }}
         >
           <div>
-            <h1 className="text-xl font-bold text-gray-50">{getPageTitle()}</h1>
-            <p className="text-xs text-gray-200">
+            <h1 className="text-xl font-bold text-white">{getPageTitle()}</h1>
+            <p className="text-xs text-gray-50">
               Manage your {getPageTitle().toLowerCase()}
             </p>
           </div>
@@ -204,7 +204,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
               {currentUserIsAdmin ? (
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-blue-400 rounded-lg p-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
                 >
                   <div>
                     <p className="text-sm font-medium text-white text-right">

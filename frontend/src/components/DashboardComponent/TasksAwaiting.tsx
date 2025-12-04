@@ -245,7 +245,7 @@ const TasksAwaiting: React.FC = () => {
         />
       )}
 
-      <div className="max-h-[40rem] overflow-y-auto">
+      <div className="max-h-[38.9rem] overflow-y-auto">
         {filtered.map((item) => (
           <MyToDoItem key={item.name} item={item} />
         ))}
