@@ -69,24 +69,24 @@ const TeamAttendanceDetails = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employeee",
-        "Explanation",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "Actions",
-      ]
+      "Select",
+      "Employeee",
+      "Explanation",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employeee",
-        "Explanation",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "Actions",
-      ];
+      "Employeee",
+      "Explanation",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["5%", "10%", "15%", "8%", "8%", "8%", "10%", "20%"]
@@ -114,13 +114,39 @@ const TeamAttendanceDetails = () => {
                 showPagination={true}
                 infiniteScroll={true}
                 loadMorePagination={false}
+                isSearch={true}
+                isFilter={true}
+                filterFields={[
+                  {
+                    fieldname: "status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: [
+                      "Pending",
+                      "Approved",
+                      "Rejected",
+                    ],
+
+                  },
+                  {
+                    fieldname: "allocated_to",
+                    label: "Allocated to",
+                    fieldtype: "Data",
+                  },
+                  {
+                    fieldname: "due_date",
+                    label: "Due Date",
+                    fieldtype: "Date",
+                  },
+
+                ]}
                 renderCardContent={(item) => (
                   <ApprovalCard
                     isSelected={item?.isSelected}
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}
                     onAction={item?.onAction}
-                    onClick={(request: any) => handleRequestClick(request)}
+                    onClick={(request: MyAttendanceRequest) => handleRequestClick(request)}
                     loadingAction={item?.loadingAction}
                     isBulkSelectEnabled={isBulkSelectEnabled}
                   />

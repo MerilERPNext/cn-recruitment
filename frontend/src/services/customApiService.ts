@@ -14,6 +14,7 @@ interface FetchParams {
   searchTerm?: string;
   filters?: Record<string, unknown>;
   orderBy?: string;
+  searchFields?: string[];
   [key: string]: unknown;
 }
 
@@ -64,13 +65,16 @@ export const customApiService = {
     params: FetchParams
   ): Promise<FrappePageResponse> {
     try {
+      // Determine which searchFields to use - params takes precedence over customAPI config
+      const searchFields = params.searchFields || customAPI.searchFields;
+      
       // Prepare API call parameters with correct parameter names
       const apiParams: Record<string, unknown> = {
         ...customAPI.params,
-        ...(params.searchTerm && customAPI.searchFields
+        ...(params.searchTerm && searchFields
           ? {
               search_term: params.searchTerm,
-              search_fields: customAPI.searchFields,
+              search_fields: searchFields,
             }
           : {}),
         ...(params.pageParam !== undefined ? { start: params.pageParam } : {}),

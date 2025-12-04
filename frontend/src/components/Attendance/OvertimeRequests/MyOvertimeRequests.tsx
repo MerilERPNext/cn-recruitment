@@ -114,8 +114,30 @@ const MyOvertimeRequests = () => {
                   }}
                   onRefetchComplete={handleMyRequestsRefetchComplete}
                   refetchTrigger={refetchMyRequestsList || refetchAttendance}
-                  isSearch={false}
+                  isSearch={true}
                   isFilter={true}
+                  filterFields={[
+                    {
+                      fieldname: "status",
+                      label: "Status",
+                      fieldtype: "Select",
+                      options: [
+                        "Open",
+                        "Approved",
+                        "Rejected",
+                      ],
+                    },
+                    {
+                      fieldname: "allocated_to",
+                      label: "Allocated to",
+                      fieldtype: "Data",
+                    },
+                    {
+                      fieldname: "due_date",
+                      label: "Due Date",
+                      fieldtype: "Date",
+                    },
+                  ]}
                   pageSize={10}
                   showRefreshButton={false}
                   orderBy="modified desc"

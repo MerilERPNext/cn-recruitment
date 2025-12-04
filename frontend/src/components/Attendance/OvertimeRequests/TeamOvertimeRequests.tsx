@@ -97,6 +97,30 @@ const TeamOvertimeRequests = () => {
                 showPagination={true}
                 loadMorePagination={false}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                isSearch={true}
+                isFilter={true}
+                filterFields={[
+                  {
+                    fieldname: "status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: [
+                      "Open",
+                      "Approved",
+                      "Rejected",
+                    ],
+                  },
+                  {
+                    fieldname: "allocated_to",
+                    label: "Allocated to",
+                    fieldtype: "Data",
+                  },
+                  {
+                    fieldname: "due_date",
+                    label: "Due Date",
+                    fieldtype: "Date",
+                  },
+                ]}
                 renderCardContent={(item) => (
                   <OvertimeApprovalCard
                     isSelected={item?.isSelected}

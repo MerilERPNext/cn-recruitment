@@ -129,14 +129,39 @@ const AttendanceRequest = ({
                       }}
                       onRefetchComplete={handleRefetchComplete}
                       refetchTrigger={refetchAttendance}
-                      isSearch={false}
-                      isFilter={false}
+
                       pageSize={pageSize}
                       showRefreshButton={false}
                       orderBy="modified desc"
                       showPagination={showPagination}
                       infiniteScroll={true}
                       loadMorePagination={false}
+                      isSearch={true}
+                      isFilter={true}
+                      filterFields={[
+                        {
+                          fieldname: "status",
+                          label: "Status",
+                          fieldtype: "Select",
+                          options: [
+                            "Pending",
+                            "Approved",
+                            "Rejected",
+                          ],
+
+                        },
+                        {
+                          fieldname: "allocated_to",
+                          label: "Allocated to",
+                          fieldtype: "Data",
+                        },
+                        {
+                          fieldname: "due_date",
+                          label: "Due Date",
+                          fieldtype: "Date",
+                        },
+
+                      ]}
                     />
                   ) : (
                     <></>

@@ -63,7 +63,7 @@ export interface PostListComponentProps<T> {
   totalCount: number;
 }
 
-interface FilterField {
+export interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
@@ -146,6 +146,7 @@ const DataListView = <T extends BaseItem>({
 
   const [searchTerm, setSearchTerm] = useState(initialSearchQuery);
   const [filters, setFilters] = useState(defaultFilters);
+  const [debouncedFilters, setDebouncedFilters] = useState(defaultFilters);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearchTerm, setDebouncedSearchTerm] =
@@ -180,6 +181,7 @@ const DataListView = <T extends BaseItem>({
 
   useEffect(() => {
     setFilters(defaultFilters || {});
+    setDebouncedFilters(defaultFilters || {});
   }, [defaultFiltersString]);
 
   // Debounce search term
@@ -190,10 +192,18 @@ const DataListView = <T extends BaseItem>({
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Debounce filters
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [filters]);
+
   // Memoize stringified filters to avoid complex dependency
   const currentFiltersString = useMemo(
-    () => JSON.stringify(filters),
-    [filters]
+    () => JSON.stringify(debouncedFilters),
+    [debouncedFilters]
   );
 
   // Reset to first page when search or filters change
@@ -225,14 +235,14 @@ const DataListView = <T extends BaseItem>({
     () => ({
       pageSize,
       searchTerm: debouncedSearchTerm,
-      filters: { ...filters, ...queryParamsFilters },
+      filters: { ...debouncedFilters, ...queryParamsFilters },
       searchFields,
       orderBy,
     }),
     [
       pageSize,
       debouncedSearchTerm,
-      filters,
+      debouncedFilters,
       queryParamsFilters,
       searchFields,
       orderBy,
@@ -496,6 +506,7 @@ const DataListView = <T extends BaseItem>({
 
   const clearFilters = () => {
     setFilters({});
+    setDebouncedFilters({});
     setSearchTerm("");
     setDebouncedSearchTerm("");
     setQueryParamsFilters({});
@@ -789,7 +800,7 @@ const DataListView = <T extends BaseItem>({
       {/* Header */}
       <div className="border-gray-200 pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-1 w-full">
+          <div className="flex items-center w-full">
             {isSearch && (
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -807,7 +818,7 @@ const DataListView = <T extends BaseItem>({
             {isFilter && filterFields.length > 0 && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${showFilters ? "bg-gray-100" : ""
+                className={`h-full flex items-center px-3 py-2 shadow-sm text-sm leading-4 font-medium  text-gray-700 bg-white hover:bg-gray-50 focus:outline-none ${showFilters ? "bg-gray-100" : ""
                   }`}
               >
                 <Filter className="h-4 w-4" />

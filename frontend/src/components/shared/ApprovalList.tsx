@@ -1,5 +1,5 @@
 import { useState, ReactNode, useCallback, useEffect } from "react";
-import DataListView from "../DataListView";
+import DataListView, { FilterField } from "../DataListView";
 import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
@@ -31,6 +31,9 @@ type ApprovalListProps = {
   onApprovalRefetchComplete?: () => void;
   infiniteScroll?: boolean;
   loadMorePagination?: boolean;
+  filterFields?: FilterField[]
+  isFilter?: boolean
+  isSearch?: boolean
 };
 
 const ApprovalList = ({
@@ -44,6 +47,9 @@ const ApprovalList = ({
   showPagination = true,
   infiniteScroll = true,
   loadMorePagination = false,
+  filterFields,
+  isFilter = false,
+  isSearch = false
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
@@ -97,8 +103,8 @@ const ApprovalList = ({
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-                req?.custom_doctype_actions_with_form.replace(/'/g, '"')
-              )
+              req?.custom_doctype_actions_with_form.replace(/'/g, '"')
+            )
             : [];
           if (
             actionsWithForm?.includes("Approve") ||
@@ -182,8 +188,7 @@ const ApprovalList = ({
         {
           onSuccess: () => {
             toast.success(
-              `Requests ${
-                action === "Reject" ? "rejected" : action.toLowerCase()
+              `Requests ${action === "Reject" ? "rejected" : action.toLowerCase()
               }d successfully!`
             );
             triggerRefetch();
@@ -216,8 +221,9 @@ const ApprovalList = ({
             fields: ["*"],
           },
         }}
-        isSearch={false}
-        isFilter={false}
+        isSearch={isSearch}
+        isFilter={isFilter}
+        filterFields={filterFields}
         pageSize={pageSize}
         showPagination={showPagination}
         showRefreshButton={false}
@@ -229,14 +235,14 @@ const ApprovalList = ({
             {(status === "Open" ||
               status === "Pending" ||
               status === "Draft") && (
-              <BulkActionBar
-                selectedIds={selectedIds}
-                pendingRequests={allRequests}
-                onSelectAll={handleSelectAll}
-                onBulkAction={handleBulkAction}
-                loadingAction={bulkLoading}
-              />
-            )}
+                <BulkActionBar
+                  selectedIds={selectedIds}
+                  pendingRequests={allRequests}
+                  onSelectAll={handleSelectAll}
+                  onBulkAction={handleBulkAction}
+                  loadingAction={bulkLoading}
+                />
+              )}
           </div>
         )}
         ItemComponent={(props: { item: any }) => {
