@@ -18,6 +18,7 @@ interface AttendanceChartProps {
   avg_working_hours?: number;
   avg_overtime?: number;
   className?: string;
+  selectedMonth?: Date;
 }
 
 const AttendanceChart: React.FC<AttendanceChartProps> = ({
@@ -28,17 +29,18 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
   avg_overtime = 0,
   avg_late_by = 0,
   className = "",
+  selectedMonth,
 }) => {
   const { isDesktop } = useScreenSize();
 
   const total = present + absent + leaves;
-  const presentPercent = total > 0 ? (present / total) * 100 : 0;
-  const absentPercent = total > 0 ? (absent / total) * 100 : 0;
+  // const presentPercent = total > 0 ? (present / total) * 100 : 0;
+  // const absentPercent = total > 0 ? (absent / total) * 100 : 0;
   // const leavesPercent = total > 0 ? (leaves / total) * 100 : 0;
 
   // Convert percentages to angles (360 degrees = 100%)
-  const presentAngle = (presentPercent / 100) * 360;
-  const absentAngle = (absentPercent / 100) * 360;
+  // const presentAngle = (presentPercent / 100) * 360;
+  // const absentAngle = (absentPercent / 100) * 360;
 
   // SVG path for donut segments
   const createArcPath = (
@@ -65,6 +67,25 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
     return `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z`;
   };
 
+  // Get days in current month
+  const getDaysInCurrentMonth = () => {
+    const today = selectedMonth || new Date();
+    return new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  };
+
+  const daysInMonth = getDaysInCurrentMonth();
+
+  // Percentages based on days in month
+  const presentPercent = (present / daysInMonth) * 100;
+  const absentPercent = (absent / daysInMonth) * 100;
+  const leavesPercent = (leaves / daysInMonth) * 100;
+
+  // Angles
+  const presentAngle = (presentPercent / 100) * 360;
+  const absentAngle = (absentPercent / 100) * 360;
+  const leavesAngle = (leavesPercent / 100) * 360;
+
+
   return (
     <div
       className={`bg-white p-6 rounded-lg border border-gray-200 ${className}`}
@@ -90,32 +111,54 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
               viewBox="0 0 200 200"
               className="transform -rotate-90"
             >
-              {/* Present segment */}
-              <path
-                d={createArcPath(0, presentAngle, 80, 50)}
-                fill="#10b981"
-                className="transition-all duration-700 hover:opacity-80"
+              {/* Base gray ring */}
+              <circle
+                cx="100"
+                cy="100"
+                r="65"
+                stroke="#e5e7eb"
+                strokeWidth="30"
+                fill="none"
               />
 
-              {/* Absent segment */}
-              <path
-                d={createArcPath(
-                  presentAngle,
-                  presentAngle + absentAngle,
-                  80,
-                  50
-                )}
-                fill="#ef4444"
-                className="transition-all duration-700 hover:opacity-80"
-              />
+              {/* Present */}
+              {present > 0 && (
+                <path
+                  d={createArcPath(0, presentAngle, 80, 50)}
+                  fill="#10b981"
+                  className="transition-all duration-700 hover:opacity-80"
+                />
+              )}
 
-              {/* Leaves segment */}
-              <path
-                d={createArcPath(presentAngle + absentAngle, 360, 80, 50)}
-                fill="#f59e0b"
-                className="transition-all duration-700 hover:opacity-80"
-              />
+              {/* Absent */}
+              {absent > 0 && (
+                <path
+                  d={createArcPath(
+                    presentAngle,
+                    presentAngle + absentAngle,
+                    80,
+                    50
+                  )}
+                  fill="#ef4444"
+                  className="transition-all duration-700 hover:opacity-80"
+                />
+              )}
+
+              {/* Leaves */}
+              {leaves > 0 && (
+                <path
+                  d={createArcPath(
+                    presentAngle + absentAngle,
+                    presentAngle + absentAngle + leavesAngle,
+                    80,
+                    50
+                  )}
+                  fill="#f59e0b"
+                  className="transition-all duration-700 hover:opacity-80"
+                />
+              )}
             </svg>
+
 
             {/* Center content */}
             <div className="absolute inset-0 flex items-center justify-center">
@@ -128,6 +171,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
             </div>
           </div>
         </div>
+
 
         {/* Statistics */}
         {/* Attendance Summary Cards */}

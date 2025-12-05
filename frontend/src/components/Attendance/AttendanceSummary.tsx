@@ -153,6 +153,7 @@ const AttendanceSummary = () => {
             Number(employeeAttendanceSummary?.avg_working_hours) || 0
           }
           avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
+          selectedMonth={currentDate}
         />
         {isDesktop ? (
           // Desktop Layout
