@@ -134,6 +134,11 @@ const TasksAwaiting: React.FC = () => {
 
   const filtered = useMemo(() => {
     if (activeCategory === "All") return fullData;
+
+    if (activeCategory === "Others") {
+      return fullData.filter((item) => !item.reference_type);
+    }
+
     return fullData.filter((item) => item.reference_type === activeCategory);
   }, [activeCategory, fullData]);
 
@@ -190,33 +195,6 @@ const TasksAwaiting: React.FC = () => {
           );
         })}
       </div>
-      {/* {fullData.length === 0 &&(
-        
-        <FrappeListView
-          doctype="ToDo"
-          ItemComponent={() => null}
-          isSearch={false}
-          pageSize={100}
-          orderBy="date desc"
-          onDataLoad={handleDataLoad}
-          defaultFilters={{
-            status: "Open",
-            allocated_to: currentEmployeeId || "",
-          }}
-          defaultFields={[
-            "name",
-            "description",
-            "owner",
-            "status",
-            "reference_type",
-            "reference_name",
-            "date",
-            "priority",
-            "allocated_to",
-          ]}
-          showPagination={false}
-        />
-      )} */}
 
       {currentEmployeeId && fullData.length === 0 && (
         <FrappeListView
@@ -228,7 +206,7 @@ const TasksAwaiting: React.FC = () => {
           onDataLoad={handleDataLoad}
           defaultFilters={{
             status: "Open",
-            allocated_to: currentEmployeeId, // always correct now
+            allocated_to: currentEmployeeId,
           }}
           defaultFields={[
             "name",
