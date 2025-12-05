@@ -101,8 +101,10 @@ const NotificationItem: React.FC<{
   }
 
   // Tab filter logic
-  if (activeTab === "read" && !isRead) return null;
-  if (activeTab === "unread" && isRead) return null;
+  if (!openDialog) {
+    if (activeTab === "read" && !isRead) return null;
+    if (activeTab === "unread" && isRead) return null;
+  }
 
   const getIcon = (type: string) => {
     switch (type?.toLowerCase()) {
