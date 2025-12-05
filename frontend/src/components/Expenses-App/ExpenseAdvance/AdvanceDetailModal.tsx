@@ -151,7 +151,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                         <tr>
                           <td
                             className="px-4 py-6 text-center text-gray-500"
-                            colSpan={5}
+                            colSpan={4}
                           >
                             No specific breakup items found for this advance.
                           </td>
