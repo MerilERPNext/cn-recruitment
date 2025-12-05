@@ -43,7 +43,6 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
     },
     {}
   );
-  if (!isLoading && !groupedHistory.length) return null
 
   return (
     <div className="address-form-container h-full">

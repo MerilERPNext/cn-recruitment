@@ -69,24 +69,24 @@ const TeamAttendanceDetails = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Employeee",
-      "Explanation",
-      "From Date",
-      "To Date",
-      "Due Date",
-      "Status",
-      "Actions",
-    ]
+        "Select",
+        "Employeee",
+        "Explanation",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "Actions",
+      ]
     : [
-      "Employeee",
-      "Explanation",
-      "From Date",
-      "To Date",
-      "Due Date",
-      "Status",
-      "Actions",
-    ];
+        "Employeee",
+        "Explanation",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "Actions",
+      ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["5%", "10%", "15%", "8%", "8%", "8%", "10%", "20%"]
@@ -121,12 +121,7 @@ const TeamAttendanceDetails = () => {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    options: [
-                      "Pending",
-                      "Approved",
-                      "Rejected",
-                    ],
-
+                    options: ["Pending", "Approved", "Rejected"],
                   },
                   {
                     fieldname: "allocated_to",
@@ -138,7 +133,6 @@ const TeamAttendanceDetails = () => {
                     label: "Due Date",
                     fieldtype: "Date",
                   },
-
                 ]}
                 renderCardContent={(item) => (
                   <ApprovalCard
@@ -146,7 +140,9 @@ const TeamAttendanceDetails = () => {
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}
                     onAction={item?.onAction}
-                    onClick={(request: MyAttendanceRequest) => handleRequestClick(request)}
+                    onClick={(request: MyAttendanceRequest) =>
+                      handleRequestClick(request)
+                    }
                     loadingAction={item?.loadingAction}
                     isBulkSelectEnabled={isBulkSelectEnabled}
                   />

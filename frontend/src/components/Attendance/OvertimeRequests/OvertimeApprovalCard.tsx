@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -26,7 +27,6 @@ const OvertimeApprovalCard = ({
   isBulkSelectEnabled,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
-  console.log(data, "------------->>>>>>>>>>>>>>");
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -133,7 +133,7 @@ const OvertimeApprovalCard = ({
           )}
 
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_document?.employee}
+            {data?.username}
           </div>
 
           <div className="text-gray-600 text-sm truncate text-start">
@@ -145,8 +145,7 @@ const OvertimeApprovalCard = ({
           </div>
 
           <div className="flex items-center justify-start">
-            <Tooltip content={data?.allocated_to}>
-
+            <Tooltip content={`Allocated to : ${data?.allocated_to}`}>
               <Badge
                 size="sm"
                 label={status?.label as string}
@@ -173,7 +172,7 @@ const OvertimeApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -256,7 +255,7 @@ const OvertimeApprovalCard = ({
                       }
                     >
                       {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

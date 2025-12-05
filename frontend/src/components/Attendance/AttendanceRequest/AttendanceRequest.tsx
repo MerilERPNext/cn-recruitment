@@ -129,7 +129,6 @@ const AttendanceRequest = ({
                       }}
                       onRefetchComplete={handleRefetchComplete}
                       refetchTrigger={refetchAttendance}
-
                       pageSize={pageSize}
                       showRefreshButton={false}
                       orderBy="modified desc"
@@ -143,12 +142,7 @@ const AttendanceRequest = ({
                           fieldname: "status",
                           label: "Status",
                           fieldtype: "Select",
-                          options: [
-                            "Pending",
-                            "Approved",
-                            "Rejected",
-                          ],
-
+                          options: ["Pending", "Approved", "Rejected"],
                         },
                         {
                           fieldname: "allocated_to",
@@ -160,7 +154,6 @@ const AttendanceRequest = ({
                           label: "Due Date",
                           fieldtype: "Date",
                         },
-
                       ]}
                     />
                   ) : (

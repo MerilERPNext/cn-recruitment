@@ -119,52 +119,34 @@
 
 /* Removes scrollbar from the profile form */
 
-.profile-form .nav-tabs {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  gap: 32px !important;
+/* Ensure profile form doesn't overflow */
+.profile-form {
+  max-width: 100%;
   width: 100%;
-  height: 40px;
-  border-radius: 6px !important;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  height: 100%;
 }
 
-.profile-form .nav-tabs .nav-link.active {
-  color: rgb(15, 100, 238) !important;
-  position: relative;
-  height: 100%;
-  background-color: rgba(15, 100, 238, 0.147);
-  padding: 4px 6px;
-  border-radius: 8px;
-}
-.profile-form .nav-tabs .nav-link.active::before {
-  content: "";
-  position: absolute;
-  bottom: -8px;
-  left: 0;
-  height: 4px;
-  width: 100%;
-  border-radius: 20px;
-  background-color: rgb(15, 100, 238);
-  opacity: 1;
-  z-index: 10;
-}
-
-.profile-form .nav-tabs .nav-item {
-  height: 100%;
-}
-.profile-form .nav-tabs::-webkit-scrollbar {
+/* Hide scrollbar for horizontal tab navigation */
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Formio form constraints to prevent overflow */
+.profile-form .formio-form {
+  max-width: 100%;
+  width: 100%;
+}
+
 .profile-form .formio-form .card {
   border-radius: 6px;
   border: none;
+  max-width: 100%;
 }
+
 .profile-form .formio-form .card-header {
   background-color: white;
   box-shadow: none;
@@ -172,11 +154,52 @@
   border-bottom: 1px solid rgba(128, 128, 128, 0.319) !important;
 }
 
-@media (max-width: 640px) {
-  .profile-form .nav-tabs .nav-link.active::before {
-    display: none;
-  }
+.profile-form .formio-form .card-body {
+  max-width: 100%;
 }
+
+/* Ensure all form components are responsive */
+.profile-form .formio-component,
+.profile-form .form-group {
+  max-width: 100%;
+}
+
+.profile-form .row,
+.profile-form .col,
+.profile-form [class*="col-"] {
+  max-width: 100%;
+}
+
+/* Fix Bootstrap grid margins that cause overflow */
+.profile-form .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.profile-form .col,
+.profile-form [class*="col-"] {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Ensure inputs don't overflow */
+/* .profile-form input,
+.profile-form select,
+.profile-form textarea,
+.profile-form .form-control {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+} */
+
+/* Force any containers to be responsive - but don't hide overflow for dropdowns */
+.profile-form .panel,
+.profile-form .panel-body,
+.profile-form .tab-content,
+.profile-form .tab-pane {
+  max-width: 100%;
+}
+
 /* Removes scrollbar from the profile form */
 
 /* styles accross app */

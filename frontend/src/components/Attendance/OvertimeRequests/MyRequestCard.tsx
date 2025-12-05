@@ -4,6 +4,7 @@ import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import Tooltip from "../../shared/Tooltip";
 
 export function MyRequestCard({
   request,
@@ -77,11 +78,13 @@ export function MyRequestCard({
             {formattedDate}
           </div>
           <div className="w-full flex justify-start">
-            <Badge
-              size="sm"
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            />
+            <Tooltip content={`Allocated to : ${request?.allocated_to}`}>
+              <Badge
+                size="sm"
+                label={status?.label as string}
+                backgroundColor={status?.statusColor}
+              />
+            </Tooltip>
           </div>
         </div>
       ) : (

@@ -3,6 +3,7 @@ import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import DOMPurify from "dompurify";
+import Tooltip from "../../shared/Tooltip";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -158,11 +159,13 @@ const ApprovalCard = ({
 
           {/* Status + Actions */}
           <div className="flex items-center justify-start">
-            <Badge
-              size="sm"
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            />
+            <Tooltip content={`Allocated to : ${data?.allocated_to}`}>
+              <Badge
+                size="sm"
+                label={status?.label as string}
+                backgroundColor={status?.statusColor}
+              />
+            </Tooltip>
           </div>
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
@@ -183,7 +186,7 @@ const ApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -284,7 +287,7 @@ const ApprovalCard = ({
                       }
                     >
                       {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action
