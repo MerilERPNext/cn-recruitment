@@ -1,0 +1,107 @@
+frappe.ui.form.on('Leave Application', {
+    // Fetch min days from Leave Type
+    leave_type: function(frm) {
+        if (frm.doc.leave_type) {
+            frappe.db.get_doc('Leave Type', frm.doc.leave_type)
+                .then(leave_type_doc => {
+                    frm.doc._custom_min_pl = leave_type_doc.custom_minimum_consecutive_leave_allowed || 0;
+                    frm.trigger('show_min_pl_warning');
+                })
+                .catch(err => {
+                    console.error('Error fetching Leave Type:', err);
+                    frappe.msgprint({
+                        message: __('Error fetching Leave Type details. Please try again.'),
+                        title: __('Error'),
+                        indicator: 'red'
+                    });
+                });
+        }
+    },
+
+    // Trigger show_min_pl_warning on relevant field changes
+    from_date: function(frm) {
+        frm.trigger('show_min_pl_warning');
+    },
+
+    to_date: function(frm) {
+        frm.trigger('show_min_pl_warning');
+    },
+
+    half_day: function(frm) {
+        frm.trigger('show_min_pl_warning');
+    },
+
+    half_day_date: function(frm) {
+        frm.trigger('show_min_pl_warning');
+    },
+
+    // Show warning but don't block save
+    show_min_pl_warning: function(frm) {
+        const { leave_type, from_date, to_date, half_day, half_day_date } = frm.doc;
+        const min_days = frm.doc._custom_min_pl || 0;
+
+        if (leave_type && from_date && to_date && min_days > 0) {
+            const from = frappe.datetime.str_to_obj(from_date);
+            const to = frappe.datetime.str_to_obj(to_date);
+            let days = frappe.datetime.get_diff(to, from) + 1;
+
+            if (half_day && half_day_date) {
+                days -= 0.5;
+            }
+
+            if (days < min_days) {
+                frappe.msgprint({
+                    message: __('Note: You must apply for at least {0} days for {1}. Current application is for {2} days.', [min_days, leave_type, days]),
+                    title: __('Minimum Leave Days Warning'),
+                    indicator: 'orange'
+                });
+            }
+        }
+    },
+
+    // Run final validation on save/submit
+    validate: async function(frm) {
+        await frm.trigger('validate_leave_days');
+    },
+
+    // Main validation logic
+    validate_leave_days: async function(frm) {
+        const { leave_type, from_date, to_date, half_day, half_day_date } = frm.doc;
+
+        if (leave_type && from_date && to_date) {
+            try {
+                const leave_type_doc = await frappe.db.get_doc('Leave Type', leave_type);
+                const min_days = leave_type_doc.custom_minimum_consecutive_leave_allowed || 0;
+
+                const from = frappe.datetime.str_to_obj(from_date);
+                const to = frappe.datetime.str_to_obj(to_date);
+                let total_days = frappe.datetime.get_diff(to, from) + 1;
+
+                if (half_day && half_day_date) {
+                    total_days -= 0.5;
+                }
+
+                if (min_days > 0 && total_days < min_days) {
+                    frappe.msgprint({
+                        message: __('You must apply for at least {0} days for {1}. You applied for {2} days.', [min_days, leave_type, total_days]),
+                        title: __('Invalid Leave Application'),
+                        indicator: 'red'
+                    });
+                    frappe.validated = false;
+                    return;
+                }
+
+                // Set total days field
+                frm.set_value('total_leave_days', total_days);
+            } catch (err) {
+                console.error('Error in validate_leave_days:', err);
+                frappe.msgprint({
+                    message: __('An error occurred while validating the leave application. Please try again.'),
+                    title: __('Validation Error'),
+                    indicator: 'red'
+                });
+                frappe.validated = false;
+            }
+        }
+    }
+});

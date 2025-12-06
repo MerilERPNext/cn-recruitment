@@ -76,9 +76,15 @@ doctype_js = {
     "Employee Onboarding":["public/js/employee_onboarding.js","public/js/emp_OB_verification_table.js"],
    "Employee Separation":["public/js/employee_separation.js"],
    "Employee Promotion":["public/js/employee_promotion.js"],
-   "Employee":["public/js/employee.js"],
+   "Employee":["public/js/employee/employee.js"],
    "Exit Interview":["public/js/exit_interview.js"],
    "Training Event":["public/js/training_event.js"],
+   "Interview Feedback":["public/js/interview_feedback/interview_feedback.js"],
+   "Leave Allocation":["public/js/leave_alloction/leave_alloction.js"],
+   "Leave Application":["public/js/leave_application/leave_application.js"],
+   "Payroll Entry":["public/js/payroll_entry/payroll_entry.js"],
+   "Salary Slip":["public/js/salary_slip/salary_slip.js"],
+   "Salary Structure Assignment":["public/js/salary_structure_assignment/salary_structure_assignment.js"]
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -248,8 +254,10 @@ override_whitelisted_methods = {
 }
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",
-    "Job Opening": "recruitment.customizations.job_opening.class_override.CustomJobOpening"
+    "Job Opening": "recruitment.customizations.job_opening.class_override.CustomJobOpening",
+    "Appraisal": "recruitment.server_script.appraisal.appraisal.Appraisal"
 }
+
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

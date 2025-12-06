@@ -1009,3 +1009,531 @@ frappe.ui.form.on('Job Applicant', {
     }
 });
 
+
+frappe.ui.form.on('Job Applicant', {
+    refresh: function(frm) {
+        let job_applicant_html = `
+        <style>
+            .custom-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+                font-family: Arial, sans-serif;
+            }
+            .custom-table, .custom-table th, .custom-table td {
+                border: 1px solid black;
+                padding: 8px;
+                text-align: left;
+            }
+            .table-heading {
+                background-color: #000;
+                color: white;
+                text-align: center;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            .section-heading {
+                background-color: #000;
+                color: white;
+                font-weight: bold;
+                padding: 8px;
+            }
+            .bold {
+                font-weight: bold;
+            }
+        </style>
+
+        <div class="section-heading">APPLICANT INFORMATION</div>
+        <table class="custom-table">
+            <tr>
+                <th class="bold">Applicant Name</th>
+                <td>${frm.doc.applicant_name || '-'}</td>
+                <th class="bold">Email ID</th>
+                <td>${frm.doc.email_id || '-'}</td>
+            </tr>
+            <tr>
+                <th class="bold">Phone Number</th>
+                <td>${frm.doc.phone_number || '-'}</td>
+                <th class="bold">Country</th>
+                <td>${frm.doc.country || '-'}</td>
+            </tr>
+            <tr>
+                <th class="bold">Job Title</th>
+                <td>${frm.doc.job_title || '-'}</td>
+                <th class="bold">Designation</th>
+                <td>${frm.doc.designation || '-'}</td>
+            </tr>
+            <tr>
+                <th class="bold">Status</th>
+                <td>${frm.doc.status || '-'}</td>
+                <th class="bold">Shortlisted by Hiring Manager</th>
+                <td>${frm.doc.custom_shortlisted_by_hiring_manager || '-'}</td>
+            </tr>
+            <tr>
+                <th class="bold">Expected Date of Joining</th>
+                <td>${frm.doc.custom_expected_doj || '-'}</td>
+                <th class="bold">Approval Pending from Management</th>
+                <td><input type="checkbox" ${frm.doc.custom_approval_pending_from_management ? 'checked' : ''} disabled></td>
+            </tr>
+        </table>
+
+        <div class="section-heading">SOURCE AND RATING</div>
+        <table class="custom-table">
+            <tr>
+                <th class="bold">Source</th>
+                <td>${frm.doc.source || '-'}</td>
+                <th class="bold">Source Name</th>
+                <td>${frm.doc.source_name || '-'}</td>
+            </tr>
+            <tr>
+                <th class="bold">Employee Referral</th>
+                <td>${frm.doc.employee_referral || '-'}</td>
+                <th class="bold">Applicant Rating</th>
+                <td>${frm.doc.applicant_rating || '-'}</td>
+            </tr>
+            <tr>
+                <th class="bold">Resume Attachment</th>
+                <td>${frm.doc.resume_attachment ? `<a href="${frm.doc.resume_attachment}" target="_blank">Download</a>` : '-'}</td>
+                <th class="bold">Resume Link</th>
+                <td>${frm.doc.resume_link || '-'}</td>
+            </tr>
+        </table>
+        `;
+
+        // Fetch Interview details
+        frappe.call({
+            method: 'frappe.client.get_list',
+            args: {
+                doctype: 'Interview',
+                filters: {
+                    job_applicant: frm.doc.name
+                },
+                fields: ['custom_interview_type', 'interview_round', 'job_applicant', 'custom_bond_', 'status', 'scheduled_on', 'from_time', 'to_time', 'custom_interview_location', 'custom_zoom_link', 'custom_zoom_password']
+            },
+            callback: function(response) {
+                let interview_data = response.message[0]; // Get the first record
+                let interview_html = `
+                <div class="section-heading">INTERVIEW DETAILS</div>
+                <table class="custom-table">
+                    <tr>
+                        <th class="bold">Interview Type</th>
+                        <td>${interview_data.custom_interview_type || '-'}</td>
+                        <th class="bold">Interview Round</th>
+                        <td>${interview_data.interview_round || '-'}</td>
+                    </tr>
+                    <tr>
+                        <th class="bold">Job Applicant</th>
+                        <td>${interview_data.job_applicant || '-'}</td>
+                        <th class="bold">Bond Requirement</th>
+                        <td>${interview_data.custom_bond_ || '-'}</td>
+                    </tr>
+                    <tr>
+                        <th class="bold">Status</th>
+                        <td>${interview_data.status || '-'}</td>
+                        <th class="bold">Scheduled On</th>
+                        <td>${interview_data.scheduled_on || '-'}</td>
+                    </tr>
+                    <tr>
+                        <th class="bold">From Time</th>
+                        <td>${interview_data.from_time || '-'}</td>
+                        <th class="bold">To Time</th>
+                        <td>${interview_data.to_time || '-'}</td>
+                    </tr>
+                    <tr>
+                        <th class="bold">Interview Location</th>
+                        <td>${interview_data.custom_interview_location || '-'}</td>
+                        <th class="bold">Zoom Link</th>
+                        <td>${interview_data.custom_zoom_link || '-'}</td>
+                    </tr>
+                    <tr>
+                        <th class="bold">Zoom Password</th>
+                        <td>${interview_data.custom_zoom_password || '-'}</td>
+                    </tr>
+                </table>
+                `;
+                
+
+                // Append Interview Details to Job Applicant
+                job_applicant_html += interview_html;
+
+                // Fetch Interview Feedback
+                frappe.call({
+                    method: 'frappe.client.get_list',
+                    args: {
+                        doctype: 'Interview Feedback',
+                        filters: {
+                            job_applicant: frm.doc.name
+                        },
+                        fields: ['interview', 'interview_round', 'job_applicant', 'interviewer', 'result', 'feedback']
+                    },
+                    callback: function(response) {
+                        let interview_feedback_data = response.message[0];
+                        let feedback_html = `
+                        <div class="section-heading">INTERVIEW FEEDBACK</div>
+                        <table class="custom-table">
+                            <tr>
+                                <th class="bold">Interview</th>
+                                <td>${interview_feedback_data.interview || '-'}</td>
+                                <th class="bold">Interview Round</th>
+                                <td>${interview_feedback_data.interview_round || '-'}</td>
+                            </tr>
+                            <tr>
+                                <th class="bold">Job Applicant</th>
+                                <td>${interview_feedback_data.job_applicant || '-'}</td>
+                                <th class="bold">Interviewer</th>
+                                <td>${interview_feedback_data.interviewer || '-'}</td>
+                            </tr>
+                            <tr>
+                                <th class="bold">Result</th>
+                                <td>${interview_feedback_data.result || '-'}</td>
+                                <th class="bold">Feedback</th>
+                                <td>${interview_feedback_data.feedback || '-'}</td>
+                            </tr>
+                        </table>
+                        `;
+
+                        // Append Interview Feedback to Job Applicant
+                        job_applicant_html += feedback_html;
+
+                        // Insert HTML into the custom field
+                        frm.fields_dict.custom_custom_table.$wrapper.html(job_applicant_html);
+                    }
+                });
+            }
+        });
+    }
+});
+
+
+
+
+frappe.ui.form.on('Job Applicant', {
+    refresh: function(frm) {
+        // Only fetch if custom_job_offer field is empty
+        if (!frm.doc.custom_job_offer && frm.doc.name) {
+            frappe.call({
+                method: "frappe.client.get_value",
+                args: {
+                    doctype: "Job Offer",
+                    filters: {
+                        job_applicant: frm.doc.name  // Check for this Job Applicant
+                    },
+                    fieldname: "name"
+                },
+                callback: function(r) {
+                    if (r.message && r.message.name) {
+                        // Set the field silently if Job Offer found
+                        frm.set_value('custom_job_offer', r.message.name);
+                        frm.save();
+                    }
+                    // No error or message if not found
+                }
+            });
+        }
+    }
+});
+
+
+frappe.ui.form.on('Job Applicant', {
+    refresh: function(frm) {
+        let interview_html = ''; // Initialize empty HTML
+
+        // Fetch Interview Feedback details
+        frappe.call({
+            method: 'frappe.client.get_list',
+            args: {
+                doctype: 'Interview Feedback',
+                filters: {
+                    job_applicant: frm.doc.name // Use frm.doc.name since we're in Job Applicant form
+                },
+                fields: ['interview_round', 'interviewer', 'result', 'feedback', 'custom_ctc', 'custom_bond'],
+                order_by: 'creation asc' // Sort by creation date
+            },
+            callback: function(feedback_response) {
+                let feedback_list = feedback_response.message;
+                
+                // Use current form data directly (no need for additional API call)
+                let job_applicant = frm.doc;
+                
+                // Create the new layout HTML
+                interview_html = `
+<style>
+    .hiring-dashboard {
+        font-family: Arial, sans-serif;
+        margin: 20px 0;
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+    }
+    
+    .applicant-summary-box {
+        width: 300px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        flex-shrink: 0;
+    }
+    
+    .applicant-summary-box h3 {
+        margin: 0 0 20px 0;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        border-bottom: 2px solid rgba(255,255,255,0.3);
+        padding-bottom: 15px;
+    }
+    
+    .summary-item {
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .summary-item .icon {
+        width: 25px;
+        height: 25px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 12px;
+    }
+    
+    .summary-item .content {
+        flex: 1;
+    }
+    
+    .summary-item .label {
+        font-size: 12px;
+        opacity: 0.8;
+        margin-bottom: 2px;
+    }
+    
+    .summary-item .value {
+        font-weight: bold;
+        font-size: 14px;
+        word-break: break-word;
+    }
+    
+    .feedback-section {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .feedback-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 20px 25px;
+        border-radius: 15px 15px 0 0;
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+    }
+    
+    .feedback-container {
+        background: #f8f9fa;
+        border-radius: 0 0 15px 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .feedback-item {
+        background: white;
+        margin: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: transform 0.2s ease;
+    }
+    
+    .feedback-item:hover {
+        transform: translateY(-2px);
+    }
+    
+    .feedback-round-header {
+        padding: 10px 10px;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .feedback-round-header .round-icon {
+        width: 30px;
+        height: 30px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 16px;
+    }
+    
+    .feedback-details {
+        padding: 20px;
+        background: white;
+    }
+    
+    .feedback-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .feedback-field {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .feedback-field.full-width {
+        grid-column: 1 / -1;
+    }
+    
+    
+    .no-feedback {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+        font-style: italic;
+    }
+    
+    @media (max-width: 768px) {
+        .hiring-dashboard {
+            flex-direction: column;
+        }
+        
+        .applicant-summary-box {
+            width: 100%;
+        }
+        
+        .feedback-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="hiring-dashboard">
+    <!-- Left Side: Applicant Summary Box -->
+    <div class="applicant-summary-box">
+        <h3>👤 Candidate Profile</h3>
+        
+        <div class="summary-item">
+            <div class="icon">👤</div>
+            <div class="content">
+                <div class="label">Name</div>
+                <div class="value">${job_applicant.applicant_name || 'N/A'}</div>
+            </div>
+        </div>
+        
+        <div class="summary-item">
+            <div class="icon">📧</div>
+            <div class="content">
+                <div class="label">Email</div>
+                <div class="value">${job_applicant.email_id || 'N/A'}</div>
+            </div>
+        </div>
+        
+        <div class="summary-item">
+            <div class="icon">🏢</div>
+            <div class="content">
+                <div class="label">Department</div>
+                <div class="value">${job_applicant.custom_department || 'N/A'}</div>
+            </div>
+        </div>
+        
+        <div class="summary-item">
+            <div class="icon">💼</div>
+            <div class="content">
+                <div class="label">Designation</div>
+                <div class="value">${job_applicant.designation || 'N/A'}</div>
+            </div>
+        </div>
+        
+        <div class="summary-item">
+            <div class="icon">💰</div>
+            <div class="content">
+                <div class="label">Expected CTC</div>
+                <div class="value">${job_applicant.custom_expected_ctc || 'N/A'}</div>
+            </div>
+        </div>
+        
+        <div class="summary-item">
+            <div class="icon">📊</div>
+            <div class="content">
+                <div class="label">Status</div>
+                <div class="value">${job_applicant.status || 'N/A'}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Side: Feedback Section -->
+    <div class="feedback-section">
+        <h3 class="feedback-header">📝 Interview Feedback</h3>
+        <div class="feedback-container">
+`;
+
+                const colors = ['#6A5ACD', '#FF6B6B', '#3CB371', '#FFA500', '#008B8B', '#DC143C'];
+                const icons = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣'];
+
+                if (feedback_list && feedback_list.length > 0) {
+                    feedback_list.forEach((feedback, index) => {
+                        let color = colors[index % colors.length];
+                        let icon = icons[index % icons.length];
+                        
+                        interview_html += `
+            <div class="feedback-item">
+                <div class="feedback-round-header" style="background-color: ${color}">
+                    <div class="round-icon">${icon}</div>
+                    <span>${feedback.interview_round || `Round ${index + 1}`}</span>
+                </div>
+                <div class="feedback-details">
+                    <div class="feedback-grid">
+                        <div class="feedback-field">
+                            <div class="field-label"><span class="bold">Interviewer:</span> ${feedback.interviewer || 'Not specified'}</div>
+                        </div>
+                        <div class="feedback-field">
+                            <div class="field-label"><span class="bold">Result:</span> ${feedback.result || 'Pending'}</div>
+                        </div>
+                        <div class="feedback-field">
+                            <div class="field-label"><span class="bold">Offered CTC: </span>${feedback.custom_ctc || 'Not specified'}</div>
+                        </div>
+                        <div class="feedback-field">
+                            <div class="field-label"><span class="bold">Bond Period: </span>${feedback.custom_bond || 'Not specified'}</div>
+                        </div>
+                        <div class="feedback-field full-width">
+                            <div class="field-label"><span class="bold">Feedback Details: </span>${feedback.feedback || 'No feedback provided'}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        `;
+                    });
+                } else {
+                    interview_html += `
+            <div class="no-feedback">
+                <h4>📋 No Feedback Available</h4>
+                <p>No interview feedback has been recorded for this candidate yet.</p>
+            </div>
+                    `;
+                }
+
+                interview_html += `
+        </div>
+    </div>
+</div>
+                `;
+
+                // Insert the HTML into the custom field
+                frm.fields_dict.custom_table.$wrapper.html(interview_html);
+            }
+        });
+    }
+});

@@ -437,3 +437,134 @@ frappe.ui.form.on("Job Requisition", {
           }
     }
 })
+
+
+
+frappe.ui.form.on('Job Requisition', {
+    refresh: function(frm) {
+        if (frm.is_new() && !frm.doc.custom_location) {
+            console.log("Fetching branch for user:", frappe.session.user);
+            
+            frappe.call({
+                method: "frappe.client.get_value",
+                args: {
+                    doctype: "Employee",
+                    filters: {
+                        user_id: frappe.session.user
+                    },
+                    fieldname: ["branch"]
+                },
+                callback: function(r) {
+                    if (r.message && r.message.branch) {
+                        console.log("Branch fetched:", r.message.branch);
+                        frm.set_value("custom_location", r.message.branch);
+                    } else {
+                        console.log("Branch not found for this user.");
+                    }
+                }
+            });
+        }
+    }
+});
+
+
+
+
+frappe.ui.form.on('Job Requisition', {
+    refresh: function(frm) {
+        let job_requisition_html = `
+        <style>
+            .custom-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+                font-family: Arial, sans-serif;
+            }
+            .custom-table, .custom-table th, .custom-table td {
+                border: 1px solid black;
+                padding: 8px;
+                text-align: left;
+            }
+            .table-heading {
+                background-color: #000;
+                color: white;
+                text-align: center;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            .section-heading {
+                background-color: #000;
+                color: white;
+                font-weight: bold;
+                padding: 8px;
+            }
+            .checkbox-group td {
+                text-align: center;
+            }
+        </style>
+
+        <div class="section-heading">GENERAL INFORMATION</div>
+        <table class="custom-table">
+            <tr>
+                <th>Date:</th>
+                <td>${frm.doc.posting_date || 'N/A'}</td>
+                <th>Hiring Manager:</th>
+                <td>${frm.doc.requested_by_name || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>Position:</th>
+                <td>${frm.doc.designation || 'N/A'}</td>
+                <th>Department:</th>
+                <td>${frm.doc.department || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>No of Positions:</th>
+                <td>${frm.doc.no_of_positions || 'N/A'}</td>
+                <th>Expected Compensation:</th>
+                <td>${frm.doc.expected_compensation || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>Skills Required:</th>
+                <td>${frm.doc.custom_skills || 'N/A'}</td>
+                <th>Company:</th>
+                <td>${frm.doc.company || 'N/A'}</td>
+            </tr>
+        </table>
+
+        <div class="section-heading">REQUIRED BY</div>
+        <table class="custom-table">
+            <tr>
+                <th>Requested By:</th>
+                <td>${frm.doc.requested_by || 'N/A'}</td>
+                <th>Requested By Name:</th>
+                <td>${frm.doc.requested_by_name || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>HOD:</th>
+                <td>${frm.doc.custom_hod || 'N/A'}</td>
+                <th>Department:</th>
+                <td>${frm.doc.requested_by_dept || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>Designation:</th>
+                <td>${frm.doc.requested_by_designation || 'N/A'}</td>
+                <th>How the Vacancy Arise:</th>
+                <td>${frm.doc.custom_how_the_vacancy_as_arisen || 'N/A'}</td>
+            </tr>
+        </table>
+
+        <div class="section-heading">TIMELINES</div>
+        <table class="custom-table">
+            <tr>
+                <th>Posting Date:</th>
+                <td>${frm.doc.posting_date || 'N/A'}</td>
+                <th>Expected By:</th>
+                <td>${frm.doc.expected_by || 'N/A'}</td>
+            </tr>
+        </table>
+        `;
+
+        // Insert HTML into the custom field
+        frm.fields_dict.custom_custom_table.$wrapper.html(job_requisition_html);
+    }
+});

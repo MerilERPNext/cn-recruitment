@@ -166,3 +166,15 @@ function render_jd_live_preview(frm) {
         frm.dirty();
     });
 }
+
+
+frappe.ui.form.on('Job Opening', {
+    before_save: function(frm) {
+        if (frm.is_new()) {
+            let designation = frm.doc.designation
+            let closes_on = frm.doc.closes_on
+            
+            frm.set_value('route', `${closes_on}-${designation}`);
+        }
+    }
+});
