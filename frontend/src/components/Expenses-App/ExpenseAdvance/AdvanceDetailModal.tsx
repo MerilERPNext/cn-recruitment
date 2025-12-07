@@ -109,9 +109,9 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                       <tr>
                         <th className="px-4 py-3 border-b">Advance Type</th>
                         <th className="px-4 py-3 border-b">Date</th>
-                        <th className="px-4 py-3 border-b">Merchant</th>
-                        <th className="px-4 py-3 border-b">Invoice No.</th>
-
+                        <th className="px-4 py-3 border-b text-right">
+                          Sanctioned Amount
+                        </th>
                         <th className="px-4 py-3 border-b text-right">
                           Claimed Amount
                         </th>
@@ -136,12 +136,8 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                                   {formatToIndianDate(item.expense_date)}
                                 </td>
 
-                                <td className="px-4 py-3 align-top">
-                                  {item.custom_mercent || "—"}
-                                </td>
-
-                                <td className="px-4 py-3 align-top">
-                                  {item.custom_invoice_number || "—"}
+                                <td className="px-4 py-3 text-right align-top font-medium">
+                                  {formatCurrency(item.sanctioned_amount)}
                                 </td>
 
                                 <td className="px-4 py-3 text-right align-top font-medium">
@@ -155,7 +151,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                         <tr>
                           <td
                             className="px-4 py-6 text-center text-gray-500"
-                            colSpan={5}
+                            colSpan={4}
                           >
                             No specific breakup items found for this advance.
                           </td>
