@@ -1,7 +1,6 @@
 import React from "react";
 import { useFrappeDocument } from "../../hooks/useFrappeQuery";
 import EmploymentHistoryCard from "./EmploymentHistoryCard";
-import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -32,7 +31,6 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
     ["custom_work_history"]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) as { data: Employee | null; isLoading: boolean; error: any };
-  const { isDesktop } = useScreenSize();
   const history = data?.custom_work_history || [];
 
   const groupedHistory = history.reduce<Record<string, CustomWorkHistory[]>>(
@@ -45,18 +43,16 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   );
 
   return (
-    <div className="address-form-container h-full">
+    <div className="address-form-container bg-white">
       <div className="p-4 md:p-8">
-        {isDesktop && (
-          <div className="border-b border-gray-200 pb-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Employment History
-            </h2>
-            <p className="text-gray-600">
-              Your employment history and organizational information
-            </p>
-          </div>
-        )}
+        <div className="border-b border-gray-200 pb-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Employment History
+          </h2>
+          <p className="text-gray-600">
+            Your employment history and organizational information
+          </p>
+        </div>
 
         {!employeeId && (
           <p className="p-4 text-gray-500">No employee selected</p>

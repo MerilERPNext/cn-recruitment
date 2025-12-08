@@ -240,7 +240,7 @@ export default function ThreeLevelOrgChart() {
   }, [employeeHierarchy, employeeId, setNodes, setEdges]);
 
   return (
-    <div className="w-full h-screen bg-gray-100">
+    <div className="w-full bg-gray-100">
       <div className=" bg-white shadow-sm px-4 py-3 flex items-center justify-between">
         <h1 className="text-lg font-semibold text-gray-900">
           Organizational Chart
@@ -255,21 +255,25 @@ export default function ThreeLevelOrgChart() {
         </button>
       </div>
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={{ person: PersonNode }}
-        fitView
-        attributionPosition="top-right"
-        proOptions={{ hideAttribution: true }}
-        minZoom={0.1}
-        maxZoom={2}
-        defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
-      >
-        <Controls position="top-right" showZoom showFitView />
-      </ReactFlow>
+      <div className="h-[400px]">
+
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          nodeTypes={{ person: PersonNode }}
+          fitView
+          attributionPosition="top-right"
+          proOptions={{ hideAttribution: true }}
+          minZoom={0.1}
+          maxZoom={2}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
+          zoomOnScroll={false}
+        >
+          <Controls position="top-right" showZoom showFitView />
+        </ReactFlow>
+      </div>
     </div>
   );
 }

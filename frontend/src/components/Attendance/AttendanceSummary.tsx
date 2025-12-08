@@ -22,6 +22,7 @@ import { useState } from "react";
 
 import {
   useAllAttendance,
+  useGetEmployeeShift,
   useGetPolicyForDate,
   useGetQuickAttendanceSummary,
 } from "../../hooks/useAttendance";
@@ -42,6 +43,9 @@ const AttendanceSummary = () => {
     currentUser?.name as string
   );
 
+  const { data: employeeShift } = useGetEmployeeShift(
+    currentEmployee?.user_id || ""
+  );
   const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(
     currentEmployee?.employee as string,
     format(startOfMonth(currentDate), "yyyy-MM-dd"),
@@ -91,16 +95,28 @@ const AttendanceSummary = () => {
     },
   ];
 
+  const getAttendanceMethod = () => {
+    const methods = [];
+    if (currentEmployee?.custom_enable_web_clockin) {
+      methods.push("Web Clockin");
+    }
+    if (currentEmployee?.custom_allow_mobile_checkin) {
+      methods.push("Mobile Clockin");
+    }
+
+    return methods;
+  };
+
   const settingsData = [
     {
       icon: Clock,
       title: "Attendance Method",
-      details: ["Biometric verification required", "GEOFENCING FOR CHECK-IN"],
+      details: getAttendanceMethod(),
     },
     {
       icon: Users,
       title: "Current Shift",
-      details: ["General shift schedule"],
+      details: employeeShift ? [employeeShift?.shift] : [],
     },
     {
       icon: Shield,
@@ -110,7 +126,7 @@ const AttendanceSummary = () => {
     {
       icon: Calendar,
       title: "Week Off",
-      details: ["1st, 2nd, 4th Sunday"],
+      details: [currentEmployee?.custom_weekly_off || ""],
     },
     {
       icon: Timer,
@@ -321,7 +337,7 @@ const AttendanceSummary = () => {
                             })
                           ) : (
                             <p className="text-sm text-gray-500">
-                              No policy defined
+                              No policy assigned
                             </p>
                           )}
                         </div>

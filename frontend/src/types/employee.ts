@@ -79,8 +79,9 @@ export interface Employee {
   reason_for_leaving?: string;
   feedback?: string;
 
-  custom_allow_mobile_checkin?: boolean;
-  custom_enable_web_clockin?: boolean;
+  custom_allow_mobile_checkin ?:boolean;
+  custom_enable_web_clockin ?:boolean;
+  custom_weekly_off?: string;
 }
 
 export interface EmployeeNode {
