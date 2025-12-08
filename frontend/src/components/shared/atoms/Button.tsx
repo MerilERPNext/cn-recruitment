@@ -19,7 +19,7 @@ interface ButtonProps {
 const Button: React.FC<ButtonProps> = ({
   children,
   icon,
-  bgColor = "gray-900",
+  bgColor = "blue-600",
   textColor = "white",
   variant = "contain",
   size = "sm",

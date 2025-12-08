@@ -348,7 +348,7 @@ const EmployeeAttendanceDetails = ({
         disabled={isButtonDisabled}
         className={`w-full flex items-center justify-center py-3 rounded-lg text-md font-medium transition-colors ${isButtonDisabled
           ? "bg-gray-400 cursor-not-allowed"
-          : "bg-black hover:bg-gray-800"
+          : "bg-blue-600 hover:bg-blue-700"
           } text-white`}
         onClick={() => setShowReqAttendanceCorrection(true)}
       >

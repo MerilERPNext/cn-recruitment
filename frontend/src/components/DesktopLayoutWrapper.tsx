@@ -172,7 +172,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       >
         {/* Header */}
         <div
-          className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 border-b border-gray-200 px-8 py-3 flex items-center justify-between sticky top-0 z-10 flex-shrink-0"
+          className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 border-b border-gray-200 px-8 py-3 flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
           style={{ height: "73px" }}
         >
           <div>
@@ -232,36 +232,41 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                   <div className="h-6 w-6 bg-gray-300 rounded-full "></div>
                 </div>
               ) : (
-                <button
-                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-white text-right">
-                      {currentEmployee?.employee_name ||
-                        currentEmployee?.first_name}
-                    </p>
-                    <p className="text-xs text-gray-50 text-right">
-                      Employee ID: {currentEmployee?.employee}
-                    </p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
-                    <img
-                      src={currentEmployee?.image || defaultProfile}
-                      alt="User avatar"
-                      className="w-full h-full object-cover"
+                <>
+                  <button
+                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                    className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-white text-right">
+                        {currentEmployee?.employee_name ||
+                          currentEmployee?.first_name}
+                      </p>
+                      <p className="text-xs text-gray-50 text-right">
+                        Employee ID: {currentEmployee?.employee}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                      <img
+                        src={currentEmployee?.image || defaultProfile}
+                        alt="User avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <ChevronDown
+                      className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                        }`}
                     />
-                  </div>
-                  <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
-                  />
-                </button>
+                  </button>
+
+                </>
               )}
 
               {/* Profile Dropdown */}
               {showProfileDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div
+                  className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]"
+                >
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center gap-3">
                       {/* Avatar */}
