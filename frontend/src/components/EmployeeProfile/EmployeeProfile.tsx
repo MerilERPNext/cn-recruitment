@@ -268,6 +268,11 @@ const EmployeeProfile: React.FC = () => {
             <p className="text-gray-400 text-sm">
               Employee ID: {user?.employee}
             </p>
+            {user?.custom_employee_status &&
+              <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-[1000px]">
+                {user?.custom_employee_status}
+              </span>
+            }
           </div>
           <div className="px-4 w-full flex justify-center">
             {showAttendanceAssignment ? (
@@ -378,6 +383,11 @@ const EmployeeProfile: React.FC = () => {
                 <p className="text-gray-500 text-sm mt-1">
                   ID: {user?.employee}
                 </p>
+                {user?.custom_employee_status &&
+                  <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-[1000px]">
+                    {user?.custom_employee_status}
+                  </span>
+                }
               </div>
               {showAttendanceAssignment && (
                 <Button
