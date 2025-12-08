@@ -4,13 +4,11 @@ import {
   Clock,
   FileText,
   User,
-  HelpCircle,
   CheckCircle,
   XCircle,
   LogOut,
   Search,
   ChevronDown,
-  Headset,
   Timer,
   ArrowUpDown,
   Dock,
@@ -314,13 +312,13 @@ export default function DesktopDashboard() {
     return Math.min(percentage, 100);
   };
 
-  const handleTodoClick = () => {
-    window.location.href = "/app/task_manager";
-  };
+  // const handleTodoClick = () => {
+  //   window.location.href = "/app/task_manager";
+  // };
 
-  const handleHelpDeskClick = () => {
-    window.location.href = "/helpdesk/my-tickets";
-  };
+  // const handleHelpDeskClick = () => {
+  //   window.location.href = "/helpdesk/my-tickets";
+  // };
 
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
