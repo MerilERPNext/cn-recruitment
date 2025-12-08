@@ -92,11 +92,11 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="module-title">Attendance Overview</h3>
+          <h3 className="base-title md:module-title">Attendance Overview</h3>
           <p className="text-sm text-gray-600">Monthly attendance summary</p>
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold text-gray-900">{total}</p>
+        <div className="text-center">
+          <p className="text-xl md:text-2xl font-bold text-gray-900">{total}</p>
           <p className="text-sm text-gray-500">Total Days</p>
         </div>
       </div>
@@ -163,7 +163,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
             {/* Center content */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xl md:text-2xl font-bold text-gray-900">
                   {presentPercent.toFixed(0)}%
                 </p>
                 <p className="text-xs text-gray-500">Present</p>

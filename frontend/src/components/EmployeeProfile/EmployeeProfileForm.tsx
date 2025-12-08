@@ -6,7 +6,10 @@ import {
   useGetEmployeeDetailsByEmpId,
   useGetEmployeeFieldPermissions,
 } from "../../hooks/useEmployee";
-import { convertToFormioWithTabMetadata, type TabWithSchema } from "./FrappeToFormIoConverterSepTabs";
+import {
+  convertToFormioWithTabMetadata,
+  type TabWithSchema,
+} from "./FrappeToFormIoConverterSepTabs";
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import toast from "react-hot-toast";
@@ -34,7 +37,10 @@ const EmployeeProfileForm: React.FC = () => {
   useEffect(() => {
     if (!fieldPermissions || !employee?.data) return;
 
-    const result = convertToFormioWithTabMetadata(fieldPermissions, employee?.data);
+    const result = convertToFormioWithTabMetadata(
+      fieldPermissions,
+      employee?.data
+    );
     setTabs(result.tabs);
     if (result.tabs.length > 0) {
       setActiveTab(result.tabs[0].key);
@@ -53,14 +59,14 @@ const EmployeeProfileForm: React.FC = () => {
     let scrollParent: HTMLElement | null = firstSection.parentElement;
     while (scrollParent) {
       const overflowY = window.getComputedStyle(scrollParent).overflowY;
-      if (overflowY === 'auto' || overflowY === 'scroll') {
+      if (overflowY === "auto" || overflowY === "scroll") {
         break;
       }
       scrollParent = scrollParent.parentElement;
     }
 
     if (!scrollParent) {
-      console.warn('No scroll parent found');
+      console.warn("No scroll parent found");
       return;
     }
 
@@ -106,7 +112,10 @@ const EmployeeProfileForm: React.FC = () => {
       }
     };
 
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const observer = new IntersectionObserver(
+      observerCallback,
+      observerOptions
+    );
 
     Object.values(sectionRefs.current).forEach((section) => {
       if (section) {
@@ -214,10 +223,11 @@ const EmployeeProfileForm: React.FC = () => {
               <button
                 key={tab.key}
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-2 py-1 rounded-[32px] text-sm font-medium transition-all duration-200 ${activeTab === tab.key
-                  ? "bg-blue-100 text-blue-600"
-                  : "border-transparent text-gray-600 hover:text-blue-600"
-                  }`}
+                className={`whitespace-nowrap px-2 py-1 rounded-[32px] text-sm font-medium transition-all duration-200 ${
+                  activeTab === tab.key
+                    ? "bg-blue-100 text-blue-600"
+                    : "border-transparent text-gray-600 hover:text-blue-600"
+                }`}
               >
                 {tab.label}
               </button>

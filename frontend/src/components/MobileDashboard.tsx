@@ -110,7 +110,9 @@ const MobileDashboard: React.FC = () => {
         setLocation(coords);
       } catch (err) {
         console.error("Failed to get location:", err);
-        setLocationError("Unable to get your location. Please enable location services.");
+        setLocationError(
+          "Unable to get your location. Please enable location services."
+        );
       } finally {
         setIsLocationLoading(false);
       }
@@ -159,11 +161,11 @@ const MobileDashboard: React.FC = () => {
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(CompanyLogo) &&
-      CompanyLogo.length > 0 &&
-      currentEmployeeCompany
+    CompanyLogo.length > 0 &&
+    currentEmployeeCompany
       ? CompanyLogo.find(
-        (company) => company.company_name === currentEmployeeCompany
-      )
+          (company) => company.company_name === currentEmployeeCompany
+        )
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -181,30 +183,30 @@ const MobileDashboard: React.FC = () => {
 
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
           parseISO(b.time.replace(" ", "T"))
         )
       )[0]
+    : undefined;
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T"))
+          )
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -215,7 +217,9 @@ const MobileDashboard: React.FC = () => {
   const handleCheckInOut = (type: string) => {
     // Validate location before proceeding
     if (!location?.latitude || !location?.longitude) {
-      toast.error("Location not available. Please wait for location to load or enable location services.");
+      toast.error(
+        "Location not available. Please wait for location to load or enable location services."
+      );
       return;
     }
 
@@ -349,7 +353,7 @@ const MobileDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-4 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <button className="flex items-center hover:bg-black/5 transition-colors w-10 h-10 rounded-xl overflow-hidden ">
+          <button className="flex items-center hover:bg-black/5 transition-colors w-12 h-12 rounded-xl overflow-hidden ">
             <img
               src={typeof logoToShow === "string" ? logoToShow : ""}
               alt="CompnayLogo"
@@ -421,7 +425,7 @@ const MobileDashboard: React.FC = () => {
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Shift Start
             </p>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl font-bold text-gray-900">
               {employeeShift?.start_time
                 ? formatTimeSafe(employeeShift?.start_time)
                 : "--:--"}
@@ -432,7 +436,7 @@ const MobileDashboard: React.FC = () => {
               In Time
             </p>
 
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl font-bold text-gray-900">
               {firstCheckIn?.time
                 ? formatTo24HourTime((firstCheckIn?.time as string) || "")
                 : "--:--"}
@@ -445,7 +449,7 @@ const MobileDashboard: React.FC = () => {
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Shift End
             </p>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl font-bold text-gray-900">
               {employeeShift?.end_time
                 ? formatTimeSafe(employeeShift?.end_time)
                 : "--:--"}
@@ -455,7 +459,7 @@ const MobileDashboard: React.FC = () => {
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Out Time
             </p>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl font-bold text-gray-900">
               {lastCheckOut?.time
                 ? formatTo24HourTime(lastCheckOut?.time)
                 : "--:--"}
@@ -468,16 +472,23 @@ const MobileDashboard: React.FC = () => {
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Total Hours
             </p>
-            <p className="text-2xl font-bold text-gray-900">{getTotalTime()}</p>
+            <p className="text-xl font-bold text-gray-900">{getTotalTime()}</p>
           </div>
           {currentEmployee?.custom_allow_mobile_checkin ? (
             <div className="w-full">
               <button
                 onClick={() =>
-                  handleCheckInOut(isCurrentlyCheckedIn ? "checkOut" : "checkIn")
+                  handleCheckInOut(
+                    isCurrentlyCheckedIn ? "checkOut" : "checkIn"
+                  )
                 }
                 className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                disabled={checkInCheckOutPending || !employeeShift?.shift || isLocationLoading || !location}
+                disabled={
+                  checkInCheckOutPending ||
+                  !employeeShift?.shift ||
+                  isLocationLoading ||
+                  !location
+                }
               >
                 {checkInCheckOutPending || isRefetching ? (
                   <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
@@ -493,7 +504,9 @@ const MobileDashboard: React.FC = () => {
                 )}
               </button>
               {locationError && (
-                <p className="text-xs text-red-600 mt-1 text-center">{locationError}</p>
+                <p className="text-xs text-red-600 mt-1 text-center">
+                  {locationError}
+                </p>
               )}
             </div>
           ) : null}
@@ -517,7 +530,7 @@ const MobileDashboard: React.FC = () => {
         </div>
 
         <div className="mb-5">
-          <h3 className="text-lg font-bold mb-3">Quick Links</h3>
+          <h3 className="base-title mb-3">Quick Links</h3>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <Link
               to="/webapp/leave-app"
@@ -619,9 +632,9 @@ const MobileDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="mb-4 sm:mb-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold">Attendance</h3>
+        <div className="mb-5">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="base-title">Attendance</h3>
 
             <ViewAll
               title="View Details"
@@ -672,11 +685,9 @@ const MobileDashboard: React.FC = () => {
         </div>
 
         {expenseData?.length > 0 && (
-          <div className="rounded-xl  border border-gray-100 mb-4 sm:mb-5">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
-                Unpaid Expense Claims
-              </h3>
+          <div className="rounded-xl mb-4 sm:mb-5">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="base-title">Unpaid Expense Claims</h3>
               <ViewAll
                 title="View Claims"
                 onClick={() => navigate("/webapp/expenses-app")}
@@ -693,7 +704,7 @@ const MobileDashboard: React.FC = () => {
                 }) => {
                   const styles =
                     statusStyles[
-                    item.status?.toLowerCase() as keyof typeof statusStyles
+                      item.status?.toLowerCase() as keyof typeof statusStyles
                     ] || statusStyles.draft;
 
                   return (
@@ -707,16 +718,14 @@ const MobileDashboard: React.FC = () => {
                           {styles.icon}
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">
-                            {item?.employee_name}
-                          </p>
+                          <p className="card-title">{item?.employee_name}</p>
                           <p className="text-xs text-gray-600">
                             {formatDateString(item?.creation)}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-gray-900">
+                        <p className="card-title">
                           {item?.total_claimed_amount} Rs
                         </p>
                         <span

@@ -73,15 +73,15 @@ const ApprovalRejectedForMobile = ({
       <div className="flex justify-between gap-6">
         {/* Left Column */}
         <div>
-          <div className="mt-2">
-            <div className="text-xs text-gray-500">Employee</div>
-            <div className="font-medium text-sm text-gray-800">
+          <div className="flex flex-col gap-1">
+            <div className="card-title">Employee</div>
+            <div className="card-subtitle">
               {data?.reference_document?.employee_name || "--"}
             </div>
           </div>
-          <div>
-            <div className="text-xs text-gray-500">Shift Type</div>
-            <div className="font-medium text-sm text-gray-800">
+          <div className="flex flex-col gap-1 mt-2">
+            <div className="card-title">Shift Type</div>
+            <div className="card-subtitle">
               {data?.reference_document?.shift_type || "--"}
             </div>
           </div>
@@ -89,15 +89,15 @@ const ApprovalRejectedForMobile = ({
 
         {/* Right Column */}
         <div className="text-right">
-          <div>
-            <div className="text-xs text-gray-500">From</div>
-            <div className="font-medium text-sm text-gray-800">
+          <div className="flex flex-col gap-1">
+            <div className="card-title">From</div>
+            <div className="card-subtitle">
               {formatToIndianDate(data?.reference_document?.from_date)}
             </div>
           </div>
-          <div className="mt-2">
-            <div className="text-xs text-gray-500">To</div>
-            <div className="font-medium text-sm text-gray-800">
+          <div className="flex flex-col gap-1 mt-2">
+            <div className="card-title">To</div>
+            <div className="card-subtitle">
               {formatToIndianDate(data?.reference_document?.to_date)}
             </div>
           </div>
@@ -105,7 +105,7 @@ const ApprovalRejectedForMobile = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap justify-start gap-2 mt-4">
+      <div className="flex justify-start gap-2 mt-4">
         {actions?.length > 0 &&
           actions.map((action: string) => (
             <Button
@@ -121,6 +121,7 @@ const ApprovalRejectedForMobile = ({
                 loadingAction?.id === data?.todo_id &&
                 loadingAction?.action === action
               }
+              className="w-full"
             >
               {loadingAction?.id === data?.todo_id &&
               loadingAction?.action === action ? (

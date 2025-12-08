@@ -27,7 +27,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
       }
       className="flex border  border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 my-2 cursor-pointer"
     >
-      <span className="font-medium text-gray-900">{name}</span>
+      <span className="card-title">{name}</span>
       <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-semibold">
         <span className="uppercase leading-none">{count}</span>
       </div>

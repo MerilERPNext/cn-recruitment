@@ -14,11 +14,14 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import FileRenderer from "../../shared/molecules/FileRenderer";
 import { formatDashedDate } from "../../../utils/formatToIndianDate";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
-import { ErrorView, LoadingView } from "../../shared/DetailViewErrorLoadingWrapper";
+import {
+  ErrorView,
+  LoadingView,
+} from "../../shared/DetailViewErrorLoadingWrapper";
 
 export function MyOvertimeDetails({
   documentName,
-  data : propData,
+  data: propData,
   onClose,
   onAction,
   label = "Planned Overtime Request",
@@ -30,10 +33,10 @@ export function MyOvertimeDetails({
   onAction?: () => void;
   loadingAction?: { id: string; action: string } | null;
 }) {
-    const {
-      data: fetchedData,
-      isLoading,
-      error,
+  const {
+    data: fetchedData,
+    isLoading,
+    error,
   } = useGetToDoWithReferenceDoc(documentName || "");
 
   const { data: currentUser } = useCurrentUser();
@@ -44,7 +47,9 @@ export function MyOvertimeDetails({
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
-  const data = (documentName ? fetchedData : propData) as MyPlannedAttendanceRequest;
+  const data = (
+    documentName ? fetchedData : propData
+  ) as MyPlannedAttendanceRequest;
   const handleAction = useCallback(
     async (action: string) => {
       setCurrentAction(action);
@@ -161,18 +166,15 @@ export function MyOvertimeDetails({
     return isValid(date) ? format(date, "dd/MM/yyyy") : "--/--";
   };
 
-     // Loading state
+  // Loading state
   if (isLoading && documentName) {
-    return (
-       <LoadingView onClose={onClose} label={label} />
-    );
+    return <LoadingView onClose={onClose} label={label} />;
   }
 
   // Error state
   if (error && documentName) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
-  
 
   return data?.allocated_to ? (
     <div
@@ -185,9 +187,7 @@ export function MyOvertimeDetails({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">
-            {label} 
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -198,12 +198,12 @@ export function MyOvertimeDetails({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Allocated To + Status */}
           <div className="flex gap-2 justify-between">
-            <div>
-              <div className="text-sm text-gray-500">Allocated To</div>
-              <div className="text-base font-medium text-gray-800">
+            <div className="flex flex-col gap-1">
+              <div className="card-title">Allocated To</div>
+              <div className="card-subtitle">
                 {data?.username} ({data.allocated_to})
               </div>
             </div>
@@ -216,23 +216,23 @@ export function MyOvertimeDetails({
           </div>
 
           {/* Created On */}
-          <div>
-            <div className="text-sm text-gray-500">Created On</div>
-            <div className="text-base text-gray-800">
+          <div className="flex flex-col gap-1">
+            <div className="card-title">Created On</div>
+            <div className="card-subtitle">
               {new Date(doc?.creation).toLocaleString()}
             </div>
           </div>
-          <div>
-            <div className="text-sm text-gray-500">Due Date</div>
-            <div className="text-base text-gray-800">
-              {formatDashedDate( (data?.due_date || data?.date ) as string)}
+          <div className="flex flex-col gap-1">
+            <div className="card-title">Due Date</div>
+            <div className="card-subtitle">
+              {formatDashedDate((data?.due_date || data?.date) as string)}
             </div>
           </div>
 
           {/* Overtime Details */}
           {doc?.overtime_details?.length > 0 && (
             <div>
-              <div className="text-sm text-gray-500 mb-2">Overtime Details</div>
+              <div className="base-title mb-1">Overtime Details</div>
               <div className="grid grid-cols-1 gap-4 ">
                 {doc.overtime_details.map(
                   (item: OvertimeDetail, idx: number) => (
@@ -241,51 +241,47 @@ export function MyOvertimeDetails({
                       className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
                     >
                       <div className="mb-3">
-                        <h4 className="text-sm font-semibold text-gray-700">
-                          Overtime Entry {idx + 1}
-                        </h4>
+                        <h4 className="card-title">Overtime Entry {idx + 1}</h4>
                       </div>
 
                       <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-600">
-                        <div>
-                          <span className="block font-medium text-gray-800">
-                            Start Date
+                        <div className="flex flex-col gap-1">
+                          <span className="card-title">Start Date</span>
+                          <span className="card-subtitle">
+                            {formatDate(item.start_date)}
                           </span>
-                          <span>{formatDate(item.start_date)}</span>
                         </div>
-                        <div>
-                          <span className="block font-medium text-gray-800">
-                            Start Time
+                        <div className="flex flex-col gap-1">
+                          <span className="card-title">Start Time</span>
+                          <span className="card-subtitle">
+                            {item.start_time}
                           </span>
-                          <span>{item.start_time}</span>
-                        </div>
-
-                        <div>
-                          <span className="block font-medium text-gray-800">
-                            End Date
-                          </span>
-                          <span>{formatDate(item.end_date)}</span>
-                        </div>
-                        <div>
-                          <span className="block font-medium text-gray-800">
-                            End Time
-                          </span>
-                          <span>{item.end_time}</span>
                         </div>
 
-                        <div>
-                          <span className="block font-medium text-gray-800">
-                            Shift Date
+                        <div className="flex flex-col gap-1">
+                          <span className="card-title">End Date</span>
+                          <span className="card-subtitle">
+                            {formatDate(item.end_date)}
                           </span>
-                          <span>{formatDate(item.shift_date)}</span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="card-title">End Time</span>
+                          <span className="card-subtitle">{item.end_time}</span>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <span className="card-title">Shift Date</span>
+                          <span className="card-subtitle">
+                            {formatDate(item.shift_date)}
+                          </span>
                         </div>
 
                         {item.message && (
-                          <div className="col-span-2">
-                            <span className="block font-medium text-gray-800">
-                              Message
+                          <div className="flex flex-col gap-1">
+                            <span className="card-title">Message</span>
+                            <span className="card-subtitle">
+                              {item.message}
                             </span>
-                            <span>{item.message}</span>
                           </div>
                         )}
                       </div>
@@ -293,13 +289,12 @@ export function MyOvertimeDetails({
                   )
                 )}
               </div>
-              {data?.attachments && data?.attachments?.length>0 ? (
+              {data?.attachments && data?.attachments?.length > 0 ? (
                 <div className="py-4">
                   <p className="text-sm  mb-2 font-bold">Attachment</p>
-                  {data?.attachments?.map((item)=>  <FileRenderer
-                    filePath={item?.file_url || ""}
-                  />)}
-                
+                  {data?.attachments?.map((item) => (
+                    <FileRenderer filePath={item?.file_url || ""} />
+                  ))}
                 </div>
               ) : null}
             </div>
@@ -325,6 +320,7 @@ export function MyOvertimeDetails({
                         size="md"
                         bgColor={getActionStyles(action).bg}
                         textColor={getActionStyles(action).text}
+                        className="w-full"
                       >
                         {isLoading ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />

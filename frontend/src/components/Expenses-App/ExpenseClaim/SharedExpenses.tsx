@@ -37,26 +37,25 @@ const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
   return (
     <div className="rounded-xl my-1 border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
       <div className="flex justify-between items-start">
-        <div>
-          <p className="text-sm text-gray-500">Shared by</p>
-          <p className="text-lg font-semibold text-gray-900">
-            {item.employee_name}
-          </p>
+        <div className="flex flex-col gap-1">
+          <p className="card-title">Shared by</p>
+          <p className="card-subtitle">{item.employee_name}</p>
         </div>
 
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Sanctioned</p>
-          <p className="text-lg font-bold">{formattedSanctioned}</p>
+        <div className="text-right flex flex-col gap-1">
+          <p className="card-title">Sanctioned</p>
+          <p className="card-subtitle">{formattedSanctioned}</p>
         </div>
       </div>
 
       <div className="flex justify-between items-center text-sm text-gray-600">
-        <div>
+        <div className="flex flex-col gap-1">
           <p>
-            <span className="font-bold">Posting:</span> {postingDate}
+            <span className="card-title">Posting:</span>
+            <span className="pl-2">{postingDate}</span>
           </p>
           <p>
-            <span className="font-bold">Status:</span>{" "}
+            <span className="card-title pr-2">Status:</span>
             <span
               className={`px-2 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(
                 item.status
@@ -67,17 +66,21 @@ const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
           </p>
         </div>
 
-        <div className="text-right text-sm">
+        <div className="text-right">
           <p>
-            <span className="font-bold">Share %:</span>{" "}
-            {item.participant_info?.percentage ?? "-"}%
+            <span className="card-title">Share:</span>
+            <span className="pl-2 card-subtitle">
+              {item.participant_info?.percentage ?? "-"}%
+            </span>
           </p>
           <p>
-            <span className="font-bold">Amount:</span>{" "}
-            {new Intl.NumberFormat("en-IN", {
-              style: "currency",
-              currency: "INR",
-            }).format(item.participant_info?.allocated_amount ?? 0)}
+            <span className="card-title">Amount:</span>
+            <span className="pl-2 card-subtitle">
+              {new Intl.NumberFormat("en-IN", {
+                style: "currency",
+                currency: "INR",
+              }).format(item.participant_info?.allocated_amount ?? 0)}
+            </span>
           </p>
         </div>
       </div>
@@ -161,14 +164,12 @@ const SharedExpenses: React.FC = () => {
     >
       <div className="flex justify-between items-center mb-2 border-b border-gray-200">
         {!isDesktop ? (
-          <div className="flex w-full py-2 justify-between items-center">
+          <div className="flex w-full pb-2 justify-between items-center">
             <button onClick={() => navigate(-1)}>
               <ChevronLeft className="text-gray-500" />
             </button>
 
-            <h2 className="text-lg font-semibold text-gray-800 pb-1">
-              Shared Expense Claims
-            </h2>
+            <h2 className="base-title pb-1">Shared Expense Claims</h2>
             <div className="min-w-8"></div>
           </div>
         ) : (

@@ -201,13 +201,13 @@ export function LeaveDetailView({
               backgroundColor={status?.statusColor}
             />{" "}
           </div>
-          <div className="py-4">
+          <div className="py-2">
             <div className="flex gap-2 justify-between">
               {/* Display From Date */}
               {data?.reference_document?.from_date && (
-                <p className="text-sm flex flex-col font-bold">
-                  <span>From Date</span>
-                  <span className="text-gray-500">
+                <p className="flex flex-col gap-1">
+                  <span className="card-title">From Date</span>
+                  <span className="card-subtitle">
                     {formatDate(data?.reference_document?.from_date)}
                   </span>
                 </p>
@@ -215,9 +215,9 @@ export function LeaveDetailView({
 
               {/* Display To Date */}
               {data?.reference_document?.to_date && (
-                <p className="text-sm flex flex-col font-bold">
-                  <span>To Date</span>
-                  <span className="text-gray-500">
+                <p className=" flex flex-col gap-1">
+                  <span className="card-title">To Date</span>
+                  <span className="card-subtitle">
                     {formatDate(data?.reference_document?.to_date)}
                   </span>
                 </p>
@@ -225,28 +225,30 @@ export function LeaveDetailView({
             </div>
           </div>
           {data?.due_date && (
-            <p className="text-sm flex flex-col font-bold">
-              <span>Due Date</span>
-              <span className="text-gray-500">
+            <p className=" flex flex-col gap-1">
+              <span className="card-title">Due Date</span>
+              <span className="card-subtitle">
                 {formatDate(data?.due_date)}
               </span>
             </p>
           )}
-          <div className="py-4">
-            <p className="text-sm  mb-2 font-bold">Reason</p>
+          <div className="py-2 flex flex-col gap-1">
+            <p className="card-title">Reason</p>
 
-            {data?.reference_document?.custom_reason}
+            <span className="card-subtitle">
+              {data?.reference_document?.custom_reason}
+            </span>
           </div>
           {/* explanation */}
-          <div className="py-4">
-            <p className="text-sm  mb-2 font-bold">Description</p>
-            <div className="bg-gray-100 p-3 rounded-lg">
+          <div className="py-2">
+            <p className="card-title mb-2">Description</p>
+            <div className="text-sm bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </div>
           </div>
           {data?.reference_document?.custom_attachment ? (
             <div className="py-4">
-              <p className="text-sm  mb-2 font-bold">Attachment</p>
+              <p className="card-title mb-2">Attachment</p>
               <FileRenderer
                 filePath={data?.reference_document?.custom_attachment || ""}
               />

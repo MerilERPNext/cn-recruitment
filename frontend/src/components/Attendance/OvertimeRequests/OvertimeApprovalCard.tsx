@@ -208,20 +208,20 @@ const OvertimeApprovalCard = ({
 
             <div className="w-full">
               <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-500 font-bold">
+                <div className="flex flex-col gap-1">
+                  <p className="card-title">
                     {data?.reference_document?.employee}
                   </p>
 
                   <div className="flex gap-2">
                     {data?.due_date && (
-                      <p className="text-sm text-gray-500">
+                      <p className="card-subtitle">
                         Due Date - {formatDate(data?.due_date)}
                       </p>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                    <span className="font-semibold">Description:</span>{" "}
+                  <p className="card-subtitle mt-1 line-clamp-2">
+                    <span className="card-title">Description:</span>{" "}
                     <div
                       dangerouslySetInnerHTML={{ __html: cleanDescription }}
                     />
@@ -253,6 +253,7 @@ const OvertimeApprovalCard = ({
                         loadingAction?.id === data?.todo_id &&
                         loadingAction?.action === action
                       }
+                      className="w-full"
                     >
                       {loadingAction?.id === data?.todo_id &&
                       loadingAction?.action === action ? (

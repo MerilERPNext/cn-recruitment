@@ -161,7 +161,7 @@ const MyAdvanceExpenseList = () => {
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
       <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800 pb-1">
+        <h2 className="base-title md:module-title font-semibold text-gray-800 pb-1">
           My Advance Expenses
         </h2>
 

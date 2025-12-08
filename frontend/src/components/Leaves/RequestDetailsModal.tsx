@@ -109,17 +109,17 @@ const RequestDetailsModal: React.FC<Props> = ({
       )}
 
       <div className="pt-4">
-            {actions}
-            {request.status === "Open" && isMyLeaveRequest && (
-              <button
-                onClick={onRevoke}
-                className="mt-2 w-full bg-black text-white font-medium py-2 px-4 rounded-lg"
-                disabled={!onRevoke}
-              >
-                Revoke
-              </button>
-            )}
-          </div>
+        {actions}
+        {request.status === "Open" && isMyLeaveRequest && (
+          <button
+            onClick={onRevoke}
+            className="mt-2 w-full bg-black text-white font-medium py-2 px-4 rounded-lg"
+            disabled={!onRevoke}
+          >
+            Revoke
+          </button>
+        )}
+      </div>
     </div>
   );
 
@@ -128,13 +128,25 @@ const RequestDetailsModal: React.FC<Props> = ({
       <Modal isOpen={true} onClose={onClose} size="md">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Leave Request Details</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Leave Request Details
+            </h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>

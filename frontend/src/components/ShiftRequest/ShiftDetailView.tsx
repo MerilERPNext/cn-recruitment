@@ -8,10 +8,13 @@ import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
 import { formatDate } from "../../utils/qrCodeUtils";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
-import { ErrorView, LoadingView } from "../shared/DetailViewErrorLoadingWrapper";
+import {
+  ErrorView,
+  LoadingView,
+} from "../shared/DetailViewErrorLoadingWrapper";
 
 export function ShiftDetailView({
-  data : propData,
+  data: propData,
   documentName,
   onClose,
   onAction,
@@ -26,7 +29,7 @@ export function ShiftDetailView({
 }) {
   const mutation = useApprovalListActions();
   const { setRefetchAttendance } = useGlobalStore();
-  
+
   const {
     data: fetchedData,
     isLoading,
@@ -37,7 +40,7 @@ export function ShiftDetailView({
   const shouldRender = !!documentName || !!data?.todo_id;
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  
+
   const getStatus = (status: string) => {
     if (status === "Draft") {
       return {
@@ -152,18 +155,16 @@ export function ShiftDetailView({
     return styles;
   };
 
-    // Loading state
+  // Loading state
   if (isLoading && documentName) {
-    return (
-       <LoadingView onClose={onClose} label={label} />
-    );
+    return <LoadingView onClose={onClose} label={label} />;
   }
 
   // Error state
   if (error && documentName) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
-  
+
   if (!shouldRender) return null;
 
   return (
@@ -180,9 +181,7 @@ export function ShiftDetailView({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
-            <h2 className="text-lg font-semibold text-gray-800">
-              {label}
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
           </div>
           <button
             onClick={onClose}
@@ -196,41 +195,41 @@ export function ShiftDetailView({
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
           {/* Employee Info */}
-          <div className="py-4">
+          <div className="py-2">
             <Badge
               label={status?.label as string}
               backgroundColor={status?.statusColor}
             />{" "}
           </div>
-          <div className="py-4">
+          <div className="py-2">
             <div className="flex gap-2 justify-between">
               {/* Display Employee Name */}
               {data?.reference_document?.employee_name && (
-                <p className="text-sm flex flex-col font-bold">
-                  <span>Employee Name</span>
-                  <span className="text-gray-500">
+                <p className=" flex flex-col gap-1">
+                  <span className="card-title">Employee Name</span>
+                  <span className="card-subtitle">
                     {data?.reference_document?.employee_name}
                   </span>
                 </p>
               )}
               {/* Display From Date */}
               {data?.reference_document?.from_date && (
-                <p className="text-sm flex flex-col font-bold">
-                  <span>From Date</span>
-                  <span className="text-gray-500">
+                <p className=" flex flex-col gap-1">
+                  <span className="card-title">From Date</span>
+                  <span className="card-subtitle">
                     {formatDate(data?.reference_document?.from_date)}
                   </span>
                 </p>
               )}
             </div>
           </div>
-          <div className="py-4">
+          <div className="py-2">
             <div className="flex gap-2 justify-between">
               {/* Display Shift Type */}
               {data?.reference_document?.shift_type && (
-                <p className="text-sm flex flex-col font-bold">
-                  <span>Shift Type</span>
-                  <span className="text-gray-500">
+                <p className=" flex flex-col gap-1">
+                  <span className="card-title">Shift Type</span>
+                  <span className="card-subtitle">
                     {data?.reference_document?.shift_type}
                   </span>
                 </p>
@@ -238,9 +237,9 @@ export function ShiftDetailView({
 
               {/* Display To Date */}
               {data?.reference_document?.to_date && (
-                <p className="text-sm flex flex-col font-bold">
-                  <span>To Date</span>
-                  <span className="text-gray-500">
+                <p className=" flex flex-col gap-1">
+                  <span className="card-title">To Date</span>
+                  <span className="card-subtitle">
                     {formatDate(data?.reference_document?.to_date)}
                   </span>
                 </p>
@@ -248,9 +247,9 @@ export function ShiftDetailView({
             </div>
           </div>
           {/* explanation */}
-          <div className="py-4">
-            <p className="text-sm  mb-2 font-bold">Description</p>
-            <div className="bg-gray-100 p-3 rounded-lg">
+          <div className="py-2 flex flex-col gap-1">
+            <p className="card-title">Description</p>
+            <div className="text-sm bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </div>
           </div>

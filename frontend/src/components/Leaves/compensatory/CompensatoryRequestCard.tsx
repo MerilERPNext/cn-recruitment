@@ -88,10 +88,10 @@ const CompensatoryRequestCard = ({
   const status = getStatus(item?.custom_status, item?.docstatus);
 
   const formattedFromDate = item?.work_from_date
-    ? format(new Date(item.work_from_date), "d MMM yyyy")
+    ? format(new Date(item.work_from_date), "dd/MM/yyyy")
     : "N/A";
   const formattedToDate = item?.work_end_date
-    ? format(new Date(item.work_end_date), "d MMM yyyy")
+    ? format(new Date(item.work_end_date), "dd/MM/yyyy")
     : "N/A";
 
   return isDesktop ? (
@@ -136,15 +136,11 @@ const CompensatoryRequestCard = ({
       </div>
 
       <div className="flex-1">
-        <div className="text-sm font-semibold text-gray-900">
-          {item?.leave_type}
-        </div>
-        <div className="text-xs text-gray-600">
+        <div className="card-title">{item?.leave_type}</div>
+        <div className="card-subtitle py-1">
           {formattedFromDate} – {formattedToDate}
         </div>
-        <div className="text-xs text-gray-500 truncate">
-          {item.reason || "—"}
-        </div>
+        <div className="card-subtitle truncate">{item.reason || "—"}</div>
       </div>
 
       <div className="flex items-center">

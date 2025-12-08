@@ -61,7 +61,7 @@ const LeaveTransactionCard: React.FC<{
             onClick={() => toggle(idx)}
           >
             <span className="font-medium">{entry.type}</span>
-            <span className="text-lg font-bold text-gray-700">
+            <span className="text-base md:text-lg  font-bold text-gray-700">
               {entry.total.toString().padStart(2, "0")}
             </span>
           </button>
@@ -166,10 +166,10 @@ const LeaveBalance: React.FC = () => {
               {leaveBalance.map((leave) => (
                 <div
                   key={leave?.type}
-                  className="rounded-xl p-4 mb-4 md:mb-0 bg-white"
+                  className="rounded-xl p-4 md:mb-4 md:mb-0 bg-white"
                 >
                   <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
-                    <span className="text-left module-title">
+                    <span className="text-left base-title md:module-title">
                       {leave?.type}
                     </span>
                     {leave?.visibility_flags?.show_carry_over && (
@@ -185,7 +185,7 @@ const LeaveBalance: React.FC = () => {
                     {leave?.visibility_flags?.show_entitled && (
                       <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-col items-center justify-center bg-blue-50">
                         <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mb-1" />
-                        <p className="text-lg font-bold text-blue-800">
+                        <p className="md:text-lg text-base font-bold text-blue-800">
                           {leave.entitled}
                         </p>
                         <p className="text-xs font-medium text-blue-700">
@@ -196,7 +196,7 @@ const LeaveBalance: React.FC = () => {
                     {leave?.visibility_flags?.show_availed && (
                       <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-col items-center justify-center bg-green-50">
                         <FaClockRotateLeft className="w-6 h-6 text-green-600 mb-1" />
-                        <p className="text-lg font-bold text-green-800">
+                        <p className="md:text-lg text-base font-bold text-green-800">
                           {leave.availed}
                         </p>
                         <p className="text-xs font-medium text-green-700">
@@ -207,7 +207,7 @@ const LeaveBalance: React.FC = () => {
                     {leave?.visibility_flags?.show_balance && (
                       <div className="flex-1 text-center border border-orange-100 rounded-lg py-2 flex flex-col items-center justify-center bg-orange-50">
                         <FiPieChart className="w-6 h-6 text-orange-600 mb-1" />
-                        <p className="text-lg font-bold text-orange-800">
+                        <p className="md:text-lg text-base font-bold text-orange-800">
                           {leave.balance}
                         </p>
                         <p className="text-xs font-medium text-orange-700">

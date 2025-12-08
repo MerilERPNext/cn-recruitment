@@ -79,10 +79,11 @@ const TeamAttendance = () => {
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
-                  <span className="font-semibold">
+                  <span className="base-title">
                     {date.toLocaleString("default", { month: "long" })}{" "}
                     {date.getFullYear()}
                   </span>
+
                   <button
                     onClick={increaseMonth}
                     disabled={nextMonthButtonDisabled}

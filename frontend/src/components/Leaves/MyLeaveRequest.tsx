@@ -136,8 +136,10 @@ const MyLeaveRequests = ({
       <div>
         <div className="bg-white h-full md:px-4 md:pt-2">
           <div className="bg-white px-2">
-            <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200">
-              <h2 className="module-title pb-1">My Leave Requests</h2>
+            <div className="flex justify-between items-center md:pt-4 mb-2 border-b-1 border-gray-200">
+              <h2 className="base-title md:module-title pb-1">
+                My Leave Requests
+              </h2>
               <div className="flex items-center space-x-3 pb-1">
                 <FilterDropdowns />
               </div>

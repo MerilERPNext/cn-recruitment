@@ -90,7 +90,7 @@ const HolidaysFull: React.FC = () => {
               </svg>
             </button>
 
-            <h1 className="text-xl font-semibold text-slate-900">
+            <h1 className="base-title md:text-xl font-semibold text-slate-900">
               {holidayType === "optional"
                 ? "Optional Holidays"
                 : "Regular Holidays"}

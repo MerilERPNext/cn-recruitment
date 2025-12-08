@@ -51,7 +51,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
       : "bg-gray-100 text-gray-800";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
       <div
         className="absolute inset-0 bg-black/40"
         onClick={onClose}
@@ -60,7 +60,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
       <div className="relative z-10 w-full max-w-xl rounded-lg bg-white p-6 shadow-lg">
         <div className="flex justify-between items-center mb-5 pb-4 border-b">
-          <h3 className="text-lg font-semibold">Expense Claim: {id}</h3>
+          <h3 className="base-title md:module-title">Expense Claim: {id}</h3>
           <button
             onClick={onClose}
             className="text-sm p-2 rounded-full hover:bg-gray-200"
@@ -78,13 +78,15 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-              <p className="text-sm text-gray-700">
-                <strong>Expense Category:</strong>{" "}
-                {data?.custom_expense_category ?? "—"}
+              <p className="">
+                <span className="card-title">Expense Category:</span>
+                <span className="card-subtitle ml-2">
+                  {data?.custom_expense_category ?? "—"}
+                </span>
               </p>
 
               <p className="text-sm text-gray-700 flex gap-4 items-center">
-                <strong>Status:</strong>{" "}
+                <span className="card-title">Status:</span>
                 <Badge
                   label={
                     data?.approval_status === "Draft"
@@ -99,21 +101,27 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                 />
               </p>
               <p className="text-sm text-gray-700">
-                <strong>Claimed Amount:</strong>{" "}
-                {formatINR(data?.total_claimed_amount)}
+                <span className="card-title">Claimed Amount:</span>
+                <span className="card-subtitle ml-2">
+                  {formatINR(data?.total_claimed_amount)}
+                </span>
               </p>
               <p className="text-sm text-gray-700">
-                <strong>Sanctioned Amount:</strong>{" "}
-                {formatINR(data?.total_sanctioned_amount)}
+                <span className="card-title">Sanctioned Amount:</span>
+                <span className="card-subtitle ml-2">
+                  {formatINR(data?.total_sanctioned_amount)}
+                </span>
               </p>
 
               <p className="text-sm text-gray-700">
-                <strong>Claimed Date:</strong>{" "}
-                {data?.creation
-                  ? new Date(data.creation).toLocaleString("en-IN", {
-                      dateStyle: "medium",
-                    })
-                  : "—"}
+                <span className="card-title">Claimed Date:</span>
+                <span className="card-subtitle ml-2">
+                  {data?.creation
+                    ? new Date(data.creation).toLocaleString("en-IN", {
+                        dateStyle: "medium",
+                      })
+                    : "—"}
+                </span>
               </p>
 
               <div className="hidden md:block"></div>
@@ -121,9 +129,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
             {Array.isArray(selectedStages) && selectedStages.length > 0 && (
               <div className="mb-4 pt-2">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  Approval Stages
-                </h4>
+                <h4 className="card-title mb-2">Approval Stages</h4>
                 <ApprovalStagesProgress stages={selectedStages} />
               </div>
             )}
@@ -183,7 +189,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
               )}
 
             <div className="mt-4">
-              <h4 className="text-md font-semibold mb-2">
+              <h4 className="base-title md:module-title mb-2">
                 Expense Claim Items
               </h4>
               <div className="overflow-x-auto">

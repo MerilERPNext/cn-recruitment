@@ -96,12 +96,10 @@ export function MyRequestCard({
             <div className="flex items-start gap-3 w-full">
               <div className="w-full">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-sm text-gray-800">
-                      {request?.username}
-                    </h3>
-                    <p className="text-sm text-gray-500">{request?.todo_id}</p>
-                    <p className="text-sm text-gray-500">{formattedDate}</p>
+                  <div className="flex flex-col gap-1">
+                    <h3 className="card-title">{request?.username}</h3>
+                    {/* <p className="text-sm text-gray-500">{request?.todo_id}</p> */}
+                    <p className="card-subtitle">{formattedDate}</p>
                   </div>
                   <Badge
                     size="sm"
@@ -110,8 +108,8 @@ export function MyRequestCard({
                   />
                 </div>
 
-                <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                  <span className="font-semibold">Description:</span>{" "}
+                <p className="card-subtitle mt-2 line-clamp-2">
+                  <span className="card-title">Description:</span>{" "}
                   <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
                 </p>
               </div>

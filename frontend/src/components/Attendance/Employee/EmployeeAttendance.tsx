@@ -195,8 +195,9 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex  bg-gray-100 `}>
       <div
-        className={`flex  bg-gray-100 p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-          }`}
+        className={`flex  bg-gray-100 p-2 flex-col ${
+          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+        }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -239,14 +240,11 @@ const EmployeeAttendance = () => {
 
         {/* My Attendance Requests */}
         <div className="pb-20 px-2 bg-white mt-2 rounded-lg">
-          <div className="flex justify-between items-center w-full p-4">
-            <h3 className="module-title mb-1 ">My Attendance Requests</h3>
-            {/* <p
-              onClick={() => navigate("/webapp/attendance/attendance-request")}
-              className="text-sm text-blue-500 cursor-pointer"
-            >
-              View All
-            </p> */}
+          <div className="flex justify-between items-center w-full pt-4 pb-2 md:p-4">
+            <h3 className="base-title md:module-title mb-1">
+              My Attendance Requests
+            </h3>
+
             <ViewAll
               title="View All"
               onClick={() => navigate("/webapp/attendance/attendance-request")}

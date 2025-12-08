@@ -216,3 +216,20 @@
   color: #111827;
   text-transform: capitalize;
 }
+
+.base-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.card-title {
+  font-size: 0.935rem;
+  font-weight: 600;
+  color: #111827;
+}
+.card-subtitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
