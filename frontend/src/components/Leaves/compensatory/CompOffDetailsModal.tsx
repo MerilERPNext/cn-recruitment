@@ -47,9 +47,7 @@ const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({
       <div className="flex-1 overflow-y-auto p-4">
         <div className="bg-white shadow-md rounded-xl p-4 space-y-3 border border-gray-200">
           <div className="flex items-center justify-between">
-            <div className="text-lg font-semibold text-gray-900">
-              {compOff.leave_type}
-            </div>
+            <div className="base-title">{compOff.leave_type}</div>
             <span
               className={`px-2 py-1 text-xs font-medium rounded-xl ${
                 compOff.custom_status?.toLowerCase() === "issued"
@@ -64,29 +62,29 @@ const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({
           </div>
 
           <div className="flex justify-between text-sm text-gray-700 border-t pt-3">
-            <div>
-              <p className="text-xs text-gray-500">From</p>
-              <p className="font-medium">{formattedFromDate}</p>
+            <div className="flex flex-col gap-1">
+              <p className="card-title">From</p>
+              <p className="card-subtitle">{formattedFromDate}</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-500">To</p>
-              <p className="font-medium">{formattedToDate}</p>
+            <div className="flex flex-col gap-1">
+              <p className="card-title">To</p>
+              <p className="card-subtitle">{formattedToDate}</p>
             </div>
           </div>
 
-          <div className="border-t pt-3">
-            <p className="text-xs text-gray-500 mb-1">Reason</p>
+          <div className="pt-2">
+            <p className="card-title mb-1">Reason</p>
             <div className="bg-gray-100 rounded-md p-2 text-sm text-gray-800">
               {compOff.reason || "—"}
             </div>
           </div>
 
           {compOff?.pay_button_required && (
-            <div className="border-t pt-3 flex justify-end">
+            <div className=" pt-3 flex justify-end">
               <button
                 onClick={handlePay}
                 disabled={isPending}
-                className="bg-black rounded-md text-white px-4 py-1"
+                className="bg-blue-600 rounded-md text-white px-4 py-1"
               >
                 {isPending ? "Processing..." : "Pay"}
               </button>

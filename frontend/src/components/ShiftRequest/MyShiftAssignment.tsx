@@ -16,25 +16,23 @@ const ShiftAssignmentItem: React.FC<{ item: ApiShiftAssignment }> = ({
     <div className="w-full px-1">
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
         <div className="flex justify-between items-start mb-2">
-          <h2 className="text-base font-semibold text-gray-900 mb-1">
-            {item.shift_type}
-          </h2>
+          <h2 className="card-title">{item.shift_type}</h2>
           <span className="text-xs text-gray-500">
             <StatusBadge status={shiftStatus} />
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <div className="flex flex-col">
-            <span className="text-gray-500 font-bold">Date</span>
-            <span className="font-medium text-gray-900">
+          <div className="flex flex-col gap-1">
+            <span className="card-title">Date</span>
+            <span className="card-subtitle">
               {`${formatToIndianDate(item.start_date)} - ${formatEndDate(
                 item.end_date
               )}`}
             </span>
           </div>
-          <div className="flex flex-col text-left">
-            <span className="text-gray-500 font-bold">Time</span>
-            <span className="font-medium text-gray-900">
+          <div className="flex flex-col text-left gap-1">
+            <span className="card-title">Time</span>
+            <span className="card-subtitle">
               {`${item.start_time} - ${item.end_time}`}
             </span>
           </div>

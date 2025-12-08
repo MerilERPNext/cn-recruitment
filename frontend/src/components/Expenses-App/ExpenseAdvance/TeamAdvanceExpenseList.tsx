@@ -62,7 +62,9 @@ const TeamAdvanceExpenseList = () => {
       <div className="bg-white min-h-screen">
         <div className="bg-white px-0 md:p-6">
           <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-            <h2 className="module-title pb-1">Team Advance Requests</h2>
+            <h2 className="base-title md:module-title pb-1">
+              Team Advance Requests
+            </h2>
 
             <div className="flex items-center gap-3 pb-1">
               <CustomDropdown

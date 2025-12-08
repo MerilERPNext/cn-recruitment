@@ -215,7 +215,9 @@ const Holidays: React.FC = () => {
     <div className="p-4 min-h-full pb-24">
       <section className="mb-8">
         <div className="mb-4 flex justify-between items-center">
-          <h2 className="module-title ">Upcoming Regular Holidays</h2>
+          <h2 className="base-title md:module-title ">
+            Upcoming Regular Holidays
+          </h2>
           {isDesktop && allRegular.length !== 0 && (
             <ViewAll
               title="View All"
@@ -229,7 +231,7 @@ const Holidays: React.FC = () => {
         </div>
 
         {upcomingRegular.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">
+          <p className=" text-gray-500 text-center py-4">
             No upcoming regular holidays
           </p>
         ) : (
@@ -261,7 +263,9 @@ const Holidays: React.FC = () => {
       <section>
         <div className="mb-4">
           <div className="mb-4 flex justify-between items-center ">
-            <h2 className="module-title">Upcoming Optional Holidays</h2>
+            <h2 className="base-title md:module-title">
+              Upcoming Optional Holidays
+            </h2>
             {attendancePolicy && isDesktop && allOptional.length !== 0 && (
               <ViewAll
                 title="View All"

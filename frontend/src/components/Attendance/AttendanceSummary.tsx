@@ -147,7 +147,7 @@ const AttendanceSummary = () => {
             <ChevronLeft className="h-5 w-5 text-gray-600" />
           </button>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="base-title md:text-xl font-bold text-gray-900">
               {format(currentDate, "MMMM yyyy")}
             </h1>
             <p className="text-sm text-gray-500 mt-1">Attendance Overview</p>
@@ -265,8 +265,8 @@ const AttendanceSummary = () => {
             {/* Header */}
             <div className="mb-4">
               {/* Team Summary */}
-              <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0">
-                <h2 className="text-xl font-semibold">Today's Team Summary</h2>
+              <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0 mt-5">
+                <h2 className="base-title">Today's Team Summary</h2>
                 <div className="grid grid-cols-3 gap-3">
                   {teamSummaryData.map((data, index) => (
                     <SummaryCard
@@ -301,9 +301,7 @@ const AttendanceSummary = () => {
                           <Icon className="h-4 w-4 text-gray-700" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">
-                            {setting.title}
-                          </h3>
+                          <h3 className="card-title mb-1">{setting.title}</h3>
 
                           {setting.details.length > 0 ? (
                             setting.details.map((detail, detailIndex) => {

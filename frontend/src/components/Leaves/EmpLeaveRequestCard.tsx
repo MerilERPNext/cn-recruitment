@@ -170,7 +170,7 @@ const EmpLeaveRequestCard = ({
       {isDesktop ? (
         <div
           style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr" }}
-          className={`grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer relative`}
+          className={`grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer relative`}
         >
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.leave_type}
@@ -212,15 +212,17 @@ const EmpLeaveRequestCard = ({
         <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow relative">
           <div className="p-2 w-full flex justify-between">
             <div className="flex gap-1 flex-col">
-              <div className="flex gap-2 items-center">
-                <span>{data?.reference_document?.leave_type}</span>
+              <div className="flex gap-2 items-center mb-1">
+                <span className="card-title">
+                  {data?.reference_document?.leave_type}
+                </span>
 
                 <span className="text-sm font-medium text-gray-700 bg-blue-100 px-2 py-0.5 rounded-full">
                   {data?.reference_document?.total_leave_days}
                 </span>
               </div>
 
-              <div className="text-sm text-gray-500">
+              <div className="card-subtitle">
                 {formattedFromDate} - {formattedToDate}
               </div>
             </div>

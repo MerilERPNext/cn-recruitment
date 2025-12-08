@@ -208,7 +208,9 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
     >
       <div className="bg-white md:rounded-xl rounded-t-xl shadow-md w-full max-w-md relative pb-3">
         <div className="flex justify-between items-center border-b px-4 py-4">
-          <h2 className="text-lg font-semibold">Replace Leave Type</h2>
+          <h2 className="base-title md:text-lg font-semibold">
+            Replace Leave Type
+          </h2>
           <button
             className="text-gray-500 hover:text-gray-700"
             onClick={onClose}
@@ -241,7 +243,7 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
           />
           <button
             onClick={handleReplace}
-            className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition-colors"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition-colors"
           >
             Replace
           </button>

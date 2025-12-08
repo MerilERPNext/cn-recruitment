@@ -148,11 +148,11 @@ const EmpAttendanceRequestCard = ({
       ) : (
         <div className="w-full px-1 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
           <div className=" flex items-start justify-between gap-4 w-full">
-            <div className="flex gap-1 flex-col justify-around w-full pb-2">
+            <div className="flex gap-1 flex-col justify-around w-full p-2">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-between w-full py-2">
+                <div className="flex items-center justify-between w-full py-1">
                   <div className="flex items-center gap-2">
-                    <p className="whitespace-nowrap">
+                    <p className="whitespace-nowrap card-title">
                       {data?.reference_document?.custom_request_type}
                     </p>
                   </div>
@@ -189,7 +189,7 @@ const EmpAttendanceRequestCard = ({
                 </div>
                 {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="card-subtitle">
                 {formattedFromDate}
                 {data?.reference_document?.to_date && formattedToDate !== "N/A"
                   ? ` - ${formattedToDate}`

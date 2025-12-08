@@ -18,17 +18,19 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
-  
+
   const navigate = useNavigate();
   const [edit, setEdit] = useState(false);
   const {
-      data: shiftTypes,
-      isLoading: shiftTypesLoading,
-      error: shiftTypesError,
-    } = useShiftTypes();
+    data: shiftTypes,
+    isLoading: shiftTypesLoading,
+    error: shiftTypesError,
+  } = useShiftTypes();
 
   const handleEditClick = () => {
-      navigate(`/webapp/shift-request/shift-change-form/${data?.reference_document?.name}`);
+    navigate(
+      `/webapp/shift-request/shift-change-form/${data?.reference_document?.name}`
+    );
   };
 
   const handleRevokeClick = () => {
@@ -83,19 +85,21 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
     ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
     : "";
 
- const getShiftTimeline = (shiftTypeName: string) => {
-  if (shiftTypes && !shiftTypesLoading && !shiftTypesError) {
-    const shiftType = shiftTypes.data.find(
-      (type) => type.name === shiftTypeName
-    );
+  const getShiftTimeline = (shiftTypeName: string) => {
+    if (shiftTypes && !shiftTypesLoading && !shiftTypesError) {
+      const shiftType = shiftTypes.data.find(
+        (type) => type.name === shiftTypeName
+      );
 
-    if (shiftType) {
-      return `${shiftType.start_time || "--"} - ${shiftType.end_time || "--"}`;
+      if (shiftType) {
+        return `${shiftType.start_time || "--"} - ${
+          shiftType.end_time || "--"
+        }`;
+      }
     }
-  }
 
-  return "";
-};
+    return "";
+  };
 
   return (
     <>
@@ -106,7 +110,9 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate flex flex-col">
             <div>{data?.reference_document?.shift_type}</div>
-            <div className="text-xs">{getShiftTimeline(data?.reference_document?.shift_type || "")}</div>
+            <div className="text-xs">
+              {getShiftTimeline(data?.reference_document?.shift_type || "")}
+            </div>
           </div>
 
           {/* From Date */}
@@ -131,7 +137,8 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               />
             </Tooltip>
           </div>
-          {data?.custom_allow_revoke && data?.can_edit && 
+          {data?.custom_allow_revoke &&
+          data?.can_edit &&
           data?.reference_document?.status === "Draft" ? (
             <div className="text-sm text-gray-900 text-start flex gap-5 items-center">
               {/* ✨ ADD THE EDIT BUTTON HERE */}
@@ -139,9 +146,9 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 icon={<Pencil className="h-3 w-3" />}
                 variant="outline"
                 size="sm"
-                onClick={()=> setEdit(true)}
+                onClick={() => setEdit(true)}
               >
-                Edit 
+                Edit
               </Button>
               {/* REVOKE BUTTON */}
               <Button
@@ -162,7 +169,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
         <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer">
           {/* Top Section: Shift Type + Status */}
           <div className="flex justify-between items-start mb-3">
-            <h3 className="text-base font-semibold text-gray-900 truncate">
+            <h3 className="base-title truncate">
               {data?.reference_document?.shift_type || "--"}
             </h3>
             <Badge
@@ -176,15 +183,15 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           <div className="flex justify-between gap-6">
             {/* Left Column */}
             <div>
-              <div>
-                <div className="text-xs text-gray-500">Employee</div>
-                <div className="font-medium text-sm text-gray-800">
+              <div className="flex flex-col gap-1">
+                <div className="card-title">Employee</div>
+                <div className="card-subtitle">
                   {data?.reference_document?.employee_name || "--"}
                 </div>
               </div>
-              <div className="mt-2">
-                <div className="text-xs text-gray-500">Shift Type</div>
-                <div className="font-medium text-sm text-gray-800">
+              <div className="flex flex-col gap-1 mt-1">
+                <div className="card-title">Shift Type</div>
+                <div className="card-subtitle">
                   {data?.reference_document?.shift_type || "--"}
                 </div>
               </div>
@@ -192,23 +199,22 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
 
             {/* Right Column */}
             <div className="text-right">
-              <div>
-                <div className="text-xs text-gray-500">From</div>
-                <div className="font-medium text-sm text-gray-800">
-                  {formattedFromDate}
-                </div>
+              <div className="flex flex-col gap-1">
+                <div className="card-title">From</div>
+                <div className="card-subtitle">{formattedFromDate}</div>
               </div>
-              <div className="mt-2">
-                <div className="text-xs text-gray-500">To</div>
+              <div className="flex flex-col gap-1 mt-1">
+                <div className="card-title">To</div>
                 <div className="font-medium text-sm text-gray-800">
                   {formattedToDate}
                 </div>
               </div>
             </div>
           </div>
-   
+
           {/* Action Buttons */}
-          {data?.custom_allow_revoke && data?.can_edit &&
+          {data?.custom_allow_revoke &&
+          data?.can_edit &&
           data?.reference_document?.status === "Draft" ? (
             <div className="flex flex-wrap justify-start gap-2 mt-4">
               <Button
@@ -230,22 +236,22 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               </Button>
             </div>
           ) : null}
-
         </div>
       )}
-        {edit && isDesktop &&
-            createPortal(    
-               <ExpenseFormModal
-                    isOpen={edit}
-                    onClose={() => setEdit(false)}
-                    title="Request Shift Change"
-                  >
-                <ShiftRequestFormModal
-                  onClose={() => setEdit(false)}
-                  defaultShiftRequestData={data?.reference_document}
-                  forActionType="edit"
-              />
-        </ExpenseFormModal>,
+      {edit &&
+        isDesktop &&
+        createPortal(
+          <ExpenseFormModal
+            isOpen={edit}
+            onClose={() => setEdit(false)}
+            title="Request Shift Change"
+          >
+            <ShiftRequestFormModal
+              onClose={() => setEdit(false)}
+              defaultShiftRequestData={data?.reference_document}
+              forActionType="edit"
+            />
+          </ExpenseFormModal>,
           document.body
         )}
     </>

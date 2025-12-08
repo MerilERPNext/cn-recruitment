@@ -15,6 +15,7 @@ import { SquarePen, Users } from "lucide-react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import Button from "../../shared/atoms/Button";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { format } from "date-fns";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Draft" },
@@ -42,20 +43,16 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
   const formattedDate = item?.reference_document?.creation
-    ? new Date(item?.reference_document?.creation).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+    ? format(new Date(item.reference_document.creation), "dd/MM/yyyy")
     : " - ";
 
   return (
     <div className="rounded-xl my-1 border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
       <div className="flex justify-between items-start">
-        <div className="flex flex-col">
-          <span className=" text-sm text-gray-500">Expense category</span>
+        <div className="flex flex-col gap-1">
+          <span className="card-title">Expense category</span>
           {item?.reference_document?.custom_expense_category && (
-            <span className="font-semibold text-base text-gray-900">
+            <span className="card-subtitle">
               {item?.reference_document?.custom_expense_category}
             </span>
           )}
@@ -74,13 +71,17 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         )}
       </div>
 
-      <p className="flex justify-between text-sm text-gray-500">
-        <span className="font-semibold">Claimed Date:</span> {formattedDate}
-      </p>
-      <p className="flex justify-between text-sm text-gray-500">
-        <span className="font-semibold">Claimed Amount:</span>{" "}
-        <span className="font-semibold text-gray-900">{formattedAmount}</span>
-      </p>
+      <div className="flex justify-between">
+        <div className="flex flex-col gap-1">
+          <span className="card-title">Claimed Date</span>
+          <span className="card-subtitle">{formattedDate}</span>
+        </div>
+
+        <div className="flex flex-col gap-1 text-right">
+          <span className="card-title">Claimed Amount</span>
+          <span className="card-subtitle">{formattedAmount}</span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -132,7 +133,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
 
   return (
     <div
-      className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
+      className="grid gap-4 px-6 py-5 hover:bg-blue-50 border-b border-gray-100 text-sm text-gray-700 items-center"
       style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 0.5fr" }}
     >
       <span>{expenseClaim?.custom_expense_category || " - "}</span>
@@ -291,9 +292,7 @@ const ExpensesList: React.FC = () => {
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
       <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800 pb-1">
-          My Expense Claims
-        </h2>
+        <h2 className="base-title md:module-title pb-1">My Expense Claims</h2>
 
         <div className="flex items-center space-x-3 pb-1">
           <Button

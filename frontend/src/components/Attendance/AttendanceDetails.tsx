@@ -8,7 +8,10 @@ import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
-import { ErrorView, LoadingView } from "../shared/DetailViewErrorLoadingWrapper";
+import {
+  ErrorView,
+  LoadingView,
+} from "../shared/DetailViewErrorLoadingWrapper";
 
 export function AttendanceDetailView({
   data: propData,
@@ -30,7 +33,6 @@ export function AttendanceDetailView({
     isLoading,
     error,
   } = useGetToDoWithReferenceDoc(documentName || "");
-
 
   // Use fetched data if documentName is provided, otherwise use prop data
   const data = documentName ? fetchedData : propData;
@@ -176,9 +178,7 @@ export function AttendanceDetailView({
 
   // Loading state
   if (isLoading && documentName) {
-    return (
-       <LoadingView onClose={onClose} label={label} />
-    );
+    return <LoadingView onClose={onClose} label={label} />;
   }
 
   // Error state
@@ -222,13 +222,13 @@ export function AttendanceDetailView({
               backgroundColor={status?.statusColor}
             />{" "}
           </div>
-          <div className="py-4">
+          <div className="py-2">
             <div className="flex gap-2 justify-between">
               {/* Display From Date */}
               {data?.reference_document?.from_date && (
-                <p className="text-sm flex flex-col font-bold">
-                  <span>From Date</span>
-                  <span className="text-gray-500">
+                <p className="flex flex-col gap-1">
+                  <span className="card-title">From Date</span>
+                  <span className="card-subtitle">
                     {formatDate(data?.reference_document?.from_date)}
                   </span>
                 </p>
@@ -236,9 +236,9 @@ export function AttendanceDetailView({
 
               {/* Display To Date */}
               {data?.reference_document?.to_date && (
-                <p className="text-sm flex flex-col font-bold">
-                  <span>To Date</span>
-                  <span className="text-gray-500">
+                <p className=" flex flex-col gap-1">
+                  <span className="card-title">To Date</span>
+                  <span className="card-subtitle">
                     {formatDate(data?.reference_document?.to_date)}
                   </span>
                 </p>
@@ -246,42 +246,43 @@ export function AttendanceDetailView({
             </div>
           </div>
           {data?.due_date && (
-            <p className="text-sm flex flex-col font-bold">
-              <span>Due Date</span>
-              <span className="text-gray-500">
+            <p className=" flex flex-col gap-1">
+              <span className="card-title">Due Date</span>
+              <span className="card-subtitle">
                 {formatDate(data?.due_date)}
               </span>
             </p>
           )}
-          <div className="py-4">
-            <p className="text-sm  mb-2 font-bold">Reason</p>
-            {label === "Leave Application"
-              ? data?.reference_document?.custom_reason
-              : data?.reference_document?.reason}
+          <div className="py-2 flex flex-col gap-1">
+            <p className="card-title">Reason</p>
+            <span className="card-subtitle">
+              {label === "Leave Application"
+                ? data?.reference_document?.custom_reason
+                : data?.reference_document?.reason}
+            </span>
           </div>
           {/* description */}
-          <div className="py-4">
-            <p className="text-sm  mb-2 font-bold">Description</p>
-            <div className="bg-gray-100 p-3 rounded-lg">
+          <div className="py-2">
+            <p className="card-title mb-2">Description</p>
+            <div className="text-sm bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </div>
           </div>
           {/* explanation */}
-          <div className="py-4">
-            <p className="text-sm  mb-2 font-bold">Explanation</p>
-            <div className="bg-gray-100 p-3 rounded-lg">
+          <div className="py-2">
+            <p className="card-title mb-2">Explanation</p>
+            <div className="text-sm bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanExplaination }} />
             </div>
           </div>
-        {data?.attachments && data?.attachments?.length>0 ? (
-                <div className="py-4">
-                  <p className="text-sm  mb-2 font-bold">Attachment</p>
-                  {data?.attachments?.map((item:{file_url:string})=>  <FileRenderer
-                    filePath={item?.file_url || ""}
-                  />)}
-                
-                </div>
-              ) : null}
+          {data?.attachments && data?.attachments?.length > 0 ? (
+            <div className="py-2">
+              <p className="card-title mb-2">Attachment</p>
+              {data?.attachments?.map((item: { file_url: string }) => (
+                <FileRenderer filePath={item?.file_url || ""} />
+              ))}
+            </div>
+          ) : null}
         </div>
 
         {/* Actions */}

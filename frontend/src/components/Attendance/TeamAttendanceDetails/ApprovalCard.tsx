@@ -223,10 +223,10 @@ const ApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <p className="text-md font-bold">
+                  <p className="card-title">
                     {data?.reference_document?.employee_name}
                   </p>
-                  <p className="text-sm text-gray-500">{data?.todo_id} </p>
+                  {/* <p className="text-sm text-gray-500">{data?.todo_id} </p> */}
                 </div>
 
                 <Badge
@@ -240,8 +240,8 @@ const ApprovalCard = ({
                   {/* Display From Date */}
                   {data?.reference_document?.from_date && (
                     <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
-                      <span>From</span>
-                      <span className="text-black font-semibold">
+                      <span className="card-title mb-1">From</span>
+                      <span className="card-subtitle">
                         {formatDate(data?.reference_document?.from_date)}
                       </span>
                     </p>
@@ -250,16 +250,16 @@ const ApprovalCard = ({
                   {/* Display To Date */}
                   {data?.reference_document?.to_date && (
                     <p className="text-sm text-gray-500 flex flex-col items-center">
-                      <span>To</span>
-                      <span className="text-black font-semibold">
+                      <span className="card-title mb-1">To</span>
+                      <span className="card-subtitle">
                         {formatDate(data?.reference_document?.to_date)}
                       </span>
                     </p>
                   )}
                   {data?.due_date && (
                     <p className="text-sm text-gray-500 flex flex-col items-end">
-                      <span>Due</span>
-                      <span className="text-black font-semibold">
+                      <span className="card-title mb-1">Due</span>
+                      <span className="card-subtitle">
                         {formatDate(data?.due_date)}
                       </span>
                     </p>
@@ -267,7 +267,7 @@ const ApprovalCard = ({
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+              <div className="flex sm:flex-row sm:justify-start gap-2">
                 {actions?.length > 0 &&
                   data?.status === "Pending" &&
                   actions.map((action: string) => (

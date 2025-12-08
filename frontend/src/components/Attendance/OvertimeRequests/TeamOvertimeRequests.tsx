@@ -78,8 +78,10 @@ const TeamOvertimeRequests = () => {
     <div>
       <div className="bg-white min-h-screen">
         <div className="bg-white px-2">
-          <div className="flex justify-between pt-4 mb-2 border-b-1 border-gray-200 px-2">
-            <h2 className="module-title pb-1">Team Overtime Requests</h2>
+          <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
+            <h2 className="base-title md:module-title pb-1">
+              Team Overtime Requests
+            </h2>
             <div className="flex items-center space-x-3 pb-1">
               <FilterDropdowns />
             </div>
@@ -104,11 +106,7 @@ const TeamOvertimeRequests = () => {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    options: [
-                      "Open",
-                      "Approved",
-                      "Rejected",
-                    ],
+                    options: ["Open", "Approved", "Rejected"],
                   },
                   {
                     fieldname: "allocated_to",

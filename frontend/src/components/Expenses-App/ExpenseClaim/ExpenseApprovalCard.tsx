@@ -177,7 +177,7 @@ const ExpenseApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -277,7 +277,7 @@ const ExpenseApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <p className="text-md font-bold">
+                  <p className="card-title">
                     {data?.reference_document?.employee_name}
                   </p>
                 </div>
@@ -288,30 +288,35 @@ const ExpenseApprovalCard = ({
                   backgroundColor={status?.statusColor}
                 />
               </div>
-              <div className="flex flex-col items-start justify-between bg-gray-100 mt-1 rounded-md p-1">
-                <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">
-                    Category
-                  </p>
-                  <p className="w-1/2 truncate text-end">
-                    {data?.reference_document?.custom_expense_category}
-                  </p>
+              <div className="flex flex-col items-start justify-between mt-1 rounded-md p-1">
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-1">
+                    <p className="card-title">Category</p>
+                    <p className="card-subtitle">
+                      {data?.reference_document?.custom_expense_category}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <p className="card-title">Claimed Amount</p>
+                    <p className="card-subtitle">{totalClaimedAmount}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">
-                    Claimed Amount
-                  </p>
-                  <p className="w-1/2 truncate text-end">
-                    {totalClaimedAmount}
-                  </p>
-                </div>
-                <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">
-                    Due Date
-                  </p>
-                  <p className="w-1/2 truncate text-end">
-                    {formatDate(data?.due_date)}
-                  </p>
+
+                <div className="flex justify-between w-full mt-2">
+                  <div className="flex flex-col gap-1">
+                    <p className="card-title">Claim Date</p>
+                    <p className="card-subtitle">
+                      {formatDate(
+                        data?.reference_document?.expenses[0]?.expense_date
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <p className="card-title">Due Date</p>
+                    <p className="card-subtitle">
+                      {formatDate(data?.due_date)}
+                    </p>
+                  </div>
                 </div>
               </div>
 
