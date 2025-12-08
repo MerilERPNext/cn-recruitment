@@ -50,6 +50,10 @@ const SearchMembersApp = () => {
     [
       ["name", "like", `%${query}%`],
       ["employee_name", "like", `%${query}%`],
+      ["status", "like", `%${query}%`],
+      ["department", "like", `%${query}%`],
+      ["designation", "like", `%${query}%`],
+      ["name", "like", `%${query}%`],
     ]
   );
 
@@ -95,7 +99,7 @@ const SearchMembersApp = () => {
     if (error)
       return (
         <div className="text-center text-red-600 py-6" role="alert">
-          Error loading employees
+          {error.message.toString()}
         </div>
       );
 
