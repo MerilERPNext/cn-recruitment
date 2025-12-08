@@ -599,63 +599,9 @@ export default function DesktopDashboard() {
               <div className="h-auto">
                 <TasksAwaiting />
               </div>
-              {/* Requests */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="section-title mb-6">Requests</h3>
-
-                <div className="grid grid-cols-4 gap-4">
-                  {/* Apply Leave */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={() => setShowLeaveRequest(true)}
-                  >
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <Calendar className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Apply Leave
-                    </p>
-                  </div>
-
-                  {/* Attendance Request */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={() => setShowAttendanceRequest(true)}
-                  >
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <FileText className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Attendance Request
-                    </p>
-                  </div>
-
-                  {/* Overtime */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={() => setShowOvertimeRequest(true)}
-                  >
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <Timer className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Planned Overtime Request
-                    </p>
-                  </div>
-
-                  {/* Shift Change */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={handleShiftForm}
-                  >
-                    <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <ArrowUpDown className="w-6 h-6 text-green-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Request Shift Change
-                    </p>
-                  </div>
-                </div>
+              {/* Admin Apps  */}
+              <div>
+                <MicroAppInDashboard />
               </div>
             </div>
 
@@ -793,9 +739,9 @@ export default function DesktopDashboard() {
                   </div>
 
                   {/* Status */}
-                  <div className="flex items-center justify-center w-full gap-2 text-sm bg-red-100 rounded py-1">
+                  <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
                     <div
-                      className={`w-2 h-2 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                      className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
                         }`}
                     ></div>
 
@@ -811,43 +757,8 @@ export default function DesktopDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="section-title mb-4">Helpdesk / ToDo's</h3>
-                <div className="flex flex-col w-full gap-4">
-                  {/* Helpdesk Card */}
-                  <div className="flex w-full flex-col gap-2 bg-gray-100 p-2 rounded-lg hover:bg-gray-200">
-                    <div className="bg-blue-200 w-full p-2 rounded-lg">
-                      <button
-                        onClick={handleHelpDeskClick}
-                        className="flex items-center w-full justify-center text-white px-4 py-2 rounded-lg text-sm"
-                      >
-                        <Headset className="w-4 h-4 text-blue-800" />
-                      </button>
-                    </div>
-                    <div className="text-sm text-gray-800 font-medium text-center">
-                      Helpdesk
-                    </div>
-                  </div>
-
-                  {/* Todo Card */}
-                  <div className="flex w-full flex-col gap-2 bg-gray-100 p-2 rounded-lg hover:bg-gray-200">
-                    <div className="bg-green-200 p-2 rounded-lg">
-                      <button
-                        onClick={handleTodoClick}
-                        className="flex items-center w-full justify-center text-white px-4 py-2 rounded-lg text-sm"
-                      >
-                        <HelpCircle className="w-4 h-4 text-green-800" />
-                      </button>
-                    </div>
-                    <div className="text-sm text-gray-600 font-medium text-center">
-                      ToDo List
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Announcements */}
-              <div className="bg-white p-6 rounded-lg shadow-sm min-h-[15rem] overflow-y-auto">
+              <div className="bg-white p-6 rounded-lg shadow-sm min-h-[16.5rem] overflow-y-auto">
                 <div className="text-center">
                   <h3 className="section-title mb-2 text-left">
                     Announcements
@@ -857,11 +768,66 @@ export default function DesktopDashboard() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="mt-4">
-            <MicroAppInDashboard />
+              {/* Requests */}
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <h3 className="section-title mb-6">Requests</h3>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Apply Leave */}
+                  <div
+                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
+                    onClick={() => setShowLeaveRequest(true)}
+                  >
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
+                      <Calendar className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      Apply Leave
+                    </p>
+                  </div>
+
+                  {/* Attendance Request */}
+                  <div
+                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
+                    onClick={() => setShowAttendanceRequest(true)}
+                  >
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
+                      <FileText className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      Attendance Request
+                    </p>
+                  </div>
+
+                  {/* Overtime */}
+                  <div
+                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
+                    onClick={() => setShowOvertimeRequest(true)}
+                  >
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto flex items-center justify-center mb-3">
+                      <Timer className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      Planned Overtime Request
+                    </p>
+                  </div>
+
+                  {/* Shift Change */}
+                  <div
+                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
+                    onClick={handleShiftForm}
+                  >
+                    <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto flex items-center justify-center mb-3">
+                      <ArrowUpDown className="w-6 h-6 text-green-600" />
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      Request Shift Change
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

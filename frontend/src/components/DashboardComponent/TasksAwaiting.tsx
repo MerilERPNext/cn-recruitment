@@ -167,11 +167,10 @@ const TasksAwaiting: React.FC = () => {
       <div className="flex overflow-x-auto gap-3 mb-4 p-2">
         <button
           onClick={() => setActiveCategory("All")}
-          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${
-            activeCategory === "All"
+          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${activeCategory === "All"
               ? "bg-gray-900 text-white scale-105"
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          } transition-all`}
+            } transition-all`}
         >
           All ({totalCount})
         </button>
@@ -184,11 +183,10 @@ const TasksAwaiting: React.FC = () => {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
-                isActive
-                  ? `scale-105 ring-2 ${colors}`
-                  : `${colors} opacity-70 hover:opacity-100`
-              }`}
+              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
+                ? `scale-105 ring-2 ${colors}`
+                : `${colors} opacity-70 hover:opacity-100`
+                }`}
             >
               {cat} ({count})
             </button>
@@ -223,7 +221,7 @@ const TasksAwaiting: React.FC = () => {
         />
       )}
 
-      <div className="max-h-[38.9rem] overflow-y-auto">
+      <div className="max-h-[38.9rem] min-h-[38.9rem]  overflow-y-auto">
         {filtered.map((item) => (
           <MyToDoItem key={item.name} item={item} />
         ))}

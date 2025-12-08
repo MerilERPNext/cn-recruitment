@@ -145,6 +145,7 @@ const SearchMembersApp = () => {
                   type="search"
                   value={searchQuery}
                   onChange={onSearchInputChange}
+                  autoFocus
                   placeholder="Search members…"
                   className="flex-1 bg-transparent text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:outline-none"
                   inputMode="search"

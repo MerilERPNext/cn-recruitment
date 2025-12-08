@@ -20,35 +20,36 @@ export interface Employee {
   gender: string;
   image?: string;
   status: 'Active' | 'Inactive' | 'Suspended' | 'Left';
+  custom_employee_status?: "On Probation" | "Confirmation" | "Probation Extended" | "On Notice Period";
   user_id?: string;
   reports_to?: string;
-  
+
   // Contact Details
   cell_number?: string;
   personal_email?: string;
   company_email?: string;
   prefered_email?: string;
-  
+
   // Address
   current_address?: string;
   permanent_address?: string;
   custom_same_as_current?: string;
-  
+
   // Emergency Contact
   person_to_be_contacted?: string;
   emergency_phone_number?: string;
   relation?: string;
-  
+
   // Attendance & Leaves
   attendance_device_id?: string;
   holiday_list?: string;
   default_shift?: string;
-  
+
   // Personal Details
   marital_status?: string;
   blood_group?: string;
   custom_aadhar_no?: string;
-  
+
   // Employment Details
   job_applicant?: string;
   scheduled_confirmation_date?: string;
@@ -56,7 +57,7 @@ export interface Employee {
   contract_end_date?: string;
   notice_number_of_days?: number;
   date_of_retirement?: string;
-  
+
   // Salary Information
   ctc?: number;
   salary_currency?: string;
@@ -64,12 +65,12 @@ export interface Employee {
   payroll_cost_center?: string;
   pan_number?: string;
   provident_fund_account?: string;
-  
+
   // Bank Details
   bank_name?: string;
   bank_ac_no?: string;
   ifsc_code?: string;
-  
+
   // Exit Details
   resignation_letter_date?: string;
   relieving_date?: string;
@@ -78,11 +79,11 @@ export interface Employee {
   reason_for_leaving?: string;
   feedback?: string;
 
-  custom_allow_mobile_checkin ?:boolean;
-  custom_enable_web_clockin ?:boolean;
+  custom_allow_mobile_checkin?: boolean;
+  custom_enable_web_clockin?: boolean;
 }
 
-export interface EmployeeNode  {
+export interface EmployeeNode {
   name: string;
   id: string;
   lft: number;
@@ -121,7 +122,7 @@ export interface EmployeeListItem {
   designation?: string;
   status: string;
   image?: string;
-} 
+}
 
 export interface IReason {
   name: string;
