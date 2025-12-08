@@ -48,6 +48,7 @@ const EmployeeProfile: React.FC = () => {
     employeeId || "",
     currentUser?.employee || ""
   );
+
   const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
     useState(false);
   const navigate = useNavigate();

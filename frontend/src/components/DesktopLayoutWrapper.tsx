@@ -21,6 +21,7 @@ import useLogout from "../hooks/useLogout";
 import { useRequestPasswordReset } from "../hooks/useResetPassword";
 import { toast } from "react-hot-toast";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
+import ViewingAsBanner from "./ViewingAsBanner";
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -346,6 +347,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Viewing As Banner */}
+        <ViewingAsBanner />
 
         {/* Page Content */}
         <div className="flex-1 overflow-hidden relative">

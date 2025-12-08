@@ -55,6 +55,7 @@ import {
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { ViewAll } from "./shared/atoms/ViewAll";
+import ViewingAsBanner from "./ViewingAsBanner";
 
 const statusStyles = {
   unpaid: {
@@ -388,6 +389,9 @@ const MobileDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Viewing As Banner */}
+      <ViewingAsBanner />
 
       {/* Search Bar */}
       <div className="px-4 py-2 mt-2 bg-white border-b border-gray-100 flex-shrink-0">
