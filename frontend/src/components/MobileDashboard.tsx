@@ -374,10 +374,7 @@ const MobileDashboard: React.FC = () => {
             <div
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer border border-gray-400"
               onClick={() => {
-                const employeeId = currentEmployee?.employee;
-                if (employeeId) {
-                  navigate(`/webapp/employee-profile/${employeeId}`);
-                }
+                navigate(`/webapp/employee-profile`);
               }}
             >
               <img

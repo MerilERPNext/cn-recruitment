@@ -4,7 +4,7 @@ import { useCurrentEmployee } from '../hooks/useEmployee';
 
 interface ViewedUserContextType {
     targetEmployeeId: string | null;
-    setTargetEmployee: (employeeId: string | null) => void;
+    setTargetEmployee: (employeeId: string | null, targetPath?: string) => void;
     clearTargetEmployee: () => void;
     isViewingOtherUser: boolean;
 }
@@ -41,38 +41,13 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         const urlParam = searchParams.get(TARGET_USER_PARAM);
 
-        // Check if we're on an employee profile route and extract the ID
-        const profileMatch = location.pathname.match(/\/employee-profile\/([^/]+)/);
-        const profileEmployeeId = profileMatch ? profileMatch[1] : null;
-
-        // If we're on a profile page, sync that ID
-        if (profileEmployeeId && profileEmployeeId !== targetEmployeeId) {
-            setTargetEmployeeIdState(profileEmployeeId);
-            sessionStorage.setItem(SESSION_STORAGE_KEY, profileEmployeeId);
-
-            // Also update URL query param if missing
-            if (!urlParam) {
-                const newParams = new URLSearchParams(searchParams);
-                newParams.set(TARGET_USER_PARAM, profileEmployeeId);
-                navigate(
-                    {
-                        pathname: location.pathname,
-                        search: newParams.toString(),
-                    },
-                    { replace: true }
-                );
-            }
-            return;
-        }
-
         if (urlParam && urlParam !== targetEmployeeId) {
             // URL has a different target user, update state
             setTargetEmployeeIdState(urlParam);
             sessionStorage.setItem(SESSION_STORAGE_KEY, urlParam);
-        } else if (!urlParam && targetEmployeeId && !profileEmployeeId) {
+        } else if (!urlParam && targetEmployeeId) {
             // URL is missing the param but we have a target user in state
             // This is the "Sticky Session" logic - append the param to URL
-            // But only if we're NOT on a profile page (which handles its own ID)
             const newParams = new URLSearchParams(searchParams);
             newParams.set(TARGET_USER_PARAM, targetEmployeeId);
 
@@ -90,10 +65,10 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.pathname, searchParams.toString(), targetEmployeeId]);
 
-    const setTargetEmployee = (employeeId: string | null) => {
+    const setTargetEmployee = (employeeId: string | null, targetPath?: string) => {
         if (employeeId) {
             // Only update if the value actually changed
-            if (employeeId === targetEmployeeId) {
+            if (employeeId === targetEmployeeId && !targetPath) {
                 return;
             }
 
@@ -107,7 +82,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
             navigate(
                 {
-                    pathname: location.pathname,
+                    pathname: targetPath || location.pathname,
                     search: newParams.toString(),
                 },
                 { replace: true }
@@ -135,7 +110,8 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         );
     };
 
-    const isViewingOtherUser = targetEmployeeId !== null &&
+    const isViewingOtherUser =
+        targetEmployeeId !== null &&
         currentEmployee?.name !== undefined &&
         targetEmployeeId !== currentEmployee.name;
 

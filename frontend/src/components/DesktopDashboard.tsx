@@ -56,6 +56,7 @@ import { useRequestPasswordReset } from "../hooks/useResetPassword";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 import { CustomError } from "../types/attendance";
+import ViewingAsBanner from "./ViewingAsBanner";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -512,10 +513,7 @@ export default function DesktopDashboard() {
 
                     <button
                       onClick={() => {
-                        const employeeId = currentEmployee?.employee;
-                        if (employeeId) {
-                          navigate(`/webapp/employee-profile/${employeeId}`);
-                        }
+                        navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
@@ -566,6 +564,7 @@ export default function DesktopDashboard() {
             </div>
           </div>
         </div>
+        <ViewingAsBanner />
 
         <div className="p-4 flex-1">
           <div className="pr-3">

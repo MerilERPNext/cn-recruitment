@@ -262,7 +262,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
               {/* Profile Dropdown */}
               {showProfileDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center gap-3">
                       {/* Avatar */}
@@ -293,10 +293,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                   <div className="py-2">
                     <button
                       onClick={() => {
-                        const employeeId = currentEmployee?.employee;
-                        if (employeeId) {
-                          navigate(`/webapp/employee-profile/${employeeId}`);
-                        }
+                        navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"

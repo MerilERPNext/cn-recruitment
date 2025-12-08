@@ -1,9 +1,17 @@
 import { format } from "date-fns"; // Import the format function
 import { useEmployeeHolidays } from "../../hooks/useEmployeeHolidays";
-import { useParams } from "react-router-dom";
+import { useViewedUser } from "../../context/ViewedUserContext";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 
 const ShowHolidays = () => {
-  const { id: employeeId } = useParams<{ id: string }>();
+  const { targetEmployeeId } = useViewedUser();
+  const { data: userId } = useLoggedInUser();
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
+
+  // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
+  const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";
+
   const { data: holidays, isLoading, error } = useEmployeeHolidays(employeeId);
 
   // Early returns to handle loading, error, and empty holidays states
