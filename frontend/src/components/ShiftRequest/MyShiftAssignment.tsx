@@ -23,14 +23,18 @@ const ShiftAssignmentItem: React.FC<{ item: ApiShiftAssignment }> = ({
         </div>
         <div className="flex justify-between text-sm">
           <div className="flex flex-col gap-1">
-            <span className="card-title">Date</span>
+            <span className="card-title">From</span>
             <span className="card-subtitle">
-              {`${formatToIndianDate(item.start_date)} - ${formatEndDate(
-                item.end_date
-              )}`}
+              {`${formatToIndianDate(item.start_date)}`}
             </span>
           </div>
-          <div className="flex flex-col text-left gap-1">
+          <div className="flex flex-col gap-1 text-center">
+            <span className="card-title">To</span>
+            <span className="card-subtitle">
+              {`${formatEndDate(item.end_date)}`}
+            </span>
+          </div>
+          <div className="flex flex-col text-right gap-1">
             <span className="card-title">Time</span>
             <span className="card-subtitle">
               {`${item.start_time} - ${item.end_time}`}

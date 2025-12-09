@@ -66,7 +66,7 @@ const SelectByMonth = ({
               <button
                 key={month.value}
                 onClick={() => setSelectedMonth(month)}
-                className="mb-4 w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-lg last:border-b-0 border-1 border-gray-100 bg-white shadow-sm rounded-xl"
+                className="mb-4 w-full flex items-center justify-between p-4 hover:bg-blue-50 transition-colors rounded-lg last:border-b-0 border-1 border-gray-100 bg-white shadow-sm rounded-xl"
               >
                 <span className="text-gray-900 font-medium text-left">
                   {month.label}
@@ -74,7 +74,7 @@ const SelectByMonth = ({
 
                 <div className="flex items-center">
                   {selectedMonth.value === month.value ? (
-                    <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
+                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                       <Check className="w-4 h-4 text-white" />
                     </div>
                   ) : (
@@ -92,7 +92,7 @@ const SelectByMonth = ({
         <div className="sticky bottom-0 left-0 right-0 bg-white w-full p-4 border-t border-gray-200">
           <button
             onClick={handleApply}
-            className="w-full py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
           >
             Apply
           </button>

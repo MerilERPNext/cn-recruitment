@@ -97,7 +97,7 @@ const CompensatoryRequestCard = ({
   return isDesktop ? (
     <div
       style={{ gridTemplateColumns: "1fr 1fr 1fr 2.5fr 1fr 1fr" }}
-      className="grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+      className="grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-blue-50 transition-colors"
       onClick={onClick}
     >
       <div className="text-sm font-medium text-gray-700 truncate">

@@ -156,37 +156,36 @@ const EmpAttendanceRequestCard = ({
                       {data?.reference_document?.custom_request_type}
                     </p>
                   </div>
-
-                  <Badge
-                    size="sm"
-                    backgroundColor={status?.statusColor}
-                    label={status?.label || ""}
-                  />
+                  <div className="text-sm text-gray-900 text-start flex gap-2">
+                    {data?.custom_allow_revoke && type === "pending" ? (
+                      <Button
+                        icon={<RotateCcw className="h-3 w-3" />}
+                        variant="contain"
+                        size="sm"
+                        onClick={handleRevokeClick}
+                        disabled={revokeEventMutation.isPending}
+                      >
+                        {revokeEventMutation.isPending ? "Revoking..." : ""}
+                      </Button>
+                    ) : (
+                      <></>
+                    )}
+                    {type == "pending" && data?.can_edit && (
+                      <Button
+                        onClick={() => {
+                          setEdit(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="text-sm text-gray-900 text-start flex gap-2">
-                  {data?.custom_allow_revoke && type === "pending" ? (
-                    <Button
-                      icon={<RotateCcw className="h-3 w-3" />}
-                      variant="contain"
-                      size="sm"
-                      onClick={handleRevokeClick}
-                      disabled={revokeEventMutation.isPending}
-                    >
-                      {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                    </Button>
-                  ) : (
-                    <></>
-                  )}
-                  {type == "pending" && data?.can_edit && (
-                    <Button
-                      onClick={() => {
-                        setEdit(true);
-                      }}
-                    >
-                      Edit
-                    </Button>
-                  )}
-                </div>
+                <Badge
+                  size="sm"
+                  backgroundColor={status?.statusColor}
+                  label={status?.label || ""}
+                />
                 {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
               </div>
               <div className="card-subtitle">
