@@ -1,41 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FrappeAPI } from '../utils/frappeAPI';
-import { Notice, NoticeFilters } from '../types/notice';
+import { Notice } from '../types/notice';
 
 // Notice API service
 export class NoticeService {
   
   private readonly baseUrl = '/api/method/recruitment.api';
   
-  async getAllNotices(filters?: NoticeFilters): Promise<Notice[]> {
+  async getAllNotices(): Promise<Notice[]> {
     try {
-      console.log('📡 Fetching notices...');
-      
-      // Call our custom API
-      const response = await fetch(`/api/resource/Notices`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filters: filters || {} }),
-      });
+        const notices = await FrappeAPI.getDocumentList('Notice',{fields:["*"]});
 
-      if (!response.ok) {
-        console.error('📡 API failed:', response.statusText);
-        throw new Error(`API request failed: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.message && Array.isArray(result.message)) {
-        console.log('📡 Successfully fetched', result.message.length, 'notices');
-        return result.message;
-      }
-      
-      console.log('📡 No notices returned from API');
-      return [];
-      
+      return notices.data as Notice[];
     } catch (error) {
       console.error('📡 Error fetching notices:', error);
       throw error;
@@ -43,6 +19,7 @@ export class NoticeService {
   }
 
   // Stub for getAllNoticeReadStatus
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getAllNoticeReadStatus(_filters: any[]): Promise<any[]> {
     // TODO: Replace with real API call
     return [];

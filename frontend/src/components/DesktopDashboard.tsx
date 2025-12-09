@@ -56,6 +56,9 @@ import { errorResponseFormater } from "../utils/errorResponseFormater";
 import { CustomError } from "../types/attendance";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
+import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
+import { useGetAllNotices } from "../hooks/useNotices";
+import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -110,6 +113,7 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
+  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices();
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -125,29 +129,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T"))
-          )
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -406,9 +410,8 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -437,9 +440,8 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               )}
@@ -570,8 +572,8 @@ export default function DesktopDashboard() {
         </div>
         <ViewingAsBanner />
 
-        <div className="p-4 flex-1">
-          <div className="pr-3">
+        <div className="p-4 flex-1 overflow-hidden">
+          <div className="pr-3 max-w-full">
             {/* Employee Error Section */}
             {!employeeState.isLoading && !employeeState.hasValidData && (
               <EmployeeFallback
@@ -594,6 +596,16 @@ export default function DesktopDashboard() {
                   Your contributions are making the day amazing!
                 </p>
               </div>
+            </div>
+            <div className="my-4 w-full max-w-full overflow-hidden rounded-2xl">
+              {!noticeIsLoading && notices && notices?.length > 0 &&
+                <Carousel className="w-full h-full max-h-[150px]" showNavigation={false}>
+                  {notices?.slice(0, 5)?.map((item) => (
+                    <CarouselSlide key={item.name}>
+                      <NoticeSlide data={item} />
+                    </CarouselSlide>
+                  ))}
+                </Carousel>}
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
@@ -735,8 +747,8 @@ export default function DesktopDashboard() {
                         {clockInCheckOutPending || isRefetching
                           ? "Processing…"
                           : isCurrentlyCheckedIn
-                          ? "Clock Out"
-                          : "Clock In"}
+                            ? "Clock Out"
+                            : "Clock In"}
                       </button>
                     )}
                   </div>
@@ -744,9 +756,8 @@ export default function DesktopDashboard() {
                   {/* Status */}
                   <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
                     <div
-                      className={`w-2 h-2 shrink-0 rounded-full ${
-                        isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
-                      }`}
+                      className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                        }`}
                     ></div>
 
                     <span
