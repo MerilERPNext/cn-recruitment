@@ -3,11 +3,13 @@ import { User, ChevronUp, ChevronDown } from "lucide-react";
 import type { EmployeeNode } from "./type/type";
 import { useNavigate } from "react-router";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
   const { data: employee } = useCurrentEmployee();
-  const employeeId = employee?.name;
+  const currentEmployeeId = employee?.name;
   const navigate = useNavigate();
+  const { setTargetEmployee, clearTargetEmployee } = useTargetUser();
 
   const {
     id,
@@ -19,6 +21,17 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
     totalChildren = 0,
     showExpand = true,
   } = data;
+
+  const handleClick = () => {
+    if (id) {
+      if (id !== currentEmployeeId) {
+        setTargetEmployee(String(id), `/webapp/employee-profile`);
+      } else {
+        clearTargetEmployee();
+        navigate(`/webapp/employee-profile`);
+      }
+    }
+  };
 
   return (
     <div className="relative">
@@ -35,13 +48,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
 
       <div
         className="min-w-[160px] px-4 py-3 bg-white border border-gray-300 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg cursor-pointer"
-        onClick={() => {
-          if (employeeId === id) {
-            navigate(`/webapp/organizational-chart?employee=${id}`);
-          } else {
-            navigate(`/webapp/employee-profile/${id}`);
-          }
-        }}
+        onClick={handleClick}
       >
         <div className="flex items-center space-x-3">
           <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">

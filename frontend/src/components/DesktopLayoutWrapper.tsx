@@ -21,6 +21,8 @@ import useLogout from "../hooks/useLogout";
 import { useRequestPasswordReset } from "../hooks/useResetPassword";
 import { toast } from "react-hot-toast";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
+import ViewingAsBanner from "./ViewingAsBanner";
+import { useTargetUser } from "../context/ViewedUserContext";
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -44,6 +46,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee, isLoading: currentEmpIsLoading } =
     useCurrentEmployeeAllDetails(userId || "");
+  const { clearTargetEmployee } = useTargetUser();
 
   const { data: currentUser } = useCurrentUser();
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
@@ -297,10 +300,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                   <div className="py-2">
                     <button
                       onClick={() => {
-                        const employeeId = currentEmployee?.employee;
-                        if (employeeId) {
-                          navigate(`/webapp/employee-profile/${employeeId}`);
-                        }
+                        clearTargetEmployee()
+                        navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
@@ -351,6 +352,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Viewing As Banner */}
+        <ViewingAsBanner />
 
         {/* Page Content */}
         <div className="flex-1 overflow-hidden relative">

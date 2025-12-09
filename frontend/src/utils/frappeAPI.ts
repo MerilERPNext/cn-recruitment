@@ -22,6 +22,17 @@ declare global {
   }
 }
 
+// Module-level variable to track the target employee ID
+let currentTargetEmployeeId: string | null = null;
+
+// Setter function to be called by ViewedUserContext
+export const setTargetEmployeeId = (employeeId: string | null) => {
+  currentTargetEmployeeId = employeeId;
+};
+
+// Getter function for external access
+export const getTargetEmployeeId = () => currentTargetEmployeeId;
+
 const apiClient = axios.create({
   baseURL: API_BASE,
   headers: {
@@ -49,6 +60,12 @@ apiClient.interceptors.request.use(
     ) {
       config.headers["X-Frappe-CSRF-Token"] = window.csrf_token;
     }
+    
+    // Inject target employee ID header if set
+    if (currentTargetEmployeeId) {
+      config.headers["X-Target-Employee-Id"] = currentTargetEmployeeId;
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)

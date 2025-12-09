@@ -1,6 +1,6 @@
 // import HRLetters from "./HRLetters";
 import HeaderBar from "../HeaderBar";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   useCurrentEmployeeAllDetails,
   useGetEmployeeDetailsByEmpId,
@@ -27,6 +27,7 @@ import toast from "react-hot-toast";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import DocumentLibrary from "../Library/Library";
 import Tooltip from "../shared/Tooltip";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -35,23 +36,27 @@ export interface PersonalInfoProps {
 
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const { id: employeeId } = useParams<{ id: string }>();
-  const { data: user, refetch: userRefetch, isLoading: userIsLoading } = useGetEmployeeDetailsByEmpId(
-    employeeId || ""
-  );
+  const { targetEmployeeId } = useTargetUser();
   const { data: userId } = useLoggedInUser();
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
 
-  const { data: currentUser, refetch: currentUserRefetch } =
-    useCurrentEmployeeAllDetails(userId || "");
+  // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
+  // Don't default to empty string until we know currentUser has loaded
+  const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";
+
+  const { data: user, refetch: userRefetch, isLoading: userIsLoading } = useGetEmployeeDetailsByEmpId(
+    employeeId
+  );
 
   const { data: showAttendanceAssignment } = useShowAttendanaceAssignmentButton(
-    employeeId || "",
+    employeeId,
     currentUser?.employee || ""
   );
-  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
-    useState(false);
+
+  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] = useState(false);
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+
   const uploadMutation = useFileUpload();
   const updateDocMutation = useUpdateFrappeDocument();
 
@@ -68,14 +73,13 @@ const EmployeeProfile: React.FC = () => {
           updateDocMutation.mutate(
             {
               doctype: "Employee",
-              name: employeeId || "",
+              name: employeeId,
               data: {
                 image: data?.file_url,
               },
             },
             {
               onSuccess() {
-                currentUserRefetch();
                 userRefetch();
                 toast.success("Updated data successfully.");
               },

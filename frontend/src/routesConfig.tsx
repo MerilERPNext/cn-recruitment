@@ -534,7 +534,7 @@ export const routesConfig: AppRoute[] = [
   { path: "/webapp/notices/:id", element: <NoticeDetails /> },
 
   {
-    path: "/webapp/employee-profile/:id",
+    path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
   },
 

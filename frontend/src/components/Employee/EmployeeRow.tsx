@@ -1,10 +1,10 @@
 import React from "react";
 import { ChevronRightIcon } from "lucide-react";
 
-import { useNavigate } from "react-router-dom";
 import Tooltip from "../shared/Tooltip";
 import Badge from "../shared/Badge";
 import { Employee } from "../../types/employee";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 function initials(name = ""): string {
   const parts = name.trim().split(/\s+/);
@@ -28,7 +28,7 @@ const Avatar: React.FC<AvatarProps> = ({ name, src }) => {
       aria-hidden
     >
       {src ? (
-       
+
         <img
           loading="lazy"
           src={src}
@@ -57,7 +57,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
   showRemove,
   idx,
 }) => {
-  const navigate = useNavigate();
+  const { setTargetEmployee } = useTargetUser();
 
   function recentSearch(emp: Employee): void {
     const searches: Employee[] = JSON.parse(
@@ -78,7 +78,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   const handleonClick = (emp: Employee) => () => {
     recentSearch(emp);
-    navigate(`/webapp/employee-profile/${emp.name}`);
+    setTargetEmployee(emp.name, `/webapp/employee-profile`);
   };
 
   const isActive = emp.status?.toLowerCase() === "active";
@@ -94,7 +94,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
       }}
     >
       <div className="flex items-center sm:items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4 shadow-sm hover:shadow-md active:bg-gray-50 transition-shadow cursor-pointer">
-          <Avatar name={emp.employee_name} src={emp.image} />
+        <Avatar name={emp.employee_name} src={emp.image} />
         <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full">
 
           <div className="flex flex-col min-w-0 w-full">
@@ -108,8 +108,8 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
                 backgroundColor={isActive ? "bg-green-100" : "bg-gray-100"}
                 textColor={isActive ? "text-green-700" : "text-gray-600"}
                 size="sm"
-              
-                
+
+
               />
             </div>
 
