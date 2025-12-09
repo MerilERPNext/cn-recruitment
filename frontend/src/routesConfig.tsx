@@ -377,7 +377,8 @@ const NewGoalPlan = lazyWithRetry(
 );
 
 const PerformanceReviewApp = lazyWithRetry(
-  () => import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
+  () =>
+    import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
   "PerformanceReviewApp"
 );
 
@@ -544,14 +545,13 @@ export const routesConfig: AppRoute[] = [
     element: <ExpensesApp />,
     children: [
       { path: "expenses-list", element: <ExpensesList /> },
-      { path: "add-expense", element: <AddExpensePage /> },
       { path: "team-requests", element: <TeamExpense /> },
       { path: "my-advance-expense", element: <MyAdvanceExpenseList /> },
       { path: "team-advance-expense", element: <TeamAdvanceExpenseList /> },
       { path: "shared-expenses", element: <SharedExpenses /> },
     ],
   },
-
+  { path: "/webapp/expenses-app/add-expense", element: <AddExpensePage /> },
   // Flat Recruitment Routes
   {
     path: "/webapp/recruitment-app/referrals/add-new-referral",

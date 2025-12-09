@@ -20,6 +20,7 @@ import { CalculateExpenseParams } from "../../../types/expenseAdvance";
 import { SquarePen, Trash2 } from "lucide-react";
 import ParticipantsDrawer from "./ParticipantDrawer";
 import { Employee } from "../../../types/employee";
+import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 
 export interface EmployeeOption {
   name: string;
@@ -122,14 +123,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setIsCalculating(Boolean(isFetchingCalc));
   }, [isFetchingCalc]);
 
-  const { isMobile } = useScreenSize();
+  const { isMobile, isDesktop } = useScreenSize();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!initialExpense) return;
     setEditingExpenseId(initialExpense.uid);
     const copy: any = { ...initialExpense };
-    console.log("initialExpense", initialExpense);
 
     if (typeof copy.custom_attach_receipt === "string") {
       copy.attach_receipt = [
@@ -482,6 +482,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 template: "<span>{{ item }}</span>",
                 defaultValue: "INR",
                 valueProperty: "",
+                searchEnabled: false,
                 validate: {
                   required: field?.required,
                   customMessage: `${field?.label} is required`,
@@ -517,6 +518,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   customMessage: `${field?.label} is required`,
                 },
                 input: true,
+                searchEnabled: false,
                 refreshOn: "expenseType",
                 clearOnRefresh: true,
                 html: true,
@@ -811,619 +813,597 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     ? "Update"
     : "Save";
 
-  return (
-    <>
-      {!isMobile && (
-        <HeaderBar title="Add Expense" onBack={() => navigate(-1)} />
-      )}
-      <div
-        className={`${
-          isMobile
-            ? "fixed inset-0 bg-white z-50 overflow-y-auto pb-4"
-            : "max-w-4xl mx-auto p-4 pt-0"
-        }`}
-      >
-        {isMobile && (
-          <HeaderBar title="Add Expense" onBack={() => navigate(-1)} />
-        )}
-        <div className="px-4 md:px-0">
-          {(showCategoryAndType || expenses.length === 0) && (
-            <Form
-              key={formKey}
-              ref={formRef}
-              form={formSchema}
-              submission={{ data: mainFormData }}
-              onChange={(change: any) => {
-                const newCategory = change.data.expenseCategory;
+  const FormContent = (
+    <div className="flex flex-col h-full bg-white">
+      <HeaderBar title="Add Expense" onBack={() => navigate(-1)} />
 
-                if (
-                  previousCategory &&
-                  newCategory &&
-                  previousCategory !== newCategory
-                ) {
-                  change.data.expenseType = null;
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
+        {(showCategoryAndType || expenses.length === 0) && (
+          <Form
+            key={formKey}
+            ref={formRef}
+            form={formSchema}
+            submission={{ data: mainFormData }}
+            onChange={(change: any) => {
+              const newCategory = change.data.expenseCategory;
 
-                  setDynamicFormData({});
-                  setDynamicFields([]);
-                  setCalcParams(undefined);
-                  setFormKey((k) => k + 1);
+              if (
+                previousCategory &&
+                newCategory &&
+                previousCategory !== newCategory
+              ) {
+                change.data.expenseType = null;
 
-                  try {
-                    if (dynamicFormRef.current?.reset) {
-                      dynamicFormRef.current.reset();
-                    }
-                  } catch (e) {
-                    console.error(e);
+                setDynamicFormData({});
+                setDynamicFields([]);
+                setCalcParams(undefined);
+                setFormKey((k) => k + 1);
+
+                try {
+                  if (dynamicFormRef.current?.reset) {
+                    dynamicFormRef.current.reset();
                   }
+                } catch (e) {
+                  console.error(e);
                 }
+              }
 
-                if (newCategory) {
-                  setPreviousCategory(newCategory);
-                }
+              if (newCategory) {
+                setPreviousCategory(newCategory);
+              }
 
-                setMainFormData(change.data);
-              }}
-              onSubmit={handleSubmit}
-              options={{ noAlerts: true }}
-            />
-          )}
+              setMainFormData(change.data);
+            }}
+            onSubmit={handleSubmit}
+            options={{ noAlerts: true }}
+          />
+        )}
 
-          {expenseTypeValue && isFetchingFields && (
-            <ExpenseFieldSkeleton columns={isMobile ? 1 : 2} />
-          )}
+        {expenseTypeValue && isFetchingFields && (
+          <ExpenseFieldSkeleton columns={isMobile ? 1 : 2} />
+        )}
 
-          {dynamicFields.length > 0 && !isFetchingFields && (
-            <div className="mt-4">
-              <Form
-                key={`dynamic-${formKey}`}
-                ref={dynamicFormRef}
-                submission={{ data: dynamicFormData }}
-                form={{
-                  display: "form",
-                  components: (() => {
-                    if (isMobile) {
-                      return [
-                        ...dynamicFields.map((comp) => comp),
+        {dynamicFields.length > 0 && !isFetchingFields && (
+          <div className="mt-4">
+            <Form
+              key={`dynamic-${formKey}`}
+              ref={dynamicFormRef}
+              submission={{ data: dynamicFormData }}
+              form={{
+                display: "form",
+                components: (() => {
+                  if (isMobile) {
+                    return [
+                      ...dynamicFields.map((comp) => comp),
+                      ...(isShareAllowed && !isEditingFromDetailsPage
+                        ? [
+                            {
+                              type: "checkbox",
+                              key: "shareExpenseCheckbox",
+                              label: "Share Expense",
+                              customClass: "mt-4",
+                              disabled:
+                                isCalculating || !(dynamicFormData?.amount > 0),
+                              input: true,
+                            },
+                          ]
+                        : []),
+                      {
+                        type: "button",
+                        action: "submit",
+                        label: submitButtonLabel,
+                        theme: "primary",
+                        key: "submitButton",
+                        customClass: "mt-4",
+                        disabled: isCalculating,
+                      },
+                    ];
+                  }
+
+                  return [
+                    {
+                      type: "columns",
+                      key: "dynamicColumns",
+                      columns: [
+                        {
+                          components: dynamicFields.filter(
+                            (_, i) => i % 2 === 0
+                          ),
+                        },
+                        {
+                          components: dynamicFields.filter(
+                            (_, i) => i % 2 !== 0
+                          ),
+                        },
+                      ],
+                    },
+                    {
+                      type: "columns",
+                      key: "actionsRow",
+                      customClass: "mt-4",
+                      columns: [
                         ...(isShareAllowed && !isEditingFromDetailsPage
                           ? [
                               {
-                                type: "checkbox",
-                                key: "shareExpenseCheckbox",
-                                label: "Share Expense",
-                                customClass: "mt-4",
-                                disabled:
-                                  isCalculating ||
-                                  !(dynamicFormData?.amount > 0),
-                                input: true,
+                                width: 6,
+                                components: [
+                                  {
+                                    type: "checkbox",
+                                    key: "shareExpenseCheckbox",
+                                    label: "Share Expense",
+                                    disabled:
+                                      isCalculating ||
+                                      !(
+                                        (editingExpenseId
+                                          ? expenses.find(
+                                              (x) => x.uid === editingExpenseId
+                                            )?.amount ?? dynamicFormData?.amount
+                                          : dynamicFormData?.amount) > 0
+                                      ),
+                                    input: true,
+                                  },
+                                ],
                               },
                             ]
                           : []),
                         {
-                          type: "button",
-                          action: "submit",
-                          label: submitButtonLabel,
-                          theme: "primary",
-                          key: "submitButton",
-                          customClass: "mt-4",
-                          disabled: isCalculating,
+                          width: isShareAllowed ? 6 : 12,
+                          components: [
+                            {
+                              type: "button",
+                              action: "submit",
+                              label: submitButtonLabel,
+                              theme: "primary",
+                              key: "submitButton",
+                              disabled: isCalculating,
+                            },
+                          ],
                         },
-                      ];
-                    }
+                      ],
+                    },
+                  ];
+                })(),
+              }}
+              onSubmit={async (submission: any) => {
+                const combinedData = {
+                  ...mainFormData,
+                  ...submission.data,
+                };
 
-                    return [
-                      {
-                        type: "columns",
-                        key: "dynamicColumns",
-                        columns: [
-                          {
-                            components: dynamicFields.filter(
-                              (_, i) => i % 2 === 0
-                            ),
-                          },
-                          {
-                            components: dynamicFields.filter(
-                              (_, i) => i % 2 !== 0
-                            ),
-                          },
-                        ],
-                      },
+                if (
+                  !combinedData.expenseCategory ||
+                  !combinedData.expenseType
+                ) {
+                  toast.error(
+                    "Please select Expense Category and Expense Type!"
+                  );
+                  return;
+                }
 
-                      {
-                        type: "columns",
-                        key: "actionsRow",
-                        customClass: "mt-4",
-                        columns: [
-                          ...(isShareAllowed && !isEditingFromDetailsPage
-                            ? [
-                                {
-                                  width: 6,
-                                  components: [
-                                    {
-                                      type: "checkbox",
-                                      key: "shareExpenseCheckbox",
-                                      label: "Share Expense",
-                                      disabled:
-                                        isCalculating ||
-                                        !(
-                                          (editingExpenseId
-                                            ? expenses.find(
-                                                (x) =>
-                                                  x.uid === editingExpenseId
-                                              )?.amount ??
-                                              dynamicFormData?.amount
-                                            : dynamicFormData?.amount) > 0
-                                        ),
-                                      input: true,
-                                    },
-                                  ],
-                                },
-                              ]
-                            : []),
-                          {
-                            width: isShareAllowed ? 6 : 12,
-                            components: [
-                              {
-                                type: "button",
-                                action: "submit",
-                                label: submitButtonLabel,
-                                theme: "primary",
-                                key: "submitButton",
-                                disabled: isCalculating,
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                    ];
-                  })(),
-                }}
-                onSubmit={async (submission: any) => {
-                  const combinedData = {
-                    ...mainFormData,
-                    ...submission.data,
+                const isAmountReadonly =
+                  expenseTypeData?.is_amount_readonly ?? false;
+                let amountFromApi: number | undefined = undefined;
+
+                if (isAmountReadonly) {
+                  const currentParams: CalculateExpenseParams = {
+                    expense_type:
+                      combinedData.expenseType || combinedData.expense_type,
+                    units:
+                      combinedData.units ?? combinedData.no_of_units ?? null,
                   };
 
                   if (
-                    !combinedData.expenseCategory ||
-                    !combinedData.expenseType
+                    combinedData.vehicle_type !== undefined &&
+                    combinedData.vehicle_type !== null &&
+                    combinedData.vehicle_type !== ""
                   ) {
-                    toast.error(
-                      "Please select Expense Category and Expense Type!"
-                    );
-                    return;
+                    currentParams.vehicle_type = combinedData.vehicle_type;
                   }
 
-                  const isAmountReadonly =
-                    expenseTypeData?.is_amount_readonly ?? false;
-                  let amountFromApi: number | undefined = undefined;
+                  let usedCalcData = calcData;
+                  const calcMatches =
+                    calcData &&
+                    calcParams &&
+                    calcParams.expense_type === currentParams.expense_type &&
+                    String(calcParams.units) === String(currentParams.units) &&
+                    (calcParams.vehicle_type ?? "") ===
+                      (currentParams.vehicle_type ?? "");
 
-                  if (isAmountReadonly) {
-                    const currentParams: CalculateExpenseParams = {
-                      expense_type:
-                        combinedData.expenseType || combinedData.expense_type,
-                      units:
-                        combinedData.units ?? combinedData.no_of_units ?? null,
-                    };
-
-                    if (
-                      combinedData.vehicle_type !== undefined &&
-                      combinedData.vehicle_type !== null &&
-                      combinedData.vehicle_type !== ""
-                    ) {
-                      currentParams.vehicle_type = combinedData.vehicle_type;
+                  if (!calcMatches) {
+                    setCalcParams(currentParams);
+                    try {
+                      setIsCalculating(true);
+                      toast.loading("Calculating amount...", { id: "calc" });
+                      const refRes = await refetchCalc();
+                      usedCalcData = refRes?.data ?? usedCalcData;
+                    } catch (err: any) {
+                      console.error("refetch calc error", err);
+                    } finally {
+                      setIsCalculating(false);
+                      toast.dismiss("calc");
                     }
+                  }
 
-                    let usedCalcData = calcData;
-                    const calcMatches =
-                      calcData &&
-                      calcParams &&
-                      calcParams.expense_type === currentParams.expense_type &&
-                      String(calcParams.units) ===
-                        String(currentParams.units) &&
-                      (calcParams.vehicle_type ?? "") ===
-                        (currentParams.vehicle_type ?? "");
+                  const amount =
+                    (usedCalcData &&
+                      (usedCalcData.message?.amount ??
+                        usedCalcData.amount ??
+                        usedCalcData.data?.amount)) ??
+                    null;
 
-                    if (!calcMatches) {
-                      setCalcParams(currentParams);
-                      try {
-                        setIsCalculating(true);
-                        toast.loading("Calculating amount...", { id: "calc" });
-                        const refRes = await refetchCalc();
-                        usedCalcData = refRes?.data ?? usedCalcData;
-                      } catch (err: any) {
-                        console.error("refetch calc error", err);
-                      } finally {
-                        setIsCalculating(false);
-                        toast.dismiss("calc");
-                      }
-                    }
-
-                    const amount =
-                      (usedCalcData &&
-                        (usedCalcData.message?.amount ??
-                          usedCalcData.amount ??
-                          usedCalcData.data?.amount)) ??
-                      null;
-
-                    if (amount !== null && amount !== undefined) {
-                      amountFromApi = Number(amount);
-                      setDynamicFormData((prev: any) => ({
-                        ...prev,
-                        ...submission.data,
-                        amount: amountFromApi,
-                      }));
-                    } else {
-                      setDynamicFormData((prev: any) => ({
-                        ...prev,
-                        ...submission.data,
-                      }));
-                      toast.error("No amount returned from calculate API.");
-                    }
+                  if (amount !== null && amount !== undefined) {
+                    amountFromApi = Number(amount);
+                    setDynamicFormData((prev: any) => ({
+                      ...prev,
+                      ...submission.data,
+                      amount: amountFromApi,
+                    }));
                   } else {
                     setDynamicFormData((prev: any) => ({
                       ...prev,
                       ...submission.data,
                     }));
-                    amountFromApi = combinedData.amount ?? undefined;
+                    toast.error("No amount returned from calculate API.");
                   }
+                } else {
+                  setDynamicFormData((prev: any) => ({
+                    ...prev,
+                    ...submission.data,
+                  }));
+                  amountFromApi = combinedData.amount ?? undefined;
+                }
 
-                  const attachment =
-                    combinedData.attach_receipt?.[0]?.url || null;
+                const attachment =
+                  combinedData.attach_receipt?.[0]?.url || null;
 
-                  const newExpense: Expense = {
-                    uid: editingExpenseId ?? Date.now().toString(),
-                    ...combinedData,
-                    attach_receipt: attachment,
-                    amount: amountFromApi ?? combinedData.amount ?? undefined,
-                  };
+                const newExpense: Expense = {
+                  uid: editingExpenseId ?? Date.now().toString(),
+                  ...combinedData,
+                  attach_receipt: attachment,
+                  amount: amountFromApi ?? combinedData.amount ?? undefined,
+                };
 
-                  if (isEditingFromDetailsPage) {
-                    const participants = dynamicFormData?.participants
-                      ? dynamicFormData.participants.map((p: any) => ({
-                          name: p.name,
-                          employee_type: p.employee_type || p.employeetype,
-                          employee: p.employee,
-                          employee_name: p.employee_name || p.employeename,
-                          guest_name: p.guest_name || p.guestname,
-                          percentage: p.percentage,
-                          allocated_amount: p.allocated_amount || p.amount,
-                        }))
-                      : [];
-                    console.log("expenseClaimName:", expense_claim_name);
-                    updateExpense(
-                      {
-                        expense_claim_name: expense_claim_name || "",
-                        expenses: [newExpense],
-                        participants: participants,
+                if (isEditingFromDetailsPage) {
+                  const participants = dynamicFormData?.participants
+                    ? dynamicFormData.participants.map((p: any) => ({
+                        name: p.name,
+                        employee_type: p.employee_type || p.employeetype,
+                        employee: p.employee,
+                        employee_name: p.employee_name || p.employeename,
+                        guest_name: p.guest_name || p.guestname,
+                        percentage: p.percentage,
+                        allocated_amount: p.allocated_amount || p.amount,
+                      }))
+                    : [];
+                  updateExpense(
+                    {
+                      expense_claim_name: expense_claim_name || "",
+                      expenses: [newExpense],
+                      participants: participants,
+                    },
+                    {
+                      onSuccess: () => {
+                        setEditingExpenseId(null);
+                        formRef.current?.reset();
+                        dynamicFormRef.current?.reset();
+                        setShowCategoryAndType(false);
+                        setMainFormData({});
+                        setDynamicFormData({});
+                        setDynamicFields([]);
+                        navigate("/webapp/expenses-app/expenses-list");
                       },
-                      {
-                        onSuccess: () => {
-                          setEditingExpenseId(null);
-                          formRef.current?.reset();
-                          dynamicFormRef.current?.reset();
-                          setShowCategoryAndType(false);
-                          setMainFormData({});
-                          setDynamicFormData({});
-                          setDynamicFields([]);
-                          navigate("/webapp/expenses-app/expenses-list");
-                        },
-                      }
-                    );
-                    return;
-                  }
-
-                  if (editingExpenseId) {
-                    setExpenses((prev) =>
-                      prev.map((e) =>
-                        e.uid === editingExpenseId ? newExpense : e
-                      )
-                    );
-                  } else {
-                    setExpenses((prev) => [...prev, newExpense]);
-                  }
-
-                  setIsSharePanelOpen(false);
-                  setEditingExpenseId(null);
-                  formRef.current?.reset();
-                  dynamicFormRef.current?.reset();
-                  setMainFormData({});
-                  setDynamicFormData({});
-                  setDynamicFields([]);
-                  setShowCategoryAndType(false);
-                  setFormKey((prev) => prev + 1);
-                }}
-                onChange={(change: any) => {
-                  setDynamicFormData(change.data);
-
-                  if (change.data?.shareExpenseCheckbox !== undefined) {
-                    setIsSharePanelOpen(change.data.shareExpenseCheckbox);
-                  }
-
-                  if (change.data?.vehicle_type) {
-                    setVehicleType(change.data.vehicle_type);
-                  }
-
-                  const isAmountReadonly =
-                    expenseTypeData?.is_amount_readonly ?? false;
-                  if (isAmountReadonly) {
-                    const rawUnits =
-                      change.data?.units ?? change.data?.no_of_units ?? null;
-                    const unitsStr =
-                      rawUnits === null || rawUnits === undefined
-                        ? null
-                        : String(rawUnits).trim();
-                    const vehicle_type = change.data?.vehicle_type ?? null;
-                    const expense_type =
-                      change.data?.expenseType ||
-                      change.data?.expense_type ||
-                      mainFormData.expenseType ||
-                      mainFormData.expense_type;
-
-                    if (expense_type && unitsStr !== null && unitsStr !== "") {
-                      if (debounceRef.current) {
-                        window.clearTimeout(debounceRef.current);
-                      }
-                      const rawUnits =
-                        dynamicFormData?.units ??
-                        dynamicFormData?.no_of_units ??
-                        null;
-                      const unitsNum = parseUnits(rawUnits);
-                      if (unitsNum === undefined) return;
-                      debounceRef.current = window.setTimeout(() => {
-                        const payload: CalculateExpenseParams = {
-                          expense_type: String(expense_type).trim(),
-                          units: unitsNum,
-                        };
-                        if (
-                          vehicle_type !== null &&
-                          vehicle_type !== undefined &&
-                          vehicle_type !== ""
-                        ) {
-                          payload.vehicle_type = vehicle_type;
-                        }
-
-                        setCalcParams(payload);
-                      }, 700);
                     }
-                  }
-                }}
-              />
+                  );
+                  return;
+                }
 
-              {!isEditingFromDetailsPage &&
-                displayParticipants &&
-                displayParticipants.length > 0 && (
-                  <div className="mt-4 border rounded p-3 bg-white shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-sm font-medium">Participants</div>
-                      <div className="text-xs text-gray-500">
-                        {displayParticipants.length}{" "}
-                        {displayParticipants.length === 1
-                          ? "participant"
-                          : "participants"}
-                      </div>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-sm">
-                        <thead>
-                          <tr className="text-left text-xs text-gray-600">
-                            <th className="px-2 py-1">#</th>
-                            <th className="px-2 py-1">Type</th>
-                            <th className="px-2 py-1">Employee Name</th>
-                            <th className="px-2 py-1">Percentage</th>
-                            <th className="px-2 py-1">Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {displayParticipants.map((p: any, idx: number) => (
-                            <tr key={idx} className="border-t">
-                              <td className="px-2 py-2 align-top">{idx + 1}</td>
-                              <td className="px-2 py-2 align-top">
-                                {p.employee_type ?? "-"}
-                              </td>
-                              <td className="px-2 py-2 align-top">
-                                {console.log(p.employee)}
-                                {p.employee
-                                  ? p.employee
-                                  : p.guest_name
-                                  ? p.guest_name
-                                  : "-"}
-                                {p.employee_label && (
-                                  <div className="text-xs text-gray-500">
-                                    {p.employee_label}
-                                  </div>
-                                )}
-                              </td>
-                              <td className="px-2 py-2 align-top">
-                                {p.percentage !== undefined &&
-                                p.percentage !== null
-                                  ? `${p.percentage}%`
-                                  : "-"}
-                              </td>
-                              <td className="px-2 py-2 align-top">
-                                {p.amount !== undefined && p.amount !== null
-                                  ? `INR ${Number(p.amount).toFixed(2)}`
-                                  : "-"}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                if (editingExpenseId) {
+                  setExpenses((prev) =>
+                    prev.map((e) =>
+                      e.uid === editingExpenseId ? newExpense : e
+                    )
+                  );
+                } else {
+                  setExpenses((prev) => [...prev, newExpense]);
+                }
+
+                setIsSharePanelOpen(false);
+                setEditingExpenseId(null);
+                formRef.current?.reset();
+                dynamicFormRef.current?.reset();
+                setMainFormData({});
+                setDynamicFormData({});
+                setDynamicFields([]);
+                setShowCategoryAndType(false);
+                setFormKey((prev) => prev + 1);
+              }}
+              onChange={(change: any) => {
+                setDynamicFormData(change.data);
+
+                if (change.data?.shareExpenseCheckbox !== undefined) {
+                  setIsSharePanelOpen(change.data.shareExpenseCheckbox);
+                }
+
+                if (change.data?.vehicle_type) {
+                  setVehicleType(change.data.vehicle_type);
+                }
+
+                const isAmountReadonly =
+                  expenseTypeData?.is_amount_readonly ?? false;
+                if (isAmountReadonly) {
+                  const rawUnits =
+                    change.data?.units ?? change.data?.no_of_units ?? null;
+                  const unitsStr =
+                    rawUnits === null || rawUnits === undefined
+                      ? null
+                      : String(rawUnits).trim();
+                  const vehicle_type = change.data?.vehicle_type ?? null;
+                  const expense_type =
+                    change.data?.expenseType ||
+                    change.data?.expense_type ||
+                    mainFormData.expenseType ||
+                    mainFormData.expense_type;
+
+                  if (expense_type && unitsStr !== null && unitsStr !== "") {
+                    if (debounceRef.current) {
+                      window.clearTimeout(debounceRef.current);
+                    }
+                    const rawUnits =
+                      dynamicFormData?.units ??
+                      dynamicFormData?.no_of_units ??
+                      null;
+                    const unitsNum = parseUnits(rawUnits);
+                    if (unitsNum === undefined) return;
+                    debounceRef.current = window.setTimeout(() => {
+                      const payload: CalculateExpenseParams = {
+                        expense_type: String(expense_type).trim(),
+                        units: unitsNum,
+                      };
+                      if (
+                        vehicle_type !== null &&
+                        vehicle_type !== undefined &&
+                        vehicle_type !== ""
+                      ) {
+                        payload.vehicle_type = vehicle_type;
+                      }
+
+                      setCalcParams(payload);
+                    }, 700);
+                  }
+                }
+              }}
+            />
+
+            {!isEditingFromDetailsPage &&
+              displayParticipants &&
+              displayParticipants.length > 0 && (
+                <div className="mt-4 border rounded p-3 bg-white shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium">Participants</div>
+                    <div className="text-xs text-gray-500">
+                      {displayParticipants.length}{" "}
+                      {displayParticipants.length === 1
+                        ? "participant"
+                        : "participants"}
                     </div>
                   </div>
-                )}
-            </div>
-          )}
-
-          {expenses.length > 0 && (
-            <div className="mt-8">
-              {failedExpenseUids.size > 0 && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <svg
-                      className="w-5 h-5 text-red-600 mt-0.5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-red-800">
-                        Submission Failed for {failedExpenseUids.size} items
-                      </h3>
-                      <p className="mt-1 text-sm text-red-700">
-                        The highlighted expense items below failed to submit.
-                        Please review and correct them, then try submitting
-                        again.
-                      </p>
-                    </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-gray-600">
+                          <th className="px-2 py-1">#</th>
+                          <th className="px-2 py-1">Type</th>
+                          <th className="px-2 py-1">Employee Name</th>
+                          <th className="px-2 py-1">Percentage</th>
+                          <th className="px-2 py-1">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayParticipants.map((p: any, idx: number) => (
+                          <tr key={idx} className="border-t">
+                            <td className="px-2 py-2 align-top">{idx + 1}</td>
+                            <td className="px-2 py-2 align-top">
+                              {p.employee_type ?? "-"}
+                            </td>
+                            <td className="px-2 py-2 align-top">
+                              {p.employee
+                                ? p.employee
+                                : p.guest_name
+                                ? p.guest_name
+                                : "-"}
+                              {p.employee_label && (
+                                <div className="text-xs text-gray-500">
+                                  {p.employee_label}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-2 py-2 align-top">
+                              {p.percentage !== undefined &&
+                              p.percentage !== null
+                                ? `${p.percentage}%`
+                                : "-"}
+                            </td>
+                            <td className="px-2 py-2 align-top">
+                              {p.amount !== undefined && p.amount !== null
+                                ? `INR ${Number(p.amount).toFixed(2)}`
+                                : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
+          </div>
+        )}
 
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Expense List</h2>
-                <button
-                  onClick={handleDeleteSelected}
-                  disabled={selectedExpenses.length === 0}
-                  className={`px-4 py-2 rounded ${
-                    selectedExpenses.length === 0
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-red-500 text-white hover:bg-red-600"
-                  }`}
-                >
-                  Delete Selected
-                </button>
+        {expenses.length > 0 && (
+          <div className="mt-8">
+            {failedExpenseUids.size > 0 && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <svg
+                    className="w-5 h-5 text-red-600 mt-0.5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-red-800">
+                      Submission Failed for {failedExpenseUids.size} items
+                    </h3>
+                    <p className="mt-1 text-sm text-red-700">
+                      The highlighted expense items below failed to submit.
+                      Please review and correct them, then try submitting again.
+                    </p>
+                  </div>
+                </div>
               </div>
+            )}
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="w-12 px-4 py-2 text-left">
-                        <input
-                          type="checkbox"
-                          onChange={(e) =>
-                            setSelectedExpenses(
-                              e.target.checked ? expenses.map((e) => e.uid) : []
-                            )
-                          }
-                          checked={
-                            selectedExpenses.length === expenses.length &&
-                            expenses.length > 0
-                          }
-                        />
-                      </th>
-                      <th className="px-4 py-2 text-left">Expense Category</th>
-                      <th className="px-4 py-2 text-left">Expense Type</th>
-                      <th className="px-4 py-2 text-left">Expense Date</th>
-                      <th className="px-4 py-2 text-left">Merchant</th>
-                      <th className="px-4 py-2 text-left">Invoice Number</th>
-                      <th className="px-4 py-2 text-left">Amount</th>
-                      <th className="px-4 py-2 text-left">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {expenses.map((expense) => {
-                      const isFailed = failedExpenseUids.has(expense.uid);
-                      return (
-                        <tr
-                          key={expense.uid}
-                          className={`border-t border-gray-200 hover:bg-gray-50 ${
-                            isFailed ? "bg-red-50 border-red-200" : ""
-                          }`}
-                        >
-                          <td className="px-4 py-2">
-                            <input
-                              type="checkbox"
-                              checked={selectedExpenses.includes(expense.uid)}
-                              onChange={() => handleCheckboxChange(expense.uid)}
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="flex items-center gap-2">
-                              {expense.expenseCategory}
-                              {isFailed && (
-                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
-                                  Failed
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2">{expense.expenseType}</td>
-                          <td className="px-4 py-2">
-                            {expense.expense_date
-                              ? format(
-                                  new Date(expense.expense_date),
-                                  "dd-MM-yyyy"
-                                )
-                              : "-"}
-                          </td>
-                          <td className="px-4 py-2">
-                            {expense.merchant || "-"}
-                          </td>
-                          <td className="px-4 py-2">
-                            {expense.invoice_number || "-"}
-                          </td>
-                          <td className="px-4 py-2">{expense.amount ?? "-"}</td>
-                          <td className="px-4 py-2 flex items-center gap-2">
-                            <button
-                              onClick={() => handleEdit(expense)}
-                              className="text-blue-400 hover:text-green-800"
-                              title="Edit"
-                            >
-                              <SquarePen />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setExpenses((prev) =>
-                                  prev.filter((e) => e.uid !== expense.uid)
-                                );
-                                setSelectedExpenses((prev) =>
-                                  prev.filter((id) => id !== expense.uid)
-                                );
-                                clearFailedStatus(expense.uid);
-                              }}
-                              className="text-red-400 hover:text-blue-700"
-                              title="Delete"
-                            >
-                              <Trash2 />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex justify-end mt-4">
-                <button
-                  className="bg-blue-500 text-white font-bold px-6 py-2 rounded hover:bg-blue-600 mr-4"
-                  onClick={() => {
-                    setShowCategoryAndType(true);
-                    setFormKey((prev) => prev + 1);
-                    setEditingExpenseId(null);
-                    setMainFormData({});
-                    setDynamicFormData({});
-                  }}
-                >
-                  Add More
-                </button>
-                <button
-                  className="bg-green-600 text-white font-bold px-6 py-2 rounded hover:bg-green-700"
-                  disabled={expenses.length === 0 || isPending}
-                  onClick={submitAll}
-                >
-                  {isPending ? "Submitting..." : "Submit"}
-                </button>
-              </div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Expense List</h2>
+              <button
+                onClick={handleDeleteSelected}
+                disabled={selectedExpenses.length === 0}
+                className={`px-4 py-2 rounded ${
+                  selectedExpenses.length === 0
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-red-500 text-white hover:bg-red-600"
+                }`}
+              >
+                Delete Selected
+              </button>
             </div>
-          )}
-        </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="w-12 px-4 py-2 text-left">
+                      <input
+                        type="checkbox"
+                        onChange={(e) =>
+                          setSelectedExpenses(
+                            e.target.checked ? expenses.map((e) => e.uid) : []
+                          )
+                        }
+                        checked={
+                          selectedExpenses.length === expenses.length &&
+                          expenses.length > 0
+                        }
+                      />
+                    </th>
+                    <th className="px-4 py-2 text-left">Expense Category</th>
+                    <th className="px-4 py-2 text-left">Expense Type</th>
+                    <th className="px-4 py-2 text-left">Expense Date</th>
+                    <th className="px-4 py-2 text-left">Merchant</th>
+                    <th className="px-4 py-2 text-left">Invoice Number</th>
+                    <th className="px-4 py-2 text-left">Amount</th>
+                    <th className="px-4 py-2 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expenses.map((expense) => {
+                    const isFailed = failedExpenseUids.has(expense.uid);
+                    return (
+                      <tr
+                        key={expense.uid}
+                        className={`border-t border-gray-200 hover:bg-gray-50 ${
+                          isFailed ? "bg-red-50 border-red-200" : ""
+                        }`}
+                      >
+                        <td className="px-4 py-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedExpenses.includes(expense.uid)}
+                            onChange={() => handleCheckboxChange(expense.uid)}
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center gap-2">
+                            {expense.expenseCategory}
+                            {isFailed && (
+                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+                                Failed
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2">{expense.expenseType}</td>
+                        <td className="px-4 py-2">
+                          {expense.expense_date
+                            ? format(
+                                new Date(expense.expense_date),
+                                "dd-MM-yyyy"
+                              )
+                            : "-"}
+                        </td>
+                        <td className="px-4 py-2">{expense.merchant || "-"}</td>
+                        <td className="px-4 py-2">
+                          {expense.invoice_number || "-"}
+                        </td>
+                        <td className="px-4 py-2">{expense.amount ?? "-"}</td>
+                        <td className="px-4 py-2 flex items-center gap-2">
+                          <button
+                            onClick={() => handleEdit(expense)}
+                            className="text-blue-400 hover:text-green-800"
+                            title="Edit"
+                          >
+                            <SquarePen />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setExpenses((prev) =>
+                                prev.filter((e) => e.uid !== expense.uid)
+                              );
+                              setSelectedExpenses((prev) =>
+                                prev.filter((id) => id !== expense.uid)
+                              );
+                              clearFailedStatus(expense.uid);
+                            }}
+                            className="text-red-400 hover:text-blue-700"
+                            title="Delete"
+                          >
+                            <Trash2 />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end mt-4 gap-3">
+              <button
+                className="bg-blue-500 text-white font-bold px-6 py-2 rounded hover:bg-blue-600"
+                onClick={() => {
+                  setShowCategoryAndType(true);
+                  setFormKey((prev) => prev + 1);
+                  setEditingExpenseId(null);
+                  setMainFormData({});
+                  setDynamicFormData({});
+                }}
+              >
+                Add More
+              </button>
+              <button
+                className="bg-green-600 text-white font-bold px-6 py-2 rounded hover:bg-green-700"
+                disabled={expenses.length === 0 || isPending}
+                onClick={submitAll}
+              >
+                {isPending ? "Submitting..." : "Submit"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {isSharePanelOpen && (
@@ -1461,8 +1441,18 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
           }}
         />
       )}
-    </>
+    </div>
   );
+
+  if (isDesktop) {
+    return (
+      <DesktopLayoutWrapper title="Add Expense">
+        {FormContent}
+      </DesktopLayoutWrapper>
+    );
+  }
+
+  return <div className="h-screen bg-white">{FormContent}</div>;
 };
 
 export default AddExpenseForm;
