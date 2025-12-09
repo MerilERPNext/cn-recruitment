@@ -1,10 +1,10 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { useViewedUser } from '../context/ViewedUserContext';
+import { useTargetUser } from '../context/ViewedUserContext';
 import { useEmployee } from '../hooks/useEmployee';
 
 const ViewingAsBanner: React.FC = () => {
-    const { targetEmployeeId, clearTargetEmployee, isViewingOtherUser } = useViewedUser();
+    const { targetEmployeeId, clearTargetEmployee, isViewingOtherUser } = useTargetUser();
     const { data: targetEmployee } = useEmployee(targetEmployeeId);
 
     if (!isViewingOtherUser || !targetEmployee) {
@@ -16,13 +16,9 @@ const ViewingAsBanner: React.FC = () => {
             <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                 <span className="text-sm font-medium text-blue-900">
-                    Viewing as:{' '}
                     <span className="font-semibold">
                         {targetEmployee.employee_name || targetEmployee.name}
                     </span>
-                </span>
-                <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
-                    {targetEmployee.designation || 'Employee'}
                 </span>
             </div>
             <button

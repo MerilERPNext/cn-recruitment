@@ -10,11 +10,11 @@ import { convertToFormioWithTabMetadata, type TabWithSchema } from "./FrappeToFo
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import toast from "react-hot-toast";
-import { useViewedUser } from "../../context/ViewedUserContext";
+import { useTargetUser } from "../../context/ViewedUserContext";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 
 const EmployeeProfileForm: React.FC = () => {
-  const { targetEmployeeId } = useViewedUser();
+  const { targetEmployeeId } = useTargetUser();
   const { data: userId } = useLoggedInUser();
   const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
 

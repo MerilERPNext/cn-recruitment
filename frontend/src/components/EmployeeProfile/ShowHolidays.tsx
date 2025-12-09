@@ -1,11 +1,11 @@
 import { format } from "date-fns"; // Import the format function
 import { useEmployeeHolidays } from "../../hooks/useEmployeeHolidays";
-import { useViewedUser } from "../../context/ViewedUserContext";
+import { useTargetUser } from "../../context/ViewedUserContext";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 
 const ShowHolidays = () => {
-  const { targetEmployeeId } = useViewedUser();
+  const { targetEmployeeId } = useTargetUser();
   const { data: userId } = useLoggedInUser();
   const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
 

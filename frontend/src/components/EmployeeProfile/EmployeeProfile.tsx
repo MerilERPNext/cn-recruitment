@@ -27,7 +27,7 @@ import toast from "react-hot-toast";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import DocumentLibrary from "../Library/Library";
 import Tooltip from "../shared/Tooltip";
-import { useViewedUser } from "../../context/ViewedUserContext";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -36,7 +36,7 @@ export interface PersonalInfoProps {
 
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const { targetEmployeeId } = useViewedUser();
+  const { targetEmployeeId } = useTargetUser();
   const { data: userId } = useLoggedInUser();
   const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
 

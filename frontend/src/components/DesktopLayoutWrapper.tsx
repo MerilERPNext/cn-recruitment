@@ -22,6 +22,7 @@ import { useRequestPasswordReset } from "../hooks/useResetPassword";
 import { toast } from "react-hot-toast";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 import ViewingAsBanner from "./ViewingAsBanner";
+import { useTargetUser } from "../context/ViewedUserContext";
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -45,6 +46,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee, isLoading: currentEmpIsLoading } =
     useCurrentEmployeeAllDetails(userId || "");
+  const { clearTargetEmployee } = useTargetUser();
 
   const { data: currentUser } = useCurrentUser();
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
@@ -293,6 +295,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                   <div className="py-2">
                     <button
                       onClick={() => {
+                        clearTargetEmployee()
                         navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}

@@ -3,13 +3,13 @@ import { User, ChevronUp, ChevronDown } from "lucide-react";
 import type { EmployeeNode } from "./type/type";
 import { useNavigate } from "react-router";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
-import { useViewedUser } from "../../context/ViewedUserContext";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
   const { data: employee } = useCurrentEmployee();
   const currentEmployeeId = employee?.name;
   const navigate = useNavigate();
-  const { setTargetEmployee, clearTargetEmployee } = useViewedUser();
+  const { setTargetEmployee, clearTargetEmployee } = useTargetUser();
 
   const {
     id,

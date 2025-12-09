@@ -57,6 +57,7 @@ import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRe
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 import { CustomError } from "../types/attendance";
 import ViewingAsBanner from "./ViewingAsBanner";
+import { useTargetUser } from "../context/ViewedUserContext";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -70,6 +71,8 @@ export default function DesktopDashboard() {
   const [showLeaveRequest, setShowLeaveRequest] = useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
+  const { clearTargetEmployee } = useTargetUser();
+
   const handleCloseShiftModal = () => {
     setShowShiftRequestModal(false);
   };
@@ -513,6 +516,7 @@ export default function DesktopDashboard() {
 
                     <button
                       onClick={() => {
+                        clearTargetEmployee()
                         navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}

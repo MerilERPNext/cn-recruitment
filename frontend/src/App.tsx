@@ -25,7 +25,7 @@ import {
   preloadAdjacentRoutes,
 } from "./utils/routePreloader";
 import { useCurrentUser } from "./hooks/useCurrentUser";
-import { ViewedUserProvider, useViewedUser } from "./context/ViewedUserContext";
+import { ViewedUserProvider, useTargetUser } from "./context/ViewedUserContext";
 import { setTargetEmployeeId } from "./utils/frappeAPI";
 
 const App: React.FC = () => {
@@ -151,7 +151,7 @@ export default App;
 
 // Component to sync ViewedUserContext with frappeAPI
 const TargetUserSync: React.FC = () => {
-  const { targetEmployeeId } = useViewedUser();
+  const { targetEmployeeId } = useTargetUser();
 
   useEffect(() => {
     setTargetEmployeeId(targetEmployeeId);

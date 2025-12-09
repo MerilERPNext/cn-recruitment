@@ -4,7 +4,7 @@ import { ChevronRightIcon } from "lucide-react";
 import Tooltip from "../shared/Tooltip";
 import Badge from "../shared/Badge";
 import { Employee } from "../../types/employee";
-import { useViewedUser } from "../../context/ViewedUserContext";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 function initials(name = ""): string {
   const parts = name.trim().split(/\s+/);
@@ -57,7 +57,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
   showRemove,
   idx,
 }) => {
-  const { setTargetEmployee } = useViewedUser();
+  const { setTargetEmployee } = useTargetUser();
 
   function recentSearch(emp: Employee): void {
     const searches: Employee[] = JSON.parse(

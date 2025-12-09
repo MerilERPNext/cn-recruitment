@@ -16,7 +16,7 @@ import { EmployeeHierarchy, NodeData } from "./type/type";
 import { useGetEmployeeSubordinateHierarchy, useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useNavigate } from "react-router";
 import { IoChevronForwardOutline } from "react-icons/io5";
-import { useViewedUser } from "../../context/ViewedUserContext";
+import { useTargetUser } from "../../context/ViewedUserContext";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 
 const normalizeId = (id: unknown): string | null => {
@@ -205,7 +205,7 @@ export default function ThreeLevelOrgChart() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const navigate = useNavigate();
-  const { targetEmployeeId } = useViewedUser();
+  const { targetEmployeeId } = useTargetUser();
   const { data: userId } = useLoggedInUser();
   const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
 

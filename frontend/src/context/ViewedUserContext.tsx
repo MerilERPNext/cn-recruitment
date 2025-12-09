@@ -20,6 +20,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const navigate = useNavigate();
     const { data: currentEmployee } = useCurrentEmployee();
     const isClearing = useRef(false);
+    const navigateTimeoutRef = useRef<number | null>(null);
 
     const [targetEmployeeId, setTargetEmployeeIdState] = useState<string | null>(() => {
         // Initialize from URL first, then session storage
@@ -65,9 +66,15 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.pathname, searchParams.toString(), targetEmployeeId]);
 
+
     const setTargetEmployee = (employeeId: string | null, targetPath?: string) => {
+        // Clear any pending navigation timeout
+        if (navigateTimeoutRef.current) {
+            clearTimeout(navigateTimeoutRef.current);
+            navigateTimeoutRef.current = null;
+        }
+
         if (employeeId) {
-            // Only update if the value actually changed
             if (employeeId === targetEmployeeId && !targetPath) {
                 return;
             }
@@ -76,17 +83,19 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             setTargetEmployeeIdState(employeeId);
             sessionStorage.setItem(SESSION_STORAGE_KEY, employeeId);
 
-            // Update URL immediately
             const newParams = new URLSearchParams(searchParams);
             newParams.set(TARGET_USER_PARAM, employeeId);
 
-            navigate(
-                {
-                    pathname: targetPath || location.pathname,
-                    search: newParams.toString(),
-                },
-                { replace: true }
-            );
+            navigateTimeoutRef.current = window.setTimeout(() => {
+                navigate(
+                    {
+                        pathname: targetPath || location.pathname,
+                        search: newParams.toString(),
+                    },
+                    { replace: true }
+                );
+            }, 100);
+
         } else {
             clearTargetEmployee();
         }
@@ -130,10 +139,10 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useViewedUser = () => {
+export const useTargetUser = () => {
     const context = useContext(ViewedUserContext);
     if (context === undefined) {
-        throw new Error('useViewedUser must be used within a ViewedUserProvider');
+        throw new Error('useTargetUser must be used within a ViewedUserProvider');
     }
     return context;
 };
