@@ -56,6 +56,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { ViewAll } from "./shared/atoms/ViewAll";
 import ViewingAsBanner from "./ViewingAsBanner";
+import SearchMembersApp from "./shared/SearchMembers";
 
 const statusStyles = {
   unpaid: {
@@ -162,11 +163,11 @@ const MobileDashboard: React.FC = () => {
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(CompanyLogo) &&
-    CompanyLogo.length > 0 &&
-    currentEmployeeCompany
+      CompanyLogo.length > 0 &&
+      currentEmployeeCompany
       ? CompanyLogo.find(
-          (company) => company.company_name === currentEmployeeCompany
-        )
+        (company) => company.company_name === currentEmployeeCompany
+      )
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -184,30 +185,30 @@ const MobileDashboard: React.FC = () => {
 
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T"))
-          )
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -396,15 +397,7 @@ const MobileDashboard: React.FC = () => {
 
       {/* Search Bar */}
       <div className="px-4 py-2 mt-2 bg-white border-b border-gray-100 flex-shrink-0">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search members..."
-            onClick={() => navigate("/webapp/search-members")}
-            className="w-full pl-10 pr-4 py-3 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-        </div>
+        <SearchMembersApp />
       </div>
 
       <div className="px-4 py-3 flex-1 overflow-y-auto">
@@ -705,7 +698,7 @@ const MobileDashboard: React.FC = () => {
                 }) => {
                   const styles =
                     statusStyles[
-                      item.status?.toLowerCase() as keyof typeof statusStyles
+                    item.status?.toLowerCase() as keyof typeof statusStyles
                     ] || statusStyles.draft;
 
                   return (
