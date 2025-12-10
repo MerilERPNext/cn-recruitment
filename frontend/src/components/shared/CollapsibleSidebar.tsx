@@ -5,9 +5,9 @@ import {
   Home,
   Calendar,
   User,
-  DollarSign,
+  IndianRupee,
   ArrowUpDown,
-  Receipt,
+  ReceiptIndianRupee,
   Shield,
   ChevronRight,
   CreditCard,
@@ -204,7 +204,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       ],
     },
     {
-      icon: DollarSign,
+      icon: IndianRupee,
       label: "Compensation",
       path: "/webapp/salary-slip-app",
       subItems: [
@@ -230,12 +230,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Advances",
-          icon: DollarSign,
+          icon: IndianRupee,
           href: "/webapp/salary-slip-app/advances-list",
         },
         {
           name: "Benefits",
-          icon: DollarSign,
+          icon: IndianRupee,
           href: "/webapp/salary-slip-app/benefits-list",
         },
         {
@@ -246,13 +246,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       ],
     },
     {
-      icon: Receipt,
+      icon: ReceiptIndianRupee,
       label: "Expenses",
       path: "/webapp/expenses-app",
       subItems: [
         {
           name: "Expense Claims",
-          icon: DollarSign,
+          icon: IndianRupee,
           href: "/webapp/expenses-app/expenses-list",
         },
         {
