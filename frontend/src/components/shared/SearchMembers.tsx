@@ -137,7 +137,7 @@ const SearchMembersApp = () => {
                     <div className="flex items-center gap-2">
 
 
-                        <div className="flex-1  flex  bg-gray-50 items-center gap-2 rounded-xl  px-3 sm:px-4 h-11 sm:h-12 focus-within:border-2 border-gray-700 transition">
+                        <div className="flex-1  flex  bg-gray-100 focus-within:bg-white items-center gap-2 rounded-xl  px-3 sm:px-4 h-11 sm:h-12 focus-within:ring-2 ring-blue-700 transition">
                             <Search className="text-gray-600 w-5 h-5" aria-hidden="true" />
                             <input
                                 id="member-search"

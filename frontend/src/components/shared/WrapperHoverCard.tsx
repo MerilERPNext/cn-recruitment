@@ -37,7 +37,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                 className={`pointer-events-none absolute p-4 opacity-100 z-[9999] ${positionClasses[placement]}`}
             >
                 <div
-                    className="w-full max-w-xs md:max-w-sm lg:max-w-md rounded-2xl backdrop-blur-md bg-gray-200 border border-gray-600/10 shadow-xl p-4 pointer-events-auto opacity-0 group-hover:opacity-100 "
+                    className="w-full max-w-xs md:max-w-sm lg:max-w-md rounded-xl backdrop-blur-md bg-gray-200 border border-gray-600/10 shadow-xl p-4 pointer-events-auto opacity-0 group-hover:opacity-100 "
                     style={{
                         WebkitBackdropFilter: "blur(4px)",
                         backdropFilter: "blur(4px)",
@@ -46,13 +46,14 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center gap-2 py-2">
                             <Loader2 className="w-8 h-8 animate-spin text-gray-700" />
-                            <span className="text-sm font-medium text-gray-700 animate-pulse">
+                            <span className="text-sm font-medium text-gray-700 animate-pulse whitespace-nowrap">
                                 Loading employee info…
                             </span>
                         </div>
                     ) : (
                         <div className="text-gray-800 font-semibold">
-                            {employeeId}
+                            <p className="whitespace-nowrap font-bold ">{data?.employee_name}</p>
+                            <p className="whitespace-nowrap text-sm font-semibold text-gray-500">{data?.name}</p>
                         </div>
                     )}
                 </div>
