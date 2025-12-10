@@ -16,10 +16,10 @@ const QUERY_KEYS = {
 };
 
 // Hook to get unread count
-export function useGetAllNotices() {
+export function useGetAllNotices(limit?:number,filters?: FilterCondition[]) {
   return useQuery({
     queryKey: QUERY_KEYS.allNotices(),
-    queryFn: () => noticeService.getAllNotices(),
+    queryFn: () => noticeService.getAllNotices(limit,filters),
     staleTime: 2 * 60 * 1000, // 2 minutes - count can be slightly more frequent
     gcTime: 5 * 60 * 1000, // 5 minutes cache time
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes instead of 1 minute

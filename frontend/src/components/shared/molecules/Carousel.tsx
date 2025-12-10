@@ -5,8 +5,23 @@ interface CarouselSlideProps {
 }
 
 export const CarouselSlide = ({ children }: CarouselSlideProps) => {
-    return <div className="w-full h-full min-h-full bg-red- min-w-0 overflow-hidden flex-shrink-0">{children}</div>;
+    return (
+        <div
+            className="
+                flex-shrink-0
+                flex-grow-0
+                basis-full
+                w-full
+                h-full
+                min-w-0
+                overflow-hidden
+            "
+        >
+            {children}
+        </div>
+    );
 };
+
 
 interface CarouselProps {
     children: React.ReactNode;
@@ -21,7 +36,7 @@ const Carousel = ({
     className = "",
     style = {},
     showNavigation = true,
-    autoScrollInterval = 2000
+    autoScrollInterval = 200000
 }: CarouselProps) => {
     const slides = Children.toArray(children).filter(
         (child): child is ReactElement =>

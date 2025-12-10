@@ -40,12 +40,12 @@ export const NoticeSlide = ({ data, backgroundColor }: NoticeSlideProps) => {
 
     return (
         <div
-            className="flex py-4 h-[150px] min-h-full"
+            className="flex py-4 h-[150px] min-h-full w-full"
             style={backgroundStyle}
         >
             {/* CONTENT (LEFT SIDE) */}
-            <div className="w-full z-10">
-                <div className="flex items-center justify-start gap-1 mb-2">
+            <div className="w-[100%] z-10">
+                <div className="w-fit flex items-center justify-start gap-1 mb-2">
 
                     <h2 className="text-xl font-bold mx-4 line-clamp-1">{data.title}</h2>
                     <div className="flex items-center justify-center bg-white/20 rounded-lg p-2 cursor-pointer hover:bg-white/40" onClick={() => navigate(`/webapp/notices/${data.name}`)}   >
@@ -53,8 +53,7 @@ export const NoticeSlide = ({ data, backgroundColor }: NoticeSlideProps) => {
                     </div>
                 </div>
 
-                <div className="text-sm mb-3 mx-4 line-clamp-2  trim max-w-[60%] bg-transparent"
-
+                <div className="text-sm mb-3 mx-4 line-clamp-2 text-wrap trim max-w-[65%] bg-transparent"
                 >{plainText}</div>
 
 

@@ -14,6 +14,7 @@ import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import SharedExpenses from "./components/Expenses-App/ExpenseClaim/SharedExpenses";
+import Requests from "./components/Requests";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -446,6 +447,7 @@ export const routesConfig: AppRoute[] = [
   // Standalone Routes
   { path: "/webapp/search-members", element: <SearchMembers /> },
 
+  { path: "/webapp/requests", element: <Requests /> },
   { path: "/webapp/id-card", element: <IdCard /> },
   { path: "/webapp/id-card/:employeeId", element: <IdCard /> },
   { path: "/webapp/expenses", element: <Expenses /> },

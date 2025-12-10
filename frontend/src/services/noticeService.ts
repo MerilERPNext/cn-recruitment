@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FrappeAPI } from '../utils/frappeAPI';
 import { Notice } from '../types/notice';
+import { FilterCondition } from '../types/frappe';
 
 // Notice API service
 export class NoticeService {
   
   private readonly baseUrl = '/api/method/recruitment.api';
   
-  async getAllNotices(): Promise<Notice[]> {
+  async getAllNotices(limit?:number, filters?: FilterCondition[]): Promise<Notice[]> {
     try {
-        const notices = await FrappeAPI.getDocumentList('Notice',{fields:["*"]});
+        const notices = await FrappeAPI.getDocumentList('Notice',{fields:["*"],limit:limit,filters,orderBy:"creation desc"});
 
       return notices.data as Notice[];
     } catch (error) {

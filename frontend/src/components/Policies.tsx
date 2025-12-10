@@ -11,7 +11,7 @@ const Policies: React.FC = () => {
         </Link>
         <h1 className="text-xl font-semibold text-gray-900">Policies</h1>
       </div>
-      
+
       <div className="px-6 py-8">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Company Policies</h2>

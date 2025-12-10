@@ -114,7 +114,7 @@ const EmployeeAttendanceDetails = ({
       ]
       : []
   );
-  console.log("attendanceRequests-------------------------------", attendanceRequests);
+
   const hasExistingRequest =
     attendanceRequests && attendanceRequests.length > 0;
 
@@ -280,6 +280,10 @@ const EmployeeAttendanceDetails = ({
       <div>
         <LeaveDetailsCard data={leaveDetails} />
         {data?.custom_auto_created === 1 ? renderLeaveDetailsActions() : null}
+        <div className="border-t-2 border-gray-100 mt-6"></div>
+
+        {hasExistingRequest ? <AttendanceRequestInfo data={attendanceRequests?.[0]} /> : null}
+
       </div>
     );
   };

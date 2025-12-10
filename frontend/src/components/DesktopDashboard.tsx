@@ -113,7 +113,7 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices();
+  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [["status", "!=", "Expired"]]);
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -589,18 +589,10 @@ export default function DesktopDashboard() {
             )}
 
             {/* Hero Banner */}
-            <div className="bg-teal-100 mb-2 rounded-lg p-6 text-gray-800 overflow-hidden">
-              <div className="relative z-0">
-                <h2 className="text-xl font-bold mb-2">Keep Up the Rhythm!</h2>
-                <p className="text-gray-500">
-                  Your contributions are making the day amazing!
-                </p>
-              </div>
-            </div>
-            <div className="my-4 w-full max-w-full overflow-hidden rounded-2xl">
+            <div className="my-4 w-full max-w-full overflow-hidden rounded-2xl bg-white">
               {!noticeIsLoading && notices && notices?.length > 0 &&
                 <Carousel className="w-full h-full max-h-[150px]" showNavigation={false}>
-                  {notices?.slice(0, 5)?.map((item) => (
+                  {notices?.map((item) => (
                     <CarouselSlide key={item.name}>
                       <NoticeSlide data={item} />
                     </CarouselSlide>
@@ -786,7 +778,20 @@ export default function DesktopDashboard() {
 
               {/* Requests */}
               <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="section-title mb-6">Requests</h3>
+                <div className="w-full flex justify-between items-center mb-6">
+
+                  <h3 className="section-title ">Requests</h3>
+                  <button
+                    onClick={() => {
+                      navigate(
+                        "/webapp/requests"
+                      );
+                    }}
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    View All
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   {/* Apply Leave */}
