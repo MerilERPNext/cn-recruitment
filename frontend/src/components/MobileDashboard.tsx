@@ -5,7 +5,6 @@ import {
   Receipt,
   Shield,
   Bell,
-  Search,
   CheckCircle,
   AlertCircle,
   User,

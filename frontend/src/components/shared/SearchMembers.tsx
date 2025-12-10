@@ -1,19 +1,13 @@
-import HeaderBar from "./HeaderBar";
-
-import { useNavigate } from "react-router-dom";
-
 import { useEffect, useState } from "react";
 
 
-import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
 import { Search } from "lucide-react";
 
-import { IoChevronBackOutline } from "react-icons/io5";
 import useDebounce from "../../hooks/useDebounce";
 import { useEmployees } from "../../hooks/useEmployee";
-import { useScreenSize } from "../../hooks/useScreenSize";
 import SearchCard from "../Employee/SearchCard";
-import { Employee } from "../MyProfile/EmploymentHistory";
+import { Employee } from "../../types/employee";
+
 
 const EmployeeCardSkeleton = () => {
     return (
@@ -41,7 +35,6 @@ const EmployeeCardSkeleton = () => {
 
 const SearchMembersApp = () => {
     const [recentSearches, setRecentSearches] = useState<Employee[]>([]);
-    const { isDesktop } = useScreenSize();
     const [searchQuery, setSearchQuery] = useState("");
     const query = useDebounce(searchQuery, 350);
 
@@ -61,8 +54,6 @@ const SearchMembersApp = () => {
             ["name", "like", `%${query}%`],
         ]
     );
-
-    const navigate = useNavigate();
 
     // Load recent searches
     useEffect(() => {

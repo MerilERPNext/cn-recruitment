@@ -6,7 +6,6 @@ import {
   LogOut,
   ChevronDown,
   User,
-  Search,
   Dock,
   RotateCcwKey,
 } from "lucide-react";

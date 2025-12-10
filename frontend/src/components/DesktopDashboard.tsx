@@ -7,7 +7,6 @@ import {
   CheckCircle,
   XCircle,
   LogOut,
-  Search,
   ChevronDown,
   Timer,
   ArrowUpDown,

@@ -1,6 +1,6 @@
 import React from "react";
 import { Loader2 } from "lucide-react";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployee, useEmployee } from "../../hooks/useEmployee";
 
 type WrapperHoverCardProps = {
     children: React.ReactNode;
@@ -18,7 +18,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     placement = "center-right"
 }) => {
 
-    const { data, isLoading } = useCurrentEmployee();
+    const { data, isLoading } = useEmployee(employeeId);
 
     const positionClasses: Record<string, string> = {
         "bottom-right": "top-1/2 left-full",
@@ -37,7 +37,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                 className={`pointer-events-none absolute p-4 opacity-100 z-[9999] ${positionClasses[placement]}`}
             >
                 <div
-                    className="w-full max-w-xs md:max-w-sm lg:max-w-md rounded-xl backdrop-blur-md bg-gray-200 border border-gray-600/10 shadow-xl p-4 pointer-events-auto opacity-0 group-hover:opacity-100 "
+                    className={`w-full max-w-xs md:max-w-sm lg:max-w-md rounded-xl backdrop-blur-md bg-gray-200 border border-gray-600/10 shadow-xl p-4 pointer-events-auto opacity-0 group-hover:opacity-100 ${cardClassName}`}
                     style={{
                         WebkitBackdropFilter: "blur(4px)",
                         backdropFilter: "blur(4px)",
