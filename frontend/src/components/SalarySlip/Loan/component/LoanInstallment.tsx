@@ -48,9 +48,9 @@ export default function LoanInstallments({ installments }: LoanInstallmentsProps
 
   return (
     <div>
-      <h3 className="font-semibold mb-4 text-gray-900">Loans Breakup Details</h3>
+      <h3 className=" card-title  mb-4">Loans Breakup Details</h3>
       <CardTable titles={titles} columnWidths={columnWidths}>
-      <div className="text-sm divide-y divide-gray-200">
+      <div className="card-subtitle  divide-y divide-gray-200">
         {installments.length > 0 ? (
           installments.map((installment, index) => (
             <div

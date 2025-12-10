@@ -14,6 +14,11 @@ import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import SharedExpenses from "./components/Expenses-App/ExpenseClaim/SharedExpenses";
+import ExtraPayment from "./components/SalarySlip/Extrapayment/ExtraPayment";
+import IncomeTaxSheet from "./components/SalarySlip/TaxSheet/TaxSheet";
+import ITDeclarationForm from "./components/SalarySlip/IT Declaration/ITDeclaration";
+import TeamLoanRequest from "./components/SalarySlip/Loan/TeamLoan/TeamLoanRequest";
+import TeamAdvanceRequest from "./components/SalarySlip/Advances/ApprovalAdvanceRquest";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -481,9 +486,14 @@ export const routesConfig: AppRoute[] = [
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "hr-payroll", element: <HRPayroll /> },
       { path: "loan", element: <LoansPage /> },
+      { path: "team-loan-requests", element: <TeamLoanRequest/> },
       { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
       { path: "advances-list", element: <AdvancesList /> },
+      { path: "team-advances-list", element: <TeamAdvanceRequest /> },
       { path: "benefits-list", element: <BenefitsList /> },
+      {path: "extra-payment", element: <ExtraPayment />},
+      {path: "income-tax-sheet", element: <IncomeTaxSheet />},
+      {path: "it-declalaration-form", element: <ITDeclarationForm />},
     ],
   },
   {

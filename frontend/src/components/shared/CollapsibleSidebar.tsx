@@ -27,6 +27,10 @@ import {
   ChartNoAxesCombined,
   Telescope,
   Goal,
+  HandCoins,
+  Coins,
+  WalletCards,
+  BadgeIndianRupee,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -213,30 +217,53 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Calculator,
           href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
         },
-        {
-          name: "Monthly Salary",
-          icon: Calculator,
-          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=monthly",
-        },
+    
         {
           name: "Salary Slip",
           icon: CreditCard,
           href: "/webapp/salary-slip-app/salary-slip-list",
         },
         {
-          name: "Loan",
+          name: "Tax Declaration Sheet",
           icon: Wallet,
-          href: "/webapp/salary-slip-app/loan",
+          href: "/webapp/salary-slip-app/income-tax-sheet",
         },
         {
-          name: "Advances",
-          icon: DollarSign,
+          name: "IT Declaration",
+          icon: BadgeIndianRupee,
+          href: "/webapp/salary-slip-app/it-declalaration-form",
+        },
+        {
+          name: "My Loan Requests",
+          icon: BadgeIndianRupee,
+          href: "/webapp/salary-slip-app/loan",
+        },
+
+        {
+          name: "Team Loan Requests",
+          icon: Users,
+          href: "/webapp/salary-slip-app/team-loan-requests",
+        },
+
+        {
+          name: "My Advances Requests",
+          icon: WalletCards,
           href: "/webapp/salary-slip-app/advances-list",
+        },
+        {
+          name: "Team Advances Requests",
+          icon: Coins,
+          href: "/webapp/salary-slip-app/team-advances-list",
         },
         {
           name: "Benefits",
           icon: DollarSign,
           href: "/webapp/salary-slip-app/benefits-list",
+        },
+        {
+          name: "Extra Payment",
+          icon: HandCoins,
+          href: "/webapp/salary-slip-app/extra-payment",
         },
         {
           name: "Payroll Documents",

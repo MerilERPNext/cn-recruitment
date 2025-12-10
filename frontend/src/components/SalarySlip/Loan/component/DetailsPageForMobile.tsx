@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useNavigate, useParams } from "react-router";
 import HeaderBar from "../../../HeaderBar";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";

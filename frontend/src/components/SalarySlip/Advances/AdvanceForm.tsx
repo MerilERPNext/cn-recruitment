@@ -179,7 +179,6 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     }
   };
 
-  /** ✅ Cancel Handler */
   const handleCancel = useCallback(() => {
     if (formAdvanceInstance.current) {
       formAdvanceInstance.current.resetValue();
@@ -236,7 +235,6 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
               if (submission?.changed?.component?.key === "attachments")
                 setAttachments([
                   ...attachments,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ...((submission?.data?.attachments as any) || []),
                 ]);
             }}

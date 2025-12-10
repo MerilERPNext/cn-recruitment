@@ -302,7 +302,7 @@ export default function AllShiftsDashboard() {
           <div>
             <Card>
               <CardHeader
-                title="Shift Change Request"
+                title="Shift Change Requests"
                 onSeeAll={() =>
                   navigate("/webapp/shift-request/shift-change-request")
                 }
@@ -317,7 +317,7 @@ export default function AllShiftsDashboard() {
                     "To Date",
                     "Due Date",
                     "Status",
-                    "Actions",
+                    "Actionsasdfasdf",
                   ]}
                   columnWidths={[
                     "8%",
@@ -344,7 +344,6 @@ export default function AllShiftsDashboard() {
                         onToggleSelect={item?.onToggleSelect}
                         data={item?.data}
                         onAction={item?.onAction}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onClick={handleRequestClick}
                         loadingAction={item?.loadingAction}
                       />

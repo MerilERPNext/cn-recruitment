@@ -371,8 +371,8 @@ const SalarySlipItemDesktop = ({
 
   return (
     <div className="my-data-row">
-      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
-        <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
+      <div className="grid grid-cols-6  items-center gap-4 px-6 h-14 border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+        <span className="card-subtitle text-gray-700 text-start  relative group inline-block overflow-visible">
           {item.employee_name}
           <div
                     className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
@@ -384,20 +384,20 @@ const SalarySlipItemDesktop = ({
                     {item.employee}
                   </div>
         </span>
-        <div className="text-sm font-medium text-gray-700 text-start truncate">
+        <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.start_date)}
         </div>
-        <div className="text-sm font-medium text-gray-700 text-start truncate">
+        <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.end_date)}
         </div>
-        <div className="text-sm font-medium text-gray-700 text-start truncate">
+        <div className="card-subtitle text-gray-700 text-start truncate">
           {maskSalary ? (
             <span className="blur-sm text-gray-400">₹XX,XXX</span>
           ) : (
             formatCurrency(item.gross_pay)
           )}
         </div>
-        <div className="text-sm font-medium text-gray-700 text-start truncate">
+        <div className="card-subtitle text-gray-700 text-start truncate">
           {maskSalary ? (
             <span className="blur-sm text-gray-400">₹XX,XXX</span>
           ) : (
