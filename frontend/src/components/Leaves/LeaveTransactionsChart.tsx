@@ -5,7 +5,7 @@ import { ChevronUp } from "lucide-react";
 import { ApexOptions } from "apexcharts";
 
 interface LeaveTransactionsChartProps {
-    data: LeaveTransaction[];
+    data?: LeaveTransaction[];
 }
 
 // 🎨 Dynamic color generator (HSL hue cycling)
