@@ -447,10 +447,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 customMessage: `${field?.label} is required`,
               },
               input: true,
-              fileTypes: [
-                { label: "Documents", value: ".pdf,.doc,.docx" },
-                { label: "Images", value: ".jpg,.jpeg,.png" },
-              ],
+              // fileTypes: [
+              //   { label: "Documents", value: ".pdf,.doc,.docx" },
+              //   { label: "Images", value: ".jpg,.jpeg,.png" },
+              // ],
               filePattern: "*/*",
               customClass: "mb-4",
               html: true,

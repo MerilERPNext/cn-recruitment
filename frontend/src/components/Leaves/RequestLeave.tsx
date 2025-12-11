@@ -173,18 +173,18 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     formData.fromDate || "",
     formData.toDate || ""
   );
-  
+
   const { data: requiredFields } = useRequiredFields("Leave Application");
   const requiredFieldMap = useMemo(() => {
-  if (!requiredFields?.fields) return {};
-  const map: Record<string, boolean> = {};
-  requiredFields.fields.forEach(f => {
-    if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
-  });
-  return map;
-}, [requiredFields]);
+    if (!requiredFields?.fields) return {};
+    const map: Record<string, boolean> = {};
+    requiredFields.fields.forEach((f) => {
+      if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+    });
+    return map;
+  }, [requiredFields]);
 
-console.log("requiredFieldMap", requiredFieldMap);
+  console.log("requiredFieldMap", requiredFieldMap);
   const {
     data: reasons,
     isLoading: isReasonLoading,
@@ -300,7 +300,9 @@ console.log("requiredFieldMap", requiredFieldMap);
               {
                 type: "datetime",
                 key: "fromDate",
-                label: requiredFieldMap["from_date"] ? "From Date <span style='color:red;margin-left:3px;'> *</span>" : "From Date",
+                label: requiredFieldMap["from_date"]
+                  ? "From Date <span style='color:red;margin-left:3px;'> *</span>"
+                  : "From Date",
                 errorLabel: "From Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -325,8 +327,9 @@ console.log("requiredFieldMap", requiredFieldMap);
               {
                 type: "datetime",
                 key: "toDate",
-                label:
-                requiredFieldMap["to_date"] ?  "To Date <span style='color:red;margin-left:3px;'> *</span>" : "To Date",
+                label: requiredFieldMap["to_date"]
+                  ? "To Date <span style='color:red;margin-left:3px;'> *</span>"
+                  : "To Date",
                 errorLabel: "To Date",
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
@@ -352,7 +355,9 @@ console.log("requiredFieldMap", requiredFieldMap);
             type: "checkbox",
             key: "halfDay",
             errorLabel: "Half-Day Leave",
-            label: (!!mandatory.half_day) ?  "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>" : "Half-Day Leave",
+            label: !!mandatory.half_day
+              ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
+              : "Half-Day Leave",
             defaultValue: defaults?.halfDay,
             input: true,
             labelPosition: "bottom",
@@ -387,7 +392,9 @@ console.log("requiredFieldMap", requiredFieldMap);
                         type: "datetime",
                         key: "half_day_date",
                         errorLabel: "Half-Day Date",
-                        label: (!!mandatory.half_day_date) ?  "Half-Day Date <span style='color:red;margin-left:3px;'> *</span>" : "Half-Day Date",
+                        label: !!mandatory.half_day_date
+                          ? "Half-Day Date <span style='color:red;margin-left:3px;'> *</span>"
+                          : "Half-Day Date",
                         placeholder: "DD-MM-YYYY",
                         enableDate: true,
                         enableTime: false,
@@ -416,7 +423,9 @@ console.log("requiredFieldMap", requiredFieldMap);
                         type: "datetime",
                         key: "custom_second_half_day_date",
                         errorLabel: "Second Half-Day Date",
-                        label: (!!mandatory.custom_second_half_day_date) ?  "Second Half-Day Date <span style='color:red;margin-left:3px;'> *</span>" : "Second Half-Day Date",
+                        label: !!mandatory.custom_second_half_day_date
+                          ? "Second Half-Day Date <span style='color:red;margin-left:3px;'> *</span>"
+                          : "Second Half-Day Date",
                         placeholder: "DD-MM-YYYY",
                         enableDate: true,
                         enableTime: false,
@@ -450,24 +459,34 @@ console.log("requiredFieldMap", requiredFieldMap);
       {
         type: "textarea",
         key: "description",
-        label: requiredFieldMap["description"] ? "Message <span style='color:red;margin-left:3px;'> *</span>" : "Message",
+        label: requiredFieldMap["description"]
+          ? "Message <span style='color:red;margin-left:3px;'> *</span>"
+          : "Message",
         errorLabel: "Message",
         defaultValue: defaults?.description ?? "",
         placeholder: "Enter the message for leave",
         rows: 3,
-        validate: { required: !!mandatory.description || requiredFieldMap["description"], minLength: 3 },
+        validate: {
+          required: !!mandatory.description || requiredFieldMap["description"],
+          minLength: 3,
+        },
         input: true,
         customClass: "px-2 my-3",
       },
       {
         type: "select",
         key: "custom_reason",
-        label: requiredFieldMap["custom_reason"] ? "Reason <span style='color:red;margin-left:3px;'> *</span>" : "Reason",
+        label: requiredFieldMap["custom_reason"]
+          ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
+          : "Reason",
         errorLabel: "Reason",
         placeholder: "Select a reason",
         defaultValue: defaults?.custom_reason ?? "",
         input: true,
-        validate: { required: !!mandatory.custom_reason || requiredFieldMap["custom_reason"] },
+        validate: {
+          required:
+            !!mandatory.custom_reason || requiredFieldMap["custom_reason"],
+        },
         data: {
           values:
             reasons?.map((r) => ({
@@ -488,20 +507,26 @@ console.log("requiredFieldMap", requiredFieldMap);
                 name: defaults.custom_attachment,
                 url: defaults.custom_attachment,
                 storage: "url",
-                type: "application/octet-stream",
+                // type: "application/octet-stream",
                 size: 0,
               },
             ]
           : [],
-        label: requiredFieldMap["custom_attachment"] ? "Attachment <span style='color:red;margin-left:3px;'> *</span>" : "Attachment",
+        label: requiredFieldMap["custom_attachment"]
+          ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
+          : "Attachment",
         errorLabel: "Attachment",
         input: true,
         storage: "customBase64",
-        validate: { required: !!mandatory.custom_attachment || requiredFieldMap["custom_attachment"] },
-        fileTypes: [
-          { label: "Documents", value: ".pdf,.doc,.docx" },
-          { label: "Images", value: ".jpg,.jpeg,.png" },
-        ],
+        validate: {
+          required:
+            !!mandatory.custom_attachment ||
+            requiredFieldMap["custom_attachment"],
+        },
+        // fileTypes: [
+        //   { label: "Documents", value: ".pdf,.doc,.docx" },
+        //   { label: "Images", value: ".jpg,.jpeg,.png" },
+        // ],
         filePattern: "*/*",
         customClass: "px-2 mb-6",
       },
@@ -529,7 +554,7 @@ console.log("requiredFieldMap", requiredFieldMap);
     handleFromDateChange,
     formData.fromDate,
     formData.toDate,
-    requiredFieldMap
+    requiredFieldMap,
   ]);
 
   return (

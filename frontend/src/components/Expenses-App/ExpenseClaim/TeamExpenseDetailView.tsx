@@ -121,12 +121,16 @@ export function TeamExpenseDetailView({
     if (ref?.expenses && Array.isArray(ref.expenses)) {
       setExpenseItems(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ref.expenses.map((item: any, index: number) => ({
-          ...item,
-          id: item.name || index,
-          sanctionedAmount: item.sanctioned_amount || item.amount || 0,
-          comment: "",
-        }))
+        ref.expenses.map((item: any, index: number) => {
+          const initialAmount = item.sanctioned_amount || item.amount || 0;
+          return {
+            ...item,
+            id: item.name || index,
+            sanctionedAmount: initialAmount,
+            sanctionedAmountInput: String(initialAmount),
+            comment: "",
+          };
+        })
       );
     }
   }, [ref?.expenses]);
@@ -288,10 +292,10 @@ export function TeamExpenseDetailView({
   };
 
   const formatINR = (value?: number | null) =>
-    typeof value === "number" ? value.toFixed(2) : "0.00";
+    typeof value === "number" ? value.toString() : "0";
 
   const updateSanctionedAmount = (itemId: string, value: string) => {
-    const numValue = parseFloat(value) || 0;
+    const numValue = parseInt(value, 10) || 0;
     setExpenseItems((prev) =>
       prev.map((item) => {
         if (item.id === itemId) {
@@ -299,20 +303,16 @@ export function TeamExpenseDetailView({
           if (hasChanged && !hasUnsavedChanges) {
             setHasUnsavedChanges(true);
           }
-          return { ...item, sanctionedAmount: numValue };
+          return {
+            ...item,
+            sanctionedAmountInput: value,
+            sanctionedAmount: numValue,
+          };
         }
         return item;
       })
     );
   };
-
-  // const updateComment = (itemId: string, value: string) => {
-  //   setExpenseItems((prev) =>
-  //     prev.map((item) =>
-  //       item.id === itemId ? { ...item, comment: value } : item
-  //     )
-  //   );
-  // };
 
   const getActionStyles = (action: string): { bg: string; text: string } => {
     const parsedAction = action.toLowerCase().trim();
@@ -484,7 +484,6 @@ export function TeamExpenseDetailView({
             expenseItems.map((item) => {
               const itemStatus = getStatus(item.custom_approval_staus || "");
 
-              //changes in the sactioned amount
               const originalSanctionedAmount =
                 typeof item.sanctioned_amount === "number"
                   ? item.sanctioned_amount
@@ -672,34 +671,24 @@ export function TeamExpenseDetailView({
                         <label className="text-xs text-gray-500 uppercase mb-1 block">
                           SANCTIONED AMOUNT (INR) *
                         </label>
+
                         <input
                           type="number"
-                          value={item.sanctionedAmount}
+                          value={item.sanctionedAmountInput}
                           onChange={(e) =>
                             updateSanctionedAmount(item.id, e.target.value)
                           }
                           disabled={!isClaimEditable}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                          step="0.01"
+                          step="1"
                           min="0"
+                          onKeyDown={(e) => {
+                            if (e.key === "." || e.key === ",") {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       </div>
-
-                      {/* <div className="mb-3">
-                        <label className="text-xs text-gray-500 uppercase mb-1 block">
-                          COMMENT (Required for Reject)
-                        </label>
-                        <textarea
-                          value={item.comment}
-                          onChange={(e) =>
-                            updateComment(item.id, e.target.value)
-                          }
-                          placeholder="Add your comment here (required for rejection)..."
-                          disabled={!isClaimEditable}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                          rows={3}
-                        />
-                      </div> */}
 
                       {isClaimEditable && isItemDirty && (
                         <div className="flex gap-2">
@@ -875,5 +864,3 @@ export function TeamExpenseDetailView({
     </div>
   );
 }
-
-export default TeamExpenseDetailView;

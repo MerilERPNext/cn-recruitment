@@ -256,6 +256,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                   required: !!field.required,
                   customMessage: `${field?.label} is required`,
                 },
+                defaultValue: "INR",
                 html: true,
                 input: true,
                 clearOnRefresh: false,
