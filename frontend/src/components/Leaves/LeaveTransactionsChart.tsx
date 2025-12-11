@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import { LeaveTransaction } from "../../types/leaves";
 import { ChevronUp } from "lucide-react";
@@ -19,22 +19,22 @@ const generateColors = (count: number): string[] => {
 const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({ data }) => {
     const [open, setOpen] = useState(false);
 
-    const months = [
+    const months = useMemo(() => [
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ];
+    ], []);
 
-    const cleanedData = data?.filter(item => !item.dont_show_in_frontend) ?? [];
-    const colors = generateColors(cleanedData.length);
+    const cleanedData = useMemo(() => data?.filter(item => !item.dont_show_in_frontend) ?? [], [data]);
+    const colors = useMemo(() => generateColors(cleanedData.length), [cleanedData]);
 
-    const monthlySeries = cleanedData.map(item => ({
+    const monthlySeries = useMemo(() => cleanedData.map(item => ({
         name: item.type,
         data: item.monthly,
-    }));
+    })), [cleanedData]);
 
-    const monthlyOptions: ApexOptions = {
+    const monthlyOptions: ApexOptions = useMemo(() => ({
         chart: {
-            type: "bar",            // now valid
+            type: "bar",
             stacked: false,
             toolbar: { show: false },
         },
@@ -70,7 +70,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({ data })
         tooltip: {
             theme: "light",
         },
-    };
+    }), [colors, months]);
 
     return (
         <div className="w-full">
