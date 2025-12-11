@@ -10,6 +10,8 @@ import { FaClockRotateLeft } from "react-icons/fa6";
 import { FiPieChart } from "react-icons/fi";
 import HeaderBar from "../HeaderBar";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
+import LeaveBarGraph from "./LeaveTransactionsChart";
+import LeaveTransactionsChart from "./LeaveTransactionsChart";
 
 type LeaveTransactionEntry = {
   type: string;
@@ -146,6 +148,7 @@ const LeaveBalance: React.FC = () => {
 
   return (
     <div className="pb-4 relative">
+      <LeaveTransactionsChart data={data?.leave_transactions} />
       {showTransactions ? (
         <div className="fixed inset-0 bg-white z-50 flex flex-col md:static md:max-w-full">
           <HeaderBar
