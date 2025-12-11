@@ -22,7 +22,7 @@ import { toast } from "react-hot-toast";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
-import SearchMembersApp from "./shared/SearchMembers";
+import SearchMembers from "./shared/SearchMembers";
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -185,7 +185,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             </p>
           </div>
           {location.pathname !== ROUTES.SEARCH_MEMBERS && (
-            <SearchMembersApp />
+            <SearchMembers />
           )}
           <div className="flex items-center gap-4">
             <button

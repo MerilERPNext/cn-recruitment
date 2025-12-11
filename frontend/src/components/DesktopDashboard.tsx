@@ -58,7 +58,7 @@ import { useTargetUser } from "../context/ViewedUserContext";
 import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
 import { useGetAllNotices } from "../hooks/useNotices";
 import { NoticeSlide } from "./shared/molecules/NoticeSlide";
-import SearchMembersApp from "./shared/SearchMembers";
+import SearchMembers from "./shared/SearchMembers";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -370,7 +370,7 @@ export default function DesktopDashboard() {
               </>
             )}
           </div>
-          <SearchMembersApp />
+          <SearchMembers />
 
 
           <div className="flex items-center gap-4">

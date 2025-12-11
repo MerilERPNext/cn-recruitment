@@ -33,7 +33,7 @@ const EmployeeCardSkeleton = () => {
     );
 };
 
-const SearchMembersApp = () => {
+const SearchMembers = () => {
     const [recentSearches, setRecentSearches] = useState<Employee[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const query = useDebounce(searchQuery, 350);
@@ -79,8 +79,8 @@ const SearchMembersApp = () => {
         const updated = [...recentSearches];
         updated.splice(idx, 1);
         localStorage.setItem("recentSearches", JSON.stringify(updated));
-        setRecentSearches(updated);
-    };
+        setRecentSearches(updated)
+    }
 
     const employeeList = () => {
         if (isLoading)
@@ -121,10 +121,10 @@ const SearchMembersApp = () => {
     const [isFocused, setIsFocused] = useState(false);
 
     return (
-        <div className="w-full max-w-lg flex flex-col">
+        <div className="w-full max-w-md flex flex-col">
 
             <main className="flex-grow w-full">
-                <div className="relative mx-auto max-w-3xl px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
+                <div className="relative mx-auto max-w-3xl px-3 sm:px-6 lg:px-8 ">
                     <div className="flex items-center gap-2">
 
 
@@ -151,4 +151,4 @@ const SearchMembersApp = () => {
     );
 };
 
-export default SearchMembersApp;
+export default SearchMembers;
