@@ -46,58 +46,53 @@ function isChunkLoadError(error: any): boolean {
 /**
  * Handle chunk loading errors
  */
-function handleChunkLoadError(error: Error): void {
-  console.warn('Chunk loading error detected:', error.message);
+function handleChunkLoadError(error: any) {
+  console.warn("Chunk load error detected:", error);
 
-  // Extract chunk name if possible
-  const chunkMatch = error.message?.match(/chunk\s+(\S+)/i);
-  const chunkName = chunkMatch ? chunkMatch[1] : 'unknown';
-
-  // Check if we've already failed to load this chunk
-  if (failedChunks.has(chunkName)) {
-    console.warn(`Chunk ${chunkName} has already failed. Suggesting page refresh.`);
-    showRefreshPrompt();
+  // Reload once to fetch the latest build
+  if (!window.__chunkReloaded) {
+    window.__chunkReloaded = true;
+    window.location.reload();
     return;
   }
 
-  // Mark this chunk as failed
-  failedChunks.add(chunkName);
-
-  // Try to recover by clearing cache and retrying
-  recoverFromChunkError();
+  // If reload already happened and still failing => show prompt
+  showRefreshPrompt();
 }
+
+
 
 /**
  * Attempt to recover from chunk loading error
  */
-async function recoverFromChunkError(): Promise<void> {
-  try {
-    // Clear module cache if using Vite HMR
-    if (import.meta.hot) {
-      import.meta.hot.invalidate();
-    }
+// async function recoverFromChunkError(): Promise<void> {
+//   try {
+//     // Clear module cache if using Vite HMR
+//     if (import.meta.hot) {
+//       import.meta.hot.invalidate();
+//     }
 
-    // Clear service worker cache if available
-    if ('caches' in window) {
-      const cacheNames = await caches.keys();
-      const viteCaches = cacheNames.filter(name =>
-        name.includes('vite') || name.includes('chunk')
-      );
+//     // Clear service worker cache if available
+//     if ('caches' in window) {
+//       const cacheNames = await caches.keys();
+//       const viteCaches = cacheNames.filter(name =>
+//         name.includes('vite') || name.includes('chunk')
+//       );
 
-      for (const cacheName of viteCaches) {
-        await caches.delete(cacheName);
-      }
-    }
+//       for (const cacheName of viteCaches) {
+//         await caches.delete(cacheName);
+//       }
+//     }
 
-    // Clear failed chunks after recovery attempt
-    setTimeout(() => {
-      failedChunks.clear();
-    }, 5000);
-  } catch (error) {
-    console.error('Failed to recover from chunk error:', error);
-    showRefreshPrompt();
-  }
-}
+//     // Clear failed chunks after recovery attempt
+//     setTimeout(() => {
+//       failedChunks.clear();
+//     }, 5000);
+//   } catch (error) {
+//     console.error('Failed to recover from chunk error:', error);
+//     showRefreshPrompt();
+//   }
+// }
 
 /**
  * Show a user-friendly prompt to refresh the page

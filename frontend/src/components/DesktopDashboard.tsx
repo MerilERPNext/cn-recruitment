@@ -7,7 +7,6 @@ import {
   CheckCircle,
   XCircle,
   LogOut,
-  Search,
   ChevronDown,
   Timer,
   ArrowUpDown,
@@ -59,6 +58,7 @@ import { useTargetUser } from "../context/ViewedUserContext";
 import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
 import { useGetAllNotices } from "../hooks/useNotices";
 import { NoticeSlide } from "./shared/molecules/NoticeSlide";
+import SearchMembers from "./shared/SearchMembers";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -370,15 +370,8 @@ export default function DesktopDashboard() {
               </>
             )}
           </div>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search members..."
-              onClick={() => navigate("/webapp/search-members")}
-              className="w-full pl-10 pr-4 py-2 min-w-[28rem] cursor-pointer bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-800 placeholder-gray-500"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-          </div>
+          <SearchMembers />
+
 
           <div className="flex items-center gap-4">
             <button
