@@ -1,6 +1,6 @@
 import React from "react";
 import { Loader2 } from "lucide-react";
-import { useCurrentEmployee, useEmployee } from "../../hooks/useEmployee";
+import { useGetEmployeeHoverData } from "../../hooks/useEmployee";
 
 type WrapperHoverCardProps = {
     children: React.ReactNode;
@@ -8,6 +8,21 @@ type WrapperHoverCardProps = {
     cardClassName?: string;
     employeeId?: string;
     placement?: "bottom-right" | "bottom-left" | "top-right" | "top-left" | "center-left" | "center-right";
+};
+
+const data = {
+    data: [
+        { label: "Employee", value: "PP00129" },
+        { label: "First Name", value: "omkar" },
+        { label: "Middle Name", value: null },
+        { label: "Last Name", value: null },
+        { label: "Full Name", value: "omkar" },
+        { label: "Gender", value: "Transgender" },
+        { label: "Image", value: "/private/files/photo-1568602471122-7832951cc4c5.jpeg" },
+        { label: "Bank A/C No.", value: null },
+        { label: "Marital Status", value: "" },
+        { label: "Encashment Date", value: null }
+    ]
 };
 
 const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
@@ -18,7 +33,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     placement = "center-right"
 }) => {
 
-    const { data, isLoading } = useEmployee(employeeId);
+    const { data: EmployeeInfo, isLoading } = useGetEmployeeHoverData(employeeId);
 
     const positionClasses: Record<string, string> = {
         "bottom-right": "top-1/2 left-full",
@@ -30,14 +45,22 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     };
 
     return (
-        <div className={`group relative inline-block ${className}`}>
-            <div className="relative z-10">{children}</div>
+        <div className={`relative inline-block group ${className}`}>
+            {/* Trigger */}
+            <div>{children}</div>
 
+            {/* Hover Card */}
             <div
-                className={`pointer-events-none absolute p-4 opacity-100 z-[9999] ${positionClasses[placement]}`}
+                className={`
+        absolute py-4 opacity-0 group-hover:opacity-100 
+        pointer-events-none group-hover:pointer-events-auto
+        transition-opacity duration-150 z-[9999] 
+        ${positionClasses[placement]}
+    `}
             >
                 <div
-                    className={`w-full max-w-xs md:max-w-sm lg:max-w-md rounded-xl backdrop-blur-md bg-gray-200 border border-gray-600/10 shadow-xl p-4 pointer-events-auto opacity-0 group-hover:opacity-100 ${cardClassName}`}
+                    className={`w-full max-h-[400px] overflow-y-auto py-4 md:max-w-sm lg:max-w-md 
+            rounded-xl backdrop-blur-md bg-white border border-gray-400 shadow-xl ${cardClassName}`}
                     style={{
                         WebkitBackdropFilter: "blur(4px)",
                         backdropFilter: "blur(4px)",
@@ -52,12 +75,17 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                         </div>
                     ) : (
                         <div className="text-gray-800 font-semibold">
-                            <p className="whitespace-nowrap font-bold ">{data?.employee_name}</p>
-                            <p className="whitespace-nowrap text-sm font-semibold text-gray-500">{data?.name}</p>
+                            {data?.data?.map(item => (
+                                <div key={item.label} className="grid grid-cols-2 w-[300px] px-2 py-2 border-b border-gray-400">
+                                    <p className="text-sm text-gray-500">{item.label}</p>
+                                    <span>{item.value ?? "—"}</span>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
             </div>
+
         </div>
     );
 };

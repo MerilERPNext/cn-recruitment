@@ -375,7 +375,7 @@ const SalarySlipItemDesktop = ({
       <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
         <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
           <WrapperHoverCard employeeId={item.employee}>{item.employee_name}</WrapperHoverCard>
-          <div
+          {/* <div
             className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
                    opacity-0 invisible group-hover:opacity-100 group-hover:visible
                    transition-all duration-150 ease-out pointer-events-none
@@ -383,7 +383,7 @@ const SalarySlipItemDesktop = ({
                    shadow-lg z-50"
           >
             {item.employee}
-          </div>
+          </div> */}
         </span>
         <div className="text-sm font-medium text-gray-700 text-start truncate">
           {formatToIndianDate(item.start_date)}
