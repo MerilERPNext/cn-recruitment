@@ -98,7 +98,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({ data })
                         options={monthlyOptions}
                         series={monthlySeries}
                         type="bar"
-                        height={500}
+                        height={350}
                     />
                 </div>
             </div>
