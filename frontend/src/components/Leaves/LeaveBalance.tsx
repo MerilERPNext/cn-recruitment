@@ -10,7 +10,6 @@ import { FaClockRotateLeft } from "react-icons/fa6";
 import { FiPieChart } from "react-icons/fi";
 import HeaderBar from "../HeaderBar";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
-import LeaveBarGraph from "./LeaveTransactionsChart";
 import LeaveTransactionsChart from "./LeaveTransactionsChart";
 
 type LeaveTransactionEntry = {
