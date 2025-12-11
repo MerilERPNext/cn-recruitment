@@ -86,9 +86,7 @@ const EmpAttendanceRequestCard = ({
         <div
           className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer`}
         >
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.username}
-          </div>
+
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.custom_request_type}
@@ -107,7 +105,9 @@ const EmpAttendanceRequestCard = ({
           <div className="text-sm text-gray-900 text-start">
             {formattedDueDate}
           </div>
-
+          <div className="text-sm font-medium text-gray-700 text-start truncate">
+            {data?.username}
+          </div>
           {/* Status */}
           <div className="flex justify-start">
             <Tooltip

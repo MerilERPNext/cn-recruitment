@@ -195,9 +195,8 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex  bg-gray-100 `}>
       <div
-        className={`flex  bg-gray-100 p-2 flex-col ${
-          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-        }`}
+        className={`flex  bg-gray-100 p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+          }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -252,11 +251,11 @@ const EmployeeAttendance = () => {
           </div>
           <CardTable
             titles={[
-              "Allocated To",
               "Request Type",
               "From Date",
               "To Date",
               "Due Date",
+              "Allocated To",
               "Status",
               "Actions",
             ]}

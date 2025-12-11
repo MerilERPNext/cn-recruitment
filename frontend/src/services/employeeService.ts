@@ -481,11 +481,12 @@ export class EmployeeService {
   static async getAllEmployees(
     fields?: string[],
     filters?: FilterCondition[],
-    orFilters?: FilterCondition[]
+    orFilters?: FilterCondition[],
+    limit?: number
   ): Promise<Employee[]> {
     const response = FrappeAPI.getDocumentList("Employee", {
       fields: fields && fields.length > 0 ? fields : ["*"],
-
+      limit: limit,
       filters: filters,
       orFilters: orFilters,
     });

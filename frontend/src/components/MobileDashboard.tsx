@@ -15,6 +15,7 @@ import {
   BanknoteX,
   Workflow,
   ChartNoAxesCombined,
+  RotateCcw,
 } from "lucide-react";
 import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -102,25 +103,41 @@ const MobileDashboard: React.FC = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
-  useEffect(() => {
-    async function fetchLocation() {
-      setIsLocationLoading(true);
-      setLocationError(null);
-      try {
-        const coords = await getDeviceLocation();
-        setLocation(coords);
-      } catch (err) {
-        console.error("Failed to get location:", err);
-        setLocationError(
-          "Unable to get your location. Please enable location services."
-        );
-      } finally {
-        setIsLocationLoading(false);
-      }
+  const fetchLocation = async () => {
+    setIsLocationLoading(true);
+    setLocationError(null);
+    try {
+      const coords = await getDeviceLocation();
+      setLocation(coords);
+      return coords;
+    } catch (err) {
+      console.error("Failed to get location:", err);
+      setLocationError(
+        "Unable to get your location. Please enable location services."
+      );
+      return null;
+    } finally {
+      setIsLocationLoading(false);
     }
+  };
 
-    fetchLocation();
+  useEffect(() => {
+    // Initial fetch with a fallback retry to handle potential native interface delay
+    fetchLocation().then((coords) => {
+      if (!coords) {
+        // If initial fetch fails, try again after a short delay
+        setTimeout(() => {
+          fetchLocation();
+        }, 1000);
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    if (location) {
+      setLocationError(null);
+    }
+  }, [location]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -496,10 +513,19 @@ const MobileDashboard: React.FC = () => {
                   "Check In"
                 )}
               </button>
-              {locationError && (
-                <p className="text-xs text-red-600 mt-1 text-center">
-                  {locationError}
-                </p>
+              {locationError && !isLocationLoading && (
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <p className="text-xs text-red-600 font-medium">
+                    {locationError}
+                  </p>
+                  <button
+                    onClick={fetchLocation}
+                    className="p-1.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors border border-red-200"
+                    title="Retry Location"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )}
             </div>
           ) : null}

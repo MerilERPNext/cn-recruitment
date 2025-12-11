@@ -55,7 +55,7 @@ export function MyRequestCard({
       ? format(parsedDate, "dd/MM/yyyy")
       : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(request?.description || "");
-  const gridTemplateColumns = "1fr 2fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "2fr 1fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -64,9 +64,7 @@ export function MyRequestCard({
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {request?.username || ""}
-          </div>
+
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>
@@ -76,6 +74,9 @@ export function MyRequestCard({
           </div>
           <div className="text-gray-700 text-sm text-start">
             {formattedDate}
+          </div>
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
+            {request?.username || ""}
           </div>
           <div className="w-full flex justify-start">
             <Tooltip content={`Allocated to : ${request?.allocated_to}`}>

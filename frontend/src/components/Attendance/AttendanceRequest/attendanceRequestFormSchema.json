@@ -450,12 +450,15 @@
         },
         {
           "label": "Message",
-          "key": "message",
+          "key": "explanation",
           "type": "textarea",
           "input": true,
           "placeholder": "Provide additional details...",
           "rows": 4,
-          "customClass": "mb-4"
+          "customClass": "mb-4",
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Attachments",
