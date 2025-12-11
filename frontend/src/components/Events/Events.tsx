@@ -55,11 +55,17 @@ const Events = () => {
                             >
                                 <div className="flex gap-2">
                                     {/* Avatar */}
-                                    <img
-                                        src={employee.image}
-                                        alt={employee.employee_name}
-                                        className="w-10 h-10 rounded-full object-cover"
-                                    />
+                                    {employee.image ? (
+                                        <img
+                                            src={employee.image}
+                                            alt={employee.employee_name}
+                                            className="w-10 h-10 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-lg uppercase">
+                                            {employee.employee_name.charAt(0)}
+                                        </div>
+                                    )}
 
                                     {/* Text */}
                                     <div className="flex flex-col leading-tight">
