@@ -2,13 +2,13 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Calendar,
   ArrowUpDown,
-  Receipt,
+  ReceiptIndianRupee,
   Shield,
   Bell,
   CheckCircle,
   AlertCircle,
   User,
-  DollarSign,
+  IndianRupee,
   XCircle,
   FileEdit,
   Timer,
@@ -179,11 +179,11 @@ const MobileDashboard: React.FC = () => {
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(CompanyLogo) &&
-      CompanyLogo.length > 0 &&
-      currentEmployeeCompany
+    CompanyLogo.length > 0 &&
+    currentEmployeeCompany
       ? CompanyLogo.find(
-        (company) => company.company_name === currentEmployeeCompany
-      )
+          (company) => company.company_name === currentEmployeeCompany
+        )
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -201,30 +201,30 @@ const MobileDashboard: React.FC = () => {
 
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
           parseISO(b.time.replace(" ", "T"))
         )
       )[0]
+    : undefined;
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T"))
+          )
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -580,7 +580,7 @@ const MobileDashboard: React.FC = () => {
               className="flex flex-col items-center group"
             >
               <div className="w-16 h-16 bg-yellow-50 border-2 border-yellow-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-yellow-200 transition-colors">
-                <DollarSign className="w-6 h-6 text-yellow-600 group-hover:text-yellow-800 transition-colors" />
+                <IndianRupee className="w-6 h-6 text-yellow-600 group-hover:text-yellow-800 transition-colors" />
               </div>
               <span className="text-xs font-medium text-yellow-700 text-center">
                 Compensation
@@ -630,7 +630,7 @@ const MobileDashboard: React.FC = () => {
               className="flex flex-col items-center group"
             >
               <div className="w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
-                <Receipt className="w-6 h-6 text-pink-600 group-hover:text-pink-800 transition-colors" />
+                <ReceiptIndianRupee className="w-6 h-6 text-pink-600 group-hover:text-pink-800 transition-colors" />
               </div>
               <span className="text-xs font-medium text-pink-700 text-center">
                 Expenses
@@ -723,7 +723,7 @@ const MobileDashboard: React.FC = () => {
                 }) => {
                   const styles =
                     statusStyles[
-                    item.status?.toLowerCase() as keyof typeof statusStyles
+                      item.status?.toLowerCase() as keyof typeof statusStyles
                     ] || statusStyles.draft;
 
                   return (
