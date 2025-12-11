@@ -15,6 +15,7 @@ import { profileService } from "../services/profileService";
 import { AddressInfoData } from "../types/profile";
 import toast from "react-hot-toast";
 import { FilterCondition } from "../types/frappe";
+import commonSerivce from "../services/commonSerivce";
 
 // Hook to get a single employee by ID
 const defaultQueryOptions = {
@@ -303,5 +304,15 @@ export const useFileUpload = () => {
     onError: (error) => {
       console.error("Error uploading file:", error);
     },
+  });
+};
+
+
+export const useGetEmployeeHoverData = (employee_id: string) => {
+  return useQuery({
+    queryKey: ["emp-hover-data", employee_id],
+    queryFn: () => commonSerivce.getHoverData("Employee", employee_id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
   });
 };
