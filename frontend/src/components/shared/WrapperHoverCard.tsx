@@ -1,28 +1,20 @@
-import React from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useGetEmployeeHoverData } from "../../hooks/useEmployee";
+import { createPortal } from "react-dom";
 
 type WrapperHoverCardProps = {
     children: React.ReactNode;
     className?: string;
     cardClassName?: string;
     employeeId?: string;
-    placement?: "bottom-right" | "bottom-left" | "top-right" | "top-left" | "center-left" | "center-right";
-};
-
-const data = {
-    data: [
-        { label: "Employee", value: "PP00129" },
-        { label: "First Name", value: "omkar" },
-        { label: "Middle Name", value: null },
-        { label: "Last Name", value: null },
-        { label: "Full Name", value: "omkar" },
-        { label: "Gender", value: "Transgender" },
-        { label: "Image", value: "/private/files/photo-1568602471122-7832951cc4c5.jpeg" },
-        { label: "Bank A/C No.", value: null },
-        { label: "Marital Status", value: "" },
-        { label: "Encashment Date", value: null }
-    ]
+    placement?:
+    | "bottom-right"
+    | "bottom-left"
+    | "top-right"
+    | "top-left"
+    | "center-left"
+    | "center-right";
 };
 
 const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
@@ -30,63 +22,136 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     className = "",
     cardClassName = "",
     employeeId = "",
-    placement = "center-right"
+    placement = "center-right",
 }) => {
+    const { data: EmployeeInfo, isLoading, isError, error } = useGetEmployeeHoverData(employeeId);
 
-    const { data: EmployeeInfo, isLoading } = useGetEmployeeHoverData(employeeId);
+    const targetRef = useRef<HTMLDivElement>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
 
-    const positionClasses: Record<string, string> = {
-        "bottom-right": "top-1/2 left-full",
-        "bottom-left": "top-1/2 right-full",
-        "top-right": "bottom-1/2 left-full",
-        "top-left": "bottom-1/2 right-full",
-        "center-left": "top-0 -translate-y-1/2 right-[calc(100%+10px)]",
-        "center-right": "top-0 -translate-y-1/2 left-[calc(100%+10px)]",
+    const [pos, setPos] = useState({ top: 0, left: 0 });
+    const [show, setShow] = useState(false);
+    const hideTimer = useRef<any>(null);
+
+    // Delay hover show/hide to prevent flicker
+    const handleEnter = () => {
+        if (hideTimer.current) clearTimeout(hideTimer.current);
+        setShow(true);
+    };
+    const handleLeave = () => {
+        hideTimer.current = setTimeout(() => setShow(false), 120);
     };
 
-    return (
-        <div className={`relative inline-block group ${className}`}>
-            {/* Trigger */}
-            <div>{children}</div>
+    const updatePosition = () => {
+        const el = targetRef.current;
+        const card = cardRef.current;
+        if (!el || !card) return;
 
-            {/* Hover Card */}
+        const rect = el.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+
+        let top = 0;
+        let left = 0;
+
+        switch (placement) {
+            case "bottom-left":
+                top = rect.bottom + window.scrollY + 8;
+                left = rect.right + window.scrollX - cardRect.width;
+                break;
+            case "bottom-right":
+                top = rect.bottom + window.scrollY + 8;
+                left = rect.left + window.scrollX;
+                break;
+            case "top-left":
+                top = rect.top + window.scrollY - cardRect.height - 8;
+                left = rect.right + window.scrollX - cardRect.width;
+                break;
+            case "top-right":
+                top = rect.top + window.scrollY - cardRect.height - 8;
+                left = rect.left + window.scrollX;
+                break;
+            case "center-right":
+                top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
+                left = rect.right + window.scrollX + 12;
+                break;
+            case "center-left":
+                top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
+                left = rect.left + window.scrollX - cardRect.width - 12;
+                break;
+            default:
+                break;
+        }
+
+        setPos({ top, left });
+    };
+
+    useLayoutEffect(() => {
+        updatePosition();
+        window.addEventListener("scroll", updatePosition, true);
+        window.addEventListener("resize", updatePosition);
+
+        return () => {
+            window.removeEventListener("scroll", updatePosition, true);
+            window.removeEventListener("resize", updatePosition);
+        };
+    }, [placement, show]);
+
+    return (
+        <>
+            {/* TRIGGER */}
             <div
-                className={`
-        absolute py-4 opacity-0 group-hover:opacity-100 
-        pointer-events-none group-hover:pointer-events-auto
-        transition-opacity duration-150 z-[9999] 
-        ${positionClasses[placement]}
-    `}
+                ref={targetRef}
+                className={`inline-block ${className}`}
+                onMouseEnter={handleEnter}
+                onMouseLeave={handleLeave}
             >
-                <div
-                    className={`w-full max-h-[400px] overflow-y-auto py-4 md:max-w-sm lg:max-w-md 
-            rounded-xl backdrop-blur-md bg-white border border-gray-400 shadow-xl ${cardClassName}`}
-                    style={{
-                        WebkitBackdropFilter: "blur(4px)",
-                        backdropFilter: "blur(4px)",
-                    }}
-                >
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center gap-2 py-2">
-                            <Loader2 className="w-8 h-8 animate-spin text-gray-700" />
-                            <span className="text-sm font-medium text-gray-700 animate-pulse whitespace-nowrap">
-                                Loading employee info…
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="text-gray-800 font-semibold">
-                            {data?.data?.map(item => (
-                                <div key={item.label} className="grid grid-cols-2 w-[300px] px-2 py-2 border-b border-gray-400">
-                                    <p className="text-sm text-gray-500">{item.label}</p>
-                                    <span>{item.value ?? "—"}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                {children}
             </div>
 
-        </div>
+            {/* HOVER CARD */}
+            {show &&
+                createPortal(
+                    <div
+                        ref={cardRef}
+                        className="absolute z-[9999]"
+                        style={{ top: pos.top, left: pos.left }}
+                        onMouseEnter={handleEnter}
+                        onMouseLeave={handleLeave}
+                    >
+                        <div
+                            className={`w-full max-h-[400px] overflow-y-auto py-4 md:max-w-sm lg:max-w-md 
+                  rounded-xl backdrop-blur-md bg-white border border-gray-400 shadow-xl ${cardClassName}`}
+                        >
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center gap-2 py-2">
+                                    <Loader2 className="w-8 h-8 animate-spin text-gray-700" />
+                                    <span className="text-sm font-medium text-gray-700 animate-pulse whitespace-nowrap">
+                                        Loading employee info…
+                                    </span>
+                                </div>
+                            ) : isError ? (
+                                <div className="flex flex-col items-center justify-center gap-2 py-4 text-red-600">
+                                    <p className="text-sm font-semibold">Failed to load employee info.</p>
+                                    <p className="text-xs">{error?.message ?? "Unknown error"}</p>
+                                </div>
+                            ) : (
+                                <div className="text-gray-800 font-semibold">
+                                    {(EmployeeInfo?.data ?? []).map((item: any) => (
+                                        <div
+                                            key={item.label}
+                                            className="grid grid-cols-2 w-[300px] px-2 py-2 border-b border-gray-300"
+                                        >
+                                            <p className="text-xs text-gray-500">{item.label}</p>
+                                            <span className="text-xs">{item.value ?? "—"}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>,
+                    document.body
+                )}
+        </>
     );
 };
 
