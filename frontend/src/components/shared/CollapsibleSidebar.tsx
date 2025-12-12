@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Home,
@@ -32,6 +32,8 @@ import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { ROUTES } from "../../constants/routes";
 import useCurrentUser from "../../hooks/useCurrentUser";
+// import { useGetUiPermission } from "../../hooks/useGetUiPermission";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
 
 interface SubSubMenuItem {
   name: string;
@@ -50,6 +52,7 @@ interface NavigationItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   path: string;
+  permissionKey: string; // Add this to match with backend
   subItems?: SubMenuItem[];
 }
 
@@ -68,6 +71,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const { data: companyLogo } = useCompanyLogo();
   const { data: currentEmployee } = useCurrentEmployee();
+  const { data: uiPermissions } = useGetUiPermission();
 
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
@@ -118,16 +122,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     window.open(routeToOpen, "_blank");
   };
 
-  const navigationItems: NavigationItem[] = [
+  const allNavigationItems: NavigationItem[] = [
     {
       icon: Home,
       label: "Dashboard",
       path: "/webapp/",
+      permissionKey: "Dashboard",
     },
     {
       icon: Calendar,
       label: "Leaves & Holidays",
       path: "/webapp/leave-app",
+      permissionKey: "Leaves and Holidays",
       subItems: [
         {
           name: "Leave Balance",
@@ -160,6 +166,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: User,
       label: "Attendance",
       path: "/webapp/attendance",
+      permissionKey: "Attendance",
       subItems: [
         {
           name: "Attendance Summary",
@@ -207,6 +214,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: IndianRupee,
       label: "Compensation",
       path: "/webapp/salary-slip-app",
+      permissionKey: "Compensation",
       subItems: [
         {
           name: "Annual CTC",
@@ -249,6 +257,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: ReceiptIndianRupee,
       label: "Expenses",
       path: "/webapp/expenses-app",
+      permissionKey: "Expenses",
       subItems: [
         {
           name: "Expense Claims",
@@ -276,6 +285,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: Workflow,
       label: "Flows",
       path: "/webapp/flow-app",
+      permissionKey: "Flows",
       subItems: [
         {
           name: "Flow Requests",
@@ -298,6 +308,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: ChartNoAxesCombined,
       label: "Performance",
       path: "/webapp/performance-app",
+      permissionKey: "Performance",
       subItems: [
         {
           name: "Overview",
@@ -321,18 +332,65 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: Shield,
       label: "Policies",
       path: "/webapp/policies-app",
+      permissionKey: "Policies",
     },
     {
       icon: ListTodo,
       label: "Todo",
       path: "",
+      permissionKey: "Todo",
     },
     {
       icon: HelpCircle,
       label: "Help Desk",
       path: "",
+      permissionKey: "Help Desk",
     },
   ];
+
+  // Filter navigation items based on permissions - fully dynamic
+  const navigationItems = useMemo(() => {
+    if (!uiPermissions || uiPermissions.length === 0) {
+      return allNavigationItems;
+    }
+
+    return allNavigationItems
+      .map((item) => {
+        // Find permission by exact match with permissionKey
+        const appPermission = uiPermissions.find(
+          (perm) => perm.app_name === item.permissionKey
+        );
+
+        // If app is not enabled, filter it out
+        if (!appPermission || !appPermission.enabled) {
+          return null;
+        }
+
+        // If item has no subItems, include it as is
+        if (!item.subItems || item.subItems.length === 0) {
+          return item;
+        }
+
+        // Filter subItems based on page permissions
+        const filteredSubItems = item.subItems.filter((subItem) => {
+          const pagePermission = appPermission.pages?.find(
+            (page) => page.page_name === subItem.name
+          );
+          return pagePermission && pagePermission.enabled;
+        });
+
+        // If no subItems are enabled, filter out the parent
+        if (filteredSubItems.length === 0) {
+          return null;
+        }
+
+        return {
+          ...item,
+          subItems: filteredSubItems,
+        };
+      })
+      .filter((item): item is NavigationItem => item !== null);
+  }, [uiPermissions]);
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
     if (location.pathname === subSubItem.href) {
@@ -455,7 +513,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     );
 
     setOpenDropdown(activeParent?.label || null);
-  }, [location.pathname]);
+  }, [location.pathname, navigationItems]);
 
   return (
     <>
@@ -495,7 +553,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   }`}
                 >
                   <h2
-                    className="font-semibold text-gray-900 whitespace-nowrap"
+                    className="font-semibant text-gray-900 whitespace-nowrap"
                     title={originalCompanyName}
                   >
                     {companyName}
