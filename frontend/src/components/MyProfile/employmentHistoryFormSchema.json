@@ -13,25 +13,38 @@
             "customClass": "bg-white rounded-lg",
             "components": [
                 {
+                    "type": "hidden",
+                    "key": "companies",
+                    "input": true
+                },
+                {
+                    "type": "hidden",
+                    "key": "departments",
+                    "input": true
+                },
+                {
+                    "type": "hidden",
+                    "key": "designations",
+                    "input": true
+                },
+                {
+                    "type": "hidden",
+                    "key": "functional_areas",
+                    "input": true
+                },
+                {
                     "type": "select",
-                    "key": "delegation",
-                    "label": "Delegation",
-                    "errorLabel": "Delegation",
-                    "placeholder": "Select Delegation",
-                    "validate": {},
+                    "key": "company",
+                    "label": "Company",
+                    "errorLabel": "Company",
+                    "placeholder": "Select Company",
                     "input": true,
+                    "dataSrc": "custom",
                     "data": {
-                        "values": [
-                            {
-                                "label": "1",
-                                "value": "1"
-                            },
-                            {
-                                "label": "2",
-                                "value": "2"
-                            }
-                        ]
+                        "custom": "values = data.companies"
                     },
+                    "valueProperty": "name",
+                    "template": "<span>{{ item.name }}</span>",
                     "validateWhenHidden": false,
                     "customClass": "w-full"
                 },
@@ -42,64 +55,50 @@
                     "errorLabel": "Department",
                     "placeholder": "Select Department",
                     "validate": {},
+                    "customConditional": "show = !!data.company",
                     "input": true,
+                    "dataSrc": "custom",
                     "data": {
-                        "values": [
-                            {
-                                "label": "1",
-                                "value": "1"
-                            },
-                            {
-                                "label": "2",
-                                "value": "2"
-                            }
-                        ]
+                        "custom": "values = data.departments"
                     },
+                    "valueProperty": "name",
+                    "template": "<span>{{ item.name }}</span>",
                     "validateWhenHidden": false,
                     "customClass": "w-full"
                 },
                 {
                     "type": "select",
-                    "key": "branch",
-                    "label": "Branch",
-                    "errorLabel": "Branch",
-                    "placeholder": "Select Branch",
+                    "key": "designation",
+                    "label": "Designation",
+                    "errorLabel": "Designation",
+                    "placeholder": "Select Designation",
+                    "validate": {},
+                    "customConditional": "show = !!data.department",
+                    "input": true,
+                    "dataSrc": "custom",
+                    "data": {
+                        "custom": "values = data.designations"
+                    },
+                    "valueProperty": "name",
+                    "template": "<span>{{ item.name }}</span>",
+                    "validateWhenHidden": false,
+                    "customClass": "w-full"
+                },
+                {
+                    "type": "select",
+                    "key": "functional_area",
+                    "label": "Functional Area",
+                    "errorLabel": "Functional Area",
+                    "placeholder": "Select Functional Area",
+                    "customConditional": "show = !!data.designation",
                     "validate": {},
                     "input": true,
+                    "dataSrc": "custom",
                     "data": {
-                        "values": [
-                            {
-                                "label": "1",
-                                "value": "1"
-                            },
-                            {
-                                "label": "2",
-                                "value": "2"
-                            }
-                        ]
+                        "custom": "values = data.functional_areas"
                     },
-                    "validateWhenHidden": false,
-                    "customClass": "w-full"
-                },
-                {
-                    "type": "select",
-                    "key": "company",
-                    "label": "Company",
-                    "errorLabel": "Company",
-                    "placeholder": "Select Company",
-                    "input": true,
-                    "data": {
-                        "values": [
-                            {
-                                "label": "1",
-                                "value": "1"
-                            },
-                            {
-                                "label": "2",
-                                "value": "2"
-                            }
-                        ]
-                    },
+                    "valueProperty": "name",
+                    "template": "<span>{{ item.name }}</span>",
                     "validateWhenHidden": false,
                     "customClass": "w-full"
                 },

@@ -130,3 +130,12 @@ export interface IReason {
   reason: string;
   reason_type: string;
 }
+
+export interface IDesignationHierarchy {
+  data: {
+    companies: string[];
+    departments: string[];
+    designations: string[];
+    functional_areas: string[]
+  }
+}

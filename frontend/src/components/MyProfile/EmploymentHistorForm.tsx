@@ -1,15 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Button from "../shared/atoms/Button";
 import employmentHistoryFormSchema from "./employmentHistoryFormSchema.json";
+import { useAddEmployeeHistoryMutation, useCurrentEmployeeAllDetails, useGetDesignationHierarchy } from "../../hooks/useEmployee";
+import CircularLoader from "../shared/atoms/CircularLoader";
+import useCurrentUser from "../../hooks/useCurrentUser";
 
 
 interface EmploymentHistoryProps {
     onSuccess?: (data?: any) => void;
     onCancel?: () => void;
+    isEdit?: boolean;
 }
 
 
@@ -17,17 +21,43 @@ const EmploymentHistoryForm = ({ onCancel }: EmploymentHistoryProps) => {
     const formInstance = useRef<any>(null);
     const initialSubmissionSet = useRef(false);
     const [attachments, setAttachments] = useState<File[]>([]);
+    const { data: currentUser } = useCurrentUser();
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+        currentUser?.name as string
+    );
+    const { data: designationHierarchy } = useGetDesignationHierarchy(
+        currentEmployee?.company || "",
+        currentEmployee?.department || "",
+        currentEmployee?.designation || "",
+    );
+    const { mutateAsync: addEmployeeHistory, isPending: addEmployeeHistoryPending } = useAddEmployeeHistoryMutation();
 
 
-
-
+    const initialSubmissionData = useMemo(
+        () => ({
+            data: {
+                companies: designationHierarchy?.data?.companies,
+                departments: designationHierarchy?.data?.departments,
+                designations: designationHierarchy?.data?.designations,
+            },
+        }),
+        [designationHierarchy]
+    );
 
     const handleSubmit = async () => {
         try {
             const submission = await formInstance.current?.submit(); // returns all form data
             const data = submission?.data;
-            console.log(data, "---------------")
 
+            await addEmployeeHistory({
+                company: data.company,
+                department: data.department,
+                designation: data.designation,
+                start_date: data.startDate,
+                functional_area: data.functional_area,
+
+            });
+            onCancel?.();
         } catch (err) {
             toast.error("Please fill in all required fields.");
             console.warn("Form submission error -", err);
@@ -78,7 +108,7 @@ const EmploymentHistoryForm = ({ onCancel }: EmploymentHistoryProps) => {
                         onFormReady={(instance: any) => {
                             formInstance.current = instance;
                             if (!initialSubmissionSet.current) {
-                                instance?.setSubmission?.(initialSubmissionSet);
+                                instance?.setSubmission?.(initialSubmissionData);
                                 initialSubmissionSet.current = true;
                             }
                         }}
@@ -111,7 +141,11 @@ const EmploymentHistoryForm = ({ onCancel }: EmploymentHistoryProps) => {
                         textColor="white"
                         className="hover:bg-blue-700 font-medium"
                     >
-                        Submit Request
+                        {
+                            addEmployeeHistoryPending ? <CircularLoader />
+                                :
+                                "Submit Request"
+                        }
 
                     </Button>
                 </div>
