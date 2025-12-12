@@ -4,6 +4,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import DOMPurify from "dompurify";
 import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -154,9 +155,11 @@ const ApprovalCard = ({
             {formatDate(data?.due_date)}
           </div>
           {/* Allocated To */}
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_document?.employee_name}
-          </div>
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              {data?.reference_document?.employee_name}
+            </div>
+          </WrapperHoverCard>
           {/* Status + Actions */}
           <div className="flex items-center justify-start">
             <Tooltip content={`Allocated to : ${data?.allocated_to}`}>

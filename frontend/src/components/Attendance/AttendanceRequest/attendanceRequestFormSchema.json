@@ -19,6 +19,16 @@
         },
         {
           "type": "hidden",
+          "key": "allowed_from_date",
+          "input": true
+        },
+        {
+          "type": "hidden",
+          "key": "allowed_to_date",
+          "input": true
+        },
+        {
+          "type": "hidden",
           "key": "isForOthers",
           "input": true,
           "defaultValue": false
@@ -218,9 +228,17 @@
           "key": "from_date",
           "type": "datetime",
           "input": true,
+          "enableMinDateInput": false,
+          "enableMaxDateInput": false,
+          "validateWhenHidden": false,
           "widget": {
             "type": "calendar",
-            "minDate": "today"
+            "minDate": "allowed_from_date",
+            "maxDate": "allowed_to_date"
+          },
+          "datePicker": {
+            "minDate": "allowed_from_date",
+            "maxDate": "allowed_to_date"
           },
           "format": "dd-MM-yyyy",
           "placeholder": "dd-mm-yyyy",
@@ -228,7 +246,7 @@
           "enableTime": false,
           "validate": {},
           "disabled": false,
-          "redrawOn": "request_type"
+          "redrawOn": "allowed_from_date"
         },
         {
           "label": "To Date",
@@ -237,7 +255,13 @@
           "type": "datetime",
           "input": true,
           "widget": {
-            "type": "calendar"
+            "type": "calendar",
+            "minDate": "allowed_from_date",
+            "maxDate": "allowed_to_date"
+          },
+          "datePicker": {
+            "minDate": "allowed_from_date",
+            "maxDate": "allowed_to_date"
           },
           "format": "dd-MM-yyyy",
           "placeholder": "dd-mm-yyyy",

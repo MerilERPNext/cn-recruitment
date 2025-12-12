@@ -4,19 +4,19 @@ import { Employee } from "../../types/employee";
 
 interface SearchCardProps {
   employees?: Employee[];
-  
+
   onRemove: (idx: number) => void;
   showRemove?: boolean;
 }
 
 const SearchCard: React.FC<SearchCardProps> = ({
   employees,
-  
+
   onRemove,
   showRemove = false,
 }) => {
   return (
-    <div className="w-full   min-w-3xl mx-auto space-y-3 sm:space-y-4 px-0 sm:px-0 ">
+    <div className="w-full   min-w-3xl mx-auto  px-0 sm:px-0 ">
       {employees?.map((emp, idx) => (
         <EmployeeRow
           idx={idx}

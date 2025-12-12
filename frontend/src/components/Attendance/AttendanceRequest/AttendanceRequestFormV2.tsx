@@ -63,6 +63,8 @@ interface FormioFormInstance {
   redraw: () => void;
   getComponent: (key: string) => FormioComponent | null;
   element?: HTMLElement;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  submission?: any;
 }
 
 export interface FormSchema {
@@ -155,7 +157,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const { data: attendanceRequestAttachmentsMandatory } =
     useAttendanceRequestAttachments(
       currentEmployee?.employee || "",
-      fromDateChanged,
+      fromDateChanged || formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
       requestTypeChanged
     );
   const mutation = useCreateNewAttendanceRequest();
@@ -185,7 +187,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     const applyToComponents = (components?: SchemaComponent[]) => {
       if (!components) return;
       components.forEach((comp) => {
-        console.log(comp, "-----------------------------?", requiredMap)
         const key = comp.key;
         if (key && requiredMap[key]) {
           // ensure validate exists
@@ -397,6 +398,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         overnight_out_duty: false,
         message: defaultAttendanceData?.reference_document?.explanation || "",
         show_attachment: attendanceRequestAttachmentsMandatory?.is_mandatory,
+        allowed_from_date: attendanceRequestAttachmentsMandatory?.allowed_from_date,
+        allowed_to_date: attendanceRequestAttachmentsMandatory?.allowed_to_date,
         attachments:
           defaultAttendanceData?.attachments &&
             defaultAttendanceData?.attachments?.length > 0
@@ -422,7 +425,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       attendanceRequestAttachmentsMandatory,
     ]
   );
-
   // Update hidden fields when isForOthers or currentEmployee changes
   useEffect(() => {
     if (formAddressInstance.current) {
@@ -450,6 +452,87 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       currentEmployeeIdComponent?.redraw();
     }
   }, [isForOthers, currentEmployee]);
+
+  // Sync attachment mandatory status and date limits
+  useEffect(() => {
+    if (formAddressInstance.current && attendanceRequestAttachmentsMandatory) {
+      const showAttachmentComp = formAddressInstance.current.getComponent("show_attachment");
+      const allowedFromDateComp = formAddressInstance.current.getComponent("allowed_from_date");
+      const allowedToDateComp = formAddressInstance.current.getComponent("allowed_to_date");
+
+      if (showAttachmentComp) {
+        showAttachmentComp.setValue(
+          String(!!attendanceRequestAttachmentsMandatory.is_mandatory),
+          { noUpdateEvent: true }
+        );
+      }
+
+      if (allowedFromDateComp && attendanceRequestAttachmentsMandatory.allowed_from_date) {
+        allowedFromDateComp.setValue(
+          attendanceRequestAttachmentsMandatory.allowed_from_date,
+          { noUpdateEvent: true }
+        );
+      }
+
+      if (allowedToDateComp && attendanceRequestAttachmentsMandatory.allowed_to_date) {
+        allowedToDateComp.setValue(
+          attendanceRequestAttachmentsMandatory.allowed_to_date,
+          { noUpdateEvent: true }
+        );
+      }
+
+      // Directly update the date components schema to enforce constraints
+      const fromDateComp = formAddressInstance.current.getComponent("from_date");
+      const toDateComp = formAddressInstance.current.getComponent("to_date");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateDateConstraints = (comp: any) => {
+        if (comp && comp.component) {
+          if (!comp.component.datePicker) comp.component.datePicker = {};
+          if (!comp.component.widget) comp.component.widget = {};
+
+          const parseDate = (d: string | undefined) => {
+            if (!d) return undefined;
+            const parsed = new Date(d);
+            return isNaN(parsed.getTime()) ? undefined : parsed;
+          };
+
+          const minD = parseDate(attendanceRequestAttachmentsMandatory.allowed_from_date);
+          const maxD = parseDate(attendanceRequestAttachmentsMandatory.allowed_to_date);
+
+          if (minD) {
+            comp.component.datePicker.minDate = minD;
+            comp.component.widget.minDate = minD;
+            comp.component.minDate = minD;
+          } else {
+            delete comp.component.datePicker.minDate;
+            delete comp.component.widget.minDate;
+            delete comp.component.minDate;
+          }
+
+          if (maxD) {
+            comp.component.datePicker.maxDate = maxD;
+            comp.component.widget.maxDate = maxD;
+            comp.component.maxDate = maxD;
+          } else {
+            delete comp.component.datePicker.maxDate;
+            delete comp.component.widget.maxDate;
+            delete comp.component.maxDate;
+          }
+        }
+      };
+      updateDateConstraints(fromDateComp);
+      updateDateConstraints(toDateComp);
+
+      // Refresh form to apply visibility changes and date limits
+      // We save the current submission to ensure values aren't lost during redraw
+      const currentSubmission = formAddressInstance.current.submission;
+      formAddressInstance.current.redraw();
+      if (currentSubmission) {
+        formAddressInstance.current.submission = currentSubmission;
+      }
+    }
+  }, [attendanceRequestAttachmentsMandatory]);
 
   const formatTime = (date: Date | string | undefined): string | undefined => {
     if (!date) return undefined;
@@ -639,10 +722,23 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         const fromDateValue = submission?.data?.from_date;
         const toDateComponent = formInstance.getComponent("to_date");
         if (toDateComponent && fromDateValue) {
-          toDateComponent.setValue(String(fromDateValue), {
+          // Format date to YYYY-MM-DD if needed, or pass as string if already formatted
+          // Ideally Formio works well with ISO strings or Date objects, but for consistency we can try YYYY-MM-DD if it's a date object
+          let valToSet = fromDateValue;
+          if (fromDateValue instanceof Date) {
+            valToSet = formatDateToYYYYMMDD(fromDateValue);
+          } else if (typeof fromDateValue === 'string' && fromDateValue.includes('T')) {
+            // Try to safe parse ISO
+            const d = new Date(fromDateValue);
+            if (!isNaN(d.getTime())) {
+              valToSet = formatDateToYYYYMMDD(d);
+            }
+          }
+
+          toDateComponent.setValue(String(valToSet), {
             noUpdateEvent: true,
           });
-          toDateComponent.redraw();
+          // Removed redraw() as setValue updates the view and redraw() was causing state loss
         }
       }
     }
