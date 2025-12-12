@@ -59,6 +59,7 @@ import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
 import { useGetAllNotices } from "../hooks/useNotices";
 import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import SearchMembers from "./shared/SearchMembers";
+import Events from "./Events/Events";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -757,23 +758,25 @@ export default function DesktopDashboard() {
                 </div>
               </div>
 
-              {/* Announcements */}
-              <div className="bg-white p-6 rounded-lg shadow-sm min-h-[16.5rem] overflow-y-auto">
-                <div className="text-center">
-                  <h3 className="section-title mb-2 text-left">
-                    Announcements
-                  </h3>
-                  <div className="text-gray-500">
-                    <p>Coming Soon...</p>
-                  </div>
+              {/* Events Widget */}
+              <div className="bg-white rounded-lg shadow-sm max-h-[16.5rem] min-h-[16.5rem] flex flex-col">
+                {/* Header */}
+                <div className="sticky top-0 bg-white border-b px-6 py-2">
+                  <h3 className="section-title mb-0 text-left">Events</h3>
+                </div>
+
+                {/* Content Scroll Area */}
+                <div className="flex-1 overflow-y-auto px-4 py-3">
+                  <Events />
                 </div>
               </div>
 
-              {/* Requests */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <div className="w-full flex justify-between items-center mb-6">
 
-                  <h3 className="section-title ">Requests</h3>
+
+              {/* Requests */}
+              <div className="bg-white rounded-lg shadow-sm relative">
+                <div className="sticky top-0 border-b px-6 py-2 z-10 flex justify-between items-center mb-3 px-6">
+                  <h3 className="section-title mb-0 text-left">Requests</h3>
                   <button
                     onClick={() => {
                       navigate(
@@ -786,7 +789,9 @@ export default function DesktopDashboard() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+
+
+                <div className="grid grid-cols-2 gap-4 px-6">
                   {/* Apply Leave */}
                   <div
                     className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"

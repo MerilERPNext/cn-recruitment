@@ -81,12 +81,12 @@ const MyOvertimeRequests = () => {
               </div>
             </div>
             <CardTable
-              columnWidths={["1fr", "2fr", "1fr", "1fr", "1fr"]}
+              columnWidths={["2fr", "1fr", "1fr", "1fr", "1fr"]}
               titles={[
-                "Allocated To",
                 "Description",
                 "Creation",
                 "Due Date",
+                "Allocated To",
                 "Status",
               ]}
             >

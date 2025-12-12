@@ -99,6 +99,9 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
           const leftPosition =
             totalStages === 1 ? 50 : (index / (totalStages - 1)) * 100;
 
+          const tooltipPosition =
+            index === 0 ? "tl" : index === totalStages - 1 ? "tr" : undefined;
+
           return (
             <React.Fragment key={index}>
               {index > 0 && (
@@ -118,6 +121,10 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
                 style={{ left: `calc(${leftPosition}% + 4px)` }}
               >
                 <Tooltip
+                  {...(tooltipPosition
+                    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      { position: tooltipPosition as any }
+                    : {})}
                   content={
                     <div className="flex flex-col text-left text-xs space-y-1 p-1">
                       <p>
@@ -136,7 +143,7 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
                   }
                 >
                   <div
-                    className={`flex size-8 items-center justify-center rounded-full border-4 border-white shadow-md transition-colors duration-300 z-20 ${circleBgClass}`}
+                    className={`w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-full border-4 border-white shadow-md transition-colors duration-300 z-20 box-border ${circleBgClass}`}
                   >
                     {circleIconContent}
                   </div>

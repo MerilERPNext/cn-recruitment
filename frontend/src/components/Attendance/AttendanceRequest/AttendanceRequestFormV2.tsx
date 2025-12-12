@@ -31,7 +31,7 @@ interface AttendanceFormData {
     employee_name: string;
     company: string;
   };
-  message?: string;
+  explanation?: string;
   custom__request_reason?: string;
   from_date?: string | Date;
   to_date?: string | Date;
@@ -185,6 +185,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     const applyToComponents = (components?: SchemaComponent[]) => {
       if (!components) return;
       components.forEach((comp) => {
+        console.log(comp, "-----------------------------?", requiredMap)
         const key = comp.key;
         if (key && requiredMap[key]) {
           // ensure validate exists
@@ -374,18 +375,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         custom_from_time: defaultAttendanceData?.reference_document
           ?.custom_from_time
           ? new Date(
-              `1970-01-01T${normalizeTime(
-                defaultAttendanceData?.reference_document.custom_from_time
-              )}`
-            )
+            `1970-01-01T${normalizeTime(
+              defaultAttendanceData?.reference_document.custom_from_time
+            )}`
+          )
           : "",
         custom_to_time: defaultAttendanceData?.reference_document
           ?.custom_to_time
           ? new Date(
-              `1970-01-01T${normalizeTime(
-                defaultAttendanceData?.reference_document?.custom_to_time
-              )}`
-            )
+            `1970-01-01T${normalizeTime(
+              defaultAttendanceData?.reference_document?.custom_to_time
+            )}`
+          )
           : "",
         custom__request_reason:
           defaultAttendanceData?.reference_document?.custom__request_reason ||
@@ -398,13 +399,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         show_attachment: attendanceRequestAttachmentsMandatory?.is_mandatory,
         attachments:
           defaultAttendanceData?.attachments &&
-          defaultAttendanceData?.attachments?.length > 0
+            defaultAttendanceData?.attachments?.length > 0
             ? defaultAttendanceData?.attachments?.map((item) => {
-                return {
-                  name: item?.file_url?.split("/").pop(),
-                  url: item?.file_url,
-                };
-              })
+              return {
+                name: item?.file_url?.split("/").pop(),
+                url: item?.file_url,
+              };
+            })
             : [],
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
@@ -467,7 +468,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       employee: isForOthers
         ? submission.data.employee?.name
         : currentEmployee?.employee,
-      explanation: submission.data.message,
+      explanation: submission.data.explanation,
       ...(submission.data.from_date && {
         from_date: formatDateToYYYYMMDD(new Date(submission.data.from_date)),
       }),
@@ -687,17 +688,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           {userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                  !isForOthers ? "bg-blue-600 text-white" : ""
-                }`}
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-blue-600 text-white" : ""
+                  }`}
                 onClick={() => setIsForOthers(false)}
               >
                 Self
               </button>
               <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
-                  isForOthers ? "bg-blue-600 text-white" : ""
-                }`}
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-blue-600 text-white" : ""
+                  }`}
                 onClick={() => setIsForOthers(true)}
               >
                 For Others
@@ -762,11 +761,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                   rootEl as HTMLElement
                 ).querySelectorAll
                   ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
-                      "input.flatpickr-input"
-                    )
+                    "input.flatpickr-input"
+                  )
                   : document.querySelectorAll<FlatpickrInput>(
-                      "input.flatpickr-input"
-                    );
+                    "input.flatpickr-input"
+                  );
 
                 flatInputs.forEach((input) => {
                   const handler = () => {
@@ -806,9 +805,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               variant="contain"
               bgColor={isDesktop ? "blue-600" : "black"}
               textColor="white"
-              className={`flex-1 ${
-                isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
-              } font-medium`}
+              className={`flex-1 ${isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
+                } font-medium`}
             >
               {mutation.isPending || uploadFileLoading ? (
                 <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>

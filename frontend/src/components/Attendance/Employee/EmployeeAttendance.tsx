@@ -105,12 +105,47 @@ const EmployeeAttendance = () => {
     const statusMap: Record<string, AttendanceStatusInfo> = {};
     const groupedByDate: Record<string, AttendanceRecord[]> = {};
 
+    // Helper: expand a start-end date range into all dates
+    const expandDateRange = (start: string, end: string): string[] => {
+      const days: string[] = [];
+      const current = new Date(start);
+      const last = new Date(end);
+
+      while (current <= last) {
+        days.push(formatDateKey(current));
+        current.setDate(current.getDate() + 1);
+      }
+
+      return days;
+    };
+
+    // First pass → group attendance + range events by date
     attendances.forEach((record) => {
+      const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
+        record.doctype
+      );
+
+      const hasRange = record.start && record.end;
+
+      // --- If it's an EVENT (not attendance) and has range, expand ---
+      if (!isAttendanceType && hasRange) {
+        const rangeKeys = expandDateRange(record.start, record.end);
+
+        rangeKeys.forEach((dateKey) => {
+          if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+          groupedByDate[dateKey].push(record);
+        });
+
+        return;
+      }
+
+      // --- Default: single-day add ---
       const dateKey = formatDateKey(parseLocalDate(record.start));
       if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
       groupedByDate[dateKey].push(record);
     });
 
+    // Second pass → build final statusMap
     Object.entries(groupedByDate).forEach(([dateKey, records]) => {
       let status: Status = "default";
       let firstHalf = "";
@@ -155,13 +190,17 @@ const EmployeeAttendance = () => {
             default:
               status = "default";
           }
+
           if (record?.custom_auto_created === 1) {
             status = "unpaid";
           }
         } else {
+          // Range-expanded events land here automatically
           events.push(record);
         }
       });
+
+      // Build final object
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       if (status === "half-day") {
@@ -177,11 +216,13 @@ const EmployeeAttendance = () => {
       }
     });
 
+    // Getter
     return (date: Date): AttendanceStatusInfo => {
       const key = formatDateKey(date);
       return statusMap[key] || { status: "default", events: [] };
     };
   };
+
 
   const getAttendanceStatus = useMemo(() => {
     return createAttendanceStatusGetter(allAttendance ?? []);
@@ -195,9 +236,8 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex  bg-gray-100 `}>
       <div
-        className={`flex  bg-gray-100 p-2 flex-col ${
-          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-        }`}
+        className={`flex  bg-gray-100 p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+          }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -252,11 +292,11 @@ const EmployeeAttendance = () => {
           </div>
           <CardTable
             titles={[
-              "Allocated To",
               "Request Type",
               "From Date",
               "To Date",
               "Due Date",
+              "Allocated To",
               "Status",
               "Actions",
             ]}

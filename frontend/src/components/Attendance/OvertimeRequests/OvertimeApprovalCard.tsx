@@ -81,8 +81,8 @@ const OvertimeApprovalCard = ({
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "5% 10% 35% 8% 8% 20%" // With checkbox
-    : "12% 40% 10% 10% 20%"; // Without checkbox
+    ? "5%  35% 8% 10% 8% 20%" // With checkbox
+    : " 40% 10% 12% 10% 20%"; // Without checkbox
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -132,16 +132,15 @@ const OvertimeApprovalCard = ({
             </div>
           )}
 
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.username}
-          </div>
-
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>
 
           <div className="text-gray-700 text-sm text-start">
             {formatDate(data?.due_date)}
+          </div>
+          <div className="truncate text-gray-900 font-medium text-sm text-start">
+            {data?.username}
           </div>
 
           <div className="flex items-center justify-start">
@@ -172,7 +171,7 @@ const OvertimeApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -256,7 +255,7 @@ const OvertimeApprovalCard = ({
                       className="w-full"
                     >
                       {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

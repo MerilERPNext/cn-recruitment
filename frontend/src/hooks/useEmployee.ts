@@ -204,13 +204,13 @@ export const useEmployeeByUserId = (userId?: string) => {
 };
 export const useGetAllEmployees = (
   fields?: string[],
+  limit?: number,
   filters?: FilterCondition[],
-
   orFilters?: FilterCondition[]
 ): UseQueryResult<Employee[], Error> => {
   return useQuery<Employee[], Error>({
     queryKey: ["all-employees-list", fields, filters, orFilters],
-    queryFn: () => EmployeeService.getAllEmployees(fields, filters, orFilters),
+    queryFn: () => EmployeeService.getAllEmployees(fields, filters, orFilters, limit),
     // staleTime: 1000 * 60 * 5,
   });
 };

@@ -263,7 +263,7 @@ export default function ThreeLevelOrgChart() {
         </button>
       </div>
 
-      <div className="h-[400px]">
+      <div className="h-[400px] px-2">
 
         <ReactFlow
           nodes={nodes}
@@ -274,10 +274,16 @@ export default function ThreeLevelOrgChart() {
           fitView
           attributionPosition="top-right"
           proOptions={{ hideAttribution: true }}
-          minZoom={0.1}
+          minZoom={0.2}
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
           zoomOnScroll={false}
+          zoomOnPinch={false}
+          nodesDraggable={false}
+          draggable={false}
+          // panOnScroll
+          // panOnScrollSpeed={1}
+          panOnDrag={false}
         >
           <Controls position="top-right" showZoom showFitView />
         </ReactFlow>

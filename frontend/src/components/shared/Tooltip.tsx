@@ -3,7 +3,7 @@ import React, { useState, ReactNode } from "react";
 interface TooltipProps {
   content: string | ReactNode;
   children: ReactNode;
-  position?: "top" | "bottom" | "left" | "right";
+  position?: "top" | "bottom" | "left" | "right" | "tl" | "tr";
   className?: string;
   delay?: number;
 }
@@ -41,6 +41,10 @@ const Tooltip: React.FC<TooltipProps> = ({
         return "right-full top-1/2 transform -translate-y-1/2 mr-2";
       case "right":
         return "left-full top-1/2 transform -translate-y-1/2 ml-2";
+      case "tl":
+        return "bottom-full mb-2";
+      case "tr":
+        return "bottom-full mb-2 right-1";
       default:
         return "bottom-full left-1/2 transform -translate-x-1/2 mb-2";
     }
@@ -56,6 +60,10 @@ const Tooltip: React.FC<TooltipProps> = ({
         return "left-full top-1/2 transform -translate-y-1/2 border-t-transparent border-b-transparent border-r-0 border-l-gray-900";
       case "right":
         return "right-full top-1/2 transform -translate-y-1/2 border-t-transparent border-b-transparent border-l-0 border-r-gray-900";
+      case "tl":
+        return "top-full left-[15%] transform -translate-x-1/2 border-l-transparent border-r-transparent border-b-0 border-t-gray-900";
+      case "tr":
+        return "top-full right-[5%] transform -translate-x-1/2 border-l-transparent border-r-transparent border-b-0 border-t-gray-900";
       default:
         return "top-full left-1/2 transform -translate-x-1/2 border-l-transparent border-r-transparent border-b-0 border-t-gray-900";
     }
