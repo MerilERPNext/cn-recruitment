@@ -10,6 +10,7 @@ import Button from "../../shared/atoms/Button";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -105,9 +106,11 @@ const EmpAttendanceRequestCard = ({
           <div className="text-sm text-gray-900 text-start">
             {formattedDueDate}
           </div>
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.username}
-          </div>
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="text-sm font-medium text-gray-700 text-start truncate">
+              {data?.username}
+            </div>
+          </WrapperHoverCard>
           {/* Status */}
           <div className="flex justify-start">
             <Tooltip

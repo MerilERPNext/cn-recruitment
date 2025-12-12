@@ -5,6 +5,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 export function MyRequestCard({
   request,
@@ -75,9 +76,11 @@ export function MyRequestCard({
           <div className="text-gray-700 text-sm text-start">
             {formattedDate}
           </div>
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {request?.username || ""}
-          </div>
+          <WrapperHoverCard employeeId={request?.reference_document?.employee}>
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              {request?.username || ""}
+            </div>
+          </WrapperHoverCard>
           <div className="w-full flex justify-start">
             <Tooltip content={`Allocated to : ${request?.allocated_to}`}>
               <Badge

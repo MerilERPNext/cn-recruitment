@@ -385,7 +385,6 @@ export const useAttendanceRequestAttachments = (employee: string,date:string,req
   return useQuery<any>({
     queryKey: ["attendance-request-attachments-allowed", date, employee, request_type],
     queryFn: () => {
-      console.log(employee, date, request_type, "--------------------------------")
       return attendanceService.attendanceRequestAttachments(employee,date,request_type);
     },
     enabled: !!employee && !!request_type && !!date,
