@@ -311,7 +311,7 @@ export const useGetEmployeeHoverData = () => {
   return useMutation({
     mutationFn: (employee_id: string) => commonSerivce.getHoverData("Employee", employee_id),
     onError: (error) => {
-      console.error("Error uploading file:", error);
+      console.error("Error fetching employee hover data:", error);
     },
   });
 };
