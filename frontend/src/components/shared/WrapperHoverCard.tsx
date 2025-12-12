@@ -87,8 +87,8 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
-    const [error, setError] = useState<any>(null);
-    const [EmployeeInfo, setEmployeeInfo] = useState<any>(null);
+    const [error, setError] = useState<Error | null>(null);
+    const [EmployeeInfo, setEmployeeInfo] = useState<DataResponse | null>(null);
 
     const hasFetchedRef = useRef(false);
 
