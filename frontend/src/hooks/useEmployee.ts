@@ -307,12 +307,11 @@ export const useFileUpload = () => {
   });
 };
 
-
-export const useGetEmployeeHoverData = (employee_id: string) => {
-  return useQuery({
-    queryKey: ["emp-hover-data", employee_id],
-    queryFn: () => commonSerivce.getHoverData("Employee", employee_id),
-    staleTime: 1000 * 60 * 5,
-    enabled: !!employee_id,
+export const useGetEmployeeHoverData = () => {
+  return useMutation({
+    mutationFn: (employee_id: string) => commonSerivce.getHoverData("Employee", employee_id),
+    onError: (error) => {
+      console.error("Error uploading file:", error);
+    },
   });
 };
