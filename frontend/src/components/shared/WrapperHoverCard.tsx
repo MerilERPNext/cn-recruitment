@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState, useEffect } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useGetEmployeeHoverData } from "../../hooks/useEmployee";
 import { createPortal } from "react-dom";
