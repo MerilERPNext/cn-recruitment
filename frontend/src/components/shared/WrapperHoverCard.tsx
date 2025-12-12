@@ -4,17 +4,17 @@ import { useGetEmployeeHoverData } from "../../hooks/useEmployee";
 import { createPortal } from "react-dom";
 
 type WrapperHoverCardProps = {
-  children: React.ReactNode;
-  className?: string;
-  cardClassName?: string;
-  employeeId?: string;
-  placement?:
-  | "bottom-right"
-  | "bottom-left"
-  | "top-right"
-  | "top-left"
-  | "center-left"
-  | "center-right";
+    children: React.ReactNode;
+    className?: string;
+    cardClassName?: string;
+    employeeId?: string;
+    placement?:
+    | "bottom-right"
+    | "bottom-left"
+    | "top-right"
+    | "top-left"
+    | "center-left"
+    | "center-right";
 };
 
 // Pastel Color Generator
@@ -76,19 +76,19 @@ const getAvatar = (data: any[]) => {
 };
 
 const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
-  children,
-  className = "",
-  cardClassName = "",
-  employeeId = "",
-  placement = "center-right",
+    children,
+    className = "",
+    cardClassName = "",
+    employeeId = "",
+    placement = "center-right",
 }) => {
     const { mutateAsync: fetchEmployee } = useGetEmployeeHoverData();
 
 
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
-    const [error, setError] = useState<Error | null>(null);
-    const [EmployeeInfo, setEmployeeInfo] = useState<DataResponse | null>(null);
+    const [error, setError] = useState<any>(null);
+    const [EmployeeInfo, setEmployeeInfo] = useState<any>(null);
 
     const hasFetchedRef = useRef(false);
 
@@ -115,8 +115,9 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     const targetRef = useRef<HTMLDivElement>(null);
     const cardRef = useRef<HTMLDivElement>(null);
 
-    setPos({ top, left });
-  };
+    const [pos, setPos] = useState({ top: 0, left: 0 });
+    const [show, setShow] = useState(false);
+    const hideTimer = useRef<any>(null);
 
     const handleEnter = () => {
         if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -170,7 +171,6 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
         setPos({ top, left });
     };
-  }, [placement, show]);
 
     useLayoutEffect(() => {
         if (show) updatePosition();
@@ -184,37 +184,8 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     }, [show, placement]);
 
     return (
-      <div
-        className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg"
-        style={{ backgroundColor: color }}
-      >
-        {fallbackChar}
-      </div>
-    );
-  };
-
-  return (
-    <>
-      {/* TRIGGER */}
-      <div
-        ref={targetRef}
-        className={`inline-block ${className}`}
-        onMouseEnter={handleEnter}
-        onMouseLeave={handleLeave}
-      >
-        {children}
-      </div>
-
-      {/* HOVER CARD */}
-      {show &&
-        createPortal(
-          <div
-            ref={cardRef}
-            className="absolute z-[9999]"
-            style={{ top: pos.top, left: pos.left }}
-            onMouseEnter={handleEnter}
-            onMouseLeave={handleLeave}
-          >
+        <>
+            {/* TRIGGER */}
             <div
                 ref={targetRef}
                 className={`inline-block ${className}`}
@@ -224,28 +195,19 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                 }}
                 onMouseLeave={handleLeave}
             >
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-2 px-4">
-                  <Loader2 className="w-8 h-8 animate-spin text-gray-700" />
-                  <span className="text-sm font-medium text-gray-700 animate-pulse whitespace-nowrap">
-                    Loading employee info…
-                  </span>
-                </div>
-              ) : isError ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-4 px-4 text-red-600">
-                  <p className="text-sm font-semibold">Failed to load employee info.</p>
-                  <p className="text-xs">{error?.message ?? "Unknown error"}</p>
-                </div>
-              ) : (
-                <>
-                  {/* Avatar on top */}
-                  {getAvatar(EmployeeInfo?.data ?? [])}
+                {children}
+            </div>
 
-                  {/* Employee Info below */}
-                  <div className="w-full px-4">
-                    {(EmployeeInfo?.data ?? [])
-                      .filter((item) => item.label !== "Image")
-                      .map((item: any) => (
+            {/* HOVER CARD */}
+            {show &&
+                createPortal(
+                    <div
+                        ref={cardRef}
+                        className="absolute z-[9999]"
+                        style={{ top: pos.top, left: pos.left }}
+                        onMouseEnter={handleEnter}
+                        onMouseLeave={handleLeave}
+                    >
                         <div
                             className={`w-full max-h-[400px] overflow-y-auto pt-6 md:max-w-sm lg:max-w-md rounded-xl 
                                 backdrop-blur-md bg-white border border-gray-300 shadow-xl flex flex-col items-center gap-4 ${cardClassName}`}
@@ -267,30 +229,27 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                                     {getAvatar(EmployeeInfo.data)}
 
                                     <table className="w-full px-4 border-none">
-                                        {EmployeeInfo.data
-                                            .filter((item: any) => !["Full Name", "ID (name)", "Image"].includes(item.label))
-                                            .map((item: any) => (
-                                                <tr key={item.label} className="py-2 border-b border-gray-200 text-sm">
-                                                    <td className="text-xs text-gray-500">{item.label}</td>
-                                                    <td className="text-xs text-right">{item.value ?? "—"}</td>
-                                                </tr>
-                                            ))}
+                                        <tbody>
+                                            {EmployeeInfo.data
+                                                .filter((item: any) => !["Full Name", "ID (name)", "Image"].includes(item.label))
+                                                .map((item: any) => (
+                                                    <tr key={item.label} className="py-2 border-b border-gray-200 text-sm">
+                                                        <td className="text-xs text-gray-500">{item.label}</td>
+                                                        <td className="text-xs text-right">{item.value ?? "—"}</td>
+                                                    </tr>
+                                                ))}
+                                        </tbody>
                                     </table>
                                 </>
                             ) : (
                                 <p className="text-xs text-gray-500 py-4">No data available.</p>
                             )}
                         </div>
-                      ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>,
-          document.body
-        )}
-    </>
-  );
+                    </div>,
+                    document.body
+                )}
+        </>
+    );
 };
 
 export default WrapperHoverCard;
