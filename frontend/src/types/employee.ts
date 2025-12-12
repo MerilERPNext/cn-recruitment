@@ -20,7 +20,7 @@ export interface Employee {
   gender: string;
   image?: string;
   status: 'Active' | 'Inactive' | 'Suspended' | 'Left';
-  custom_employee_status?: "On Probation" | "Confirmation" | "Probation Extended" | "On Notice Period";
+  custom_employment_status?: "On Probation" | "Confirmation" | "Probation Extended" | "On Notice Period";
   user_id?: string;
   reports_to?: string;
 
@@ -79,8 +79,8 @@ export interface Employee {
   reason_for_leaving?: string;
   feedback?: string;
 
-  custom_allow_mobile_checkin ?:boolean;
-  custom_enable_web_clockin ?:boolean;
+  custom_allow_mobile_checkin?: boolean;
+  custom_enable_web_clockin?: boolean;
   custom_weekly_off?: string;
 }
 
