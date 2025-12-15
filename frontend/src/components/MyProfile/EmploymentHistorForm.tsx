@@ -5,7 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Button from "../shared/atoms/Button";
 import employmentHistoryFormSchema from "./employmentHistoryFormSchema.json";
-import { useAddEmployeeHistoryMutation, useCurrentEmployeeAllDetails, useGetDesignationHierarchy } from "../../hooks/useEmployee";
+import { useAddEmployeeHistoryMutation, useCurrentEmployeeAllDetails, useGetDesignationHierarchy, useGetEmpDesignationHierarchyCurrentDetails } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import useCurrentUser from "../../hooks/useCurrentUser";
 
@@ -17,7 +17,7 @@ interface EmploymentHistoryProps {
 }
 
 
-const EmploymentHistoryForm = ({ onCancel }: EmploymentHistoryProps) => {
+const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryProps) => {
     const formInstance = useRef<any>(null);
     const initialSubmissionSet = useRef(false);
     const [attachments, setAttachments] = useState<File[]>([]);
@@ -29,9 +29,12 @@ const EmploymentHistoryForm = ({ onCancel }: EmploymentHistoryProps) => {
         currentEmployee?.company || "",
         currentEmployee?.department || "",
         currentEmployee?.designation || "",
+        isEdit
     );
     const { mutateAsync: addEmployeeHistory, isPending: addEmployeeHistoryPending } = useAddEmployeeHistoryMutation();
+    const { data: empDesignationHierarchyCurrentDetails } = useGetEmpDesignationHierarchyCurrentDetails(currentEmployee?.employee || "", isEdit);
 
+    console.log("🚀 ~ EmploymentHistoryForm ~ empDesignationHierarchyCurrentDetails-------------------:", empDesignationHierarchyCurrentDetails)
 
     const initialSubmissionData = useMemo(
         () => ({
