@@ -132,10 +132,24 @@ export interface IReason {
 }
 
 export interface IDesignationHierarchy {
+  company?: string;
+  department?: string;
+  designation?: string;
+  functional_area?: string;
+  start_date?: string;
   data: {
     companies: string[];
     departments: string[];
     designations: string[];
     functional_areas: string[]
+  }
+}
+export interface IGetEmpDesignationHierarchyCurrentDetails {
+  data: {
+    company: string,
+    department: string,
+    designation: string,
+    functional_area: string,
+    start_date: string
   }
 }

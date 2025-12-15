@@ -25,16 +25,15 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name as string
     );
-    const { data: designationHierarchy } = useGetDesignationHierarchy(
+    const { data: designationHierarchy, isLoading: designationHierarchyLoading } = useGetDesignationHierarchy(
         currentEmployee?.company || "",
         currentEmployee?.department || "",
         currentEmployee?.designation || "",
         isEdit
     );
     const { mutateAsync: addEmployeeHistory, isPending: addEmployeeHistoryPending } = useAddEmployeeHistoryMutation();
-    const { data: empDesignationHierarchyCurrentDetails } = useGetEmpDesignationHierarchyCurrentDetails(currentEmployee?.employee || "", isEdit);
+    const { data: empDesignationHierarchyCurrentDetails, isPending: empDesignationHierarchyCurrentDetailsPending } = useGetEmpDesignationHierarchyCurrentDetails(currentEmployee?.employee || "", isEdit);
 
-    console.log("🚀 ~ EmploymentHistoryForm ~ empDesignationHierarchyCurrentDetails-------------------:", empDesignationHierarchyCurrentDetails)
 
     const initialSubmissionData = useMemo(
         () => ({
@@ -42,9 +41,17 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
                 companies: designationHierarchy?.data?.companies,
                 departments: designationHierarchy?.data?.departments,
                 designations: designationHierarchy?.data?.designations,
+                functional_areas: designationHierarchy?.data?.functional_areas,
+                ...(isEdit && {
+                    company: empDesignationHierarchyCurrentDetails?.data?.company,
+                    department: empDesignationHierarchyCurrentDetails?.data?.department,
+                    designation: empDesignationHierarchyCurrentDetails?.data?.designation,
+                    functional_area: empDesignationHierarchyCurrentDetails?.data?.functional_area,
+                    startDate: empDesignationHierarchyCurrentDetails?.data?.start_date,
+                }),
             },
         }),
-        [designationHierarchy]
+        [designationHierarchy, empDesignationHierarchyCurrentDetails, isEdit]
     );
 
     const handleSubmit = async () => {
@@ -97,7 +104,7 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
                 </div>
 
                 {/* Form.io Form */}
-                <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+                {empDesignationHierarchyCurrentDetailsPending || designationHierarchyLoading ? <CircularLoader /> : <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12">
                     <Form
                         form={employmentHistoryFormSchema}
                         onChange={(submission: any) => {
@@ -132,7 +139,7 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
                         }}
                     />
                 </div>
-
+                }
                 {/* Footer */}
                 <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
                     <Button

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Employee, IDesignationHierarchy } from "../types/employee";
+import { Employee, IDesignationHierarchy, IGetEmpDesignationHierarchyCurrentDetails } from "../types/employee";
 import { GenderResponse, IField } from "../types/profile";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -101,7 +101,7 @@ export const profileService = {
   },
   getEmpDesignationHierarchyCurrentDetails: async (
     employee: string
-  ): Promise<IDesignationHierarchy> => {
+  ): Promise<IGetEmpDesignationHierarchyCurrentDetails> => {
     try {
       const res = await FrappeAPI.callMethod(
         "cn_hrms_core.cn_hrms_core.apis.employee_history.get_employee_current_details",
@@ -109,7 +109,7 @@ export const profileService = {
           employee: employee,
         }
       );
-      return res as IDesignationHierarchy;
+      return res as IGetEmpDesignationHierarchyCurrentDetails;
     } catch (error) {
       console.error("📡 Error while fetching designation hierarchy:", error);
       throw error;
