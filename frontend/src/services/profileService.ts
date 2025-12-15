@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Employee } from "../types/employee";
+import { Employee, IDesignationHierarchy, IGetEmpDesignationHierarchyCurrentDetails } from "../types/employee";
 import { GenderResponse, IField } from "../types/profile";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -79,12 +79,61 @@ export const profileService = {
       throw error;
     }
   },
-
+  getDesignationHierarchy: async (
+    company: string,
+    department: string,
+    designation: string
+  ): Promise<IDesignationHierarchy> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.get_designation_hierarchy_options",
+        {
+          company: company,
+          department: department,
+          designation: designation,
+        }
+      );
+      return res as IDesignationHierarchy;
+    } catch (error) {
+      console.error("📡 Error while fetching designation hierarchy:", error);
+      throw error;
+    }
+  },
+  getEmpDesignationHierarchyCurrentDetails: async (
+    employee: string
+  ): Promise<IGetEmpDesignationHierarchyCurrentDetails> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.get_employee_current_details",
+        {
+          employee: employee,
+        }
+      );
+      return res as IGetEmpDesignationHierarchyCurrentDetails;
+    } catch (error) {
+      console.error("📡 Error while fetching designation hierarchy:", error);
+      throw error;
+    }
+  },
+  addEmployeeHistory: async (
+    body: Record<string, unknown>
+  ): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.update_employee_designation",
+        body
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while clocking in:", error);
+      throw error;
+    }
+  },
   uploadFile: async (
     file: File,
     doctype?: string,
     docName?: string
-  ): Promise<{ file_url: string; [key: string]: any }> => {
+  ): Promise<{ file_url: string;[key: string]: any }> => {
     try {
       const result = await FrappeAPI.uploadFile(file, "", docName, doctype);
       return result;

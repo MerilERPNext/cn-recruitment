@@ -296,6 +296,43 @@ export const useShowAttendanaceAssignmentButton = (
     enabled: !!employee_id,
   });
 };
+export const useGetDesignationHierarchy = (
+  company: string,
+  department: string,
+  designation: string,
+  isEdit: boolean
+) => {
+  return useQuery({
+    queryKey: ["designation-hierarchy", company, department, designation],
+    queryFn: () =>
+      profileService.getDesignationHierarchy(
+        company,
+        department,
+        designation
+      ),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!company && !isEdit,
+  });
+};
+
+export const useGetEmpDesignationHierarchyCurrentDetails = (employee: string, enabled: boolean) => {
+  return useQuery({
+    queryKey: ["designation-hierarchy", employee],
+    queryFn: () => profileService.getEmpDesignationHierarchyCurrentDetails(employee),
+    staleTime: 1000 * 60 * 5,
+    enabled: enabled
+  });
+};
+
+export const useAddEmployeeHistoryMutation = () => {
+  return useMutation({
+    mutationKey: ["addEmployeeHistory"],
+    mutationFn: (body: Record<string, unknown>) => profileService.addEmployeeHistory(body),
+    onError: (error) => {
+      console.error("Error adding employee history:", error);
+    },
+  });
+};
 
 export const useFileUpload = () => {
   return useMutation({
