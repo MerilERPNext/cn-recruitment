@@ -23,9 +23,9 @@ const Separation = () => {
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-          (item: any) =>
-            item?.trigger_category?.name === trigger_category
-        )
+        (item: any) =>
+          item?.trigger_category?.name === trigger_category
+      )
       : [];
   }
   const separationData = getFunnelData("Separation");
@@ -37,7 +37,7 @@ const Separation = () => {
     definition_name,
     l
   );
-// const {data: employeeSeparationData} = useSeparationEmployee()
+  // const {data: employeeSeparationData} = useSeparationEmployee()
   const handleTriggerChat = () => {
     if (
       typeof window !== "undefined" &&
@@ -51,57 +51,55 @@ const Separation = () => {
 
   return (
     <div>
-
-        
-     
-    <div className="flex flex-col min-h-screen p-6 gap-4 bg-white">
-              <main className="min-h-full bg-background mb-2">
-                <div className="max-w-full">
-                  <SeparationApprovalTracker data={item} />
+      <div className="flex flex-col min-h-screen p-6 gap-4 bg-white">
+        {item ?
+          <main className="min-h-full bg-background mb-2">
+            <div className="max-w-full">
+              <SeparationApprovalTracker data={item} />
+            </div>
+          </main>
+          :
+          <div className="min-h-screen bg-gray-50 flex items-start justify-center">
+            <div className="bg-gray-200 rounded-xl shadow-sm w-full max-w-full overflow-hidden">
+              {/* Main content */}
+              <div className="flex flex-col md:flex-row items-center justify-between">
+                {/* Left Section */}
+                <div className="flex-1 p-10">
+                  <div className="bg-blue-200 text-black font-bold text-3xl md:text-4xl leading-snug p-8 rounded-lg w-fit">
+                    <p>WE’RE SAD TO</p>
+                    <p>SEE YOU GO</p>
+                  </div>
+                  <p className="mt-6 text-gray-700 text-sm md:text-base">
+                    Please connect with your HBRP once
+                  </p>
                 </div>
-              </main>
 
-      {/* Full screen container with centered card layout*/}
-      <div className="min-h-screen bg-gray-50 flex items-start justify-center">
-        <div className="bg-gray-200 rounded-xl shadow-sm w-full max-w-full overflow-hidden">
-          {/* Main content */}
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            {/* Left Section */}
-            <div className="flex-1 p-10">
-              <div className="bg-blue-200 text-black font-bold text-3xl md:text-4xl leading-snug p-8 rounded-lg w-fit">
-                <p>WE’RE SAD TO</p>
-                <p>SEE YOU GO</p>
+                {/* Right Section (illustration) */}
+                <div className="flex-1 flex justify-center p-10">
+                  <img
+                    src={image}
+                    alt="Goodbye illustration"
+                    className="max-h-64 object-contain"
+                  />
+                </div>
               </div>
-              <p className="mt-6 text-gray-700 text-sm md:text-base">
-                Please connect with your HBRP once
-              </p>
-            </div>
 
-            {/* Right Section (illustration) */}
-            <div className="flex-1 flex justify-center p-10">
-              <img
-                src={image}
-                alt="Goodbye illustration"
-                className="max-h-64 object-contain"
-              />
+              {/* Button */}
+              <div className="flex justify-center py-6">
+                <Button
+                  onClick={handleTriggerChat}
+                  size="md"
+                  bgColor="blue-500"
+                  className="hover:bg-blue-600"
+                >
+                  INITIATE SEPARATION
+                </Button>
+              </div>
             </div>
           </div>
-
-          {/* Button */}
-          <div className="flex justify-center py-6">
-            <Button
-              onClick={handleTriggerChat}
-              size="md"
-              bgColor="blue-500"
-              className="hover:bg-blue-600"
-            >
-              INITIATE SEPARATION
-            </Button>
-          </div>
-        </div>
+        }
       </div>
-    </div>
-  
+
     </div>
   );
 };

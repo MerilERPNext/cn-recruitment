@@ -30,7 +30,7 @@ const FlowApp: React.FC = () => {
   );
   const [showInitiateModel, setShowInitiateModel] = useState<boolean>(false);
 
-  const showInitiateButton = activeTab === "Flow Requests" && !seprateRoute;
+  const showInitiateButton = activeTab === "Flow Requests";
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
@@ -108,7 +108,7 @@ const FlowApp: React.FC = () => {
     </div>
   );
 
-  const actionButton = (
+  const actionButton = showInitiateButton ? (
     <Button
       bgColor="blue-600"
       size="lg"
@@ -117,7 +117,7 @@ const FlowApp: React.FC = () => {
     >
       + Initiate
     </Button>
-  );
+  ) : null;
 
   const desktopLayout = !seprateRoute ? (
     <DesktopLayoutWrapper title="Flows" actionButton={actionButton}>
