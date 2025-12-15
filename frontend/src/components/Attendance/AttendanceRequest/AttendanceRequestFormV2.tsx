@@ -48,6 +48,8 @@ interface AttendanceFormData {
 }
 
 interface FormioComponent {
+  disabled: boolean;
+  component: FormioComponent | null;
   hidden: boolean;
   setValue: (
     value: string | boolean,
@@ -487,6 +489,12 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       // Directly update the date components schema to enforce constraints
       const fromDateComp = formAddressInstance.current.getComponent("from_date");
       const toDateComp = formAddressInstance.current.getComponent("to_date");
+
+      // Disable to_date if required by API
+      if (toDateComp && toDateComp.component) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        toDateComp.component.disabled = !!(attendanceRequestAttachmentsMandatory as any)?.to_date_read_only;
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateDateConstraints = (comp: any) => {
