@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import toast from "react-hot-toast";
 import Button from "../shared/atoms/Button";
 import employmentHistoryFormSchema from "./employmentHistoryFormSchema.json";
@@ -20,10 +20,9 @@ interface EmploymentHistoryProps {
 const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryProps) => {
     const formInstance = useRef<any>(null);
     const initialSubmissionSet = useRef(false);
-    const [attachments, setAttachments] = useState<File[]>([]);
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string
+        currentUser?.name || ""
     );
     const { data: designationHierarchy, isLoading: designationHierarchyLoading } = useGetDesignationHierarchy(
         currentEmployee?.company || "",
@@ -80,7 +79,6 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) {
                     onCancel?.();
-                    setAttachments([]);
                 }
             }}
         >
@@ -94,7 +92,6 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
                         onClick={(e) => {
                             e.stopPropagation();
                             onCancel?.();
-                            setAttachments([]);
                         }}
                         className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
                         aria-label="Close"
@@ -107,13 +104,7 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
                 {empDesignationHierarchyCurrentDetailsPending || designationHierarchyLoading ? <CircularLoader /> : <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12">
                     <Form
                         form={employmentHistoryFormSchema}
-                        onChange={(submission: any) => {
-                            if (submission?.changed?.component?.key === "attachment")
-                                setAttachments([
-                                    ...attachments,
-                                    ...(submission?.data?.attachment || []),
-                                ]);
-                        }}
+
                         /** CRITICAL FIX: Do NOT pass submission prop */
                         onFormReady={(instance: any) => {
                             formInstance.current = instance;
