@@ -436,7 +436,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         formAddressInstance.current.getComponent("currentUserId");
 
       if (isForOthersComponent) {
-        isForOthersComponent.setValue(isForOthers, { noUpdateEvent: true });
+        isForOthersComponent.setValue(isForOthers);
       }
       if (currentEmployeeIdComponent && currentEmployee?.employee) {
         currentEmployeeIdComponent.setValue(currentEmployee.employee, {
@@ -448,8 +448,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           noUpdateEvent: true,
         });
       }
-      // Force redraw to update conditional fields
-      currentEmployeeIdComponent?.redraw();
+
+
+      if (formAddressInstance.current) {
+        formAddressInstance.current.redraw();
+      }
     }
   }, [isForOthers, currentEmployee]);
 
