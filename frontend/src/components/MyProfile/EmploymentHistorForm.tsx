@@ -31,7 +31,7 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
         isEdit
     );
     const { mutateAsync: addEmployeeHistory, isPending: addEmployeeHistoryPending } = useAddEmployeeHistoryMutation();
-    const { data: empDesignationHierarchyCurrentDetails, isPending: empDesignationHierarchyCurrentDetailsPending } = useGetEmpDesignationHierarchyCurrentDetails(currentEmployee?.employee || "", isEdit);
+    const { data: empDesignationHierarchyCurrentDetails, isLoading: empDesignationHierarchyCurrentDetailsPending } = useGetEmpDesignationHierarchyCurrentDetails(currentEmployee?.employee || "", isEdit);
 
 
     const initialSubmissionData = useMemo(
@@ -72,7 +72,6 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
             console.warn("Form submission error -", err);
         }
     };
-
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 max-w-full overflow-hidden"
@@ -101,35 +100,39 @@ const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryPr
                 </div>
 
                 {/* Form.io Form */}
-                {empDesignationHierarchyCurrentDetailsPending || designationHierarchyLoading ? <CircularLoader /> : <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12">
-                    <Form
-                        form={employmentHistoryFormSchema}
+                {empDesignationHierarchyCurrentDetailsPending || designationHierarchyLoading ?
+                    <div className="flex justify-center items-center h-full w-full p-10">
+                        <CircularLoader />
+                    </div>
+                    : <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12">
+                        <Form
+                            form={employmentHistoryFormSchema}
 
-                        /** CRITICAL FIX: Do NOT pass submission prop */
-                        onFormReady={(instance: any) => {
-                            formInstance.current = instance;
-                            if (!initialSubmissionSet.current) {
-                                instance?.setSubmission?.(initialSubmissionData);
-                                initialSubmissionSet.current = true;
-                            }
-                        }}
-                        options={{
-                            builder: { styles: false },
-                            submitButton: false,
-                            alerts: false,
-                            disableOnSubmit: true,
-                            clearOnSubmit: false,
-                            formClass: "space-y-6",
-                            rowClass: "flex flex-col md:flex-row md:space-x-4",
-                            labelClass: "mb-1 font-medium text-gray-700",
-                            inputClass:
-                                "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 px-2 py-1",
-                            validateOnInit: true,
-                            validateOnBlur: true,
-                            validateOnChange: false,
-                        }}
-                    />
-                </div>
+                            /** CRITICAL FIX: Do NOT pass submission prop */
+                            onFormReady={(instance: any) => {
+                                formInstance.current = instance;
+                                if (!initialSubmissionSet.current) {
+                                    instance?.setSubmission?.(initialSubmissionData);
+                                    initialSubmissionSet.current = true;
+                                }
+                            }}
+                            options={{
+                                builder: { styles: false },
+                                submitButton: false,
+                                alerts: false,
+                                disableOnSubmit: true,
+                                clearOnSubmit: false,
+                                formClass: "space-y-6",
+                                rowClass: "flex flex-col md:flex-row md:space-x-4",
+                                labelClass: "mb-1 font-medium text-gray-700",
+                                inputClass:
+                                    "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 px-2 py-1",
+                                validateOnInit: true,
+                                validateOnBlur: true,
+                                validateOnChange: false,
+                            }}
+                        />
+                    </div>
                 }
                 {/* Footer */}
                 <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
