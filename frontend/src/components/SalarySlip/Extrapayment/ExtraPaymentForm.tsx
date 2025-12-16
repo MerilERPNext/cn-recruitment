@@ -51,12 +51,9 @@ export default function ExtraPaymentForm({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-center"
-      onMouseDown={onClose}
-    >
+    <div onMouseDown={onClose}>
       <div
-        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden"
+        className="w-full h-full md:h-auto md:max-w-4xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}

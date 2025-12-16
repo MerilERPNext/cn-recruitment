@@ -209,7 +209,7 @@ export default function ExtraPayment() {
                   </div>
                   <div className="px-6 py-2 text-xs">{payment.invoiceId}</div>
                   <div className="px-6 py-2 text-xs">
-                    {payment.salary_component || "asfsa"}
+                    {payment.salary_component}
                   </div>
                   <div className="px-6 py-2 text-xs">{payment.date}</div>
                   <div className="px-6 py-2 text-xs font-medium">
