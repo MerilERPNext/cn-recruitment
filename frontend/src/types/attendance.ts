@@ -121,8 +121,8 @@ export type PlannedOvertimeRequest = {
 };
 
 export interface MyPlannedAttendanceRequest {
-  attachments?:[
-    {file_url:string}
+  attachments?: [
+    { file_url: string }
   ]
   due_date: string | number | Date;
   reference_document: PlannedOvertimeRequest;
@@ -238,6 +238,7 @@ export type AttendanceRecord = {
   applied_on?: string;
   working_hours?: string;
   message?: string;
+  request_type?: string;
 };
 
 export type PolicyQuestion = {
