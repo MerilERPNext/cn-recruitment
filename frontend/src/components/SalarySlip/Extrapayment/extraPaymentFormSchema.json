@@ -1,0 +1,183 @@
+{
+  "display": "form",
+  "components": [
+    {
+      "type": "checkbox",
+      "key": "is_off_cycle_payment",
+      "label": "Is Off Cycle Payment",
+      "input": true
+    },
+    {
+      "type": "checkbox",
+      "key": "is_reimbursement",
+      "label": "Is Reimbursement",
+      "input": true
+    },
+
+    {
+      "type": "select",
+      "key": "extra_payment_category",
+      "label": "Extra Payments Category",
+      "input": true,
+      "data": {
+        "values": [
+          { "label": "Refyne from salary", "value": "refyne_from_salary" }
+        ]
+      }
+    },
+
+    {
+      "type": "textfield",
+      "key": "name",
+      "label": "Name",
+      "input": true
+    },
+
+    {
+      "type": "textfield",
+      "key": "type",
+      "label": "Type",
+      "defaultValue": "Fixed",
+      "disabled": true
+    },
+
+    {
+      "type": "select",
+      "key": "frequency",
+      "label": "Frequency",
+      "input": true,
+      "data": {
+        "values": [{ "label": "Monthly", "value": "Monthly" }]
+      }
+    },
+
+    {
+      "type": "select",
+      "key": "period",
+      "label": "Period",
+      "input": true,
+      "data": {
+        "values": [{ "label": "2025-04", "value": "2025-04" }]
+      }
+    },
+
+    {
+      "type": "textfield",
+      "key": "currency",
+      "label": "Currency",
+      "defaultValue": "INR",
+      "disabled": true
+    },
+
+    {
+      "type": "columns",
+      "key": "value_with_unit",
+      "columns": [
+        {
+          "width": 8,
+          "components": [
+            {
+              "type": "number",
+              "key": "value",
+              "label": "Value",
+              "input": true,
+              "defaultValue": 0
+            }
+          ]
+        },
+        {
+          "width": 4,
+          "components": [
+            {
+              "type": "textfield",
+              "key": "unit",
+              "label": "Unit",
+              "defaultValue": "Amount",
+              "disabled": true,
+              "input": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "textarea",
+      "key": "description",
+      "label": "Description"
+    },
+
+    {
+      "type": "datetime",
+      "key": "callback_date",
+      "label": "Callback Date",
+      "input": true,
+      "format": "dd-MM-yyyy",
+      "enableTime": false
+    },
+
+    {
+      "type": "checkbox",
+      "key": "is_off_cycle_non_taxable",
+      "label": "Is Off Cycle Non Taxable"
+    },
+
+    {
+      "type": "checkbox",
+      "key": "is_off_cycle_tds_auto",
+      "label": "Is Off Cycle TDS Auto Calculate"
+    },
+
+    {
+      "type": "number",
+      "key": "off_cycle_tds",
+      "label": "Off Cycle TDS",
+      "input": true,
+      "defaultValue": 0
+    },
+
+    {
+      "type": "radio",
+      "key": "end_condition",
+      "label": "End Condition",
+      "values": [
+        { "label": "End By", "value": "end_by" },
+        { "label": "End After", "value": "end_after" }
+      ]
+    },
+
+    {
+      "type": "select",
+      "key": "end_by",
+      "label": "End By",
+      "customConditional": "show = data.end_condition === 'end_by';",
+      "data": {
+        "values": [{ "label": "2025-04", "value": "2025-04" }]
+      }
+    },
+
+    {
+      "type": "number",
+      "key": "end_after",
+      "label": "Number of Occurrences",
+      "customConditional": "show = data.end_condition === 'end_after';"
+    },
+
+    {
+      "type": "checkbox",
+      "key": "impacted_by_lop",
+      "label": "Impacted By LOP"
+    },
+
+    {
+      "type": "select",
+      "key": "tax_impact",
+      "label": "Tax Impact",
+      "data": {
+        "values": [
+          { "label": "One Time", "value": "one_time" },
+          { "label": "Monthly", "value": "monthly" }
+        ]
+      }
+    }
+  ]
+}
