@@ -383,6 +383,34 @@ const PerformanceReviewApp = lazyWithRetry(
   "PerformanceReviewApp"
 );
 
+const BenefitsApp = lazyWithRetry(
+  () => import("./components/Benefits/BenefitsApp"),
+  "BenefitsApp"
+);
+
+const MyBenefits = lazyWithRetry(
+  () => import("./components/Benefits/MyBenefits/MyBenefits"),
+  "MyBenefits"
+);
+
+const MyBenefitRequests = lazyWithRetry(
+  () => import("./components/Benefits/MyRequests/MyRequests"),
+  "MyBenefitRequests"
+);
+
+const BenefitsSlips = lazyWithRetry(
+  () => import("./components/Benefits/BenefitsSlips/BenefitsSlips"),
+  "BenefitsSlips"
+);
+
+const MyTeamBenefitsRequests = lazyWithRetry(
+  () => import("./components/Benefits/MyTeamRequest/MyTeamRequest"),
+  "MyTeamBenefitsRequests"
+);
+
+
+
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -496,6 +524,17 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/salary-slip-app/loan/:loanId",
     element: <LoanMainComponent />,
+  },
+
+  {
+    path: "/webapp/benefits-app",
+    element: <BenefitsApp />,
+    children: [
+      { path: "my-benefits", element: <MyBenefits /> },
+      { path: "my-requests", element: <MyBenefitRequests /> },
+      { path: "benefits-slips", element: <BenefitsSlips /> },
+      { path: "my-team-requests", element: <MyTeamBenefitsRequests /> },
+    ],
   },
 
   {
