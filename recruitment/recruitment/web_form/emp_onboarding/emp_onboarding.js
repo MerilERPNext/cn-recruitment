@@ -528,7 +528,7 @@ frappe.ready(function () {
             is_saving = true;
 
             frappe.call({
-                method: "recruitment.recruitment.web_form.employee_onboarding.employee_onboarding.create_job_applicant_and_offer",
+                method: "recruitment.recruitment.web_form.emp_onboarding.emp_onboarding.create_job_applicant_and_offer",
                 freeze: true,
                 freeze_message: "Creating Employee Onboarding...",
                 args: {
@@ -653,7 +653,7 @@ frappe.ready(function () {
                 console.log("🚀 Fetching ITS data for:", its);
 
                 frappe.call({
-                    method: "recruitment.recruitment.web_form.employee_onboarding.employee_onboarding.fetch_employee_data_by_its_id",
+                    method: "recruitment.recruitment.web_form.emp_onboarding.emp_onboarding.fetch_employee_data_by_its_id",
                     args: { its_id: its },
                     freeze: true,
                     freeze_message: "Fetching ITS data...",

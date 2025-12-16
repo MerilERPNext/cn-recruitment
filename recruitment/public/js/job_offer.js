@@ -1,5 +1,17 @@
 frappe.ui.form.on("Job Offer", {
-    // refresh: function(frm){
+	onload: function (frm) {
+		// Make status and resume_attachment non-mandatory on load
+		make_fields_non_mandatory(frm);
+	  },
+	
+	  setup: function (frm) {
+		// Make status and resume_attachment non-mandatory
+		make_fields_non_mandatory(frm);
+	  },
+	
+    refresh: function(frm){
+		make_fields_non_mandatory(frm);
+
 	// 	if(frm.doc.status=="Awaiting Response"){
 	// 		  frm.add_custom_button(__('Send Job Offer'), function(){
 	// 			frappe.call({
@@ -18,7 +30,7 @@ frappe.ui.form.on("Job Offer", {
 
 	// 		});
 	// 	}
-    // },
+    },
     offer_date: function(frm) {
         frm.trigger("filter_jo_expiry_date");
     },
@@ -105,3 +117,12 @@ frappe.ui.form.on("Job Offer", {
 		}
 	}	
 })
+function make_fields_non_mandatory(frm) {
+    ["custom_jo_expiry_date"].forEach(field => {
+        if (frm.fields_dict[field]) {
+            frm.fields_dict[field].df.reqd = 0;
+            frm.refresh_field(field);
+            console.log(`[Job Offer] Made '${field}' non-mandatory`);
+        }
+    });
+}

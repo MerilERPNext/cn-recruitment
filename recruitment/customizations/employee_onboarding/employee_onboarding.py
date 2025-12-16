@@ -1,3 +1,4 @@
+import requests
 import frappe
 from frappe.model.mapper import get_mapped_doc
 import json
@@ -28,3 +29,89 @@ def make_employee(source_name, target_doc=None):
         set_missing_values,
     )
     return doc
+
+@frappe.whitelist()
+def fetch_employee_data_by_its_id(its_id):
+    """
+    Fetch employee data from payroll API based on ITS ID.
+
+    Args:
+        its_id: The ITS ID of the employee
+
+    Returns:
+        Dictionary containing employee information:
+        - employee_name
+        - custom_primary_mobile_number
+        - custom_whatsapp_number
+        - custom_email_id
+        - custom_farig_year
+        - custom_farig_darajah
+    """
+    if not its_id:
+        frappe.throw("ITS ID is required")
+
+    # API endpoint
+    url = "https://cloud.dhaccounts.com/api/payroll"
+
+    # Request payload
+    payload = {
+        "its": str(its_id),
+        "key": "P@yroll53His@b"
+    }
+    print("nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",payload)
+
+    # Request headers
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    try:
+        # Make POST request
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        response.raise_for_status()  # Raise error for bad status codes
+
+        data = response.json()
+        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&######",data)
+
+        # Log the API response for debugging
+        frappe.log_error(
+            message=frappe.as_json(data, indent=2),
+            title=f"Payroll API Response - ITS ID: {its_id}"
+        )
+
+        # Extract employee data from response
+        # Map API response fields to Employee Onboarding fields
+        employee_data = {
+            "employee_name": data.get("fullname") or "",
+            "custom_primary_mobile_number": data.get("mobile") or "",
+            "custom_whatsapp_number": data.get("whatsapp") or "",
+            "custom_email_id": data.get("email") or "",
+            "custom_farig_year": data.get("farig_year") or "",
+            "custom_farig_darajah": data.get("farig_darajah") or "",
+            "success": True,
+            "message": "Employee data fetched successfully",
+            "raw_response": data
+        }
+
+        return employee_data
+
+    except requests.exceptions.Timeout:
+        frappe.log_error(
+            message=f"Request timeout for ITS ID: {its_id}",
+            title="Payroll API Timeout"
+        )
+        frappe.throw("Request timeout. Please try again.")
+
+    except requests.exceptions.RequestException as e:
+        frappe.log_error(
+            message=str(e),
+            title=f"Payroll API Error - ITS ID: {its_id}"
+        )
+        frappe.throw(f"Failed to fetch employee data: {str(e)}")
+
+    except Exception as e:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title=f"Error fetching employee data - ITS ID: {its_id}"
+        )
+        frappe.throw(f"An error occurred: {str(e)}")

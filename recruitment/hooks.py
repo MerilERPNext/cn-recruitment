@@ -54,10 +54,11 @@ fixtures =   [
 #         "filters": [["Workflow", "name", "=", "Submit To Hiring Manager"]],
     ]
 fixtures = [
-    # {
-    #      "doctype": "Workspace",
-    #      "filters": [["Workspace", "name", "=", "Recruitment"]],
-	# },
+    
+    {"dt": "Web Form", "filters": [["name", "in", ["Employee Onboarding"]]]}  ,
+    {"dt": "Web Form", "filters": [["name", "in", ["Employee Onboarding-1"]]]}  ,  #      "filters": [["Workspace", "name", "=", "Recruitment"]],
+  #      "filters": [["Workspace", "name", "=", "Recruitment"]],
+	
    
     {
         "dt":"Custom Field",

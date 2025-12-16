@@ -1,27 +1,129 @@
 frappe.ui.form.on("Employee Onboarding", {
     refresh: function (frm) {
-        if (!frm.doc.employee) {
+        ["job_offer", "job_applicant", "custom_educational_details","employee_name"].forEach(field => {
+            if (frm.fields_dict[field]) {
+                // 🔸 Make non-mandatory
+                frm.fields_dict[field].df.reqd = 0;
+
+                // 🔸 Change fieldtype from Link to Data
+                frm.fields_dict[field].df.fieldtype = "Data";
+
+                // 🔸 Remove options (unlink it from any Doctype)
+                frm.fields_dict[field].df.options = "";
+
+                // 🔸 Make non-mandatory
+                frm.fields_dict[field].df.reqd = 0;
+                
+
+
+
+
+
+
+                // 🔸 Refresh field to apply changes
+                frm.refresh_field(field);
+
+                console.log(`[DeskForm] Converted '${field}' to Data field`);
+            }
+        });
+        // Show "Create Employee" button only if workflow_state is "Approved" and employee not created yet
+        if (!frm.doc.employee && frm.doc.workflow_state === "Approved") {
             frm.remove_custom_button("Employee", "Create");
 
             frm.add_custom_button(
                 __("Create Employee"),
-                () => frm.events.create_employee(frm),  
+                () => frm.events.create_employee(frm),
                 __("Create")
             );
             frm.page.set_inner_btn_group_as_primary(__("Create"));
         }
     },
 
+    // Auto-fetch employee data when ITS ID is entered
+    custom_its_id: function(frm) {
+        if (frm.doc.custom_its_id && frm.doc.custom_its_id.trim()) {
+            console.log("[ITS ID] Fetching employee data for:", frm.doc.custom_its_id);
+
+            frappe.call({
+                method: "recruitment.customizations.employee_onboarding.employee_onboarding.fetch_employee_data_by_its_id",
+                args: {
+                    its_id: frm.doc.custom_its_id.trim()
+                },
+                freeze: true,
+                freeze_message: __("Fetching employee data..."),
+                callback: function(r) {
+                    if (r.message && r.message.success) {
+                        console.log("[ITS ID] Employee data fetched:", r.message);
+
+                        // Populate the fields with fetched data
+                        if (r.message.employee_name) {
+                            frm.set_value('employee_name', r.message.employee_name);
+                        }
+                        if (r.message.custom_primary_mobile_number) {
+                            frm.set_value('custom_primary_mobile_number', r.message.custom_primary_mobile_number);
+                        }
+                        if (r.message.custom_whatsapp_number) {
+                            frm.set_value('custom_whatsapp_number', r.message.custom_whatsapp_number);
+                        }
+                        if (r.message.custom_email_id) {
+                            frm.set_value('custom_email_id', r.message.custom_email_id);
+                        }
+                        if (r.message.custom_farig_year) {
+                            frm.set_value('custom_farig_year', r.message.custom_farig_year);
+                        }
+                        if (r.message.custom_farig_darajah) {
+                            frm.set_value('custom_farig_darajah', r.message.custom_farig_darajah);
+                        }
+
+                        // Show success message
+                        frappe.show_alert({
+                            message: __('Employee data fetched and populated successfully!'),
+                            indicator: 'green'
+                        }, 5);
+                    } else {
+                        console.warn("[ITS ID] Failed to fetch employee data");
+                        frappe.msgprint({
+                            title: __('Error'),
+                            indicator: 'red',
+                            message: __('Failed to fetch employee data. Please check the ITS ID and try again.')
+                        });
+                    }
+                },
+                error: function(err) {
+                    console.error("[ITS ID] Error fetching employee data:", err);
+                    frappe.msgprint({
+                        title: __('Error'),
+                        indicator: 'red',
+                        message: __('An error occurred while fetching employee data.')
+                    });
+                }
+            });
+        }
+    },
+
     create_employee(frm) {
         frappe.call({
-            method: "recruitment.auto_fetch_fields.make_employee",  // Update this path as per your setup
+            method: "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee",
             args: { source_name: frm.doc.name },
+            freeze: true,
+            freeze_message: __("Creating Employee..."),
             callback: function (r) {
                 if (r.message) {
                     frappe.model.sync(r.message);
                     frappe.set_route("Form", r.message.doctype, r.message.name);
+                    frappe.show_alert({
+                        message: __('Employee created successfully!'),
+                        indicator: 'green'
+                    }, 5);
                 }
             },
+            error: function(err) {
+                frappe.msgprint({
+                    title: __('Error'),
+                    indicator: 'red',
+                    message: __('Failed to create employee. Please try again.')
+                });
+            }
         });
     },
 

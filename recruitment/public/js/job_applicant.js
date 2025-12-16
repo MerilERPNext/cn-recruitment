@@ -1,5 +1,21 @@
 frappe.ui.form.on("Job Applicant", {
+  onload: function (frm) {
+    // Make status and resume_attachment non-mandatory on load
+    make_fields_non_mandatory(frm);
+  },
+
+  setup: function (frm) {
+    // Make status and resume_attachment non-mandatory
+    make_fields_non_mandatory(frm);
+  },
+
   refresh: function (frm) {
+    // Make status and resume_attachment non-mandatory on refresh as well
+    make_fields_non_mandatory(frm);
+
+       
+
+
     // frm.events.create_custom_buttons(frm);
     // frm.remove_custom_button('Interview', 'Create');
     // if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted") {
@@ -1008,4 +1024,15 @@ frappe.ui.form.on('Job Applicant', {
         }
     }
 });
+
+// Helper function to make fields non-mandatory
+function make_fields_non_mandatory(frm) {
+    ["status", "resume_attachment"].forEach(field => {
+        if (frm.fields_dict[field]) {
+            frm.fields_dict[field].df.reqd = 0;
+            frm.refresh_field(field);
+            console.log(`[Job Applicant] Made '${field}' non-mandatory`);
+        }
+    });
+}
 
