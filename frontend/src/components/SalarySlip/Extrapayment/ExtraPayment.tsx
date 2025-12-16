@@ -7,7 +7,7 @@ import { useExtraPayment } from "../../../hooks/useExtraPAyments";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import Modal from "../Advances/commonModal";
-import ExtreaPaymentForm from "./ExtraPaymentForm";
+import ExtraPaymentForm from "./ExtraPaymentForm";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -262,7 +262,7 @@ export default function ExtraPayment() {
       </div>
       {showExtraPaymentForm && (
         <Modal onClose={() => setShowExtraPaymentForm(false)}>
-          <ExtreaPaymentForm
+          <ExtraPaymentForm
             isOpen={showExtraPaymentForm}
             onClose={() => setShowExtraPaymentForm(false)}
             onSuccess={() => {
