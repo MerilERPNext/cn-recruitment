@@ -7,7 +7,6 @@ import {
   CheckCircle,
   XCircle,
   LogOut,
-  Search,
   ChevronDown,
   Timer,
   ArrowUpDown,
@@ -54,6 +53,13 @@ import { useRequestPasswordReset } from "../hooks/useResetPassword";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 import { CustomError } from "../types/attendance";
+import ViewingAsBanner from "./ViewingAsBanner";
+import { useTargetUser } from "../context/ViewedUserContext";
+import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
+import { useGetAllNotices } from "../hooks/useNotices";
+import { NoticeSlide } from "./shared/molecules/NoticeSlide";
+import SearchMembers from "./shared/SearchMembers";
+import Events from "./Events/Events";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -67,6 +73,8 @@ export default function DesktopDashboard() {
   const [showLeaveRequest, setShowLeaveRequest] = useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
+  const { clearTargetEmployee } = useTargetUser();
+
   const handleCloseShiftModal = () => {
     setShowShiftRequestModal(false);
   };
@@ -106,6 +114,7 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
+  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [["status", "!=", "Expired"]]);
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -121,29 +130,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T"))
-          )
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -362,15 +371,8 @@ export default function DesktopDashboard() {
               </>
             )}
           </div>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search members..."
-              onClick={() => navigate("/webapp/search-members")}
-              className="w-full pl-10 pr-4 py-2 min-w-[28rem] cursor-pointer bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-800 placeholder-gray-500"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-          </div>
+          <SearchMembers />
+
 
           <div className="flex items-center gap-4">
             <button
@@ -402,9 +404,8 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -433,9 +434,8 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               )}
@@ -512,10 +512,8 @@ export default function DesktopDashboard() {
 
                     <button
                       onClick={() => {
-                        const employeeId = currentEmployee?.employee;
-                        if (employeeId) {
-                          navigate(`/webapp/employee-profile/${employeeId}`);
-                        }
+                        clearTargetEmployee()
+                        navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
@@ -566,9 +564,10 @@ export default function DesktopDashboard() {
             </div>
           </div>
         </div>
+        <ViewingAsBanner />
 
-        <div className="p-4 flex-1">
-          <div className="pr-3">
+        <div className="p-4 flex-1 overflow-hidden">
+          <div className="pr-3 max-w-full">
             {/* Employee Error Section */}
             {!employeeState.isLoading && !employeeState.hasValidData && (
               <EmployeeFallback
@@ -584,13 +583,15 @@ export default function DesktopDashboard() {
             )}
 
             {/* Hero Banner */}
-            <div className="bg-teal-100 mb-2 rounded-lg p-6 text-gray-800 overflow-hidden">
-              <div className="relative z-0">
-                <h2 className="text-xl font-bold mb-2">Keep Up the Rhythm!</h2>
-                <p className="text-gray-500">
-                  Your contributions are making the day amazing!
-                </p>
-              </div>
+            <div className="my-4 w-full max-w-full overflow-hidden rounded-2xl bg-white">
+              {!noticeIsLoading && notices && notices?.length > 0 &&
+                <Carousel className="w-full h-full max-h-[150px]" showNavigation={false}>
+                  {notices?.map((item) => (
+                    <CarouselSlide key={item.name}>
+                      <NoticeSlide data={item} />
+                    </CarouselSlide>
+                  ))}
+                </Carousel>}
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
@@ -732,8 +733,8 @@ export default function DesktopDashboard() {
                         {clockInCheckOutPending || isRefetching
                           ? "Processing…"
                           : isCurrentlyCheckedIn
-                          ? "Clock Out"
-                          : "Clock In"}
+                            ? "Clock Out"
+                            : "Clock In"}
                       </button>
                     )}
                   </div>
@@ -741,9 +742,8 @@ export default function DesktopDashboard() {
                   {/* Status */}
                   <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
                     <div
-                      className={`w-2 h-2 shrink-0 rounded-full ${
-                        isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
-                      }`}
+                      className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                        }`}
                     ></div>
 
                     <span
@@ -758,23 +758,40 @@ export default function DesktopDashboard() {
                 </div>
               </div>
 
-              {/* Announcements */}
-              <div className="bg-white p-6 rounded-lg shadow-sm min-h-[16.5rem] overflow-y-auto">
-                <div className="text-center">
-                  <h3 className="section-title mb-2 text-left">
-                    Announcements
-                  </h3>
-                  <div className="text-gray-500">
-                    <p>Coming Soon...</p>
-                  </div>
+              {/* Events Widget */}
+              <div className="bg-white rounded-lg shadow-sm max-h-[16.5rem] min-h-[16.5rem] flex flex-col">
+                {/* Header */}
+                <div className="sticky top-0 bg-white border-b px-6 py-2">
+                  <h3 className="section-title mb-0 text-left">Events</h3>
+                </div>
+
+                {/* Content Scroll Area */}
+                <div className="flex-1 overflow-y-auto px-4 py-3">
+                  <Events />
                 </div>
               </div>
 
-              {/* Requests */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="section-title mb-6">Requests</h3>
 
-                <div className="grid grid-cols-2 gap-4">
+
+              {/* Requests */}
+              <div className="bg-white rounded-lg shadow-sm relative">
+                <div className="sticky top-0 border-b px-6 py-2 z-10 flex justify-between items-center mb-3 px-6">
+                  <h3 className="section-title mb-0 text-left">Requests</h3>
+                  <button
+                    onClick={() => {
+                      navigate(
+                        "/webapp/requests"
+                      );
+                    }}
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    View All
+                  </button>
+                </div>
+
+
+
+                <div className="grid grid-cols-2 gap-4 px-6">
                   {/* Apply Leave */}
                   <div
                     className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -19,6 +20,7 @@ import { SquarePen, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import AdvanceFormSkeleton from "./AdvanceFormSkeleton";
 
 interface ExpenseClaim {
   id: string;
@@ -37,7 +39,8 @@ const ExpenseAdvanceForm: React.FC<{
   const navigate = useNavigate();
   const { setRefetchAttendance } = useGlobalStore();
 
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee, isLoading: isEmployeeLoading } =
+    useCurrentEmployee();
   const employeeId = currentEmployee?.name || "";
   const employeeCompany = currentEmployee?.company || "";
 
@@ -85,6 +88,7 @@ const ExpenseAdvanceForm: React.FC<{
       }
 
       const preparedExpenseClaims = expenseClaims.map(({ id, ...claim }) => {
+        console.debug(id);
         const filteredClaim = Object.fromEntries(
           Object.entries(claim).filter(
             ([, value]) => value !== null && value !== undefined && value !== ""
@@ -356,11 +360,12 @@ const ExpenseAdvanceForm: React.FC<{
                       data: {
                         url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}&advance_type=${encodeURIComponent(
                           selectedAdvanceType || ""
-                        )}&_t=${Date.now()}`, // break cache
+                        )}&_t=${Date.now()}`,
                       },
                       selectValues: "message[0]",
                       valueProperty: "",
                       template: "<span>{{ item }}</span>",
+                      defaultValue: "INR",
                     },
                   ],
                 },
@@ -459,7 +464,6 @@ const ExpenseAdvanceForm: React.FC<{
                 ]
               : []),
 
-            // Purpose
             {
               type: "textarea",
               key: "purpose",
@@ -488,6 +492,20 @@ const ExpenseAdvanceForm: React.FC<{
     advanceTypesData,
     selectedAdvanceType,
   ]);
+
+  if (isEmployeeLoading || !employeeId || !employeeCompany) {
+    const skeletonContent = <AdvanceFormSkeleton />;
+
+    if (isDesktop) {
+      return (
+        <DesktopLayoutWrapper title="New Expense Advance">
+          {skeletonContent}
+        </DesktopLayoutWrapper>
+      );
+    }
+
+    return <div className="h-screen bg-white">{skeletonContent}</div>;
+  }
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">

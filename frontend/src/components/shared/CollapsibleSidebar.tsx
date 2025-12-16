@@ -1,13 +1,13 @@
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   Calendar,
   User,
-  DollarSign,
+  IndianRupee,
   ArrowUpDown,
-  Receipt,
+  ReceiptIndianRupee,
   Shield,
   ChevronRight,
   CreditCard,
@@ -27,15 +27,17 @@ import {
   ChartNoAxesCombined,
   Telescope,
   Goal,
+  Gift,
   HandCoins,
   Coins,
-  WalletCards,
   BadgeIndianRupee,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { ROUTES } from "../../constants/routes";
 import useCurrentUser from "../../hooks/useCurrentUser";
+// import { useGetUiPermission } from "../../hooks/useGetUiPermission";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
 
 interface SubSubMenuItem {
   name: string;
@@ -54,6 +56,7 @@ interface NavigationItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   path: string;
+  permissionKey: string; // Add this to match with backend
   subItems?: SubMenuItem[];
 }
 
@@ -72,6 +75,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const { data: companyLogo } = useCompanyLogo();
   const { data: currentEmployee } = useCurrentEmployee();
+  const { data: uiPermissions } = useGetUiPermission();
 
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
@@ -122,16 +126,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     window.open(routeToOpen, "_blank");
   };
 
-  const navigationItems: NavigationItem[] = [
+  const allNavigationItems: NavigationItem[] = [
     {
       icon: Home,
       label: "Dashboard",
       path: "/webapp/",
+      permissionKey: "Dashboard",
     },
     {
       icon: Calendar,
       label: "Leaves & Holidays",
       path: "/webapp/leave-app",
+      permissionKey: "Leaves and Holidays",
       subItems: [
         {
           name: "Leave Balance",
@@ -164,6 +170,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: User,
       label: "Attendance",
       path: "/webapp/attendance",
+      permissionKey: "Attendance",
       subItems: [
         {
           name: "Attendance Summary",
@@ -208,16 +215,17 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       ],
     },
     {
-      icon: DollarSign,
+      icon: IndianRupee,
       label: "Compensation",
       path: "/webapp/salary-slip-app",
+      permissionKey: "Compensation",
       subItems: [
         {
           name: "Annual CTC",
           icon: Calculator,
           href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
         },
-    
+
         {
           name: "Salary Slip",
           icon: CreditCard,
@@ -246,8 +254,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
 
         {
-          name: "My Advances Requests",
-          icon: WalletCards,
+          name: "Advances",
+          icon: IndianRupee,
           href: "/webapp/salary-slip-app/advances-list",
         },
         {
@@ -257,7 +265,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Benefits",
-          icon: DollarSign,
+          icon: IndianRupee,
           href: "/webapp/salary-slip-app/benefits-list",
         },
         {
@@ -271,15 +279,43 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/hr-payroll",
         },
       ],
+    }, {
+      icon: Gift,
+      label: "Benefits",
+      path: "/webapp/benefits-app",
+      permissionKey: "Benefit",
+      subItems: [
+        {
+          name: "My Benefits",
+          icon: Calculator,
+          href: "/webapp/benefits-app/my-benefits",
+        }, {
+          name: "My Requests",
+          icon: Calculator,
+          href: "/webapp/benefits-app/my-requests",
+        },
+        {
+          name: "Team Requests",
+          icon: Calculator,
+          href: "/webapp/benefits-app/my-team-requests",
+        },
+        {
+          name: "Benefit Slips",
+          icon: Calculator,
+          href: "/webapp/benefits-app/benefits-slips",
+        },
+      ],
     },
+
     {
-      icon: Receipt,
+      icon: ReceiptIndianRupee,
       label: "Expenses",
       path: "/webapp/expenses-app",
+      permissionKey: "Expenses",
       subItems: [
         {
           name: "Expense Claims",
-          icon: DollarSign,
+          icon: IndianRupee,
           href: "/webapp/expenses-app/expenses-list",
         },
         {
@@ -303,6 +339,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: Workflow,
       label: "Flows",
       path: "/webapp/flow-app",
+      permissionKey: "Flows",
       subItems: [
         {
           name: "Flow Requests",
@@ -325,6 +362,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: ChartNoAxesCombined,
       label: "Performance",
       path: "/webapp/performance-app",
+      permissionKey: "Performance",
       subItems: [
         {
           name: "Overview",
@@ -348,18 +386,65 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: Shield,
       label: "Policies",
       path: "/webapp/policies-app",
+      permissionKey: "Policies",
     },
     {
       icon: ListTodo,
       label: "Todo",
       path: "",
+      permissionKey: "Todo",
     },
     {
       icon: HelpCircle,
       label: "Help Desk",
       path: "",
+      permissionKey: "Help Desk",
     },
   ];
+
+  // Filter navigation items based on permissions - fully dynamic
+  const navigationItems = useMemo(() => {
+    if (!uiPermissions || uiPermissions.length === 0) {
+      return allNavigationItems;
+    }
+
+    return allNavigationItems
+      .map((item) => {
+        // Find permission by exact match with permissionKey
+        const appPermission = uiPermissions.find(
+          (perm) => perm.app_name === item.permissionKey
+        );
+
+        // If app is not enabled, filter it out
+        if (!appPermission || !appPermission.enabled) {
+          return null;
+        }
+
+        // If item has no subItems, include it as is
+        if (!item.subItems || item.subItems.length === 0) {
+          return item;
+        }
+
+        // Filter subItems based on page permissions
+        const filteredSubItems = item.subItems.filter((subItem) => {
+          const pagePermission = appPermission.pages?.find(
+            (page) => page.page_name === subItem.name
+          );
+          return pagePermission && pagePermission.enabled;
+        });
+
+        // If no subItems are enabled, filter out the parent
+        if (filteredSubItems.length === 0) {
+          return null;
+        }
+
+        return {
+          ...item,
+          subItems: filteredSubItems,
+        };
+      })
+      .filter((item): item is NavigationItem => item !== null);
+  }, [uiPermissions]);
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
     if (location.pathname === subSubItem.href) {
@@ -482,7 +567,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     );
 
     setOpenDropdown(activeParent?.label || null);
-  }, [location.pathname]);
+  }, [location.pathname, navigationItems]);
 
   return (
     <>
@@ -508,27 +593,29 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             className="px-4 bg-white py-3 border-b border-gray-200"
             style={{ height: "73px" }}
           >
-            <div className="flex items-center  gap-3 h-full">
-              <img
-                src={typeof logoToShow === "string" ? logoToShow : ""}
-                alt="companyLogo"
-                className="w-12 h-12 rounded-full  flex-shrink-0"
-              />
-              <div
-                className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
-                  }`}
-              >
-                <h2
-                  className="font-semibold text-gray-900 whitespace-nowrap"
-                  title={originalCompanyName}
+            <Link to="/webapp/">
+              <div className="flex items-center  gap-3 h-full">
+                <img
+                  src={typeof logoToShow === "string" ? logoToShow : ""}
+                  alt="companyLogo"
+                  className="w-12 h-12 rounded-full  flex-shrink-0"
+                />
+                <div
+                  className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                    }`}
                 >
-                  {companyName}
-                </h2>
-                <p className="text-sm text-gray-500 whitespace-nowrap">
-                  Employee Portal
-                </p>
+                  <h2
+                    className="font-semibant text-gray-900 whitespace-nowrap"
+                    title={originalCompanyName}
+                  >
+                    {companyName}
+                  </h2>
+                  <p className="text-sm text-gray-500 whitespace-nowrap">
+                    Employee Portal
+                  </p>
+                </div>
               </div>
-            </div>
+            </Link>
           </div>
           <div className="flex-1 p-4 space-y-1">
             {navigationItems.map((item) => {
@@ -578,8 +665,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         </div>
                         <span
                           className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded
-                              ? "opacity-100"
-                              : "opacity-0 -translate-x-2"
+                            ? "opacity-100"
+                            : "opacity-0 -translate-x-2"
                             }`}
                         >
                           {item.label}
@@ -588,8 +675,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       {isExpanded && (
                         <ChevronRight
                           className={`h-4 w-4 transition-transform duration-200  ${isDropdownOpen || isAnySubItemActive
-                              ? "rotate-90"
-                              : ""
+                            ? "rotate-90"
+                            : ""
                             }`}
                         />
                       )}
@@ -598,8 +685,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     <div
                       onClick={handleTodoClick}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${isItemDirectlyActive
-                          ? "bg-blue-600 text-white hover:text-white"
-                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                        ? "bg-blue-600 text-white hover:text-white"
+                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                         }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -608,8 +695,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         </div>
                         <span
                           className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded
-                              ? "opacity-100"
-                              : "opacity-0 -translate-x-2"
+                            ? "opacity-100"
+                            : "opacity-0 -translate-x-2"
                             }`}
                         >
                           {item.label}
@@ -620,8 +707,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     <div
                       onClick={handleHelpDeskClick}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${isItemDirectlyActive
-                          ? "bg-blue-600 text-white hover:text-white"
-                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                        ? "bg-blue-600 text-white hover:text-white"
+                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                         }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -630,8 +717,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         </div>
                         <span
                           className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded
-                              ? "opacity-100"
-                              : "opacity-0 -translate-x-2"
+                            ? "opacity-100"
+                            : "opacity-0 -translate-x-2"
                             }`}
                         >
                           {item.label}
@@ -642,8 +729,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     <Link
                       to={item.path}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${isItemDirectlyActive
-                          ? "bg-blue-600 text-white hover:text-white"
-                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                        ? "bg-blue-600 text-white hover:text-white"
+                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                         }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -652,8 +739,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         </div>
                         <span
                           className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded
-                              ? "opacity-100"
-                              : "opacity-0 -translate-x-2"
+                            ? "opacity-100"
+                            : "opacity-0 -translate-x-2"
                             }`}
                         >
                           {item.label}
@@ -686,16 +773,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                       handleSubItemClick(subItem.name, true)
                                     }
                                     className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${isSubActive || isSubDropdownOpen
-                                        ? "bg-blue-50 text-blue-600"
-                                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                                      ? "bg-blue-50 text-blue-600"
+                                      : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
                                       }`}
                                   >
                                     <div className="flex items-center space-x-2">
                                       <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <span
                                         className={`font-medium transition-all duration-300 whitespace-nowrap  ${isExpanded
-                                            ? "opacity-100 translate-x-0"
-                                            : "opacity-0 -translate-x-2"
+                                          ? "opacity-100 translate-x-0"
+                                          : "opacity-0 -translate-x-2"
                                           }`}
                                       >
                                         {subItem.name}
@@ -703,9 +790,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     </div>
                                     <ChevronRight
                                       className={`h-3 w-3 transition-transform duration-200 ${isSubDropdownOpen ||
-                                          isAnySubSubItemActive
-                                          ? "rotate-90"
-                                          : ""
+                                        isAnySubSubItemActive
+                                        ? "rotate-90"
+                                        : ""
                                         }`}
                                     />
                                   </div>
@@ -713,16 +800,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                   <Link
                                     to={subItem.href || "#"}
                                     className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
-                                        ? "bg-blue-600 text-white hover:text-white"
-                                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                                      ? "bg-blue-600 text-white hover:text-white"
+                                      : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
                                       }`}
                                   >
                                     <div className="flex items-center space-x-2">
                                       <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <span
                                         className={`font-medium transition-all duration-300 whitespace-nowrap ${isExpanded
-                                            ? "opacity-100 translate-x-0"
-                                            : "opacity-0 -translate-x-2"
+                                          ? "opacity-100 translate-x-0"
+                                          : "opacity-0 -translate-x-2"
                                           }`}
                                       >
                                         {subItem.name}
@@ -746,16 +833,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                               key={subSubItem.name}
                                               to={subSubItem.href}
                                               className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubSubActive
-                                                  ? "bg-blue-600 text-white hover:text-white"
-                                                  : "text-gray-400 hover:bg-blue-50 hover:text-blue-600"
+                                                ? "bg-blue-600 text-white hover:text-white"
+                                                : "text-gray-400 hover:bg-blue-50 hover:text-blue-600"
                                                 }`}
                                             >
                                               <div className="flex items-center space-x-2">
                                                 <SubSubIcon className="h-3 w-3 opacity-70" />
                                                 <span
                                                   className={`font-medium transition-all duration-300 whitespace-nowrap ${isExpanded
-                                                      ? "opacity-100 translate-x-0"
-                                                      : "opacity-0 -translate-x-2"
+                                                    ? "opacity-100 translate-x-0"
+                                                    : "opacity-0 -translate-x-2"
                                                     }`}
                                                 >
                                                   {subSubItem.name}

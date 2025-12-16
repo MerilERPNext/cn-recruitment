@@ -19,6 +19,7 @@ import IncomeTaxSheet from "./components/SalarySlip/TaxSheet/TaxSheet";
 import ITDeclarationForm from "./components/SalarySlip/IT Declaration/ITDeclaration";
 import TeamLoanRequest from "./components/SalarySlip/Loan/TeamLoan/TeamLoanRequest";
 import TeamAdvanceRequest from "./components/SalarySlip/Advances/ApprovalAdvanceRquest";
+import Requests from "./components/Requests";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -382,9 +383,38 @@ const NewGoalPlan = lazyWithRetry(
 );
 
 const PerformanceReviewApp = lazyWithRetry(
-  () => import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
+  () =>
+    import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
   "PerformanceReviewApp"
 );
+
+const BenefitsApp = lazyWithRetry(
+  () => import("./components/Benefits/BenefitsApp"),
+  "BenefitsApp"
+);
+
+const MyBenefits = lazyWithRetry(
+  () => import("./components/Benefits/MyBenefits/MyBenefits"),
+  "MyBenefits"
+);
+
+const MyBenefitRequests = lazyWithRetry(
+  () => import("./components/Benefits/MyRequests/MyRequests"),
+  "MyBenefitRequests"
+);
+
+const BenefitsSlips = lazyWithRetry(
+  () => import("./components/Benefits/BenefitsSlips/BenefitsSlips"),
+  "BenefitsSlips"
+);
+
+const MyTeamBenefitsRequests = lazyWithRetry(
+  () => import("./components/Benefits/MyTeamRequest/MyTeamRequest"),
+  "MyTeamBenefitsRequests"
+);
+
+
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
@@ -450,6 +480,7 @@ export const routesConfig: AppRoute[] = [
   // Standalone Routes
   { path: "/webapp/search-members", element: <SearchMembers /> },
 
+  { path: "/webapp/requests", element: <Requests /> },
   { path: "/webapp/id-card", element: <IdCard /> },
   { path: "/webapp/id-card/:employeeId", element: <IdCard /> },
   { path: "/webapp/expenses", element: <Expenses /> },
@@ -486,14 +517,14 @@ export const routesConfig: AppRoute[] = [
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "hr-payroll", element: <HRPayroll /> },
       { path: "loan", element: <LoansPage /> },
-      { path: "team-loan-requests", element: <TeamLoanRequest/> },
+      { path: "team-loan-requests", element: <TeamLoanRequest /> },
       { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
       { path: "advances-list", element: <AdvancesList /> },
       { path: "team-advances-list", element: <TeamAdvanceRequest /> },
       { path: "benefits-list", element: <BenefitsList /> },
-      {path: "extra-payment", element: <ExtraPayment />},
-      {path: "income-tax-sheet", element: <IncomeTaxSheet />},
-      {path: "it-declalaration-form", element: <ITDeclarationForm />},
+      { path: "extra-payment", element: <ExtraPayment /> },
+      { path: "income-tax-sheet", element: <IncomeTaxSheet /> },
+      { path: "it-declalaration-form", element: <ITDeclarationForm /> },
     ],
   },
   {
@@ -503,6 +534,17 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/salary-slip-app/loan/:loanId",
     element: <LoanMainComponent />,
+  },
+
+  {
+    path: "/webapp/benefits-app",
+    element: <BenefitsApp />,
+    children: [
+      { path: "my-benefits", element: <MyBenefits /> },
+      { path: "my-requests", element: <MyBenefitRequests /> },
+      { path: "benefits-slips", element: <BenefitsSlips /> },
+      { path: "my-team-requests", element: <MyTeamBenefitsRequests /> },
+    ],
   },
 
   {
@@ -544,7 +586,7 @@ export const routesConfig: AppRoute[] = [
   { path: "/webapp/notices/:id", element: <NoticeDetails /> },
 
   {
-    path: "/webapp/employee-profile/:id",
+    path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
   },
 
@@ -554,14 +596,13 @@ export const routesConfig: AppRoute[] = [
     element: <ExpensesApp />,
     children: [
       { path: "expenses-list", element: <ExpensesList /> },
-      { path: "add-expense", element: <AddExpensePage /> },
       { path: "team-requests", element: <TeamExpense /> },
       { path: "my-advance-expense", element: <MyAdvanceExpenseList /> },
       { path: "team-advance-expense", element: <TeamAdvanceExpenseList /> },
       { path: "shared-expenses", element: <SharedExpenses /> },
     ],
   },
-
+  { path: "/webapp/expenses-app/add-expense", element: <AddExpensePage /> },
   // Flat Recruitment Routes
   {
     path: "/webapp/recruitment-app/referrals/add-new-referral",

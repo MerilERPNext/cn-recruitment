@@ -1,10 +1,10 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { Form } from "@tsed/react-formio";
 import ProfileGridSkeleton from "./ProfileSkeleton";
-import { useParams } from "react-router-dom";
 import {
   useGetEmployeeDetailsByEmpId,
   useGetEmployeeFieldPermissions,
+  useCurrentEmployeeAllDetails,
 } from "../../hooks/useEmployee";
 import {
   convertToFormioWithTabMetadata,
@@ -13,14 +13,22 @@ import {
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import toast from "react-hot-toast";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 
 const EmployeeProfileForm: React.FC = () => {
-  const { id: employeeId } = useParams<{ id: string }>();
+  const { targetEmployeeId } = useTargetUser();
+  const { data: userId } = useLoggedInUser();
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
+
+  // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
+  const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";
+
   const [tabs, setTabs] = useState<TabWithSchema[]>([]);
   const [activeTab, setActiveTab] = useState<string>("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formInstances = useRef<Record<string, any>>({});
-  const employee = useGetEmployeeDetailsByEmpId(employeeId || "");
+  const employee = useGetEmployeeDetailsByEmpId(employeeId);
   const mutation = useUpdateFrappeDocument();
   const { data: fieldPermissions } = useGetEmployeeFieldPermissions({
     doctype: "Employee",

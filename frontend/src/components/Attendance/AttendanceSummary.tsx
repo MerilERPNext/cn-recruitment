@@ -25,6 +25,7 @@ import {
   useGetEmployeeShift,
   useGetPolicyForDate,
   useGetQuickAttendanceSummary,
+  useReqValidationsForOvertimeRequest,
 } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
@@ -46,6 +47,10 @@ const AttendanceSummary = () => {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
+  const { data: employeeOvertimePolicy } = useReqValidationsForOvertimeRequest(
+    currentEmployee?.employee || ""
+  );
+
   const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(
     currentEmployee?.employee as string,
     format(startOfMonth(currentDate), "yyyy-MM-dd"),
@@ -131,7 +136,7 @@ const AttendanceSummary = () => {
     {
       icon: Timer,
       title: "Overtime Policy",
-      details: [],
+      details: [employeeOvertimePolicy || ""],
     },
   ];
 
@@ -198,7 +203,7 @@ const AttendanceSummary = () => {
             </div>
 
             {/* Right Column: Settings */}
-            <div className="w-1/3 ml-6 bg-white border border-gray-200 rounded-xl p-4">
+            <div className="w-1/3 ml-6 bg-white border border-gray-200 rounded-xl p-4 mb-4">
               <h2 className="module-title mb-4">Settings</h2>
               <div className="space-y-4">
                 {settingsData.map((setting, index) => {

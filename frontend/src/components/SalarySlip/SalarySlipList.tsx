@@ -19,6 +19,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { FaRegEye } from "react-icons/fa";
 import CardTable from "../shared/CardTable";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 const SalarySlipsList = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const SalarySlipsList = () => {
     name: string;
     date: string;
   } | null>(null);
-  
+
 
 
   // Hook 1 - Regular Salary Slip
@@ -161,9 +162,9 @@ const SalarySlipsList = () => {
 
   const filters: Record<string, [string, string]> | undefined = selectedYear
     ? {
-        start_date: [">=", `${selectedYear}-01-01`],
-        end_date: ["<=", `${selectedYear}-12-31`],
-      }
+      start_date: [">=", `${selectedYear}-01-01`],
+      end_date: ["<=", `${selectedYear}-12-31`],
+    }
     : undefined;
 
   const currentYear = new Date().getFullYear();
@@ -312,28 +313,28 @@ const DownloadMenu = ({
         className="w-60 p-2"
       >
         {[
-       { label: "Regular Payslip", fn: onType1, key: "regular_payslip_exists" },
-       { label: "TDS Sheet", fn: onType2, key: "tds_payslip_exists" },
-       { label: "Benefit Payslip", fn: onType3, key: "benefit_payslip_exists" },
-       { label: "Off Cycle Payslip", fn: onType4, key: "off_payslip_exists" },
+          { label: "Regular Payslip", fn: onType1, key: "regular_payslip_exists" },
+          { label: "TDS Sheet", fn: onType2, key: "tds_payslip_exists" },
+          { label: "Benefit Payslip", fn: onType3, key: "benefit_payslip_exists" },
+          { label: "Off Cycle Payslip", fn: onType4, key: "off_payslip_exists" },
         ].map((item, i) => (
-  printFormatMenuRef?.[item.key] === 1 && (
-    <div key={i} className="flex justify-between items-center ">
-      <button
-        onClick={(e) => {
-          setOpen(false);
-          item.fn(e, itemName);
-        }}
-        className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
-      >
-        <span className="p-2 border rounded">
-          <FaRegEye className="w-4 h-4 text-blue-500" />
-        </span>
-        {item.label}
-      </button>
-    </div>
-  )
-))}
+          printFormatMenuRef?.[item.key] === 1 && (
+            <div key={i} className="flex justify-between items-center ">
+              <button
+                onClick={(e) => {
+                  setOpen(false);
+                  item.fn(e, itemName);
+                }}
+                className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
+              >
+                <span className="p-2 border rounded">
+                  <FaRegEye className="w-4 h-4 text-blue-500" />
+                </span>
+                {item.label}
+              </button>
+            </div>
+          )
+        ))}
       </ContextualPopup>
     </div>
   );
@@ -371,18 +372,18 @@ const SalarySlipItemDesktop = ({
 
   return (
     <div className="my-data-row">
-      <div className="grid grid-cols-6  items-center gap-4 px-6 h-14 border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
-        <span className="card-subtitle text-gray-700 text-start  relative group inline-block overflow-visible">
-          {item.employee_name}
-          <div
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
+      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+        <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
+          <WrapperHoverCard employeeId={item.employee}>{item.employee_name}</WrapperHoverCard>
+          {/* <div
+            className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
                    opacity-0 invisible group-hover:opacity-100 group-hover:visible
                    transition-all duration-150 ease-out pointer-events-none
                    bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
                    shadow-lg z-50"
-                  >
-                    {item.employee}
-                  </div>
+          >
+            {item.employee}
+          </div> */}
         </span>
         <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.start_date)}

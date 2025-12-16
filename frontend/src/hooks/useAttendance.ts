@@ -334,6 +334,14 @@ export function useReqValidationsForAttendanceRequest(empId: string) {
   });
 }
 
+export function useReqValidationsForOvertimeRequest(empId: string) {
+  return useQuery({
+    queryKey: ["overtime-request-validations", empId],
+    queryFn: () => attendanceService.reqValidationsForOvertimeRequest(empId!),
+    enabled: !!empId,
+  });
+}
+
 export const usePlannedOvertimeAllowed = (employee: string) => {
   return useQuery<boolean>({
     queryKey: ["planned-overtime-allowed", employee],
@@ -377,7 +385,6 @@ export const useAttendanceRequestAttachments = (employee: string,date:string,req
   return useQuery<any>({
     queryKey: ["attendance-request-attachments-allowed", date, employee, request_type],
     queryFn: () => {
-      console.log(employee, date, request_type, "--------------------------------")
       return attendanceService.attendanceRequestAttachments(employee,date,request_type);
     },
     enabled: !!employee && !!request_type && !!date,

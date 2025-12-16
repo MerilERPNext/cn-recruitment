@@ -1,6 +1,9 @@
 import React from "react";
 import { useFrappeDocument } from "../../hooks/useFrappeQuery";
 import EmploymentHistoryCard from "./EmploymentHistoryCard";
+import Button from "../shared/atoms/Button";
+import { EditIcon, PlusIcon } from "lucide-react";
+import EmploymentHistoryForm from "./EmploymentHistorForm";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -33,6 +36,8 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   ) as { data: Employee | null; isLoading: boolean; error: any };
   const history = data?.custom_work_history || [];
 
+  const [isModalOpen, setIsModalOpen] = React.useState<string | null>(null);
+
   const groupedHistory = history.reduce<Record<string, CustomWorkHistory[]>>(
     (acc, item) => {
       if (!acc[item.doctype_name]) acc[item.doctype_name] = [];
@@ -45,15 +50,37 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   return (
     <div className="address-form-container bg-white">
       <div className="p-4 md:p-8">
-        <div className="border-b border-gray-200 pb-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Employment History
-          </h2>
-          <p className="text-gray-600">
-            Your employment history and organizational information
-          </p>
-        </div>
+        <div className="flex items-start justify-between">
 
+          <div className="border-b border-gray-200 pb-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Employment History
+            </h2>
+            <p className="text-gray-600">
+              Your employment history and organizational information
+            </p>
+          </div>
+          <div className="flex gap-2 ">
+            <Button
+              onClick={() => setIsModalOpen('edit')}
+              icon={<EditIcon className="h-4 w-4" />}
+              variant="subtle"
+              size="md"
+              disabled
+            >
+              Edit
+            </Button>
+            <Button
+              onClick={() => setIsModalOpen('add')}
+              icon={<PlusIcon className="h-4 w-4" />}
+              variant="contain"
+              size="md"
+              disabled
+            >
+              Add
+            </Button>
+          </div>
+        </div>
         {!employeeId && (
           <p className="p-4 text-gray-500">No employee selected</p>
         )}
@@ -123,6 +150,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             );
           })}
       </div>
+      <EmploymentHistoryForm isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
     </div>
   );
 };

@@ -13,9 +13,11 @@ import {
 import "@xyflow/react/dist/style.css";
 import PersonNode from "./PersonNode";
 import { EmployeeHierarchy, NodeData } from "./type/type";
-import { useGetEmployeeSubordinateHierarchy } from "../../hooks/useEmployee";
-import { useNavigate, useParams } from "react-router";
+import { useGetEmployeeSubordinateHierarchy, useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useNavigate } from "react-router";
 import { IoChevronForwardOutline } from "react-icons/io5";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 
 const normalizeId = (id: unknown): string | null => {
   if (!id) return null;
@@ -203,9 +205,15 @@ export default function ThreeLevelOrgChart() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const navigate = useNavigate();
-  const { id: employeeId } = useParams<{ id: string }>();
+  const { targetEmployeeId } = useTargetUser();
+  const { data: userId } = useLoggedInUser();
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
+
+  // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
+  const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";
+
   const { data: employeeHierarchy } = useGetEmployeeSubordinateHierarchy(
-    employeeId || ""
+    employeeId
   );
 
   useEffect(() => {
@@ -255,7 +263,7 @@ export default function ThreeLevelOrgChart() {
         </button>
       </div>
 
-      <div className="h-[400px]">
+      <div className="h-[400px] px-2">
 
         <ReactFlow
           nodes={nodes}
@@ -266,10 +274,16 @@ export default function ThreeLevelOrgChart() {
           fitView
           attributionPosition="top-right"
           proOptions={{ hideAttribution: true }}
-          minZoom={0.1}
+          minZoom={0.2}
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
           zoomOnScroll={false}
+          zoomOnPinch={false}
+          nodesDraggable={false}
+          draggable={false}
+          // panOnScroll
+          // panOnScrollSpeed={1}
+          panOnDrag={false}
         >
           <Controls position="top-right" showZoom showFitView />
         </ReactFlow>

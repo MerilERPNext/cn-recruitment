@@ -1,0 +1,98 @@
+{
+    "title": "Employee Benefit Claim",
+    "name": "benefitClaim",
+    "path": "benefit-claim",
+    "display": "form",
+    "components": [
+        {
+            "type": "panel",
+            "key": "employmentHistoryPanel",
+            "label": "Employment History Details",
+            "title": "Employment History Details",
+            "hideLabel": true,
+            "customClass": "bg-white rounded-lg",
+            "components": [
+                {
+                    "type": "select",
+                    "key": "delegations",
+                    "label": "Delegations",
+                    "errorLabel": "Delegations",
+                    "placeholder": "Select Delegation",
+                    "validate": {},
+                    "input": true,
+                    "dataSrc": "url",
+                    "data": {
+                        "url": ""
+                    },
+                    "valueProperty": "value",
+                    "template": "<span>{{ item.label }}</span>",
+                    "selectValues": "message.component_array",
+                    "refreshOn": "currentEmployeeId,claimDate",
+                    "clearOnRefresh": false,
+                    "lazyLoad": false,
+                    "customClass": "w-full"
+                },
+                {
+                    "type": "select",
+                    "key": "department",
+                    "label": "Department",
+                    "errorLabel": "Department",
+                    "placeholder": "Select Department",
+                    "validate": {},
+                    "input": true,
+                    "dataSrc": "url",
+                    "data": {
+                        "url": ""
+                    },
+                    "valueProperty": "value",
+                    "template": "<span>{{ item.label }}</span>",
+                    "selectValues": "message.component_array",
+                    "refreshOn": "currentEmployeeId,claimDate",
+                    "clearOnRefresh": false,
+                    "lazyLoad": false,
+                    "customClass": "w-full"
+                },
+                {
+                    "type": "select",
+                    "key": "branch",
+                    "label": "Branch",
+                    "errorLabel": "Branch",
+                    "placeholder": "Select Branch",
+                    "validate": {},
+                    "input": true,
+                    "dataSrc": "url",
+                    "data": {
+                        "url": ""
+                    },
+                    "valueProperty": "value",
+                    "template": "<span>{{ item.label }}</span>",
+                    "selectValues": "message.component_array",
+                    "refreshOn": "currentEmployeeId,claimDate",
+                    "clearOnRefresh": false,
+                    "lazyLoad": false,
+                    "customClass": "w-full"
+                },
+                {
+                    "type": "select",
+                    "key": "company",
+                    "label": "Company",
+                    "errorLabel": "Company",
+                    "placeholder": "Select Company",
+                    "validate": {},
+                    "input": true,
+                    "dataSrc": "url",
+                    "data": {
+                        "url": ""
+                    },
+                    "valueProperty": "value",
+                    "template": "<span>{{ item.label }}</span>",
+                    "selectValues": "message.component_array",
+                    "refreshOn": "currentEmployeeId,claimDate",
+                    "clearOnRefresh": false,
+                    "lazyLoad": false,
+                    "customClass": "w-full"
+                }
+            ]
+        }
+    ]
+}

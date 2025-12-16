@@ -4,6 +4,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import DOMPurify from "dompurify";
 import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -83,8 +84,8 @@ const ApprovalCard = ({
   };
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "5% 10% 15% 8% 8% 8% 10% 20%" // 8 columns (with Select)
-    : "12% 20% 10% 10% 10% 10% 20%"; // 7 columns (Adjusted widths)
+    ? "5%  15% 8% 8% 8% 10% 10% 20%" // 8 columns (with Select)
+    : " 20% 10% 10% 10% 12% 10% 20%"; // 7 columns (Adjusted widths)
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
@@ -138,10 +139,7 @@ const ApprovalCard = ({
             </div>
           )}
 
-          {/* Allocated To */}
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_document?.employee_name}
-          </div>
+
           <div className="truncate text-gray-900 font-medium text-sm text-start line-clamp-1">
             {cleanExplaination}
           </div>
@@ -156,7 +154,12 @@ const ApprovalCard = ({
           <div className="text-gray-700 text-sm text-start">
             {formatDate(data?.due_date)}
           </div>
-
+          {/* Allocated To */}
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              {data?.reference_document?.employee_name}
+            </div>
+          </WrapperHoverCard>
           {/* Status + Actions */}
           <div className="flex items-center justify-start">
             <Tooltip content={`Allocated to : ${data?.allocated_to}`}>
@@ -186,7 +189,7 @@ const ApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -287,7 +290,7 @@ const ApprovalCard = ({
                       }
                     >
                       {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

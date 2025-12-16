@@ -2,20 +2,20 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Calendar,
   ArrowUpDown,
-  Receipt,
+  ReceiptIndianRupee,
   Shield,
   Bell,
-  Search,
   CheckCircle,
   AlertCircle,
   User,
-  DollarSign,
+  IndianRupee,
   XCircle,
   FileEdit,
   Timer,
   BanknoteX,
   Workflow,
   ChartNoAxesCombined,
+  RotateCcw,
 } from "lucide-react";
 import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -55,6 +55,8 @@ import {
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { ViewAll } from "./shared/atoms/ViewAll";
+import ViewingAsBanner from "./ViewingAsBanner";
+import SearchMembers from "./shared/SearchMembers";
 
 const statusStyles = {
   unpaid: {
@@ -101,25 +103,41 @@ const MobileDashboard: React.FC = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
-  useEffect(() => {
-    async function fetchLocation() {
-      setIsLocationLoading(true);
-      setLocationError(null);
-      try {
-        const coords = await getDeviceLocation();
-        setLocation(coords);
-      } catch (err) {
-        console.error("Failed to get location:", err);
-        setLocationError(
-          "Unable to get your location. Please enable location services."
-        );
-      } finally {
-        setIsLocationLoading(false);
-      }
+  const fetchLocation = async () => {
+    setIsLocationLoading(true);
+    setLocationError(null);
+    try {
+      const coords = await getDeviceLocation();
+      setLocation(coords);
+      return coords;
+    } catch (err) {
+      console.error("Failed to get location:", err);
+      setLocationError(
+        "Unable to get your location. Please enable location services."
+      );
+      return null;
+    } finally {
+      setIsLocationLoading(false);
     }
+  };
 
-    fetchLocation();
+  useEffect(() => {
+    // Initial fetch with a fallback retry to handle potential native interface delay
+    fetchLocation().then((coords) => {
+      if (!coords) {
+        // If initial fetch fails, try again after a short delay
+        setTimeout(() => {
+          fetchLocation();
+        }, 1000);
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    if (location) {
+      setLocationError(null);
+    }
+  }, [location]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -377,10 +395,7 @@ const MobileDashboard: React.FC = () => {
             <div
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer border border-gray-400"
               onClick={() => {
-                const employeeId = currentEmployee?.employee;
-                if (employeeId) {
-                  navigate(`/webapp/employee-profile/${employeeId}`);
-                }
+                navigate(`/webapp/employee-profile`);
               }}
             >
               <img
@@ -393,17 +408,12 @@ const MobileDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Viewing As Banner */}
+      <ViewingAsBanner />
+
       {/* Search Bar */}
       <div className="px-4 py-2 mt-2 bg-white border-b border-gray-100 flex-shrink-0">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search members..."
-            onClick={() => navigate("/webapp/search-members")}
-            className="w-full pl-10 pr-4 py-3 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900 placeholder-gray-500"
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-        </div>
+        <SearchMembers />
       </div>
 
       <div className="px-4 py-3 flex-1 overflow-y-auto">
@@ -503,10 +513,19 @@ const MobileDashboard: React.FC = () => {
                   "Check In"
                 )}
               </button>
-              {locationError && (
-                <p className="text-xs text-red-600 mt-1 text-center">
-                  {locationError}
-                </p>
+              {locationError && !isLocationLoading && (
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <p className="text-xs text-red-600 font-medium">
+                    {locationError}
+                  </p>
+                  <button
+                    onClick={fetchLocation}
+                    className="p-1.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors border border-red-200"
+                    title="Retry Location"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )}
             </div>
           ) : null}
@@ -561,7 +580,7 @@ const MobileDashboard: React.FC = () => {
               className="flex flex-col items-center group"
             >
               <div className="w-16 h-16 bg-yellow-50 border-2 border-yellow-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-yellow-200 transition-colors">
-                <DollarSign className="w-6 h-6 text-yellow-600 group-hover:text-yellow-800 transition-colors" />
+                <IndianRupee className="w-6 h-6 text-yellow-600 group-hover:text-yellow-800 transition-colors" />
               </div>
               <span className="text-xs font-medium text-yellow-700 text-center">
                 Compensation
@@ -611,7 +630,7 @@ const MobileDashboard: React.FC = () => {
               className="flex flex-col items-center group"
             >
               <div className="w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
-                <Receipt className="w-6 h-6 text-pink-600 group-hover:text-pink-800 transition-colors" />
+                <ReceiptIndianRupee className="w-6 h-6 text-pink-600 group-hover:text-pink-800 transition-colors" />
               </div>
               <span className="text-xs font-medium text-pink-700 text-center">
                 Expenses

@@ -379,6 +379,7 @@ export const attendanceService = {
     );
     return response as UserRoles;
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getToDoWithReferenceDoc: async (todo_id?: string): Promise<any> => {
     const response = await FrappeAPI.callMethod(
       "cn_hrms_core.api.get_reference_doc",
@@ -456,6 +457,22 @@ export const attendanceService = {
         }
       );
       return response as AttendanceRequestValidations;
+    } catch (error) {
+      console.error("📡 Error while checking in:", error);
+      throw error;
+    }
+  },
+  reqValidationsForOvertimeRequest: async (
+    empId: string
+  ): Promise<string> => {
+    try {
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.cn_leave_shift_managment.overtime.check_overtime_policy",
+        {
+          employee: empId,
+        }
+      );
+      return response as string;
     } catch (error) {
       console.error("📡 Error while checking in:", error);
       throw error;

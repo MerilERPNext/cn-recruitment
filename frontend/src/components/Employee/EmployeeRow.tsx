@@ -1,10 +1,10 @@
 import React from "react";
 import { ChevronRightIcon } from "lucide-react";
 
-import { useNavigate } from "react-router-dom";
 import Tooltip from "../shared/Tooltip";
 import Badge from "../shared/Badge";
 import { Employee } from "../../types/employee";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 function initials(name = ""): string {
   const parts = name.trim().split(/\s+/);
@@ -24,11 +24,11 @@ interface AvatarProps {
 const Avatar: React.FC<AvatarProps> = ({ name, src }) => {
   return (
     <div
-      className="h-12 w-12  sm:h-14 sm:w-14 shrink-0 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-base sm:text-lg font-semibold overflow-hidden border"
+      className="h-9 w-9  shrink-0 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xs font-semibold overflow-hidden border"
       aria-hidden
     >
       {src ? (
-       
+
         <img
           loading="lazy"
           src={src}
@@ -52,12 +52,11 @@ interface EmployeeRowProps {
 
 const EmployeeRow: React.FC<EmployeeRowProps> = ({
   emp,
-
   onRemove,
   showRemove,
   idx,
 }) => {
-  const navigate = useNavigate();
+  const { setTargetEmployee } = useTargetUser();
 
   function recentSearch(emp: Employee): void {
     const searches: Employee[] = JSON.parse(
@@ -78,7 +77,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   const handleonClick = (emp: Employee) => () => {
     recentSearch(emp);
-    navigate(`/webapp/employee-profile/${emp.name}`);
+    setTargetEmployee(emp.name, `/webapp/employee-profile`);
   };
 
   const isActive = emp.status?.toLowerCase() === "active";
@@ -93,13 +92,13 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
         if (e.key === "Enter" || e.key === " ") handleonClick(emp)();
       }}
     >
-      <div className="flex items-center sm:items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4 shadow-sm hover:shadow-md active:bg-gray-50 transition-shadow cursor-pointer">
-          <Avatar name={emp.employee_name} src={emp.image} />
+      <div className="flex items-center sm:items-center justify-between gap-3  px-4 py-3 bg-white hover:bg-blue-100 border-b ">
+        <Avatar name={emp.employee_name} src={emp.image} />
         <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full">
 
           <div className="flex flex-col min-w-0 w-full">
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
-              <p className="text-sm  sm:text-lg  font-semibold text-gray-900 truncate">
+              <p className="text-sm   font-semibold text-gray-900 truncate">
                 {emp.employee_name}
               </p>
 
@@ -108,15 +107,13 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
                 backgroundColor={isActive ? "bg-green-100" : "bg-gray-100"}
                 textColor={isActive ? "text-green-700" : "text-gray-600"}
                 size="sm"
-              
-                
               />
             </div>
 
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 sm:gap-y-2 text-sm text-gray-600 min-w-0">
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 sm:gap-y-2 text-xs text-gray-600 min-w-0">
               <span className="sm:inline min-w-0">
                 <Tooltip content={emp.designation || "—"} position="bottom">
-                  <span className="inline-block text-[10px] md:text-sm sm:max-w-[60ch] max-w-[27ch] truncate align-bottom">
+                  <span className="inline-block text-xs  max-w-[20ch] truncate align-bottom">
                     {emp.designation || "—"}
                   </span>
                 </Tooltip>
@@ -128,7 +125,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
               <span className="sm:inline min-w-0">
                 <Tooltip content={emp.department || "—"} position="bottom">
-                  <span className="inline-block text-[10px] md:text-sm sm:max-w-[60ch] max-w-[27ch] truncate align-bottom">
+                  <span className="inline-block text-xs  max-w-[20ch] truncate align-bottom">
                     {emp.department || "—"}
                   </span>
                 </Tooltip>

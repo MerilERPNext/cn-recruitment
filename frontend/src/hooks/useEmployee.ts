@@ -15,6 +15,7 @@ import { profileService } from "../services/profileService";
 import { AddressInfoData } from "../types/profile";
 import toast from "react-hot-toast";
 import { FilterCondition } from "../types/frappe";
+import commonSerivce from "../services/commonSerivce";
 
 // Hook to get a single employee by ID
 const defaultQueryOptions = {
@@ -203,13 +204,13 @@ export const useEmployeeByUserId = (userId?: string) => {
 };
 export const useGetAllEmployees = (
   fields?: string[],
+  limit?: number,
   filters?: FilterCondition[],
-
   orFilters?: FilterCondition[]
 ): UseQueryResult<Employee[], Error> => {
   return useQuery<Employee[], Error>({
     queryKey: ["all-employees-list", fields, filters, orFilters],
-    queryFn: () => EmployeeService.getAllEmployees(fields, filters, orFilters),
+    queryFn: () => EmployeeService.getAllEmployees(fields, filters, orFilters, limit),
     // staleTime: 1000 * 60 * 5,
   });
 };
@@ -302,6 +303,15 @@ export const useFileUpload = () => {
     mutationFn: (file: File) => profileService.uploadFile(file),
     onError: (error) => {
       console.error("Error uploading file:", error);
+    },
+  });
+};
+
+export const useGetEmployeeHoverData = () => {
+  return useMutation({
+    mutationFn: (employee_id: string) => commonSerivce.getHoverData("Employee", employee_id),
+    onError: (error) => {
+      console.error("Error fetching employee hover data:", error);
     },
   });
 };

@@ -178,7 +178,15 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
                   <div className="flex gap-1">
                     {Array.from(
                       new Set(
-                        (attendance?.events ?? []).map((event) => event.doctype)
+                        (attendance?.events ?? [])
+                          .filter(
+                            (event) =>
+                              !(
+                                event.doctype === "Attendance Request" &&
+                                event.status === "Approved"
+                              )
+                          )
+                          .map((event) => event.doctype)
                       )
                     ).map((doctype, index) => (
                       <div
