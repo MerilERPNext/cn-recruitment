@@ -334,6 +334,17 @@ export const useAddEmployeeHistoryMutation = () => {
   });
 };
 
+
+export const useGetEmployeeReportingDetails = (employee: string) => {
+  return useQuery({
+    queryKey: ["getEmployeeReportingDetails", employee],
+    queryFn: () => profileService.getEmployeeReportingDetails(employee),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee
+  });
+};
+
+
 export const useFileUpload = () => {
   return useMutation({
     mutationKey: ["uploadFile"],

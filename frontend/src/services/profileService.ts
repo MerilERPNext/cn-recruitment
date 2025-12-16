@@ -129,6 +129,26 @@ export const profileService = {
       throw error;
     }
   },
+
+
+  getEmployeeReportingDetails: async (
+    employee: string
+  ): Promise<any> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.get_employee_reporting_details",
+        {
+          employee: employee,
+        }
+      );
+      return response as any;
+    } catch (error) {
+      console.error("📡 Error while clocking in:", error);
+      throw error;
+    }
+  },
+
+
   uploadFile: async (
     file: File,
     doctype?: string,
