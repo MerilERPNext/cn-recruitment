@@ -1,24 +1,24 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import TaxSheet from "./Component/TaxSheet"
-import IncomeComputationSheet from "./Component/IncomeTax"
+import { useState } from "react";
+import TaxSheet from "./Component/TaxSheet";
+import IncomeComputationSheet from "./Component/IncomeTax";
 
 export default function IncomeTaxSheet() {
-  const [activeTab, setActiveTab] = useState<"taxsheet" | "income-computation">("taxsheet")
+  const [activeTab, setActiveTab] = useState<"taxsheet" | "income-computation">(
+    "taxsheet"
+  );
 
   return (
-    <div className="min-h-screen bg-white p-4">
+    <div className="min-h-screen bg-white px-3 py-2 sm:px-6 sm:py-4">
       <div className="max-w-7xl mx-auto">
-
-       
-        <div className="mb-6 flex items-center justify-between">
-          
-          {/* LEFT TABS */}
-          <div className="flex gap-2">
+        {/* HEADER CONTROLS */}
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          {/* TABS */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab("taxsheet")}
-              className={`px-4 py-1 rounded-lg border ${
+              className={`px-3 py-1.5 text-sm rounded-md border whitespace-nowrap ${
                 activeTab === "taxsheet"
                   ? "bg-blue-600 text-white"
                   : "bg-white text-gray-700"
@@ -29,40 +29,41 @@ export default function IncomeTaxSheet() {
 
             <button
               onClick={() => setActiveTab("income-computation")}
-              className={`px-4 py-1 rounded-lg border ${
+              className={`px-3 py-1.5 text-sm rounded-md border whitespace-nowrap ${
                 activeTab === "income-computation"
                   ? "bg-blue-600 text-white"
                   : "bg-white text-gray-700"
               }`}
             >
-              Income Tax Computation sheet
+              Income Tax Computation
             </button>
 
             <button
               disabled
-              className="px-4 py-1 rounded bg-yellow-100 text-yellow-800"
+              className="px-3 py-1.5 text-sm rounded-md bg-yellow-100 text-yellow-800 whitespace-nowrap"
             >
               New Tax Regime
             </button>
           </div>
 
-          {/* RIGHT SIDE BUTTONS */}
-          <div className="flex gap-2 items-center">
-            <span className="text-sm text-muted-foreground">Currency: INR</span>
+          {/* ACTION BUTTONS */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <span className="text-xs text-gray-500">Currency: INR</span>
 
-            <button className="px-4 py-1 bg-transparent border rounded text-sm">
+            <button className="px-3 py-1.5 border rounded text-sm w-full sm:w-auto">
               Preview
             </button>
 
-            <button className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded">
+            <button className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm w-full sm:w-auto">
               Download
             </button>
           </div>
         </div>
 
+        {/* CONTENT */}
         {activeTab === "taxsheet" && <TaxSheet />}
         {activeTab === "income-computation" && <IncomeComputationSheet />}
       </div>
     </div>
-  )
+  );
 }
