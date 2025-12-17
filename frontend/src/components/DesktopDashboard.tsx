@@ -759,17 +759,9 @@ export default function DesktopDashboard() {
               </div>
 
               {/* Events Widget */}
-              <div className="bg-white rounded-lg shadow-sm max-h-[16.5rem] min-h-[16.5rem] flex flex-col">
-                {/* Header */}
-                <div className="sticky top-0 bg-white border-b px-6 py-2">
-                  <h3 className="section-title mb-0 text-left">Events</h3>
-                </div>
 
-                {/* Content Scroll Area */}
-                <div className="flex-1 overflow-y-auto px-4 py-3">
-                  <Events />
-                </div>
-              </div>
+              <Events />
+
 
 
 

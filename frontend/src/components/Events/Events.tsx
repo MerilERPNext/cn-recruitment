@@ -64,113 +64,112 @@ const Events = () => {
     const tabs = ["Birthdays", "Anniversaries"];
 
     return (
-        <div className="flex flex-col gap-3">
-            {/* Tabs */}
-            <div className="flex gap-2 w-full overflow-x-auto">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab}
-                        type="button"
-                        onClick={() => setActiveTab(tab)}
-                    >
-                        <Badge
-                            label={tab}
-                            size="sm"
-                            backgroundColor={
-                                activeTab === tab
-                                    ? tab === "Birthdays"
-                                        ? "bg-blue-100"
-                                        : "bg-emerald-100"
-                                    : "bg-gray-100"
-                            }
-                            textColor={
-                                activeTab === tab
-                                    ? tab === "Birthdays"
-                                        ? "text-blue-700"
-                                        : "text-emerald-700"
-                                    : "text-gray-700"
-                            }
-                        />
-                    </button>
-                ))}
-            </div>
-
-            {/* Events List */}
-            <div className="space-y-3">
-                {events.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">
-                        No upcoming {activeTab.toLowerCase()}.
-                    </p>
-                )}
-
-                {events.map((employee, index) => {
-                    const baseDate = isBirthdayTab
-                        ? new Date(employee.date_of_birth)
-                        : new Date(employee.date_of_joining);
-
-                    const displayDate = new Date(
-                        now.getFullYear(),
-                        baseDate.getMonth(),
-                        baseDate.getDate()
-                    );
-
-                    const years = isBirthdayTab
-                        ? now.getFullYear() - baseDate.getFullYear()
-                        : now.getFullYear() -
-                        new Date(employee.date_of_joining).getFullYear();
-
-                    return (
-                        <div
-                            key={`${employee.employee_name}-${index}`}
-                            className="flex items-start justify-between gap-3 bg-white border border-gray-200 rounded-lg p-3"
+        <div className="bg-white rounded-lg shadow-sm max-h-[16.5rem] min-h-[16.5rem] flex flex-col">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b px-6 py-2 flex justify-between w-full">
+                <h3 className="section-title mb-0 text-left">Events</h3>
+                {/* Tabs */}
+                <div className="flex gap-2 overflow-x-auto">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab}
+                            type="button"
+                            onClick={() => setActiveTab(tab)}
                         >
-                            <div className="flex gap-2">
-                                {/* Avatar */}
-                                {employee.image ? (
-                                    <img
-                                        src={employee.image}
-                                        alt={employee.employee_name}
-                                        className="w-10 h-10 rounded-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-lg uppercase">
-                                        {employee.employee_name.charAt(0)}
-                                    </div>
-                                )}
-
-                                {/* Text */}
-                                <div className="flex flex-col leading-tight">
-                                    <span className="font-medium text-gray-900">
-                                        {employee.employee_name}
-                                    </span>
-
-                                    <span className="text-xs text-gray-500">
-                                        {isBirthdayTab
-                                            ? `Turns ${years} years old`
-                                            : `Completes ${years} year${years > 1 ? "s" : ""
-                                            }`}
-                                    </span>
-                                </div>
-                            </div>
-
                             <Badge
+                                label={tab}
                                 size="sm"
-                                label={`${isBirthdayTab ? "Birthday" : "Anniversary"
-                                    }: ${format(displayDate, "dd MMM")}`}
                                 backgroundColor={
-                                    isBirthdayTab
-                                        ? "bg-blue-100"
-                                        : "bg-emerald-100"
+                                    activeTab === tab
+                                        ? tab === "Birthdays"
+                                            ? "bg-blue-100"
+                                            : "bg-emerald-100"
+                                        : "bg-gray-100"
                                 }
                                 textColor={
-                                    isBirthdayTab
-                                        ? "text-blue-700"
-                                        : "text-emerald-700"
+                                    activeTab === tab
+                                        ? tab === "Birthdays"
+                                            ? "text-blue-700"
+                                            : "text-emerald-700"
+                                        : "text-gray-700"
                                 }
                             />
-                        </div>
-                    );
-                })}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Content Scroll Area */}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+
+                <div className="flex flex-col gap-3">
+
+
+                    {/* Events List */}
+                    <div className="space-y-3">
+                        {events.length === 0 && (
+                            <p className="text-gray-500 text-center py-4">
+                                No upcoming {activeTab.toLowerCase()}.
+                            </p>
+                        )}
+
+                        {events.map((employee, index) => {
+                            const baseDate = isBirthdayTab
+                                ? new Date(employee.date_of_birth)
+                                : new Date(employee.date_of_joining);
+
+                            const displayDate = new Date(
+                                now.getFullYear(),
+                                baseDate.getMonth(),
+                                baseDate.getDate()
+                            );
+
+                            return (
+                                <div
+                                    key={`${employee.employee_name}-${index}`}
+                                    className="flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-lg p-2"
+                                >
+                                    <div className="flex gap-2 items-center">
+                                        {/* Avatar */}
+                                        {employee.image ? (
+                                            <img
+                                                src={employee.image}
+                                                alt={employee.employee_name}
+                                                className="w-10 h-10 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-lg uppercase">
+                                                {employee.employee_name.charAt(0)}
+                                            </div>
+                                        )}
+
+                                        {/* Text */}
+                                        <div className="flex leading-tight">
+                                            <p className="text-sm text-gray-600 font-medium">
+                                                {employee.employee_name}</p>
+                                        </div>
+                                    </div>
+
+                                    <Badge
+                                        size="sm"
+                                        label={`${isBirthdayTab ? "Birthday" : "Anniversary"
+                                            }: ${format(displayDate, "dd MMM")}`}
+                                        backgroundColor={
+                                            isBirthdayTab
+                                                ? "bg-blue-100"
+                                                : "bg-emerald-100"
+                                        }
+                                        textColor={
+                                            isBirthdayTab
+                                                ? "text-blue-700"
+                                                : "text-emerald-700"
+                                        }
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
         </div>
     );
