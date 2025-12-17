@@ -307,9 +307,15 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
                 enableTime: false,
-                defaultValue: defaults?.fromDate
-                  ? `${defaults.fromDate}T00:00:00`
-                  : "",
+                // defaultValue: defaults?.fromDate
+                //   ? `${defaults.fromDate}T00:00:00`
+                //   : "",
+                defaultValue:
+                  defaults?.source === "balances"
+                    ? `${today}T00:00:00`
+                    : defaults?.fromDate
+                    ? `${defaults.fromDate}T00:00:00`
+                    : "",
                 validate: { required: requiredFieldMap["from_date"] },
                 input: true,
                 customClass: "mb-4",

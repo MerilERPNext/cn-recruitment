@@ -508,9 +508,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
       // Disable to_date if required by API
       if (toDateComp && toDateComp.component) {
-        toDateComp.component.disabled =
-          !!// eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (attendanceRequestAttachmentsMandatory as any)?.to_date_read_only;
+        toDateComp.component.disabled = !!(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (attendanceRequestAttachmentsMandatory as any)?.to_date_read_only
+        );
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -955,7 +956,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               fullWidth
               size="lg"
               variant="contain"
-              bgColor={isDesktop ? "blue-600" : "black"}
+              bgColor="blue-600"
               textColor="white"
               className={`flex-1 ${
                 isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"

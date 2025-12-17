@@ -114,7 +114,9 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [["status", "!=", "Expired"]]);
+  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [
+    ["status", "!=", "Expired"],
+  ]);
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -130,29 +132,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
           parseISO(b.time.replace(" ", "T"))
         )
       )[0]
+    : undefined;
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T"))
+          )
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -352,8 +354,12 @@ export default function DesktopDashboard() {
         className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
-          <div>
+        <div
+          className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600
+  border-b border-gray-200 px-8 py-2
+  flex items-center sticky top-0 z-10 gap-4"
+        >
+          <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
                 <h1 className="text-xl font-bold text-white">
@@ -366,15 +372,16 @@ export default function DesktopDashboard() {
               </>
             ) : (
               <>
-                <div className="w-52 h-6 my-2 rounded-lg bg-gray-300 animate-pulse"></div>
+                <div className="w-52 h-5 my-2 rounded-lg bg-gray-300 animate-pulse"></div>
                 <div className="w-32 h-4 my-1 rounded-lg bg-gray-300 animate-pulse"></div>
               </>
             )}
           </div>
-          <SearchMembers />
+          <div className="flex-1 min-w-0 flex justify-center">
+            <SearchMembers />
+          </div>
 
-
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-shrink-0">
             <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-blue-500 rounded-lg transition-colors"
@@ -404,8 +411,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -434,8 +442,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               )}
@@ -512,7 +521,7 @@ export default function DesktopDashboard() {
 
                     <button
                       onClick={() => {
-                        clearTargetEmployee()
+                        clearTargetEmployee();
                         navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
@@ -583,17 +592,22 @@ export default function DesktopDashboard() {
             )}
 
             {/* Hero Banner */}
-            <div className="my-4 w-full max-w-full overflow-hidden rounded-2xl bg-white">
-              {!noticeIsLoading && notices && notices?.length > 0 &&
-                <Carousel className="w-full h-full max-h-[150px]" showNavigation={false}>
+            <div className=" w-full max-w-full overflow-hidden rounded-2xl bg-white">
+              {!noticeIsLoading && notices && notices?.length > 0 && (
+                <Carousel
+                  className="w-full h-full max-h-[150px]"
+                  showNavigation={false}
+                >
                   {notices?.map((item) => (
                     <CarouselSlide key={item.name}>
                       <NoticeSlide data={item} />
                     </CarouselSlide>
                   ))}
-                </Carousel>}
+                </Carousel>
+              )}
             </div>
           </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
             <div className="lg:col-span-7 flex flex-col gap-4">
               {/* Tasks Awaiting */}
@@ -608,7 +622,7 @@ export default function DesktopDashboard() {
 
             <div className="lg:col-span-3 flex flex-col gap-4">
               {/* Total Hours Worked + Daily Timings */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
+              <div className="bg-white rounded-lg p-6 shadow-md border border-[rgba(0,0,0,0.05)]">
                 <div className="text-center">
                   <p className="section-title mb-2 text-left">
                     Total hours worked
@@ -714,7 +728,13 @@ export default function DesktopDashboard() {
                 </div>
 
                 {/* Clock In / Out */}
-                <div className={`flex ${homeSummary && !homeSummary?.length ? "flex-col-reverse gap-2" : "flex-row gap-4"}  mt-4`}>
+                <div
+                  className={`flex ${
+                    homeSummary && !homeSummary?.length
+                      ? "flex-col-reverse gap-2"
+                      : "flex-row gap-4"
+                  }  mt-4`}
+                >
                   <div className="flex w-full">
                     {canShowClockIn?.can_show && (
                       <button
@@ -733,40 +753,39 @@ export default function DesktopDashboard() {
                         {clockInCheckOutPending || isRefetching
                           ? "Processing…"
                           : isCurrentlyCheckedIn
-                            ? "Clock Out"
-                            : "Clock In"}
+                          ? "Clock Out"
+                          : "Clock In"}
                       </button>
                     )}
                   </div>
 
                   {/* Status */}
-                  {
-                    homeSummary && homeSummary?.length > 0 ?
-                      <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
-                        <div
-                          className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
-                            }`}
-                        ></div>
+                  {homeSummary && homeSummary?.length > 0 ? (
+                    <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
+                      <div
+                        className={`w-2 h-2 shrink-0 rounded-full ${
+                          isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                        }`}
+                      ></div>
 
-                        <span
-                          className={
-                            isCurrentlyCheckedIn ? "text-green-600" : "text-red-600"
-                          }
-                        >
-                          Currently{" "}
-                          {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
-                        </span>
-                      </div>
-                      : <div className="flex items-center justify-center w-full gap-2 p-2 text-sm bg-blue-100 rounded">
-                        <span
-                          className={
-                            "text-blue-600"
-                          }
-                        >
-                          Let's Get The Ball Rolling
-                        </span>
-
-                      </div>}
+                      <span
+                        className={
+                          isCurrentlyCheckedIn
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }
+                      >
+                        Currently{" "}
+                        {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center w-full gap-2 p-2 text-sm bg-blue-100 rounded">
+                      <span className={"text-blue-600"}>
+                        Let's Get The Ball Rolling
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -774,26 +793,19 @@ export default function DesktopDashboard() {
 
               <Events />
 
-
-
-
               {/* Requests */}
-              <div className="bg-white rounded-lg shadow-sm relative">
+              <div className="bg-white rounded-lg shadow-md relative border border-[rgba(0,0,0,0.05)]">
                 <div className="sticky top-0 border-b px-6 py-2 z-10 flex justify-between items-center mb-3 px-6">
                   <h3 className="section-title mb-0 text-left">Requests</h3>
                   <button
                     onClick={() => {
-                      navigate(
-                        "/webapp/requests"
-                      );
+                      navigate("/webapp/requests");
                     }}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     View All
                   </button>
                 </div>
-
-
 
                 <div className="grid grid-cols-2 gap-4 px-6">
                   {/* Apply Leave */}
