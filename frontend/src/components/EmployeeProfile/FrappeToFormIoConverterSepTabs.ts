@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Enhanced mapping for better FormIO compatibility
 const formioFieldTypeMap: Record<string, string> = {
   // Text fields
   Data: "textfield",
@@ -119,7 +120,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
     }
 
     case "Dynamic Link":
-      
+
       schema.data = { values: [] };
       schema.searchEnabled = true;
       break;
@@ -246,15 +247,15 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         const url = file.url || file.data?.file_url || null;
         schema.defaultValue = url
           ? [
-              {
-                storage: "url",
-                url,
-                name: url.split("/").pop(),
-                originalName: url.split("/").pop(),
-                size: file.size || 0,
-                type: file.type || "file",
-              },
-            ]
+            {
+              storage: "url",
+              url,
+              name: url.split("/").pop(),
+              originalName: url.split("/").pop(),
+              size: file.size || 0,
+              type: file.type || "file",
+            },
+          ]
           : "";
       } else if (typeof fieldValue === "string" && fieldValue.trim() !== "") {
         // Handle backend string (after reload)
@@ -353,35 +354,20 @@ export function convertToFormioWithTabMetadata(
   const tabs: TabWithSchema[] = [];
   let currentTab: any = null;
   let currentSection: any = null;
-  let currentColumns: any = null;
-  let currentColumnIndex = 0;
+  // Columns support removed to force full width
+  // let currentColumns: any = null;
+  // let currentColumnIndex = 0;
 
   // Helper function to close current structures
   const closeCurrentStructures = () => {
-    // If there are buffered fields and no columns were created,
-    // add them directly to the section
-    if (fieldsBuffer.length > 0 && currentSection && !currentColumns) {
+    // If there are buffered fields, add them directly to the section
+    if (fieldsBuffer.length > 0 && currentSection) {
       currentSection.components.push(...fieldsBuffer);
       fieldsBuffer = [];
     }
 
-    if (currentColumns && currentSection) {
-      // Calculate equal width for all columns based on total count
-      const totalColumns = currentColumns.columns.length;
-      const columnWidth = Math.floor(12 / totalColumns);
+    // Logic for columns removed
 
-      // Update all column widths to be equal
-      currentColumns.columns.forEach((col: any, index: number) => {
-        col.width = columnWidth;
-        // If there's a remainder, distribute it to the last column
-        if (index === totalColumns - 1) {
-          col.width = 12 - columnWidth * (totalColumns - 1);
-        }
-      });
-
-      currentSection.components.push(currentColumns);
-      currentColumns = null;
-    }
     if (currentSection && currentTab) {
       currentTab.components.push(currentSection);
       currentSection = null;
@@ -414,7 +400,7 @@ export function convertToFormioWithTabMetadata(
     if (field.fieldtype === "Button" || field.hidden === 1) continue;
 
     if (field.fieldtype === "Tab Break") {
-      if (fieldsBuffer.length > 0 && currentSection && !currentColumns) {
+      if (fieldsBuffer.length > 0 && currentSection) {
         currentSection.components.push(...fieldsBuffer);
         fieldsBuffer = [];
       }
@@ -431,15 +417,13 @@ export function convertToFormioWithTabMetadata(
       };
       fieldsBuffer = [];
     } else if (field.fieldtype === "Section Break") {
-      if (fieldsBuffer.length > 0 && currentSection && !currentColumns) {
+      if (fieldsBuffer.length > 0 && currentSection) {
         currentSection.components.push(...fieldsBuffer);
         fieldsBuffer = [];
       }
 
-      if (currentColumns && currentSection) {
-        currentSection.components.push(currentColumns);
-        currentColumns = null;
-      }
+      // Column logic removed, just push current section
+
       if (currentSection && currentTab) {
         currentTab.components.push(currentSection);
       }
@@ -509,56 +493,16 @@ export function convertToFormioWithTabMetadata(
         }
       }
 
-      currentColumns = null;
+      // currentColumns = null;
       fieldsBuffer = [];
     } else if (field.fieldtype === "Column Break") {
+      // Column Break ignored to enforce full width
       ensureCurrentTab();
 
-      if (!currentSection) {
-        currentSection = {
-          type: "panel",
-          title: "",
-          key: `auto_section_${Date.now()}_${Math.random()
-            .toString(36)
-            .slice(2, 11)}`,
-          components: [],
-          input: false,
-          tableView: false,
-        };
-      }
+      // If we are in a section, just ensure we flush the buffer?
+      // Actually, standard behavior is full width so we do nothing special here
+      // just treat it as a continuation
 
-      if (!currentColumns) {
-        currentColumns = {
-          type: "columns",
-          key: `columns_${Date.now()}_${Math.random()
-            .toString(36)
-            .slice(2, 11)}`,
-          columns: [],
-          input: false,
-          tableView: false,
-        };
-
-        const firstColumn = {
-          components: [...fieldsBuffer],
-          width: 6,
-          offset: 0,
-          push: 0,
-          pull: 0,
-          size: "md",
-        };
-        currentColumns.columns.push(firstColumn);
-        fieldsBuffer = [];
-      }
-
-      currentColumns.columns.push({
-        components: [],
-        width: 6,
-        offset: 0,
-        push: 0,
-        pull: 0,
-        size: "md",
-      });
-      currentColumnIndex = currentColumns.columns.length - 1;
     } else {
       const fieldValue = employeeData[field?.fieldname] || "";
       const mapped = mapFieldToFormio(field, fieldValue);
@@ -566,12 +510,21 @@ export function convertToFormioWithTabMetadata(
 
       ensureCurrentTab();
 
-      if (currentColumns && currentColumns.columns.length > 0) {
-        currentColumns.columns[currentColumnIndex].components.push(mapped);
-      } else if (currentSection) {
-        fieldsBuffer.push(mapped);
+      if (currentSection) {
+        currentSection.components.push(mapped); // Push directly to section
       } else {
-        currentTab.components.push(mapped);
+        // If no section active (rare if following standard Frappe layout but possible),
+        // we could push to tab directly or a default section.
+        // Original logic pushed to fieldsBuffer if currentSection existed (bug in previous thought? lines 571-572: if currentSection -> buffer. Wait, line 571 says `else if (currentSection) { fieldsBuffer.push }`)
+
+        // Buffering was likely for columns or some optimization.
+        // Let's simplified: Always push to current container.
+
+        if (currentSection) {
+          currentSection.components.push(mapped);
+        } else {
+          currentTab.components.push(mapped);
+        }
       }
     }
   }
@@ -654,7 +607,7 @@ export function convertToFormioWithLayout(
 
   // Helper function to close current structures
   const closeCurrentStructures = () => {
-    
+
     if (fieldsBuffer.length > 0 && currentSection && !currentColumns) {
       currentSection.components.push(...fieldsBuffer);
       fieldsBuffer = [];
@@ -914,6 +867,7 @@ export function convertToFormioWithLayout(
     });
   }
 
+  // Final schema
   const schema = {
     type: "form",
     display: "form",
@@ -921,16 +875,145 @@ export function convertToFormioWithLayout(
       filteredTabs.length === 1
         ? filteredTabs[0].components
         : [
-            {
-              label: "Tabs",
-              key: "tabs",
-              type: "tabs",
-              input: false,
-              tableView: false,
-              components: filteredTabs,
-            },
-          ],
+          {
+            label: "Tabs",
+            key: "tabs",
+            type: "tabs",
+            input: false,
+            tableView: false,
+            components: filteredTabs,
+          },
+        ],
   };
 
   return schema;
+}
+
+// --------------------------------------------------------
+// NEW SIMPLE CONVERTER STARTS HERE
+// --------------------------------------------------------
+
+export interface SimpleField {
+  label: string;
+  key: string;
+  value: any;
+  type: string;
+  hidden: boolean;
+  required: boolean;
+  readOnly: boolean;
+  options?: string[]; // New for Select fields
+}
+
+export interface SimpleTab {
+  label: string;
+  key: string;
+  fields: SimpleField[];
+  hidden: boolean;
+}
+
+export interface SimpleTabbedData {
+  tabs: SimpleTab[];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function convertFieldsToSimpleTabbedData(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  apiFields: any[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  employeeData: any
+): SimpleTabbedData {
+  if (!apiFields || !Array.isArray(apiFields)) {
+    console.warn(
+      "Invalid apiFields provided to convertFieldsToSimpleTabbedData:",
+      apiFields
+    );
+    return { tabs: [] };
+  }
+
+  const tabs: SimpleTab[] = [];
+  let currentTab: SimpleTab | null = null;
+
+  let lastFieldType = "";
+
+  const ensureCurrentTab = () => {
+    if (!currentTab) {
+      currentTab = {
+        label: "General",
+        key: "general",
+        fields: [],
+        hidden: false,
+      };
+      tabs.push(currentTab);
+    }
+  };
+
+  for (const field of apiFields) {
+    if (!field || !field.fieldtype || field?.label === "Connections") continue;
+
+    if (field.hidden === true || field.hidden === 1) continue;
+
+    if (lastFieldType.endsWith(" Break") && field.fieldtype === lastFieldType) {
+      continue;
+    }
+
+    if ((field.fieldtype.endsWith(" Break"))) {
+      if (field.fieldtype === lastFieldType) {
+        continue;
+      }
+      lastFieldType = field.fieldtype;
+    } else {
+      lastFieldType = field.fieldtype;
+    }
+
+    if (field.fieldtype === "Button") continue;
+
+    if (field.fieldtype === "Tab Break") {
+      currentTab = {
+        label: field.label || `Tab ${tabs.length + 1}`,
+        key: field.fieldname || `tab_${tabs.length + 1}`,
+        fields: [],
+        hidden: !!field.hidden,
+      };
+      tabs.push(currentTab);
+    } else if (field.fieldtype === "Section Break") {
+      ensureCurrentTab();
+    } else if (field.fieldtype === "Column Break") {
+      ensureCurrentTab();
+    } else {
+      // It's a field
+      ensureCurrentTab();
+
+      const fieldValue = employeeData[field.fieldname];
+
+      // Determine simpler type
+      let simpleType = "text";
+      if (['Int', 'Float', 'Currency', 'Percent'].includes(field.fieldtype)) simpleType = "number";
+      else if (['Date', 'Datetime', 'Time'].includes(field.fieldtype)) simpleType = "date";
+      else if (['Select', 'Link', 'Dynamic Link'].includes(field.fieldtype)) simpleType = "select";
+      else if (['Check'].includes(field.fieldtype)) simpleType = "boolean";
+      else if (['Attach', 'Attach Image'].includes(field.fieldtype)) simpleType = "file";
+      else if (['Table'].includes(field.fieldtype)) simpleType = "table";
+
+      const simpleField: SimpleField = {
+        label: field.label || field.fieldname,
+        key: field.fieldname,
+        value: fieldValue,
+        type: simpleType, // simplified type
+        hidden: !!field.hidden,
+        required: !!field.reqd,
+        readOnly: !!field.read_only
+      };
+
+      if (field.options && typeof field.options === 'string') {
+        simpleField.options = field.options.split('\n');
+      }
+
+      currentTab!.fields.push(simpleField);
+    }
+  }
+
+  // Filter empty tabs if necessary
+  const nonEmptyTabs = tabs.filter(t => t.fields.length > 0);
+
+  return { tabs: nonEmptyTabs };
 }

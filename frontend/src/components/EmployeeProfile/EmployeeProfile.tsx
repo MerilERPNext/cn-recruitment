@@ -14,7 +14,6 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { NotebookPen, Pencil } from "lucide-react";
-import EmployeeProfileForm from "./EmployeeProfileForm";
 import { Tab } from "../NavigationTab";
 import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
@@ -29,6 +28,7 @@ import DocumentLibrary from "../Library/Library";
 import Tooltip from "../shared/Tooltip";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useQueryClient } from "@tanstack/react-query";
+import EmployeeProfileSections from "./EmployeeProfileSections";
 // import ReportingDetails from "./ReportingDetails";
 
 export interface PersonalInfoProps {
@@ -112,7 +112,8 @@ const EmployeeProfile: React.FC = () => {
 
   const tabs: Tab[] = useMemo(
     () => [
-      { key: "personal-info", label: "Personal Info" },
+      // { key: "personal-info", label: "Personal Info" },
+      { key: "personal-information", label: "Personal Information" },
       { key: "ORG-chart", label: "Organization Chart" },
       { key: "employment-history", label: "Employment History" },
       // { key: "reporting-details", label: "Reporting Details" },
@@ -131,7 +132,8 @@ const EmployeeProfile: React.FC = () => {
 
   const tabContent: Record<string, React.ReactNode> = useMemo(
     () => ({
-      "personal-info": <EmployeeProfileForm />,
+      // "personal-info": <EmployeeProfileForm />,
+      "personal-information": <EmployeeProfileSections />,
       "ORG-chart": <TwoLevelOrgChart />,
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
       "employee-holidays": <ShowHolidays />,
@@ -335,7 +337,7 @@ const EmployeeProfile: React.FC = () => {
           </div>
         </div>
         {/* All Sections Rendered */}
-        <div className="bg-gray-100">
+        <div className="bg-white-100">
           {tabs.map((tab) => (
             <div
               key={tab.key}
@@ -343,7 +345,7 @@ const EmployeeProfile: React.FC = () => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="min-h-[400px] p-4"
+              className="p-4"
             >
               {tabContent[tab.key]}
             </div>
@@ -458,7 +460,7 @@ const EmployeeProfile: React.FC = () => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="bg-white mb-4 min-h-[100px] p-6 w-full max-w-full"
+              className="bg-white mb-4  w-full max-w-full"
             >
               {tabContent[tab.key]}
             </div>

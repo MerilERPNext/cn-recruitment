@@ -231,11 +231,10 @@ const EmployeeProfileForm: React.FC = () => {
               <button
                 key={tab.key}
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-2 py-1 rounded-[32px] text-sm font-medium transition-all duration-200 ${
-                  activeTab === tab.key
+                className={`whitespace-nowrap px-2 py-1 rounded-[32px] text-sm font-medium transition-all duration-200 ${activeTab === tab.key
                     ? "bg-blue-100 text-blue-600"
                     : "border-transparent text-gray-600 hover:text-blue-600"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>

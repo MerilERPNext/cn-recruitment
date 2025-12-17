@@ -159,7 +159,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   };
 
   // Calculate dynamic margin based on sidebar width
-  const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
+  const contentMarginLeft = isSidebarExpanded ? "left-64" : "left-20";
+  const contentWidthLeft = isSidebarExpanded ? "16rem" : "5rem";
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -171,7 +172,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
       {/* Main Content */}
       <div
-        className={`flex-1 ${contentMarginLeft} flex flex-col h-screen transition-all duration-300 ease-in-out`}
+        className={`flex-1 ${contentMarginLeft}  flex flex-col h-screen transition-all duration-300 ease-in-out relative`}
+        style={{ maxWidth: `calc(100% - ${contentWidthLeft})` }}
       >
         {/* Header */}
         <div
