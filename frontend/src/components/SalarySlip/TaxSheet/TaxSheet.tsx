@@ -49,9 +49,8 @@ export default function IncomeTaxSheet() {
 
           {/* RIGHT SIDE BUTTONS */}
           <div className="flex gap-2 items-center">
-            <span className="text-sm text-muted-foreground">Currency: INR</span>
 
-            <button className="px-4 py-1 bg-transparent border rounded text-sm">
+            <button className="px-4 py-1 bg-transparent hover:bg-blue-100 cursor-pointer border rounded text-sm">
               Preview
             </button>
 
