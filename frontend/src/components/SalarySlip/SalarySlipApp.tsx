@@ -26,7 +26,7 @@ const tabRoutes: Record<TabName, string> = {
   "Annual CTC": "/webapp/salary-slip-app/ctc-salary-breakdown",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
   "Tax Declaration": "/webapp/salary-slip-app/income-tax-sheet",
-  "IT Declaration": "/webapp/salary-slip-app/it-declalaration-form",
+  "IT Declaration": "/webapp/salary-slip-app/it-declaration-form",
   "My Loan Requests": "/webapp/salary-slip-app/my-loan-requests",
   "Team Loan Requests": "/webapp/salary-slip-app/team-loan-requests",
   "My Advances": "/webapp/salary-slip-app/advances-list",

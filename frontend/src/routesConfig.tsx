@@ -513,7 +513,7 @@ export const routesConfig: AppRoute[] = [
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "income-tax-sheet", element: <IncomeTaxSheet /> },
-      { path: "it-declalaration-form", element: <ITDeclarationForm /> },
+      { path: "it-declaration-form", element: <ITDeclarationForm /> },
       { path: "my-loan-requests", element: <LoansPage /> },
       { path: "team-loan-requests", element: <TeamLoanRequest /> },
       { path: "hr-payroll", element: <HRPayroll /> },

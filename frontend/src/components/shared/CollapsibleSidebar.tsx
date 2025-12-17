@@ -239,7 +239,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         {
           name: "IT Declaration",
           icon: BadgeIndianRupee,
-          href: "/webapp/salary-slip-app/it-declalaration-form",
+          href: "/webapp/salary-slip-app/it-declaration-form",
         },
         {
           name: "My Loan Requests",
