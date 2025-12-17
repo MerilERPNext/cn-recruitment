@@ -13,6 +13,63 @@ frappe.ready(function () {
 
         $(".navbar, .web-footer").remove();
 
+        // Add debug function to window for manual field inspection
+        window.debugWebForm = function() {
+            console.log("=".repeat(80));
+            console.log("DEBUG: All fields in DOM:");
+            let allFields = [];
+            $('[data-fieldname]').each(function() {
+                const fname = $(this).attr('data-fieldname');
+                const visible = $(this).is(':visible');
+                const height = $(this).height();
+                allFields.push({ name: fname, visible: visible, height: height });
+            });
+            console.table(allFields);
+
+            console.log("\nVISIBLE fields only:");
+            let visibleFields = allFields.filter(f => f.visible && f.height > 0);
+            console.log(visibleFields.map(f => f.name));
+
+            console.log("\nFramework info:");
+            console.log("frappe.web_form exists:", !!frappe.web_form);
+            if (frappe.web_form) {
+                console.log("frappe.web_form.page_number:", frappe.web_form.page_number);
+                console.log("frappe.web_form keys:", Object.keys(frappe.web_form));
+            }
+            console.log("=".repeat(80));
+        };
+        console.log("💡 Debug function added! Run 'debugWebForm()' in console to see all fields.");
+
+        // Inject CSS into <head> IMMEDIATELY (for button control and review page)
+        if (!$('#webform-custom-styles').length) {
+            $('head').append(`
+                <style id="webform-custom-styles">
+                    /* Force hide Next button on Page 4 */
+                    body.on-page-4 .web-form-actions .btn-next,
+                    body.on-page-4 .web-form-actions button.btn-primary {
+                        display: none !important;
+                        visibility: hidden !important;
+                        opacity: 0 !important;
+                        pointer-events: none !important;
+                    }
+                    /* Review page styles */
+                    .review-row {
+                        padding: 10px 0;
+                        border-bottom: 1px solid #e0e0e0;
+                        font-size: 15px;
+                    }
+                    .review-row:last-child {
+                        border-bottom: none;
+                    }
+                    .review-row strong {
+                        color: #555;
+                        margin-right: 10px;
+                    }
+                </style>
+            `);
+            console.log("✅ Custom CSS injected into <head>");
+        }
+
         /* ======================================================
            FETCH INITIATE ONBOARDING (SAFE + DELAYED)
         ====================================================== */
@@ -43,7 +100,7 @@ frappe.ready(function () {
                         safeSet("custom_initiate_onboarding_id", d.name);
                         safeSet("department", d.department);
                         safeSet("designation", d.designation);
-                        safeSet("employee_grade", d.employee_grade);
+                        // safeSet("employee_grade", d.employee_grade);
                         safeSet("company", d.company);
                     console.log("✅ All Initiate fields set");
                     }, 2000);
@@ -52,8 +109,22 @@ frappe.ready(function () {
         }
 
         function safeSet(field, value) {
+            // ENHANCED LOGGING FOR MOBILE/WHATSAPP
+            const isMobileOrWhatsapp = field === 'custom_primary_mobile_number' || field === 'custom_whatsapp_number';
+            if (isMobileOrWhatsapp) {
+                console.log("=" + "=".repeat(80));
+                console.log(`🔍 ENHANCED DEBUG for ${field}`);
+                console.log(`  Value received:`, value);
+                console.log(`  Value type:`, typeof value);
+                console.log(`  Value length:`, value ? value.toString().length : 0);
+                console.log("=" + "=".repeat(80));
+            }
+
             if (!value) {
                 console.warn(`⚠️ Empty value for: ${field}`);
+                if (isMobileOrWhatsapp) {
+                    console.error(`❌ ${field} has empty/null value! This is the problem!`);
+                }
                 return;
             }
 
@@ -63,10 +134,16 @@ frappe.ready(function () {
                 const field_obj = frappe.web_form.fields_dict[field];
                 if (!field_obj) {
                     console.warn(`  → Field object NOT found in fields_dict for ${field}`);
+                    if (isMobileOrWhatsapp) {
+                        console.error(`❌ ${field} field object NOT FOUND! Available fields:`, Object.keys(frappe.web_form.fields_dict).filter(f => f.includes('mobile') || f.includes('whatsapp')));
+                    }
                     return;
                 }
 
                 console.log(`  → Field object found for ${field}, type: ${field_obj.df?.fieldtype}`);
+                if (isMobileOrWhatsapp) {
+                    console.log(`  → Field details:`, field_obj.df);
+                }
 
                 // Check if field is read-only
                 const isReadOnly = field_obj.df?.read_only === 1;
@@ -183,8 +260,26 @@ frappe.ready(function () {
                 }
 
                 console.log(`✅ Set ${field} complete`);
+
+                // VERIFY VALUE WAS SET (for mobile/whatsapp)
+                if (isMobileOrWhatsapp) {
+                    setTimeout(() => {
+                        const currentValue = frappe.web_form.get_value(field);
+                        console.log(`🔍 VERIFICATION for ${field}:`);
+                        console.log(`  → Value in model:`, currentValue);
+                        console.log(`  → Value in DOM:`, $(`[data-fieldname="${field}"] input`).val());
+                        if (!currentValue || currentValue !== value) {
+                            console.error(`❌ ${field} was NOT set correctly! Expected: ${value}, Got: ${currentValue}`);
+                        } else {
+                            console.log(`✅ ${field} verified successfully!`);
+                        }
+                    }, 200);
+                }
             } catch (err) {
                 console.error(`❌ Error setting ${field}:`, err);
+                if (isMobileOrWhatsapp) {
+                    console.error(`❌ CRITICAL ERROR setting ${field}:`, err.stack);
+                }
             }
         }
 
@@ -231,10 +326,10 @@ frappe.ready(function () {
         
                 urlDiv.innerHTML = `
                     <strong>Reference:</strong>
-                    <a href="https://example.com/aadhaar-info"
-                       target="_blank"
-                       style="color:#007bff; text-decoration:none;">
-                        Click here for Aadhaar information
+                    <a href="https://eportal.incometax.gov.in/iec/foservices/#/pre-login/link-aadhaar-status"
+                    target="_blank"
+                    style="color:#007bff; text-decoration:none;">
+                        Click here for  Aadhaar & PAN Verification
                     </a>
                 `;
         
@@ -275,73 +370,241 @@ frappe.ready(function () {
         let is_saving = false;
 
         // Show Save button on PAGE 4 (Education/Marksheets page)
-        let saveButtonCreated = false;
-
-        setInterval(() => {
-            // Check if we're on review or success page
+        const pageWatcher = setInterval(() => {
             const isReviewPage = $('.review-page-container').length > 0;
             const formIsVisible = $('form[data-web-form], form.web-form').is(':visible');
 
-            // ALWAYS hide ALL default Frappe Save/Submit buttons (be very aggressive)
+            // Hide ALL default Save/Submit buttons EVERYWHERE
             $('button[type="submit"]').not('.btn-custom-save').hide();
-            $('.btn-primary[type="submit"]').not('.btn-custom-save').hide();
-            $('.btn-primary').filter(function() {
+            $('.page-header button, .page-title button, .page-head button, .page-actions button').filter(function() {
                 return $(this).text().toLowerCase().includes('save');
-            }).not('.btn-custom-save').hide();
-            $('.web-form-footer button').not('.btn-custom-save, .btn-previous, .btn-default').hide();
-            $('button').filter(function() {
-                return $(this).text().toLowerCase().includes('save') && !$(this).hasClass('btn-custom-save');
             }).hide();
 
-            // Single detection method: Check if any field with "marksheet" or "previously_employed" is visible
+            // Page 4 detector - ONLY check custom_previously_employed field
             let isPage4 = false;
+            let foundField = '';
 
-            $('[data-fieldname]').each(function() {
-                const fieldname = $(this).attr('data-fieldname') || '';
-                if ((fieldname.includes('marksheet') || fieldname.includes('previously_employed')) &&
-                    $(this).is(':visible')) {
-                    isPage4 = true;
-                    return false; // break loop
+            // ONLY check for custom_previously_employed field (unique to Page 4)
+            const $prevEmployedField = $('[data-fieldname="custom_previously_employed"]');
+            console.log("🔎 Checking for custom_previously_employed field:");
+            console.log("  - Field exists in DOM:", $prevEmployedField.length > 0);
+            if ($prevEmployedField.length > 0) {
+                console.log("  - Field is visible:", $prevEmployedField.is(':visible'));
+                console.log("  - Field height:", $prevEmployedField.height());
+            }
+
+            if ($prevEmployedField.length > 0 && $prevEmployedField.is(':visible') && $prevEmployedField.height() > 0) {
+                isPage4 = true;
+                foundField = 'custom_previously_employed';
+                console.log("✅ Page 4 DETECTED! Field: custom_previously_employed is visible");
+            } else {
+                console.log("❌ Page 4 NOT detected - custom_previously_employed not found/visible");
+            }
+
+            // All fallback detection disabled - only using custom_previously_employed field
+
+            // Log ALL visible fields for debugging - ALWAYS LOG to help diagnose
+            let allVisible = [];
+            $('[data-fieldname]').filter(':visible').each(function() {
+                const fname = $(this).attr('data-fieldname');
+                const height = $(this).height();
+                if (height > 0) {
+                    allVisible.push(fname);
                 }
             });
 
-            // On Page 4: Show our custom Save button
+            console.log("🔍 Detection - isPage4:", isPage4, "foundField:", foundField, "isReviewPage:", isReviewPage);
+            console.log("📋 Visible field count:", allVisible.length);
+            console.log("📋 First 10 visible fields:", allVisible.slice(0, 10));
+
+            console.log("🔍 Conditions: isReviewPage=", isReviewPage, "formVisible=", formIsVisible, "isPage4=", isPage4);
+
             if (!isReviewPage && formIsVisible && isPage4) {
-                // Show default Previous and Discard buttons
+                console.log("✅ ON PAGE 4 - Creating Save button, HIDING Next button");
+
+                // Add class to body to indicate we're on Page 4
+                $('body').addClass('on-page-4');
+
+                // AGGRESSIVELY HIDE Next button on Page 4
+                $('.web-form-actions .btn-next').hide().attr('style', 'display: none !important;');
+                $('.web-form-actions button').filter(function() {
+                    return $(this).text().toLowerCase().includes('next');
+                }).hide().attr('style', 'display: none !important;');
+                $('.web-form-actions .btn-primary').filter(function() {
+                    return $(this).text().toLowerCase().includes('next');
+                }).hide().attr('style', 'display: none !important;');
+
+                // Show Previous and Discard
                 $('.web-form-actions .btn-previous').show();
                 $('.web-form-actions .btn-default').show();
 
-                // Create Save button only once
-                if (!saveButtonCreated && $('.btn-custom-save').length === 0) {
-                    console.log("🆕 Creating Save button (ONCE)");
+                // Create Save button ONLY if it doesn't exist - place it AFTER Discard button
+                if ($('.btn-custom-save').length === 0) {
+                    const saveBtn = `<button type="button" class="btn btn-primary btn-sm btn-custom-save" style="margin-left:8px; display: inline-block !important;">Save</button>`;
 
-                    // Create ONE Save button
-                    const saveBtnHtml = `<button type="button" class="btn btn-default btn-sm btn-custom-save">Save</button>`;
-                    $('.web-form-actions').first().append(saveBtnHtml);
+                    // Insert AFTER the Discard button (btn-default)
+                    const $discardBtn = $('.web-form-actions .btn-default').last();
+                    console.log("🔍 Discard button search:");
+                    console.log("  - Discard buttons found:", $('.web-form-actions .btn-default').length);
+                    console.log("  - Discard button exists:", $discardBtn.length > 0);
 
-                    // Bind click event (unbind first to prevent duplicates)
-                    $('.btn-custom-save').off('click').on('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log("💾 Save button clicked");
-                        frappe.web_form.validate();
-                    });
+                    if ($discardBtn.length) {
+                        $discardBtn.after(saveBtn);
+                        console.log("💾 Save button created after Discard button");
+                    } else {
+                        $('.web-form-actions').first().append(saveBtn);
+                        console.log("💾 Save button created (appended to actions - Discard not found)");
+                    }
 
-                    saveButtonCreated = true;
-                    console.log("✅ Save button created");
+                    // Verify Save button was added to DOM and watch for removal
+                    setTimeout(function() {
+                        const saveCount = $('.btn-custom-save').length;
+                        const saveVisible = $('.btn-custom-save').is(':visible');
+                        console.log("✔️ Verification - Save buttons in DOM:", saveCount, "Visible:", saveVisible);
+                        if (saveCount > 0 && !saveVisible) {
+                            console.error("⚠️ WARNING: Save button exists but is NOT VISIBLE!");
+                        }
+
+                        // Add MutationObserver to detect if Save button is removed
+                        if (saveCount > 0 && !window.saveButtonObserver) {
+                            const $saveBtn = $('.btn-custom-save').get(0);
+                            if ($saveBtn && $saveBtn.parentNode) {
+                                window.saveButtonObserver = new MutationObserver(function(mutations) {
+                                    mutations.forEach(function(mutation) {
+                                        mutation.removedNodes.forEach(function(node) {
+                                            if (node.classList && node.classList.contains('btn-custom-save')) {
+                                                console.error("🚨 ALERT: Save button was REMOVED from DOM!");
+                                                console.trace("Stack trace:");
+                                            }
+                                        });
+                                    });
+                                });
+                                window.saveButtonObserver.observe($saveBtn.parentNode, { childList: true });
+                                console.log("👀 Watching for Save button removal");
+                            }
+                        }
+                    }, 50);
+                } else {
+                    console.log("ℹ️ Save button already exists, not recreating");
+                    // Force visibility even if button exists
+                    $('.btn-custom-save').attr('style', 'margin-left:8px; display: inline-block !important; visibility: visible !important; opacity: 1 !important;');
+                    $('.btn-custom-save').show();
                 }
 
-                // Make sure it's visible
-                $('.btn-custom-save').show();
-            } else if (!isReviewPage && formIsVisible) {
-                // On other pages: Hide our Save button
-                $('.btn-custom-save').hide();
-            } else {
-                // On review page: Hide all buttons
-                $('.btn-custom-save').hide();
-            }
-        }, 300);
+                // FORCE Save button to stay visible AND clickable on every iteration
+                if ($('.btn-custom-save').length > 0) {
+                    $('.btn-custom-save').each(function() {
+                        $(this).attr('style', 'margin-left:8px; display: inline-block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; z-index: 9999 !important; position: relative !important; cursor: pointer !important;');
+                        $(this).show();
+                        $(this).prop('disabled', false); // Ensure not disabled
+                        $(this).removeAttr('disabled'); // Remove disabled attribute
+                    });
+                }
 
+                // Bind Save button click - Collect ALL form data and create documents
+                $('.btn-custom-save').off('click').on('click', function(e) {
+                    console.log("🎯 SAVE BUTTON CLICKED!");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("💾 Save button clicked - Collecting all form data");
+
+                    // Get required fields
+                    const email = frappe.web_form.get_value('custom_email_id');
+                    const first_name = frappe.web_form.get_value('custom_first_name');
+                    const designation = frappe.web_form.get_value('designation');
+
+                    if (!email || !first_name || !designation) {
+                        frappe.msgprint({
+                            title: 'Required Fields Missing',
+                            indicator: 'red',
+                            message: 'Please fill Email, First Name, and Designation before saving.'
+                        });
+                        return false;
+                    }
+
+                    // Collect ALL form data from all pages
+                    const form_data = frappe.web_form.get_values();
+                    form_data.job_applicant = '';
+                    form_data.job_offer = '';
+
+                    console.log("📋 Collected form data from all pages:", form_data);
+
+                    // Call backend to create Job Applicant, Job Offer, and Employee Onboarding
+                    frappe.call({
+                        method: "recruitment.recruitment.web_form.employee_onboarding.employee_onboarding.create_job_applicant_and_offer",
+                        args: {
+                            email: email,
+                            first_name: first_name,
+                            designation: designation,
+                            web_form_data: JSON.stringify(form_data)
+                        },
+                        freeze: true,
+                        freeze_message: "Creating Employee Onboarding...",
+                        callback: function(r) {
+                            console.log("✅ Backend response:", r.message);
+                            if (r.message && r.message.success && r.message.saved) {
+                                const docname = r.message.employee_onboarding;
+                                frappe.msgprint({
+                                    title: 'Success',
+                                    indicator: 'green',
+                                    message: 'Employee Onboarding created successfully!'
+                                });
+
+                                // Show review page with the created document
+                                setTimeout(() => {
+                                    showReviewPage(docname, form_data);
+                                }, 1000);
+                            } else {
+                                frappe.msgprint({
+                                    title: 'Error',
+                                    indicator: 'red',
+                                    message: r.message?.message || 'Failed to create Employee Onboarding'
+                                });
+                            }
+                        },
+                        error: function(err) {
+                            console.error("❌ Error creating documents:", err);
+                            frappe.msgprint({
+                                title: 'Error',
+                                indicator: 'red',
+                                message: 'Failed to create records. Please try again.'
+                            });
+                        }
+                    });
+
+                    return false;
+                });
+
+            } else {
+                console.log("❌ NOT on Page 4 - Showing Next button");
+
+                // Remove class from body
+                $('body').removeClass('on-page-4');
+
+                // Remove Save button
+                $('.btn-custom-save').remove();
+
+                if (!isReviewPage && formIsVisible) {
+                    // On other pages - AGGRESSIVELY show Next button
+                    console.log("🔄 Forcing Next button to show");
+
+                    // Remove ALL inline styles and show the button
+                    $('.web-form-actions .btn-next').removeAttr('style').attr('style', 'display: inline-block !important;').show();
+
+                    $('.web-form-actions button').each(function() {
+                        if ($(this).text().toLowerCase().includes('next')) {
+                            $(this).removeAttr('style').attr('style', 'display: inline-block !important;').show();
+                            console.log("👉 Next button found and shown:", $(this).text());
+                        }
+                    });
+
+                    // Also try with filter
+                    $('.web-form-actions .btn-primary').filter(function() {
+                        return $(this).text().toLowerCase().includes('next');
+                    }).removeAttr('style').attr('style', 'display: inline-block !important;').show();
+                }
+            }
+        }, 400);
         // Prevent default form submission
         $(document).on('submit', 'form[data-web-form], form.web-form', function(e) {
             console.log("🚫 Form submit blocked");
@@ -577,11 +840,13 @@ frappe.ready(function () {
         };
 
         /* ======================================================
-           ITS FETCH (GUARANTEED)
+           ITS FETCH (GUARANTEED) WITH DEBOUNCING
         ====================================================== */
 
         let itsBindAttempts = 0;
         const maxItsBindAttempts = 20; // Try for 10 seconds
+        let itsFetchTimeout = null; // For debouncing
+        let lastFetchedITS = null; // To prevent duplicate fetches
 
         function bindITS() {
             itsBindAttempts++;
@@ -640,53 +905,101 @@ frappe.ready(function () {
             console.log("  → Field type:", $input.attr('type'));
             console.log("  → Field name:", $input.attr('data-fieldname'));
 
-            // Remove any existing handlers and bind new ones
-            $input.off(".its").on("blur.its change.its input.its", function () {
+            // Remove any existing handlers and bind new ones with debouncing
+            $input.off(".its").on("blur.its", function () {
                 const its = $(this).val();
-                console.log("🔄 ITS field event triggered, current value:", its);
+                console.log("🔄 ITS field blur event, current value:", its);
+
+                // Clear any pending timeout
+                if (itsFetchTimeout) {
+                    clearTimeout(itsFetchTimeout);
+                }
 
                 if (!its || its.trim().length < 3) {
                     console.log("  ⏭️ ITS value too short (need at least 3 chars), skipping fetch");
                     return;
                 }
 
-                console.log("🚀 Fetching ITS data for:", its);
+                // Don't fetch if we already fetched this ITS ID
+                if (its === lastFetchedITS) {
+                    console.log("  ⏭️ Already fetched data for this ITS ID, skipping");
+                    return;
+                }
 
-                frappe.call({
-                    method: "recruitment.recruitment.web_form.employee_onboarding.employee_onboarding.fetch_employee_data_by_its_id",
-                    args: { its_id: its },
-                    freeze: true,
-                    freeze_message: "Fetching ITS data...",
-                    callback(r) {
-                        console.log("📦 ITS API Response:", r);
+                // Debounce: Wait 800ms before fetching
+                itsFetchTimeout = setTimeout(() => {
+                    console.log("🚀 Fetching ITS data for:", its);
+                    lastFetchedITS = its; // Remember this ITS ID
 
-                        if (!r.message?.success) {
-                            console.warn("❌ No ITS data found in response");
-                            frappe.msgprint("❌ No ITS data found");
-                            return;
+                    frappe.call({
+                        method: "recruitment.recruitment.web_form.employee_onboarding.employee_onboarding.fetch_employee_data_by_its_id",
+                        args: { its_id: its },
+                        freeze: true,
+                        freeze_message: "Fetching ITS data...",
+                        callback(r) {
+                            console.log("📦 ITS API Response:", r);
+
+                            if (!r.message?.success) {
+                                console.warn("❌ ITS fetch failed:", r.message?.error || "No data found");
+
+                                // Show the detailed error message from backend
+                                frappe.msgprint({
+                                    title: "ITS Data Fetch Failed",
+                                    indicator: "red",
+                                    message: r.message?.error || "No employee data found for this ITS ID"
+                                });
+                                return;
+                            }
+
+                            const d = r.message;
+                            console.log("=" * 80);
+                            console.log("✅ ITS Data received - FULL RESPONSE:", r);
+                            console.log("✅ ITS Data message object:", d);
+                            console.log("📱 Mobile number from response:", d.custom_primary_mobile_number);
+                            console.log("📱 WhatsApp number from response:", d.custom_whatsapp_number);
+                            console.log("=" * 80);
+
+                            // Set values with slight delay to ensure fields are ready
+                            setTimeout(() => {
+                                console.log("🔧 Starting to set ITS data fields...");
+
+                                console.log("Setting employee_name:", d.employee_name);
+                                safeSet("employee_name", d.employee_name);
+
+                                console.log("Setting custom_email_id:", d.custom_email_id);
+                                safeSet("custom_email_id", d.custom_email_id);
+
+                                console.log("Setting custom_primary_mobile_number:", d.custom_primary_mobile_number);
+                                safeSet("custom_primary_mobile_number", d.custom_primary_mobile_number);
+
+                                console.log("Setting custom_whatsapp_number:", d.custom_whatsapp_number);
+                                safeSet("custom_whatsapp_number", d.custom_whatsapp_number);
+
+                                console.log("Setting custom_farig_year:", d.custom_farig_year);
+                                safeSet("custom_farig_year", d.custom_farig_year);
+
+                                console.log("Setting custom_farig_darajah:", d.custom_farig_darajah);
+                                safeSet("custom_farig_darajah", d.custom_farig_darajah);
+
+                                console.log("✅ All ITS fields set");
+
+                                frappe.msgprint({
+                                    title: "Success",
+                                    indicator: "green",
+                                    message: "ITS data fetched and populated successfully!"
+                                });
+                            }, 100);
+                        },
+                        error(err) {
+                            console.error("❌ ITS API Error:", err);
+                            frappe.msgprint({
+                                title: "API Error",
+                                indicator: "red",
+                                message: "Failed to fetch ITS data. Please check your internet connection and try again."
+                            });
                         }
-
-                        const d = r.message;
-                        console.log("✅ ITS Data received:", d);
-
-                        // Set values with slight delay to ensure fields are ready
-                        setTimeout(() => {
-                            console.log("🔧 Starting to set ITS data fields...");
-                            safeSet("employee_name", d.employee_name);
-                            safeSet("custom_email_id", d.custom_email_id);
-                            safeSet("custom_primary_mobile_number", d.custom_primary_mobile_number);
-                            safeSet("custom_whatsapp_number", d.custom_whatsapp_number);
-                            safeSet("custom_farig_year", d.custom_farig_year);
-                            safeSet("custom_farig_darajah", d.custom_farig_darajah);
-                            console.log("✅ All ITS fields set");
-                            frappe.msgprint("✅ ITS data fetched successfully");
-                        }, 100);
-                    },
-                    error(err) {
-                        console.error("❌ ITS API Error:", err);
-                        frappe.msgprint("❌ Error fetching ITS data");
-                    }
-                });
+                    });
+                }, 800); // 800ms debounce delay
             });
 
             // Also add a test on focus to verify binding
@@ -710,7 +1023,10 @@ frappe.ready(function () {
             $('.web-form-actions').hide();
             $('.btn-primary[type="submit"]').hide();
             $('button[type="submit"]').hide();
-            $('.page_content').hide(); // Hide existing page content
+
+            // Hide only the form content inside page_content, not the container itself
+            $('.page_content > *').not('.review-page-container').hide();
+            $('.page-content > *').not('.review-page-container').hide();
 
             // Remove any existing review page
             $('.review-page-container').remove();
@@ -741,7 +1057,6 @@ frappe.ready(function () {
                             <div class="review-row"><strong>Company:</strong> ${formData.company || 'N/A'}</div>
                             <div class="review-row"><strong>Designation:</strong> ${formData.designation || 'N/A'}</div>
                             <div class="review-row"><strong>Department:</strong> ${formData.department || 'N/A'}</div>
-                            <div class="review-row"><strong>Employee Grade:</strong> ${formData.employee_grade || 'N/A'}</div>
                         </div>
 
                         ${formData.custom_bank_account_no ? `
@@ -767,9 +1082,6 @@ frappe.ready(function () {
                     </div>
 
                     <div class="review-actions" style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
-                        <button class="btn btn-secondary btn-lg btn-previous" style="min-width: 160px; padding: 12px 24px; font-size: 16px;">
-                            <i class="fa fa-arrow-left"></i> Previous
-                        </button>
                         <button class="btn btn-primary btn-lg btn-submit-final" style="min-width: 160px; padding: 12px 24px; font-size: 16px; background-color: #27ae60; border-color: #27ae60;">
                             Submit <i class="fa fa-check"></i>
                         </button>
@@ -777,29 +1089,16 @@ frappe.ready(function () {
 
                     <input type="hidden" class="review-docname" value="${docname}">
                 </div>
-
-                <style>
-                    .review-row {
-                        padding: 10px 0;
-                        border-bottom: 1px solid #e0e0e0;
-                        font-size: 15px;
-                    }
-                    .review-row:last-child {
-                        border-bottom: none;
-                    }
-                    .review-row strong {
-                        color: #555;
-                        margin-right: 10px;
-                    }
-                </style>
             `;
 
             // Insert Page 5 (Review Page) - try multiple selectors
             if ($('.page-content').length) {
                 $('.page-content').append(reviewHtml);
+                $('.page-content').show(); // Make sure container is visible
                 console.log("✅ Review page appended to .page-content");
             } else if ($('.page_content').length) {
                 $('.page_content').append(reviewHtml);
+                $('.page_content').show(); // Make sure container is visible
                 console.log("✅ Review page appended to .page_content");
             } else if ($('body').length) {
                 $('body').append(reviewHtml);
@@ -808,20 +1107,16 @@ frappe.ready(function () {
                 console.error("❌ Could not find container to append review page");
             }
 
+            // Force visibility of review page
+            $('.review-page-container').show();
+
             // Scroll to top
             window.scrollTo(0, 0);
             console.log("✅ Review page should now be visible");
+            console.log("📊 Review page container count:", $('.review-page-container').length);
+            console.log("📊 Review page is visible:", $('.review-page-container').is(':visible'));
 
-            // Handle Previous button - go back to Page 4
-            $('.btn-previous').on('click', function() {
-                console.log("⬅️ Previous clicked - returning to Page 4");
-                $('.review-page-container').remove();
-                $('form[data-web-form], form.web-form').show();
-                $('.web-form-footer').show();
-
-                // Load the saved data back into the form
-                loadSavedData(docname);
-            });
+            // Previous button removed - review page now shows only Submit button
 
             // Handle Submit button - finalize submission
             $('.btn-submit-final').on('click', function() {

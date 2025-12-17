@@ -23,7 +23,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 100,
- "modified": "2025-12-15 13:17:17.602696",
+ "modified": "2025-12-17 12:00:10.492317",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "employee-onboarding",
@@ -52,20 +52,6 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "fieldname": "employee_grade",
-   "fieldtype": "Link",
-   "hidden": 0,
-   "label": "Employee Grade",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "Employee Grade",
-   "precision": "",
-   "read_only": 1,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
    "fieldname": "custom_primary_mobile_number",
    "fieldtype": "Phone",
    "hidden": 0,
@@ -73,8 +59,8 @@
    "max_length": 0,
    "max_value": 0,
    "precision": "",
-   "read_only": 0,
-   "reqd": 1,
+   "read_only": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -87,7 +73,7 @@
    "max_length": 0,
    "max_value": 0,
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
@@ -139,7 +125,7 @@
    "max_length": 0,
    "max_value": 0,
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
@@ -299,8 +285,8 @@
    "max_length": 0,
    "max_value": 0,
    "precision": "",
-   "read_only": 0,
-   "reqd": 1,
+   "read_only": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -338,7 +324,7 @@
    "max_length": 0,
    "max_value": 0,
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
@@ -378,7 +364,7 @@
    "max_length": 0,
    "max_value": 0,
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -727,20 +713,6 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "fieldname": "custom_aadhar_pan_verificaion_link",
-   "fieldtype": "Data",
-   "hidden": 0,
-   "label": "Aadhar Pan Verificaion Link",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "URL",
-   "precision": "",
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
    "fieldname": "custom_aadhar_card_number",
    "fieldtype": "Data",
    "hidden": 0,
@@ -922,7 +894,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -935,7 +907,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -1054,7 +1026,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {

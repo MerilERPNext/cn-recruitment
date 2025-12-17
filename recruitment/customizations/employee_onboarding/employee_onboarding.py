@@ -71,7 +71,15 @@ def fetch_employee_data_by_its_id(its_id):
         response.raise_for_status()  # Raise error for bad status codes
 
         data = response.json()
-        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&######",data)
+        print("=" * 80)
+        print("PAYROLL API RESPONSE:")
+        print("  Full response:", data)
+        print("  Keys in response:", list(data.keys()) if isinstance(data, dict) else "Not a dict")
+        print("  fullname:", data.get("fullname"))
+        print("  mobile:", data.get("mobile"))
+        print("  whatsapp:", data.get("whatsapp"))
+        print("  email:", data.get("email"))
+        print("=" * 80)
 
         # Log the API response for debugging
         frappe.log_error(
@@ -81,10 +89,21 @@ def fetch_employee_data_by_its_id(its_id):
 
         # Extract employee data from response
         # Map API response fields to Employee Onboarding fields
+        # Try multiple possible field name variations
+        mobile = data.get("mobile") or data.get("mobile_number") or data.get("phone") or ""
+        print("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr",mobile)
+        whatsapp = data.get("whatsapp") or data.get("whatsapp_number") or data.get("whatsapp_no") or ""
+        print("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTt",whatsapp)
+
+        print("MAPPED VALUES:")
+        print("  mobile (mapped):", mobile)
+        print("  whatsapp (mapped):", whatsapp)
+        print("=" * 80)
+
         employee_data = {
             "employee_name": data.get("fullname") or "",
-            "custom_primary_mobile_number": data.get("mobile") or "",
-            "custom_whatsapp_number": data.get("whatsapp") or "",
+            "custom_primary_mobile_number": mobile,
+            "custom_whatsapp_number": whatsapp,
             "custom_email_id": data.get("email") or "",
             "custom_farig_year": data.get("farig_year") or "",
             "custom_farig_darajah": data.get("farig_darajah") or "",

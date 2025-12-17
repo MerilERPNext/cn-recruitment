@@ -219,7 +219,7 @@ def create_job_applicant(email, first_name):
 		if existing:
 			print(f"[create_job_applicant] Existing Job Applicant found: {existing}")
 			job_applicant = frappe.get_doc("Job Applicant", existing)
-			frappe.msgprint(_("Existing Job Applicant {0} found").format(job_applicant.name))
+			# frappe.msgprint(_("Existing Job Applicant {0} found").format(job_applicant.name))
 			return job_applicant
 
 		print("[create_job_applicant] Creating new Job Applicant...")
@@ -244,7 +244,7 @@ def create_job_applicant(email, first_name):
 		frappe.db.commit()
 
 		print(f"[create_job_applicant] SUCCESS - Created: {job_applicant.name}")
-		frappe.msgprint(_("Job Applicant {0} created successfully").format(job_applicant.name))
+		# frappe.msgprint(_("Job Applicant {0} created successfully").format(job_applicant.name))
 		return job_applicant
 
 	except Exception as e:
@@ -295,7 +295,7 @@ def create_and_submit_job_offer(email, first_name, designation, job_applicant):
 		frappe.db.commit()
 
 		print(f"[create_and_submit_job_offer] SUCCESS - Created and submitted: {job_offer.name}")
-		frappe.msgprint(_("Job Offer {0} created and submitted successfully").format(job_offer.name))
+		# frappe.msgprint(_("Job Offer {0} created and submitted successfully").format(job_offer.name))
 		return job_offer
 
 	except Exception as e:
@@ -599,12 +599,62 @@ def fetch_employee_data_by_its_id(its_id):
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=30)
         response.raise_for_status()
-        data = response.json()
+
+        # Check if response has content before parsing JSON
+        if not response.text or response.text.strip() == "":
+            frappe.log_error(
+                message=f"Empty response from Payroll API for ITS ID: {its_id}",
+                title="Payroll API Empty Response"
+            )
+            return {
+                "success": False,
+                "error": "The Payroll API returned an empty response. Please check if the ITS ID is correct or try again later."
+            }
+
+        # Try to parse JSON
+        try:
+            data = response.json()
+        except ValueError as json_err:
+            frappe.log_error(
+                message=f"Invalid JSON response from Payroll API for ITS ID: {its_id}\nResponse text: {response.text[:500]}",
+                title="Payroll API Invalid JSON"
+            )
+            return {
+                "success": False,
+                "error": "The Payroll API returned an invalid response. Please try again later."
+            }
+
+        # Enhanced logging to debug mobile/whatsapp issue
+        print("=" * 80)
+        print("PAYROLL API RESPONSE (WEB FORM):")
+        print("  Full response:", data)
+        print("  Keys in response:", list(data.keys()) if isinstance(data, dict) else "Not a dict")
+        print("  fullname:", data.get("fullname"))
+        print("  mobile:", data.get("mobile"))
+        print("  whatsapp:", data.get("whatsapp"))
+        print("  email:", data.get("email"))
+        print("=" * 80)
 
         frappe.log_error(
             message=frappe.as_json(data, indent=2),
             title=f"Payroll API Response - ITS ID: {its_id}"
         )
+
+        # Check if data contains employee information
+        if not data.get("fullname") and not data.get("email"):
+            return {
+                "success": False,
+                "error": f"No employee data found for ITS ID: {its_id}"
+            }
+
+        # Try multiple possible field name variations for mobile and whatsapp
+        mobile = data.get("mobile") or data.get("mobile_number") or data.get("phone") or data.get("contact") or ""
+        whatsapp = data.get("whatsapp") or data.get("whatsapp_number") or data.get("whatsapp_no") or data.get("wa_number") or ""
+
+        print("MAPPED VALUES (WEB FORM):")
+        print("  mobile (mapped):", mobile)
+        print("  whatsapp (mapped):", whatsapp)
+        print("=" * 80)
 
         return {
             "success": True,
@@ -612,10 +662,31 @@ def fetch_employee_data_by_its_id(its_id):
             "custom_farig_year": data.get("farig_year") or "",
             "custom_farig_darajah": data.get("farig_darajah") or "",
             "employee_name": data.get("fullname") or "",
-            "custom_primary_mobile_number": data.get("mobile") or "",
-            "custom_whatsapp_number": data.get("whatsapp") or "",
+            "custom_primary_mobile_number": mobile,
+            "custom_whatsapp_number": whatsapp,
         }
 
+    except requests.exceptions.Timeout:
+        frappe.log_error(
+            message=f"Payroll API timeout for ITS ID: {its_id}",
+            title="Payroll API Timeout"
+        )
+        return {
+            "success": False,
+            "error": "The Payroll API request timed out. Please try again later."
+        }
+    except requests.exceptions.RequestException as req_err:
+        frappe.log_error(
+            message=f"Payroll API request error for ITS ID: {its_id}\n{str(req_err)}",
+            title="Payroll API Request Error"
+        )
+        return {
+            "success": False,
+            "error": f"Failed to connect to Payroll API: {str(req_err)}"
+        }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Payroll API Error")
-        frappe.throw(f"Error fetching data: {str(e)}")
+        return {
+            "success": False,
+            "error": f"An unexpected error occurred: {str(e)}"
+        }
