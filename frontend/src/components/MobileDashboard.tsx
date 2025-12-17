@@ -16,6 +16,7 @@ import {
   Workflow,
   ChartNoAxesCombined,
   RotateCcw,
+  Gift,
 } from "lucide-react";
 import { useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -589,6 +590,18 @@ const MobileDashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
+            <Link
+              to="/webapp/benefits-app"
+              className="flex flex-col items-center group"
+            >
+              <div className="w-16 h-16 bg-orange-50 border-2 border-orange-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-orange-200 transition-colors">
+                <Gift className="w-6 h-6 text-orange-600 group-hover:text-orange-800 transition-colors" />
+              </div>
+              <span className="text-xs font-medium text-orange-700 text-center">
+                Benefits
+              </span>
+            </Link>
+
             <Link
               to="/webapp/shift-request"
               className="flex flex-col items-center group"

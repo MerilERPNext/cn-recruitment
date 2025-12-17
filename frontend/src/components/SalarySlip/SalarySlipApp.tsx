@@ -1,4 +1,4 @@
-import React, { useEffect, useState, createContext, } from "react";
+import React, { useEffect, useState, createContext } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import NavigationTabs, { Tab } from "../NavigationTab";
@@ -8,10 +8,14 @@ import CreateLoanDialog from "./Loan/component/CreateLoanDailog";
 import Button from "../shared/atoms/Button";
 
 type TabName =
+  | "Annual CTC"
   | "Salary Slip"
-  | "CTC Breakdown"
-  | "Loan"
-  | "Advances"
+  | "Tax Declaration"
+  | "IT Declaration"
+  | "My Loan Requests"
+  | "Team Loan Requests"
+  | "My Advances"
+  | "Team Advances"
   | "Benefits"
   | "Extra Payments"
   | "Payroll Documents";
@@ -19,10 +23,14 @@ type TabName =
 type ViewMode = "annual"; // ❌ removed monthly
 
 const tabRoutes: Record<TabName, string> = {
-  "CTC Breakdown": "/webapp/salary-slip-app/ctc-salary-breakdown",
+  "Annual CTC": "/webapp/salary-slip-app/ctc-salary-breakdown",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
-  Loan: "/webapp/salary-slip-app/loan",
-  Advances: "/webapp/salary-slip-app/advances-list",
+  "Tax Declaration": "/webapp/salary-slip-app/income-tax-sheet",
+  "IT Declaration": "/webapp/salary-slip-app/it-declalaration-form",
+  "My Loan Requests": "/webapp/salary-slip-app/my-loan-requests",
+  "Team Loan Requests": "/webapp/salary-slip-app/team-loan-requests",
+  "My Advances": "/webapp/salary-slip-app/advances-list",
+  "Team Advances": "/webapp/salary-slip-app/team-advances-list",
   Benefits: "/webapp/salary-slip-app/benefits-list",
   "Extra Payments": "/webapp/salary-slip-app/extra-payment",
   "Payroll Documents": "/webapp/salary-slip-app/hr-payroll",
@@ -37,14 +45,11 @@ const ViewModeContext = createContext<ViewModeContextType | undefined>(
   undefined
 );
 
-
-
-
 const SalarySlipApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabName>("CTC Breakdown");
+  const [activeTab, setActiveTab] = useState<TabName>("Annual CTC");
 
   // Only ANNUAL mode now
   const [viewMode] = useState<ViewMode>("annual");
@@ -70,7 +75,7 @@ const SalarySlipApp: React.FC = () => {
 
   useEffect(() => {
     if (location.pathname === "/webapp/salary-slip-app") {
-      navigate(tabRoutes["CTC Breakdown"], { replace: true });
+      navigate(tabRoutes["Annual CTC"], { replace: true });
     }
   }, [location.pathname, navigate]);
 
@@ -100,22 +105,13 @@ const SalarySlipApp: React.FC = () => {
             activeTab={activeTab}
             onTabChange={handleTabChange}
           />
-
-          {/* ❌ Removed Monthly Toggle — Only Annual CTC */}
-          {activeTab === "CTC Breakdown" && (
-            <div className="flex justify-center py-2 bg-white border-b">
-              <span className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium">
-                Annual CTC
-              </span>
-            </div>
-          )}
         </header>
 
         <main className="p-4 z-100 flex-grow overflow-y-auto">
           <Outlet />
         </main>
 
-        {activeTab === "Loan" && (
+        {activeTab === "My Loan Requests" && (
           <footer className="fixed bottom-0 left-0 w-full border-t bg-white shadow-md p-2">
             <Button
               fullWidth
