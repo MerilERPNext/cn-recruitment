@@ -82,8 +82,8 @@ const OvertimeApprovalCard = ({
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "5%  35% 8% 10% 8% 20%" // With checkbox
-    : " 40% 10% 12% 10% 20%"; // Without checkbox
+    ? "5% 10% 35% 8% 8% 20%" // With checkbox
+    : "12% 40% 10% 10% 20%";// Without checkbox
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -132,6 +132,11 @@ const OvertimeApprovalCard = ({
               />
             </div>
           )}
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              {data?.username}
+            </div>
+          </WrapperHoverCard>
 
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
@@ -140,11 +145,6 @@ const OvertimeApprovalCard = ({
           <div className="text-gray-700 text-sm text-start">
             {formatDate(data?.due_date)}
           </div>
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.username}
-            </div>
-          </WrapperHoverCard>
 
           <div className="flex items-center justify-start">
             <Tooltip content={`Allocated to : ${data?.allocated_to}`}>

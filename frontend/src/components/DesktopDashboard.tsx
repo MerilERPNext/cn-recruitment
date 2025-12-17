@@ -714,7 +714,7 @@ export default function DesktopDashboard() {
                 </div>
 
                 {/* Clock In / Out */}
-                <div className="flex flex-row gap-4 mt-4">
+                <div className={`flex ${homeSummary && !homeSummary?.length ? "flex-col-reverse gap-2" : "flex-row gap-4"}  mt-4`}>
                   <div className="flex w-full">
                     {canShowClockIn?.can_show && (
                       <button
@@ -740,21 +740,33 @@ export default function DesktopDashboard() {
                   </div>
 
                   {/* Status */}
-                  <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
-                    <div
-                      className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
-                        }`}
-                    ></div>
+                  {
+                    homeSummary && homeSummary?.length > 0 ?
+                      <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
+                        <div
+                          className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                            }`}
+                        ></div>
 
-                    <span
-                      className={
-                        isCurrentlyCheckedIn ? "text-green-600" : "text-red-600"
-                      }
-                    >
-                      Currently{" "}
-                      {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
-                    </span>
-                  </div>
+                        <span
+                          className={
+                            isCurrentlyCheckedIn ? "text-green-600" : "text-red-600"
+                          }
+                        >
+                          Currently{" "}
+                          {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
+                        </span>
+                      </div>
+                      : <div className="flex items-center justify-center w-full gap-2 p-2 text-sm bg-blue-100 rounded">
+                        <span
+                          className={
+                            "text-blue-600"
+                          }
+                        >
+                          Let's Get The Ball Rolling
+                        </span>
+
+                      </div>}
                 </div>
               </div>
 
