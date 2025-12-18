@@ -11,6 +11,7 @@ import DataListView from "../../DataListView";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import Tooltip from "../../shared/Tooltip";
 import Badge from "../../shared/Badge";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -77,7 +78,9 @@ const MyAdvanceExpenseList = () => {
         className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
-        <span>{doc.employee_name}</span>
+        <WrapperHoverCard employeeId={doc.employee}>
+          <span>{doc.employee_name}</span>
+        </WrapperHoverCard>
         <span>{formatToIndianDate(doc.posting_date)}</span>
         <span>{doc.company}</span>
         <span>{doc.department}</span>
