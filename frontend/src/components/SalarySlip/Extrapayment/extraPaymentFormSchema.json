@@ -108,8 +108,8 @@
 
     {
       "type": "datetime",
-      "key": "callback_date",
-      "label": "Callback Date",
+      "key": "clawback_date",
+      "label": "Clawback Date",
       "input": true,
       "format": "dd-MM-yyyy",
       "enableTime": false
