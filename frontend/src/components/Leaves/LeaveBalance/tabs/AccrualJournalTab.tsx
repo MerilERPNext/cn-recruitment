@@ -1,128 +1,300 @@
 "use client";
-import type React from "react";
-import { useState } from "react";
+import React from "react";
+import { useEffect, useMemo } from "react";
+import { Form } from "@tsed/react-formio";
 import { HelpCircle, Calendar } from "lucide-react";
+import {
+  useGetAccrualJournalMetadata,
+  useGetAccrualJournalEntries,
+} from "../../../../hooks/useLeaves";
+import { LeaveBalance } from "../../../../types/leaves";
+import { useCurrentEmployee } from "../../../../hooks/useEmployee";
 
 interface AccrualJournalTabProps {
-  leaveData: any;
+  leaveData: LeaveBalance;
 }
 
 const AccrualJournalTab: React.FC<AccrualJournalTabProps> = ({ leaveData }) => {
-  const [selectedPeriod, setSelectedPeriod] = useState(
-    "Month 9 (December-2025)"
+  const {
+    data: currentEmployee,
+    isLoading: isEmployeeLoading,
+    isError: isEmployeeError,
+  } = useCurrentEmployee();
+  const employeeId = currentEmployee?.name;
+  const leaveType = leaveData?.type || "";
+
+  const [selectedPeriod, setSelectedPeriod] = React.useState<number | null>(
+    null
   );
 
-  // Generate month options - this should come from API
-  const generateMonthOptions = () => {
-    const months = [
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-      "January",
-      "February",
-      "March",
-    ];
-    const currentYear = 2025;
+  const {
+    data: metadata,
+    isLoading: isMetadataLoading,
+    isError: isMetadataError,
+  } = useGetAccrualJournalMetadata(employeeId ?? "", leaveType);
 
-    return months.map((month, index) => {
-      const monthNumber = index + 1;
-      const year = index >= 9 ? currentYear + 1 : currentYear;
-      return {
-        value: `Month ${monthNumber} (${month}-${year})`,
-        label: `Month ${monthNumber} (${month}-${year})`,
-      };
-    });
+  const {
+    data: accrualEntries,
+    isLoading: isEntriesLoading,
+    isError: isEntriesError,
+  } = useGetAccrualJournalEntries(employeeId ?? "", leaveType, selectedPeriod);
+
+  const formioValues = useMemo(() => {
+    if (!metadata?.period_options) return [];
+
+    return metadata.period_options.map((p) => ({
+      label: p.label,
+      value: p.value,
+      disabled: p.is_excluded === 1,
+    }));
+  }, [metadata]);
+
+  const accrualPeriodForm = useMemo(
+    () => ({
+      display: "form",
+      components: [
+        {
+          type: "select",
+          key: "accrual_period",
+          label: "Accrual Period",
+          placeholder: isMetadataLoading
+            ? "Loading periods..."
+            : "Select accrual period",
+          input: true,
+          dataSrc: "values",
+          data: {
+            values: formioValues,
+          },
+          valueProperty: "value",
+          template: "<span>{{ item.label }}</span>",
+          clearOnHide: false,
+          searchEnabled: false,
+          validate: {
+            required: false,
+          },
+          disabled: isMetadataLoading,
+        },
+      ],
+    }),
+    [formioValues, isMetadataLoading]
+  );
+
+  useEffect(() => {
+    if (metadata?.default_period && selectedPeriod === null) {
+      setSelectedPeriod(metadata.default_period);
+    }
+  }, [metadata, selectedPeriod]);
+
+  const handlePeriodChange = (submission: {
+    data?: { accrual_period?: number };
+  }) => {
+    const period = submission?.data?.accrual_period;
+    if (period !== undefined) {
+      setSelectedPeriod(period || null);
+    }
   };
 
-  const monthOptions = generateMonthOptions();
+  const LoadingSkeleton = () => (
+    <div className="p-4 md:p-6 space-y-4">
+      <div className="max-w-md">
+        <div className="h-10 bg-gray-200 rounded animate-pulse" />
+      </div>
+      <div className="bg-white border border-gray-200 rounded-lg p-5">
+        <div className="flex items-start gap-3">
+          <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+            <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+          </div>
+        </div>
+      </div>
+      <div className="bg-white border border-gray-200 rounded-lg p-5">
+        <div className="flex items-start gap-3">
+          <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+            <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
+          </div>
+        </div>
+      </div>
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+        <div className="flex items-center justify-between">
+          <div className="h-6 bg-gray-200 rounded w-64 animate-pulse" />
+          <div className="h-8 bg-gray-200 rounded w-16 animate-pulse" />
+        </div>
+      </div>
+    </div>
+  );
 
-  // Mock data - should come from API based on selected period
-  const accrualData = {
-    earnAmount: 2.0,
-    frequency: "Beginning of Every month",
-    formula: "Annual allotment / 12",
-    netBalance: 2,
-  };
+  if (isEmployeeLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (isEmployeeError || !employeeId) {
+    return (
+      <div className="p-4 text-sm text-red-600">
+        Failed to load employee information
+      </div>
+    );
+  }
+
+  const hasNoMetadata =
+    !metadata?.period_options ||
+    metadata.period_options.length === 0 ||
+    !metadata.default_period;
+
+  if (isMetadataError) {
+    return (
+      <div className="p-4 text-sm text-red-600">
+        Failed to load accrual journal metadata
+      </div>
+    );
+  }
+
+  if (isMetadataLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (hasNoMetadata) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+          <svg
+            className="w-16 h-16 mb-4 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <p className="text-base font-medium text-gray-700">
+            No data found for selected leave type
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            There are no accrual periods available for {leaveType}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6">
-      {/* Accrual Period Selector */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Accrual Period
-        </label>
-        <select
-          value={selectedPeriod}
-          onChange={(e) => setSelectedPeriod(e.target.value)}
-          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          {monthOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+      <div className="mb-6 max-w-md">
+        <Form
+          key={selectedPeriod ?? "empty"}
+          form={accrualPeriodForm}
+          submission={{
+            data: {
+              accrual_period: selectedPeriod ?? "",
+            },
+          }}
+          options={{ noAlerts: true }}
+          onChange={handlePeriodChange}
+        />
       </div>
 
-      {/* Accrual Policy Card */}
-      <div className="bg-white border border-gray-200 rounded-lg p-5 mb-4">
-        <div className="flex items-start gap-3">
-          <div className="mt-1">
-            <HelpCircle className="w-5 h-5 text-gray-400" />
+      {!selectedPeriod ? (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+          <Calendar className="w-16 h-16 mb-4 text-gray-300" />
+          <p className="text-sm font-medium">No accrual period selected</p>
+          <p className="text-xs mt-1">
+            Please select a period from the dropdown above
+          </p>
+        </div>
+      ) : isEntriesLoading ? (
+        <div className="space-y-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+              </div>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-semibold text-gray-800 mb-1">
-              Accrual Policy
-            </h3>
-            <p className="text-sm text-gray-600">
-              You earn{" "}
-              <span className="font-semibold text-gray-900">
-                {accrualData.earnAmount}
-              </span>{" "}
-              monthly at the {accrualData.frequency}
-            </p>
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+            <div className="flex items-center justify-between">
+              <div className="h-6 bg-gray-200 rounded w-64 animate-pulse" />
+              <div className="h-8 bg-gray-200 rounded w-16 animate-pulse" />
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Standard Formula Card */}
-      <div className="bg-white border border-gray-200 rounded-lg p-5 mb-6">
-        <div className="flex items-start gap-3">
-          <div className="mt-1">
-            <Calendar className="w-5 h-5 text-gray-400" />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-gray-800 mb-1">
-              Standard Formula
-            </h3>
-            <p className="text-sm text-gray-600">({accrualData.formula})</p>
-          </div>
+      ) : isEntriesError ? (
+        <div className="p-4 text-sm text-red-600">
+          Failed to load accrual journal entries
         </div>
-      </div>
+      ) : accrualEntries?.accrual_data ? (
+        <>
+          <div className="bg-white border border-gray-200 rounded-lg p-5 mb-4">
+            <div className="flex items-start gap-3">
+              <HelpCircle className="w-5 h-5 text-gray-400 mt-1" />
+              <div>
+                <h3 className="text-base font-semibold text-gray-800 mb-1">
+                  Accrual Policy
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {accrualEntries.accrual_data.accrual_policy_text}
+                </p>
+              </div>
+            </div>
+          </div>
 
-      {/* Net Balance Section */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-800">
-            Net Balance Credited this Accrual Period
-          </h3>
-          <span className="text-2xl font-bold text-green-600">
-            +{accrualData.netBalance}
-          </span>
+          <div className="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+            <div className="flex items-start gap-3">
+              <Calendar className="w-5 h-5 text-gray-400 mt-1" />
+              <div>
+                <h3 className="text-base font-semibold text-gray-800 mb-1">
+                  Standard Formula
+                </h3>
+                <p className="text-sm text-gray-600">
+                  ({accrualEntries.accrual_data.formula})
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="base-title md:module-title font-semibold text-gray-800">
+                Net Balance Credited this Accrual Period
+              </h3>
+              <span className="text-lg font-bold text-green-600">
+                +{accrualEntries.accrual_data.net_balance_credited}
+              </span>
+            </div>
+          </div>
+
+          {accrualEntries.accrual_data.is_excluded === 1 && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Note: </strong>
+                {accrualEntries.accrual_data.exclusion_reason && (
+                  <span>{accrualEntries.accrual_data.exclusion_reason}</span>
+                )}
+              </p>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="p-4 text-sm text-gray-500">
+          No accrual data available for the selected period
         </div>
-      </div>
-
-      {/* Optional: Additional Information */}
-      <div className="mt-6 text-xs text-gray-500 italic">
-        *Accrual calculations are based on the policy configuration and may vary
-        based on your employment terms.
-      </div>
+      )}
     </div>
   );
 };

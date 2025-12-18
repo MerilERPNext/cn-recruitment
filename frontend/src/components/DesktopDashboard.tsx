@@ -575,7 +575,7 @@ export default function DesktopDashboard() {
         </div>
         <ViewingAsBanner />
 
-        <div className="p-4 flex-1 overflow-hidden">
+        <div className="p-4 flex-1 overflow-hidden bg-gray-200">
           <div className="pr-3 max-w-full">
             {/* Employee Error Section */}
             {!employeeState.isLoading && !employeeState.hasValidData && (
