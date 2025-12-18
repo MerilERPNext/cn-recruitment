@@ -413,9 +413,6 @@ const MyTeamBenefitsRequests = lazyWithRetry(
   "MyTeamBenefitsRequests"
 );
 
-
-
-
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -513,18 +510,18 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/salary-slip-app",
     element: <SalarySlipApp />,
     children: [
-      { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
-      { path: "hr-payroll", element: <HRPayroll /> },
-      { path: "loan", element: <LoansPage /> },
+      { path: "salary-slip-list", element: <SalarySlipsList /> },
+      { path: "income-tax-sheet", element: <IncomeTaxSheet /> },
+      { path: "it-declaration-form", element: <ITDeclarationForm /> },
+      { path: "my-loan-requests", element: <LoansPage /> },
       { path: "team-loan-requests", element: <TeamLoanRequest /> },
+      { path: "hr-payroll", element: <HRPayroll /> },
       { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
       { path: "advances-list", element: <AdvancesList /> },
       { path: "team-advances-list", element: <TeamAdvanceRequest /> },
       { path: "benefits-list", element: <PayPackage /> },
       { path: "extra-payment", element: <ExtraPayment /> },
-      { path: "income-tax-sheet", element: <IncomeTaxSheet /> },
-      { path: "it-declalaration-form", element: <ITDeclarationForm /> },
     ],
   },
   {

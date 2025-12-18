@@ -27,21 +27,24 @@ const ITDeclarationForm = () => {
           <div className="space-y-2">
             <h1 className="text-xs font-semibold text-gray-800">
               IT Declaration for the Financial Year 2025 - 2026
-              <span className="text-sm font-normal text-orange-500 ml-2 bg-orange-100 px-2 py-0.5 rounded">
+              <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded">
                 UPDATED
               </span>
             </h1>
 
-            <p className='text-xs font-serif'>
-              Go Ahead with New Tax Regime : NEW
+            <p className="text-xs text-gray-600 mt-1">
+              Go Ahead with New Tax Regime :{" "}
+              <span className="font-medium">NEW</span>
             </p>
           </div>
 
-          <div className="flex space-x-2">
-            <button className="bg-blue-600 text-white px-4 py-1 rounded text-sm font-medium hover:bg-blue-700">
+          {/* RIGHT ACTIONS */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 w-full sm:w-auto">
               COMPARE TAX
             </button>
-            <span className="border border-gray-300 px-4 py-1 rounded text-sm bg-gray-100">
+
+            <span className="border border-gray-300 px-4 py-1.5 rounded text-sm bg-white text-center w-full sm:w-auto">
               Form 12BB
             </span>
             <button className="bg-blue-600 text-white px-4 py-1 rounded text-sm font-medium hover:bg-blue-700">
