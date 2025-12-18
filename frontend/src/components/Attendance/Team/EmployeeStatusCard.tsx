@@ -7,6 +7,7 @@ import { Edit, EllipsisVertical } from "lucide-react";
 import ContextualPopup from "../../shared/molecules/ContextualPopup";
 import { EditAttendance } from "./EditAttendance";
 import Badge from "../../shared/Badge";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 const EmployeeStatusCard = ({
   data,
@@ -117,9 +118,12 @@ const EmployeeStatusCard = ({
           />
           <div className="flex-1 min-w-10">
             <div className="flex flex-wrap items-start gap-2">
-              <h5 className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none">
-                {data?.employee_name}
-              </h5>
+              <WrapperHoverCard employeeId={data?.employee}>
+
+                <h5 className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none">
+                  {data?.employee_name}
+                </h5>
+              </WrapperHoverCard>
               {data?.shift ?
                 <Badge size="sm" label={"Shift " + data?.shift} />
                 : null

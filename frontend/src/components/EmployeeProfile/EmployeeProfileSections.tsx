@@ -15,6 +15,7 @@ import {
 import Button from "../shared/atoms/Button";
 import EmployeeSidebarForm from "./EmployeeSidebarForm";
 import ProfileGridSkeleton from "./ProfileSkeleton";
+import { PencilIcon } from "lucide-react";
 
 interface EditableField {
     key: string;
@@ -50,25 +51,26 @@ const EmployeeProfileSections = () => {
     useEffect(() => {
         if (!fieldPermissions || !employee?.data) return;
 
-        const result = convertFieldsToSimpleTabbedData(
-            fieldPermissions,
-            employee.data
-        );
+        const fetchData = async () => {
+            const result = await convertFieldsToSimpleTabbedData(
+                fieldPermissions,
+                employee.data
+            );
+            setTabs(result.tabs);
+            setActiveTab(result.tabs[0]?.key || "");
 
-        const formioResult = convertToFormioWithTabMetadata(
-            fieldPermissions,
-            employee?.data
-        );
-        setTabs(result.tabs);
-        setActiveTab(result.tabs[0]?.key || "");
-        setformioTabs(formioResult.tabs);
+            const formioResult = await convertToFormioWithTabMetadata(
+                fieldPermissions,
+                employee?.data
+            );
+            setformioTabs(formioResult.tabs);
+        };
+        fetchData();
     }, [fieldPermissions, employee?.data]);
 
 
-    /* 🔍 Scroll Spy (unchanged) */
     useEffect(() => {
         if (!tabs.length) return;
-
         const observer = new IntersectionObserver(
             entries => {
                 entries.forEach(entry => {
@@ -97,18 +99,27 @@ const EmployeeProfileSections = () => {
     if (fieldPermissionsLoading || employee.isLoading) {
         return <ProfileGridSkeleton />;
     }
-    console.log(tabs, "tabs");
 
     return (
         <div>
+            <div className="flex items-start justify-between">
+                <div className="border-gray-200 px-6 my-2 pb-2">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                        Personal Information
+                    </h2>
+                    <p className="text-gray-600">
+                        Your personal information
+                    </p>
+                </div>
+            </div>
             {tabs.length > 1 && (
-                <div className=" px-6 sticky top-12 md:top-16 z-10 bg-white flex-shrink-0 w-full max-w-full border-b-2 border-gray-200">
+                <div className=" px-6 sticky top-12 md:top-16 z-10 bg-white flex-shrink-0 w-full max-w-full shadow-sm mb-2">
                     <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-2 w-full py-2">
                         {tabs.map(tab => (
                             <button
                                 key={tab.key}
                                 onClick={() => scrollToSection(tab.key)}
-                                className={`whitespace-nowrap px-2 py-1 rounded-[32px] text-sm font-medium transition-all duration-200
+                                className={`whitespace-nowrap px-2 py-1 rounded-md text-sm font-medium transition-all duration-200
                   ${activeTab === tab.key
                                         ? "bg-blue-100 text-blue-600"
                                         : "border-transparent text-gray-600 hover:text-blue-600"
@@ -122,7 +133,7 @@ const EmployeeProfileSections = () => {
             )}
 
             {/* Scrollable Sections */}
-            <div className="space-y-14 mt-6 py-6">
+            <div className="space-y-14 pb-6">
                 {tabs.map(tab => (
                     <section
                         key={tab.key}
@@ -132,12 +143,14 @@ const EmployeeProfileSections = () => {
                         className="scroll-mt-28"
                     >
                         {/* Section Header */}
-                        <div className="flex items-center justify-between mb-5 border-b border-gray-200 px-6 pb-2">
-                            <h2 className="text-lg font-semibold text-gray-900">
+                        <div className="flex items-center justify-between mb-5 py-1 px-6 bg-gray-100">
+                            <h2 className="text-lg font-md font-semibold text-gray-900">
                                 {tab.label}
                             </h2>
 
                             <Button
+                                variant="subtle"
+                                icon={<PencilIcon className="h-4 w-4" />}
                                 size="md"
                                 onClick={() => setEdit({ key: tab.key, label: tab.label })}
                             // className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
@@ -159,7 +172,7 @@ const EmployeeProfileSections = () => {
                                             {field.label || "-"}
                                         </p>
                                         <p className="text-sm font-medium text-gray-900">
-                                            {typeof field.value === "object" ? field.value?.[0]?.doctype_name : field?.value || "—"}
+                                            {Array.isArray(field.value) ? <CardsRenderer items={field.value} /> : field?.value || "—"}
                                         </p>
                                     </div>
                                 ))}
@@ -172,9 +185,77 @@ const EmployeeProfileSections = () => {
                 setEdit={setEdit}
                 formioTabs={formioTabs}
                 formInstances={formInstances}
+                employeeId={employeeId}
+                refetchEmployee={() => { employee.refetch() }}
+                employeeIsLoading={employee.isLoading}
             />
         </div>
     );
 };
 
 export default EmployeeProfileSections;
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CardsRenderer = ({ items }: { items: Record<string, any>[] }) => {
+    if (!Array.isArray(items) || items.length === 0) {
+        return <p className="text-gray-500">No data available</p>;
+    }
+
+    return (
+        <div className="w-full">
+            {items.map((item, index) => (
+                <GenericCard key={item?.id || item?.name || index} data={item} />
+            ))}
+        </div>
+    );
+};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const GenericCard = ({ data }: { data: Record<string, any> }) => {
+    if (!data || typeof data !== "object") return null;
+
+    return (
+        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-gray-300 mb-2">
+            <div className="space-y-2">
+                {Object.entries(data).map(([key, value]) => (
+                    <div
+                        key={key}
+                        className="flex items-start justify-between gap-6"
+                    >
+                        {/* Label */}
+                        <span className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                            {formatKey(key)}
+                        </span>
+
+                        {/* Value */}
+                        <span className="max-w-[65%] text-sm font-semibold text-gray-900 text-right break-words leading-relaxed">
+                            {formatValue(value)}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const formatKey = (key: string) =>
+    key
+        .replace(/_/g, " ")
+        .replace(/([a-z])([A-Z])/g, "$1 $2");
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const formatValue = (value: string | object | any[] | null | undefined) => {
+    if (value === null || value === undefined || value === "")
+        return "—";
+
+    if (typeof value === "boolean")
+        return value ? "Yes" : "No";
+
+    if (Array.isArray(value))
+        return value.length ? value.join(", ") : "—";
+
+    if (typeof value === "object")
+        return JSON.stringify(value, null, 2);
+
+    return String(value);
+};

@@ -249,14 +249,21 @@ export default function ThreeLevelOrgChart() {
 
   return (
     <div className="w-full bg-gray-100">
-      <div className=" bg-white shadow-sm px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">
-          Organizational Chart
-        </h1>
+      <div className=" bg-white shadow-sm  py-3 flex items-start justify-between">
+        <div className="flex items-start justify-between">
+          <div className="border-gray-200 px-6 my-2 pb-2">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Organizational Chart
+            </h2>
+            <p className="text-gray-600">
+              Your organizational information
+            </p>
+          </div>
+        </div>
 
         <button
           onClick={() => navigate("/webapp/organizational-chart")}
-          className="flex items-center space-x-1 text-gray-700 hover:text-black"
+          className="flex items-center space-x-1 text-gray-700 hover:text-black mt-3"
         >
           <span className="text-sm font-medium text-blue-600">View All</span>
           <IoChevronForwardOutline size={18} />

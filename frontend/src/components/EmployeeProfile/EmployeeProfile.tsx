@@ -112,7 +112,6 @@ const EmployeeProfile: React.FC = () => {
 
   const tabs: Tab[] = useMemo(
     () => [
-      // { key: "personal-info", label: "Personal Info" },
       { key: "personal-information", label: "Personal Information" },
       { key: "ORG-chart", label: "Organization Chart" },
       { key: "employment-history", label: "Employment History" },
@@ -132,7 +131,6 @@ const EmployeeProfile: React.FC = () => {
 
   const tabContent: Record<string, React.ReactNode> = useMemo(
     () => ({
-      // "personal-info": <EmployeeProfileForm />,
       "personal-information": <EmployeeProfileSections />,
       "ORG-chart": <TwoLevelOrgChart />,
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
@@ -326,10 +324,11 @@ const EmployeeProfile: React.FC = () => {
               <button
                 key={tab.key}
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-600 hover:text-blue-600"
-                  }`}
+                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${
+                  activeTab === tab.key
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-600 hover:text-blue-600"
+                }`}
               >
                 {tab.label}
               </button>
@@ -442,10 +441,11 @@ const EmployeeProfile: React.FC = () => {
                 <button
                   key={tab.key}
                   onClick={() => scrollToSection(tab.key)}
-                  className={`whitespace-nowrap px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-blue-600"
-                    }`}
+                  className={`whitespace-nowrap px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
+                    activeTab === tab.key
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-600 hover:text-blue-600"
+                  }`}
                 >
                   {tab.label}
                 </button>

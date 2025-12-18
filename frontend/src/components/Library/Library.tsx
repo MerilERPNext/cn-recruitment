@@ -44,11 +44,17 @@ const DocumentLibrary = () => {
   const getFileUrl = (path: string) => `${path}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <h1 className="text-xl font-extrabold text-gray-900 mb-6">
-        Document Library
-      </h1>
-
+    <div className="bg-white p-4">
+      <div className="flex items-start justify-between">
+        <div className="border-gray-200 my-2 pb-2">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Document Library
+          </h2>
+          <p className="text-gray-600">
+            Your document library
+          </p>
+        </div>
+      </div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         {/* MOBILE VIEW */}
         {isMobile ? (
@@ -82,8 +88,8 @@ const DocumentLibrary = () => {
           <div className="flex flex-col md:flex-row gap-2">
             <button
               className={`px-5 py-2 rounded-md font-medium transition-all ${activeTab === "awaiting"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               onClick={() => setActiveTab("awaiting")}
             >
@@ -95,8 +101,8 @@ const DocumentLibrary = () => {
 
             <button
               className={`px-5 py-2 rounded-md font-medium transition-all ${activeTab === "mydocs"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               onClick={() => setActiveTab("mydocs")}
             >
@@ -112,8 +118,8 @@ const DocumentLibrary = () => {
 
             <button
               className={`px-5 py-2 rounded-md font-medium transition-all ${activeTab === "approved"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               onClick={() => setActiveTab("approved")}
             >
@@ -154,10 +160,10 @@ const DocumentLibrary = () => {
                   <td className="py-4 px-6">
                     <span
                       className={`text-sm font-medium px-3 py-1 whitespace-nowrap rounded-xl ${doc.status === "Approved"
-                          ? "bg-green-100 text-green-700"
-                          : doc.status === "Acknowledgement Required"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
+                        ? "bg-green-100 text-green-700"
+                        : doc.status === "Acknowledgement Required"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
                         }`}
                     >
                       {doc.status}

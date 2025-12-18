@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-type DrawerSize = "sm" | "md" | "lg" | "xl" | "full";
+type DrawerSize = "sm" | "md" | "lg" | "xl" | "xxl" | "full";
 
 interface SideDrawerProps {
     open: boolean;
@@ -16,6 +16,7 @@ const sizeClasses: Record<DrawerSize, string> = {
     md: "w-screen sm:w-80",
     lg: "w-screen sm:w-96",
     xl: "w-screen sm:w-[32rem]",
+    xxl: "w-screen sm:w-[42rem]",
     full: "w-screen",
 };
 

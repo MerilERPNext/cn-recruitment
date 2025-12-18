@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { profileService } from "../../services/profileService";
 
 // Enhanced mapping for better FormIO compatibility
 const formioFieldTypeMap: Record<string, string> = {
@@ -51,6 +52,12 @@ const formioFieldTypeMap: Record<string, string> = {
   // Rating field
   Rating: "number",
 };
+
+function frappeFieldTypeToFormioFieldType(
+  frappeType: string,
+): string {
+  return formioFieldTypeMap[frappeType] || "textfield";
+}
 
 function mapFieldToFormio(field: any, fieldValue: any): any {
   const type = formioFieldTypeMap[field.fieldtype] || "textfield";
@@ -337,12 +344,12 @@ export interface FormioWithTabs {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function convertToFormioWithTabMetadata(
+export async function convertToFormioWithTabMetadata(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   apiFields: any[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   employeeData: any
-): FormioWithTabs {
+): Promise<FormioWithTabs> {
   if (!apiFields || !Array.isArray(apiFields)) {
     console.warn(
       "Invalid apiFields provided to convertToFormioWithTabMetadata:",
@@ -503,28 +510,93 @@ export function convertToFormioWithTabMetadata(
       // Actually, standard behavior is full width so we do nothing special here
       // just treat it as a continuation
 
+
     } else {
-      const fieldValue = employeeData[field?.fieldname] || "";
-      const mapped = mapFieldToFormio(field, fieldValue);
+      let mapped: any = null;
+
+      if (field.fieldtype === "Table") {
+        const allowedFields = new Set([
+          "Data",
+          "Small Text",
+          "Select",
+          "Link",
+          "Currency",
+          "Float",
+          "Int",
+          "Text",
+          "Check",
+          "Email",
+          "Password",
+          "Phone",
+          "Percent",
+        ]);
+
+        let childComponents: any[] = [];
+        if (field.options) {
+          try {
+            const res = await profileService.getEmployeeFieldPermissions({
+              doctype: field.options,
+              detailed: 1,
+              all_fields: 1,
+            });
+
+            if (res?.length) {
+              childComponents = res
+                .filter((fd: any) => allowedFields.has(fd.fieldtype))
+                .map((childField: any) => ({
+                  label: childField.label,
+                  type: frappeFieldTypeToFormioFieldType(
+                    childField.fieldtype,
+                  ),
+                  key: childField.fieldname,
+                  input: true,
+                  applyMaskOn: "change",
+                  tableView: true,
+                }));
+            }
+          } catch (e) {
+            console.error(
+              `Failed to fetch fields for child table ${field.options}`,
+              e
+            );
+          }
+        }
+
+        const baseSchema = mapFieldToFormio(field, []); // Get base schema without value first
+
+        mapped = {
+          ...baseSchema,
+          icon: "table",
+          type: "datagrid", // Ensure type is datagrid
+          reorder: false,
+          addAnotherPosition: "bottom",
+          layoutFixed: false,
+          enableRowGroups: false,
+          initEmpty: false,
+          tableView: false,
+          defaultValue: [{}],
+          components: childComponents,
+        };
+
+        // Handle value if present
+        const fieldValue = employeeData[field.fieldname];
+        if (Array.isArray(fieldValue)) {
+          mapped.defaultValue = fieldValue;
+        }
+
+      } else {
+        const fieldValue = employeeData[field?.fieldname] || "";
+        mapped = mapFieldToFormio(field, fieldValue);
+      }
+
       if (!mapped) continue;
 
       ensureCurrentTab();
 
       if (currentSection) {
-        currentSection.components.push(mapped); // Push directly to section
+        currentSection.components.push(mapped);
       } else {
-        // If no section active (rare if following standard Frappe layout but possible),
-        // we could push to tab directly or a default section.
-        // Original logic pushed to fieldsBuffer if currentSection existed (bug in previous thought? lines 571-572: if currentSection -> buffer. Wait, line 571 says `else if (currentSection) { fieldsBuffer.push }`)
-
-        // Buffering was likely for columns or some optimization.
-        // Let's simplified: Always push to current container.
-
-        if (currentSection) {
-          currentSection.components.push(mapped);
-        } else {
-          currentTab.components.push(mapped);
-        }
+        currentTab.components.push(mapped);
       }
     }
   }
@@ -916,12 +988,12 @@ export interface SimpleTabbedData {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function convertFieldsToSimpleTabbedData(
+export async function convertFieldsToSimpleTabbedData(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   apiFields: any[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   employeeData: any
-): SimpleTabbedData {
+): Promise<SimpleTabbedData> {
   if (!apiFields || !Array.isArray(apiFields)) {
     console.warn(
       "Invalid apiFields provided to convertFieldsToSimpleTabbedData:",
@@ -1003,6 +1075,38 @@ export function convertFieldsToSimpleTabbedData(
         required: !!field.reqd,
         readOnly: !!field.read_only
       };
+
+      if (field.fieldtype === 'Table' && field.options) {
+        try {
+          const res = await profileService.getEmployeeFieldPermissions({
+            doctype: field.options,
+            detailed: 1,
+            all_fields: 1,
+          });
+
+          if (res?.length && Array.isArray(fieldValue)) {
+            // Map table rows using child field definitions
+            simpleField.value = fieldValue.map((row: any) => {
+              const rowData: Record<string, any> = {};
+              res.forEach((childField: any) => {
+                if (childField.fieldtype === 'Section Break' || childField.fieldtype === 'Column Break') return;
+                rowData[childField.fieldname] = row[childField.fieldname];
+              });
+              // Keep original row data if needed, but for simple view, mapped data is cleaner
+              // Or better yet, maybe we just want to enhance the value structure?
+              // The user said "mapped with the field permission".
+              // Let's assume they want the row object to only contain relevant fields or be structured nicely.
+              // For "Card Renderer", it takes Record<string, any>.
+
+              // Let's return the row as is but ensuring we have the keys from the child fields.
+              // Actually, simply returning the row is often enough, but let's filter by permissions
+              return rowData;
+            });
+          }
+        } catch (e) {
+          console.error(`Failed to fetch child fields for table ${field.fieldname}`, e);
+        }
+      }
 
       if (field.options && typeof field.options === 'string') {
         simpleField.options = field.options.split('\n');
