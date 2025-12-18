@@ -17,22 +17,17 @@ type WrapperHoverCardProps = {
     | "center-right";
 };
 
-// Pastel Color Generator
+// 🎨 Pastel Color Generator
 const stringToPastelColor = (str: string) => {
     let hash = 0;
-
     for (let i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-
     const h = Math.abs(hash % 360);
-    const s = 65;
-    const l = 58;
-
-    return `hsl(${h}, ${s}%, ${l}%)`;
+    return `hsl(${h}, 65%, 58%)`;
 };
 
-// Avatar Renderer
+// 👤 Avatar Renderer
 const getAvatar = (data: any[]) => {
     const imageItem = data.find((item) => item.label === "Image");
     const fullName = data.find((item) => item.label === "Full Name")?.value || "";
@@ -42,11 +37,13 @@ const getAvatar = (data: any[]) => {
     const color = stringToPastelColor(fullName || "default");
 
     const AvatarWrapper = ({ children }: { children: React.ReactNode }) => (
-        <div className="flex flex-col justify-center items-center">
+        <div className="flex flex-col items-center gap-2 pb-3">
             {children}
-            <div className="mt-2 flex flex-col justify-center">
-                <p className="font-semibold text-center">{fullName}</p>
-                <p className="text-[12px] text-center opacity-80">{employeeId}</p>
+            <div className="text-center">
+                <p className="text-sm font-semibold text-gray-900 leading-tight">
+                    {fullName}
+                </p>
+                <p className="text-xs text-gray-500">{employeeId}</p>
             </div>
         </div>
     );
@@ -57,7 +54,7 @@ const getAvatar = (data: any[]) => {
                 <img
                     src={imageItem.value}
                     alt="avatar"
-                    className="w-14 h-14 shrink-0 rounded-full object-cover"
+                    className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-200"
                 />
             </AvatarWrapper>
         );
@@ -66,7 +63,7 @@ const getAvatar = (data: any[]) => {
     return (
         <AvatarWrapper>
             <div
-                className="w-14 h-14 shrink-0 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                className="w-14 h-14 rounded-full flex items-center justify-center text-white font-semibold text-xl shadow-inner"
                 style={{ background: color }}
             >
                 {fallbackChar}
@@ -84,7 +81,6 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 }) => {
     const { mutateAsync: fetchEmployee } = useGetEmployeeHoverData();
 
-
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
     const [error, setError] = useState<any>(null);
@@ -92,7 +88,6 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
     const hasFetchedRef = useRef(false);
 
-    // Fetch only once per open
     const handleFetchProfile = async () => {
         if (hasFetchedRef.current || !employeeId) return;
 
@@ -125,12 +120,9 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     };
 
     const handleLeave = () => {
-        hideTimer.current = setTimeout(() => {
-            setShow(false);
-        }, 120);
+        hideTimer.current = setTimeout(() => setShow(false), 120);
     };
 
-    // Calculate portal position
     const updatePosition = () => {
         const el = targetRef.current;
         const card = cardRef.current;
@@ -185,10 +177,10 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
     return (
         <>
-            {/* TRIGGER */}
+            {/* Trigger */}
             <div
                 ref={targetRef}
-                className={`inline-block w-fit ${className}`}
+                className={`inline-block ${className}`}
                 onMouseEnter={() => {
                     handleEnter();
                     handleFetchProfile();
@@ -198,7 +190,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                 {children}
             </div>
 
-            {/* HOVER CARD */}
+            {/* Hover Card */}
             {show &&
                 createPortal(
                     <div
@@ -209,41 +201,67 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                         onMouseLeave={handleLeave}
                     >
                         <div
-                            className={`w-full max-h-[400px] overflow-y-auto scrollbar-hide pt-6 md:max-w-sm  rounded-xl 
-                                backdrop-blur-md bg-white border border-gray-300 shadow-xl flex flex-col items-center gap-4 ${cardClassName}`}
+                            className={`w-[260px] max-h-[380px] overflow-hidden rounded-xl 
+                bg-white border border-gray-200 shadow-xl ${cardClassName}`}
                         >
-                            {isLoading ? (
-                                <div className="flex flex-col items-center pb-6 justify-center gap-2 py-2 px-4">
-                                    <Loader2 className="w-8 h-8 animate-spin text-gray-700" />
-                                    <span className="text-sm font-medium text-gray-700 animate-pulse whitespace-nowrap">
-                                        Loading employee info…
-                                    </span>
-                                </div>
-                            ) : isError ? (
-                                <div className="flex flex-col items-center justify-center gap-2 mb-4 py-4 px-4 text-red-600">
-                                    <p className="text-sm font-semibold">Failed to load employee info.</p>
-                                    <p className="text-xs">{error?.message ?? "Unknown error"}</p>
-                                </div>
-                            ) : EmployeeInfo?.data ? (
-                                <>
-                                    {getAvatar(EmployeeInfo.data)}
+                            <div className="px-3 pt-3">
+                                {isLoading ? (
+                                    <div className="flex flex-col items-center gap-1.5 py-4">
+                                        <Loader2 className="w-6 h-6 animate-spin text-gray-600" />
+                                        <span className="text-[11px] font-medium text-gray-500">
+                                            Loading employee info…
+                                        </span>
+                                    </div>
+                                ) : isError ? (
+                                    <div className="py-4 text-center text-red-600">
+                                        <p className="text-xs font-semibold">
+                                            Failed to load data
+                                        </p>
+                                        <p className="text-[11px] opacity-80">
+                                            {error?.message ?? "Unknown error"}
+                                        </p>
+                                    </div>
+                                ) : EmployeeInfo?.data ? (
+                                    <>
+                                        {/* Avatar */}
+                                        <div className="pb-2">
+                                            {getAvatar(EmployeeInfo.data)}
+                                        </div>
 
-                                    <table className="w-full border-t block pt-2">
-                                        <tbody>
-                                            {EmployeeInfo.data
-                                                .filter((item: any) => !["Full Name", "ID (name)", "Image"].includes(item.label))
-                                                .map((item: any) => (
-                                                    <tr key={item.label} className="px-2 text-sm">
-                                                        <td className="sm:text-sm w-fit  min-w-0 block leading-[0.4] text-sm border-none font-semibold text-gray-700">{item.label}</td>
-                                                        <td className="sm:text-sm  leading-[0.4] text-sm border-none text-start text-wrap">{item.value ?? "—"}</td>
-                                                    </tr>
-                                                ))}
-                                        </tbody>
-                                    </table>
-                                </>
-                            ) : (
-                                <p className="text-xs text-gray-500 py-4">No data available.</p>
-                            )}
+                                        {/* Details */}
+                                        <div className="border-t pt-2 max-h-[240px] overflow-y-auto scrollbar-hide">
+                                            <table className="w-full">
+                                                <tbody>
+                                                    {EmployeeInfo.data
+                                                        .filter(
+                                                            (item: any) =>
+                                                                !["Full Name", "ID (name)", "Image"].includes(
+                                                                    item.label
+                                                                )
+                                                        )
+                                                        .map((item: any) => (
+                                                            <tr
+                                                                key={item.label}
+                                                                className="flex justify-between gap-3 py-[2px]"
+                                                            >
+                                                                <td className="text-[11px] border-none font-medium text-gray-600 whitespace-nowrap">
+                                                                    {item.label}
+                                                                </td>
+                                                                <td className="text-[11px] border-none text-gray-900 text-right break-words">
+                                                                    {item.value ?? "—"}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-[11px] text-gray-500 py-4 text-center">
+                                        No data available
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>,
                     document.body
