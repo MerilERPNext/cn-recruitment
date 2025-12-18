@@ -140,6 +140,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const [attachments, setAttachments] = useState<File[]>([]);
   const [fromDateChanged, setFromDateChanged] = useState<string>("");
   const [requestTypeChanged, setRequestTypeChanged] = useState<string>("");
+  const [currentlySelectedEmployee, setCurrentlySelectedEmployee] =
+    useState<string>("");
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
   const [isForOthers, setIsForOthers] = useState(false);
@@ -153,13 +155,17 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     currentUser?.name as string
   );
   const { data: userRoles } = useGetUserRoles();
-  const reqValidationmutation = useReqValidationsForAttendanceRequest(
-    currentEmployee?.employee as string
-  );
+
+  const activeEmployeeId =
+    currentlySelectedEmployee || currentEmployee?.employee || "";
+
+  const reqValidationmutation =
+    useReqValidationsForAttendanceRequest(activeEmployeeId);
   const { data: attendanceRequestAttachmentsMandatory } =
     useAttendanceRequestAttachments(
-      currentEmployee?.employee || "",
-      fromDateChanged || formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
+      activeEmployeeId,
+      fromDateChanged ||
+        formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
       requestTypeChanged
     );
   const mutation = useCreateNewAttendanceRequest();
@@ -378,18 +384,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         custom_from_time: defaultAttendanceData?.reference_document
           ?.custom_from_time
           ? new Date(
-            `1970-01-01T${normalizeTime(
-              defaultAttendanceData?.reference_document.custom_from_time
-            )}`
-          )
+              `1970-01-01T${normalizeTime(
+                defaultAttendanceData?.reference_document.custom_from_time
+              )}`
+            )
           : "",
         custom_to_time: defaultAttendanceData?.reference_document
           ?.custom_to_time
           ? new Date(
-            `1970-01-01T${normalizeTime(
-              defaultAttendanceData?.reference_document?.custom_to_time
-            )}`
-          )
+              `1970-01-01T${normalizeTime(
+                defaultAttendanceData?.reference_document?.custom_to_time
+              )}`
+            )
           : "",
         custom__request_reason:
           defaultAttendanceData?.reference_document?.custom__request_reason ||
@@ -400,17 +406,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         overnight_out_duty: false,
         message: defaultAttendanceData?.reference_document?.explanation || "",
         show_attachment: attendanceRequestAttachmentsMandatory?.is_mandatory,
-        allowed_from_date: attendanceRequestAttachmentsMandatory?.allowed_from_date,
+        allowed_from_date:
+          attendanceRequestAttachmentsMandatory?.allowed_from_date,
         allowed_to_date: attendanceRequestAttachmentsMandatory?.allowed_to_date,
         attachments:
           defaultAttendanceData?.attachments &&
-            defaultAttendanceData?.attachments?.length > 0
+          defaultAttendanceData?.attachments?.length > 0
             ? defaultAttendanceData?.attachments?.map((item) => {
-              return {
-                name: item?.file_url?.split("/").pop(),
-                url: item?.file_url,
-              };
-            })
+                return {
+                  name: item?.file_url?.split("/").pop(),
+                  url: item?.file_url,
+                };
+              })
             : [],
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
@@ -451,7 +458,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         });
       }
 
-
       if (formAddressInstance.current) {
         formAddressInstance.current.redraw();
       }
@@ -461,9 +467,12 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   // Sync attachment mandatory status and date limits
   useEffect(() => {
     if (formAddressInstance.current && attendanceRequestAttachmentsMandatory) {
-      const showAttachmentComp = formAddressInstance.current.getComponent("show_attachment");
-      const allowedFromDateComp = formAddressInstance.current.getComponent("allowed_from_date");
-      const allowedToDateComp = formAddressInstance.current.getComponent("allowed_to_date");
+      const showAttachmentComp =
+        formAddressInstance.current.getComponent("show_attachment");
+      const allowedFromDateComp =
+        formAddressInstance.current.getComponent("allowed_from_date");
+      const allowedToDateComp =
+        formAddressInstance.current.getComponent("allowed_to_date");
 
       if (showAttachmentComp) {
         showAttachmentComp.setValue(
@@ -472,14 +481,20 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         );
       }
 
-      if (allowedFromDateComp && attendanceRequestAttachmentsMandatory.allowed_from_date) {
+      if (
+        allowedFromDateComp &&
+        attendanceRequestAttachmentsMandatory.allowed_from_date
+      ) {
         allowedFromDateComp.setValue(
           attendanceRequestAttachmentsMandatory.allowed_from_date,
           { noUpdateEvent: true }
         );
       }
 
-      if (allowedToDateComp && attendanceRequestAttachmentsMandatory.allowed_to_date) {
+      if (
+        allowedToDateComp &&
+        attendanceRequestAttachmentsMandatory.allowed_to_date
+      ) {
         allowedToDateComp.setValue(
           attendanceRequestAttachmentsMandatory.allowed_to_date,
           { noUpdateEvent: true }
@@ -487,13 +502,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       }
 
       // Directly update the date components schema to enforce constraints
-      const fromDateComp = formAddressInstance.current.getComponent("from_date");
+      const fromDateComp =
+        formAddressInstance.current.getComponent("from_date");
       const toDateComp = formAddressInstance.current.getComponent("to_date");
 
       // Disable to_date if required by API
       if (toDateComp && toDateComp.component) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        toDateComp.component.disabled = !!(attendanceRequestAttachmentsMandatory as any)?.to_date_read_only;
+        toDateComp.component.disabled =
+          !!// eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (attendanceRequestAttachmentsMandatory as any)?.to_date_read_only;
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -508,8 +525,12 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             return isNaN(parsed.getTime()) ? undefined : parsed;
           };
 
-          const minD = parseDate(attendanceRequestAttachmentsMandatory.allowed_from_date);
-          const maxD = parseDate(attendanceRequestAttachmentsMandatory.allowed_to_date);
+          const minD = parseDate(
+            attendanceRequestAttachmentsMandatory.allowed_from_date
+          );
+          const maxD = parseDate(
+            attendanceRequestAttachmentsMandatory.allowed_to_date
+          );
 
           if (minD) {
             comp.component.datePicker.minDate = minD;
@@ -556,12 +577,19 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   };
 
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
+    // Logic to determine employee: Use selected from form (if any) or fallback to current
+    const selectedEmpId =
+      submission.data.employee?.name || currentEmployee?.employee;
+
     const baseBody = {
       custom_request_type: submission.data.request_type,
+      // If employee is selected (i.e. for others), use form company? Or always use current employee company?
+      // Usually if applying for someone else, might want their company.
+      // But let's stick to safe defaults or existing logic.
+      // Existing: company: isForOthers ? submission.data.company : currentEmployee?.company
+      // Let's keep existing logic for company or maybe infer from employee if we had that data.
       company: isForOthers ? submission.data.company : currentEmployee?.company,
-      employee: isForOthers
-        ? submission.data.employee?.name
-        : currentEmployee?.employee,
+      employee: selectedEmpId,
       explanation: submission.data.explanation,
       ...(submission.data.from_date && {
         from_date: formatDateToYYYYMMDD(new Date(submission.data.from_date)),
@@ -586,6 +614,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       case "Out Duty":
         requestBody = {
           ...baseBody,
+          to_date: baseBody.to_date,
           custom_from_time: formatTime(submission.data.custom_from_time),
           custom_to_time: formatTime(submission.data.custom_to_time),
           custom__request_reason: submission.data.custom__request_reason,
@@ -720,6 +749,17 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       return;
     }
     // Track employee selection
+    if (submission?.changed?.component?.key === "employee") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const empValue = submission.changed.value as any;
+      // Depending on Formio configuration, value might be the object or the ID string
+      // Schema suggests it might be object because template uses item.name
+      const empId = empValue?.name || empValue;
+      if (typeof empId === "string") {
+        setCurrentlySelectedEmployee(empId);
+      }
+    }
+
     if (submission?.changed?.component?.key === "attachments")
       setAttachments([
         ...attachments,
@@ -738,7 +778,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           let valToSet = fromDateValue;
           if (fromDateValue instanceof Date) {
             valToSet = formatDateToYYYYMMDD(fromDateValue);
-          } else if (typeof fromDateValue === 'string' && fromDateValue.includes('T')) {
+          } else if (
+            typeof fromDateValue === "string" &&
+            fromDateValue.includes("T")
+          ) {
             // Try to safe parse ISO
             const d = new Date(fromDateValue);
             if (!isNaN(d.getTime())) {
@@ -795,15 +838,17 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           {userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-blue-600 text-white" : ""
-                  }`}
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+                  !isForOthers ? "bg-blue-600 text-white" : ""
+                }`}
                 onClick={() => setIsForOthers(false)}
               >
                 Self
               </button>
               <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-blue-600 text-white" : ""
-                  }`}
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${
+                  isForOthers ? "bg-blue-600 text-white" : ""
+                }`}
                 onClick={() => setIsForOthers(true)}
               >
                 For Others
@@ -868,11 +913,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                   rootEl as HTMLElement
                 ).querySelectorAll
                   ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
-                    "input.flatpickr-input"
-                  )
+                      "input.flatpickr-input"
+                    )
                   : document.querySelectorAll<FlatpickrInput>(
-                    "input.flatpickr-input"
-                  );
+                      "input.flatpickr-input"
+                    );
 
                 flatInputs.forEach((input) => {
                   const handler = () => {
@@ -912,8 +957,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               variant="contain"
               bgColor={isDesktop ? "blue-600" : "black"}
               textColor="white"
-              className={`flex-1 ${isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
-                } font-medium`}
+              className={`flex-1 ${
+                isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
+              } font-medium`}
             >
               {mutation.isPending || uploadFileLoading ? (
                 <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
