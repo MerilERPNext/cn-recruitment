@@ -1,36 +1,31 @@
-import { useState } from "react";
-import InvestmentDeclaration from "./Component/InvestmentDeclaration";
-import HouseProperty from "./Component/HouseProperty";
-import OtherDeclaration from "./Component/OtherDeclaration";
-
-const tabs = [
-  {
-    id: "houseProperty",
-    label: "House Property (U/S 24)",
-    component: HouseProperty,
-  },
-  {
-    id: "investment",
-    label: "Investment Declaration (U/S 80C & Others)",
-    component: InvestmentDeclaration,
-  },
-  { id: "others", label: "Others", component: OtherDeclaration },
-];
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from 'react';
+import { useIncomeTaxSheetData } from '../../../hooks/useTaxSheet';
+import CategoryDeclaration from './Component/test';
 
 const ITDeclarationForm = () => {
-  const [activeTab, setActiveTab] = useState("houseProperty");
+  const { data } = useIncomeTaxSheetData();
+  const categories = data || [];
 
-  const ActiveComponent =
-    tabs.find((tab) => tab.id === activeTab)?.component || null;
+  const [activeTab, setActiveTab] = useState<string>("");
+
+  // 👇 auto-select first category
+  useEffect(() => {
+    if (categories.length && !activeTab) {
+      setActiveTab(categories[0].category_name);
+    }
+  }, [categories, activeTab]);
+
+  const activeCategory = categories.find(
+    (cat: any) => cat.category_name === activeTab
+  );
 
   return (
-    <div className="bg-gray-50 min-h-screen px-3 sm:px-6 py-4">
-      {/* HEADER */}
-      <header className="bg-blue-50 rounded-lg p-4 mb-5">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          {/* LEFT INFO */}
-          <div>
-            <h1 className="text-sm font-semibold text-gray-800 flex flex-wrap items-center gap-2">
+    <div className="bg-gray-50 min-h-screen">
+      <header className="mb-6 py-4 px-8 bg-blue-50 rounded-lg">
+        <div className='flex items-center justify-between w-full'>
+          <div className="space-y-2">
+            <h1 className="text-xs font-semibold text-gray-800">
               IT Declaration for the Financial Year 2025 - 2026
               <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded">
                 UPDATED
@@ -52,41 +47,46 @@ const ITDeclarationForm = () => {
             <span className="border border-gray-300 px-4 py-1.5 rounded text-sm bg-white text-center w-full sm:w-auto">
               Form 12BB
             </span>
+            <button className="bg-blue-600 text-white px-4 py-1 rounded text-sm font-medium hover:bg-blue-700">
+              Submit
+            </button>
+            
           </div>
         </div>
+<div className='flex flex-row justify-start w-full gap-4 mt-4 '>
+  <span className="text-xs flex flex-row items-center justify-center font-medium text-gray-700"><input type="checkbox" id="declarationCheckbox" className="mr-2" /><h2>Yes</h2></span>
+  <span className="text-xs flex flex-row items-center justify-center font-medium text-gray-700"><input type="checkbox" id="declarationCheckbox" className="mr-2" /><h2>No</h2></span>
+</div>
 
-        {/* TABS */}
-        <nav className="mt-4 flex gap-2 overflow-x-auto scrollbar-hide">
-          {tabs.map((tab) => (
+        {/* 🔹 Dynamic Tabs */}
+        <nav className="flex flex-wrap gap-2 mt-4 border-b pb-3">
+          {categories.map((cat: any) => (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap px-4 py-1.5 text-sm rounded-2xl border-1 transition
+              key={cat.category_name}
+              onClick={() => setActiveTab(cat.category_name)}
+              className={`
+                px-4 py-1 text-xs rounded-2xl border
                 ${
-                  activeTab === tab.id
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
-                }`}
+                  activeTab === cat.category_name
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }
+              `}
             >
-              {tab.label}
+              {cat.category_name}
             </button>
           ))}
         </nav>
       </header>
 
-      {/* CONTENT CARD */}
-      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-        {ActiveComponent && (
-          <div className="w-full overflow-x-auto">
-            <ActiveComponent investments={[]} />
-          </div>
+      {/* 🔹 Active Category Content */}
+      <div className="bg-white p-6 shadow rounded-lg">
+        {activeCategory && (
+          <CategoryDeclaration
+            categoryName={activeCategory.category_name}
+            items={activeCategory.items}
+          />
         )}
-
-        {/* FOOTER LINKS */}
-        <div className="mt-6 pt-4 border-t text-xs text-gray-600 space-y-1">
-          <p>VIEW VERSIONS OF IT DECLARATION (0)</p>
-          <p>VIEW VERSIONS OF I/O (0)</p>
-        </div>
       </div>
     </div>
   );

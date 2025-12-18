@@ -1,5 +1,4 @@
 import React from 'react';
-import { Typography } from '@mui/material';
 import { Form } from '@tsed/react-formio';
 
 
@@ -76,9 +75,9 @@ const HouseProperty: React.FC = () => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <Typography variant="h6" gutterBottom>
+      <h1 className=' base-title'>
         House Property Declaration
-      </Typography>
+      </h1>
 
      
 

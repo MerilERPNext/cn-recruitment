@@ -10,7 +10,8 @@ export default function IncomeTaxSheet() {
   );
 
   return (
-    <div className="min-h-screen bg-white px-3 py-2 sm:px-6 sm:py-4">
+    <div className="min-h-screen bg-white p-4">
+
       <div className="max-w-7xl mx-auto">
         {/* HEADER CONTROLS */}
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -46,11 +47,10 @@ export default function IncomeTaxSheet() {
             </button>
           </div>
 
-          {/* ACTION BUTTONS */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-            <span className="text-xs text-gray-500">Currency: INR</span>
+          {/* RIGHT SIDE BUTTONS */}
+          <div className="flex gap-2 items-center">
 
-            <button className="px-3 py-1.5 border rounded text-sm w-full sm:w-auto">
+            <button className="px-4 py-1 bg-transparent hover:bg-blue-100 cursor-pointer border rounded text-sm">
               Preview
             </button>
 

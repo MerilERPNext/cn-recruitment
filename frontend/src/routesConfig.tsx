@@ -327,9 +327,9 @@ const AdvancesList = lazyWithRetry(
   "AdvancesList"
 );
 
-const BenefitsList = lazyWithRetry(
-  () => import("./components/SalarySlip/Benefits/BenefitsList"),
-  "BenefitsList"
+const PayPackage = lazyWithRetry(
+  () => import("./components/SalarySlip/Paypackage/PayPackage"),
+  "PayPackage"
 );
 
 const CompensatoryRequest = lazyWithRetry(
@@ -520,7 +520,7 @@ export const routesConfig: AppRoute[] = [
       { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
       { path: "advances-list", element: <AdvancesList /> },
       { path: "team-advances-list", element: <TeamAdvanceRequest /> },
-      { path: "benefits-list", element: <BenefitsList /> },
+      { path: "benefits-list", element: <PayPackage /> },
       { path: "extra-payment", element: <ExtraPayment /> },
     ],
   },

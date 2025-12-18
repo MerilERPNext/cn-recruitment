@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useState } from 'react';
 import {
     ChevronDown,
@@ -37,7 +38,7 @@ const MyBenefits: React.FC = () => {
         const year = new Date().getFullYear();
         const yy = year % 100;
         const nextYy = (year + 1) % 100;
-        return `${yy - 1}-${nextYy - 1}`;
+        return `${yy}-${nextYy}`;
     }, []);
 
 

@@ -1,10 +1,15 @@
-"use client"
-
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
-import { useTaxSheetData } from "../../../../hooks/useTaxSheet";
+import {
+  useTaxSheetData,
+  useTaxSheetPayrollPriodsData,
+} from "../../../../hooks/useTaxSheet";
 import { TaxSheetData, SeriesItem } from "../../../../types/taxSheet";
+import CustomDropdown from "../../../shared/CustomDropdown";
+
+/* ---------------- Types ---------------- */
 
 type SectionKey = keyof TaxSheetData;
 
@@ -13,17 +18,52 @@ interface SectionProps {
   data: SeriesItem[];
 }
 
+type PayrollPeriod = {
+  name: string;
+};
+
+/* ---------------- Component ---------------- */
+
 export default function TaxSheet() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: payrollPeriods } =
+    useTaxSheetPayrollPriodsData() as {
+      data: PayrollPeriod[] | undefined;
+    };
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(payrollPeriods?.[0]?.name || "");
+
+  useEffect(() => {
+    if (!selectedPeriod) {
+      setSelectedPeriod(payrollPeriods?.[0]?.name || "");
+    }
+  }, [payrollPeriods, selectedPeriod]);
+
+  const payrollPeriodOptions =
+    payrollPeriods?.map((p) => ({
+      value: p.name,
+      label: p.name,
+    })) || [];
+
+  const handlePeriodChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setSelectedPeriod(e.target.value);
+  };
 
   const { data: taxsheetData } = useTaxSheetData(
-    user?.employee || null
+    user?.employee || null,
+    selectedPeriod || null
   ) as { data: TaxSheetData | undefined };
+
+  useEffect(() => {
+    if (selectedPeriod) {
+      console.log("API called for payroll period:", selectedPeriod);
+    }
+  }, [selectedPeriod]);
 
   if (!taxsheetData) return <div>Loading...</div>;
 
-  /** --- Build dynamic sections from keys --- **/
   const buildSections = (data: TaxSheetData) => {
     const keys = Object.keys(data) as SectionKey[];
 
@@ -44,10 +84,8 @@ export default function TaxSheet() {
 
   const sections = buildSections(taxsheetData);
 
-
-  /** ---- Reusable Section component ---- **/
   const Section: React.FC<SectionProps> = ({ title, data }) => {
-    if (!data || data.length === 0) return null;
+    if (!data?.length) return null;
 
     return (
       <>
@@ -55,12 +93,17 @@ export default function TaxSheet() {
           {title}
         </div>
 
-        {data.map((row: SeriesItem, idx: number) => (
+        {data.map((row, idx) => (
           <React.Fragment key={idx}>
-            <div className="border-b px-4 py-3 text-sm">{row.name}</div>
+            <div className="border-b px-4 py-3 text-sm">
+              {row.name}
+            </div>
 
-            {row.values.map((value: number, i: number) => (
-              <div key={i} className="border-b px-4 py-3 text-sm text-center">
+            {row.values.map((value, i) => (
+              <div
+                key={i}
+                className="border-b px-4 py-3 text-sm text-center"
+              >
                 {value}
               </div>
             ))}
@@ -74,25 +117,43 @@ export default function TaxSheet() {
     );
   };
 
+  const FilterDropdowns = () => (
+    <div className="flex items-center gap-2">
+      <CustomDropdown
+        value={selectedPeriod}
+        onChange={handlePeriodChange}
+        options={payrollPeriodOptions}
+      />
+    </div>
+  );
+
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-x-auto border rounded-lg">
+    <div className="space-y-1">
+      <header className="py-2 px-4 bg-blue-50 rounded">
+        <div className="flex items-center justify-between w-full">
+          <h1 className="base-title font-semibold text-gray-800">
+            Tax Sheet {selectedPeriod}
+          </h1>
+          <FilterDropdowns />
+        </div>
+      </header>
 
+      <div className="overflow-x-auto border rounded-lg">
         <div
           className="min-w-max"
           style={{
             display: "grid",
-            gridTemplateColumns: `repeat(${taxsheetData.months.length + 2}, minmax(120px, 1fr))`,
+            gridTemplateColumns: `repeat(${
+              taxsheetData.months.length + 2
+            }, minmax(120px, 1fr))`,
           }}
         >
-
-          {/* Header Row */}
           <div className="bg-gray-50 border-b px-4 py-2 text-sm font-semibold">
             Particulars
           </div>
 
-          {taxsheetData.months.map((month: string) => (
+          {taxsheetData.months.map((month) => (
             <div
               key={month}
               className="bg-gray-50 border-b px-4 py-2 text-center text-sm font-semibold"
@@ -105,8 +166,6 @@ export default function TaxSheet() {
             Total
           </div>
 
-
-          {/* ---- render all dynamic sections ---- */}
           {sections.map((section) => (
             <Section
               key={section.key}
@@ -114,7 +173,6 @@ export default function TaxSheet() {
               data={taxsheetData[section.key] as SeriesItem[]}
             />
           ))}
-
         </div>
       </div>
     </div>

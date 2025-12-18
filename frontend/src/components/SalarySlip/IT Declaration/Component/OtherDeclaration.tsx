@@ -91,10 +91,10 @@ const formJson = {
       
 
 
-export default function OtherDeclaration() {
+const OtherDeclaration: React.FC = () =>  {
   return (
-    <div style={{ maxWidth: 1300, margin: "auto", padding: 30 }}>
-      <h2 style={{ marginBottom: 20 }}>TDS on Other Income</h2>
+    <div>
+      <h2 className=" base-title mb-2">TDS on Other Income</h2>
 
       <Form
         form={formJson}
@@ -103,3 +103,4 @@ export default function OtherDeclaration() {
     </div>
   )
 }
+export default OtherDeclaration
