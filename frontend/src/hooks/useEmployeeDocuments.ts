@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { EmployeeDocumentService } from "../services/EmployeeDocumentService";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { AcknowledgementRequiredService, EmployeeDocumentService } from "../services/EmployeeDocumentService";
 import { DocumentItem } from "../types/employeeDocument";
 
 export const useEmployeeDocument = () => {
@@ -8,3 +8,11 @@ export const useEmployeeDocument = () => {
       queryFn: EmployeeDocumentService.getDraftEmployeeDocument,
     });
   };
+
+
+export const useSubmitAcknowledgement = () => {
+  return useMutation({
+    mutationFn: (documentId: string) =>
+      AcknowledgementRequiredService.submitAcknowledgement(documentId),
+  });
+};

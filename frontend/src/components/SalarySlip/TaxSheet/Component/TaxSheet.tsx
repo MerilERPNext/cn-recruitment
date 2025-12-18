@@ -9,8 +9,6 @@ import {
 import { TaxSheetData, SeriesItem } from "../../../../types/taxSheet";
 import CustomDropdown from "../../../shared/CustomDropdown";
 
-/* ---------------- Types ---------------- */
-
 type SectionKey = keyof TaxSheetData;
 
 interface SectionProps {
@@ -21,9 +19,6 @@ interface SectionProps {
 type PayrollPeriod = {
   name: string;
 };
-
-/* ---------------- Component ---------------- */
-
 export default function TaxSheet() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
@@ -32,7 +27,6 @@ export default function TaxSheet() {
       data: PayrollPeriod[] | undefined;
     };
   const [selectedPeriod, setSelectedPeriod] = useState<string>(payrollPeriods?.[0]?.name || "");
-
   useEffect(() => {
     if (!selectedPeriod) {
       setSelectedPeriod(payrollPeriods?.[0]?.name || "");
@@ -117,6 +111,7 @@ export default function TaxSheet() {
     );
   };
 
+
   const FilterDropdowns = () => (
     <div className="flex items-center gap-2">
       <CustomDropdown
@@ -126,8 +121,6 @@ export default function TaxSheet() {
       />
     </div>
   );
-
-
   return (
     <div className="space-y-1">
       <header className="py-2 px-4 bg-blue-50 rounded">
@@ -135,8 +128,11 @@ export default function TaxSheet() {
           <h1 className="base-title font-semibold text-gray-800">
             Tax Sheet {selectedPeriod}
           </h1>
-          <FilterDropdowns />
+<div className="flex flex-row md:flex-row md:items-center md:gap-4">
+<FilterDropdowns />
+</div>
         </div>
+ 
       </header>
 
       <div className="overflow-x-auto border rounded-lg">

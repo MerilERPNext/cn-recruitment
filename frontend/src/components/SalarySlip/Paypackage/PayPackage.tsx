@@ -23,7 +23,7 @@ export default function SalaryAssignmentList() {
       <div className="border rounded-md bg-white">
         <div className="px-4 py-3 font-semibold border-b">Pay Package</div>
 
-        <div className="grid font-semibold text-xs grid-cols-5 px-4 py-2 text-sm  text-gray-500 bg-gray-50">
+        <div className="grid font-semibold text-xs grid-cols-5 px-4 py-2  text-gray-500 bg-gray-50">
           <div>Effective Date</div>
           <div>Status</div>
           <div>Monthly CTC</div>
@@ -46,12 +46,12 @@ export default function SalaryAssignmentList() {
                 {" "}
                 <span
                   className={`text-xs font-medium px-2 py-[1px] rounded-xl
-    ${
-      item.idx === 1
-        ? "bg-green-100 text-green-600"
-        : "bg-gray-100 text-gray-400"
-    }
-  `}
+                  ${
+                    item.idx === 1
+                    ? "bg-green-100 text-green-600"
+                    : "bg-gray-100 text-gray-400"
+                    }
+                    `}
                 >
                   {item.idx === 1 ? "Active" : "Disabled"}
                 </span>
@@ -107,8 +107,6 @@ export default function SalaryAssignmentList() {
                   <p className="font-semibold">{selected.from_date}</p>
                 </div>
               </div>
-
-              {/* BREAKUP */}
               <div>
                 <p className="font-medium mb-2">Salary Components</p>
                 <div className="space-y-2">

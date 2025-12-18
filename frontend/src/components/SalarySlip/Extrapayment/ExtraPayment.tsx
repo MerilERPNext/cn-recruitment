@@ -8,6 +8,7 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import Modal from "../Advances/commonModal";
 import ExtraPaymentForm from "./ExtraPaymentForm";
+import { IoCloseCircleOutline } from "react-icons/io5";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -21,54 +22,54 @@ interface Payment {
   status: "Paid" | "Pending" | "Overdue";
 }
 
-function FilterModal({ isOpen, onClose, activeFilter, onFilterChange }: any) {
+function FilterDropdown({
+  isOpen,
+  onClose,
+  activeFilter,
+  onFilterChange,
+}: any) {
   if (!isOpen) return null;
 
   const filters = ["all", "paid", "pending", "overdue"];
 
   return (
-    <>
-      {/* background overlay */}
-      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
-
-      {/* left drawer */}
-      <div
-        className="fixed inset-0 bg-black/40 flex items-end z-50"
+    <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+      <div className="p-3">
+      <div className="flex items-center justify-between mb-3">  
+        <h3 className="text-sm font-semibold mb-2 text-gray-700">
+          Filter Payments
+        </h3>
+        <button
         onClick={onClose}
-      >
-        <div
-          className="bg-white w-full rounded-t-2xl p-6 shadow-lg"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <h2 className="text-lg font-semibold mb-4 text-center">
-            Filter Payments
-          </h2>
+        className=" mb-2 text-gray-700 "
+        ><IoCloseCircleOutline className="w-6 h-6"/></button>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {filters.map((filter) => (
-              <button
-                key={filter}
-                className={`px-4 py-2 rounded-xl text-sm border
-            ${
-              activeFilter === filter
-                ? "border-blue-600 bg-blue-50 text-blue-700"
-                : "border-gray-300"
-            }
-          `}
-                onClick={() => {
-                  onFilterChange(filter);
-                  onClose();
-                }}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-col gap-1">
+          {filters.map((filter) => (
+            <button
+              key={filter}
+              className={`px-3 py-2 rounded-md text-sm text-left border
+                ${
+                  activeFilter === filter
+                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                    : "border-gray-200 hover:bg-gray-50"
+                }
+              `}
+              onClick={() => {
+                onFilterChange(filter);
+                onClose();
+              }}
+            >
+              {filter}
+            </button>
+          ))}
         </div>
       </div>
-    </>
+    </div>
   );
 }
+
 
 export default function ExtraPayment() {
   const [activeFilter, setActiveFilter] = useState<PaymentStatus>("all");
@@ -159,20 +160,24 @@ export default function ExtraPayment() {
             />
           </div>
 
-          <button
-            onClick={() => setIsFilterOpen(true)}
-            className="px-2 py-2 border border-gray-300 border-l-0 rounded-r-lg bg-white text-gray-900 flex items-center gap-2"
-          >
-            <Filter className="w-4 h-4" />
-          </button>
+    <div className="relative inline-block">
+  <button
+    onClick={() => setIsFilterOpen((prev) => !prev)}
+    className="px-2 py-2 border border-gray-300 border-l-0 rounded-r-lg bg-white text-gray-900 flex items-center gap-2"
+  >
+    <Filter className="w-4 h-4" />
+  </button>
+
+  <FilterDropdown
+    isOpen={isFilterOpen}
+    activeFilter={activeFilter}
+    onFilterChange={setActiveFilter}
+    onClose={() => setIsFilterOpen(false)}
+  />
+</div>
         </div>
 
-        <FilterModal
-          isOpen={isFilterOpen}
-          onClose={() => setIsFilterOpen(false)}
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-        />
+      
 
         {/* ---------------------- WEB ---------------------- */}
         {!isMobile && (

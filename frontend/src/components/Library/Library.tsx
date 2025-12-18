@@ -1,14 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useState } from "react";
-import { useEmployeeDocument } from "../../hooks/useEmployeeDocuments";
+import { useEmployeeDocument, useSubmitAcknowledgement } from "../../hooks/useEmployeeDocuments";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const { data } = useEmployeeDocument();
   const [isMobile, setIsMobile] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
+  const {
+    mutate: submitAcknowledgement,
+  } = useSubmitAcknowledgement();
+
+  const handleSubmit = () => {
+    if (!selectedDocId) return;
+  
+    submitAcknowledgement(selectedDocId, {
+      onSuccess: () => {
+        alert("Acknowledgement submitted successfully!");
+        setSelectedFile(null);
+        setSelectedDocId(null);
+        setAcknowledged(false);
+      },
+    });
+  };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAcknowledged(e.target.checked);
@@ -167,7 +184,10 @@ const DocumentLibrary = () => {
                     {/* Acknowledgement Required → show Acknowledge button */}
                     {doc.status === "Acknowledgement Required" && (
                       <button
-                        onClick={() => setSelectedFile(doc.file_name)}
+                      onClick={() => {
+                        setSelectedFile(doc.file_name); // preview ke liye
+                        setSelectedDocId(doc.name);     // 👈 acknowledgement ke liye
+                      }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all"
                       >
                         Acknowledge
@@ -281,7 +301,7 @@ const DocumentLibrary = () => {
                 {/* Only show Acknowledge button if status = "Acknowledgement Required" */}
                 {showAcknowledgement && acknowledged && (
                   <button
-                    onClick={() => alert("submit! ✅")}
+                  onClick={handleSubmit}
                     className="ml-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md"
                   >
                     Submit

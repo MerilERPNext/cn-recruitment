@@ -1,66 +1,72 @@
-"use client";
+"use client"
+import { useState } from "react"
+import TaxSheet from "./Component/TaxSheet"
+import IncomeComputationSheet from "./Component/IncomeTax"
 
-import { useState } from "react";
-import TaxSheet from "./Component/TaxSheet";
-import IncomeComputationSheet from "./Component/IncomeTax";
+import TDSSlipHandler from "./Component/TDSDownloadAndView"
+import { useSalarySlipName } from "../../../hooks/useSalaryDetails"
+
 
 export default function IncomeTaxSheet() {
-  const [activeTab, setActiveTab] = useState<"taxsheet" | "income-computation">(
-    "taxsheet"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "taxsheet" | "income-computation"
+  >("taxsheet")
+
+  
+
+  const { data: SalarySlipName } = useSalarySlipName() as {
+    data?: { data: { name: string }[] }
+  }
+  const SalarySlipId = SalarySlipName?.data?.[0]?.name
 
   return (
     <div className="min-h-screen bg-white p-4">
-
-      <div className="max-w-7xl mx-auto">
-        {/* HEADER CONTROLS */}
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          {/* TABS */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            <button
-              onClick={() => setActiveTab("taxsheet")}
-              className={`px-3 py-1.5 text-sm rounded-md border whitespace-nowrap ${
-                activeTab === "taxsheet"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700"
-              }`}
-            >
-              Taxsheet
-            </button>
-
-            <button
-              onClick={() => setActiveTab("income-computation")}
-              className={`px-3 py-1.5 text-sm rounded-md border whitespace-nowrap ${
-                activeTab === "income-computation"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700"
-              }`}
-            >
-              Income Tax Computation
-            </button>
-
-            <button
-              disabled
-              className="px-3 py-1.5 text-sm rounded-md bg-yellow-100 text-yellow-800 whitespace-nowrap"
-            >
-              New Tax Regime
-            </button>
+      <div className="max-w-7xl mx-auto space-y-4">
+        <header className="flex flex-wrap items-center justify-between gap-4  rounded">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab("taxsheet")}
+                className={`px-4 py-1 rounded-lg border ${
+                  activeTab === "taxsheet"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700"
+                }`}
+              >
+                Taxsheet
+              </button>
+              <button
+                onClick={() => setActiveTab("income-computation")}
+                className={`px-4 py-1 rounded-lg border ${
+                  activeTab === "income-computation"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700"
+                }`}
+              >
+                Income Tax Computation
+              </button>
+              <button
+                disabled
+                className="px-4 py-1 rounded bg-yellow-100 text-yellow-800"
+              >
+                New Tax Regime
+              </button>
+            </div>
           </div>
-
-          {/* RIGHT SIDE BUTTONS */}
-          <div className="flex gap-2 items-center">
-
-            <button className="px-4 py-1 bg-transparent hover:bg-blue-100 cursor-pointer border rounded text-sm">
-              Preview
-            </button>
-
-            <button className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm w-full sm:w-auto">
-              Download
-            </button>
+          {activeTab === "taxsheet" && (<div className="flex items-center gap-3">
+            {SalarySlipId && (
+              <TDSSlipHandler
+                salarySlipName={SalarySlipId}
+                disabled={false}
+              />
+            )}
           </div>
-        </div>
+          )}
+        </header>
+        {activeTab === "taxsheet" && (
+          <TaxSheet />
+        )}
 
-        {/* CONTENT */}
         {activeTab === "taxsheet" && <TaxSheet />}
         {activeTab === "income-computation" && <IncomeComputationSheet />}
       </div>
