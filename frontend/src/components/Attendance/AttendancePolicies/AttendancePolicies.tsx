@@ -2,14 +2,14 @@ import { useLocation } from "react-router";
 import { useAttendancePolicies } from "../../../hooks/useAttendance";
 import LayoutHeader from "../../shared/LayoutHeader";
 
-const AttendancePolicies = () => {
+const AttendancePolicies = ({ doctype_name }: { doctype_name: string }) => {
   const { search } = useLocation();
   const query = new URLSearchParams(search);
   const policyParam = query.get("policy");
 
   const { data, isLoading, isError, error } = useAttendancePolicies({
-    attendance_policy: policyParam,
-    policy_question: "Attendance Policy",
+    target_doctype: policyParam,
+    doctype_name: doctype_name,
   });
 
   const renderSkeletonRows = (count = 5) => {
@@ -47,10 +47,9 @@ const AttendancePolicies = () => {
         <td className="px-2 py-3 border-r border-gray-300 text-center">
           <div
             className={`px-2 py-1 text-xs font-semibold rounded w-fit inline-block
-              ${
-                q.status === "----"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : q.status.toLowerCase() === "yes"
+              ${q.status === "----"
+                ? "bg-yellow-100 text-yellow-700"
+                : q.status.toLowerCase() === "yes"
                   ? "bg-blue-100 text-blue-700"
                   : "bg-red-100 text-red-700"
               }`}
