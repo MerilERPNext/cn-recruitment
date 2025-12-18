@@ -6,25 +6,24 @@ import { LeaveRequestRefreshProvider } from "../Leaves/LeaveRequestRefreshContex
 import { RequestLeaveModalProvider } from "../Leaves/RequestLeaveModalContext";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { ChevronDown } from "lucide-react";
 import LeaveRequest from "../Attendance/LeaveRequest";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
-import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+// import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
+// import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+// import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { SidebarProvider, useSidebar } from "./SidebarContext";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
 import Button from "../shared/atoms/Button";
 
 const AttendanceLayoutContent: React.FC = () => {
-  const { data: userId } = useLoggedInUser();
+  // const { data: userId } = useLoggedInUser();
   const { isSidebarOpen } = useSidebar();
 
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  // const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
-  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    user?.employee || ""
-  );
+  // // const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+  // //   user?.employee || ""
+  // // );
 
   const { isDesktop } = useScreenSize();
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
