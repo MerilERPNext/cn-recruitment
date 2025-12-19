@@ -1,6 +1,7 @@
 import FrappeAPI from "../utils/frappeAPI";
 
 export interface UiPermissionAction {
+  action_name: string;
   enabled: boolean;
 }
 export interface UiPermissionPage {

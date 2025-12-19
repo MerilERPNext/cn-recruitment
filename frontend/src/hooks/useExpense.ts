@@ -77,27 +77,9 @@ export function usePostExpenseClaim() {
   const navigate = useNavigate();
 
   const handleError = (err: any) => {
-    let errorMsg = "Submission failed. Please try again.";
-    try {
-      const raw = err?.response?.data?._server_messages;
-      if (raw) {
-        const messages = JSON.parse(raw);
-        if (Array.isArray(messages) && messages.length > 0) {
-          const firstMessage = JSON.parse(messages[0]);
-          if (firstMessage?.message) {
-            errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
-          }
-        }
-      } else if (err?.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      } else if (err?.message) {
-        errorMsg = err.message;
-      }
-    } catch (e) {
-      console.error("Failed to parse server error message:", e);
-    }
-
-    toast.error(errorMsg);
+    toast.error(
+      errorResponseFormater(err, "Submission failed. Please try again.")
+    );
   };
 
   return useMutation({
@@ -173,30 +155,6 @@ export const useGetUnitPrice = (
   });
 };
 
-const handleError = (err: any) => {
-  let errorMsg = "Submission failed. Please try again.";
-  try {
-    const raw = err?.response?.data?._server_messages;
-    if (raw) {
-      const messages = JSON.parse(raw);
-      if (Array.isArray(messages) && messages.length > 0) {
-        const firstMessage = JSON.parse(messages[0]);
-        if (firstMessage?.message) {
-          errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
-        }
-      }
-    } else if (err?.response?.data?.message) {
-      errorMsg = err.response.data.message;
-    } else if (err?.message) {
-      errorMsg = err.message;
-    }
-  } catch (e) {
-    console.error("Failed to parse server error message:", e);
-  }
-
-  toast.error(errorMsg);
-};
-
 //Expense approval hooks
 export function useExpenseApproval() {
   const queryClient = useQueryClient();
@@ -212,7 +170,13 @@ export function useExpenseApproval() {
       queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
     },
     onError: (error) => {
-      handleError(error);
+      toast.error(
+        errorResponseFormater(
+          error,
+          "Failed to update expense claim. Please try again."
+        )
+      );
+
       console.error("Expense approval/rejection failed:", error);
     },
   });
@@ -251,8 +215,14 @@ export function useExpenseSingleItemApproval() {
       queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
     },
     onError: (error) => {
-      handleError(error);
-      console.error("Single item approval/rejection failed:", error);
+      toast.error(
+        errorResponseFormater(
+          error,
+          "Failed to update expense claim. Please try again."
+        )
+      );
+
+      console.error("Expense approval/rejection failed:", error);
     },
   });
 }
@@ -323,7 +293,12 @@ export function useExpenseLineItemUpdate() {
       queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
     },
     onError: (error) => {
-      handleError(error);
+      toast.error(
+        errorResponseFormater(
+          error,
+          "Line item update failed, Please try again."
+        )
+      );
       console.error("Line item update failed:", error);
     },
   });
@@ -360,7 +335,9 @@ export function useExpenseCommentUpdate() {
     },
 
     onError: (error) => {
-      handleError(error);
+      toast.error(
+        errorResponseFormater(error, "Comment update failed. Please try again.")
+      );
       console.error("Comment update failed:", error);
     },
   });

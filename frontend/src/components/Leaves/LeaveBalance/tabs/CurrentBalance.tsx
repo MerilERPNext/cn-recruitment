@@ -225,7 +225,7 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
                   <h3 className="title-module font-semibold text-gray-800">
                     Balance as of {formatDate(selectedDate)}
                   </h3>
-                  <span className="text-xl font-bold text-gray-900">
+                  <span className="text-lg font-bold text-gray-900">
                     {displayData.balance ?? 0}
                   </span>
                 </div>

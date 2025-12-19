@@ -27,7 +27,6 @@ import ListView from "./EmployeeAttendence/ListView";
 import Cardtable from "./EmployeeAttendence/CardTable";
 import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
-import { Plus } from "lucide-react";
 import { ViewAll } from "../../shared/atoms/ViewAll";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 
@@ -235,9 +234,8 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex  bg-gray-100 `}>
       <div
-        className={`flex  bg-gray-100 p-2 flex-col ${
-          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-        }`}
+        className={`flex  bg-gray-100 p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+          }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -269,8 +267,9 @@ const EmployeeAttendance = () => {
                   setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
                 }}
               >
-                <Plus className="w-4 h-4 mr-2 font-bold" />
-                Raise Request
+                {/* <Plus className="w-4 h-4 mr-2 font-bold" /> */}
+                {/* Raise Request */}
+                Regularize
               </button>
             </div>
           </div>

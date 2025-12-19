@@ -158,7 +158,7 @@ const TasksAwaiting: React.FC = () => {
   const totalCount = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="bg-white rounded-lg p-6 mb-2 shadow-md border border-[rgba(0,0,0,0.05)]">
+    <div className="bg-white rounded-lg p-6 shadow-md border border-[rgba(0,0,0,0.05)]">
       <div className="flex justify-between items-center mb-4">
         <h3 className="section-title">Tasks Awaiting You</h3>
         <ViewAll title="Visit Todo" onClick={handleTodoClick} />

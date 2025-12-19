@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-type DrawerSize = "sm" | "md" | "lg" | "xl" | "xxl" | "full";
+export type DrawerSize = "sm" | "md" | "lg" | "xl" | "xxl" | "full";
 
 interface SideDrawerProps {
     open: boolean;
@@ -33,7 +33,19 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
     // Close on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
+            const target = e.target as HTMLElement;
+
+            // Check if the click is on a Choice.js dropdown or its items
+            const isChoiceDropdown =
+                target.closest(".choices__list--dropdown") ||
+                target.closest(".choices__item--choice") ||
+                target.closest(".choices");
+
+            if (
+                drawerRef.current &&
+                !drawerRef.current.contains(target) &&
+                !isChoiceDropdown
+            ) {
                 onClose?.();
             }
         };

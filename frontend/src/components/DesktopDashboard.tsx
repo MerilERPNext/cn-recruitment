@@ -566,8 +566,8 @@ export default function DesktopDashboard() {
         </div>
         <ViewingAsBanner />
 
-        <div className="p-4 flex-1 overflow-hidden">
-          <div className="pr-3 max-w-full">
+        <div className="p-4 flex-1 overflow-hidden bg-gray-200">
+          <div className="max-w-full">
             {/* Employee Error Section */}
             {!employeeState.isLoading && !employeeState.hasValidData && (
               <EmployeeFallback
@@ -583,9 +583,12 @@ export default function DesktopDashboard() {
             )}
 
             {/* Hero Banner */}
-            <div className="my-4 w-full max-w-full overflow-hidden rounded-2xl bg-white">
-              {!noticeIsLoading && notices && notices?.length > 0 &&
-                <Carousel className="w-full h-full max-h-[150px]" showNavigation={false}>
+            <div className=" w-full max-w-full overflow-hidden rounded-2xl bg-white mb-2">
+              {!noticeIsLoading && notices && notices?.length > 0 && (
+                <Carousel
+                  className="w-full h-full max-h-[150px]"
+                  showNavigation={false}
+                >
                   {notices?.map((item) => (
                     <CarouselSlide key={item.name}>
                       <NoticeSlide data={item} />
@@ -714,7 +717,12 @@ export default function DesktopDashboard() {
                 </div>
 
                 {/* Clock In / Out */}
-                <div className="flex flex-row gap-4 mt-4">
+                <div
+                  className={`flex ${homeSummary && !homeSummary?.length
+                    ? "flex-col-reverse gap-2"
+                    : "flex-row gap-4"
+                    }  mt-4`}
+                >
                   <div className="flex w-full">
                     {canShowClockIn?.can_show && (
                       <button
@@ -774,8 +782,8 @@ export default function DesktopDashboard() {
 
 
               {/* Requests */}
-              <div className="bg-white rounded-lg shadow-sm relative">
-                <div className="sticky top-0 border-b py-2 z-10 flex justify-between items-center mb-3 px-6">
+              <div className="bg-white rounded-lg shadow-md relative border border-[rgba(0,0,0,0.05)] pb-4">
+                <div className="sticky top-0 border-b px-6 py-2 z-10 flex justify-between items-center mb-3 px-6">
                   <h3 className="section-title mb-0 text-left">Requests</h3>
                   <button
                     onClick={() => {

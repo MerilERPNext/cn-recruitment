@@ -55,6 +55,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
         placeholder: isMetadataLoading ? "Loading cycles..." : "Select cycle",
         input: true,
         dataSrc: "values",
+        customClass: "text-sm font-medium text-gray-700",
         data: {
           values:
             metadata?.cycle_options?.map((c) => ({
@@ -190,7 +191,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
             Transaction
           </h3>
           {selectedCycle ? (
-            <p className="text-base font-semibold">
+            <p className="text-base font-medium text-gray-800">
               {formatDateRange(
                 metadata?.transaction_range?.from_date || "",
 

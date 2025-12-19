@@ -16,6 +16,7 @@ import Button from "../shared/atoms/Button";
 import EmployeeSidebarForm from "./EmployeeSidebarForm";
 import ProfileGridSkeleton from "./ProfileSkeleton";
 import { PencilIcon } from "lucide-react";
+import usePermission from "../../hooks/usePermission";
 
 interface EditableField {
     key: string;
@@ -23,6 +24,7 @@ interface EditableField {
 }
 const EmployeeProfileSections = () => {
     const { targetEmployeeId } = useTargetUser();
+
     const { data: userId } = useLoggedInUser();
     const { data: currentUser, isLoading } =
         useCurrentEmployeeAllDetails(userId || "");
@@ -48,6 +50,7 @@ const EmployeeProfileSections = () => {
 
     const [formioTabs, setformioTabs] = useState<TabWithSchema[]>([]);
     const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+    const can = usePermission();
     useEffect(() => {
         if (!fieldPermissions || !employee?.data) return;
 
@@ -148,15 +151,16 @@ const EmployeeProfileSections = () => {
                                 {tab.label}
                             </h2>
 
-                            <Button
-                                variant="subtle"
-                                icon={<PencilIcon className="h-4 w-4" />}
-                                size="md"
-                                onClick={() => setEdit({ key: tab.key, label: tab.label })}
-                            // className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                            >
-                                Edit
-                            </Button>
+                            {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && (
+                                <Button
+                                    variant="subtle"
+                                    icon={<PencilIcon className="h-4 w-4" />}
+                                    size="md"
+                                    onClick={() => setEdit({ key: tab.key, label: tab.label })}
+                                >
+                                    Edit
+                                </Button>
+                            )}
                         </div>
 
                         {/* Info Grid */}

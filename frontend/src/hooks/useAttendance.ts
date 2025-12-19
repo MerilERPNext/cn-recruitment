@@ -18,7 +18,9 @@ import type {
   Attendance,
   AttendanceRecord,
   AttendanceRequest,
+  AuditReportResponse,
   CanShowClockIn,
+  EmployeeAllCheckin,
   EmployeeCheckInLog,
   EmployeeShift,
   EmployeeShiftSummary,
@@ -229,6 +231,28 @@ export const useGetPolicyForDate = (
   });
 };
 
+export const useGetAllEmployeeCheckin = (
+  filters: any
+): UseQueryResult<EmployeeAllCheckin[], Error> => {
+  return useQuery<EmployeeAllCheckin[], Error>({
+    queryKey: ["all-employee-checkin", filters],
+    queryFn: () => attendanceService.getAllEmployeeCheckin(filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
+export const useGetAuditReport = (
+  filters: any
+): UseQueryResult<AuditReportResponse, Error> => {
+  return useQuery<AuditReportResponse, Error>({
+    queryKey: ["audit-report", filters],
+    queryFn: () => attendanceService.getAuditReport(filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
 export const useAttendanceById = (
   enabled: boolean,
   filters?: FilterCondition[]
@@ -381,11 +405,11 @@ export const usePlannedOvertimeRequestAttachments = (employee: string) => {
     staleTime: 5 * 60 * 1000,
   });
 };
-export const useAttendanceRequestAttachments = (employee: string,date:string,request_type:string) => {
+export const useAttendanceRequestAttachments = (employee: string, date: string, request_type: string) => {
   return useQuery<any>({
     queryKey: ["attendance-request-attachments-allowed", date, employee, request_type],
     queryFn: () => {
-      return attendanceService.attendanceRequestAttachments(employee,date,request_type);
+      return attendanceService.attendanceRequestAttachments(employee, date, request_type);
     },
     enabled: !!employee && !!request_type && !!date,
     staleTime: 5 * 60 * 1000,
