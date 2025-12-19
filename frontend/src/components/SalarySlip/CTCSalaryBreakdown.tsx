@@ -101,13 +101,10 @@ const CTCSalaryUI = () => {
  
 
   const Header = () => (
-    <div className="flex justify-between items-start mb-8">
-      <div>
+    <div className="mb-8">
+      <div className='flex justify-between items-center w-full'>
         <h1 className=" base-title text-gray-900">Compensation</h1>
-        <p className="card-subtitle mt-1">Detailed breakdown of your salary structure</p>
-      </div>
-
-      <button
+        <button
         onClick={toggleMoneyMask}
         className="my-btn-secondary card-subtitle px-3 py-2 flex items-center gap-2"
         title={isMoneyMasked ? "Show amounts" : "Hide amounts"}
@@ -124,6 +121,10 @@ const CTCSalaryUI = () => {
           </>
         )}
       </button>
+      </div>
+
+    
+      <p className="card-subtitle mt-1">Detailed breakdown of your salary structure</p>
     </div>
 
   );
@@ -169,7 +170,7 @@ const CTCSalaryUI = () => {
               <div className="px-6 py-4 bg-gray-50/50">
                 <h3 className=" base-title  text-gray-900">Annual Breakdown</h3>
               </div>
-              <div className="p-6">
+              <div className="">
 
                 {
                   isDesktop ? <div>

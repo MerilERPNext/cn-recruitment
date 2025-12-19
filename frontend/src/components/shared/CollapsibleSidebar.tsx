@@ -259,7 +259,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/advances-list",
         },
         {
-          name: "Team Advances",
+          name: "Team Advances Requests",
           icon: Coins,
           href: "/webapp/salary-slip-app/team-advances-list",
         },
@@ -274,10 +274,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/extra-payment",
         },
         {
+          name: "Perquisites",
+          icon: FileText,
+          href: "/webapp/salary-slip-app/Perquisites",
+        },
+        {
           name: "Payroll Documents",
           icon: FileText,
           href: "/webapp/salary-slip-app/hr-payroll",
         },
+
       ],
     },
     {

@@ -65,7 +65,7 @@ export default function LoanList({ loans }: LoanListProps) {
       <CardTable titles={titles} columnWidths={columnWidths}>
         <div className="card-subtitle  bg-white divide-y divide-gray-200">
           {loans.map((loan) => (
-            <div key={loan.loan_name} className="border-b border-gray-200">
+            <div key={loan.loan_name} className="border-t border-gray-200">
               {/* Row */}
               <div
                 className="my-data-row grid gap-4 px-6 py-3"

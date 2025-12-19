@@ -594,7 +594,7 @@ export default function DesktopDashboard() {
                       <NoticeSlide data={item} />
                     </CarouselSlide>
                   ))}
-                </Carousel>}
+                </Carousel>)}
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
