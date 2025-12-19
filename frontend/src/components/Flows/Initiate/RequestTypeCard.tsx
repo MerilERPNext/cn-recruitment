@@ -10,14 +10,24 @@ interface RequestTypeCardProps {
 const RequestTypeCard: React.FC<RequestTypeCardProps> = ({ data }) => {
 
   const { data: employeeIdCard } = useCurrentEmployeeIdCard();
-  const { data: trigger } = useChatAssistantFlowInitiateData(employeeIdCard?.id, data.name);
+  const {
+    mutateAsync
+  } = useChatAssistantFlowInitiateData();
 
-  const handleTriggerFlow = () => {
+  const handleTriggerFlow = async () => {
     if (
       typeof window !== "undefined" &&
       typeof window.trigger_chatnext_assistant === "function"
     ) {
-      window.trigger_chatnext_assistant(true, trigger?.session);
+      try {
+        const trigger = await mutateAsync({
+          document_name: employeeIdCard?.id || "",
+          definition_name: data.name,
+        })
+        window.trigger_chatnext_assistant(true, trigger?.session);
+      } catch (error: any) {
+        console.error("Error", error?.message);
+      }
     } else {
       console.warn("⚠️ trigger_chatnext_assistant is not available on window.");
     }

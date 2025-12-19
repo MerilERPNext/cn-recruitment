@@ -1,5 +1,5 @@
 // src/hooks/useChatAssistant.ts
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { getChatAssistantData, getChatAssistantFlowInitiateData, getDifinitionNameForSeparation, } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 
@@ -40,23 +40,19 @@ export const useChatAssistant = (
   });
 };
 
-export const useChatAssistantFlowInitiateData = (
-  document_name: string | undefined,
-  definition_name: string,
-) => {
-  return useQuery({
-    queryKey: [
-      "chatAssistant",
-      "Employee",
+export const useChatAssistantFlowInitiateData = () => {
+  return useMutation({
+    mutationFn: ({
       document_name,
-      definition_name
-    ],
-    queryFn: () => getChatAssistantFlowInitiateData(
-      document_name!,
-      definition_name
-    ),
-    enabled: !!document_name && !!definition_name
+      definition_name,
+    }: {
+      document_name: string;
+      definition_name: string;
+    }) =>
+      getChatAssistantFlowInitiateData(
+        document_name,
+        definition_name
+      ),
   });
 };
-
 
