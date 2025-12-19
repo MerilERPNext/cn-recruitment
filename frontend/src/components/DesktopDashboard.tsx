@@ -114,7 +114,9 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [["status", "!=", "Expired"]]);
+  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [
+    ["status", "!=", "Expired"],
+  ]);
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -352,8 +354,12 @@ export default function DesktopDashboard() {
         className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
-          <div>
+        <div
+          className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600
+  border-b border-gray-200 px-8 py-2
+  flex items-center sticky top-0 z-10 gap-4"
+        >
+          <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
                 <h1 className="text-xl font-bold text-white">
@@ -366,15 +372,16 @@ export default function DesktopDashboard() {
               </>
             ) : (
               <>
-                <div className="w-52 h-6 my-2 rounded-lg bg-gray-300 animate-pulse"></div>
+                <div className="w-52 h-5 my-2 rounded-lg bg-gray-300 animate-pulse"></div>
                 <div className="w-32 h-4 my-1 rounded-lg bg-gray-300 animate-pulse"></div>
               </>
             )}
           </div>
-          <SearchMembers />
+          <div className="flex-1 min-w-0 flex justify-center">
+            <SearchMembers />
+          </div>
 
-
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-shrink-0">
             <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-blue-500 rounded-lg transition-colors"
@@ -426,7 +433,7 @@ export default function DesktopDashboard() {
                       Employee ID: {currentEmployee?.employee}
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300">
                     <img
                       src={currentEmployee?.image || defaultProfile}
                       alt="User avatar"
@@ -512,7 +519,7 @@ export default function DesktopDashboard() {
 
                     <button
                       onClick={() => {
-                        clearTargetEmployee()
+                        clearTargetEmployee();
                         navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
@@ -594,9 +601,11 @@ export default function DesktopDashboard() {
                       <NoticeSlide data={item} />
                     </CarouselSlide>
                   ))}
-                </Carousel>}
+                </Carousel>
+              )}
             </div>
           </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
             <div className="lg:col-span-7 flex flex-col gap-4">
               {/* Tasks Awaiting */}
@@ -611,7 +620,7 @@ export default function DesktopDashboard() {
 
             <div className="lg:col-span-3 flex flex-col gap-4">
               {/* Total Hours Worked + Daily Timings */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
+              <div className="bg-white rounded-lg p-6 shadow-md border border-[rgba(0,0,0,0.05)]">
                 <div className="text-center">
                   <p className="section-title mb-2 text-left">
                     Total hours worked
@@ -748,38 +757,37 @@ export default function DesktopDashboard() {
                   </div>
 
                   {/* Status */}
-                  <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
-                    <div
-                      className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
-                        }`}
-                    ></div>
+                  {homeSummary && homeSummary?.length > 0 ? (
+                    <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
+                      <div
+                        className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                          }`}
+                      ></div>
 
-                    <span
-                      className={
-                        isCurrentlyCheckedIn ? "text-green-600" : "text-red-600"
-                      }
-                    >
-                      Currently{" "}
-                      {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
-                    </span>
-                  </div>
+                      <span
+                        className={
+                          isCurrentlyCheckedIn
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }
+                      >
+                        Currently{" "}
+                        {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center w-full gap-2 p-2 text-sm bg-blue-100 rounded">
+                      <span className={"text-blue-600"}>
+                        Let's Get The Ball Rolling
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Events Widget */}
-              <div className="bg-white rounded-lg shadow-sm max-h-[16.5rem] min-h-[16.5rem] flex flex-col">
-                {/* Header */}
-                <div className="sticky top-0 bg-white border-b px-6 py-2">
-                  <h3 className="section-title mb-0 text-left">Events</h3>
-                </div>
 
-                {/* Content Scroll Area */}
-                <div className="flex-1 overflow-y-auto px-4 py-3">
-                  <Events />
-                </div>
-              </div>
-
-
+              <Events />
 
               {/* Requests */}
               <div className="bg-white rounded-lg shadow-md relative border border-[rgba(0,0,0,0.05)] pb-4">
@@ -787,17 +795,13 @@ export default function DesktopDashboard() {
                   <h3 className="section-title mb-0 text-left">Requests</h3>
                   <button
                     onClick={() => {
-                      navigate(
-                        "/webapp/requests"
-                      );
+                      navigate("/webapp/requests");
                     }}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     View All
                   </button>
                 </div>
-
-
 
                 <div className="grid grid-cols-2 gap-4 px-6">
                   {/* Apply Leave */}

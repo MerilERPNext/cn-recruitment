@@ -1,16 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useMemo } from "react";
 import { usePayPackage } from "../../../hooks/payroll/usePayroll";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import HeaderBar from "../../HeaderBar";
 
 type SalaryItem = any;
 
 export default function SalaryAssignmentList() {
   const { data: apiResponse, isLoading, isError } = usePayPackage();
   const [selected, setSelected] = useState<SalaryItem | null>(null);
-
-  const { isDesktop } = useScreenSize();
 
   const list = useMemo(() => {
     return Array.isArray(apiResponse) ? apiResponse : [];
@@ -50,9 +46,10 @@ export default function SalaryAssignmentList() {
                 {" "}
                 <span
                   className={`text-xs font-medium px-2 py-[1px] rounded-xl
-                  ${item.idx === 1
-                      ? "bg-green-100 text-green-600"
-                      : "bg-gray-100 text-gray-400"
+                  ${
+                    item.idx === 1
+                    ? "bg-green-100 text-green-600"
+                    : "bg-gray-100 text-gray-400"
                     }
                     `}
                 >
@@ -77,21 +74,18 @@ export default function SalaryAssignmentList() {
       {/* MODAL */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
-          <div className={`bg-white w-full ${isDesktop && "max-w-[400px]"} shadow-lg relative h-screen overflow-y-auto`}>
+          <div className="bg-white w-full max-w-[30%] shadow-lg relative h-screen overflow-y-auto">
             {/* HEADER */}
-            {isDesktop ?
-              <div className="flex justify-between items-center p-4 border-b">
-                <h2 className="font-semibold text-lg">CTC Breakdown</h2>
-                <button
-                  onClick={() => setSelected(null)}
-                  className="text-gray-500 hover:text-black"
-                >
-                  ✕
-                </button>
-              </div>
-              :
-              <HeaderBar title="CTC Breakdown" onBack={() => setSelected(null)} />
-            }
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="font-semibold text-lg">CTC Breakdown</h2>
+              <button
+                onClick={() => setSelected(null)}
+                className="text-gray-500 hover:text-black"
+              >
+                ✕
+              </button>
+            </div>
+
             {/* BODY */}
             <div className="p-4 space-y-6 text-sm">
               {/* SUMMARY */}
