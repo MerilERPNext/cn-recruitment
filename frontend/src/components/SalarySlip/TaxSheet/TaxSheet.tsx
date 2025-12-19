@@ -66,8 +66,6 @@ export default function IncomeTaxSheet() {
         {activeTab === "taxsheet" && (
           <TaxSheet />
         )}
-
-        {activeTab === "taxsheet" && <TaxSheet />}
         {activeTab === "income-computation" && <IncomeComputationSheet />}
       </div>
     </div>

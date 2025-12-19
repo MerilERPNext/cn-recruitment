@@ -232,7 +232,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/salary-slip-list",
         },
         {
-          name: "Tax Declaration",
+          name: "Tax Declaration Sheet",
           icon: Wallet,
           href: "/webapp/salary-slip-app/income-tax-sheet",
         },

@@ -9,6 +9,8 @@ import {
 import { TaxSheetData, SeriesItem } from "../../../../types/taxSheet";
 import CustomDropdown from "../../../shared/CustomDropdown";
 
+/* ---------------- Types ---------------- */
+
 type SectionKey = keyof TaxSheetData;
 
 interface SectionProps {
@@ -19,6 +21,7 @@ interface SectionProps {
 type PayrollPeriod = {
   name: string;
 };
+
 export default function TaxSheet() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
