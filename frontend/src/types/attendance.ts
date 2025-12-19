@@ -351,3 +351,64 @@ export type ShiftBlock = {
   shift_block_type: string;
   weekly_off: string;
 };
+
+
+export interface EmployeeAllCheckin {
+  name: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  owner: string;
+  docstatus: number;
+  idx: number;
+
+  employee: string;
+  employee_name: string;
+
+  log_type: "IN" | "OUT";
+  custom_checkin_type?: string | null;
+
+  shift: string | null;
+  time: string;
+
+  device_id: string | null;
+
+  skip_auto_attendance: 0 | 1;
+  attendance: string | null;
+
+  latitude: number;
+  longitude: number;
+  geolocation: string | null;
+
+  shift_start: string | null;
+  shift_end: string | null;
+
+  offshift: 0 | 1;
+
+  shift_actual_start: string | null;
+  shift_actual_end: string | null;
+
+  _user_tags: string | null;
+  _comments: string | null;
+  _assign: string | null;
+  _liked_by: string | null;
+}
+
+export interface ShiftAndPolicyAudit {
+  policy: string | null;
+  effective_from: string;
+  shift: string | null;
+  updated_by: string;
+  updated_on: string;
+}
+
+export interface WeekOffAudit {
+  week_off: string | null;
+  updated_by: string;
+  updated_on: string;
+}
+
+export interface AuditReportResponse {
+  shift_and_policy: ShiftAndPolicyAudit[];
+  week_off: WeekOffAudit[];
+}

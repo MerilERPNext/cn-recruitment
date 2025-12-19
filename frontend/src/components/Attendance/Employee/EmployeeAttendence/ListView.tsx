@@ -3,15 +3,17 @@ import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { useNavigate } from "react-router-dom";
 import { ViewAll } from "../../../shared/atoms/ViewAll";
 import DropdownMenu from "../../../shared/DropDownMenu";
-import { MoreVertical, Shield } from "lucide-react";
-import SideDrawer from "../../../shared/SideDrawer";
+import { ClipboardPlus, LogIn, MoreVertical, Shield } from "lucide-react";
+import SideDrawer, { DrawerSize } from "../../../shared/SideDrawer";
 import { useState } from "react";
-import ViewPolicies from "../../../shared/ViewPolicies";
+import ViewPolicies from "./ViewPolicies";
+import CheckInStatus from "./CheckInStatus";
+import AuditReport from "./AuditReport";
 
 const ListView = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [openSidebarFor, setOpenSidebarFor] = useState<{ isOpen: boolean, for: string | null, label: string, sideBarSize: DrawerSize }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
 
   return (
     <div className="w-full flex justify-end md:justify-between  items-center border-b-1 border-gray-200 pb-2">
@@ -45,8 +47,9 @@ const ListView = () => {
         <DropdownMenu
           placement={'bottom-left'}
           items={[
-            { label: "View Policies", icon: <Shield className="h-4 w-4" />, onClick: () => { setOpen(true) } },
-            // { label: "Check In/Out", icon: <LogIn className="h-4 w-4" />, onClick: () => { } },
+            { label: "View Policies", icon: <Shield className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "policies", label: "View Policies", sideBarSize: "xl" }) } },
+            { label: "Check In Status", icon: <LogIn className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "checkInStatus", label: "Check In Status", sideBarSize: "xxl" }) } },
+            { label: "Audit Report", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "auditReport", label: "Audit Report", sideBarSize: "xxl" }) } },
           ]}
         >
           <button className="p-1  border-1 rounded-lg hover:bg-gray-200">
@@ -54,13 +57,18 @@ const ListView = () => {
           </button>
         </DropdownMenu>
         <SideDrawer
-          open={open}
-          onClose={() => setOpen(false)}
+          open={openSidebarFor.isOpen}
+          onClose={() => setOpenSidebarFor({ isOpen: false, for: null, label: "", sideBarSize: "xl" })}
           side="right"
-          title="View Policies"
-          size="xl"
+          title={openSidebarFor.label}
+          size={openSidebarFor.sideBarSize}
         >
-          <ViewPolicies />
+          <div className="pb-20">
+
+            {openSidebarFor.for === "policies" && <ViewPolicies />}
+            {openSidebarFor.for === "checkInStatus" && <CheckInStatus />}
+            {openSidebarFor.for === "auditReport" && <AuditReport />}
+          </div>
         </SideDrawer>
       </div>
     </div>

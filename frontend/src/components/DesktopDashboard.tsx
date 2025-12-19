@@ -574,7 +574,7 @@ export default function DesktopDashboard() {
         <ViewingAsBanner />
 
         <div className="p-4 flex-1 overflow-hidden bg-gray-200">
-          <div className="pr-3 max-w-full">
+          <div className="max-w-full">
             {/* Employee Error Section */}
             {!employeeState.isLoading && !employeeState.hasValidData && (
               <EmployeeFallback
@@ -590,7 +590,7 @@ export default function DesktopDashboard() {
             )}
 
             {/* Hero Banner */}
-            <div className=" w-full max-w-full overflow-hidden rounded-2xl bg-white">
+            <div className=" w-full max-w-full overflow-hidden rounded-2xl bg-white mb-2">
               {!noticeIsLoading && notices && notices?.length > 0 && (
                 <Carousel
                   className="w-full h-full max-h-[150px]"
@@ -728,8 +728,8 @@ export default function DesktopDashboard() {
                 {/* Clock In / Out */}
                 <div
                   className={`flex ${homeSummary && !homeSummary?.length
-                      ? "flex-col-reverse gap-2"
-                      : "flex-row gap-4"
+                    ? "flex-col-reverse gap-2"
+                    : "flex-row gap-4"
                     }  mt-4`}
                 >
                   <div className="flex w-full">

@@ -5,8 +5,10 @@ import {
   isValid,
   parse,
   parseISO,
+  subMonths,
 } from "date-fns";
 import { FilterCondition, FilterOperator } from "../types/frappe";
+import { MonthOption } from "../components/Attendance/AllEmpAttendance/SelectByMonth";
 
 export const gradientClassMap: Record<string, string> = {
   present: "#dcfce7", // green-100
@@ -18,9 +20,8 @@ export const gradientClassMap: Record<string, string> = {
 };
 
 export const getStatusGradient = (firstHalf: string, secondHalf: string) => {
-  const gradient = `linear-gradient(to bottom right, ${
-    gradientClassMap[firstHalf?.toLowerCase()]
-  } 50%, ${gradientClassMap[secondHalf?.toLowerCase()]} 50%)`;
+  const gradient = `linear-gradient(to bottom right, ${gradientClassMap[firstHalf?.toLowerCase()]
+    } 50%, ${gradientClassMap[secondHalf?.toLowerCase()]} 50%)`;
   return { background: gradient };
 };
 
@@ -340,4 +341,17 @@ export const getBadgePropsByPriority = (
         size: "sm",
       };
   }
+};
+
+
+export const generateMonthOptions = (count: number): MonthOption[] => {
+  const now = new Date();
+
+  return Array.from({ length: count }, (_, i) => {
+    const date = subMonths(now, i);
+    return {
+      label: format(date, "MMM-yyyy"),
+      value: format(date, "yyyy-MM"),
+    };
+  });
 };

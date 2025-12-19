@@ -333,12 +333,30 @@ export const useAddEmployeeHistoryMutation = () => {
     },
   });
 };
+export const useAddEmployeeReportingDetailsMutation = () => {
+  return useMutation({
+    mutationKey: ["addEmployeeReportingDetails"],
+    mutationFn: (body: Record<string, unknown>) => profileService.addEmployeeReportingDetails(body),
+    onError: (error) => {
+      console.error("Error adding employee reporting details:", error);
+    },
+  });
+};
 
 
 export const useGetEmployeeReportingDetails = (employee: string) => {
   return useQuery({
     queryKey: ["getEmployeeReportingDetails", employee],
     queryFn: () => profileService.getEmployeeReportingDetails(employee),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee
+  });
+};
+
+export const useGetEmployeeHierarchyHistory = (employee: string) => {
+  return useQuery({
+    queryKey: ["getEmployeeHierarchyHistory", employee],
+    queryFn: () => profileService.getEmployeeHierarchyHistory(employee),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee
   });

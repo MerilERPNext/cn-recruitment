@@ -129,6 +129,20 @@ export const profileService = {
       throw error;
     }
   },
+  addEmployeeReportingDetails: async (
+    body: Record<string, unknown>
+  ): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.update_employee_reporting",
+        body
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while clocking in:", error);
+      throw error;
+    }
+  },
 
 
   getEmployeeReportingDetails: async (
@@ -143,7 +157,24 @@ export const profileService = {
       );
       return response as any;
     } catch (error) {
-      console.error("📡 Error while clocking in:", error);
+      console.error("📡 Error while fetching reporting details:", error);
+      throw error;
+    }
+  },
+
+  getEmployeeHierarchyHistory: async (
+    employee: string
+  ): Promise<any> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.get_employee_hierarchy_history",
+        {
+          employee: employee,
+        }
+      );
+      return response as any;
+    } catch (error) {
+      console.error("📡 Error while fetching hierarchy history:", error);
       throw error;
     }
   },

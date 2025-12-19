@@ -8,22 +8,22 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import LeaveRequest from "../Attendance/LeaveRequest";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
-// import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
-// import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-// import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { SidebarProvider, useSidebar } from "./SidebarContext";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
 import Button from "../shared/atoms/Button";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 
 const AttendanceLayoutContent: React.FC = () => {
-  // const { data: userId } = useLoggedInUser();
+  const { data: userId } = useLoggedInUser();
   const { isSidebarOpen } = useSidebar();
 
-  // const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
-  // // const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-  // //   user?.employee || ""
-  // // );
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    user?.employee || ""
+  );
 
   const { isDesktop } = useScreenSize();
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
@@ -81,7 +81,6 @@ const AttendanceLayoutContent: React.FC = () => {
   useEffect(() => {
     const pathSegments = location.pathname.split("/");
     const lastSegment = pathSegments[pathSegments.length - 1];
-
     const isValidMainTab = tabs.some((tab) => tab.key === lastSegment);
     const isCalendarSubTab = calendarSubTabs.some(
       (subTab) => subTab.key === lastSegment
@@ -162,7 +161,8 @@ const AttendanceLayoutContent: React.FC = () => {
       )}
     </div>
   );
-
+  const currentPathSegment = location.pathname.split("/")[location.pathname.split("/").length - 1];
+  const isOvertimePage = currentPathSegment === "my-overtime-requests" || currentPathSegment === "team-overtime-requests";
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     return (
@@ -170,13 +170,18 @@ const AttendanceLayoutContent: React.FC = () => {
         <Button
           // onClick={() => setShowActionsDropdown(!showActionsDropdown)}
           onClick={() => {
-            setShowAttendanceRequest(true);
+            if (isOvertimePage && plannedOvertimAllowed) {
+              setShowOvertimeRequest(true);
+            } else {
+              setShowAttendanceRequest(true);
+            }
           }}
           size="lg"
           bgColor="blue-600"
           className="hover:bg-blue-700"
         >
           Regularize
+          {isOvertimePage && plannedOvertimAllowed ? "+ Overtime" : "+ Regularize"}
           {/* <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
               showActionsDropdown ? "rotate-180" : ""
@@ -243,6 +248,7 @@ const AttendanceLayoutContent: React.FC = () => {
             </div>
           </div>
         )} */}
+
       </div>
     );
   };

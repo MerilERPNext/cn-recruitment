@@ -1,31 +1,97 @@
-import { useCurrentEmployeeAllDetails, useGetEmployeeReportingDetails, } from "../../hooks/useEmployee";
+import {
+    useCurrentEmployeeAllDetails,
+    useGetEmployeeHierarchyHistory,
+} from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import CircularLoader from "../shared/atoms/CircularLoader";
+import Button from "../shared/atoms/Button";
+import { EditIcon, PlusIcon } from "lucide-react";
+import { format } from "date-fns";
+import React from "react";
+import { Building2 } from "lucide-react";
+import { useState } from "react";
+import ReportingDetailsForm from "../MyProfile/ReportingDetailsForm";
 
 const ReportingDetails = () => {
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name || ""
     );
-    const { data: reportingData, isLoading: employeeReportingDetailsPending } = useGetEmployeeReportingDetails(currentEmployee?.employee || "");
-    const Field = ({ label, value }: { label: string; value: string }) => (
-        <div>
-            <p className="text-sm text-gray-500">{label}</p>
-            <p className="text-gray-900 font-medium">
-                {value || "—"}
-            </p>
-        </div>
-    );
-    if (employeeReportingDetailsPending) {
-        return <CircularLoader />
+
+    const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
+        useGetEmployeeHierarchyHistory(currentEmployee?.employee || "");
+
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+    const [isEditing, setIsEditing] = useState<boolean>(false);
+
+
+    interface HierarchyCardProps {
+        name: string;
+        startDate: string;
+        endDate: string | null;
     }
 
+    const HierarchyCard: React.FC<HierarchyCardProps> = ({
+        name,
+        startDate,
+        endDate,
+    }) => {
+        const formatDate = (date?: string | null) => {
+            if (!date) return "N/A";
+            return format(new Date(date), "dd-MM-yyyy");
+        };
+
+        const isCurrent = !endDate;
+
+        return (
+            <div className="bg-white rounded-xl shadow-sm border p-6 relative">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                        <Building2 className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <h3 className="font-medium text-gray-900 truncate">
+                        <span title={name}>{name}</span>
+                    </h3>
+                </div>
+
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">Start Date</span>
+                        <span className="text-sm font-medium bg-gray-50 px-3 py-1 rounded-md">
+                            {formatDate(startDate)}
+                        </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">End Date</span>
+                        <span
+                            style={{
+                                backgroundColor: isCurrent ? "#DCFCE7" : "#F9FAFB",
+                                color: isCurrent ? "#166534" : undefined,
+                            }}
+                            className="text-sm font-medium px-3 py-1 rounded-md"
+                        >
+                            {endDate ? formatDate(endDate) : "Present"}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+
+    if (employeeHierarchyHistoryPending) {
+        return <CircularLoader />;
+    }
+
+    const hierarchySections = hierarchyData?.data || {};
     return (
         <div className="address-form-container bg-white rounded-lg border border-gray-200">
             <div className="p-4 md:p-8">
                 {/* Header */}
                 <div className="flex items-start justify-between">
-                    <div className="border-b border-gray-200 pb-6 mb-8 w-full">
+                    <div className="border-b border-gray-200 pb-6 mb-8">
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">
                             Reporting Details
                         </h2>
@@ -33,49 +99,62 @@ const ReportingDetails = () => {
                             Your reporting hierarchy information
                         </p>
                     </div>
-
-                    {/* <Button
-                        icon={<EditIcon className="h-4 w-4" />}
-                        variant="subtle"
-                        size="md"
-                    >
-                        Edit
-                    </Button> */}
+                    <div className="flex gap-2 ">
+                        <Button
+                            onClick={() => {
+                                setIsModalOpen(true)
+                                setIsEditing(true)
+                            }}
+                            icon={<EditIcon className="h-4 w-4" />}
+                            variant="subtle"
+                            size="md"
+                        >
+                            Edit
+                        </Button>
+                        <Button
+                            onClick={() => setIsModalOpen(true)}
+                            icon={<PlusIcon className="h-4 w-4" />}
+                            variant="contain"
+                            size="md"
+                        >
+                            Add
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Content */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Field
-                        label="Employee Name"
-                        value={reportingData?.data?.employee_name}
-                    />
 
-                    <Field
-                        label="Reporting Manager"
-                        value={reportingData?.data?.reports_to_name}
-                    />
 
-                    <Field
-                        label="Dotted Line Manager"
-                        value={reportingData?.data?.custom_dotted_line_manager_name}
-                    />
+                {/* Hierarchy History Cards */}
+                {Object.entries(hierarchySections).map(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ([sectionTitle, records]: any) => (
+                        <div key={sectionTitle} className="mb-10">
+                            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                                {sectionTitle}
+                            </h3>
 
-                    <Field
-                        label="HR Business Partner"
-                        value={reportingData?.data?.custom_hrbp_name}
-                    />
-
-                    <Field
-                        label="Head of Department"
-                        value={reportingData?.data?.custom_hod_name}
-                    />
-
-                    <Field
-                        label="CXO"
-                        value={reportingData?.data?.custom_cxo_name}
-                    />
-                </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {records.map((item: { records: string; reporting_employee_name: string; start_date: string; end_date: string }) => (
+                                    <HierarchyCard
+                                        key={item.records}
+                                        name={item.reporting_employee_name}
+                                        startDate={item.start_date}
+                                        endDate={item.end_date}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )
+                )}
             </div>
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+
+                        <ReportingDetailsForm onCancel={() => { setIsModalOpen(false); setIsEditing(false) }} isEdit={isEditing} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
