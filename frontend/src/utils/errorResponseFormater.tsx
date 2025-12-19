@@ -23,16 +23,16 @@ export const errorResponseFormater = (
     }
 
     err = err || error?.response?.data?.exception
-          ?.split(":")
-          .slice(1)
-          .join(":")
-          .trim() || error?.response?.data?.message?.error;
+      ?.split(":")
+      .slice(1)
+      .join(":")
+      .trim() || error?.response?.data?.messag || error?.message;
   } catch {
     console.error("Failed to parse error message:", error);
     err = fallback;
   }
-  
-  if(err==null) err = fallback;
+
+  if (err == null) err = fallback;
   // ❗ Always return sanitized HTML ReactNode
   return <span className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(err) }} />;
 };

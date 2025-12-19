@@ -77,27 +77,8 @@ export function usePostExpenseClaim() {
   const navigate = useNavigate();
 
   const handleError = (err: any) => {
-    let errorMsg = "Submission failed. Please try again.";
-    try {
-      const raw = err?.response?.data?._server_messages;
-      if (raw) {
-        const messages = JSON.parse(raw);
-        if (Array.isArray(messages) && messages.length > 0) {
-          const firstMessage = JSON.parse(messages[0]);
-          if (firstMessage?.message) {
-            errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
-          }
-        }
-      } else if (err?.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      } else if (err?.message) {
-        errorMsg = err.message;
-      }
-    } catch (e) {
-      console.error("Failed to parse server error message:", e);
-    }
-
-    toast.error(errorMsg);
+    const errorMessage = errorResponseFormater(err, "Submission failed. Please try again.")
+    toast.error(errorMessage);
   };
 
   return useMutation({
