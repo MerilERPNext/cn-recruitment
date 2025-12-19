@@ -2,6 +2,7 @@ import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -26,11 +27,13 @@ const AdvanceApprovalCard = ({
   showCheckbox = true,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
-    const actions = (() => {
+  const actions = (() => {
     try {
-      return data?.custom_doctype_actions ? JSON.parse(data.custom_doctype_actions) : [];
+      return data?.custom_doctype_actions
+        ? JSON.parse(data.custom_doctype_actions)
+        : [];
     } catch (e) {
-      console.error('Failed to parse custom_doctype_actions:', e);
+      console.error("Failed to parse custom_doctype_actions:", e);
       return [];
     }
   })();
@@ -39,7 +42,7 @@ const AdvanceApprovalCard = ({
       const str = data?.custom_doctype_actions_with_form?.replace(/'/g, '"');
       return str ? JSON.parse(str) : [];
     } catch (e) {
-      console.error('Failed to parse custom_doctype_actions_with_form:', e);
+      console.error("Failed to parse custom_doctype_actions_with_form:", e);
       return [];
     }
   })();
@@ -145,10 +148,11 @@ const AdvanceApprovalCard = ({
               />
             </div>
           )}
-
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_document?.employee_name}
-          </div>
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              {data?.reference_document?.employee_name}
+            </div>
+          </WrapperHoverCard>
 
           <div className="text-gray-700 truncate text-sm text-start">
             {data?.reference_document?.department}

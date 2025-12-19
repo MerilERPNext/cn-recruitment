@@ -26,6 +26,9 @@ def generate_salary_slip(employee):
     total_deduction=0
 
     try:
+        target_employee = frappe.request.headers.get("X-Target-Employee-Id")
+        if target_employee:
+            employee = target_employee
         if not employee:
             return {"error": "Employee not provided"}
 

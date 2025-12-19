@@ -1,18 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { ConfirmationEmployeeService, ConfirmationService,} from "../services/ConfirmationService";
+import { ConfirmationEmployeeService, ConfirmationService, } from "../services/ConfirmationService";
 
 
 export const useConfirmationAndseparation = (doctype: string) => {
-    return useQuery({
-      queryKey: ["confirmation", doctype],
-      queryFn: () => ConfirmationService (doctype),
-      placeholderData: [], // prevents undefined
-    });
-  };
+  return useQuery({
+    queryKey: ["confirmation", doctype],
+    queryFn: () => ConfirmationService(doctype)
+  });
+};
 
-  export const useConfirmationEmployee = () => {
-    return useQuery({
-      queryKey: ["confirmation-employee"],
-      queryFn: ConfirmationEmployeeService,
-    });
-  };
+export const useConfirmationEmployee = () => {
+  return useQuery({
+    queryKey: ["confirmation-employee"],
+    queryFn: ConfirmationEmployeeService,
+  });
+};

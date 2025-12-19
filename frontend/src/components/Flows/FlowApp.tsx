@@ -42,6 +42,7 @@ const FlowApp: React.FC = () => {
     navigate("/webapp/flow-app/initiate-flow");
   };
 
+
   const handleInitiateModel = () => {
     setShowInitiateModel(true);
   };
@@ -108,7 +109,7 @@ const FlowApp: React.FC = () => {
     </div>
   );
 
-  const actionButton = (
+  const actionButton = showInitiateButton ? (
     <Button
       bgColor="blue-600"
       size="lg"
@@ -117,7 +118,7 @@ const FlowApp: React.FC = () => {
     >
       + Initiate
     </Button>
-  );
+  ) : null;
 
   const desktopLayout = !seprateRoute ? (
     <DesktopLayoutWrapper title="Flows" actionButton={actionButton}>
@@ -127,7 +128,6 @@ const FlowApp: React.FC = () => {
         </div>
         {showInitiateModel && (
           <InitiateFlow
-            openAsModel={true}
             handleCloseModel={() => setShowInitiateModel(false)}
           />
         )}

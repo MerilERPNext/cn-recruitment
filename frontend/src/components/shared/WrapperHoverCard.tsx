@@ -188,7 +188,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
             {/* TRIGGER */}
             <div
                 ref={targetRef}
-                className={`inline-block ${className}`}
+                className={`inline-block w-fit ${className}`}
                 onMouseEnter={() => {
                     handleEnter();
                     handleFetchProfile();
@@ -209,7 +209,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                         onMouseLeave={handleLeave}
                     >
                         <div
-                            className={`w-full max-h-[400px] overflow-y-auto pt-6 md:max-w-sm lg:max-w-md rounded-xl 
+                            className={`w-full max-h-[400px] overflow-y-auto scrollbar-hide pt-6 md:max-w-sm  rounded-xl 
                                 backdrop-blur-md bg-white border border-gray-300 shadow-xl flex flex-col items-center gap-4 ${cardClassName}`}
                         >
                             {isLoading ? (
@@ -228,14 +228,14 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                                 <>
                                     {getAvatar(EmployeeInfo.data)}
 
-                                    <table className="w-full px-4 border-none">
+                                    <table className="w-full border-t block pt-2">
                                         <tbody>
                                             {EmployeeInfo.data
                                                 .filter((item: any) => !["Full Name", "ID (name)", "Image"].includes(item.label))
                                                 .map((item: any) => (
-                                                    <tr key={item.label} className="py-2 border-b border-gray-200 text-sm">
-                                                        <td className="text-xs text-gray-500">{item.label}</td>
-                                                        <td className="text-xs text-right">{item.value ?? "—"}</td>
+                                                    <tr key={item.label} className="px-2 text-sm">
+                                                        <td className="sm:text-sm w-fit  min-w-0 block leading-[0.4] text-sm border-none font-semibold text-gray-700">{item.label}</td>
+                                                        <td className="sm:text-sm  leading-[0.4] text-sm border-none text-start text-wrap">{item.value ?? "—"}</td>
                                                     </tr>
                                                 ))}
                                         </tbody>

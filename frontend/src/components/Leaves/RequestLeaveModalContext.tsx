@@ -10,7 +10,7 @@ type RequestLeaveDefaults = {
   description?: string;
   custom_reason?: string;
   custom_attachment?: { url: string }[];
-  source?: "holiday" | "other";
+  source?: "holiday" | "balances" | "other";
   hideHalfDayToggle?: boolean;
   isEdit?: boolean;
   leave_application?: string;

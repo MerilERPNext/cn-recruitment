@@ -54,6 +54,7 @@ const AttendanceLegend: React.FC<AttendanceLegendProps> = ({
     { label: "Attendance Request", dotColor: "bg-blue-500" },
     { label: "Leave Request", dotColor: "bg-pink-500" },
     { label: "Overtime Request", dotColor: "bg-orange-500" },
+    { label: "Out Duty", dotColor: "bg-purple-500" },
   ];
 
   const containerClass = isCompact

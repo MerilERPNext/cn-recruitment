@@ -7,6 +7,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -197,11 +198,11 @@ const ExpenseApprovalCard = ({
               />
             </div>
           )}
-
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_document?.employee_name}
-          </div>
-
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              {data?.reference_document?.employee_name}
+            </div>
+          </WrapperHoverCard>
           <div className="text-gray-700 truncate text-sm text-start">
             {data?.reference_document?.custom_expense_category}
           </div>

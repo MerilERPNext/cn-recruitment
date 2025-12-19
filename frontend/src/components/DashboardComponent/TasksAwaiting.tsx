@@ -158,7 +158,7 @@ const TasksAwaiting: React.FC = () => {
   const totalCount = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="bg-white rounded-lg p-6 mb-2 shadow-sm">
+    <div className="bg-white rounded-lg p-6 mb-2 shadow-md border border-[rgba(0,0,0,0.05)]">
       <div className="flex justify-between items-center mb-4">
         <h3 className="section-title">Tasks Awaiting You</h3>
         <ViewAll title="Visit Todo" onClick={handleTodoClick} />
@@ -167,10 +167,11 @@ const TasksAwaiting: React.FC = () => {
       <div className="flex overflow-x-auto gap-3 mb-4 p-2">
         <button
           onClick={() => setActiveCategory("All")}
-          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${activeCategory === "All"
+          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${
+            activeCategory === "All"
               ? "bg-gray-900 text-white scale-105"
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            } transition-all`}
+          } transition-all`}
         >
           All ({totalCount})
         </button>
@@ -183,10 +184,11 @@ const TasksAwaiting: React.FC = () => {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
-                ? `scale-105 ring-2 ${colors}`
-                : `${colors} opacity-70 hover:opacity-100`
-                }`}
+              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
+                isActive
+                  ? `scale-105 ring-2 ${colors}`
+                  : `${colors} opacity-70 hover:opacity-100`
+              }`}
             >
               {cat} ({count})
             </button>

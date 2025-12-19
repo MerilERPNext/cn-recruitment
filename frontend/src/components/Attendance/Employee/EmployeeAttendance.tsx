@@ -223,7 +223,6 @@ const EmployeeAttendance = () => {
     };
   };
 
-
   const getAttendanceStatus = useMemo(() => {
     return createAttendanceStatusGetter(allAttendance ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -236,8 +235,9 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex  bg-gray-100 `}>
       <div
-        className={`flex  bg-gray-100 p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-          }`}
+        className={`flex  bg-gray-100 p-2 flex-col ${
+          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+        }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -265,8 +265,8 @@ const EmployeeAttendance = () => {
               <button
                 className="w-full flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
                 onClick={() => {
-                  setOpenDrawer(!openDrawer);
-                  // setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
+                  // setOpenDrawer(!openDrawer);
+                  setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
                 }}
               >
                 <Plus className="w-4 h-4 mr-2 font-bold" />

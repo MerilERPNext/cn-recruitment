@@ -25,7 +25,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
   const handleClick = () => {
     if (id) {
       if (id !== currentEmployeeId) {
-        setTargetEmployee(String(id), `/webapp/employee-profile`);
+        setTargetEmployee(String(id), `/webapp/employee-profile`, true);
       } else {
         clearTargetEmployee();
         navigate(`/webapp/employee-profile`);
@@ -56,7 +56,9 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-gray-900 text-sm truncate">{name}</h3>
+            <h3 className="font-medium text-gray-900 text-sm truncate">
+              {name}
+            </h3>
             <div className="flex gap-2 items-center">
               {title && (
                 <p className="text-gray-500 text-xs truncate mt-0.5">{title}</p>

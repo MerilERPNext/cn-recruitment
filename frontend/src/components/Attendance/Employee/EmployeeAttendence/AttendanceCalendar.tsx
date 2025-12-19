@@ -33,6 +33,8 @@ const getEventDotColor = (doctype: string): string => {
       return "bg-pink-500";
     case "Overtime Request":
       return "bg-orange-500";
+    case "Out Duty":
+      return "bg-purple-500";
     default:
       return "bg-gray-400";
   }
@@ -114,7 +116,6 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
         )}
         renderDayContents={(day, date) => {
           const attendance = getAttendanceStatus(date);
-
           const isSelected =
             selectedDate?.toDateString() === date.toDateString();
           const baseClasses = "transition-all duration-200";
@@ -144,7 +145,6 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
 
           const dayClasses = `${baseClasses} ${highlightClass} ${selectedClass}`;
           const dayBoxStyles = `w-full h-full flex items-center justify-center text-base ${dayClasses}`;
-
           if (attendance?.status === "half-day") {
             const firstColor =
               gradientClassMap[attendance?.firstHalf?.toLowerCase() || ""];
@@ -186,7 +186,8 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
                                 event.status === "Approved"
                               )
                           )
-                          .map((event) => event.doctype)
+                          // here we treat request type Out Duty as a doctype because we don't have a separate doctype for it
+                          .map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
                       )
                     ).map((doctype, index) => (
                       <div

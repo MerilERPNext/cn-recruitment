@@ -84,8 +84,8 @@ const ApprovalCard = ({
   };
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "5%  15% 8% 8% 8% 10% 10% 20%" // 8 columns (with Select)
-    : " 20% 10% 10% 10% 12% 10% 20%"; // 7 columns (Adjusted widths)
+    ? "5% 10% 15% 8% 8% 8% 10% 20%" // 8 columns (with Select)
+    : "12% 20% 10% 10% 10% 10% 20%"// 7 columns (Adjusted widths)
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
@@ -139,6 +139,11 @@ const ApprovalCard = ({
             </div>
           )}
 
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              {data?.reference_document?.employee_name}
+            </div>
+          </WrapperHoverCard>
 
           <div className="truncate text-gray-900 font-medium text-sm text-start line-clamp-1">
             {cleanExplaination}
@@ -154,12 +159,6 @@ const ApprovalCard = ({
           <div className="text-gray-700 text-sm text-start">
             {formatDate(data?.due_date)}
           </div>
-          {/* Allocated To */}
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.reference_document?.employee_name}
-            </div>
-          </WrapperHoverCard>
           {/* Status + Actions */}
           <div className="flex items-center justify-start">
             <Tooltip content={`Allocated to : ${data?.allocated_to}`}>

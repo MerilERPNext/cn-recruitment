@@ -1,13 +1,18 @@
 import FrappeAPI from "../utils/frappeAPI";
 import type {
+  AccrualJournalEntriesResponse,
+  AccrualJournalMetadataResponse,
   ButtonStatusResponse,
   LeaveFieldResponse,
+  LeavePassbookMetadataResponse,
+  LeavePassbookResponse,
   LeaveReason,
   LeaveRequest,
+  PolicyQuestionsResponse,
   TeamRequest,
 } from "../types/leaves";
 import { HolidayApiResponse } from "../types/leaves";
-import type { LeaveDetailsResponse, HolidayGroup } from "../types/leaves";
+import type { LeaveBalanceResponse, HolidayGroup } from "../types/leaves";
 import { CompOffResponse } from "../types/leaves";
 
 export type AttendancePolicyResponse = {
@@ -57,17 +62,19 @@ export const leaveService = {
 
   getLeaveBalance: async (
     employeeId: string,
-    date: string
-  ): Promise<LeaveDetailsResponse> => {
+    date: string,
+    leaveType?: string
+  ): Promise<LeaveBalanceResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.custom_get_leave_details",
       {
         employee: employeeId,
         date: date,
+        ...(leaveType ? { leave_type: leaveType } : {}),
       }
     );
 
-    return response as LeaveDetailsResponse;
+    return response as LeaveBalanceResponse;
   },
 
   getHolidays: async (employeeId: string): Promise<HolidayGroup[]> => {
@@ -237,8 +244,6 @@ export const leaveService = {
     );
   },
 
-  //get attendance policy
-
   getAttendancePolicyForDate: async (
     employee: string | number,
     targetDate: string
@@ -252,5 +257,84 @@ export const leaveService = {
     );
 
     return response as AttendancePolicyResponse;
+  },
+
+  getPassbookTransactionMetadata: async (
+    employeeId: string,
+    leaveType: string
+  ): Promise<LeavePassbookMetadataResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_leave_passbook_metadata",
+      {
+        employee: employeeId,
+        leave_type: leaveType,
+      }
+    );
+
+    return response as LeavePassbookMetadataResponse;
+  },
+
+  getPassbookTransaction: async (
+    employeeId: string,
+    leaveType: string,
+    cycleStart: string
+  ): Promise<LeavePassbookResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_leave_passbook_entries",
+      {
+        employee: employeeId,
+        leave_type: leaveType,
+        cycle_start: cycleStart,
+      }
+    );
+
+    return response as LeavePassbookResponse;
+  },
+
+  getAccrualJournalMetadata: async (
+    employeeId: string,
+    leaveType: string
+  ): Promise<AccrualJournalMetadataResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_accrual_journal_metadata",
+      {
+        employee: employeeId,
+        leave_type: leaveType,
+      }
+    );
+
+    return response as AccrualJournalMetadataResponse;
+  },
+
+  getAccrualJournalEntries: async (
+    employeeId: string,
+    leaveType: string,
+    periodNumber: number
+  ): Promise<AccrualJournalEntriesResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_accrual_journal_entries",
+      {
+        employee: employeeId,
+        leave_type: leaveType,
+        period_number: periodNumber,
+      }
+    );
+
+    return response as AccrualJournalEntriesResponse;
+  },
+
+  getPolicyQuestions: async (
+    doctypeName: string,
+    targetDoctype: string
+  ): Promise<PolicyQuestionsResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.doctype.policy_question.policy_question.get_policy_questions",
+      {
+        doctype_name: doctypeName,
+        target_doctype: targetDoctype,
+      }
+    );
+
+    return response as PolicyQuestionsResponse;
   },
 };

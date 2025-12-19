@@ -11,6 +11,9 @@ import { FiPieChart } from "react-icons/fi";
 import HeaderBar from "../HeaderBar";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import LeaveTransactionsChart from "./LeaveTransactionsChart";
+import { EllipsisVertical, ListChecks, Plus } from "lucide-react";
+import DropdownMenu from "../shared/DropDownMenu";
+import BalanceDetailsDrawer from "./LeaveBalance/BalanceDetailsDrawer";
 
 type LeaveTransactionEntry = {
   type: string;
@@ -86,13 +89,222 @@ const LeaveTransactionCard: React.FC<{
   );
 };
 
+// const LeaveBalance: React.FC = () => {
+//   const [showTransactions, setShowTransactions] = useState(false);
+//   const [selectedType, setSelectedType] = useState<string | null>(null);
+
+//    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+//   const [selectedLeave, setSelectedLeave] = useState<any>(null);
+
+//   const { openModal } = useRequestLeaveModal();
+//   const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
+//   const { data: currentEmployee, isLoading: isEmployeeLoading } =
+//     useEmployeeByUserId(userId);
+
+//   const today = new Date().toISOString().split("T")[0];
+//   const employeeId = currentEmployee?.name ?? "";
+//   const {
+//     data,
+//     isLoading: isLeaveLoading,
+//     isError,
+//   } = useGetLeaveBalance(employeeId, today);
+
+//   const toggleTransactions = useCallback((type: string | null) => {
+//     setSelectedType(type);
+//     setShowTransactions((prev) => !prev);
+//   }, []);
+
+//   if (isUserLoading || isEmployeeLoading || isLeaveLoading) {
+//     return <LeaveBalanceSkeleton />;
+//   }
+
+//   if (isError) {
+//     return (
+//       <div className="p-4 text-center text-red-600">
+//         Failed to load leave data
+//       </div>
+//     );
+//   }
+
+//   if (!data || !data.leave_balance || data.leave_balance.length === 0) {
+//     return (
+//       <div className="p-8 text-center">
+//         <div className="max-w-md mx-auto">
+//           <h3 className="text-lg font-semibold text-gray-700 mb-2">
+//             No Leave Data Found
+//           </h3>
+//           <p className="text-gray-500 mb-6">
+//             No leave balance information is available for your account at this
+//             time.
+//           </p>
+//           <div className="w-full"></div>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   const leaveBalance = (data?.leave_balance ?? []).filter(
+//     (leave) => leave.dont_show_in_frontend !== 1
+//   );
+
+//   const visibleTypes = leaveBalance.map((l) => l.type);
+
+//   const transactions = (data?.leave_transactions ?? []).filter((t) =>
+//     visibleTypes.includes(t.type)
+//   );
+
+//   return (
+//     <div className="pb-4 relative">
+//       <LeaveTransactionsChart data={data?.leave_transactions} />
+//       {/* Balance Details Drawer */}
+//       {selectedLeave && (
+//         <BalanceDetailsDrawer
+//           isOpen={isDrawerOpen}
+//           onClose={handleCloseDrawer}
+//           leaveType={selectedLeave.type}
+//           balanceDate={today}
+//           totalBalance={selectedLeave.balance}
+//           accruedSoFar={selectedLeave.entitled || 0}
+//           annualAllotment={selectedLeave.entitled || 0}
+//           creditedFromLastYear={selectedLeave.carry_over || 0}
+//         />
+//       )}
+//       {showTransactions ? (
+//         <div className="fixed inset-0 bg-white z-50 flex flex-col md:static md:max-w-full">
+//           <HeaderBar
+//             title="Transactions History"
+//             onBack={() => toggleTransactions(null)}
+//           />
+//           <main className="flex-1 overflow-y-auto p-4">
+//             <LeaveTransactionCard
+//               data={transactions}
+//               defaultOpenType={selectedType}
+//             />
+//           </main>
+//         </div>
+//       ) : (
+//         <>
+//           <div className="md:pt-4 md:p-3">
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 max-w-4xl mx-auto">
+//               {leaveBalance.map((leave) => (
+//                 <div
+//                   key={leave?.type}
+//                   className="rounded-xl p-4 md:mb-4 md:mb-0 bg-white"
+//                 >
+//                   <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
+//                     <span className="text-left base-title md:module-title">
+//                       {leave?.type}
+//                     </span>
+//                     <div className="flex items-center gap-3">
+//                       {/* {leave?.visibility_flags?.show_carry_over && ( */}
+//                       <span className="text-sm text-green-800">
+//                         {leave.carry_over} Carry Forwarded
+//                       </span>
+//                       {/* )} */}
+
+//                       {/*extra options */}
+//                       <button
+//                         onClick={() =>
+//                           openModal({
+//                             source: "balances",
+//                             leaveType: leave?.type,
+//                           })
+//                         }
+//                         className="rounded-full bg-blue-100 p-0.5"
+//                       >
+//                         <span>
+//                           <Plus />
+//                         </span>
+//                       </button>
+
+//                       <DropdownMenu
+//                         placement="bottom-left"
+//                         className="text-gray-800"
+//                         items={[
+//                           {
+//                             label: "Details",
+//                             icon: <ListChecks size={16} />,
+//                             onClick: () => {
+//                               console.log("Details clicked");
+//                               // do something here
+//                             },
+//                           },
+//                         ]}
+//                       >
+//                         <EllipsisVertical size={18} />
+//                       </DropdownMenu>
+//                     </div>
+//                   </div>
+//                   <div
+//                     className="flex justify-between mt-2 gap-2 cursor-pointer"
+//                     onClick={() => toggleTransactions(leave.type)}
+//                   >
+//                     {leave?.visibility_flags?.show_entitled && (
+//                       <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-col items-center justify-center bg-blue-50">
+//                         <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mb-1" />
+//                         <p className="md:text-lg text-base font-bold text-blue-800">
+//                           {leave.entitled}
+//                         </p>
+//                         <p className="text-xs font-medium text-blue-700">
+//                           Entitled
+//                         </p>
+//                       </div>
+//                     )}
+//                     {leave?.visibility_flags?.show_availed && (
+//                       <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-col items-center justify-center bg-green-50">
+//                         <FaClockRotateLeft className="w-6 h-6 text-green-600 mb-1" />
+//                         <p className="md:text-lg text-base font-bold text-green-800">
+//                           {leave.availed}
+//                         </p>
+//                         <p className="text-xs font-medium text-green-700">
+//                           Availed
+//                         </p>
+//                       </div>
+//                     )}
+//                     {leave?.visibility_flags?.show_balance && (
+//                       <div className="flex-1 text-center border border-orange-100 rounded-lg py-2 flex flex-col items-center justify-center bg-orange-50">
+//                         <FiPieChart className="w-6 h-6 text-orange-600 mb-1" />
+//                         <p className="md:text-lg text-base font-bold text-orange-800">
+//                           {leave.balance}
+//                         </p>
+//                         <p className="text-xs font-medium text-orange-700">
+//                           Balance
+//                         </p>
+//                       </div>
+//                     )}
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           </div>
+
+//           <div className="w-full mt-6 px-4 md:hidden">
+//             <button
+//               type="button"
+//               className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+//               onClick={() => openModal()}
+//             >
+//               + Request Leave
+//             </button>
+//           </div>
+//         </>
+//       )}
+//     </div>
+//   );
+// };
+// export default LeaveBalance;
+
 const LeaveBalance: React.FC = () => {
   const [showTransactions, setShowTransactions] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState<any>(null);
+
   const { openModal } = useRequestLeaveModal();
   const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
     useEmployeeByUserId(userId);
+
   const today = new Date().toISOString().split("T")[0];
   const employeeId = currentEmployee?.name ?? "";
   const {
@@ -105,6 +317,18 @@ const LeaveBalance: React.FC = () => {
     setSelectedType(type);
     setShowTransactions((prev) => !prev);
   }, []);
+
+  const handleOpenDrawer = useCallback((leave: any) => {
+    setSelectedLeave(leave);
+    setIsDrawerOpen(true);
+  }, []);
+
+  const handleCloseDrawer = useCallback(() => {
+    setIsDrawerOpen(false);
+    setSelectedLeave(null);
+  }, []);
+
+  // ... (keep your existing loading and error states)
 
   if (isUserLoading || isEmployeeLoading || isLeaveLoading) {
     return <LeaveBalanceSkeleton />;
@@ -148,6 +372,30 @@ const LeaveBalance: React.FC = () => {
   return (
     <div className="pb-4 relative">
       <LeaveTransactionsChart data={data?.leave_transactions} />
+
+      {/* Balance Details Drawer */}
+      {/* {selectedLeave && (
+        <BalanceDetailsDrawer
+          isOpen={isDrawerOpen}
+          onClose={handleCloseDrawer}
+          leaveType={selectedLeave.type}
+          balanceDate={today}
+          totalBalance={selectedLeave.balance}
+          accruedSoFar={selectedLeave.entitled || 0}
+          annualAllotment={selectedLeave.entitled || 0}
+          creditedFromLastYear={selectedLeave.carry_over || 0}
+        />
+      )} */}
+
+      {selectedLeave && (
+        <BalanceDetailsDrawer
+          isOpen={isDrawerOpen}
+          onClose={handleCloseDrawer}
+          leaveType={selectedLeave.type}
+          leaveData={selectedLeave}
+        />
+      )}
+
       {showTransactions ? (
         <div className="fixed inset-0 bg-white z-50 flex flex-col md:static md:max-w-full">
           <HeaderBar
@@ -174,11 +422,39 @@ const LeaveBalance: React.FC = () => {
                     <span className="text-left base-title md:module-title">
                       {leave?.type}
                     </span>
-                    {leave?.visibility_flags?.show_carry_over && (
+                    <div className="flex items-center gap-3">
                       <span className="text-sm text-green-800">
                         {leave.carry_over} Carry Forwarded
                       </span>
-                    )}
+
+                      <button
+                        onClick={() =>
+                          openModal({
+                            source: "balances",
+                            leaveType: leave?.type,
+                          })
+                        }
+                        className="rounded-full bg-blue-100 p-0.5"
+                      >
+                        <span>
+                          <Plus />
+                        </span>
+                      </button>
+
+                      <DropdownMenu
+                        placement="bottom-left"
+                        className="text-gray-800"
+                        items={[
+                          {
+                            label: "Details",
+                            icon: <ListChecks size={16} />,
+                            onClick: () => handleOpenDrawer(leave),
+                          },
+                        ]}
+                      >
+                        <EllipsisVertical size={18} />
+                      </DropdownMenu>
+                    </div>
                   </div>
                   <div
                     className="flex justify-between mt-2 gap-2 cursor-pointer"
@@ -237,4 +513,5 @@ const LeaveBalance: React.FC = () => {
     </div>
   );
 };
+
 export default LeaveBalance;

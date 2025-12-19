@@ -34,6 +34,7 @@ export interface TeamLeaveRequest {
 
 export interface LeaveBalance {
   type: string;
+  annual_allocation: number;
   dont_show_in_frontend: number;
   entitled: number;
   availed: number;
@@ -47,6 +48,7 @@ export interface LeaveBalance {
     show_availed: boolean;
     show_carry_forward_expiry_date: number;
   };
+  balance_excluding_future_transactions: number;
 }
 
 export interface LeaveTransaction {
@@ -56,7 +58,7 @@ export interface LeaveTransaction {
   dont_show_in_frontend: number;
 }
 
-export interface LeaveDetailsResponse {
+export interface LeaveBalanceResponse {
   leave_balance: LeaveBalance[];
   leave_transactions: LeaveTransaction[];
   global_settings: {
@@ -276,3 +278,112 @@ export type EditApprovedLeavePayload = {
     [key: string]: any;
   };
 };
+
+//Leave Balance Drawer Tabs Types
+
+export interface PassbookTransactionRange {
+  from_date: string;
+  to_date: string;
+}
+
+export interface PassbookCycleOption {
+  label: string;
+  value: string;
+  from_date: string;
+  to_date: string;
+}
+
+export interface LeavePassbookMetadataResponse {
+  transaction_range: PassbookTransactionRange;
+  cycle_options: PassbookCycleOption[];
+  default_cycle_label: string;
+  default_cycle: string;
+  leave_cycle_type: string;
+}
+
+export interface LeavePassbookEntry {
+  time: string;
+  creation: string;
+  comment: string;
+  opening_balance: number;
+  transacted_balance: number;
+  closing_balance: number;
+  current_cycle_accrual: number;
+  carry_forward: number;
+  leaves_taken: number;
+  encashment: number;
+  yearly_allotment: number;
+  transaction_type: string;
+  transaction_name: string;
+  from_date: string;
+  to_date: string;
+}
+export interface LeavePassbookResponse {
+  entries: LeavePassbookEntry[];
+}
+
+export interface AccrualPeriodOption {
+  label: string;
+  value: number;
+  period_label: string;
+  cron_run_date: string;
+  is_allocated: number;
+  is_excluded: number;
+}
+
+export interface AccrualAllocationInfo {
+  name: string;
+  from_date: string;
+  to_date: string;
+  total_leaves_allocated: number;
+}
+
+export interface AccrualJournalMetadataResponse {
+  period_options: AccrualPeriodOption[];
+  default_period: number;
+  default_period_label: string;
+  allocation_info: AccrualAllocationInfo;
+}
+
+export interface AccrualPolicy {
+  earn_leave: number;
+  earned_leave_frequency: string;
+  rounding: string;
+  max_leaves_allowed: number;
+  accrual_point: string;
+  no_of_weeks: number | null;
+}
+
+export interface AccrualData {
+  period_number: number;
+  period_label: string;
+  cron_run_date: string;
+  is_allocated: number;
+  is_excluded: number;
+  leaves_allocated: number;
+  exclusion_reason: string;
+  accrual_policy: AccrualPolicy;
+  accrual_policy_text: string;
+  formula: string;
+  net_balance_credited: number;
+}
+
+export interface AccrualJournalEntriesResponse {
+  accrual_data: AccrualData;
+}
+
+export interface PolicyQuestionItem {
+  name: string;
+  question_name: string;
+  status: "Yes" | "No";
+  description: string;
+  idx: number;
+}
+
+export interface PolicyQuestionsResponse {
+  name: string;
+  doctype_name: string;
+  target_doctype: string;
+  policy_question: string;
+  questions: PolicyQuestionItem[];
+}

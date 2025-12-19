@@ -28,7 +28,6 @@ const Avatar: React.FC<AvatarProps> = ({ name, src }) => {
       aria-hidden
     >
       {src ? (
-
         <img
           loading="lazy"
           src={src}
@@ -77,7 +76,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   const handleonClick = (emp: Employee) => () => {
     recentSearch(emp);
-    setTargetEmployee(emp.name, `/webapp/employee-profile`);
+    setTargetEmployee(emp.name, `/webapp/employee-profile`, true);
   };
 
   const isActive = emp.status?.toLowerCase() === "active";
@@ -95,7 +94,6 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
       <div className="flex items-center sm:items-center justify-between gap-3  px-4 py-3 bg-white hover:bg-blue-100 border-b ">
         <Avatar name={emp.employee_name} src={emp.image} />
         <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full">
-
           <div className="flex flex-col min-w-0 w-full">
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
               <p className="text-sm   font-semibold text-gray-900 truncate">
@@ -120,7 +118,9 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
               </span>
 
               {emp.designation && emp.department && (
-                <span className="sm:mx-3  hidden   mx-1 sm:block text-md text-gray-300">•</span>
+                <span className="sm:mx-3  hidden   mx-1 sm:block text-md text-gray-300">
+                  •
+                </span>
               )}
 
               <span className="sm:inline min-w-0">

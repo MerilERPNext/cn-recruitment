@@ -2,6 +2,7 @@ import { format, isValid, parse } from "date-fns";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -129,10 +130,11 @@ const LeaveApprovalCard = ({
             </div>
           )}
 
-          {/* Allocated To */}
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            {data?.reference_document?.employee_name}
-          </div>
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              {data?.reference_document?.employee_name}
+            </div>
+          </WrapperHoverCard>
           {/* Date */}
           <div className="text-gray-700 text-sm text-start">
             {formatDate(data?.reference_document?.from_date)}

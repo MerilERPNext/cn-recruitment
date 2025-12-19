@@ -61,7 +61,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const { defaults } = useRequestLeaveModal();
   const editLeaveMutation = useEditApprovedLeave();
   const { triggerRefetch } = useLeaveRequestRefresh();
-  console.log(defaults);
+  console.log("defaults", defaults?.source);
   const handleUpdate = useCallback(async () => {
     if (!currentEmployee?.name) {
       toast.error("Employee data not loaded.");
@@ -307,9 +307,15 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
                 enableTime: false,
-                defaultValue: defaults?.fromDate
-                  ? `${defaults.fromDate}T00:00:00`
-                  : "",
+                // defaultValue: defaults?.fromDate
+                //   ? `${defaults.fromDate}T00:00:00`
+                //   : "",
+                defaultValue:
+                  defaults?.source === "balances"
+                    ? `${today}T00:00:00`
+                    : defaults?.fromDate
+                    ? `${defaults.fromDate}T00:00:00`
+                    : "",
                 validate: { required: requiredFieldMap["from_date"] },
                 input: true,
                 customClass: "mb-4",
@@ -473,63 +479,72 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         input: true,
         customClass: "px-2 my-3",
       },
-      {
-        type: "select",
-        key: "custom_reason",
-        label: requiredFieldMap["custom_reason"]
-          ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
-          : "Reason",
-        errorLabel: "Reason",
-        placeholder: "Select a reason",
-        defaultValue: defaults?.custom_reason ?? "",
-        input: true,
-        validate: {
-          required:
-            !!mandatory.custom_reason || requiredFieldMap["custom_reason"],
-        },
-        data: {
-          values:
-            reasons?.map((r) => ({
-              label: r.reason,
-              value: r.name,
-            })) ?? [],
-        },
-        customClass: "px-2 mb-4",
-        disabled: isReasonLoading || isReasonError,
-      },
-      {
-        type: "file",
-        key: "custom_attachment",
-        defaultValue: defaults?.custom_attachment
-          ? [
-              {
-                //name: defaults.custom_attachment.split('/').pop() || 'attachment',
-                name: defaults.custom_attachment,
-                url: defaults.custom_attachment,
-                storage: "url",
-                // type: "application/octet-stream",
-                size: 0,
+      ...(defaults?.source !== "holiday"
+        ? [
+            {
+              type: "select",
+              key: "custom_reason",
+              label: requiredFieldMap["custom_reason"]
+                ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
+                : "Reason",
+              errorLabel: "Reason",
+              placeholder: "Select a reason",
+              defaultValue: defaults?.custom_reason ?? "",
+              input: true,
+              validate: {
+                required:
+                  !!mandatory.custom_reason ||
+                  requiredFieldMap["custom_reason"],
               },
-            ]
-          : [],
-        label: requiredFieldMap["custom_attachment"]
-          ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
-          : "Attachment",
-        errorLabel: "Attachment",
-        input: true,
-        storage: "customBase64",
-        validate: {
-          required:
-            !!mandatory.custom_attachment ||
-            requiredFieldMap["custom_attachment"],
-        },
-        // fileTypes: [
-        //   { label: "Documents", value: ".pdf,.doc,.docx" },
-        //   { label: "Images", value: ".jpg,.jpeg,.png" },
-        // ],
-        filePattern: "*/*",
-        customClass: "px-2 mb-6",
-      },
+              data: {
+                values:
+                  reasons?.map((r) => ({
+                    label: r.reason,
+                    value: r.name,
+                  })) ?? [],
+              },
+              customClass: "px-2 mb-4",
+              disabled: isReasonLoading || isReasonError,
+            },
+          ]
+        : []),
+      ...(defaults?.source !== "holiday"
+        ? [
+            {
+              type: "file",
+              key: "custom_attachment",
+              defaultValue: defaults?.custom_attachment
+                ? [
+                    {
+                      //name: defaults.custom_attachment.split('/').pop() || 'attachment',
+                      name: defaults.custom_attachment,
+                      url: defaults.custom_attachment,
+                      storage: "url",
+                      // type: "application/octet-stream",
+                      size: 0,
+                    },
+                  ]
+                : [],
+              label: requiredFieldMap["custom_attachment"]
+                ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
+                : "Attachment",
+              errorLabel: "Attachment",
+              input: true,
+              storage: "customBase64",
+              validate: {
+                required:
+                  !!mandatory.custom_attachment ||
+                  requiredFieldMap["custom_attachment"],
+              },
+              // fileTypes: [
+              //   { label: "Documents", value: ".pdf,.doc,.docx" },
+              //   { label: "Images", value: ".jpg,.jpeg,.png" },
+              // ],
+              filePattern: "*/*",
+              customClass: "px-2 mb-6",
+            },
+          ]
+        : []),
     ];
 
     return {
