@@ -9,6 +9,7 @@ import { searchEmployeesByQuery } from "../../../utils/searchEmployees";
 export interface ParticipantRow {
   employee_type?: string;
   name?: string;
+  employee_name?: string;
   percentage?: number | null;
   amount?: number | null;
 }
@@ -47,7 +48,6 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
 }) => {
   const [mode, setMode] = useState<"percentage" | "amount">("percentage");
   const [participants, setParticipants] = useState<ParticipantRow[]>([]);
-
   const computeAllocations = (
     rowsIn?: ParticipantRow[],
     m?: "percentage" | "amount"
@@ -283,6 +283,12 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
           ? currentEmployee?.name || currentEmployee?.employee_name
           : r.name) ||
         "";
+      const employeeName =
+        r.employee_name ||
+        (r.employee_type === "Self"
+          ? currentEmployee?.employee_name
+          : r.name) ||
+        "";
 
       const percent = r.percentage ?? null;
       const amt =
@@ -295,6 +301,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
       return {
         employee_type: r.employee_type === "Self" ? "Self" : "Employee",
         employee: employeeId,
+        employee_name: employeeName,
         percentage: percent,
         amount: amt,
       };
@@ -481,90 +488,108 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
             </label>
           </div>
 
-          <div className="w-full">
-            <div className="grid grid-cols-[40px_140px_1fr_80px_120px_80px] text-xs font-medium text-gray-600 border-b pb-2 mb-2">
-              <div>#</div>
-              <div>Employee Type</div>
-              <div>Name</div>
-              <div>%</div>
-              <div>Amount (INR)</div>
-              <div className="text-center">Actions</div>
-            </div>
+          <div className="w-full overflow-x-auto">
+            <div className="min-w-[640px]">
+              {/* <div className="w-full"> */}
+              <div className="grid grid-cols-[40px_140px_1fr_80px_120px_80px] text-xs font-medium text-gray-600 border-b pb-2 mb-2">
+                <div>#</div>
+                <div>Employee Type</div>
+                <div>Name</div>
+                <div>%</div>
+                <div>Amount (INR)</div>
+                <div className="text-center">Actions</div>
+              </div>
 
-            {participants.length > 0 ? (
-              participants.map((row, i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-[40px_140px_1fr_80px_120px_80px] items-start gap-2 py-2 border-b"
-                >
-                  <div className="text-sm pt-2">{i + 1}</div>
+              {participants.length > 0 ? (
+                participants.map((row, i) => (
+                  <div
+                    key={i}
+                    className="grid grid-cols-[40px_140px_1fr_80px_120px_80px] items-start gap-2 py-2 border-b"
+                  >
+                    <div className="text-sm pt-2">{i + 1}</div>
 
-                  <div>
-                    {i === 0 ? (
-                      <input
-                        type="text"
-                        readOnly
-                        value="Self"
-                        className="w-full p-1 border bg-gray-100 rounded text-sm"
-                      />
-                    ) : (
-                      <select
-                        value={row.employee_type || "Employee"}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          updateRow(i, { employee_type: val, name: "" });
-                        }}
-                        className="w-full p-1 border rounded text-sm"
-                      >
-                        <option value="Employee">Employee</option>
-                        <option value="Guest">Guest</option>
-                      </select>
-                    )}
-                  </div>
-
-                  <div>
-                    {i === 0 ? (
-                      <input
-                        type="text"
-                        readOnly
-                        value={(() => {
-                          const id =
-                            row.name ||
-                            currentEmployee?.name ||
-                            currentEmployee?.employee_name ||
-                            "";
-                          const found = optionsSource.find(
-                            (o) => o.name === id
-                          );
-                          return (
-                            found?.employee_name ??
-                            currentEmployee?.employee_name ??
-                            id ??
-                            "Self"
-                          );
-                        })()}
-                        className="w-full p-1 border bg-gray-100 rounded text-sm"
-                      />
-                    ) : row.employee_type === "Employee" ? (
-                      employeeOptionsLoading ? (
+                    <div>
+                      {i === 0 ? (
                         <input
                           type="text"
-                          disabled
-                          value="Loading..."
-                          className="w-full p-1 border rounded text-sm bg-gray-100"
+                          readOnly
+                          value="Self"
+                          className="w-full p-1 border bg-gray-100 rounded text-sm"
                         />
-                      ) : optionsSource && optionsSource.length > 0 ? (
-                        <SearchableSelect
-                          options={optionsSource.map((opt) => ({
-                            value: opt.name,
-                            label: opt.employee_name ?? opt.name,
-                          }))}
-                          value={row.name || ""}
-                          onChange={(value) => updateRow(i, { name: value })}
-                          placeholder="Search employee..."
-                          disabled={false}
-                          onSearch={searchEmployeesByQuery}
+                      ) : (
+                        <select
+                          value={row.employee_type || "Employee"}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            updateRow(i, { employee_type: val, name: "" });
+                          }}
+                          className="w-full p-1 border rounded text-sm"
+                        >
+                          <option value="Employee">Employee</option>
+                          <option value="Guest">Guest</option>
+                        </select>
+                      )}
+                    </div>
+
+                    <div>
+                      {i === 0 ? (
+                        <input
+                          type="text"
+                          readOnly
+                          value={(() => {
+                            const id =
+                              row.name ||
+                              currentEmployee?.name ||
+                              currentEmployee?.employee_name ||
+                              "";
+                            const found = optionsSource.find(
+                              (o) => o.name === id
+                            );
+                            return (
+                              found?.employee_name ??
+                              currentEmployee?.employee_name ??
+                              id ??
+                              "Self"
+                            );
+                          })()}
+                          className="w-full p-1 border bg-gray-100 rounded text-sm"
                         />
+                      ) : row.employee_type === "Employee" ? (
+                        employeeOptionsLoading ? (
+                          <input
+                            type="text"
+                            disabled
+                            value="Loading..."
+                            className="w-full p-1 border rounded text-sm bg-gray-100"
+                          />
+                        ) : optionsSource && optionsSource.length > 0 ? (
+                          <SearchableSelect
+                            options={optionsSource.map((opt) => ({
+                              value: opt.name,
+                              label: opt.employee_name ?? opt.name,
+                            }))}
+                            value={row.name || ""}
+                            onChange={(value, label) =>
+                              updateRow(i, {
+                                name: value,
+                                employee_name: label,
+                              })
+                            }
+                            placeholder="Search employee..."
+                            disabled={false}
+                            onSearch={searchEmployeesByQuery}
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={row.name || ""}
+                            onChange={(e) =>
+                              updateRow(i, { name: e.target.value })
+                            }
+                            placeholder="Employee name"
+                            className="w-full p-1 border rounded text-sm"
+                          />
+                        )
                       ) : (
                         <input
                           type="text"
@@ -572,88 +597,80 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                           onChange={(e) =>
                             updateRow(i, { name: e.target.value })
                           }
-                          placeholder="Employee name"
+                          placeholder="Guest name"
                           className="w-full p-1 border rounded text-sm"
                         />
-                      )
-                    ) : (
+                      )}
+                    </div>
+
+                    <div>
                       <input
-                        type="text"
-                        value={row.name || ""}
-                        onChange={(e) => updateRow(i, { name: e.target.value })}
-                        placeholder="Guest name"
-                        className="w-full p-1 border rounded text-sm"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        max={100}
+                        value={
+                          row.percentage !== null &&
+                          row.percentage !== undefined
+                            ? row.percentage
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          const parsed = v === "" ? null : parseFloat(v);
+                          updateRow(i, { percentage: parsed });
+                        }}
+                        onFocus={(e) => e.target.select()} // Add this line
+                        disabled={mode !== "percentage"}
+                        placeholder="0.00"
+                        className={`w-full p-1 border rounded text-sm ${
+                          mode !== "percentage" ? "bg-gray-100" : ""
+                        }`}
                       />
-                    )}
-                  </div>
+                    </div>
 
-                  <div>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      max={100}
-                      value={
-                        row.percentage !== null && row.percentage !== undefined
-                          ? row.percentage
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        const parsed = v === "" ? null : parseFloat(v);
-                        updateRow(i, { percentage: parsed });
-                      }}
-                      onFocus={(e) => e.target.select()} // Add this line
-                      disabled={mode !== "percentage"}
-                      placeholder="0.00"
-                      className={`w-full p-1 border rounded text-sm ${
-                        mode !== "percentage" ? "bg-gray-100" : ""
-                      }`}
-                    />
-                  </div>
+                    <div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={
+                          row.amount !== null && row.amount !== undefined
+                            ? row.amount
+                            : ""
+                        }
+                        onFocus={(e) => e.target.select()} // Add this line
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          const parsed = v === "" ? null : parseFloat(v);
+                          updateRow(i, { amount: parsed });
+                        }}
+                        disabled={mode !== "amount"}
+                        placeholder="0.00"
+                        className={`w-full p-1 border rounded text-sm ${
+                          mode !== "amount" ? "bg-gray-100" : ""
+                        }`}
+                      />
+                    </div>
 
-                  <div>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      value={
-                        row.amount !== null && row.amount !== undefined
-                          ? row.amount
-                          : ""
-                      }
-                      onFocus={(e) => e.target.select()} // Add this line
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        const parsed = v === "" ? null : parseFloat(v);
-                        updateRow(i, { amount: parsed });
-                      }}
-                      disabled={mode !== "amount"}
-                      placeholder="0.00"
-                      className={`w-full p-1 border rounded text-sm ${
-                        mode !== "amount" ? "bg-gray-100" : ""
-                      }`}
-                    />
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => removeRow(i)}
+                        className="text-red-500"
+                      >
+                        <Trash2 />
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => removeRow(i)}
-                      className="text-red-500"
-                    >
-                      <Trash2 />
-                    </button>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-4 text-sm">
+                  No participants. Click "Add Participant" to start.
                 </div>
-              ))
-            ) : (
-              <div className="text-center text-gray-500 py-4 text-sm">
-                No participants. Click "Add Participant" to start.
-              </div>
-            )}
+              )}
+            </div>
           </div>
-
           <div className="flex items-center justify-between gap-4 mt-4">
             <div className="text-xs text-gray-500">
               Max. Allowed Participant - {maxParticipants}

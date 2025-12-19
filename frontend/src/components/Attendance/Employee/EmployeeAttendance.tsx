@@ -27,7 +27,6 @@ import ListView from "./EmployeeAttendence/ListView";
 import Cardtable from "./EmployeeAttendence/CardTable";
 import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
-import { Plus } from "lucide-react";
 import { ViewAll } from "../../shared/atoms/ViewAll";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 

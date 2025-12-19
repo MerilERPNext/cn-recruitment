@@ -578,6 +578,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   }, [unitPriceData]);
 
   const isShareAllowed = Boolean(expenseTypeData?.shared_expense_allowed);
+  const maxAllowedParticipants = Number(expenseTypeData?.shared_expense_limit);
 
   useEffect(() => {
     if (!expenseTypeData?.fields) {
@@ -1199,24 +1200,40 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                         </tr>
                       </thead>
                       <tbody>
+                        {console.log(displayParticipants)}
                         {displayParticipants.map((p: any, idx: number) => (
                           <tr key={idx} className="border-t">
                             <td className="px-2 py-2 align-top">{idx + 1}</td>
                             <td className="px-2 py-2 align-top">
                               {p.employee_type ?? "-"}
                             </td>
+
                             <td className="px-2 py-2 align-top">
-                              {p.employee
-                                ? p.employee
-                                : p.guest_name
-                                ? p.guest_name
-                                : "-"}
-                              {p.employee_label && (
-                                <div className="text-xs text-gray-500">
-                                  {p.employee_label}
-                                </div>
-                              )}
+                              {(() => {
+                                if (
+                                  p.employee_type === "Guest" ||
+                                  p.guest_name
+                                ) {
+                                  return p.guest_name || "-";
+                                }
+
+                                // For Employee or Self type
+                                if (p.employee_name) {
+                                  return p.employee_name;
+                                }
+
+                                // Fallback: lookup from employeeOptionsForDrawer
+                                if (p.employee) {
+                                  const found = employeeOptionsForDrawer.find(
+                                    (opt) => opt.name === p.employee
+                                  );
+                                  return found?.employee_name || p.employee;
+                                }
+
+                                return "-";
+                              })()}
                             </td>
+
                             <td className="px-2 py-2 align-top">
                               {p.percentage !== undefined &&
                               p.percentage !== null
@@ -1420,7 +1437,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
           expenses={expenses}
           setExpenses={(fn) => setExpenses(fn)}
           currentEmployee={currentEmployee || undefined}
-          maxParticipants={5}
+          maxParticipants={maxAllowedParticipants}
           employeeOptions={employeeOptionsForDrawer}
           employeeOptionsLoading={isLoadingEmployees as boolean}
           onSave={(formattedParticipants) => {
