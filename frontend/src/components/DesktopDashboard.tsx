@@ -426,7 +426,7 @@ export default function DesktopDashboard() {
                       Employee ID: {currentEmployee?.employee}
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300">
                     <img
                       src={currentEmployee?.image || defaultProfile}
                       alt="User avatar"

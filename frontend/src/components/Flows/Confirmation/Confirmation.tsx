@@ -12,6 +12,7 @@ import {
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./Component/ApprovalTracker";
+import { Loader2 } from "lucide-react";
 
 const ConfirmationWorkflow = () => {
   const { data: userId } = useLoggedInUser();
@@ -28,8 +29,8 @@ const ConfirmationWorkflow = () => {
       )
       : [];
   }
-  const confirmationCreationData = useConfirmationAndseparation(doctype);
-  const item = confirmationCreationData?.data?.[0];
+  const { data: confirmationCreationData, isLoading } = useConfirmationAndseparation(doctype);
+  const item = confirmationCreationData?.[0];
   const confirmationData = getFunnelData("Confirmation");
   const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
@@ -51,6 +52,19 @@ const ConfirmationWorkflow = () => {
       console.warn("⚠️ trigger_chatnext_assistant is not available on window.");
     }
   };
+
+  /* -------------------- LOADING Spinner -------------------- */
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
+          <span className="text-sm text-gray-600">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+  /* ---------------------------------------------------------- */
 
   return (
     <div className=" bg-white  min-h-screen  p-8  text-gray-800  font-sans">

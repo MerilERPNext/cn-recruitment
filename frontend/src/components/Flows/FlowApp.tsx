@@ -30,7 +30,7 @@ const FlowApp: React.FC = () => {
   );
   const [showInitiateModel, setShowInitiateModel] = useState<boolean>(false);
 
-  const showInitiateButton = activeTab === "Flow Requests";
+  const showInitiateButton = activeTab === "Flow Requests" && !seprateRoute;
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
@@ -41,6 +41,7 @@ const FlowApp: React.FC = () => {
     setSeprateRoute("Initiate Flow");
     navigate("/webapp/flow-app/initiate-flow");
   };
+
 
   const handleInitiateModel = () => {
     setShowInitiateModel(true);
@@ -127,7 +128,6 @@ const FlowApp: React.FC = () => {
         </div>
         {showInitiateModel && (
           <InitiateFlow
-            openAsModel={true}
             handleCloseModel={() => setShowInitiateModel(false)}
           />
         )}

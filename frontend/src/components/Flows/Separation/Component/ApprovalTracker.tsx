@@ -49,12 +49,12 @@ export default function SeparationApprovalTracker({ data }: ApprovalTrackerProps
     );
   }
   const allStagesComplete =
-  data?.approval_stages_status?.every(
-    (stage) => stage.status === "Approved" || stage.status === "Rejected"
-  ) ?? false
+    data?.approval_stages_status?.every(
+      (stage) => stage.status === "Approved" || stage.status === "Rejected"
+    ) ?? false
 
   const pendingCount =
-  data?.approval_stages_status?.filter((s) => s.status === "Pending").length ?? 0
+    data?.approval_stages_status?.filter((s) => s.status === "Pending").length ?? 0
 
 
   return (
@@ -108,7 +108,7 @@ export default function SeparationApprovalTracker({ data }: ApprovalTrackerProps
                 onClick={() => setIsModalOpen(true)}
                 className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
               >
-               See Approval Status 
+                See Approval Status
               </button>
             )}
           </div>

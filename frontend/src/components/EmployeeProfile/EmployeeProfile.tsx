@@ -356,7 +356,7 @@ const EmployeeProfile: React.FC = () => {
                 onChange={handleFileChange}
               />
               <div className="relative">
-                <div className="w-24 h-24 rounded-full ring-4 ring-white overflow-hidden">
+                <div className="w-30 h-30 rounded-full ring-4 ring-white overflow-hidden">
                   <img
                     src={uploadedImage || user?.image || defaultProfile}
                     alt="User avatar"
