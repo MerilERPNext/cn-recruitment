@@ -86,7 +86,6 @@ const ReportingDetails = () => {
     }
 
     const hierarchySections = hierarchyData?.data || {};
-    console.log(hierarchyData, "----------------------------------------------")
     return (
         <div className="address-form-container bg-white rounded-lg border border-gray-200">
             <div className="p-4 md:p-8">

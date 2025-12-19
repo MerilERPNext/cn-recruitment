@@ -1,15 +1,6 @@
-export type RawPermission = {
-    app_name: string
-    enabled: boolean
-    pages: {
-        page_name: string
-        enabled: boolean
-        actions: {
-            action_name: string
-            enabled: boolean
-        }[]
-    }[]
-}
+import { UiPermissionModule } from "../../services/permissionService";
+
+export type RawPermission = UiPermissionModule;
 
 export type PermissionMap = {
     [app: string]: {
