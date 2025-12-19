@@ -175,7 +175,7 @@ const AttendanceSummary = () => {
 
   return (
     <>
-      <div className="bg-white p-4">
+      <div className="bg-gray-200 p-4">
         {/* Date Navigation */}
         <div className="flex items-center justify-between mb-4 bg-white border border-gray-200 p-4 rounded-xl">
           <button

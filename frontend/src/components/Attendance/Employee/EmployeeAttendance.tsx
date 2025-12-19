@@ -269,8 +269,9 @@ const EmployeeAttendance = () => {
                   setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
                 }}
               >
-                <Plus className="w-4 h-4 mr-2 font-bold" />
-                Raise Request
+                {/* <Plus className="w-4 h-4 mr-2 font-bold" /> */}
+                {/* Raise Request */}
+                Regularize
               </button>
             </div>
           </div>

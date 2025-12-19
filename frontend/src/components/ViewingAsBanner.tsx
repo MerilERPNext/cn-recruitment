@@ -1,11 +1,11 @@
 import React from "react";
-// import { X } from "lucide-react";
+import { X } from "lucide-react";
 import { useTargetUser } from "../context/ViewedUserContext";
 import { useEmployee } from "../hooks/useEmployee";
 
 const ViewingAsBanner: React.FC = () => {
-  // const { targetEmployeeId, clearTargetEmployee, isViewingOtherUser } =
-  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
+  const { targetEmployeeId, isViewingOtherUser, clearTargetEmployee } =
+    useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
 
   if (!isViewingOtherUser || !targetEmployee) {
@@ -22,14 +22,14 @@ const ViewingAsBanner: React.FC = () => {
           </span>
         </span>
       </div>
-      {/* <button
-                onClick={clearTargetEmployee}
-                className="flex items-center gap-1 text-sm text-blue-700 hover:text-blue-900 hover:bg-blue-100 px-3 py-1 rounded transition-colors"
-                aria-label="Exit viewing mode"
-            >
-                <X className="w-4 h-4" />
-                <span>Exit View</span>
-            </button> */}
+      <button
+        onClick={clearTargetEmployee}
+        className="flex items-center gap-1 text-sm text-blue-700 hover:text-blue-900 hover:bg-blue-100 px-3 py-1 rounded transition-colors"
+        aria-label="Exit viewing mode"
+      >
+        <X className="w-4 h-4" />
+        <span>Exit View</span>
+      </button>
     </div>
   );
 };

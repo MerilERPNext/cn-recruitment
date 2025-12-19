@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useCurrentEmployee } from "../hooks/useEmployee";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ViewedUserContextType {
   targetEmployeeId: string | null;
@@ -35,6 +36,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
   const { data: currentEmployee } = useCurrentEmployee();
   const isClearing = useRef(false);
   const navigateTimeoutRef = useRef<number | null>(null);
+  const queryClient = useQueryClient();
 
   const [targetEmployeeId, setTargetEmployeeIdState] = useState<string | null>(
     () => {
@@ -136,6 +138,9 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
     // Remove param from URL
     const newParams = new URLSearchParams(searchParams);
     newParams.delete(TARGET_USER_PARAM);
+    queryClient.invalidateQueries({
+      queryKey: ["ui-permission"],
+    });
 
     navigate(
       {
