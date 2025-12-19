@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 declare module '@tsed/react-formio' {
   import { ComponentType } from 'react';
   

@@ -19,6 +19,14 @@ const fetchHTML = async (method: string, salarySlipName: string) => {
   return data.response || data
 }
 
+export const getSalarySlipName = async () => {
+  const response = await FrappeAPI.getDocumentList("Salary Slip", {
+    fields: ["name"],
+    orderBy: "creation desc",
+  });
+  return response
+};
+
 /** Generic function to download PDF from HTML-based API*/
 const downloadPDFfromHTMLMethod = async (method: string, salarySlipName: string, fileName: string) => {
   const html = await fetchHTML(method, salarySlipName)

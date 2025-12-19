@@ -385,20 +385,20 @@ const SalarySlipItemDesktop = ({
             {item.employee}
           </div> */}
         </span>
-        <div className="text-sm font-medium text-gray-700 text-start truncate">
+        <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.start_date)}
         </div>
-        <div className="text-sm font-medium text-gray-700 text-start truncate">
+        <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.end_date)}
         </div>
-        <div className="text-sm font-medium text-gray-700 text-start truncate">
+        <div className="card-subtitle text-gray-700 text-start truncate">
           {maskSalary ? (
             <span className="blur-sm text-gray-400">₹XX,XXX</span>
           ) : (
             formatCurrency(item.gross_pay)
           )}
         </div>
-        <div className="text-sm font-medium text-gray-700 text-start truncate">
+        <div className="card-subtitle text-gray-700 text-start truncate">
           {maskSalary ? (
             <span className="blur-sm text-gray-400">₹XX,XXX</span>
           ) : (

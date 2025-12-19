@@ -14,6 +14,11 @@ import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import SharedExpenses from "./components/Expenses-App/ExpenseClaim/SharedExpenses";
+import ExtraPayment from "./components/SalarySlip/Extrapayment/ExtraPayment";
+import IncomeTaxSheet from "./components/SalarySlip/TaxSheet/TaxSheet";
+import ITDeclarationForm from "./components/SalarySlip/IT Declaration/ITDeclaration";
+import TeamLoanRequest from "./components/SalarySlip/Loan/TeamLoan/TeamLoanRequest";
+import TeamAdvanceRequest from "./components/SalarySlip/Advances/ApprovalAdvanceRquest";
 import Requests from "./components/Requests";
 
 // Lazy load heavy components with retry mechanism
@@ -322,9 +327,9 @@ const AdvancesList = lazyWithRetry(
   "AdvancesList"
 );
 
-const BenefitsList = lazyWithRetry(
-  () => import("./components/SalarySlip/Benefits/BenefitsList"),
-  "BenefitsList"
+const PayPackage = lazyWithRetry(
+  () => import("./components/SalarySlip/Paypackage/PayPackage"),
+  "PayPackage"
 );
 
 const CompensatoryRequest = lazyWithRetry(
@@ -381,6 +386,31 @@ const PerformanceReviewApp = lazyWithRetry(
   () =>
     import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
   "PerformanceReviewApp"
+);
+
+const BenefitsApp = lazyWithRetry(
+  () => import("./components/Benefits/BenefitsApp"),
+  "BenefitsApp"
+);
+
+const MyBenefits = lazyWithRetry(
+  () => import("./components/Benefits/MyBenefits/MyBenefits"),
+  "MyBenefits"
+);
+
+const MyBenefitRequests = lazyWithRetry(
+  () => import("./components/Benefits/MyRequests/MyRequests"),
+  "MyBenefitRequests"
+);
+
+const BenefitsSlips = lazyWithRetry(
+  () => import("./components/Benefits/BenefitsSlips/BenefitsSlips"),
+  "BenefitsSlips"
+);
+
+const MyTeamBenefitsRequests = lazyWithRetry(
+  () => import("./components/Benefits/MyTeamRequest/MyTeamRequest"),
+  "MyTeamBenefitsRequests"
 );
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -480,13 +510,18 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/salary-slip-app",
     element: <SalarySlipApp />,
     children: [
-      { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
+      { path: "salary-slip-list", element: <SalarySlipsList /> },
+      { path: "income-tax-sheet", element: <IncomeTaxSheet /> },
+      { path: "it-declaration-form", element: <ITDeclarationForm /> },
+      { path: "my-loan-requests", element: <LoansPage /> },
+      { path: "team-loan-requests", element: <TeamLoanRequest /> },
       { path: "hr-payroll", element: <HRPayroll /> },
-      { path: "loan", element: <LoansPage /> },
       { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
       { path: "advances-list", element: <AdvancesList /> },
-      { path: "benefits-list", element: <BenefitsList /> },
+      { path: "team-advances-list", element: <TeamAdvanceRequest /> },
+      { path: "benefits-list", element: <PayPackage /> },
+      { path: "extra-payment", element: <ExtraPayment /> },
     ],
   },
   {
@@ -496,6 +531,17 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/salary-slip-app/loan/:loanId",
     element: <LoanMainComponent />,
+  },
+
+  {
+    path: "/webapp/benefits-app",
+    element: <BenefitsApp />,
+    children: [
+      { path: "my-benefits", element: <MyBenefits /> },
+      { path: "my-requests", element: <MyBenefitRequests /> },
+      { path: "benefits-slips", element: <BenefitsSlips /> },
+      { path: "my-team-requests", element: <MyTeamBenefitsRequests /> },
+    ],
   },
 
   {

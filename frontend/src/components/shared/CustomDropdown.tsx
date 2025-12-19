@@ -90,23 +90,24 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
       {isOpen && (
         <div
-          className={`absolute right-0 mt-2 w-full min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${positionCss[position]}`}
-        >
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleSelect(option.value)}
-              className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors ${
-                value === option.value
-                  ? "bg-blue-50 text-blue-600 font-medium"
-                  : "text-gray-700"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        className={`absolute right-0 mt-2 w-max min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${positionCss[position]}`}
+      >
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => handleSelect(option.value)}
+            className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors ${
+              value === option.value
+                ? "bg-blue-50 text-blue-600 font-medium"
+                : "text-gray-700"
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      
       )}
     </div>
   );

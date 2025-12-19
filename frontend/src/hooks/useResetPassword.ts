@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { requestPasswordReset, updatePasswordViaKey } from "../services/resetPasswordService";
+import { requestPasswordReset, updatePasswordValidation, updatePasswordViaKey } from "../services/resetPasswordService";
 
 
 export const useRequestPasswordReset = () => {
@@ -13,5 +13,12 @@ export const useUpdatePasswordViaKey = () => {
   return useMutation({
     mutationFn: (payload: { key: string; new_password: string }) =>
       updatePasswordViaKey(payload),
+  });
+};
+
+export const useUpdatePasswordValidation = () => {
+  return useMutation({
+    mutationFn: (payload: { new_password: string }) =>
+      updatePasswordValidation(payload),
   });
 };

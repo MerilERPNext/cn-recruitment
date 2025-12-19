@@ -56,7 +56,7 @@ export default function LoansPage() {
       <div className="w-full mx-auto py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 px-4">
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="base-title">
             Loans For FY25-26
           </h1>
 

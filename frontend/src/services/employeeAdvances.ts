@@ -24,13 +24,12 @@ export const getAdvances = async (
   return result as ApiAdvance[];
 };
 
-//for employee advance application creation api
 
 export const getAllAdvancesTypes = async (): Promise<{
   data: [{ name: string }];
 }> => {
   const res = await FrappeAPI.getDocumentList("Advance Type", {
-    fields: ["name"],
+    fields: ["*"],
     orderBy: "creation desc",
     filters: [["policy_based_type", "=", 1]],
   });

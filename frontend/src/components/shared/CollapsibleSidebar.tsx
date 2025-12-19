@@ -27,6 +27,10 @@ import {
   ChartNoAxesCombined,
   Telescope,
   Goal,
+  Gift,
+  HandCoins,
+  Coins,
+  BadgeIndianRupee,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -221,30 +225,53 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Calculator,
           href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
         },
-        {
-          name: "Monthly Salary",
-          icon: Calculator,
-          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=monthly",
-        },
+
         {
           name: "Salary Slip",
           icon: CreditCard,
           href: "/webapp/salary-slip-app/salary-slip-list",
         },
         {
-          name: "Loan",
+          name: "Tax Declaration Sheet",
           icon: Wallet,
-          href: "/webapp/salary-slip-app/loan",
+          href: "/webapp/salary-slip-app/income-tax-sheet",
         },
         {
-          name: "Advances",
+          name: "IT Declaration",
+          icon: BadgeIndianRupee,
+          href: "/webapp/salary-slip-app/it-declaration-form",
+        },
+        {
+          name: "My Loan Requests",
+          icon: BadgeIndianRupee,
+          href: "/webapp/salary-slip-app/my-loan-requests",
+        },
+
+        {
+          name: "Team Loan Requests",
+          icon: Users,
+          href: "/webapp/salary-slip-app/team-loan-requests",
+        },
+
+        {
+          name: "My Advances",
           icon: IndianRupee,
           href: "/webapp/salary-slip-app/advances-list",
         },
         {
-          name: "Benefits",
+          name: "Team Advances",
+          icon: Coins,
+          href: "/webapp/salary-slip-app/team-advances-list",
+        },
+        {
+          name: "Pay Package",
           icon: IndianRupee,
           href: "/webapp/salary-slip-app/benefits-list",
+        },
+        {
+          name: "Extra Payment",
+          icon: HandCoins,
+          href: "/webapp/salary-slip-app/extra-payment",
         },
         {
           name: "Payroll Documents",
@@ -253,6 +280,35 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
       ],
     },
+    {
+      icon: Gift,
+      label: "Benefits",
+      path: "/webapp/benefits-app",
+      permissionKey: "Benefit",
+      subItems: [
+        {
+          name: "My Benefits",
+          icon: Calculator,
+          href: "/webapp/benefits-app/my-benefits",
+        },
+        {
+          name: "My Requests",
+          icon: Calculator,
+          href: "/webapp/benefits-app/my-requests",
+        },
+        {
+          name: "Team Requests",
+          icon: Calculator,
+          href: "/webapp/benefits-app/my-team-requests",
+        },
+        {
+          name: "Benefit Slips",
+          icon: Calculator,
+          href: "/webapp/benefits-app/benefits-slips",
+        },
+      ],
+    },
+
     {
       icon: ReceiptIndianRupee,
       label: "Expenses",

@@ -2,6 +2,7 @@ import { BenefitClaim, BenefitClaimResponse } from "../types/employeeBenifit";
 import FrappeAPI from "../utils/frappeAPI";
 
 export type PayrollData = {
+  employee: any;
   component_array: string[];
   payroll_period: string;
 };

@@ -1,14 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery } from "@tanstack/react-query"
-import {
-  getBenefitPayslipHTML,
-  getTDSPayslipHTML,
-  getSalarySlipHTML,
-  getOffCyclePayslipHTML,
-  PrintFormatMenuOptionsService,
-} from "../services/salaryDetailsService"
+
 import { PermissionError } from "../types/interview"
+import { 
+        getTDSPayslipHTML,
+        getBenefitPayslipHTML,
+        getOffCyclePayslipHTML,
+        getSalarySlipHTML,
+        PrintFormatMenuOptionsService,
+        getSalarySlipName
+     } from "../services/salaryDetailsService"
 
 const isPermissionError = (error: unknown): error is PermissionError => {
   if (error instanceof PermissionError) return true
@@ -69,5 +71,12 @@ export const usePrintFormatMenuOptions = (employee_name: string, name: string) =
     queryKey: ["print-format-menu-options", name, employee_name],
     queryFn: () => PrintFormatMenuOptionsService(employee_name, name),
     placeholderData: [], // prevents undefined
+  });
+};
+
+export const useSalarySlipName = () => {
+  return useQuery({
+    queryKey: ["salary-slip-name"],
+    queryFn: () => getSalarySlipName(),
   });
 };

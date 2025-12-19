@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useRef } from "react";
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
@@ -28,7 +29,6 @@ export default function CreateLoanDialog({
     currentUser?.name || ""
   );
   const mutation = useCreateNewLoanApplication();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
 
   const { data: requiredFields } = useRequiredFields("Loan Application");
@@ -139,7 +139,7 @@ export default function CreateLoanDialog({
       >
         {/* Dialog Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className=" base-title text-gray-900">
             Create New Loan
           </h2>
           <button
@@ -158,7 +158,6 @@ export default function CreateLoanDialog({
             options={{
               submitButton: false,
             }}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onFormReady={(instance: any) => {
               formRef.current = instance;
             }}

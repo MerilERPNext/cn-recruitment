@@ -36,6 +36,7 @@ export function useNewBenifitRequest() {
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["benifit-request"] });
+      queryClient.invalidateQueries({ queryKey: ["mybenefit-request"] });
     },
     onError: (e) => {
       console.log(e);

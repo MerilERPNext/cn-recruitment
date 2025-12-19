@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
 import { useState } from "react";
 import { Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useUpdatePasswordViaKey } from "../../hooks/useResetPassword";
+import {
+  useUpdatePasswordViaKey,
+  useUpdatePasswordValidation,
+} from "../../hooks/useResetPassword";
 import toast from "react-hot-toast";
 
 export default function PasswordReset() {
@@ -9,83 +14,71 @@ export default function PasswordReset() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState({
-    newPassword: "",
-    confirmPassword: "",
-  });
+  const [error, setError] = useState("");
 
-  const mutation = useUpdatePasswordViaKey();
+  // ✅ mutations
+  const mutation = useUpdatePasswordViaKey(); // ❗ unchanged
+  const validationMutation = useUpdatePasswordValidation();
 
   // ✅ extract key from URL
   const queryParams = new URLSearchParams(window.location.search);
   const key = queryParams.get("key") || "";
 
-  // ✅ Password validation helper
-  const validatePassword = (password: string) => {
-    if (!password) return "Password is required.";
-    if (password.length < 8)
-      return "Password must be at least 8 characters long.";
-    if (!/[A-Z]/.test(password))
-      return "Password must include at least one uppercase letter.";
-    if (!/[a-z]/.test(password))
-      return "Password must include at least one lowercase letter.";
-    if (!/[0-9]/.test(password))
-      return "Password must include at least one number.";
-    if (!/[!@#$%^&*(),.?\\":{}|<>]/.test(password))
-      return "Password must include at least one special character.";
-    return "";
-  };
-
   const handleSubmit = () => {
-    const newPasswordError = validatePassword(newPassword);
-    const confirmPasswordError =
-      confirmPassword !== newPassword
-        ? "Passwords do not match."
-        : validatePassword(confirmPassword);
-  
-    setErrors({
-      newPassword: newPasswordError,
-      confirmPassword: confirmPasswordError,
-    });
-  
-    // ✅ Submit the mutation
-    mutation.mutate(
-      { key, new_password: newPassword },
+    setError("");
+
+    if (!newPassword || !confirmPassword) {
+      setError("Both fields are required.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    // ✅ Step 1: Validate password via API
+    validationMutation.mutate(
+      { new_password: newPassword },
       {
-        onSuccess: (data) => {
-          toast.success("Password reset successfully!");
-          console.log("Response:", data);
-          setNewPassword("");
-          setConfirmPassword("");
-          window.location.href = "/login?redirect-to=%2Fwebapp";
+        onSuccess: () => {
+          // ✅ Step 2: Reset password (same logic as before)
+          mutation.mutate(
+            { key, new_password: newPassword },
+            {
+              onSuccess: (data) => {
+                toast.success("Password reset successfully!");
+                console.log("Response:", data);
+                setNewPassword("");
+                setConfirmPassword("");
+                // window.location.href = "/login?redirect-to=%2Fwebapp";
+              },
+              onError: (err: any) => {
+                toast.error("Failed to reset password!");
+                console.error(err);
+              },
+            }
+          );
         },
-        onError: (error: any) => {
-          toast.error("Failed to reset password!");
-          console.error(error);
+        onError: (err: any) => {
+          const msg =
+            err?.response?.data?.message ||
+            "Password validation failed.";
+          setError(msg);
+          toast.error(msg);
         },
       }
     );
   };
-  
+
+  const isLoading =
+    mutation.isPending || validationMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      {/* Header */}
-      <header className="flex justify-between items-center px-8 py-4 border-b border-gray-200 bg-white">
-        <nav>
-          <a
-            href="/webapp/"
-            className="text-gray-700 font-semibold hover:text-gray-900"
-          >
-            Home
-          </a>
-        </nav>
-        <div className="w-8 h-8 rounded-full bg-green-300 flex items-center justify-center">
-          <span className="text-sm font-semibold text-white">A</span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#4F9DD9]">
+  
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="flex items-center justify-center min-h-[calc(100vh-80px)] py-12 px-4">
         <div className="w-full max-w-md">
           {/* Icon */}
@@ -98,110 +91,87 @@ export default function PasswordReset() {
             </div>
           </div>
 
-          {/* Heading */}
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">
             Reset your password
           </h2>
+
           <p className="text-center text-gray-500 mb-8">
-            Create a new, strong password that you don't use for other websites.
+            Enter a new password to continue.
           </p>
 
-          {/* Form Card */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="space-y-6">
-              {/* New Password */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                  <input
-                    type={showNewPassword ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                      errors.newPassword
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-blue-600"
-                    } bg-gray-50`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-                {errors.newPassword && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.newPassword}
-                  </p>
-                )}
+          <div className="bg-white rounded-lg shadow-lg p-8 space-y-6">
+            {/* New Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                New Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2 border rounded-lg bg-gray-50 border-gray-300 focus:ring-2 focus:ring-blue-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-3 text-gray-400"
+                >
+                  {showNewPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
-
-              {/* Confirm Password */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                      errors.confirmPassword
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-blue-600"
-                    } bg-gray-50`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
-                    }
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-                {errors.confirmPassword && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.confirmPassword}
-                  </p>
-                )}
-              </div>
-
-              {/* Submit Button */}
-              <button
-                onClick={handleSubmit}
-                disabled={
-                  mutation.isPending ||
-                  !newPassword ||
-                  !confirmPassword ||
-                  !!errors.newPassword ||
-                  !!errors.confirmPassword
-                }
-                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {mutation.isPending ? "Confirming..." : "Confirm"}
-              </button>
             </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2 border rounded-lg bg-gray-50 border-gray-300 focus:ring-2 focus:ring-blue-600"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowConfirmPassword(!showConfirmPassword)
+                  }
+                  className="absolute right-3 top-3 text-gray-400"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* API Error */}
+            {error && (
+              <p className="text-red-500 text-sm">{error}</p>
+            )}
+
+            {/* Submit */}
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isLoading ? "Confirming..." : "Confirm"}
+            </button>
           </div>
         </div>
       </main>
     </div>
   );
 }
-
