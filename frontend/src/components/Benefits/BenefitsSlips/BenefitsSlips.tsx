@@ -18,7 +18,9 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 
 const BenefitsSlips = () => {
-    const [selectedYear, setSelectedYear] = useState("");
+
+    const currentYear = new Date().getFullYear();
+    const [selectedYear, setSelectedYear] = useState(currentYear.toString().slice(2));
     const [pdfModalOpen, setPdfModalOpen] = useState(false);
     const [modalHtmlContent, setModalHtmlContent] = useState<string>("");
     const [selectedSalarySlip, setSelectedSalarySlip] = useState<{
@@ -30,7 +32,6 @@ const BenefitsSlips = () => {
     const yearPeriod = (!selectedYear ? "" : `${selectedYear}-${parseInt(selectedYear) + 1}`);
     const { data: employeeIdCard } = useCurrentEmployeeIdCard();
 
-    const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 5 }, (_, i) =>
         (currentYear - i).toString()
     );
@@ -53,7 +54,7 @@ const BenefitsSlips = () => {
             )}
             <>
                 <div className="mb-4 flex items-center justify-between gap-4">
-                    <div className="flex-1 max-w-xs">
+                    <div className="flex-1 mt-2 lg:max-w-xs">
                         <select
                             id="yearFilter"
                             value={selectedYear}
@@ -88,11 +89,6 @@ const BenefitsSlips = () => {
                             company: employeeIdCard?.company || "",
                             payroll_period: yearPeriod,
                         },
-                    }}
-
-
-                    defaultFilters={{
-                        status: "Approved",
                     }}
                     getItemKey={(item: any, _: number) => item.name}
                     ItemComponent={BenefitSlipItem}
