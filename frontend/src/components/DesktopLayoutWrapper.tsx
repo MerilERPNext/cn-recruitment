@@ -243,7 +243,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                         Employee ID: {currentEmployee?.employee}
                       </p>
                     </div>
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300">
                       <img
                         src={currentEmployee?.image || defaultProfile}
                         alt="User avatar"
@@ -267,7 +267,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center gap-3">
                       {/* Avatar */}
-                      <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
+                      <div className="w-14 h-14 flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
                         <img
                           src={currentEmployee?.image || defaultProfile}
                           alt="User avatar"

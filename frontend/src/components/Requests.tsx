@@ -199,7 +199,6 @@ const Requests = () => {
             </ExpenseFormModal>
             {showInitiateModel && (
                 <InitiateFlow
-                    openAsModel={true}
                     handleCloseModel={() => setShowInitiateModel(false)}
                 />
             )}

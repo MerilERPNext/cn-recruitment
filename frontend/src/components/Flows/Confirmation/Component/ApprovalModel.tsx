@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { X } from "lucide-react";
 import ApprovalStages from "./ApprovalStages";
 
 interface ApprovalStage {
@@ -39,7 +40,7 @@ export default function ApprovalModal({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+        className="fixed -top-6 left-0 h-screen w-screen bg-black bg-opacity-50 z-40 transition-opacity"
         onClick={onClose}
       />
 
@@ -57,14 +58,14 @@ export default function ApprovalModal({
             </div>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 font-medium rounded-lg transition-colors"
+              className="p-2 bg-slate-200 hover:bg-slate-300 text-slate-900 font-medium rounded-lg transition-colors"
             >
-              X
+              <X />
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="px-6 pb-6">
             <ApprovalStages stages={data.approval_stages_status} />
           </div>
         </div>
