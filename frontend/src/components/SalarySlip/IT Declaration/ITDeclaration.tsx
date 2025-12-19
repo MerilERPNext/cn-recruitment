@@ -71,11 +71,10 @@ const ITDeclarationForm = () => {
             <button
               key={cat.category_name}
               onClick={() => setActiveTab(cat.category_name)}
-              className={`px-4 py-1 text-xs rounded-2xl border ${
-                activeTab === cat.category_name
+              className={`px-4 py-1 text-xs rounded-2xl border ${activeTab === cat.category_name
                   ? "bg-blue-600 text-white"
                   : "text-gray-600 hover:bg-gray-100"
-              }`}
+                }`}
             >
               {cat.category_name}
             </button>
