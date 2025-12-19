@@ -67,12 +67,12 @@ const TeamOvertimeRequests = () => {
   const isBulkSelectEnabled = selectedStatus === "Open";
 
   const tableTitles = isBulkSelectEnabled
-    ? ["Select", "Description", "Due Date", "Employee", "Status", "Actions"]
-    : ["Description", "Due Date", "Employee", "Status", "Actions"];
+    ? ["Select", "Employee", "Description", "Due Date", "Status", "Actions"]
+    : ["Employee", "Description", "Due Date", "Status", "Actions"];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["5%", "35%", "8%", "10%", "8%", "20%"]
-    : ["35%", "10%", "12%", "10%", "20%"];
+    ? ["5%", "10%", "35%", "8%", "8%", "20%"]
+    : ["12%", "40%", "10%", "10%", "20%"];
 
   return (
     <div>

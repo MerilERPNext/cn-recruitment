@@ -601,7 +601,11 @@ export const routesConfig: AppRoute[] = [
       { path: "team-overtime-requests", element: <TeamOvertimeRequests /> },
       {
         path: "attendance-policies",
-        element: <AttendancePolicies />,
+        element: <AttendancePolicies doctype_name="Attendance Policies" />,
+      },
+      {
+        path: "overtime-policies",
+        element: <AttendancePolicies doctype_name="Overtime Policy" />,
       },
     ],
   },

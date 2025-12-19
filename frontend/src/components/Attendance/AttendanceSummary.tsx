@@ -78,7 +78,6 @@ const AttendanceSummary = () => {
       return record.status === statusToCount ? count + 1 : count;
     }, 0);
   }
-
   const teamSummaryData = [
     {
       icon: CheckCircle,
@@ -139,6 +138,40 @@ const AttendanceSummary = () => {
       details: [employeeOvertimePolicy || ""],
     },
   ];
+
+  const getNavigatableSettingsButton = (
+    settingType: string,
+    data?: string
+  ) => {
+    if (!data) return null;
+
+    let path: string | null = null;
+
+    switch (settingType) {
+      case "Attendance Policy":
+        path = `/webapp/attendance/attendance-policies?policy=${data}`;
+        break;
+
+      case "Overtime Policy":
+        path = `/webapp/attendance/overtime-policies?policy=${data}`;
+        break;
+
+      default:
+        return null;
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => navigate(path!)}
+        className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800
+                 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        {data}
+      </button>
+    );
+  };
+
 
   return (
     <>
@@ -223,35 +256,16 @@ const AttendanceSummary = () => {
                         </h3>
 
                         {setting.details.length > 0 ? (
-                          setting.details.map((detail, detailIndex) => {
-                            if (
-                              setting.title === "Attendance Policy" &&
-                              attendancePolicy
-                            ) {
-                              return (
-                                <button
-                                  key={detailIndex}
-                                  onClick={() =>
-                                    navigate(
-                                      `/webapp/attendance/attendance-policies?policy=${attendancePolicy}`
-                                    )
-                                  }
-                                  className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                                >
-                                  {detail}
-                                </button>
-                              );
-                            }
-
-                            return (
+                          setting.details.map((detail, detailIndex) =>
+                            getNavigatableSettingsButton(setting.title, detail) ?? (
                               <p
                                 key={detailIndex}
                                 className="text-sm text-gray-700"
                               >
                                 {detail}
                               </p>
-                            );
-                          })
+                            )
+                          )
                         ) : (
                           <p className="text-sm text-gray-500">
                             No policy defined
@@ -309,35 +323,17 @@ const AttendanceSummary = () => {
                           <h3 className="card-title mb-1">{setting.title}</h3>
 
                           {setting.details.length > 0 ? (
-                            setting.details.map((detail, detailIndex) => {
-                              if (
-                                setting.title === "Attendance Policy" &&
-                                attendancePolicy
-                              ) {
-                                return (
-                                  <button
-                                    key={detailIndex}
-                                    onClick={() =>
-                                      navigate(
-                                        `/webapp/attendance/attendance-policies?policy=${attendancePolicy}`
-                                      )
-                                    }
-                                    className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                                  >
-                                    {detail}
-                                  </button>
-                                );
-                              }
-
-                              return (
+                            setting.details.map((detail, detailIndex) =>
+                              getNavigatableSettingsButton(setting.title, detail) ?? (
                                 <p
                                   key={detailIndex}
                                   className="text-sm text-gray-700"
                                 >
                                   {detail}
                                 </p>
-                              );
-                            })
+                              )
+                            )
+
                           ) : (
                             <p className="text-sm text-gray-500">
                               No policy assigned

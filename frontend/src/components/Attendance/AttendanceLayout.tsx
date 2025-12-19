@@ -6,25 +6,24 @@ import { LeaveRequestRefreshProvider } from "../Leaves/LeaveRequestRefreshContex
 import { RequestLeaveModalProvider } from "../Leaves/RequestLeaveModalContext";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { ChevronDown } from "lucide-react";
 import LeaveRequest from "../Attendance/LeaveRequest";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
-import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+// import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
+// import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+// import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { SidebarProvider, useSidebar } from "./SidebarContext";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
 import Button from "../shared/atoms/Button";
 
 const AttendanceLayoutContent: React.FC = () => {
-  const { data: userId } = useLoggedInUser();
+  // const { data: userId } = useLoggedInUser();
   const { isSidebarOpen } = useSidebar();
 
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  // const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
-  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    user?.employee || ""
-  );
+  // // const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+  // //   user?.employee || ""
+  // // );
 
   const { isDesktop } = useScreenSize();
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
@@ -168,36 +167,27 @@ const AttendanceLayoutContent: React.FC = () => {
   const ActionsButton = () => {
     return (
       <div className="relative" ref={actionsDropdownRef}>
-        {/* <button
-          onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-          className="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
-        >
-          + Request Forms
-          <ChevronDown
-            className={`w-4 h-4 transition-transform duration-200 ${
-              showActionsDropdown ? "rotate-180" : ""
-            }`}
-          />
-        </button> */}
         <Button
-          onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+          // onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+          onClick={() => {
+            setShowAttendanceRequest(true);
+          }}
           size="lg"
           bgColor="blue-600"
           className="hover:bg-blue-700"
         >
-          + Request Forms
-          <ChevronDown
+          + Attendance
+          {/* <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
               showActionsDropdown ? "rotate-180" : ""
             }`}
-          />
+          /> */}
         </Button>
 
         {/* Actions Dropdown - Positioned to the top of the button */}
-        {showActionsDropdown && (
+        {/* {showActionsDropdown && (
           <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">
             <div className="py-2">
-              {/* Corrected order: Leave Request first, then Attendance Request */}
               <button
                 onClick={() => {
                   setShowLeaveRequest(true);
@@ -252,7 +242,7 @@ const AttendanceLayoutContent: React.FC = () => {
               ) : null}
             </div>
           </div>
-        )}
+        )} */}
       </div>
     );
   };

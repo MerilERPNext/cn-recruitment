@@ -14,7 +14,6 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { NotebookPen, Pencil } from "lucide-react";
-import EmployeeProfileForm from "./EmployeeProfileForm";
 import { Tab } from "../NavigationTab";
 import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
@@ -28,6 +27,9 @@ import CircularLoader from "../shared/atoms/CircularLoader";
 import DocumentLibrary from "../Library/Library";
 import Tooltip from "../shared/Tooltip";
 import { useTargetUser } from "../../context/ViewedUserContext";
+import { useQueryClient } from "@tanstack/react-query";
+import EmployeeProfileSections from "./EmployeeProfileSections";
+// import ReportingDetails from "./ReportingDetails";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -38,22 +40,31 @@ const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId } = useTargetUser();
   const { data: userId } = useLoggedInUser();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: currentUser, isLoading: isCurrentUserLoading } =
+    useCurrentEmployeeAllDetails(userId || "");
+
+  const queryClient = useQueryClient();
 
   // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
   // Don't default to empty string until we know currentUser has loaded
-  const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";
+  const employeeId =
+    targetEmployeeId ||
+    (isCurrentUserLoading ? null : currentUser?.employee) ||
+    "";
 
-  const { data: user, refetch: userRefetch, isLoading: userIsLoading } = useGetEmployeeDetailsByEmpId(
-    employeeId
-  );
+  const {
+    data: user,
+    refetch: userRefetch,
+    isLoading: userIsLoading,
+  } = useGetEmployeeDetailsByEmpId(employeeId);
 
   const { data: showAttendanceAssignment } = useShowAttendanaceAssignmentButton(
     employeeId,
     currentUser?.employee || ""
   );
 
-  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] = useState(false);
+  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
+    useState(false);
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
@@ -101,9 +112,10 @@ const EmployeeProfile: React.FC = () => {
 
   const tabs: Tab[] = useMemo(
     () => [
-      { key: "personal-info", label: "Personal Info" },
+      { key: "personal-information", label: "Personal Information" },
       { key: "ORG-chart", label: "Organization Chart" },
       { key: "employment-history", label: "Employment History" },
+      // { key: "reporting-details", label: "Reporting Details" },
       { key: "employee-holidays", label: "Employee Holidays" },
       { key: "employee-documents", label: "Employee Documents" },
     ],
@@ -119,11 +131,12 @@ const EmployeeProfile: React.FC = () => {
 
   const tabContent: Record<string, React.ReactNode> = useMemo(
     () => ({
-      "personal-info": <EmployeeProfileForm />,
+      "personal-information": <EmployeeProfileSections />,
       "ORG-chart": <TwoLevelOrgChart />,
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
       "employee-holidays": <ShowHolidays />,
       "employee-documents": <DocumentLibrary />,
+      // "reporting-details": <ReportingDetails />,
     }),
     [user]
   );
@@ -135,6 +148,13 @@ const EmployeeProfile: React.FC = () => {
       section.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, []);
+
+  //refetching of the ui permission
+  useEffect(() => {
+    queryClient.invalidateQueries({
+      queryKey: ["ui-permission"],
+    });
+  }, [queryClient]);
 
   // Intersection Observer for scroll-spy
   useEffect(() => {
@@ -200,101 +220,103 @@ const EmployeeProfile: React.FC = () => {
   }, [isDesktop]); // Re-run when layout changes
 
   const HeaderInfoSkeleton = () => {
-    return <div className="border rounded-tl-lg rounded-tr-lg p-6">
-      <div className="flex flex-col md:flex-row md:items-center gap-6 animate-pulse">
-
-        {/* Avatar Skeleton */}
-        <div className="relative self-center md:self-center">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-200"></div>
-          <div className="absolute bottom-0 -right-2 h-8 w-8 md:h-10 md:w-10 rounded-full bg-gray-300"></div>
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-
-          {/* User Info Skeleton */}
-          <div className="flex flex-col w-full space-y-1 justify-center items-center  md:justify-start md:items-start">
-            <div className="h-5 w-24 bg-gray-200 rounded"></div>
-            <div className="h-4 w-1/3 bg-gray-200 rounded"></div>
-            <div className="h-3 w-1/2 bg-gray-200 rounded"></div>
+    return (
+      <div className="border rounded-tl-lg rounded-tr-lg p-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-6 animate-pulse">
+          {/* Avatar Skeleton */}
+          <div className="relative self-center md:self-center">
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-200"></div>
+            <div className="absolute bottom-0 -right-2 h-8 w-8 md:h-10 md:w-10 rounded-full bg-gray-300"></div>
           </div>
 
-          {/* Button Skeleton */}
-          <div className="w-1/4 md:w-auto">
-            <div className="h-6 w-full md:w-40 bg-gray-200 rounded"></div>
+          <div className="flex flex-col items-center gap-2">
+            {/* User Info Skeleton */}
+            <div className="flex flex-col w-full space-y-1 justify-center items-center  md:justify-start md:items-start">
+              <div className="h-5 w-24 bg-gray-200 rounded"></div>
+              <div className="h-4 w-1/3 bg-gray-200 rounded"></div>
+              <div className="h-3 w-1/2 bg-gray-200 rounded"></div>
+            </div>
+
+            {/* Button Skeleton */}
+            <div className="w-1/4 md:w-auto">
+              <div className="h-6 w-full md:w-40 bg-gray-200 rounded"></div>
+            </div>
           </div>
         </div>
-
       </div>
-    </div>
-
-
-
-  }
+    );
+  };
 
   const mobileLayout = (
     <div className="bg-white font-sans scroll-smooth">
       <div className="bg-white shadow">
-        {userIsLoading ? <HeaderInfoSkeleton /> : <div className="bg-white shadow">
-          <HeaderBar title="Profile" onBack={() => navigate(-1)} />
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            id="upload-image"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <div className="flex flex-col items-center py-6">
-            <div className="relative">
-              <img
-                src={uploadedImage || user?.image || defaultProfile}
-                alt="User avatar"
-                className="w-24 h-24 rounded-full object-contain"
-              />
-              <button
-                onClick={handleImageClick}
-                className="absolute bottom-0 right-0 h-7 w-7 bg-white flex justify-center items-center p-1 rounded-full shadow focus:outline-none"
-                aria-label="Upload new avatar"
-              >
-                {updateDocMutation.isPending || uploadMutation.isPending ? (
-                  <CircularLoader size="sm" />
-                ) : (
-                  <Pencil size={16} />
-                )}{" "}
-              </button>
+        {userIsLoading ? (
+          <HeaderInfoSkeleton />
+        ) : (
+          <div className="bg-white shadow">
+            <HeaderBar title="Profile" onBack={() => navigate(-1)} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              id="upload-image"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <div className="flex flex-col items-center py-6">
+              <div className="relative">
+                <img
+                  src={uploadedImage || user?.image || defaultProfile}
+                  alt="User avatar"
+                  className="w-24 h-24 rounded-full object-contain"
+                />
+                <button
+                  onClick={handleImageClick}
+                  className="absolute bottom-0 right-0 h-7 w-7 bg-white flex justify-center items-center p-1 rounded-full shadow focus:outline-none"
+                  aria-label="Upload new avatar"
+                >
+                  {updateDocMutation.isPending || uploadMutation.isPending ? (
+                    <CircularLoader size="sm" />
+                  ) : (
+                    <Pencil size={16} />
+                  )}{" "}
+                </button>
+              </div>
+              <h1 className="mt-4 text-xl font-semibold">
+                {user?.employee_name}
+              </h1>
+              <Tooltip content={user?.designation}>
+                <p className="text-gray-500 mt-1">
+                  {user?.designation?.slice(0, 20)}
+                </p>
+              </Tooltip>
+              <p className="text-gray-400 text-sm">
+                Employee ID: {user?.employee}
+              </p>
+              {user?.custom_employment_status && (
+                <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-[1000px]">
+                  {user?.custom_employment_status}
+                </span>
+              )}
             </div>
-            <h1 className="mt-4 text-xl font-semibold">
-              {user?.employee_name}
-            </h1>
-            <Tooltip content={user?.designation}>
-              <p className="text-gray-500 mt-1">{user?.designation?.slice(0, 20)}</p>
-            </Tooltip>
-            <p className="text-gray-400 text-sm">
-              Employee ID: {user?.employee}
-            </p>
-            {user?.custom_employment_status &&
-              <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-[1000px]">
-                {user?.custom_employment_status}
-              </span>
-            }
+            <div className="px-4 w-full flex justify-center">
+              {showAttendanceAssignment ? (
+                <Button
+                  icon={<NotebookPen size={"1rem"} />}
+                  size="md"
+                  bgColor="blue-50"
+                  variant="contain"
+                  textColor="blue-600"
+                  onClick={() => setIsAttendanceAssignmentsOpen(true)}
+                >
+                  Attendance Assignment
+                </Button>
+              ) : (
+                <></>
+              )}
+            </div>
           </div>
-          <div className="px-4 w-full flex justify-center">
-            {showAttendanceAssignment ? (
-              <Button
-                icon={<NotebookPen size={"1rem"} />}
-                size="md"
-                bgColor="blue-50"
-                variant="contain"
-                textColor="blue-600"
-                onClick={() => setIsAttendanceAssignmentsOpen(true)}
-              >
-                Attendance Assignment
-              </Button>
-            ) : (
-              <></>
-            )}
-          </div>
-        </div>}
+        )}
         {/* Horizontal Tabs */}
         <div className="bg-white border-b sticky top-0 z-10">
           <div className="flex overflow-x-auto scrollbar-hide px-4 py-2">
@@ -313,7 +335,7 @@ const EmployeeProfile: React.FC = () => {
           </div>
         </div>
         {/* All Sections Rendered */}
-        <div className="bg-gray-100">
+        <div className="bg-white-100">
           {tabs.map((tab) => (
             <div
               key={tab.key}
@@ -321,7 +343,7 @@ const EmployeeProfile: React.FC = () => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="min-h-[400px] p-4"
+              className="p-4"
             >
               {tabContent[tab.key]}
             </div>
@@ -335,78 +357,82 @@ const EmployeeProfile: React.FC = () => {
     </div>
   );
 
-
-
   const desktopLayout = (
     <DesktopLayoutWrapper title="Profile">
       <div className="flex flex-col h-full bg-gray-50 p-6 gap-4 w-full overflow-hidden">
         {/* Profile Header */}
 
         {/* All Sections Rendered */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
-
-          {userIsLoading ? <HeaderInfoSkeleton /> : <div className="bg-white border rounded-tl-lg rounded-tr-lg p-6">
-            <div className="flex items-center gap-6">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                id="upload-image"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <div className="relative">
-                <div className="w-30 h-30 rounded-full ring-4 ring-white overflow-hidden">
-                  <img
-                    src={uploadedImage || user?.image || defaultProfile}
-                    alt="User avatar"
-                    className="w-full h-full object-contain"
-                  />
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide"
+        >
+          {userIsLoading ? (
+            <HeaderInfoSkeleton />
+          ) : (
+            <div className="bg-white border rounded-tl-lg rounded-tr-lg p-6">
+              <div className="flex items-center gap-6">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  id="upload-image"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full ring-4 ring-white overflow-hidden">
+                    <img
+                      src={uploadedImage || user?.image || defaultProfile}
+                      alt="User avatar"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <button
+                    onClick={handleImageClick}
+                    className="absolute bottom-0 -right-2 bg-blue-600 h-10 w-10 flex justify-center items-center p-1 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    aria-label="Upload new avatar"
+                  >
+                    {updateDocMutation.isPending || uploadMutation.isPending ? (
+                      <CircularLoader size="sm" color="white" />
+                    ) : (
+                      <Pencil size={16} />
+                    )}
+                  </button>
                 </div>
-                <button
-                  onClick={handleImageClick}
-                  className="absolute bottom-0 -right-2 bg-blue-600 h-10 w-10 flex justify-center items-center p-1 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  aria-label="Upload new avatar"
-                >
-                  {updateDocMutation.isPending || uploadMutation.isPending ? (
-                    <CircularLoader size="sm" color="white" />
-                  ) : (
-                    <Pencil size={16} />
-                  )}
-                </button>
-              </div>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {user?.employee_name}
-                </h1>
-                <Tooltip content={user?.designation}>
-                  <p className="text-blue-600 font-medium mt-1">
-                    {user?.designation?.slice(0, 40)}
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {user?.employee_name}
+                  </h1>
+                  <Tooltip content={user?.designation}>
+                    <p className="text-blue-600 font-medium mt-1">
+                      {user?.designation?.slice(0, 40)}
+                    </p>
+                  </Tooltip>
+                  <p className="text-gray-500 text-sm mt-1">
+                    ID: {user?.employee}
                   </p>
-                </Tooltip>
-                <p className="text-gray-500 text-sm mt-1">
-                  ID: {user?.employee}
-                </p>
-                {user?.custom_employment_status &&
-                  <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-[1000px]">
-                    {user?.custom_employment_status}
-                  </span>
-                }
+                  {user?.custom_employment_status && (
+                    <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-[1000px]">
+                      {user?.custom_employment_status}
+                    </span>
+                  )}
+                </div>
+                {showAttendanceAssignment && (
+                  <Button
+                    icon={<NotebookPen size={"1rem"} />}
+                    size="md"
+                    bgColor="blue-50"
+                    variant="contain"
+                    textColor="blue-600"
+                    onClick={() => setIsAttendanceAssignmentsOpen(true)}
+                  >
+                    Attendance Assignment
+                  </Button>
+                )}
               </div>
-              {showAttendanceAssignment && (
-                <Button
-                  icon={<NotebookPen size={"1rem"} />}
-                  size="md"
-                  bgColor="blue-50"
-                  variant="contain"
-                  textColor="blue-600"
-                  onClick={() => setIsAttendanceAssignmentsOpen(true)}
-                >
-                  Attendance Assignment
-                </Button>
-              )}
             </div>
-          </div>}
+          )}
           {/* Horizontal Tabs - Sticky inside scroll container */}
           <div className="bg-white border-b sticky top-0 z-10">
             <div className="flex overflow-x-auto scrollbar-hide px-6 py-3 tracking-wide">
@@ -432,7 +458,8 @@ const EmployeeProfile: React.FC = () => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="bg-white mb-4 min-h-[100px] p-6 w-full max-w-full" >
+              className="bg-white mb-4  w-full max-w-full"
+            >
               {tabContent[tab.key]}
             </div>
           ))}

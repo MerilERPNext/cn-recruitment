@@ -6,13 +6,18 @@ import {
 import { CompOffResponse } from "../types/leaves";
 
 import type {
-  LeaveDetailsResponse,
+  LeaveBalanceResponse,
   HolidayGroup,
   TeamRequest,
   LeaveFieldResponse,
   LeaveReason,
   ButtonStatusResponse,
   EditApprovedLeavePayload,
+  LeavePassbookResponse,
+  LeavePassbookMetadataResponse,
+  AccrualJournalMetadataResponse,
+  AccrualJournalEntriesResponse,
+  PolicyQuestionsResponse,
 } from "../types/leaves";
 import toast from "react-hot-toast";
 
@@ -40,13 +45,14 @@ export const useMyLeaveRequests = (employeeId: string | undefined) => {
 
 export const useGetLeaveBalance = (
   employeeId: string | undefined,
-  date: string
+  date: string,
+  leaveType?: string
 ) => {
-  return useQuery<LeaveDetailsResponse>({
-    queryKey: ["leave-balance", employeeId, date],
+  return useQuery<LeaveBalanceResponse>({
+    queryKey: ["leave-balance", employeeId, date, leaveType],
     queryFn: () => {
       if (!employeeId) throw new Error("Employee ID is required");
-      return leaveService.getLeaveBalance(employeeId, date);
+      return leaveService.getLeaveBalance(employeeId, date, leaveType);
     },
     enabled: !!employeeId && !!date,
     staleTime: 5 * 60 * 1000,
@@ -284,8 +290,6 @@ export function useEditApprovedLeave() {
   });
 }
 
-//get attendance policy
-
 export const useGetAttendancePolicyForDate = (
   employee?: string | number,
   targetDate?: string
@@ -304,5 +308,105 @@ export const useGetAttendancePolicyForDate = (
     enabled: !!employee && !!targetDate,
     staleTime: 0,
     refetchOnMount: "always",
+  });
+};
+
+export const useGetLeavePassbookMetadata = (
+  employeeId: string | undefined,
+  leaveType: string | undefined
+) => {
+  return useQuery<LeavePassbookMetadataResponse>({
+    queryKey: ["leave-passbook-metadata", employeeId, leaveType],
+    queryFn: () =>
+      leaveService.getPassbookTransactionMetadata(
+        employeeId as string,
+        leaveType as string
+      ),
+    enabled: !!employeeId && !!leaveType,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useGetLeavePassbookTransaction = (
+  employeeId: string | undefined,
+  leaveType: string | undefined,
+  cycleStart: string | undefined
+) => {
+  return useQuery<LeavePassbookResponse>({
+    queryKey: ["leave-passbook", employeeId, leaveType, cycleStart],
+    queryFn: () => {
+      if (!employeeId) throw new Error("Employee ID is required");
+      if (!leaveType) throw new Error("Leave type is required");
+      if (!cycleStart) throw new Error("Cycle start date is required");
+
+      return leaveService.getPassbookTransaction(
+        employeeId,
+        leaveType,
+        cycleStart
+      );
+    },
+    enabled: !!employeeId && !!leaveType && !!cycleStart,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useGetAccrualJournalMetadata = (
+  employeeId: string | undefined,
+  leaveType: string | undefined
+) => {
+  return useQuery<AccrualJournalMetadataResponse>({
+    queryKey: ["accrual-journal-metadata", employeeId, leaveType],
+    queryFn: () => {
+      if (!employeeId || !leaveType) {
+        throw new Error("Employee ID and Leave Type are required");
+      }
+      return leaveService.getAccrualJournalMetadata(employeeId, leaveType);
+    },
+    enabled: !!employeeId && !!leaveType,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+export const useGetAccrualJournalEntries = (
+  employeeId: string | undefined,
+  leaveType: string | undefined,
+  periodNumber: number | null
+) => {
+  return useQuery<AccrualJournalEntriesResponse>({
+    queryKey: ["accrual-journal-entries", employeeId, leaveType, periodNumber],
+    queryFn: () => {
+      if (!employeeId || !leaveType || periodNumber === null) {
+        throw new Error("Employee, leave type, and period are required");
+      }
+
+      return leaveService.getAccrualJournalEntries(
+        employeeId,
+        leaveType,
+        periodNumber
+      );
+    },
+    enabled: !!employeeId && !!leaveType && periodNumber !== null,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+export const useGetPolicyQuestions = (
+  doctypeName: string | undefined,
+  targetDoctype: string | undefined
+) => {
+  return useQuery<PolicyQuestionsResponse>({
+    queryKey: ["policy-questions", doctypeName, targetDoctype],
+    queryFn: () => {
+      if (!doctypeName || !targetDoctype) {
+        throw new Error("Doctype name and target doctype are required");
+      }
+
+      return leaveService.getPolicyQuestions(doctypeName, targetDoctype);
+    },
+    enabled: !!doctypeName && !!targetDoctype,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
   });
 };

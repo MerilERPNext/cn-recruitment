@@ -372,7 +372,7 @@ code {
 /* Style the disabled select field */
 .formio-component-select select:disabled,
 .formio-component-select .form-control[disabled] {
-  background-color: #d1d5db; /* Light gray background */
+  background-color: #e5e6e8; /* Light gray background */
   cursor: not-allowed; /* Optional: make it clear that the field is disabled */
 }
 
@@ -380,13 +380,13 @@ code {
 .formio-component-select
   .choices__list--dropdown[aria-expanded="false"]:disabled,
 .formio-component-select .choices__item[aria-disabled="true"] {
-  background-color: #d1d5db; /* Same light gray background */
+  background-color: #e5e6e8; /* Same light gray background */
   cursor: not-allowed; /* Make it clear that the options are not clickable */
 }
 
 /* Make the input area in the dropdown look disabled */
 .formio-component-select .choices__input--cloned[disabled] {
-  background-color: #d1d5db; /* Light gray */
+  background-color: #e5e6e8; /* Light gray */
   cursor: not-allowed;
 }
 

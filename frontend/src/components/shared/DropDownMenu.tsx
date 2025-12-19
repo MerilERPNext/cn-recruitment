@@ -9,13 +9,21 @@ interface MenuItem {
 interface DropdownMenuProps {
   items: MenuItem[];
   children: React.ReactNode;
-  placement?: "bottom-right" | "bottom-left" | "top-right" | "top-left" | "center-left" | "center-right";
+  placement?:
+    | "bottom-right"
+    | "bottom-left"
+    | "top-right"
+    | "top-left"
+    | "center-left"
+    | "center-right";
+  className?: string;
 }
 
 const DropdownMenu: React.FC<DropdownMenuProps> = ({
   items,
   children,
   placement = "bottom-right",
+  className,
 }) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -42,7 +50,11 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
   };
 
   return (
-    <div ref={menuRef} className="relative inline-block text-left" onClick={e => e.stopPropagation()}>
+    <div
+      ref={menuRef}
+      className="relative inline-block text-left"
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Custom Trigger */}
       <div onClick={() => setOpen(!open)} className="cursor-pointer">
         {children}
@@ -64,7 +76,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                     item.onClick();
                     setOpen(false);
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100"
+                  className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 ${className}`}
                 >
                   {item.icon}
                   {item.label}
@@ -79,5 +91,3 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
 };
 
 export default DropdownMenu;
-
-

@@ -70,27 +70,27 @@ const TeamAttendanceDetails = () => {
   const tableTitles = isBulkSelectEnabled
     ? [
       "Select",
+      "Employeee",
       "Explanation",
       "From Date",
       "To Date",
       "Due Date",
-      "Employeee",
       "Status",
       "Actions",
     ]
     : [
+      "Employeee",
       "Explanation",
       "From Date",
       "To Date",
       "Due Date",
-      "Employeee",
       "Status",
       "Actions",
     ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["5%", "15%", "8%", "8%", "8%", "10%", "10%", "20%"]
-    : ["20%", "10%", "10%", "10%", "12%", "10%", "20%"];
+    ? ["5%", "10%", "15%", "8%", "8%", "8%", "10%", "20%"]
+    : ["12%", "20%", "10%", "10%", "10%", "10%", "20%"];
 
   return (
     <>

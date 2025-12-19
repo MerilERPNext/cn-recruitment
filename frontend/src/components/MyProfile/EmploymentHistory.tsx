@@ -36,7 +36,8 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   ) as { data: Employee | null; isLoading: boolean; error: any };
   const history = data?.custom_work_history || [];
 
-  const [isModalOpen, setIsModalOpen] = React.useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
+  const [isEditing, setIsEditing] = React.useState<boolean>(false);
 
   const groupedHistory = history.reduce<Record<string, CustomWorkHistory[]>>(
     (acc, item) => {
@@ -62,20 +63,21 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           </div>
           <div className="flex gap-2 ">
             <Button
-              onClick={() => setIsModalOpen('edit')}
+              onClick={() => {
+                setIsModalOpen(true)
+                setIsEditing(true)
+              }}
               icon={<EditIcon className="h-4 w-4" />}
               variant="subtle"
               size="md"
-              disabled
             >
               Edit
             </Button>
             <Button
-              onClick={() => setIsModalOpen('add')}
+              onClick={() => setIsModalOpen(true)}
               icon={<PlusIcon className="h-4 w-4" />}
               variant="contain"
               size="md"
-              disabled
             >
               Add
             </Button>
@@ -150,7 +152,15 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             );
           })}
       </div>
-      <EmploymentHistoryForm isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+
+            <EmploymentHistoryForm onCancel={() => { setIsModalOpen(false); setIsEditing(false) }} isEdit={isEditing} />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

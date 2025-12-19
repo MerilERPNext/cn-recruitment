@@ -37,34 +37,36 @@ const MyMicroApp: React.FC<{
   };
 
   // Check if the icon is an SVG
-  const isSvg = item.icon?.toLowerCase().endsWith('.svg') || item.icon?.toLowerCase().includes('.svg?');
+  const isSvg =
+    item.icon?.toLowerCase().endsWith(".svg") ||
+    item.icon?.toLowerCase().includes(".svg?");
 
   return (
     <div
       onClick={handleClick}
-      className="text-center cursor-pointer hover:scale-105 transition-transform"
+      className="text-center cursor-pointer hover:scale-105 transition-transform mb-2"
     >
       <div
-        className={`w-12 h-12 ${color.bg} rounded-lg mx-auto mb-2 flex items-center justify-center`}
+        className={`w-16 h-16 ${color.bg} rounded-lg mx-auto mb-2 flex items-center justify-center shadow-md`}
       >
         {item.icon ? (
           isSvg ? (
             <div
-              className={`w-6 h-6 ${color.text}`}
+              className={`w-8 h-8 ${color.text}`}
               style={{
-                backgroundColor: 'currentColor',
+                backgroundColor: "currentColor",
                 maskImage: `url(${item.icon})`,
-                maskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                maskPosition: 'center',
+                maskSize: "contain",
+                maskRepeat: "no-repeat",
+                maskPosition: "center",
                 WebkitMaskImage: `url(${item.icon})`,
-                WebkitMaskSize: 'contain',
-                WebkitMaskRepeat: 'no-repeat',
-                WebkitMaskPosition: 'center',
+                WebkitMaskSize: "contain",
+                WebkitMaskRepeat: "no-repeat",
+                WebkitMaskPosition: "center",
               }}
             />
           ) : (
-            <img src={item.icon} alt={item.title} className="w-6 h-6" />
+            <img src={item.icon} alt={item.title} className="w-8 h-8" />
           )
         ) : (
           <span className={`${color.text} font-bold text-lg`}>
@@ -79,7 +81,7 @@ const MyMicroApp: React.FC<{
 
 const MicroAppInDashboard: React.FC = () => {
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
+    <div className="bg-white rounded-lg p-6 shadow-md border border-[rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-between mb-4">
         <h3 className="section-title">Admin Apps</h3>
         {/* <span className="text-blue-600 text-sm cursor-pointer">View All</span> */}
