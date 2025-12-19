@@ -6,7 +6,9 @@ import type {
   AttendanceRecord,
   AttendanceRequest,
   AttendanceRequestValidations,
+  AuditReportResponse,
   CanShowClockIn,
+  EmployeeAllCheckin,
   EmployeeCheckInLog,
   EmployeeShift,
   EmployeeShiftSummary,
@@ -330,6 +332,38 @@ export const attendanceService = {
       throw error;
     }
   },
+
+
+  getAllEmployeeCheckin: async (
+    filters: AllEventsAndAttendanceT
+  ): Promise<EmployeeAllCheckin[]> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        `cn_leave_shift_managment.api.get_employee_checkin`,
+        filters
+      );
+      return response as EmployeeAllCheckin[];
+    } catch (error) {
+      console.error("📡 Error while getting employee checkin:", error);
+      throw error;
+    }
+  },
+
+
+  getAuditReport: async (
+    filters: AllEventsAndAttendanceT
+  ): Promise<AuditReportResponse> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        `cn_leave_shift_managment.api.get_audit_report`,
+        filters
+      );
+      return response as AuditReportResponse;
+    } catch (error) {
+      console.error("📡 Error while getting audit report:", error);
+      throw error;
+    }
+  },
   getAttendancePolicies: async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     filters: any
@@ -424,13 +458,13 @@ export const attendanceService = {
     body: Record<string, unknown>
   ): Promise<boolean> => {
     try {
-       await FrappeAPI.updateDocument(
+      await FrappeAPI.updateDocument(
         "Attendance Request",
         body.name as string,
         body.data as Record<string, unknown>
       );
 
-      const response =  await FrappeAPI.callMethod(
+      const response = await FrappeAPI.callMethod(
         "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
         {
           doctype: body.doctype,
@@ -445,7 +479,7 @@ export const attendanceService = {
       throw error;
     }
   },
- 
+
   reqValidationsForAttendanceRequest: async (
     empId: string
   ): Promise<AttendanceRequestValidations> => {
@@ -532,13 +566,13 @@ export const attendanceService = {
       }
     );
   },
-  attendanceRequestAttachments: async (empId: string,date:string,request_type:string) => {
+  attendanceRequestAttachments: async (empId: string, date: string, request_type: string) => {
     return FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.check_attachment_mandatory",
       {
         employee: empId,
-        date:date,
-        request_type:request_type
+        date: date,
+        request_type: request_type
       }
     );
   },

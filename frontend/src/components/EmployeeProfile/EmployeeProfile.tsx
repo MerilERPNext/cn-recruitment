@@ -29,7 +29,7 @@ import Tooltip from "../shared/Tooltip";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useQueryClient } from "@tanstack/react-query";
 import EmployeeProfileSections from "./EmployeeProfileSections";
-// import ReportingDetails from "./ReportingDetails";
+import ReportingDetails from "./ReportingDetails";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -115,7 +115,7 @@ const EmployeeProfile: React.FC = () => {
       { key: "personal-information", label: "Personal Information" },
       { key: "ORG-chart", label: "Organization Chart" },
       { key: "employment-history", label: "Employment History" },
-      // { key: "reporting-details", label: "Reporting Details" },
+      { key: "reporting-details", label: "Reporting Details" },
       { key: "employee-holidays", label: "Employee Holidays" },
       { key: "employee-documents", label: "Employee Documents" },
     ],
@@ -136,7 +136,7 @@ const EmployeeProfile: React.FC = () => {
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
       "employee-holidays": <ShowHolidays />,
       "employee-documents": <DocumentLibrary />,
-      // "reporting-details": <ReportingDetails />,
+      "reporting-details": <ReportingDetails />,
     }),
     [user]
   );
@@ -324,11 +324,10 @@ const EmployeeProfile: React.FC = () => {
               <button
                 key={tab.key}
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${
-                  activeTab === tab.key
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-blue-600"
-                }`}
+                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-blue-600"
+                  }`}
               >
                 {tab.label}
               </button>
@@ -441,11 +440,10 @@ const EmployeeProfile: React.FC = () => {
                 <button
                   key={tab.key}
                   onClick={() => scrollToSection(tab.key)}
-                  className={`whitespace-nowrap px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
-                    activeTab === tab.key
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-600 hover:text-blue-600"
-                  }`}
+                  className={`whitespace-nowrap px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-600 hover:text-blue-600"
+                    }`}
                 >
                   {tab.label}
                 </button>

@@ -9,6 +9,11 @@ import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import Button from "../../shared/atoms/Button";
+import { Plus } from "lucide-react";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import CreateOvertimeRequest from "./CreateOvertimeRequest";
+import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Open" },
@@ -19,12 +24,19 @@ const STATUS_OPTIONS = [
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const { isDesktop } = useScreenSize();
 
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    currentEmployee?.employee || ""
+  );
+  const [showForm, setShowForm] = useState(false);
+
   const [selectedStatus, setSelectedStatus] = useState("Open");
 
   const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -66,6 +78,7 @@ const MyOvertimeRequests = () => {
       />
     </div>
   );
+
 
   return (
     <div>
@@ -148,7 +161,30 @@ const MyOvertimeRequests = () => {
           </div>
         </div>
       </div>
-
+      {!isDesktop && plannedOvertimAllowed && (
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
+          <div className="max-w-7xl mx-auto px-4">
+            <Button
+              bgColor="blue-600"
+              size="lg"
+              fullWidth
+              className="hover:bg-blue-700"
+              onClick={() => setShowForm(!showForm)}
+            >
+              <Plus /> <span>Add Overtime Request</span>
+            </Button>
+          </div>
+        </div>
+      )}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CreateOvertimeRequest
+              onCancel={() => setShowForm(false)}
+            />
+          </div>
+        </div>
+      )}
       {requestId && (
         <MyOvertimeDetails
           documentName={requestId}

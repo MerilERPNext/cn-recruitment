@@ -235,9 +235,8 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex  bg-gray-100 `}>
       <div
-        className={`flex  bg-gray-100 p-2 flex-col ${
-          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-        }`}
+        className={`flex  bg-gray-100 p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+          }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -270,7 +269,7 @@ const EmployeeAttendance = () => {
                 }}
               >
                 <Plus className="w-4 h-4 mr-2 font-bold" />
-                Raise Request
+                Raise Attendance Request
               </button>
             </div>
           </div>

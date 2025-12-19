@@ -66,7 +66,7 @@ const Events = () => {
     return (
         <div className="bg-white rounded-lg shadow-sm max-h-[16.5rem] min-h-[16.5rem] flex flex-col">
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b px-6 py-2 flex justify-between w-full">
+            <div className="sticky top-0 bg-white border-b px-6 py-2 flex justify-between w-full rounded-lg">
                 <h3 className="section-title mb-0 text-left">Events</h3>
                 {/* Tabs */}
                 <div className="flex gap-2 overflow-x-auto">

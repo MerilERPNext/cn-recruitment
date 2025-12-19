@@ -1,22 +1,12 @@
 import { useState } from "react";
 import { Check, Circle, X } from "lucide-react";
-import { format, subMonths } from "date-fns";
+import { generateMonthOptions } from "../../../utils/helperUtils";
 
 export interface MonthOption {
   label: string;
   value: string;
 }
-const generateMonthOptions = (count: number): MonthOption[] => {
-  const now = new Date();
 
-  return Array.from({ length: count }, (_, i) => {
-    const date = subMonths(now, i);
-    return {
-      label: format(date, "MMM-yyyy"),
-      value: format(date, "yyyy-MM"),
-    };
-  });
-};
 const monthOptions: MonthOption[] = generateMonthOptions(12);
 
 const SelectByMonth = ({
