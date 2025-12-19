@@ -16,7 +16,7 @@ type TabName =
   | "Team Loan Requests"
   | "My Advances"
   | "Team Advances"
-  | "Pay Package"
+  | "Benefits"
   | "Extra Payments"
   | "Payroll Documents";
 
@@ -31,7 +31,7 @@ const tabRoutes: Record<TabName, string> = {
   "Team Loan Requests": "/webapp/salary-slip-app/team-loan-requests",
   "My Advances": "/webapp/salary-slip-app/advances-list",
   "Team Advances": "/webapp/salary-slip-app/team-advances-list",
-  "Pay Package": "/webapp/salary-slip-app/benefits-list",
+  Benefits: "/webapp/salary-slip-app/benefits-list",
   "Extra Payments": "/webapp/salary-slip-app/extra-payment",
   "Payroll Documents": "/webapp/salary-slip-app/hr-payroll",
 };
@@ -88,7 +88,7 @@ const SalarySlipApp: React.FC = () => {
 
   // Mobile layout
   const mobileLayout = (
-    <ViewModeContext.Provider value={{ viewMode, setViewMode: () => { } }}>
+    <ViewModeContext.Provider value={{ viewMode, setViewMode: () => {} }}>
       <div className="flex flex-col min-h-screen bg-white">
         <style>{`
           :root {
@@ -135,7 +135,7 @@ const SalarySlipApp: React.FC = () => {
 
   // Desktop layout
   const desktopLayout = (
-    <ViewModeContext.Provider value={{ viewMode, setViewMode: () => { } }}>
+    <ViewModeContext.Provider value={{ viewMode, setViewMode: () => {} }}>
       <DesktopLayoutWrapper title="Compensation">
         <div className="flex flex-col h-full bg-gray-50">
           <div className="flex-1 overflow-y-auto px-8 py-4">
