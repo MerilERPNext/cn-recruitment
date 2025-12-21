@@ -16,11 +16,11 @@ export default function PasswordReset() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ mutations
-  const mutation = useUpdatePasswordViaKey(); // ❗ unchanged
+  // mutations
+  const mutation = useUpdatePasswordViaKey();
   const validationMutation = useUpdatePasswordValidation();
 
-  // ✅ extract key from URL
+  // key from URL
   const queryParams = new URLSearchParams(window.location.search);
   const key = queryParams.get("key") || "";
 
@@ -37,29 +37,67 @@ export default function PasswordReset() {
       return;
     }
 
-    // ✅ Step 1: Validate password via API
+    // 🔹 Step 1: Password validation API
     validationMutation.mutate(
       { new_password: newPassword },
       {
-        onSuccess: () => {
-          // ✅ Step 2: Reset password (same logic as before)
+        onSuccess: (res: any) => {
+          /**
+           * Expected API response structure:
+           * res.feedback.password_policy_validation_passed
+           * res.feedback.warning
+           * res.feedback.suggestions
+           */
+
+          const feedback = res?.feedback;
+          const isValid =
+            feedback?.password_policy_validation_passed === true;
+
+          // ❌ Password policy failed
+          if (!isValid) {
+            const warning = feedback?.warning || "";
+            const suggestions: string[] =
+              feedback?.suggestions || [];
+
+            // show alert / toast
+            if (warning) {
+              toast.error(warning);
+            }
+
+            if (suggestions.length > 0) {
+              toast(
+                suggestions.join("\n"),
+                { icon: "⚠️" }
+              );
+            }
+
+            setError(
+              warning ||
+                "Password does not meet security requirements."
+            );
+            return; // ⛔ stop here
+          }
+
+          // ✅ Step 2: Reset password API (ONLY if validation passed)
           mutation.mutate(
             { key, new_password: newPassword },
             {
-              onSuccess: (data) => {
+              onSuccess: () => {
                 toast.success("Password reset successfully!");
-                console.log("Response:", data);
                 setNewPassword("");
                 setConfirmPassword("");
-                // window.location.href = "/login?redirect-to=%2Fwebapp";
+                if(res?.success === true){
+                  (window.location.href = "/login?redirect-to=%2Fwebapp");
+                }
+                 
               },
-              onError: (err: any) => {
+              onError: () => {
                 toast.error("Failed to reset password!");
-                console.error(err);
               },
             }
           );
         },
+
         onError: (err: any) => {
           const msg =
             err?.response?.data?.message ||
@@ -76,9 +114,6 @@ export default function PasswordReset() {
 
   return (
     <div className="min-h-screen bg-[#4F9DD9]">
-  
-
-      {/* Main */}
       <main className="flex items-center justify-center min-h-[calc(100vh-80px)] py-12 px-4">
         <div className="w-full max-w-md">
           {/* Icon */}
@@ -110,12 +145,16 @@ export default function PasswordReset() {
                 <input
                   type={showNewPassword ? "text" : "password"}
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={(e) =>
+                    setNewPassword(e.target.value)
+                  }
                   className="w-full pl-10 pr-10 py-2 border rounded-lg bg-gray-50 border-gray-300 focus:ring-2 focus:ring-blue-600"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  onClick={() =>
+                    setShowNewPassword(!showNewPassword)
+                  }
                   className="absolute right-3 top-3 text-gray-400"
                 >
                   {showNewPassword ? (
@@ -135,15 +174,21 @@ export default function PasswordReset() {
               <div className="relative">
                 <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                 <input
-                  type={showConfirmPassword ? "text" : "password"}
+                  type={
+                    showConfirmPassword ? "text" : "password"
+                  }
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) =>
+                    setConfirmPassword(e.target.value)
+                  }
                   className="w-full pl-10 pr-10 py-2 border rounded-lg bg-gray-50 border-gray-300 focus:ring-2 focus:ring-blue-600"
                 />
                 <button
                   type="button"
                   onClick={() =>
-                    setShowConfirmPassword(!showConfirmPassword)
+                    setShowConfirmPassword(
+                      !showConfirmPassword
+                    )
                   }
                   className="absolute right-3 top-3 text-gray-400"
                 >
@@ -156,9 +201,11 @@ export default function PasswordReset() {
               </div>
             </div>
 
-            {/* API Error */}
+            {/* Error */}
             {error && (
-              <p className="text-red-500 text-sm">{error}</p>
+              <p className="text-red-500 text-sm">
+                {error}
+              </p>
             )}
 
             {/* Submit */}

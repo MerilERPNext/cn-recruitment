@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useIncomeTaxSheetData } from "../../../hooks/useTaxSheet";
-import CategoryDeclaration from "./Component/test";
+import CategoryDeclaration from "./Component/TabCategory";
 import { ITCategory } from "../../../types/itDeclaration";
 
 
