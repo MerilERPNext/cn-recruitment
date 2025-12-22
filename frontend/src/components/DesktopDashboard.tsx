@@ -748,36 +748,36 @@ export default function DesktopDashboard() {
                   </div>
 
                   {/* Status */}
-                  <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
-                    <div
-                      className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
-                        }`}
-                    ></div>
+                  {homeSummary && homeSummary?.length > 0 ? (
+                    <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
+                      <div
+                        className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                          }`}
+                      ></div>
 
-                    <span
-                      className={
-                        isCurrentlyCheckedIn ? "text-green-600" : "text-red-600"
-                      }
-                    >
-                      Currently{" "}
-                      {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
-                    </span>
-                  </div>
+                      <span
+                        className={
+                          isCurrentlyCheckedIn
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }
+                      >
+                        Currently{" "}
+                        {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center w-full gap-2 p-2 text-sm bg-blue-100 rounded">
+                      <span className={"text-blue-600"}>
+                        Let's Get The Ball Rolling
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Events Widget */}
-              <div className="bg-white rounded-lg shadow-sm max-h-[16.5rem] min-h-[16.5rem] flex flex-col">
-                {/* Header */}
-                <div className="sticky top-0 bg-white border-b px-6 py-2">
-                  <h3 className="section-title mb-0 text-left">Events</h3>
-                </div>
-
-                {/* Content Scroll Area */}
-                <div className="flex-1 overflow-y-auto px-4 py-3">
-                  <Events />
-                </div>
-              </div>
+              <Events />
 
 
 
