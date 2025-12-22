@@ -589,10 +589,21 @@ def fetch_employee_data_by_its_id(its_id):
     if not its_id:
         frappe.throw("ITS ID is required")
 
-    url = "https://cloud.dhaccounts.com/api/payroll"
+    # Fetch API settings from ITS Settings DocType
+    try:
+        its_settings = frappe.get_single("ITS Settings")
+        api_url = its_settings.api_url
+        api_key = its_settings.api_key
+
+        if not api_url or not api_key:
+            frappe.throw("ITS Settings: API URL and API Key are required. Please configure ITS Settings.")
+    except Exception as e:
+        frappe.throw(f"Failed to fetch ITS Settings. Please configure ITS Settings first. Error: {str(e)}")
+
+    url = api_url
     payload = {
         "its": str(its_id),
-        "key": "P@yroll53His@b"
+        "key": api_key
     }
     headers = {"Content-Type": "application/json"}
 
