@@ -1,14 +1,4 @@
-// Define interfaces for the nested structure
-interface Action {
-  action_name: string;
-  enabled: boolean;
-}
-
-interface Page {
-  page_name: string;
-  enabled: boolean;
-  actions: Action[];
-}
+import { UiPermissionPage as Page } from "../services/permissionService";
 
 interface AppPermission {
   app_name: string;
@@ -26,18 +16,15 @@ export function getAllActions(
   userUiPermission: AppPermission[] | undefined,
   pageName?: string
 ): ActionWithStatus[] {
-  if (!userUiPermission || userUiPermission.length === 0) {
+  if (!userUiPermission) {
     return [];
   }
 
-  return userUiPermission.reduce<ActionWithStatus[]>((allActions, app) => {
-    const appActions = app.pages
+  return userUiPermission.flatMap((app) =>
+    app.pages
       .filter((page) => !pageName || page.page_name === pageName)
-      .reduce<ActionWithStatus[]>((pageActions, page) => {
-        return [...pageActions, ...page.actions];
-      }, []);
-    return [...allActions, ...appActions];
-  }, []);
+      .flatMap((page) => page.actions)
+  );
 }
 
 // Check if a specific action is enabled

@@ -119,7 +119,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_sanctioned_amount ?? 0);
 
-  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
+  const { data: userUiPermission } = useGetUiPermission("Expenses");
   const canEditExpense = isActionEnabled(
     userUiPermission,
     "edit_expense",
