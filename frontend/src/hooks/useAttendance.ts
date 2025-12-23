@@ -24,6 +24,7 @@ import type {
   EmployeeCheckInLog,
   EmployeeShift,
   EmployeeShiftSummary,
+  IOvertimeLog,
   PolicyQuestion,
   UserRoles,
 } from "../types/attendance";
@@ -241,6 +242,16 @@ export const useGetAllEmployeeCheckin = (
     ...defaultQueryOptions,
   });
 };
+export const useGetAllEmployeeOvertimeLog = (
+  filters: any
+): UseQueryResult<IOvertimeLog[], Error> => {
+  return useQuery<IOvertimeLog[], Error>({
+    queryKey: ["all-employee-overtime-log", filters],
+    queryFn: () => attendanceService.getAllEmployeeOvertimeLog(filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
 
 export const useGetAuditReport = (
   filters: any
@@ -293,17 +304,6 @@ export const useAttendance = (
   });
 };
 
-export const useLeaveType = (
-  filters?: FilterCondition[],
-  queryKeySuffix: unknown = filters
-): UseQueryResult<[], Error> => {
-  return useQuery<[], Error>({
-    queryKey: ["leave-type", queryKeySuffix],
-    queryFn: () => attendanceService.getLeaveType(filters),
-    staleTime: defaultStaleTime,
-    gcTime: defaultGcTime,
-  });
-};
 
 export const useCanShowClockIn = (
   params: Record<string, unknown>

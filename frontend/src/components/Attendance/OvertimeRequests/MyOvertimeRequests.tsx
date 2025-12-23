@@ -14,6 +14,7 @@ import { Plus } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CreateOvertimeRequest from "./CreateOvertimeRequest";
 import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Open" },
@@ -31,6 +32,8 @@ const MyOvertimeRequests = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+  const { targetEmployeeId } = useTargetUser();
+  const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
     currentEmployee?.employee || ""
@@ -103,15 +106,15 @@ const MyOvertimeRequests = () => {
                 "Status",
               ]}
             >
-              {currentEmployee?.employee ? (
+              {effectiveEmployeeId ? (
                 <DataListView
-                  queryKey="planned-overtime-request"
+                  queryKey={["planned-overtime-request", effectiveEmployeeId]}
                   customAPI={{
                     method:
                       "cn_leave_shift_managment.api.get_open_approval_todos",
                     params: {
                       doctype: "Planned Overtime Request",
-                      employee: currentEmployee?.employee,
+                      employee: effectiveEmployeeId,
                       status: selectedStatus,
                     },
                   }}

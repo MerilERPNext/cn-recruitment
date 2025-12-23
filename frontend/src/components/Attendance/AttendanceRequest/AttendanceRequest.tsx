@@ -10,6 +10,7 @@ import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CustomDropdown from "../../shared/CustomDropdown";
 import Button from "../../shared/atoms/Button";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
 
 const STATUS_OPTIONS = [
@@ -32,6 +33,8 @@ const AttendanceRequest = ({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+  const { targetEmployeeId } = useTargetUser();
+  const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
   const [selectedStatus, setSelectedStatus] = useState("Pending");
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
@@ -103,15 +106,15 @@ const AttendanceRequest = ({
                     "Actions",
                   ]}
                 >
-                  {currentEmployee?.employee ? (
+                  {effectiveEmployeeId ? (
                     <DataListView
-                      queryKey={["attendance-requests", selectedStatus]}
+                      queryKey={["attendance-requests", selectedStatus, effectiveEmployeeId]}
                       customAPI={{
                         method:
                           "cn_leave_shift_managment.api.get_open_approval_todos",
                         params: {
                           doctype: "Attendance Request",
-                          employee: currentEmployee?.employee,
+                          employee: effectiveEmployeeId,
                           status: selectedStatus,
                         },
                       }}

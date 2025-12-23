@@ -1089,17 +1089,40 @@ export async function convertFieldsToSimpleTabbedData(
             simpleField.value = fieldValue.map((row: any) => {
               const rowData: Record<string, any> = {};
               res.forEach((childField: any) => {
-                if (childField.fieldtype === 'Section Break' || childField.fieldtype === 'Column Break') return;
-                rowData[childField.fieldname] = row[childField.fieldname];
-              });
-              // Keep original row data if needed, but for simple view, mapped data is cleaner
-              // Or better yet, maybe we just want to enhance the value structure?
-              // The user said "mapped with the field permission".
-              // Let's assume they want the row object to only contain relevant fields or be structured nicely.
-              // For "Card Renderer", it takes Record<string, any>.
+                if (
+                  childField.fieldtype === "Section Break" ||
+                  childField.fieldtype === "Column Break"
+                )
+                  return;
 
-              // Let's return the row as is but ensuring we have the keys from the child fields.
-              // Actually, simply returning the row is often enough, but let's filter by permissions
+                let childSimpleType = "text";
+                if (
+                  ["Int", "Float", "Currency", "Percent"].includes(
+                    childField.fieldtype
+                  )
+                )
+                  childSimpleType = "number";
+                else if (
+                  ["Date", "Datetime", "Time"].includes(childField.fieldtype)
+                )
+                  childSimpleType = "date";
+                else if (
+                  ["Select", "Link", "Dynamic Link"].includes(
+                    childField.fieldtype
+                  )
+                )
+                  childSimpleType = "select";
+                else if (["Check"].includes(childField.fieldtype))
+                  childSimpleType = "boolean";
+                else if (["Attach", "Attach Image"].includes(childField.fieldtype))
+                  childSimpleType = "file";
+
+                rowData[childField.fieldname] = {
+                  value: row[childField.fieldname],
+                  type: childSimpleType,
+                  label: childField.label || childField.fieldname,
+                };
+              });
               return rowData;
             });
           }

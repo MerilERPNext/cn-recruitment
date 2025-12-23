@@ -2,13 +2,14 @@ import { MyAttendanceRequest } from "../../../../types/attendance";
 import EmpAttendanceRequestCard from "../EmpAttendanceRequestCard";
 import DataListView from "../../../DataListView";
 import CardSkeletons from "./CardSkeletons";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 type prop = {
   currentEmployee?:
-    | {
-        employee?: string;
-      }
-    | undefined;
+  | {
+    employee?: string;
+  }
+  | undefined;
   refetchAttendance?: boolean;
   setRefetchAttendance: (val: boolean) => void;
 };
@@ -17,18 +18,21 @@ const Cardtable: React.FC<prop> = ({
   refetchAttendance,
   setRefetchAttendance,
 }) => {
+  const { targetEmployeeId } = useTargetUser();
+  const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
+
   const CardSkeleton = () => <CardSkeletons />;
 
   return (
     <>
-      {currentEmployee?.employee ? (
+      {effectiveEmployeeId ? (
         <DataListView
-          queryKey={["attendance-requests", "pending", "calendar-page"]}
+          queryKey={["attendance-requests", "pending", "calendar-page", effectiveEmployeeId]}
           customAPI={{
             method: "cn_leave_shift_managment.api.get_open_approval_todos",
             params: {
               doctype: "Attendance Request",
-              employee: currentEmployee?.employee,
+              employee: effectiveEmployeeId,
             },
           }}
           defaultFilters={{

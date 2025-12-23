@@ -31,6 +31,7 @@ import { LeaveDetailsCard } from "./LeaveDetailsCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import Badge from "../../shared/Badge";
 import { getBadgePropsByStatus } from "../../../utils/helperUtils";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 interface EmployeeAttendanceDetailsProps {
   date?: Date;
@@ -48,6 +49,8 @@ const EmployeeAttendanceDetails = ({
   const { search } = useLocation();
   const query = new URLSearchParams(search);
   const dateParam = query.get("date");
+  const { targetEmployeeId } = useTargetUser();
+
   const status = propStatus || query.get("status");
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState(false);
@@ -83,6 +86,8 @@ const EmployeeAttendanceDetails = ({
       : null!
   ) as { data: LeaveApplication | undefined };
 
+  const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
+
   const { data: buttonStatus } = useGetButtonsStatus(
     currentEmployee?.employee || ""
   );
@@ -95,19 +100,19 @@ const EmployeeAttendanceDetails = ({
   }, [validDate]);
 
   const { data: empCheckIns, isLoading } = useAllEmployeeCheckIns(
-    validDate
+    validDate && effectiveEmployeeId
       ? [
         ["time", "between", [start, end]],
-        ["employee", "=", currentEmployee?.employee],
+        ["employee", "=", effectiveEmployeeId],
       ]
       : []
   );
 
   const { data: attendanceRequests } = useAllAttendanceRequests(
     1000,
-    validDate && currentEmployee?.employee
+    validDate && effectiveEmployeeId
       ? [
-        ["employee", "=", currentEmployee.employee],
+        ["employee", "=", effectiveEmployeeId],
         ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
         ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
         ["docstatus", "!=", 2],

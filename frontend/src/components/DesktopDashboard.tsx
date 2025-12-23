@@ -791,7 +791,7 @@ export default function DesktopDashboard() {
 
               {/* Requests */}
               <div className="bg-white rounded-lg shadow-md relative border border-[rgba(0,0,0,0.05)] pb-4">
-                <div className="sticky top-0 border-b px-6 py-2 z-10 flex justify-between items-center mb-3 px-6">
+                <div className="sticky top-0 border-b px-6 py-2 flex justify-between items-center mb-3 px-6">
                   <h3 className="section-title mb-0 text-left">Requests</h3>
                   <button
                     onClick={() => {

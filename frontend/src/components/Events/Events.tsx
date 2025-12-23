@@ -6,7 +6,8 @@ import Badge from "../shared/Badge";
 const Events = () => {
     const { data = [] } = useGetAllEmployees(
         ["date_of_birth", "employee_name", "image", "date_of_joining"],
-        50
+        50,
+        [["status", "=", "Active"]]
     );
 
     const [activeTab, setActiveTab] = useState("Birthdays");

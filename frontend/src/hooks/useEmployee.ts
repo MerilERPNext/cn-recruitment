@@ -10,6 +10,7 @@ import {
   EmployeeIdCard,
   EmployeeListItem,
   EmployeeNode,
+  Award,
 } from "../types/employee";
 import { profileService } from "../services/profileService";
 import { AddressInfoData } from "../types/profile";
@@ -279,6 +280,13 @@ export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {
     queryFn: () => profileService.getEmployeeDetailsByEmpId(employee_id),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee_id,
+  });
+};
+export const useGetEmployeeAppreciations = () => {
+  return useQuery<Award[] | null>({
+    queryKey: ["all-emp-appreciations"],
+    queryFn: () => profileService.getEmployeeAppreciations(),
+    staleTime: 1000 * 60 * 5,
   });
 };
 export const useShowAttendanaceAssignmentButton = (
