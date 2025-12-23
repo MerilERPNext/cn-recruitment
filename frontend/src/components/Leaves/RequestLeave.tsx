@@ -145,6 +145,22 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaveBalanceData, defaults?.leaveType]);
 
+  const leaveBalanceMap = useMemo(() => {
+    if (!leaveBalanceData?.leave_balance) return {};
+    return leaveBalanceData.leave_balance.reduce(
+      (acc: Record<string, number>, entry) => {
+        acc[entry.type] = entry.balance;
+        return acc;
+      },
+      {}
+    );
+  }, [leaveBalanceData]);
+
+  const selectedLeaveBalance =
+    formData.leaveType && leaveBalanceMap[formData.leaveType]
+      ? leaveBalanceMap[formData.leaveType]
+      : null;
+
   const calculateLeaveDays = useCallback((data: FormSubmissionData) => {
     const { fromDate, toDate, halfDay } = data;
     if (!fromDate || !toDate) return setLeaveDays(null);
@@ -574,13 +590,19 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div
-        className="ml-6 my-2 text-sm text-gray-700"
-        style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}
-      >
-        <strong>Applying for:</strong> {leaveDays}{" "}
-        {leaveDays === 1 ? "Day" : "Days"}
+      <div className="flex justify-between items-center ml-6 my-2 text-sm text-gray-700">
+        <div style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}>
+          <strong>Applying for:</strong> {leaveDays}{" "}
+          {leaveDays === 1 ? "Day" : "Days"}
+        </div>
+
+        {selectedLeaveBalance !== null && (
+          <div className="mr-6">
+            <strong>Available Balance:</strong> {selectedLeaveBalance}
+          </div>
+        )}
       </div>
+
       <div className="flex-1 min-h-0 overflow-y-auto pb-20">
         <Form
           form={leaveForm}

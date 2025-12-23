@@ -16,6 +16,8 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import Button from "../../shared/atoms/Button";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import { format } from "date-fns";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Draft" },
@@ -117,6 +119,13 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_sanctioned_amount ?? 0);
 
+  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
+  const canEditExpense = isActionEnabled(
+    userUiPermission,
+    "edit_expense",
+    "Expense Claims"
+  );
+
   const navigate = useNavigate();
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
@@ -163,14 +172,15 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
       </div>
 
       {currentUser?.name?.toLowerCase() ===
-        item?.send_back_user?.toLowerCase() && (
-        <button
-          onClick={handleEditClick}
-          className="text-gray-500 hover:text-blue-600"
-        >
-          <SquarePen size={18} />
-        </button>
-      )}
+        item?.send_back_user?.toLowerCase() &&
+        canEditExpense && (
+          <button
+            onClick={handleEditClick}
+            className="text-gray-500 hover:text-blue-600"
+          >
+            <SquarePen size={18} />
+          </button>
+        )}
     </div>
   );
 };
