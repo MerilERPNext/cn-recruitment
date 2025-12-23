@@ -462,7 +462,7 @@ const EmployeeProfile: React.FC = () => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="p-4"
+              className="p-4 scroll-mt-40"
             >
               {tabContent[tab.key]}
             </div>
@@ -617,7 +617,7 @@ const EmployeeProfile: React.FC = () => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="bg-white mb-4  w-full max-w-full"
+              className="bg-white mb-4 w-full max-w-full scroll-mt-20"
             >
               {tabContent[tab.key]}
             </div>
