@@ -14,6 +14,8 @@ import LeaveTransactionsChart from "./LeaveTransactionsChart";
 import { EllipsisVertical, ListChecks, Plus } from "lucide-react";
 import DropdownMenu from "../shared/DropDownMenu";
 import BalanceDetailsDrawer from "./LeaveBalance/BalanceDetailsDrawer";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 type LeaveTransactionEntry = {
   type: string;
@@ -93,12 +95,20 @@ const LeaveBalance: React.FC = () => {
   const [showTransactions, setShowTransactions] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedLeave, setSelectedLeave] = useState<any>(null);
 
   const { openModal } = useRequestLeaveModal();
   const { data: userId, isLoading: isUserLoading } = useLoggedInUser();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
     useEmployeeByUserId(userId);
+
+  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
+  const canRequestLeave = isActionEnabled(
+    userUiPermission,
+    "lb_request_leave",
+    "Leave Balance"
+  );
 
   const today = new Date().toISOString().split("T")[0];
   const employeeId = currentEmployee?.name ?? "";
@@ -113,6 +123,7 @@ const LeaveBalance: React.FC = () => {
     setShowTransactions((prev) => !prev);
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenDrawer = useCallback((leave: any) => {
     setSelectedLeave(leave);
     setIsDrawerOpen(true);
@@ -208,19 +219,21 @@ const LeaveBalance: React.FC = () => {
                         </span>
                       )}
 
-                      <button
-                        onClick={() =>
-                          openModal({
-                            source: "balances",
-                            leaveType: leave?.type,
-                          })
-                        }
-                        className="rounded-full bg-blue-100 p-0.5"
-                      >
-                        <span>
-                          <Plus size={20} />
-                        </span>
-                      </button>
+                      {canRequestLeave && (
+                        <button
+                          onClick={() =>
+                            openModal({
+                              source: "balances",
+                              leaveType: leave?.type,
+                            })
+                          }
+                          className="rounded-full bg-blue-100 p-0.5"
+                        >
+                          <span>
+                            <Plus size={20} />
+                          </span>
+                        </button>
+                      )}
 
                       <DropdownMenu
                         placement="bottom-left"
@@ -280,15 +293,17 @@ const LeaveBalance: React.FC = () => {
             </div>
           </div>
 
-          <div className="w-full mt-6 px-4 md:hidden">
-            <button
-              type="button"
-              className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-              onClick={() => openModal()}
-            >
-              + Request Leave
-            </button>
-          </div>
+          {canRequestLeave && (
+            <div className="w-full mt-6 px-4 md:hidden">
+              <button
+                type="button"
+                className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+                onClick={() => openModal()}
+              >
+                + Request Leave
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -201,7 +201,7 @@ const TasksAwaiting: React.FC = () => {
           doctype="ToDo"
           ItemComponent={() => null}
           isSearch={false}
-          pageSize={100}
+          pageSize={3}
           orderBy="date desc"
           onDataLoad={handleDataLoad}
           defaultFilters={{
@@ -223,7 +223,7 @@ const TasksAwaiting: React.FC = () => {
         />
       )}
 
-      <div className="max-h-[38.9rem] min-h-[38.9rem]  overflow-y-auto">
+      <div className="max-h-[38.9rem] min-h-fit  overflow-y-auto">
         {filtered.map((item) => (
           <MyToDoItem key={item.name} item={item} />
         ))}

@@ -13,6 +13,8 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import FormDialog from "../shared/FormDialog";
 import Button from "../shared/atoms/Button";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 type TabName =
   | "leave-balance"
@@ -39,6 +41,13 @@ const LeaveAppInner: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
   const [activeSubTab, setActiveSubTab] = useState<SubTabName>("My Requests");
+
+  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
+  const canRequestLeave = isActionEnabled(
+    userUiPermission,
+    "request_leave",
+    "My Requests"
+  );
 
   const tabs: Tab[] = useMemo(
     () => [
@@ -162,18 +171,21 @@ const LeaveAppInner: React.FC = () => {
         <Outlet />
       </main>
 
-      {!showModal && activeTab === "requests-status" && !isViewAllActive && (
-        <div className="sticky bottom-0 bg-white rounded-md shadow-lg py-4 px-4 w-full z-50">
-          <div className="max-w-4xl mx-auto flex">
-            <button
-              onClick={() => openModal()}
-              className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-            >
-              + Request Leave
-            </button>
+      {!showModal &&
+        activeTab === "requests-status" &&
+        !isViewAllActive &&
+        canRequestLeave && (
+          <div className="sticky bottom-0 bg-white rounded-md shadow-lg py-4 px-4 w-full z-50">
+            <div className="max-w-4xl mx-auto flex">
+              <button
+                onClick={() => openModal()}
+                className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+              >
+                + Request Leave
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       <FormDialog
         isOpen={showModal}
@@ -186,16 +198,17 @@ const LeaveAppInner: React.FC = () => {
     </div>
   );
 
-  const actionButton = !isHolidaysActive ? (
-    <Button
-      bgColor="blue-600"
-      size="lg"
-      className="hover:bg-blue-700"
-      onClick={() => openModal()}
-    >
-      + Request Leave
-    </Button>
-  ) : null;
+  const actionButton =
+    !isHolidaysActive && canRequestLeave ? (
+      <Button
+        bgColor="blue-600"
+        size="lg"
+        className="hover:bg-blue-700"
+        onClick={() => openModal()}
+      >
+        + Request Leave
+      </Button>
+    ) : null;
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Leaves & Holidays" actionButton={actionButton}>
