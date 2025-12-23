@@ -593,7 +593,7 @@ const EmployeeProfile: React.FC = () => {
             </div>
           )}
           {/* Horizontal Tabs - Sticky inside scroll container */}
-          <div className="bg-white border-b sticky top-0 z-10">
+          <div className="bg-white border-b sticky top-0 z-20">
             <div className="flex overflow-x-auto scrollbar-hide px-6 py-3 tracking-wide">
               {tabs.map((tab) => (
                 <button
