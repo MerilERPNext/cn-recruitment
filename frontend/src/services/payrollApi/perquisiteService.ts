@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../../utils/frappeAPI";
 
 export const getPerquisite = async (
@@ -10,7 +9,7 @@ export const getPerquisite = async (
     employee: employeeId,
     company: company,
     payroll_period: payroll_period,
-  }) as { status: string; data: any[] };
+  })  
 
-  return response.data;  
+  return response;  
 };
