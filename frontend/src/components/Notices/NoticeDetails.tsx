@@ -107,7 +107,7 @@ const NoticeDetails = () => {
                     onClick={() => {
                         navigate(-1)
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     Back to Notices
@@ -135,7 +135,7 @@ const NoticeDetails = () => {
                     onClick={() => {
                         navigate(-1)
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     Back to Notices
@@ -156,17 +156,17 @@ const NoticeDetails = () => {
         <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
             <div className="mx-auto px-4 sm:px-6 lg:px-8">
                 <HeaderBar
-                        title="Notices"
-                        onBack={() => navigate(-1)}
-                        rightSlot={
-                            notice?.isUnread && (
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <div className="w-2 h-2 bg-black rounded-full"></div>
-                                    <span>Unread</span>
-                                </div>
-                            )
-                        }
-                    />
+                    title="Notices"
+                    onBack={() => navigate(-1)}
+                    rightSlot={
+                        notice?.isUnread && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <div className="w-2 h-2 bg-black rounded-full"></div>
+                                <span>Unread</span>
+                            </div>
+                        )
+                    }
+                />
             </div>
         </div>
     );
@@ -177,7 +177,7 @@ const NoticeDetails = () => {
                 <div className="p-6 sm:p-8 border-b border-gray-100">
                     <div className="flex items-start gap-4">
                         <div className="flex-shrink-0">
-                            <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
+                            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
                                 <Tag className="w-6 h-6 text-white" />
                             </div>
                         </div>
@@ -243,7 +243,7 @@ const NoticeDetails = () => {
             {isDesktop ? (
                 <div className="mt-8 grid grid-cols-2 gap-4">
                     <button
-                        className="w-full px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium flex items-center justify-center gap-2"
+                        className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
                         onClick={() => handleActionClick("markAsRead")}
                         disabled={actionLoading?.markAsRead}
                     >
@@ -271,7 +271,7 @@ const NoticeDetails = () => {
             ) : (
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                     <button
-                        className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium flex items-center justify-center gap-2"
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
                         onClick={() => handleActionClick("markAsRead")}
                         disabled={actionLoading?.markAsRead}
                     >
@@ -284,12 +284,12 @@ const NoticeDetails = () => {
 
                     {notice?.status?.toLowerCase() !== 'archived' && (
                         <button
-                            className="px-6 py-3 border border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
+                            className="px-6 py-3 border border-gray-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium flex items-center justify-center gap-2"
                             onClick={() => handleActionClick("archive")}
                             disabled={actionLoading?.archive}
                         >
                             {actionLoading?.archive ? (
-                                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin text-blue-600" />
                             ) : (
                                 "Archive Notice"
                             )}

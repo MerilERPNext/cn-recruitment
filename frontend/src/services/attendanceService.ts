@@ -12,6 +12,7 @@ import type {
   EmployeeCheckInLog,
   EmployeeShift,
   EmployeeShiftSummary,
+  IOvertimeLog,
   IPRestrictionsT,
   Policy,
   PolicyQuestion,
@@ -348,6 +349,20 @@ export const attendanceService = {
       throw error;
     }
   },
+  getAllEmployeeOvertimeLog: async (
+    filters: AllEventsAndAttendanceT
+  ): Promise<IOvertimeLog[]> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        `cn_leave_shift_managment.api.get_overtime_log`,
+        filters
+      );
+      return response as IOvertimeLog[];
+    } catch (error) {
+      console.error("📡 Error while getting employee overtime log:", error);
+      throw error;
+    }
+  },
 
 
   getAuditReport: async (
@@ -423,20 +438,13 @@ export const attendanceService = {
     );
     return response;
   },
-
+  // CNBU
   getAttendance: async (filters?: FilterCondition[]): Promise<Attendance[]> => {
     const response = await FrappeAPI.getDocumentList("Attendance", {
       fields: ["*"],
       filters,
     });
     return response.data as Attendance[];
-  },
-  getLeaveType: async (filters?: FilterCondition[]): Promise<[]> => {
-    const response = await FrappeAPI.getDocumentList("Leave Type", {
-      fields: ["*"],
-      filters,
-    });
-    return response.data as [];
   },
 
   createAttendanceRequest: async (

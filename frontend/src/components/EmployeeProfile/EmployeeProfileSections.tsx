@@ -17,6 +17,7 @@ import EmployeeSidebarForm from "./EmployeeSidebarForm";
 import ProfileGridSkeleton from "./ProfileSkeleton";
 import { PencilIcon } from "lucide-react";
 import usePermission from "../../hooks/usePermission";
+import { Link } from "react-router-dom";
 
 interface EditableField {
     key: string;
@@ -99,10 +100,9 @@ const EmployeeProfileSections = () => {
             block: "start",
         });
     };
-    if (fieldPermissionsLoading || employee.isLoading) {
+    if (!employeeId || fieldPermissionsLoading || employee.isLoading || !tabs.length) {
         return <ProfileGridSkeleton />;
     }
-
     return (
         <div>
             <div className="flex items-start justify-between">
@@ -175,9 +175,14 @@ const EmployeeProfileSections = () => {
                                         <p className="text-xs uppercase tracking-wide text-gray-600 mb-1">
                                             {field.label || "-"}
                                         </p>
-                                        <p className="text-sm font-medium text-gray-900">
-                                            {Array.isArray(field.value) ? <CardsRenderer items={field.value} /> : field?.value || "—"}
-                                        </p>
+                                        {
+                                            field?.type === 'file' ? <Link to={field.value} target="_blank"
+
+                                            >{field.value}</Link> :
+                                                <p className="text-sm font-medium text-gray-900">
+                                                    {Array.isArray(field.value) ? <CardsRenderer items={field.value} /> : field?.value || "—"}
+                                                </p>
+                                        }
                                     </div>
                                 ))}
                         </div>
@@ -205,7 +210,6 @@ const CardsRenderer = ({ items }: { items: Record<string, any>[] }) => {
     if (!Array.isArray(items) || items.length === 0) {
         return <p className="text-gray-500">No data available</p>;
     }
-
     return (
         <div className="w-full">
             {items.map((item, index) => (
@@ -220,23 +224,39 @@ const GenericCard = ({ data }: { data: Record<string, any> }) => {
 
     return (
         <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-gray-300 mb-2">
-            <div className="space-y-2">
-                {Object.entries(data).map(([key, value]) => (
-                    <div
-                        key={key}
-                        className="flex items-start justify-between gap-6"
-                    >
-                        {/* Label */}
-                        <span className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-                            {formatKey(key)}
-                        </span>
+            <div className="space-y-3">
+                {Object.entries(data).map(([key, field]) => {
+                    const isStructured = field && typeof field === 'object' && 'value' in field;
+                    const value = isStructured ? field.value : field;
+                    const type = isStructured ? field.type : null;
+                    const label = (isStructured && field.label) ? field.label : formatKey(key);
 
-                        {/* Value */}
-                        <span className="max-w-[65%] text-sm font-semibold text-gray-900 text-right break-words leading-relaxed">
-                            {formatValue(value)}
-                        </span>
-                    </div>
-                ))}
+                    return (
+                        <div
+                            key={key}
+                            className="flex items-start justify-between gap-6 border-b border-gray-50 pb-2 last:border-0 last:pb-0"
+                        >
+                            {/* Label */}
+                            <span className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                {label}
+                            </span>
+
+                            {/* Value */}
+                            <div className="max-w-[65%] text-sm font-semibold text-gray-900 text-right break-words leading-relaxed">
+                                {type === 'file' && value ? (
+                                    <Link
+                                        to={value}
+                                        target="_blank"
+                                    >
+                                        {value}
+                                    </Link>
+                                ) : (
+                                    formatValue(value)
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

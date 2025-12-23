@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Employee, IDesignationHierarchy, IGetEmpDesignationHierarchyCurrentDetails } from "../types/employee";
+import { Employee, IDesignationHierarchy, IGetEmpDesignationHierarchyCurrentDetails, Award } from "../types/employee";
 import { GenderResponse, IField } from "../types/profile";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -57,6 +57,19 @@ export const profileService = {
     } catch (e) {
       throw new Error(
         `Some error occured while fetching employee details.- ${e}`
+      );
+    }
+  },
+  getEmployeeAppreciations: async (): Promise<Award[] | null> => {
+    try {
+      const result = await FrappeAPI.getDocumentList("Award", {
+        fields: ["*"],
+      });
+
+      return (result?.data as unknown as Award[]) || [];
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee awards.- ${e}`
       );
     }
   },

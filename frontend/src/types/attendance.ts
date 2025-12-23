@@ -412,3 +412,15 @@ export interface AuditReportResponse {
   shift_and_policy: ShiftAndPolicyAudit[];
   week_off: WeekOffAudit[];
 }
+
+export interface IOvertimeLog {
+  name: string;
+  employee: string;
+  date: string;
+  creation: string;
+  overtime_for: string;
+  shift: string | null;
+  overtime_hrs: number;
+  compoff_created: number;
+  owner: string;
+};

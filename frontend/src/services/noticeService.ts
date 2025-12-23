@@ -5,12 +5,12 @@ import { FilterCondition } from '../types/frappe';
 
 // Notice API service
 export class NoticeService {
-  
+
   private readonly baseUrl = '/api/method/recruitment.api';
-  
-  async getAllNotices(limit?:number, filters?: FilterCondition[]): Promise<Notice[]> {
+
+  async getAllNotices(limit?: number, filters?: FilterCondition[]): Promise<Notice[]> {
     try {
-        const notices = await FrappeAPI.getDocumentList('Notice',{fields:["*"],limit:limit,filters,orderBy:"creation desc"});
+      const notices = await FrappeAPI.getDocumentList('Notice', { fields: ["*"], limit: limit, filters, orderBy: "creation desc" });
 
       return notices.data as Notice[];
     } catch (error) {
@@ -18,6 +18,20 @@ export class NoticeService {
       throw error;
     }
   }
+
+  async getUserNotices(): Promise<any> {
+    try {
+      const result = await FrappeAPI.callMethod(
+        "nextai.nextai.doctype.notice.notice.get_user_notices",
+      );
+
+      return result;
+    } catch (error) {
+      console.error("Error fetching current employee:", error);
+      return null;
+    }
+  }
+
 
   // Stub for getAllNoticeReadStatus
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -135,7 +149,7 @@ export class NoticeService {
     // Map notice type to icon type
     const iconTypeMap: Record<string, Notice['iconType']> = {
       'Emergency': 'error',
-      'Alert': 'error', 
+      'Alert': 'error',
       'Announcement': 'campaign',
       'Policy Update': 'work',
       'System Notice': 'badge',

@@ -117,7 +117,7 @@ const CheckInStatus = () => {
 
                                     <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm">
                                         <span
-                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${item.log_type === "IN"
+                                            className={`inline-flex rounded-xl px-2 py-1 text-xs font-semibold ${item.log_type === "IN"
                                                 ? "bg-green-100 text-green-700"
                                                 : "bg-red-100 text-red-700"
                                                 }`}

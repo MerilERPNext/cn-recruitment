@@ -180,7 +180,6 @@ const AttendanceLayoutContent: React.FC = () => {
           bgColor="blue-600"
           className="hover:bg-blue-700"
         >
-          Regularize
           {isOvertimePage && plannedOvertimAllowed ? "+ Overtime" : "+ Regularize"}
           {/* <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
