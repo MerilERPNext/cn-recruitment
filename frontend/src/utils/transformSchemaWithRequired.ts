@@ -96,5 +96,5 @@ export const transformSchemaWithRequired = <T extends GenericFormSchema>(
     };
 
     applyToComponents(cloned.components);
-    return cloned;
+    return cloned as T;
 };
