@@ -13,7 +13,7 @@ export interface GenericSchemaComponent {
     label?: string;
     components?: GenericSchemaComponent[];
     data?: {
-        values?: string[];
+        values?: any[];
         url?: string;
     };
     dataSrc?: string;
