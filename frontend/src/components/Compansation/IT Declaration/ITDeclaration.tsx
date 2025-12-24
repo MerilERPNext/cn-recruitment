@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import { useIncomeTaxSheetData } from "../../../hooks/useTaxSheet";
 import CategoryDeclaration from "./Component/test";

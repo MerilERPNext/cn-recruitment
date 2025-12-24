@@ -14,12 +14,13 @@ import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import SharedExpenses from "./components/Expenses-App/ExpenseClaim/SharedExpenses";
-import ExtraPayment from "./components/SalarySlip/Extrapayment/ExtraPayment";
-import IncomeTaxSheet from "./components/SalarySlip/TaxSheet/TaxSheet";
-import ITDeclarationForm from "./components/SalarySlip/IT Declaration/ITDeclaration";
-import TeamLoanRequest from "./components/SalarySlip/Loan/TeamLoan/TeamLoanRequest";
-import TeamAdvanceRequest from "./components/SalarySlip/Advances/ApprovalAdvanceRquest";
+import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
+import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
+import ITDeclarationForm from "./components/Compansation/IT Declaration/ITDeclaration";
+import TeamLoanRequest from "./components/Compansation/Loan/TeamLoan/TeamLoanRequest";
+import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
 import Requests from "./components/Requests";
+import Perquisite from "./components/Compansation/Perquisite/Perquisite";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -175,11 +176,11 @@ const TeamAttendanceDetails = lazyWithRetry(
   "TeamAttendanceDetails"
 );
 const SalarySlipApp = lazyWithRetry(
-  () => import("./components/SalarySlip/SalarySlipApp"),
+  () => import("./components/Compansation/SalarySlipApp"),
   "SalarySlipApp"
 );
 const SalarySlipsList = lazyWithRetry(
-  () => import("./components/SalarySlip/SalarySlipList"),
+  () => import("./components/Compansation/SalarySlipList"),
   "SalarySlipsList"
 );
 const ShiftChangeForm = lazyWithRetry(
@@ -211,7 +212,7 @@ const PolicySignOff = lazyWithRetry(
   "PolicySignOff"
 );
 const CTCSalaryUI = lazyWithRetry(
-  () => import("./components/SalarySlip/CTCSalaryBreakdown"),
+  () => import("./components/Compansation/CTCSalaryBreakdown"),
   "CTCSalaryUI"
 );
 const PoliciesApp = lazyWithRetry(
@@ -231,12 +232,12 @@ const ViewPolicy = lazyWithRetry(
   "ViewPolicy"
 );
 const ViewSalarySlipModal = lazyWithRetry(
-  () => import("./components/SalarySlip/SalarySlipPDF"),
+  () => import("./components/Compansation/SalarySlipPDF"),
   "ViewSalarySlipModal"
 );
 
 const HRPayroll = lazyWithRetry(
-  () => import("./components/SalarySlip/HR-Payroll"),
+  () => import("./components/Compansation/HR-Payroll"),
   "HRPayroll"
 );
 const AttendancePolicies = lazyWithRetry(
@@ -299,7 +300,7 @@ const MyShiftRequestsRoute = lazyWithRetry(
   "MyShiftRequestsRoute"
 );
 const LoansPage = lazyWithRetry(
-  () => import("./components/SalarySlip/Loan/LoanMain"),
+  () => import("./components/Compansation/Loan/LoanMain"),
   "LoansPage"
 );
 const MyOvertimeRequests = lazyWithRetry(
@@ -311,7 +312,7 @@ const TeamOvertimeRequests = lazyWithRetry(
   "OvertimeRequests"
 );
 const LoanMainComponent = lazyWithRetry(
-  () => import("./components/SalarySlip/Loan/component/DetailsPageForMobile"),
+  () => import("./components/Compansation/Loan/component/DetailsPageForMobile"),
   "LoanMainComponent"
 );
 const OrganizationChart = lazyWithRetry(
@@ -323,12 +324,12 @@ const OrganizationCharttooo = lazyWithRetry(
   "OrganizationCharttooo"
 );
 const AdvancesList = lazyWithRetry(
-  () => import("./components/SalarySlip/Advances/AdvancesList"),
+  () => import("./components/Compansation/Advances/AdvancesList"),
   "AdvancesList"
 );
 
 const PayPackage = lazyWithRetry(
-  () => import("./components/SalarySlip/Paypackage/PayPackage"),
+  () => import("./components/Compansation/Paypackage/PayPackage"),
   "PayPackage"
 );
 
@@ -522,6 +523,7 @@ export const routesConfig: AppRoute[] = [
       { path: "team-advances-list", element: <TeamAdvanceRequest /> },
       { path: "benefits-list", element: <PayPackage /> },
       { path: "extra-payment", element: <ExtraPayment /> },
+      { path: "perquisite-list", element: <Perquisite /> },
     ],
   },
   {

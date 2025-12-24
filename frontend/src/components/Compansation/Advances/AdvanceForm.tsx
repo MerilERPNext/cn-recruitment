@@ -12,7 +12,7 @@ import {
 } from "../../../hooks/useEmployeeAdvances";
 
 // ✅ Import JSON schema
-import advanceFormJson from "../Advances/AdvanceFormio.json";
+import advanceFormJson from "./AdvanceFormio.json";
 import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";

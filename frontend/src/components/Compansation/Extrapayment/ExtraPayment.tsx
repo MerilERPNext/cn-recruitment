@@ -137,15 +137,15 @@ export default function ExtraPayment() {
     <div className="min-h-screen bg-white md:p-4">
       <div className="w-full mx-auto">
         <div className="flex items-start justify-between mb-2">
-          <h1 className="text-xl md:text-xl font-bold text-gray-900 mb-2">
+          <h1 className="base-title  font-bold text-gray-900 mb-2">
             Extra Payment History
           </h1>
-          <button
+          {/* <button
             onClick={() => setShowExtraPaymentForm(true)}
             className="px-4 py-1 rounded-lg bg-blue-600 text-white flex items-center gap-2"
           >
             Create Request +
-          </button>
+          </button> */}
         </div>
 
         <div className="flex items-center justify-between  mb-1 md:mb-2">
