@@ -1,12 +1,12 @@
 
 import { ArrowLeft, Clock, Tag, AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import { useNavigate, useParams } from "react-router"
-import { useArchiveNotice, useGetNoticeById, useMarkNoticeAsRead } from "../../hooks/useNotices"
+import { useCheckIfNoticeIsReadOrAcknowledged, useGetNoticeById, useMarkNoticeAsAcknowledge, useMarkNoticeAsRead } from "../../hooks/useNotices"
 import { useState } from "react"
 import DOMPurify from 'dompurify';
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import HeaderBar from "../HeaderBar";
+import Badge from "../shared/Badge";
 
 
 
@@ -19,28 +19,33 @@ const NoticeDetails = () => {
         isLoading,
         isError,
         error,
-        refetch
+
     } = useGetNoticeById(noticeId as string);
+    const { data: isReadOrAcknowledged, refetch: refetchIsReadOrAcknowledged } = useCheckIfNoticeIsReadOrAcknowledged(noticeId as string);
+    const isRead = isReadOrAcknowledged?.some((item) => item.read_at);
+    const isAcknowledged = isReadOrAcknowledged?.some((item) => item.acknowledged_at);
+
+
     const navigate = useNavigate();
-    const [actionLoading, setActionLoading] = useState<{ markAsRead: boolean; archive: boolean }>({
+    const [actionLoading, setActionLoading] = useState<{ markAsRead: boolean; markAsAcknowledge: boolean }>({
         markAsRead: false,
-        archive: false,
+        markAsAcknowledge: false,
     });
     const markAsRead = useMarkNoticeAsRead();
-    const archive = useArchiveNotice();
-    const handleActionClick = async (actionType: 'markAsRead' | 'archive') => {
+    const markAsAcknowledge = useMarkNoticeAsAcknowledge();
+    const handleActionClick = async (actionType: 'markAsRead' | 'markAsAcknowledge') => {
         setActionLoading(prev => ({ ...prev, [actionType]: true }));
         try {
             if (actionType === "markAsRead") {
                 await markAsRead.mutateAsync(noticeId, {
                     onSuccess() {
-                        refetch();
+                        refetchIsReadOrAcknowledged();
                     },
                 });
-            } else if (actionType === 'archive') {
-                await archive.mutateAsync(noticeId, {
+            } else if (actionType === 'markAsAcknowledge') {
+                await markAsAcknowledge.mutateAsync(noticeId, {
                     onSuccess() {
-                        refetch();
+                        refetchIsReadOrAcknowledged();
                     },
                 });
             }
@@ -53,18 +58,7 @@ const NoticeDetails = () => {
     };
 
 
-    const getPriorityIcon = (priority: string) => {
-        switch (priority) {
-            case "high":
-                return <AlertCircle className="w-4 h-4" />
-            case "medium":
-                return <Clock className="w-4 h-4" />
-            case "low":
-                return <CheckCircle className="w-4 h-4" />
-            default:
-                return <Tag className="w-4 h-4" />
-        }
-    }
+
 
     const getPriorityColor = (priority: string) => {
         switch (priority) {
@@ -150,160 +144,148 @@ const NoticeDetails = () => {
             <div className="min-h-screen bg-white flex items-center justify-center p-4">{notFound}</div>
         );
     }
-    const cleanHTML = DOMPurify.sanitize(notice?.message || "");
+    const cleanHTML = DOMPurify.sanitize(notice?.content || "");
 
-    const pageHeader = (
-        <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8">
-                <HeaderBar
-                    title="Notices"
-                    onBack={() => navigate(-1)}
-                    rightSlot={
-                        notice?.isUnread && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <div className="w-2 h-2 bg-black rounded-full"></div>
-                                <span>Unread</span>
-                            </div>
-                        )
-                    }
-                />
-            </div>
-        </div>
-    );
+
 
     const detailsBody = (
-        <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 h-full overflow-y-auto pb-32">
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="p-6 sm:p-8 border-b border-gray-100">
-                    <div className="flex items-start gap-4">
+                {/* Header Section */}
+                <div className="p-6 sm:p-8 border-b border-gray-100 bg-white">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-6">
                         <div className="flex-shrink-0">
-                            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                                <Tag className="w-6 h-6 text-white" />
+                            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100">
+                                <Tag className="w-7 h-7 text-blue-600" />
                             </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2 leading-tight">{notice?.title}</h1>
-                            <p className="text-gray-600 text-sm sm:text-base">
-                                From: <span className="font-medium text-black">{notice?.name}</span>
-                            </p>
+                        <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight capitalize">
+                                        {notice?.title}
+                                    </h1>
+                                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+                                        <Clock className="w-4 h-4" />
+                                        <span>Posted on {notice?.publish_date}</span>
+                                        <span className="text-gray-300">•</span>
+                                        <span>by {notice?.name}</span>
+                                    </div>
+                                </div>
+                                <Badge
+                                    label={isRead ? "Read" : "Unread"}
+                                    backgroundColor={isRead ? "bg-blue-100" : "bg-red-100"}
+                                    textColor={isRead ? "text-blue-700" : "text-red-700"}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 bg-gray-50/50 text-sm">
+                    <div className="p-4 sm:p-6">
+                        <p className="text-gray-500 font-medium mb-1 flex items-center gap-2">
+                            <Tag className="w-4 h-4" /> Category
+                        </p>
+                        <p className="font-semibold text-gray-900 capitalize">{notice?.notice_type || 'General'}</p>
+                    </div>
+                    <div className="p-4 sm:p-6">
+                        <p className="text-gray-500 font-medium mb-1 flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4" /> Status
+                        </p>
+                        <p className="font-semibold text-gray-900 capitalize">{notice?.status}</p>
+                    </div>
+                    <div className="p-4 sm:p-6">
+                        <p className="text-gray-500 font-medium mb-1 flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" /> Priority
+                        </p>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize mt-1 ${getPriorityColor(notice?.priority || '')}`}>
+                            {notice?.priority || 'Normal'}
+                        </span>
+                    </div>
+                    <div className="p-4 sm:p-6">
+                        <p className="text-gray-500 font-medium mb-1 flex items-center gap-2">
+                            <Clock className="w-4 h-4" /> Expires
+                        </p>
+                        <p className="font-semibold text-gray-900">{notice?.expiry_date || 'Never'}</p>
+                    </div>
+                </div>
+
+                {/* Attachment Section */}
+                {notice?.attachments && (
+                    <div className="p-6 sm:p-8 pb-0">
+                        <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                            <img
+                                src={notice.attachments}
+                                alt="Notice attachment"
+                                className="w-full h-auto max-h-[300px] object-contain mx-auto"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Content Section */}
                 <div className="p-6 sm:p-8">
                     <div
-                        className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed"
+                        className="prose prose-slate prose-lg max-w-none text-gray-600 leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: cleanHTML }}
                     />
                 </div>
-
-                <div className="p-6 sm:p-8 bg-gray-50 border-t border-gray-100">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="flex items-center gap-2">
-                            <Tag className="w-4 h-4 text-gray-400" />
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Category</p>
-                                <p className="text-sm font-medium text-black">{notice?.category}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Status</p>
-                                <p className="text-sm font-medium text-black">{notice?.status}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            {getPriorityIcon(notice?.priority)}
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Priority</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span
-                                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getPriorityColor(notice?.priority)}`}
-                                    >
-                                        {notice?.priority ? notice.priority.charAt(0).toUpperCase() + notice.priority.slice(1) : ''}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-gray-400" />
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Posted</p>
-                                <p className="text-sm font-medium text-black">{notice?.time}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            {isDesktop ? (
-                <div className="mt-8 grid grid-cols-2 gap-4">
-                    <button
-                        className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
-                        onClick={() => handleActionClick("markAsRead")}
-                        disabled={actionLoading?.markAsRead}
-                    >
-                        {actionLoading.markAsRead ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            "Mark as Read"
-                        )}
-                    </button>
-
-                    {notice?.status?.toLowerCase() !== 'archived' && (
-                        <button
-                            className="w-full px-6 py-3 border border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
-                            onClick={() => handleActionClick("archive")}
-                            disabled={actionLoading?.archive}
-                        >
-                            {actionLoading?.archive ? (
-                                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                "Archive Notice"
-                            )}
-                        </button>
+            {/* Actions Footer */}
+            <div className={`mt-8 ${isDesktop ? 'grid grid-cols-2 gap-4 mx-auto' : 'flex flex-col gap-3'}`}>
+                <button
+                    className={`
+                        w-full px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200
+                        ${isRead
+                            ? 'bg-blue-100 text-blue-600'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }
+                        disabled:opacity-70 disabled:cursor-not-allowed
+                    `}
+                    onClick={() => handleActionClick("markAsRead")}
+                    disabled={actionLoading?.markAsRead || isRead}
+                >
+                    {actionLoading.markAsRead ? (
+                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <>
+                            {isRead ? <CheckCircle className="w-5 h-5" /> : <div className="w-5 h-5 bg-white/20 rounded-full p-1" />}
+                            {isRead ? "Marked as Read" : "Mark as Read"}
+                        </>
                     )}
-                </div>
-            ) : (
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                    <button
-                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
-                        onClick={() => handleActionClick("markAsRead")}
-                        disabled={actionLoading?.markAsRead}
-                    >
-                        {actionLoading.markAsRead ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            "Mark as Read"
-                        )}
-                    </button>
+                </button>
 
-                    {notice?.status?.toLowerCase() !== 'archived' && (
-                        <button
-                            className="px-6 py-3 border border-gray-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium flex items-center justify-center gap-2"
-                            onClick={() => handleActionClick("archive")}
-                            disabled={actionLoading?.archive}
-                        >
-                            {actionLoading?.archive ? (
-                                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin text-blue-600" />
-                            ) : (
-                                "Archive Notice"
-                            )}
-                        </button>
+                <button
+                    className={`
+                        w-full px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 border
+                        ${isAcknowledged
+                            ? 'bg-green-100 text-green-700 border-green-200'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }
+                        disabled:opacity-70 disabled:cursor-not-allowed
+                    `}
+                    onClick={() => handleActionClick("markAsAcknowledge")}
+                    disabled={actionLoading?.markAsAcknowledge || isAcknowledged}
+                >
+                    {actionLoading?.markAsAcknowledge ? (
+                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <>
+                            {isAcknowledged ? <CheckCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                            {isAcknowledged ? "Acknowledged" : "Acknowledge Notice"}
+                        </>
                     )}
-                </div>
-            )}
+                </button>
+            </div>
         </div>
     );
 
     if (isDesktop) {
         return (
             <DesktopLayoutWrapper title="Notifications">
-                {pageHeader}
                 {detailsBody}
             </DesktopLayoutWrapper>
         );
@@ -311,7 +293,6 @@ const NoticeDetails = () => {
 
     return (
         <div className=" bg-white">
-            {pageHeader}
             {detailsBody}
         </div>
     )

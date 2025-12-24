@@ -14,6 +14,39 @@ export interface Notice {
   category?: string;
   status: 'active' | 'archived' | 'dismissed';
 }
+export type UserNotice = {
+  name: string;
+  title: string;
+  content: string;
+  notice_type: "Announcement" | "Alert" | "Update";
+  priority: "Low" | "Medium" | "High";
+  publish_date: string;
+  expiry_date: string;
+  status: "Draft" | "Published" | "Archived";
+  allow_acknowledgment: 0 | 1;
+  auto_scroll_frequency: number;
+  read_at: string | null;
+  acknowledged_at: string | null;
+  attachments: string;
+};
+
+
+export type NoticeUserActivity = {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: 0 | 1 | 2;
+  idx: number;
+  notice: string;
+  user: string;          // email
+  read_at: string | null;
+  acknowledged_at: string | null;
+  ip_address: string;
+
+};
+
 
 export interface NoticeAction {
   label: string;
@@ -57,18 +90,18 @@ export interface CreateNoticeData {
   category?: string;
   action?: NoticeAction;
   targetUsers?: string[];
-} 
+}
 export type NoticeStatusReadStatus = {
   name: string;
   owner: string;
-  creation: string; 
-  modified: string; 
+  creation: string;
+  modified: string;
   modified_by: string;
   docstatus: number;
   idx: number;
   notice: string;
   user: string;
-  read_at: string; 
-  acknowledged_at: string | null; 
+  read_at: string;
+  acknowledged_at: string | null;
   ip_address: string;
 };
