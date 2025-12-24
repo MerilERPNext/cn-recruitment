@@ -95,6 +95,19 @@ export function useMarkNoticeAsRead() {
   });
 }
 
+// Hook to mark notice as acknowledge
+export function useMarkNoticeAsAcknowledge() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (noticeId: string) => noticeService.markAsAcknowledge(noticeId),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notices });
+    },
+  });
+}
+
 // Hook to archive notice
 export function useArchiveNotice() {
   const queryClient = useQueryClient();
@@ -113,6 +126,13 @@ export function useGetNoticeById(noticeId: string) {
   return useQuery({
     queryKey: [QUERY_KEYS.notices, noticeId],
     queryFn: () => NoticeService.getNotice(noticeId), // keep static usage, as getNotice is static
+    enabled: !!noticeId, // avoids firing when ID is undefined
+  });
+}
+export function useCheckIfNoticeIsReadOrAcknowledged(noticeId: string) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.notices, noticeId, 'readOrAcknowledged'],
+    queryFn: () => noticeService.checkIfNoticeIsReadOrAcknowledged(noticeId), // keep static usage, as getNotice is static
     enabled: !!noticeId, // avoids firing when ID is undefined
   });
 }

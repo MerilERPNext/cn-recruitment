@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FrappeAPI } from '../utils/frappeAPI';
-import { Notice } from '../types/notice';
+import { Notice, NoticeUserActivity, UserNotice } from '../types/notice';
 import { FilterCondition } from '../types/frappe';
 
 // Notice API service
@@ -19,16 +19,16 @@ export class NoticeService {
     }
   }
 
-  async getUserNotices(): Promise<any> {
+  async getUserNotices(): Promise<UserNotice[]> {
     try {
       const result = await FrappeAPI.callMethod(
         "nextai.nextai.doctype.notice.notice.get_user_notices",
       );
 
-      return result;
+      return result as UserNotice[];
     } catch (error) {
       console.error("Error fetching current employee:", error);
-      return null;
+      throw error;
     }
   }
 
@@ -41,10 +41,10 @@ export class NoticeService {
   }
 
   // Get a single notice by ID
-  static async getNotice(noticeId: string): Promise<Notice | null> {
+  static async getNotice(noticeId: string): Promise<UserNotice | null> {
     try {
       const notice = await FrappeAPI.getDocument('Notice', noticeId);
-      return this.transformFromFrappe(notice);
+      return notice as UserNotice;
     } catch (error) {
       console.error('Error fetching notice:', error);
       return null;
@@ -54,20 +54,36 @@ export class NoticeService {
   // Mark notice as read
   async markAsRead(noticeId: string): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}.mark_notice_as_read`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ notice_id: noticeId }),
+      const response = await FrappeAPI.callMethod(`nextai.nextai.doctype.notice.notice.mark_notice_as_read`, {
+        notice_name: noticeId
       });
 
-      const result = await response.json();
-      return response.ok && result.message === true;
+      return !!response;
     } catch (error) {
       console.error('📡 Error marking notice as read:', error);
       return false;
+    }
+  }
+
+  async markAsAcknowledge(noticeId: string): Promise<boolean> {
+    try {
+      const response = await FrappeAPI.callMethod(`nextai.nextai.doctype.notice.notice.mark_notice_as_acknowledged`, {
+        notice_name: noticeId
+      });
+
+      return !!response;
+    } catch (error) {
+      console.error('📡 Error marking notice as read:', error);
+      return false;
+    }
+  }
+  async checkIfNoticeIsReadOrAcknowledged(noticeId: string): Promise<NoticeUserActivity[]> {
+    try {
+      const response = await FrappeAPI.getDocumentList(`Notice Read Status`, { filters: [["notice", "=", noticeId]], fields: ['*'] });
+      return response?.data as unknown as NoticeUserActivity[];
+    } catch (error) {
+      console.error('📡 Error marking notice as read:', error);
+      throw error;
     }
   }
 

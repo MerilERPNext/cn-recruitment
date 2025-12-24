@@ -16,7 +16,6 @@ const EmployeeSidebarForm = ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: { edit: any, setEdit: any, formioTabs: any, formInstances: any, employeeId: string, refetchEmployee: () => void, employeeIsLoading: boolean | null }) => {
 
-
     const mutation = useUpdateFrappeDocument();
 
 
@@ -83,7 +82,6 @@ const EmployeeSidebarForm = ({
     };
 
     const schema = formioTabs.find((tab: { key: string }) => tab.key === edit?.key)?.schema;
-
     return (
         <div>
             <SideDrawer size="xxl" open={!!edit} onClose={() => setEdit(null)} title={edit?.label || ""}>
