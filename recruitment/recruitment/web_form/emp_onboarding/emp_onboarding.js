@@ -363,13 +363,16 @@ frappe.ready(function () {
         /* ======================================================
            PREVIOUS EMPLOYED LOGIC
         ====================================================== */
-        frappe.web_form.on("custom_previously_employed", function (f, v) {
-            frappe.web_form.set_df_property(
-                "custom_last_3_months_salary_slip",
-                "reqd",
-                v === "Experienced" ? 1 : 0
-            );
-        });
+        // Only set up event handler if field exists
+        if (frappe.web_form.fields_dict && frappe.web_form.fields_dict.custom_previously_employed) {
+            frappe.web_form.on("custom_previously_employed", function (f, v) {
+                frappe.web_form.set_df_property(
+                    "custom_last_3_months_salary_slip",
+                    "reqd",
+                    v === "Experienced" ? 1 : 0
+                );
+            });
+        }
 
         /* ======================================================
            FORM VALIDATION + SUBMIT
@@ -538,7 +541,7 @@ frappe.ready(function () {
 
                     // Call backend to create Job Applicant, Job Offer, and Employee Onboarding
                     frappe.call({
-                        method: "recruitment.recruitment.web_form.emp_onboarding.employee_onboarding.create_job_applicant_and_offer",
+                        method: "recruitment.recruitment.web_form.emp_onboarding.emp_onboarding.create_job_applicant_and_offer",
                         args: {
                             email: email,
                             first_name: first_name,
@@ -798,7 +801,7 @@ frappe.ready(function () {
             is_saving = true;
 
             frappe.call({
-                method: "recruitment.recruitment.web_form.emp_onboarding.employee_onboarding.create_job_applicant_and_offer",
+                method: "recruitment.recruitment.web_form.emp_onboarding.emp_onboarding.create_job_applicant_and_offer",
                 freeze: true,
                 freeze_message: "Creating Employee Onboarding...",
                 args: {
@@ -939,7 +942,7 @@ frappe.ready(function () {
                     lastFetchedITS = its; // Remember this ITS ID
 
                     frappe.call({
-                        method: "recruitment.recruitment.web_form.emp_onboarding.employee_onboarding.fetch_employee_data_by_its_id",
+                        method: "recruitment.recruitment.web_form.emp_onboarding.emp_onboarding.fetch_employee_data_by_its_id",
                         args: { its_id: its },
                         freeze: true,
                         freeze_message: "Fetching ITS data...",
