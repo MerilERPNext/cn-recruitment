@@ -26,6 +26,19 @@ frappe.ui.form.on("Employee Onboarding", {
                 console.log(`[DeskForm] Converted '${field}' to Data field`);
             }
         });
+
+        // Add "Fetch ITS Data" button if ITS ID exists
+        if (!frm.is_new() && frm.doc.custom_its_id) {
+            frm.add_custom_button(__('Fetch ITS Data'), function() {
+                frappe.confirm(
+                    __('Do you want to fetch employee data from ITS for ITS ID: {0}?', [frm.doc.custom_its_id]),
+                    function() {
+                        frm.trigger('custom_its_id');
+                    }
+                );
+            }, __('Actions'));
+        }
+
         // Show "Create Employee" button only if workflow_state is "Approved" and employee not created yet
         if (!frm.doc.employee && frm.doc.workflow_state === "Approved") {
             frm.remove_custom_button("Employee", "Create");
@@ -64,81 +77,25 @@ frappe.ui.form.on("Employee Onboarding", {
                             console.log("✅ Setting employee_name:", r.message.employee_name);
                             frm.set_value('employee_name', r.message.employee_name);
                         }
-                        if (r.message.custom_primary_mobile_number) {
-                            console.log("🔵 ATTEMPTING to set custom_primary_mobile_number:", r.message.custom_primary_mobile_number);
-                            console.log("🔵 Field exists in form:", !!frm.fields_dict.custom_primary_mobile_number);
-
-                            // Set the value in the doc
-                            frm.doc.custom_primary_mobile_number = r.message.custom_primary_mobile_number;
-
-                            // Refresh the field to update UI
-                            frm.refresh_field('custom_primary_mobile_number');
-
-                            console.log("🔵 Value set and field refreshed");
-
-                            // Also try jQuery direct set as fallback
-                            setTimeout(() => {
-                                const $input = $('[data-fieldname="custom_primary_mobile_number"] input');
-                                if ($input.length) {
-                                    $input.val(r.message.custom_primary_mobile_number);
-                                    console.log("🔵 jQuery fallback - set input value directly");
-                                }
-
-                                const val = frm.doc.custom_primary_mobile_number;
-                                const uiVal = $input.val();
-                                console.log("🔍 VERIFICATION - custom_primary_mobile_number:");
-                                console.log("  → Value in doc:", val);
-                                console.log("  → Value in UI input:", uiVal);
-                                if (!uiVal || uiVal !== r.message.custom_primary_mobile_number) {
-                                    console.error("❌ UI NOT UPDATED! Doc has:", val, "UI shows:", uiVal);
-                                } else {
-                                    console.log("✅ custom_primary_mobile_number verified in UI!");
-                                }
-                            }, 500);
-                        } else {
-                            console.error("❌ custom_primary_mobile_number is empty in response!");
+                        if (r.message.custom_its_name) {
+                            console.log("✅ Setting custom_its_name:", r.message.custom_its_name);
+                            frm.set_value('custom_its_name', r.message.custom_its_name);
                         }
-                        if (r.message.custom_whatsapp_number) {
-                            console.log("🟢 ATTEMPTING to set custom_whatsapp_number:", r.message.custom_whatsapp_number);
-                            console.log("🟢 Field exists in form:", !!frm.fields_dict.custom_whatsapp_number);
-
-                            // Set the value in the doc
-                            frm.doc.custom_whatsapp_number = r.message.custom_whatsapp_number;
-
-                            // Refresh the field to update UI
-                            frm.refresh_field('custom_whatsapp_number');
-
-                            console.log("🟢 Value set and field refreshed");
-
-                            // Also try jQuery direct set as fallback
-                            setTimeout(() => {
-                                const $input = $('[data-fieldname="custom_whatsapp_number"] input');
-                                if ($input.length) {
-                                    $input.val(r.message.custom_whatsapp_number);
-                                    console.log("🟢 jQuery fallback - set input value directly");
-                                }
-
-                                const val = frm.doc.custom_whatsapp_number;
-                                const uiVal = $input.val();
-                                console.log("🔍 VERIFICATION - custom_whatsapp_number:");
-                                console.log("  → Value in doc:", val);
-                                console.log("  → Value in UI input:", uiVal);
-                                if (!uiVal || uiVal !== r.message.custom_whatsapp_number) {
-                                    console.error("❌ UI NOT UPDATED! Doc has:", val, "UI shows:", uiVal);
-                                } else {
-                                    console.log("✅ custom_whatsapp_number verified in UI!");
-                                }
-                            }, 500);
-                        } else {
-                            console.error("❌ custom_whatsapp_number is empty in response!");
+                        if (r.message.custom_its_mobile) {
+                            console.log("✅ Setting custom_its_mobile:", r.message.custom_its_mobile);
+                            frm.set_value('custom_its_mobile', r.message.custom_its_mobile);
                         }
-                        if (r.message.custom_email_id) {
-                            console.log("✅ Setting custom_email_id:", r.message.custom_email_id);
-                            frm.set_value('custom_email_id', r.message.custom_email_id);
+                        if (r.message.custom_whatsapp_no) {
+                            console.log("✅ Setting custom_whatsapp_no:", r.message.custom_whatsapp_no);
+                            frm.set_value('custom_whatsapp_no', r.message.custom_whatsapp_no);
                         }
-                        if (r.message.custom_farig_year) {
-                            console.log("✅ Setting custom_farig_year:", r.message.custom_farig_year);
-                            frm.set_value('custom_farig_year', r.message.custom_farig_year);
+                        if (r.message.custom_its_email) {
+                            console.log("✅ Setting custom_its_email:", r.message.custom_its_email);
+                            frm.set_value('custom_its_email', r.message.custom_its_email);
+                        }
+                        if (r.message.custom_farigh_year) {
+                            console.log("✅ Setting custom_farigh_year:", r.message.custom_farigh_year);
+                            frm.set_value('custom_farigh_year', r.message.custom_farigh_year);
                         }
                         if (r.message.custom_farig_darajah) {
                             console.log("✅ Setting custom_farig_darajah:", r.message.custom_farig_darajah);

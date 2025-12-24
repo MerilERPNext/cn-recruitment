@@ -113,10 +113,11 @@ def fetch_employee_data_by_its_id(its_id):
 
         employee_data = {
             "employee_name": data.get("fullname") or "",
-            "custom_primary_mobile_number": mobile,
-            "custom_whatsapp_number": whatsapp,
-            "custom_email_id": data.get("email") or "",
-            "custom_farig_year": data.get("farig_year") or "",
+            "custom_its_name": data.get("fullname") or "",
+            "custom_its_mobile": mobile,
+            "custom_whatsapp_no": whatsapp,
+            "custom_its_email": data.get("email") or "",
+            "custom_farigh_year": data.get("farig_year") or "",
             "custom_farig_darajah": data.get("farig_darajah") or "",
             "success": True,
             "message": "Employee data fetched successfully",

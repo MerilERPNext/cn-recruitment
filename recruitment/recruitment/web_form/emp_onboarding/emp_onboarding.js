@@ -76,8 +76,15 @@ frappe.ready(function () {
 
         const params = new URLSearchParams(window.location.search);
         const initiate_id = params.get("initiate_onboarding_id");
+        const employee_onboarding_id = params.get("name") || params.get("employee_onboarding_id");
 
-        if (initiate_id) {
+        // Check if we're editing an existing Employee Onboarding document
+        if (employee_onboarding_id) {
+            console.log("📝 Editing existing Employee Onboarding:", employee_onboarding_id);
+            loadSavedData(employee_onboarding_id);
+        }
+        // Otherwise, check if we're creating from Initiate Onboarding
+        else if (initiate_id) {
             console.log("🚀 Fetching Initiate Onboarding:", initiate_id);
 
             frappe.call({
@@ -531,7 +538,7 @@ frappe.ready(function () {
 
                     // Call backend to create Job Applicant, Job Offer, and Employee Onboarding
                     frappe.call({
-                        method: "recruitment.recruitment.web_form.emp_onboarding.emp_onboarding.create_job_applicant_and_offer",
+                        method: "recruitment.recruitment.web_form.emp_onboarding.employee_onboarding.create_job_applicant_and_offer",
                         args: {
                             email: email,
                             first_name: first_name,
@@ -791,7 +798,7 @@ frappe.ready(function () {
             is_saving = true;
 
             frappe.call({
-                method: "recruitment.recruitment.web_form.emp_onboarding.emp_onboarding.create_job_applicant_and_offer",
+                method: "recruitment.recruitment.web_form.emp_onboarding.employee_onboarding.create_job_applicant_and_offer",
                 freeze: true,
                 freeze_message: "Creating Employee Onboarding...",
                 args: {
@@ -932,7 +939,7 @@ frappe.ready(function () {
                     lastFetchedITS = its; // Remember this ITS ID
 
                     frappe.call({
-                        method: "recruitment.recruitment.web_form.emp_onboarding.emp_onboarding.fetch_employee_data_by_its_id",
+                        method: "recruitment.recruitment.web_form.emp_onboarding.employee_onboarding.fetch_employee_data_by_its_id",
                         args: { its_id: its },
                         freeze: true,
                         freeze_message: "Fetching ITS data...",

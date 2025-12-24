@@ -671,7 +671,7 @@ def fetch_employee_data_by_its_id(its_id):
             "success": True,
             "custom_email_id": data.get("email") or "",
             "custom_farig_year": data.get("farig_year") or "",
-            "custom_farig_darajah": data.get("farig_darajah") or "",
+            "custom_farig_darajah":  data.get("farig_darajah") or "",
             "employee_name": data.get("fullname") or "",
             "custom_primary_mobile_number": mobile,
             "custom_whatsapp_number": whatsapp,
