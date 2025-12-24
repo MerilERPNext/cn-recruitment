@@ -2,10 +2,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { AcknowledgementRequiredService, EmployeeDocumentService } from "../services/EmployeeDocumentService";
 import { DocumentItem } from "../types/employeeDocument";
 
-export const useEmployeeDocument = () => {
+export const useEmployeeDocument = (employeeId: string) => {
     return useQuery<DocumentItem[]>({
-      queryKey: ["employee-documents", "status"],
-      queryFn: EmployeeDocumentService.getDraftEmployeeDocument,
+      queryKey: ["employee-documents", employeeId],
+      queryFn: () => EmployeeDocumentService.getDraftEmployeeDocument(employeeId),
     });
   };
 

@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useEmployeeDocument, useSubmitAcknowledgement } from "../../hooks/useEmployeeDocuments";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-  const { data } = useEmployeeDocument();
+    const { data: userId } = useLoggedInUser();
+    const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data } = useEmployeeDocument(user?.employee || "");
+  console.log("Document Data:",user?.employee,userId, data);
   const [isMobile, setIsMobile] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const {
@@ -254,7 +259,7 @@ const DocumentLibrary = () => {
             {/* PDF viewer */}
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={getFileUrl(selectedFile + "#toolbar=0")}
+                src={selectedFile + "#toolbar=0"}
                 title="Document PDF"
                 className="w-full h-[80vh]"
               ></iframe>
