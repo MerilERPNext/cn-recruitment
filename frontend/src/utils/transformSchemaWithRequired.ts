@@ -25,11 +25,11 @@ export interface GenericSchemaComponent {
     [key: string]: any;
 }
 
-export const transformSchemaWithRequired = (
-    baseSchema: GenericFormSchema,
+export const transformSchemaWithRequired = <T extends GenericFormSchema>(
+    baseSchema: T,
     requiredMap: Record<string, boolean>, // {fieldvalue: boolean} 
     keyAliasMap: Record<string, string> = {} // {schemaKey<informIO>: feildsvalue<in_doctype>}
-): GenericFormSchema => {
+): T => {
     if (!baseSchema) return baseSchema;
 
     // deep clone to avoid mutating original schema
