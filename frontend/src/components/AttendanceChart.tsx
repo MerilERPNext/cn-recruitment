@@ -9,11 +9,13 @@ import {
 } from "lucide-react";
 import SummaryCard from "./Attendance/SummaryCard";
 import { useScreenSize } from "../hooks/useScreenSize";
+import { ViewAll } from "./shared/atoms/ViewAll";
 
 interface AttendanceChartProps {
   present?: number;
   absent?: number;
   leaves?: number;
+  week_offs?: number;
   avg_late_by?: number;
   avg_working_hours?: number;
   avg_overtime?: number;
@@ -25,6 +27,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
   present = 0,
   absent = 0,
   leaves = 0,
+  week_offs = 0,
   avg_working_hours = 0,
   avg_overtime = 0,
   avg_late_by = 0,
@@ -75,10 +78,11 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
 
   const daysInMonth = getDaysInCurrentMonth();
 
-  // Percentages based on days in month
-  const presentPercent = (present / daysInMonth) * 100;
-  const absentPercent = (absent / daysInMonth) * 100;
-  const leavesPercent = (leaves / daysInMonth) * 100;
+  const totalWorkingDays = daysInMonth - (present + absent + leaves + week_offs);
+  // Percentages based on total working days
+  const presentPercent = (present / totalWorkingDays) * 100;
+  const absentPercent = (absent / totalWorkingDays) * 100;
+  const leavesPercent = (leaves / totalWorkingDays) * 100;
 
   // Angles
   const presentAngle = (presentPercent / 100) * 360;
@@ -172,80 +176,82 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
           </div>
         </div>
 
+        <div>
+          <ViewAll className="ml-auto mb-2" title="View in Calender" to="/webapp/attendance/emp-attendance" />
+          {/* Statistics */}
+          {/* Attendance Summary Cards */}
+          <div
+            className={`grid gap-3 ${isDesktop ? "grid-cols-2" : "grid-cols-3"}`}
+          >
+            {/* Present Summary Card */}
+            <SummaryCard
+              icon={CheckCircle}
+              iconColor="text-green-600"
+              bgColor="bg-green-50"
+              borderColor="border-green-100"
+              value={present}
+              label="Present Days"
+              isDesktop={isDesktop}
+              isMetric={true}
+            />
 
-        {/* Statistics */}
-        {/* Attendance Summary Cards */}
-        <div
-          className={`grid gap-3 ${isDesktop ? "grid-cols-2" : "grid-cols-3"}`}
-        >
-          {/* Present Summary Card */}
-          <SummaryCard
-            icon={CheckCircle}
-            iconColor="text-green-600"
-            bgColor="bg-green-50"
-            borderColor="border-green-100"
-            value={present}
-            label="Present Days"
-            isDesktop={isDesktop}
-            isMetric={true}
-          />
+            {/* Absent Summary Card */}
+            <SummaryCard
+              icon={XCircle}
+              iconColor="text-red-600"
+              bgColor="bg-red-50"
+              borderColor="border-red-100"
+              value={absent}
+              label="Absent Days"
+              isDesktop={isDesktop}
+              isMetric={true}
+            />
 
-          {/* Absent Summary Card */}
-          <SummaryCard
-            icon={XCircle}
-            iconColor="text-red-600"
-            bgColor="bg-red-50"
-            borderColor="border-red-100"
-            value={absent}
-            label="Absent Days"
-            isDesktop={isDesktop}
-            isMetric={true}
-          />
+            {/* Leave Summary Card */}
+            <SummaryCard
+              icon={Calendar}
+              iconColor="text-orange-600"
+              bgColor="bg-orange-50"
+              borderColor="border-orange-100"
+              value={leaves}
+              label="Leave Days"
+              isDesktop={isDesktop}
+              isMetric={true}
+            />
 
-          {/* Leave Summary Card */}
-          <SummaryCard
-            icon={Calendar}
-            iconColor="text-orange-600"
-            bgColor="bg-orange-50"
-            borderColor="border-orange-100"
-            value={leaves}
-            label="Leave Days"
-            isDesktop={isDesktop}
-            isMetric={true}
-          />
+            <SummaryCard
+              icon={Timer}
+              iconColor="text-yellow-600"
+              bgColor="bg-yellow-50"
+              borderColor="border-yellow-100"
+              value={avg_late_by}
+              label="Avg. Overtime"
+              isDesktop={isDesktop}
+              isMetric={true}
+            />
 
-          <SummaryCard
-            icon={Timer}
-            iconColor="text-yellow-600"
-            bgColor="bg-yellow-50"
-            borderColor="border-yellow-100"
-            value={avg_late_by}
-            label="Avg. Overtime"
-            isDesktop={isDesktop}
-            isMetric={true}
-          />
+            <SummaryCard
+              icon={Clock}
+              iconColor="text-blue-600"
+              bgColor="bg-blue-50"
+              borderColor="border-blue-100"
+              value={avg_working_hours}
+              label="Avg. Work Duration"
+              isDesktop={isDesktop}
+              isMetric={true}
+            />
 
-          <SummaryCard
-            icon={Clock}
-            iconColor="text-blue-600"
-            bgColor="bg-blue-50"
-            borderColor="border-blue-100"
-            value={avg_working_hours}
-            label="Avg. Work Duration"
-            isDesktop={isDesktop}
-            isMetric={true}
-          />
-
-          <SummaryCard
-            icon={Clock8}
-            iconColor="text-purple-600"
-            bgColor="bg-purple-50"
-            borderColor="border-purple-100"
-            value={avg_overtime}
-            label="Avg. Late By"
-            isDesktop={isDesktop}
-            isMetric={true}
-          />
+            <SummaryCard
+              icon={Clock8}
+              iconColor="text-purple-600"
+              bgColor="bg-purple-50"
+              borderColor="border-purple-100"
+              value={avg_overtime}
+              label="Avg. Late By"
+              isDesktop={isDesktop}
+              isMetric={true}
+            />
+          </div>
         </div>
       </div>
     </div>

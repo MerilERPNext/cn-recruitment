@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Timer,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
 
 import {
   useAllAttendance,
@@ -33,6 +34,9 @@ import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import SummaryCard from "./SummaryCard";
 import AttendanceChart from "../AttendanceChart";
+import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
+import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
+import { ViewAll } from "../shared/atoms/ViewAll";
 
 const AttendanceSummary = () => {
   const navigate = useNavigate();
@@ -78,6 +82,7 @@ const AttendanceSummary = () => {
       return record.status === statusToCount ? count + 1 : count;
     }, 0);
   }
+
   const teamSummaryData = [
     {
       icon: CheckCircle,
@@ -98,6 +103,79 @@ const AttendanceSummary = () => {
       value: countStatus("On Leave") || 0,
     },
   ];
+
+  const [showAttendanceRequestModal, setShowAttendanceRequestModal] = useState(false);
+
+  const quickAction: {
+    section: string;
+    cards: QuickActionCardData[];
+  } = useMemo(() => ({
+    section: "Quick Actions",
+    cards: [
+      {
+        id: "my_requests",
+        title: "My Attendance",
+        subtitle: "Pending Requests",
+        value: employeeAttendanceSummary?.my_attendance_requests || 0,
+        icon: "FileText",
+        color: "green",
+        background: "bg-green-50",
+        actions: [
+          { label: "View My Requests", type: "link", href: "/webapp/attendance/attendance-request" },
+          { label: "+ New Request", type: "primary", onClick: () => setShowAttendanceRequestModal(true) }
+        ]
+      },
+      {
+        id: "team_requests",
+        title: "Team Attendance",
+        subtitle: "Pending Requests",
+        value: employeeAttendanceSummary?.team_attendance_requests || 0,
+        icon: "Users",
+        color: "yellow",
+        background: "bg-yellow-50",
+        actions: [
+          { label: "Manage Team Requests", type: "link", href: "/webapp/attendance/team-attendance-requests" },
+        ]
+      },
+      {
+        id: "my_overtime",
+        title: "My Overtime",
+        subtitle: "Pending Requests",
+        value: employeeAttendanceSummary?.my_overtime_requests || 0,
+        icon: "FileText",
+        color: "blue",
+        background: "bg-blue-50",
+        actions: [
+          { label: "View My Overtime", type: "link", href: "/webapp/attendance/my-overtime-requests" },
+          { label: "+ Log Overtime", type: "primary", onClick: () => setShowAttendanceRequestModal(true) }
+        ]
+      },
+      {
+        id: "team_overtime",
+        title: "Team Overtime",
+        subtitle: "Pending Requests",
+        value: employeeAttendanceSummary?.team_overtime_requests || 0,
+        icon: "Users",
+        color: "purple",
+        background: "bg-purple-50",
+        actions: [
+          { label: "Manage Team Overtime", type: "link", href: "/webapp/attendance/team-overtime-requests" },
+        ]
+      },
+      {
+        id: "shifts",
+        title: "Shifts",
+        subtitle: "Shift schedule overview",
+        value: null,
+        icon: "Calendar",
+        color: "indigo",
+        background: "bg-indigo-50",
+        actions: [
+          { label: "View My Shifts", type: "link", href: "/webapp/shift-request/all-shifts-dashboard" },
+        ]
+      }
+    ]
+  }), [employeeAttendanceSummary]);
 
   const getAttendanceMethod = () => {
     const methods = [];
@@ -202,6 +280,7 @@ const AttendanceSummary = () => {
           present={employeeAttendanceSummary?.present || 0}
           absent={employeeAttendanceSummary?.absent || 0}
           leaves={employeeAttendanceSummary?.leaves || 0}
+          week_offs={employeeAttendanceSummary?.week_offs || 0}
           avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
           avg_working_hours={
             Number(employeeAttendanceSummary?.avg_working_hours) || 0
@@ -216,7 +295,10 @@ const AttendanceSummary = () => {
             <div className="flex-1 space-y-6">
               {/* Today's Team Summary */}
               <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-                <h2 className="module-title">Today's Team Summary</h2>
+                <div className="flex">
+                  <h2 className="module-title">Today's Team Summary</h2>
+                  <ViewAll className="ml-auto" title="View Team Calender" to="/webapp/attendance/team-attendance" />
+                </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                   {teamSummaryData.map((data, index) => (
                     <SummaryCard
@@ -231,6 +313,14 @@ const AttendanceSummary = () => {
                       isMetric={true}
                     />
                   ))}
+                </div>
+                <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0 mt-5">
+                  <h2 className="module-title">Quick Actions</h2>
+                  <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {quickAction.cards.map(card => (
+                      <QuickActionCard key={card.id} {...card} />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -280,12 +370,16 @@ const AttendanceSummary = () => {
           </div>
         ) : (
           // Mobile Layout
-          <div className="bg-white">
+          <div className="bg-white p-4 mt-4">
             {/* Header */}
             <div className="mb-4">
               {/* Team Summary */}
-              <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0 mt-5">
-                <h2 className="base-title">Today's Team Summary</h2>
+              <div className="space-y-3 border-b-1 bg-white border-gray-200 pt-0 mt-4">
+
+                <div className="flex">
+                  <h2 className="base-title">Today's Team Summary</h2>
+                  <ViewAll className="ml-auto" title="View Team Calender" to="/webapp/attendance/team-attendance" />
+                </div>
                 <div className="grid grid-cols-3 gap-3">
                   {teamSummaryData.map((data, index) => (
                     <SummaryCard
@@ -300,6 +394,15 @@ const AttendanceSummary = () => {
                       isMetric={true}
                     />
                   ))}
+                </div>
+
+                <div className="space-y-3  bg-white border-gray-200 py-4 pt-0 mt-4">
+                  <h2 className="base-title">Quick Actions</h2>
+                  <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {quickAction.cards.map(card => (
+                      <QuickActionCard key={card.id} {...card} />
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -347,6 +450,12 @@ const AttendanceSummary = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {showAttendanceRequestModal && (
+          <AttendanceRequestFormV2
+            onClose={() => setShowAttendanceRequestModal(false)}
+          />
         )}
       </div>
     </>
