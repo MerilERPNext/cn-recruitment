@@ -150,6 +150,8 @@ export interface LeaveFieldFlags {
   half_day: number;
   half_day_date: number;
   custom_second_half_day_date: number;
+  show_half_day_options?: number;
+  show_individual_continuous?: number;
 }
 
 export interface LeaveFieldResponse {
