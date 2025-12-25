@@ -217,7 +217,7 @@ export class NoticeService {
 //     if (diffInDays < 7) return `${diffInDays}d ago`;
 //     return `${diffInWeeks}w ago`;
 //   }
-}
+
 
 // Export a singleton instance
 export const noticeService = new NoticeService()
