@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FrappeAPI } from '../utils/frappeAPI';
-import { Notice, NoticeUserActivity, UserNotice } from '../types/notice';
+import { Notice, UserNotice, NoticeUserActivity } from '../types/notice';
 import { FilterCondition } from '../types/frappe';
 
 // Notice API service
@@ -148,61 +148,61 @@ export class NoticeService {
       return 0;
     }
   }
+}
+// Transform Frappe document to Notice interface
+// private static transformFromFrappe(doc: any): Notice {
+//   // The API already transforms the data, so we can use it directly
+//   // But we'll add a fallback for when getting single notices
+//   if (doc.iconType) {
+//     // Already transformed by API
+//     return doc;
+//   }
 
-  // Transform Frappe document to Notice interface
-  // private static transformFromFrappe(doc: any): Notice {
-  //   // The API already transforms the data, so we can use it directly
-  //   // But we'll add a fallback for when getting single notices
-  //   if (doc.iconType) {
-  //     // Already transformed by API
-  //     return doc;
-  //   }
+//   // Transform for single notice fetch (not yet transformed by API)
+//   const createdDate = new Date(doc.publish_date || doc.creation);
+//   const relativeTime = this.getRelativeTime(createdDate);
 
-  //   // Transform for single notice fetch (not yet transformed by API)
-  //   const createdDate = new Date(doc.publish_date || doc.creation);
-  //   const relativeTime = this.getRelativeTime(createdDate);
+//   // Map notice type to icon type
+//   const iconTypeMap: Record<string, Notice['iconType']> = {
+//     'Emergency': 'error',
+//     'Alert': 'error',
+//     'Announcement': 'campaign',
+//     'Policy Update': 'work',
+//     'System Notice': 'badge',
+//     'Information': 'campaign'
+//   };
 
-  //   // Map notice type to icon type
-  //   const iconTypeMap: Record<string, Notice['iconType']> = {
-  //     'Emergency': 'error',
-  //     'Alert': 'error',
-  //     'Announcement': 'campaign',
-  //     'Policy Update': 'work',
-  //     'System Notice': 'badge',
-  //     'Information': 'campaign'
-  //   };
+//   // Map priority to our format
+//   const priorityMap: Record<string, Notice['priority']> = {
+//     'Critical': 'high',
+//     'High': 'high',
+//     'Medium': 'medium',
+//     'Low': 'low'
+//   };
 
-  //   // Map priority to our format
-  //   const priorityMap: Record<string, Notice['priority']> = {
-  //     'Critical': 'high',
-  //     'High': 'high',
-  //     'Medium': 'medium',
-  //     'Low': 'low'
-  //   };
+//   return {
+//     id: doc.name,
+//     name: doc.name,
+//     title: doc.title,
+//     message: doc.content || '',
+//     time: relativeTime,
+//     iconType: (iconTypeMap[doc.notice_type] as Notice['iconType']) || 'campaign',
+//     isUnread: !doc.read_at,
+//     priority: (priorityMap[doc.priority] as Notice['priority']) || 'medium',
+//     action: doc.allow_acknowledgment && !doc.acknowledged_at ? {
+//       label: 'Acknowledge',
+//       type: 'dismiss',
+//       variant: 'primary'
+//     } : undefined,
+//     createdAt: doc.publish_date || doc.creation,
+//     updatedAt: doc.modified,
+//     userId: doc.user_id,
+//     category: doc.notice_type,
+//     status: doc.status === 'Archived' ? 'archived' : 'active'
+//   };
+// }
 
-  //   return {
-  //     id: doc.name,
-  //     name: doc.name,
-  //     title: doc.title,
-  //     message: doc.content || '',
-  //     time: relativeTime,
-  //     iconType: (iconTypeMap[doc.notice_type] as Notice['iconType']) || 'campaign',
-  //     isUnread: !doc.read_at,
-  //     priority: (priorityMap[doc.priority] as Notice['priority']) || 'medium',
-  //     action: doc.allow_acknowledgment && !doc.acknowledged_at ? {
-  //       label: 'Acknowledge',
-  //       type: 'dismiss',
-  //       variant: 'primary'
-  //     } : undefined,
-  //     createdAt: doc.publish_date || doc.creation,
-  //     updatedAt: doc.modified,
-  //     userId: doc.user_id,
-  //     category: doc.notice_type,
-  //     status: doc.status === 'Archived' ? 'archived' : 'active'
-  //   };
-  // }
-
-  // Calculate relative time
+// Calculate relative time
 //   private static getRelativeTime(date: Date): string {
 //     const now = new Date();
 //     const diffInMs = now.getTime() - date.getTime();
@@ -220,7 +220,4 @@ export class NoticeService {
 }
 
 // Export a singleton instance
-export const noticeService = new NoticeService();
-
-// Default export for compatibility
-export default NoticeService;
+export const noticeService = new NoticeService()
