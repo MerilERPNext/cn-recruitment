@@ -130,7 +130,7 @@ const ApprovalRejectionAdvanceList = ({
             {data?.reference_document?.employee_name}
           </p>
           <p className="text-xs text-gray-500">
-            {data.reference_document.custom_advance_type}
+            {data?.reference_document?.custom_advance_type}
           </p>
         </div>
 
@@ -164,13 +164,13 @@ const ApprovalRejectionAdvanceList = ({
         <div>
           <span className="block text-gray-400">Start Date</span>
           {formatToIndianDate(
-            data.reference_document.custom_repayment_start_date
+            data?.reference_document?.custom_repayment_start_date
           )}
         </div>
 
         <div>
           <span className="block text-gray-400">Posting Date</span>
-          {formatToIndianDate(data.reference_document.posting_date)}
+          {formatToIndianDate(data?.reference_document?.posting_date)}
         </div>
       </div>
 
