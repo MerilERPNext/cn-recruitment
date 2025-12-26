@@ -15,6 +15,8 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import CreateOvertimeRequest from "./CreateOvertimeRequest";
 import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Open" },
@@ -38,6 +40,13 @@ const MyOvertimeRequests = () => {
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
     currentEmployee?.employee || ""
   );
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canRequestAttendance = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "My Overtime"
+  );
+
   const [showForm, setShowForm] = useState(false);
 
   const [selectedStatus, setSelectedStatus] = useState("Open");
@@ -164,7 +173,7 @@ const MyOvertimeRequests = () => {
           </div>
         </div>
       </div>
-      {!isDesktop && plannedOvertimAllowed && (
+      {!isDesktop && plannedOvertimAllowed && canRequestAttendance && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
             <Button
