@@ -59,7 +59,17 @@ export default function TaxSheet() {
     }
   }, [selectedPeriod]);
 
-  if (!taxsheetData) return <div>Loading...</div>;
+  if (!taxsheetData) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
+          <span className="text-sm text-gray-500">Loading tax sheet...</span>
+        </div>
+      </div>
+    );
+  }
+  
 
   const buildSections = (data: TaxSheetData) => {
     const keys = Object.keys(data) as SectionKey[];

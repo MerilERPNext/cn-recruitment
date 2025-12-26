@@ -23,9 +23,9 @@ const ApprovalRejectionLoanList = ({
   onClick,
   loadingAction,
 }: ApprovalRejectionLoanProps) => {
-  if (!data) return null;
-
   const { isMobile } = useScreenSize();
+
+  if (!data) return null;
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -42,65 +42,70 @@ const ApprovalRejectionLoanList = ({
     return { bg: "gray-200", text: "gray-600" };
   };
 
+  /* ===================== MOBILE UI ===================== */
   if (isMobile) {
     return (
       <div
-        className="border rounded-lg p-4 bg-white space-y-3"
+        className="bg-white border border-gray-200 rounded-xl p-4 mb-3 shadow-sm"
         onClick={() => onClick?.(data)}
       >
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          className="accent-blue-500"
-          checked={isSelected}
-          onClick={(e) => e.stopPropagation()}
-          onChange={() => onToggleSelect?.(data?.todo_id)}
-          disabled={
-            isDisabled ||
-            actionsWithForm?.includes("Approve") ||
-            actionsWithForm?.includes("Reject")
-          }
-        />
-        <span className="text-sm font-medium">Select</span>
-      </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Employee</span>
-          <span className="font-medium">
-            {data?.reference_document?.applicant_name ||
-              data?.reference_document?.applicant}
-          </span>
+        {/* Header */}
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <p className="text-sm font-semibold">
+              {data?.reference_document?.applicant_name ||
+                data?.reference_document?.applicant}
+            </p>
+            <p className="text-xs text-gray-500">
+              {data?.reference_document?.loan_product}
+            </p>
+          </div>
+
+          <input
+            type="checkbox"
+            className="accent-blue-500 mt-1"
+            checked={isSelected}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => onToggleSelect?.(data?.todo_id)}
+            disabled={
+              isDisabled ||
+              actionsWithForm?.includes("Approve") ||
+              actionsWithForm?.includes("Reject")
+            }
+          />
         </div>
 
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Loan</span>
-          <span>{data?.reference_document?.loan_product}</span>
-        </div>
+        {/* Details */}
+        <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 mb-3">
+          <div>
+            <span className="block text-gray-400">Amount</span>
+            <span className="font-medium text-gray-800">
+              {data?.reference_document?.loan_amount}
+            </span>
+          </div>
 
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Amount</span>
-          <span>{data?.reference_document?.loan_amount}</span>
-        </div>
+          <div>
+            <span className="block text-gray-400">Interest</span>
+            <span className="font-medium text-gray-800">
+              {data?.reference_document?.rate_of_interest}%
+            </span>
+          </div>
 
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Interest</span>
-          <span>{data?.reference_document?.rate_of_interest}%</span>
-        </div>
-
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Start Date</span>
-          <span>
+          <div>
+            <span className="block text-gray-400">Start Date</span>
             {formatToIndianDate(
               data?.reference_document?.custom_repayment_start_date
             )}
-          </span>
+          </div>
+
+          <div>
+            <span className="block text-gray-400">Status</span>
+            <StatusBadge status={data?.reference_document?.status} />
+          </div>
         </div>
 
-        <div className="flex justify-between text-sm items-center">
-          <span className="text-gray-500">Status</span>
-          <StatusBadge status={data?.reference_document?.status} />
-        </div>
-
-        <div className="flex gap-2 pt-2">
+        {/* Actions */}
+        <div className="flex flex-wrap gap-2">
           {actions.map((action: string) => (
             <Button
               key={action}
@@ -129,6 +134,7 @@ const ApprovalRejectionLoanList = ({
     );
   }
 
+  /* ===================== DESKTOP UI (UNCHANGED) ===================== */
   return (
     <div
       className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -153,7 +159,7 @@ const ApprovalRejectionLoanList = ({
         />
       </div>
 
-      <div className="text-sm font-medium text-start">
+      <div className="text-sm font-medium">
         {data?.reference_document?.applicant_name ||
           data?.reference_document?.applicant}
       </div>

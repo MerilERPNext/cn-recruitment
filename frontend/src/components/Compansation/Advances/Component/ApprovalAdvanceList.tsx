@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useScreenSize } from "../../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import Button from "../../../shared/atoms/Button";
 import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
+
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -22,6 +24,8 @@ const ApprovalRejectionAdvanceList = ({
   onClick,
   loadingAction,
 }: ApprovalRejectionLoanProps) => {
+  const { isDesktop } = useScreenSize();
+
   if (!data) return null;
 
   const actions = data?.custom_doctype_actions
@@ -39,17 +43,100 @@ const ApprovalRejectionAdvanceList = ({
     return { bg: "gray-200", text: "gray-600" };
   };
 
-  return (
+  /* ===================== DESKTOP UI (UNCHANGED) ===================== */
+  if (isDesktop) {
+    return (
+      <div
+        className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+        style={{ gridTemplateColumns: "5% 15% 15% 10% 12% 12% 10% 13%" }}
+        onClick={() => onClick?.(data)}
+      >
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            className="accent-blue-500"
+            checked={isSelected}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => onToggleSelect?.(data?.todo_id)}
+            disabled={
+              isDisabled ||
+              actionsWithForm?.includes("Approve") ||
+              actionsWithForm?.includes("Reject")
+            }
+          />
+        </div>
 
+        <div className="text-sm font-medium">
+          {data?.reference_document?.employee_name}
+        </div>
+
+        <div>{data.reference_document.custom_advance_type}</div>
+
+        <div className="text-sm">
+          {data?.reference_document?.advance_amount}
+        </div>
+
+        <div>
+          {formatToIndianDate(
+            data.reference_document.custom_repayment_start_date
+          )}
+        </div>
+
+        <div>
+          {formatToIndianDate(data.reference_document.posting_date)}
+        </div>
+
+        <div>
+          <StatusBadge status={data?.reference_document?.status} />
+        </div>
+
+        <div className="flex gap-2">
+          {actions.map((action: string) => (
+            <Button
+              key={action}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(action, data);
+              }}
+              bgColor={getActionStyles(action).bg}
+              textColor={getActionStyles(action).text}
+              disabled={
+                loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action
+              }
+            >
+              {loadingAction?.id === data?.todo_id &&
+              loadingAction?.action === action ? (
+                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                action
+              )}
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  /* ===================== MOBILE CARD UI ===================== */
+  return (
     <div
-      className="grid items-center  gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
-      style={{ gridTemplateColumns: "6% 10% 10% 10% 10% 10% 10% 10% 10% 10%" }}
+      className="bg-white rounded-xl border border-gray-200 p-4 mb-3 shadow-sm"
       onClick={() => onClick?.(data)}
     >
-      <div className="flex items-center">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <p className="font-semibold text-sm">
+            {data?.reference_document?.employee_name}
+          </p>
+          <p className="text-xs text-gray-500">
+            {data?.reference_document?.custom_advance_type}
+          </p>
+        </div>
+
         <input
           type="checkbox"
-          className="accent-blue-500"
+          className="accent-blue-500 mt-1"
           checked={isSelected}
           onClick={(e) => e.stopPropagation()}
           onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -61,31 +148,37 @@ const ApprovalRejectionAdvanceList = ({
         />
       </div>
 
-      <div className="text-sm font-medium text-start">
-        {data?.reference_document?.applicant_name || data?.reference_document?.applicant
-        }
+      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+        <div>
+          <span className="block text-gray-400">Amount</span>
+          <span className="font-medium text-gray-800">
+            {data?.reference_document?.advance_amount}
+          </span>
+        </div>
+
+        <div>
+          <span className="block text-gray-400">Status</span>
+          <StatusBadge status={data?.reference_document?.status} />
+        </div>
+
+        <div>
+          <span className="block text-gray-400">Start Date</span>
+          {formatToIndianDate(
+            data?.reference_document?.custom_repayment_start_date
+          )}
+        </div>
+
+        <div>
+          <span className="block text-gray-400">Posting Date</span>
+          {formatToIndianDate(data?.reference_document?.posting_date)}
+        </div>
       </div>
 
-      <div className="flex flex-col text-sm">
-        <span>{data?.reference_document?.loan_product}</span>
-      </div>
-
-      <div>{data.reference_document.loan_amount}</div>
-      <div>{data.reference_document.rate_of_interest}%</div>
-      <div>{data?.reference_document?.total_payable_interest}</div>
-      <div>{formatToIndianDate(data.reference_document.custom_repayment_start_date)}</div>
-      <div>{formatToIndianDate(data.reference_document.posting_date)}</div>
-
-      <div>
-        <StatusBadge status={data?.reference_document?.status} />
-      </div>
-
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {actions.map((action: string) => (
           <Button
             key={action}
             onClick={(e) => {
-              e.preventDefault();
               e.stopPropagation();
               onAction(action, data);
             }}

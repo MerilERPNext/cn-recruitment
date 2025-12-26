@@ -43,29 +43,32 @@ const CardHeader = ({
                   title="Employee Advance Requests" onSeeAll={function (): void {
                       throw new Error("Function not implemented.");
                   } }                                />
-        <div className="border border-gray-200 rounded-lg overflow-x-auto">
+        <div className=" rounded-lg overflow-x-auto">
           <CardTable
-            titles={[
-                "Advance Name",
-                "Amount",
-                "Deductions",
-                "Start Date",
-                "End Date",
-                "Status",
-                "Actions"
-            ]}
-            columnWidths={[
-              "10%",
-              "10%",
-              "10%",
-              "10%",
-              "10%",
-              "20%",
-              "20%",
-            ]}
-          >
+  titles={[
+    "Select",
+    "Employee Name",
+    "Advance Type",
+    "Amount",
+    "Start Date",
+    "End Date",
+    "Status",
+    "Actions",
+  ]}
+  columnWidths={[
+    "5%",   // Select (checkbox)
+    "15%",  // Employee Name
+    "15%",  // Advance Type
+    "10%",  // Amount
+    "12%",  // Start Date
+    "12%",  // End Date
+    "10%",  // Status
+    "13%",  // Actions
+  ]}
+>
+          
             <ApprovalList
-              status="Open"
+              status="Pending"
               doctype={"Employee Advance"}
               pageSize={4}
               showPagination={false}
