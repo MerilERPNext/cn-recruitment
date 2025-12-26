@@ -56,7 +56,7 @@ import { CustomError } from "../types/attendance";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
 import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
-import { useGetAllNotices } from "../hooks/useNotices";
+import { useGetUserNotices } from "../hooks/useNotices";
 import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import SearchMembers from "./shared/SearchMembers";
 import Events from "./Events/Events";
@@ -114,9 +114,12 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [
-    ["status", "!=", "Expired"],
-  ]);
+  // const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [
+  //   ["status", "!=", "Expired"],
+  // ]);
+  const { data: userNotices, isLoading: userNoticeIsLoading } = useGetUserNotices();
+
+  console.log(userNotices, "-----------------------------");
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -591,13 +594,13 @@ export default function DesktopDashboard() {
 
             {/* Hero Banner */}
             <div className=" w-full max-w-full overflow-hidden rounded-2xl bg-white mb-2">
-              {!noticeIsLoading && notices && notices?.length > 0 && (
+              {!userNoticeIsLoading && userNotices && userNotices?.length > 0 && (
                 <Carousel
                   className="w-full h-full max-h-[150px]"
                   showNavigation={false}
                 >
-                  {notices?.map((item) => (
-                    <CarouselSlide key={item.name}>
+                  {userNotices?.map((item) => (
+                    <CarouselSlide key={item.name} autoScrollDelay={item.auto_scroll_frequency * 1000}>
                       <NoticeSlide data={item} />
                     </CarouselSlide>
                   ))}

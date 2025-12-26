@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useEmployeeDocument, useSubmitAcknowledgement } from "../../hooks/useEmployeeDocuments";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-  const { data } = useEmployeeDocument();
+    const { data: userId } = useLoggedInUser();
+    const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data } = useEmployeeDocument(user?.employee || "");
+  console.log("Document Data:",user?.employee,userId, data);
   const [isMobile, setIsMobile] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const {
@@ -16,7 +21,7 @@ const DocumentLibrary = () => {
 
   const handleSubmit = () => {
     if (!selectedDocId) return;
-  
+
     submitAcknowledgement(selectedDocId, {
       onSuccess: () => {
         alert("Acknowledgement submitted successfully!");
@@ -61,7 +66,7 @@ const DocumentLibrary = () => {
   const getFileUrl = (path: string) => `${path}`;
 
   return (
-    <div className="bg-white p-4">
+    <div className="bg-white p-4 ">
       <div className="flex items-start justify-between">
         <div className="border-gray-200 my-2 pb-2">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -149,7 +154,7 @@ const DocumentLibrary = () => {
         )}
       </div>
 
-      <div className="bg-white border rounded-xl overflow-scroll shadow-sm">
+      <div className="bg-white border rounded-xl overflow-scroll shadow-sm min-h-[45vh]">
         <table className="w-full text-left">
           <thead className="bg-gray-100 text-gray-600 text-sm font-semibold">
             <tr>
@@ -190,10 +195,10 @@ const DocumentLibrary = () => {
                     {/* Acknowledgement Required → show Acknowledge button */}
                     {doc.status === "Acknowledgement Required" && (
                       <button
-                      onClick={() => {
-                        setSelectedFile(doc.file_name); // preview ke liye
-                        setSelectedDocId(doc.name);     // 👈 acknowledgement ke liye
-                      }}
+                        onClick={() => {
+                          setSelectedFile(doc.file_name); // preview ke liye
+                          setSelectedDocId(doc.name);     // 👈 acknowledgement ke liye
+                        }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all"
                       >
                         Acknowledge
@@ -254,7 +259,7 @@ const DocumentLibrary = () => {
             {/* PDF viewer */}
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={getFileUrl(selectedFile + "#toolbar=0")}
+                src={selectedFile + "#toolbar=0"}
                 title="Document PDF"
                 className="w-full h-[80vh]"
               ></iframe>
@@ -307,7 +312,7 @@ const DocumentLibrary = () => {
                 {/* Only show Acknowledge button if status = "Acknowledgement Required" */}
                 {showAcknowledgement && acknowledged && (
                   <button
-                  onClick={handleSubmit}
+                    onClick={handleSubmit}
                     className="ml-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md"
                   >
                     Submit

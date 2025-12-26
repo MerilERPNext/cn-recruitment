@@ -52,7 +52,6 @@ export default function IncomeComputationSheet() {
                   <div className="text-center">Taxable Amount</div>
                 </div>
               </div>
-      
               {/* Content Sections */}
               <div className="border">
                 {incomeData.map((section, sectionIdx) => (

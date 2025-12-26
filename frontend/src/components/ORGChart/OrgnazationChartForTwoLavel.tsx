@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import {
   ReactFlow,
   Node,
@@ -9,6 +9,7 @@ import {
   useNodesState,
   useEdgesState,
   Controls,
+  Position,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import PersonNode from "./PersonNode";
@@ -18,6 +19,7 @@ import { useNavigate } from "react-router";
 import { IoChevronForwardOutline } from "react-icons/io5";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import dagre from "dagre";
 
 const normalizeId = (id: unknown): string | null => {
   if (!id) return null;
@@ -74,6 +76,53 @@ export const findGrandParent = (
   return null;
 };
 
+const getLayoutedElements = (
+  nodes: Node<NodeData>[],
+  edges: Edge[],
+  options = { direction: "TB" }
+) => {
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+  const nodeWidth = 240; // Approximate width of PersonNode
+  const nodeHeight = 120; // Approximate height of PersonNode
+
+  dagreGraph.setGraph({
+    rankdir: options.direction,
+    align: "UL", // align to upper left to keep compactness
+    nodesep: 80, // Horizontal spacing
+    ranksep: 100, // Vertical spacing
+  });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  const newNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    return {
+      ...node,
+      targetPosition: Position.Top,
+      sourcePosition: Position.Bottom,
+      // We are shifting the dagre node position (anchor=center center) to the top left
+      // so it matches React Flow's default anchor point (top left).
+      position: {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      },
+      style: { opacity: 1 }, // Ensure node is visible
+    };
+  });
+
+  return { nodes: newNodes, edges };
+};
+
 // ✅ Show grandparent → parent → current user → children (only current branch)
 const buildHierarchyWithGrandparent = (
   user: EmployeeHierarchy,
@@ -82,14 +131,13 @@ const buildHierarchyWithGrandparent = (
 ): { nodes: Node<NodeData>[]; edges: Edge[] } => {
   const nodes: Node<NodeData>[] = [];
   const edges: Edge[] = [];
-  const baseY = 100;
 
   // 🧓 Grandparent (top)
   if (grandParent) {
     nodes.push({
       id: grandParent.id,
       type: "person",
-      position: { x: 400, y: baseY },
+      position: { x: 0, y: 0 },
       data: {
         id: grandParent.id,
         name: grandParent.name,
@@ -107,7 +155,7 @@ const buildHierarchyWithGrandparent = (
         id: `e${grandParent.id}-${parent.id}`,
         source: grandParent.id,
         target: parent.id,
-        type: "step",
+        type: "smoothstep",
         style: { stroke: "#d1d5db", strokeWidth: 2 },
       });
     }
@@ -118,7 +166,7 @@ const buildHierarchyWithGrandparent = (
     nodes.push({
       id: parent.id,
       type: "person",
-      position: { x: 400, y: baseY + 150 },
+      position: { x: 0, y: 0 },
       data: {
         id: parent.id,
         name: parent.name,
@@ -135,7 +183,7 @@ const buildHierarchyWithGrandparent = (
       id: `e${parent.id}-${user.id}`,
       source: parent.id,
       target: user.id,
-      type: "step",
+      type: "smoothstep",
       style: { stroke: "#d1d5db", strokeWidth: 2 },
     });
   }
@@ -147,7 +195,7 @@ const buildHierarchyWithGrandparent = (
   nodes.push({
     id: user.id,
     type: "person",
-    position: { x: 400, y: baseY + 300 },
+    position: { x: 0, y: 0 },
     data: {
       id: user.id,
       name: user.name,
@@ -163,18 +211,11 @@ const buildHierarchyWithGrandparent = (
 
   // 👶 Children (limit 5)
   if (visibleChildren.length > 0) {
-    const childSpacing = 250;
-    const totalWidth = (visibleChildren.length - 1) * childSpacing;
-    const startX = 400 - totalWidth / 2;
-
-    visibleChildren.forEach((child, index) => {
-      const childX = startX + index * childSpacing;
-      const childY = baseY + 450;
-
+    visibleChildren.forEach((child) => {
       nodes.push({
         id: child.id,
         type: "person",
-        position: { x: childX, y: childY },
+        position: { x: 0, y: 0 },
         data: {
           id: child.id,
           name: child.name,
@@ -192,7 +233,7 @@ const buildHierarchyWithGrandparent = (
         id: `e${user.id}-${child.id}`,
         source: user.id,
         target: child.id,
-        type: "step",
+        type: "smoothstep",
         style: { stroke: "#d1d5db", strokeWidth: 2 },
       });
     });
@@ -216,6 +257,15 @@ export default function ThreeLevelOrgChart() {
     employeeId
   );
 
+  const calculateLayout = useCallback((nodes: Node<NodeData>[], edges: Edge[]) => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      nodes,
+      edges
+    );
+    setNodes([...layoutedNodes]);
+    setEdges([...layoutedEdges]);
+  }, [setNodes, setEdges]);
+
   useEffect(() => {
     if (!employeeHierarchy || !employeeId) return;
 
@@ -223,29 +273,29 @@ export default function ThreeLevelOrgChart() {
       ? employeeHierarchy
       : [employeeHierarchy];
 
-    let currentUser: EmployeeHierarchy | null = null;
+    let currentUserNode: EmployeeHierarchy | null = null;
     let parent: EmployeeHierarchy | null = null;
     let grandParent: EmployeeHierarchy | null = null;
 
     for (const hierarchyData of hierarchyArray) {
-      currentUser = findNode(hierarchyData, employeeId);
-      if (currentUser) {
+      currentUserNode = findNode(hierarchyData, employeeId);
+      if (currentUserNode) {
         parent = findParent(hierarchyData, employeeId);
         grandParent = findGrandParent(hierarchyData, employeeId);
         break;
       }
     }
 
-    if (currentUser) {
-      const { nodes, edges } = buildHierarchyWithGrandparent(
-        currentUser,
+    if (currentUserNode) {
+      const { nodes: initialNodes, edges: initialEdges } = buildHierarchyWithGrandparent(
+        currentUserNode,
         parent,
         grandParent
       );
-      setNodes(nodes);
-      setEdges(edges);
+      // Determine layout based on initial nodes and edges
+      calculateLayout(initialNodes, initialEdges);
     }
-  }, [employeeHierarchy, employeeId, setNodes, setEdges]);
+  }, [employeeHierarchy, employeeId, calculateLayout]);
 
   return (
     <div className="w-full bg-gray-100">
@@ -270,8 +320,7 @@ export default function ThreeLevelOrgChart() {
         </button>
       </div>
 
-      <div className="h-[400px] px-2">
-
+      <div className="h-[400px] px-2 bg-white">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -286,11 +335,10 @@ export default function ThreeLevelOrgChart() {
           defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
           zoomOnScroll={false}
           zoomOnPinch={false}
+          preventScrolling={false}
           nodesDraggable={false}
-          draggable={false}
-          // panOnScroll
-          // panOnScrollSpeed={1}
-          panOnDrag={false}
+          draggable={false} // Allow panning
+          panOnDrag={false} // Allow panning
         >
           <Controls position="top-right" showZoom showFitView />
         </ReactFlow>

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLoan } from "../services/loan";
-import { Loan } from "../components/SalarySlip/Loan/Type/loan";
+import { Loan } from "../components/Compansation/Loan/Type/loan";
 import {
   createLoanApplication,
   getAllLoanProducts,

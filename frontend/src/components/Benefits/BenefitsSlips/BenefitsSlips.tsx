@@ -6,7 +6,7 @@ import { useState } from "react";
 import { MoreVertical } from "lucide-react";
 
 import { FaRegEye } from "react-icons/fa";
-import SalarySlipPDFModal from "../../SalarySlip/SalarySlipPDFModal";
+import SalarySlipPDFModal from "../../Compansation/SalarySlipPDFModal";
 import CardTable from "../../shared/CardTable";
 import { BenefitPayslip, useGetBenefitSlipHTML } from "../../../hooks/useBenefit";
 import { useCurrentEmployeeIdCard } from "../../../hooks/useEmployee";

@@ -284,7 +284,7 @@ const AttendanceSummary = () => {
             {/* Header */}
             <div className="mb-4">
               {/* Team Summary */}
-              <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0 mt-5">
+              <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 px-6 mt-5">
                 <h2 className="base-title">Today's Team Summary</h2>
                 <div className="grid grid-cols-3 gap-3">
                   {teamSummaryData.map((data, index) => (
