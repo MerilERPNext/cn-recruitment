@@ -26,9 +26,9 @@ const MyTeamRequest: React.FC = () => {
                         "Actions",
                     ]}
                     columnWidths={[
-                        "8%",
+                        "2%",
                         "10%",
-                        "10%",
+                        "18%",
                         "10%",
                         "10%",
                         "10%",

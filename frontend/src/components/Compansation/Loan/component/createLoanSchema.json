@@ -18,13 +18,11 @@
           "label": "Loan Product",
           "errorLabel": "Loan Product",
           "placeholder": "Select Loan Product",
-          "validate": {
-         
-          },
+          "validate": {},
           "input": true,
           "dataSrc": "url",
           "data": {
-            "url": "/api/resource/Loan Product"
+            "url": "/api/resource/Loan Product?company={{ data.company }}"
           },
           "valueProperty": "name",
           "template": "<span>{{ item.name }}</span>",
@@ -38,7 +36,7 @@
           "label": "Loan Amount (INR)  <span style='color:red;margin-left:3px;'> *</span>",
           "errorLabel": "Loan Amount (INR)",
           "validate": {
-            "required" : true,
+            "required": true,
             "min": 1
           },
           "input": true
@@ -115,9 +113,7 @@
           "key": "description",
           "label": "Reason",
           "errorLabel": "Reason",
-          "validate": {
-         
-          },
+          "validate": {},
           "input": true,
           "placeholder": "Enter reason"
         }
