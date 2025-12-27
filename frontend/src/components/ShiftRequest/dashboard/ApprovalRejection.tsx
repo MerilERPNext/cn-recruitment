@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { StatusBadge } from "../AllShiftsDashboard";
 
 // Props type
@@ -86,14 +87,17 @@ const ApprovalRejectionQueue = ({
         />
       </div>
       <div className="truncate text-gray-900 font-medium text-sm text-start">
-        {data.reference_document.employee_name}
+        <WrapperHoverCard employeeId={data?.reference_document.employee}>
+          <span>{data.reference_document.employee_name}
+          </span>
+        </WrapperHoverCard>
       </div>
       <div className="flex text-gray-900 text-sm flex-col">
         <span>{data.reference_document.shift_type}</span>
         <span className="text-[12px] text-gray-700 whitespace-nowrap">
-           {(data.reference_document.custom_start_time && data.reference_document.custom_end_time)
-      ? `${data.reference_document.custom_start_time} - ${data.reference_document.custom_end_time}`
-      : "---"}</span>
+          {(data.reference_document.custom_start_time && data.reference_document.custom_end_time)
+            ? `${data.reference_document.custom_start_time} - ${data.reference_document.custom_end_time}`
+            : "---"}</span>
       </div>
       <div className="flex items-center text-gray-900 text-sm">
         {formatToIndianDate(data.reference_document.from_date)}
@@ -126,7 +130,7 @@ const ApprovalRejectionQueue = ({
                 }
               >
                 {loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                   <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   action

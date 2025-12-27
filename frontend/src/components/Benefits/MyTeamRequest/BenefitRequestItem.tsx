@@ -2,6 +2,7 @@
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 // Props type
 type BenefitRequestItemProps = {
@@ -91,7 +92,9 @@ const BenefitRequestItem = ({
           />
         </div>
         <div className="truncate text-gray-900 font-medium text-sm text-start">
-          {data.reference_document.employee_name}
+          <WrapperHoverCard employeeId={data.reference_document.employee}>
+            {data.reference_document.employee_name}
+          </WrapperHoverCard>
         </div>
         <div className="flex text-gray-900 text-sm flex-col">
           {data.reference_document.earning_component}
