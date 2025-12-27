@@ -75,7 +75,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
 
                     {subtitle && (
                         <p className="mt-1 text-sm text-slate-600">
-                            {value !== null && value !== undefined ? (
+                            {value != null ? (
                                 <>
                                     <span className="font-semibold text-xl text-blue-500">
                                         {value}
