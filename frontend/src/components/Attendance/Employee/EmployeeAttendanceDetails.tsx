@@ -31,6 +31,9 @@ import { LeaveDetailsCard } from "./LeaveDetailsCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import Badge from "../../shared/Badge";
 import { getBadgePropsByStatus } from "../../../utils/helperUtils";
+import { useTargetUser } from "../../../context/ViewedUserContext";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 interface EmployeeAttendanceDetailsProps {
   date?: Date;
@@ -48,6 +51,8 @@ const EmployeeAttendanceDetails = ({
   const { search } = useLocation();
   const query = new URLSearchParams(search);
   const dateParam = query.get("date");
+  const { targetEmployeeId } = useTargetUser();
+
   const status = propStatus || query.get("status");
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState(false);
@@ -83,6 +88,8 @@ const EmployeeAttendanceDetails = ({
       : null!
   ) as { data: LeaveApplication | undefined };
 
+  const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
+
   const { data: buttonStatus } = useGetButtonsStatus(
     currentEmployee?.employee || ""
   );
@@ -95,24 +102,46 @@ const EmployeeAttendanceDetails = ({
   }, [validDate]);
 
   const { data: empCheckIns, isLoading } = useAllEmployeeCheckIns(
-    validDate
+    validDate && effectiveEmployeeId
       ? [
         ["time", "between", [start, end]],
-        ["employee", "=", currentEmployee?.employee],
+        ["employee", "=", effectiveEmployeeId],
       ]
       : []
   );
 
   const { data: attendanceRequests } = useAllAttendanceRequests(
     1000,
-    validDate && currentEmployee?.employee
+    validDate && effectiveEmployeeId
       ? [
-        ["employee", "=", currentEmployee.employee],
+        ["employee", "=", effectiveEmployeeId],
         ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
         ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
         ["docstatus", "!=", 2],
       ]
       : []
+  );
+
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canRequestAttendance = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance"
+  );
+  const canRevokeLeave = isActionEnabled(
+    userUiPermission,
+    "revoke_leave_request",
+    "My Attendance"
+  );
+  const canReplaceLeave = isActionEnabled(
+    userUiPermission,
+    "replace_leave_request",
+    "My Attendance"
+  );
+  const canEditLeave = isActionEnabled(
+    userUiPermission,
+    "edit_leave_request",
+    "My Attendance"
   );
 
   const hasExistingRequest =
@@ -221,17 +250,17 @@ const EmployeeAttendanceDetails = ({
 
     return (
       <div className="mt-10 flex gap-2">
-        {showButton?.show_revoke_button && (
+        {showButton?.show_revoke_button && canRevokeLeave && (
           <Button size="md" fullWidth onClick={handleRevoke}>
             {revokePending ? <CircularLoader color="white" /> : "Revoke"}
           </Button>
         )}
-        {showButton?.show_replace_button && (
+        {showButton?.show_replace_button && canReplaceLeave && (
           <Button size="md" fullWidth onClick={() => setShowReplaceModal(true)}>
             Replace
           </Button>
         )}
-        {showButton?.show_edit_button && (
+        {showButton?.show_edit_button && canEditLeave && (
           <Button size="md" fullWidth onClick={handleEdit}>
             Edit
           </Button>
@@ -333,7 +362,7 @@ const EmployeeAttendanceDetails = ({
 
   const renderFooterButton = () => {
     if (isLeaveRecord) return null;
-
+    if (!canRequestAttendance) return null;
     const isButtonDisabled =
       status !== "absent" && status !== "half-day" && status !== "half day";
 

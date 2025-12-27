@@ -337,4 +337,14 @@ export const leaveService = {
 
     return response as PolicyQuestionsResponse;
   },
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createLeaveApplication: async (leaveData: any) => {
+    return FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.create_leave_application",
+      {
+        leave_data: leaveData,
+      }
+    );
+  },
 };

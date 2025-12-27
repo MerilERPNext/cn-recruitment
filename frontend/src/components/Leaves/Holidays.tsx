@@ -16,6 +16,8 @@ import { Holiday } from "../../types/leaves";
 import { processHolidays } from "./holidayHelper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { ViewAll } from "../shared/atoms/ViewAll";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 interface HolidayCardProps {
   holiday: Holiday;
@@ -38,6 +40,13 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
   const weekday = format(dateObj, "EEEE");
   const { openModal } = useRequestLeaveModal();
 
+  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
+  const canRequestLeave = isActionEnabled(
+    userUiPermission,
+    "optional_holiday_apply",
+    "Holidays"
+  );
+
   return (
     <div className="flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 mb-2">
       <div className="flex items-center gap-3">
@@ -54,7 +63,7 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
         </div>
       </div>
 
-      {showApply && !statusLabel && (
+      {showApply && !statusLabel && canRequestLeave && (
         <button
           type="button"
           disabled={disabledApply}

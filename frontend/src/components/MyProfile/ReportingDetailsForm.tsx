@@ -48,19 +48,19 @@ const ReportingDetailsForm = ({ onCancel, isEdit = false }: ReportingDetailsProp
 
     const handleSubmit = async () => {
         try {
-            const submission = await formInstance.current?.submit();
+            const submission = await formInstance.current?.submit(); // returns all form data
             const data = submission?.data;
 
             await addEmployeeReportingDetails({
+                employee: currentEmployee?.employee || "",
                 reports_to: String(data?.reports_to ?? ""),
                 custom_dotted_line_manager: String(data?.custom_dotted_line_manager ?? ""),
                 custom_hrbp: String(data?.custom_hrbp ?? ""),
                 custom_hod: String(data?.custom_hod ?? ""),
                 custom_cxo: String(data?.custom_cxo ?? ""),
                 start_date: String(data?.start_date ?? ""),
-                employee: String(currentEmployee?.employee ?? ""),
-            });
 
+            });
             onCancel?.();
         } catch (err) {
             const formatedError = errorResponseFormater(

@@ -410,3 +410,18 @@ export const useGetPolicyQuestions = (
     retry: 1,
   });
 };
+
+export function useCreateLeaveApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mutationFn: (leaveData: any) =>
+      leaveService.createLeaveApplication(leaveData),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myLeaveRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+    },
+  });
+}

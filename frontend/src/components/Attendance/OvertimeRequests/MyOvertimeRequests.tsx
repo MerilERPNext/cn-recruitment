@@ -14,6 +14,9 @@ import { Plus } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CreateOvertimeRequest from "./CreateOvertimeRequest";
 import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
+import { useTargetUser } from "../../../context/ViewedUserContext";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Open" },
@@ -31,10 +34,19 @@ const MyOvertimeRequests = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string
   );
+  const { targetEmployeeId } = useTargetUser();
+  const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
     currentEmployee?.employee || ""
   );
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canRequestAttendance = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "My Overtime"
+  );
+
   const [showForm, setShowForm] = useState(false);
 
   const [selectedStatus, setSelectedStatus] = useState("Open");
@@ -103,15 +115,15 @@ const MyOvertimeRequests = () => {
                 "Status",
               ]}
             >
-              {currentEmployee?.employee ? (
+              {effectiveEmployeeId ? (
                 <DataListView
-                  queryKey="planned-overtime-request"
+                  queryKey={["planned-overtime-request", effectiveEmployeeId]}
                   customAPI={{
                     method:
                       "cn_leave_shift_managment.api.get_open_approval_todos",
                     params: {
                       doctype: "Planned Overtime Request",
-                      employee: currentEmployee?.employee,
+                      employee: effectiveEmployeeId,
                       status: selectedStatus,
                     },
                   }}
@@ -161,7 +173,7 @@ const MyOvertimeRequests = () => {
           </div>
         </div>
       </div>
-      {!isDesktop && plannedOvertimAllowed && (
+      {!isDesktop && plannedOvertimAllowed && canRequestAttendance && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
             <Button

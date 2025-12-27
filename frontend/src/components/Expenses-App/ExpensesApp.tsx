@@ -7,6 +7,8 @@ import ExpenseFormModal from "./ExpenseFormModal";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import ExpenseAdvanceForm from "./ExpenseAdvance/ExpenseAdvanceForm";
 import Button from "../shared/atoms/Button";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 type TabName = "Expenses" | "Team" | "My Advances" | "Team Advances";
 
@@ -23,6 +25,14 @@ const ExpensesApp: React.FC = () => {
   const location = useLocation();
   const [currentExpenseForm, setCurrentExpenseForm] = useState<string | null>(
     null
+  );
+
+  const { data: userUiPermission } = useGetUiPermission("Expenses");
+
+  const canAddExpense = isActionEnabled(
+    userUiPermission,
+    "expense_claim_request",
+    "Expense Claims"
   );
 
   const [activeTab, setActiveTab] = useState<TabName>("Expenses");
@@ -62,6 +72,7 @@ const ExpensesApp: React.FC = () => {
     location.pathname === "/webapp/expenses-app/team-requests/all";
 
   const shouldShowActionButton = () => {
+    if (!canAddExpense) return false;
     if (isFormActive || isTeamRequests || isTeamRequestsAll) return false;
     return activeTab === "Expenses" || activeTab === "My Advances";
   };

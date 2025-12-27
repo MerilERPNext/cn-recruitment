@@ -8,6 +8,8 @@ import Badge from "../shared/Badge";
 import { LeaveCardProps } from "../../types/leaves";
 import { useState, useRef, useEffect } from "react";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -29,6 +31,13 @@ const EmpLeaveRequestCard = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { openModal } = useRequestLeaveModal();
+
+  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
+  const canRequestLeave = isActionEnabled(
+    userUiPermission,
+    "revoke_replace_edit",
+    "My Requests"
+  );
 
   const leaveButtonConfig = buttonStatus?.leave_applications?.find(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -195,7 +204,7 @@ const EmpLeaveRequestCard = ({
             </Tooltip>
           </div>
           <div className="text-sm text-gray-900 text-start flex gap-2 items-center relative">
-            {data?.custom_allow_revoke && (
+            {data?.custom_allow_revoke && canRequestLeave && (
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
@@ -234,15 +243,17 @@ const EmpLeaveRequestCard = ({
                 label={status?.label || ""}
               />
 
-              <div className="relative ml-2">
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="p-1 border border-gray-300 rounded-md hover:bg-gray-100 flex items-center justify-center"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-                {menuOpen && <ActionMenu />}
-              </div>
+              {canRequestLeave && (
+                <div className="relative ml-2">
+                  <button
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    className="p-1 border border-gray-300 rounded-md hover:bg-gray-100 flex items-center justify-center"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                  {menuOpen && <ActionMenu />}
+                </div>
+              )}
             </div>
           </div>
         </div>

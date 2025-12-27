@@ -84,6 +84,19 @@ export interface Employee {
   custom_weekly_off?: string;
 }
 
+export interface Award {
+  name: string;
+  award_name: string;
+  description: string;
+  award_category: string;
+  award_period: string;
+  period_start_date?: string;
+  period_end_date?: string;
+  icon?: string;
+  display_on_profile: 0 | 1;
+  employee: string;
+}
+
 export interface EmployeeNode {
   name: string;
   id: string;

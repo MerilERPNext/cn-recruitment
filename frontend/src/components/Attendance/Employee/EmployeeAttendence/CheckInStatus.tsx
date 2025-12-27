@@ -3,12 +3,12 @@ import { useState } from "react";
 import { useGetAllEmployeeCheckin } from "../../../../hooks/useAttendance";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
-import CircularLoader from "../../../shared/atoms/CircularLoader";
 import { EmployeeAllCheckin } from "../../../../types/attendance";
 import { generateMonthOptions } from "../../../../utils/helperUtils";
 import { MonthOption } from "../../AllEmpAttendance/SelectByMonth";
 import { endOfMonth, parse, startOfMonth } from "date-fns";
 import { Select } from "../../../shared/atoms/Select";
+import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 
 const getMonthDateRange = (monthValue: string) => {
     const parsedMonth = parse(monthValue, "yyyy-MM", new Date());
@@ -45,8 +45,11 @@ const CheckInStatus = () => {
 
     if (isLoading) {
         return (
-            <div className="p-4 text-sm text-gray-500">
-                <CircularLoader />
+            <div>
+                <div className="animate-pulse mb-2">
+                    <div className="h-8 w-1/2 bg-gray-200 rounded-lg" />
+                </div>
+                <TableSkeleton columns={4} rows={16} />
             </div>
         );
     }
@@ -117,7 +120,7 @@ const CheckInStatus = () => {
 
                                     <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm">
                                         <span
-                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${item.log_type === "IN"
+                                            className={`inline-flex rounded-xl px-2 py-1 text-xs font-semibold ${item.log_type === "IN"
                                                 ? "bg-green-100 text-green-700"
                                                 : "bg-red-100 text-red-700"
                                                 }`}

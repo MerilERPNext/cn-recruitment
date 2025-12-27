@@ -7,7 +7,7 @@
 const routePreloadMap: Record<string, () => Promise<any>> = {
   '/webapp/attendance': () => import('../components/Attendance/AttendanceLayout'),
   '/webapp/leave-app': () => import('../components/Leaves/LeaveApp'),
-  '/webapp/salary-slip-app': () => import('../components/SalarySlip/SalarySlipApp'),
+  '/webapp/salary-slip-app': () => import('../components/Compansation/SalarySlipApp'),
   '/webapp/expenses-app': () => import('../components/Expenses-App/ExpensesApp'),
   '/webapp/recruitment-app': () => import('../components/RecruitmentApp'),
   '/webapp/shift-request': async () => {

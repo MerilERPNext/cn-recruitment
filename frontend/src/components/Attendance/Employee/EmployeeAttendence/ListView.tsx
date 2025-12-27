@@ -9,6 +9,7 @@ import { useState } from "react";
 import ViewPolicies from "./ViewPolicies";
 import CheckInStatus from "./CheckInStatus";
 import AuditReport from "./AuditReport";
+import OvertimeLog from "./OvertimeLog";
 
 const ListView = () => {
   const { isDesktop } = useScreenSize();
@@ -50,6 +51,7 @@ const ListView = () => {
             { label: "View Policies", icon: <Shield className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "policies", label: "View Policies", sideBarSize: "xl" }) } },
             { label: "Check In Status", icon: <LogIn className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "checkInStatus", label: "Check In Status", sideBarSize: "xxl" }) } },
             { label: "Audit Report", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "auditReport", label: "Audit Report", sideBarSize: "xxl" }) } },
+            { label: "Overtime Log", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "overtimeLog", label: "Overtime Log", sideBarSize: "xxl" }) } },
           ]}
         >
           <button className="p-1  border-1 rounded-lg hover:bg-gray-200">
@@ -68,6 +70,7 @@ const ListView = () => {
             {openSidebarFor.for === "policies" && <ViewPolicies />}
             {openSidebarFor.for === "checkInStatus" && <CheckInStatus />}
             {openSidebarFor.for === "auditReport" && <AuditReport />}
+            {openSidebarFor.for === "overtimeLog" && <OvertimeLog />}
           </div>
         </SideDrawer>
       </div>

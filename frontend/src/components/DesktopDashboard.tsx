@@ -56,7 +56,7 @@ import { CustomError } from "../types/attendance";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
 import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
-import { useGetAllNotices } from "../hooks/useNotices";
+import { useGetUserNotices } from "../hooks/useNotices";
 import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import SearchMembers from "./shared/SearchMembers";
 import Events from "./Events/Events";
@@ -114,7 +114,12 @@ export default function DesktopDashboard() {
     time: ["between", [start, end]],
   };
   const encodedFilters = encodeURIComponent(JSON.stringify(filters));
-  const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [["status", "!=", "Expired"]]);
+  // const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [
+  //   ["status", "!=", "Expired"],
+  // ]);
+  const { data: userNotices, isLoading: userNoticeIsLoading } = useGetUserNotices();
+
+  console.log(userNotices, "-----------------------------");
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -352,8 +357,12 @@ export default function DesktopDashboard() {
         className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 border-b border-gray-200 px-8 py-2 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
-          <div>
+        <div
+          className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600
+  border-b border-gray-200 px-8 py-2
+  flex items-center sticky top-0 z-10 gap-4"
+        >
+          <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
                 <h1 className="text-xl font-bold text-white">
@@ -366,15 +375,16 @@ export default function DesktopDashboard() {
               </>
             ) : (
               <>
-                <div className="w-52 h-6 my-2 rounded-lg bg-gray-300 animate-pulse"></div>
+                <div className="w-52 h-5 my-2 rounded-lg bg-gray-300 animate-pulse"></div>
                 <div className="w-32 h-4 my-1 rounded-lg bg-gray-300 animate-pulse"></div>
               </>
             )}
           </div>
-          <SearchMembers />
+          <div className="flex-1 min-w-0 flex justify-center">
+            <SearchMembers />
+          </div>
 
-
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-shrink-0">
             <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-blue-500 rounded-lg transition-colors"
@@ -426,7 +436,7 @@ export default function DesktopDashboard() {
                       Employee ID: {currentEmployee?.employee}
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300">
                     <img
                       src={currentEmployee?.image || defaultProfile}
                       alt="User avatar"
@@ -512,7 +522,7 @@ export default function DesktopDashboard() {
 
                     <button
                       onClick={() => {
-                        clearTargetEmployee()
+                        clearTargetEmployee();
                         navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
@@ -584,19 +594,21 @@ export default function DesktopDashboard() {
 
             {/* Hero Banner */}
             <div className=" w-full max-w-full overflow-hidden rounded-2xl bg-white mb-2">
-              {!noticeIsLoading && notices && notices?.length > 0 && (
+              {!userNoticeIsLoading && userNotices && userNotices?.length > 0 && (
                 <Carousel
                   className="w-full h-full max-h-[150px]"
                   showNavigation={false}
                 >
-                  {notices?.map((item) => (
-                    <CarouselSlide key={item.name}>
+                  {userNotices?.map((item) => (
+                    <CarouselSlide key={item.name} autoScrollDelay={item.auto_scroll_frequency * 1000}>
                       <NoticeSlide data={item} />
                     </CarouselSlide>
                   ))}
-                </Carousel>)}
+                </Carousel>
+              )}
             </div>
           </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
             <div className="lg:col-span-7 flex flex-col gap-4">
               {/* Tasks Awaiting */}
@@ -611,7 +623,7 @@ export default function DesktopDashboard() {
 
             <div className="lg:col-span-3 flex flex-col gap-4">
               {/* Total Hours Worked + Daily Timings */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
+              <div className="bg-white rounded-lg p-6 shadow-md border border-[rgba(0,0,0,0.05)]">
                 <div className="text-center">
                   <p className="section-title mb-2 text-left">
                     Total hours worked
@@ -777,27 +789,22 @@ export default function DesktopDashboard() {
               </div>
 
               {/* Events Widget */}
+
               <Events />
-
-
 
               {/* Requests */}
               <div className="bg-white rounded-lg shadow-md relative border border-[rgba(0,0,0,0.05)] pb-4">
-                <div className="sticky top-0 border-b px-6 py-2 z-10 flex justify-between items-center mb-3 px-6">
+                <div className="sticky top-0 border-b px-6 py-2 flex justify-between items-center mb-3 px-6">
                   <h3 className="section-title mb-0 text-left">Requests</h3>
                   <button
                     onClick={() => {
-                      navigate(
-                        "/webapp/requests"
-                      );
+                      navigate("/webapp/requests");
                     }}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     View All
                   </button>
                 </div>
-
-
 
                 <div className="grid grid-cols-2 gap-4 px-6">
                   {/* Apply Leave */}

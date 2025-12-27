@@ -70,6 +70,7 @@ export interface MyAttendanceRequest {
   reference_document: AttendanceRequest;
   reference_type: string;
   allocated_to: string;
+  allocated_to_emp_id: string;
   custom_allow_revoke: boolean;
   todo_id: string;
   username: string;
@@ -131,6 +132,7 @@ export interface MyPlannedAttendanceRequest {
   custom_approval_type: string;
   reference_type: string;
   allocated_to: string;
+  allocated_to_emp_id: string;
   custom_allow_revoke: boolean;
   todo_id: string;
   username: string;
@@ -417,3 +419,15 @@ export interface AuditReportResponse {
   shift_and_policy: ShiftAndPolicyAudit[];
   week_off: WeekOffAudit[];
 }
+
+export interface IOvertimeLog {
+  name: string;
+  employee: string;
+  date: string;
+  creation: string;
+  overtime_for: string;
+  shift: string | null;
+  overtime_hrs: number;
+  compoff_created: number;
+  owner: string;
+};

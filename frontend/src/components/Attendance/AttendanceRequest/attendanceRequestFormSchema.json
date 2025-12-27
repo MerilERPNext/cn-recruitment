@@ -53,9 +53,6 @@
           "input": true,
           "placeholder": "Select Employee",
           "customClass": "mb-4",
-          "validate": {
-            "required": true
-          },
           "customConditional": "show = data.isForOthers === true;",
           "dataSrc": "url",
           "data": {
@@ -92,6 +89,7 @@
           "input": true,
           "customClass": "mb-4",
           "disabled": true,
+          "errorLabel": "Company",
           "customConditional": "show = data.isForOthers === true;",
           "customDefaultValue": " ",
           "calculateValue": " ",
@@ -268,7 +266,7 @@
           "customClass": "mb-4",
           "enableTime": false,
           "validate": {},
-          "customConditional": "show = !['Clockin'].includes(data.request_type || '');",
+          "customConditional": "show = !['Clockin','Out Duty'].includes(data.request_type || '');",
           "calculateValue": "value = data.request_type === 'Short Attendance Request' ? data.from_date : value",
           "disabled": false,
           "redrawOn": "from_date"
@@ -470,10 +468,7 @@
           "input": true,
           "placeholder": "Provide additional details...",
           "rows": 4,
-          "customClass": "mb-4",
-          "validate": {
-            "required": true
-          }
+          "customClass": "mb-4"
         },
         {
           "label": "Attachments",
@@ -487,9 +482,6 @@
           "privateDownload": false,
           "filePattern": ".pdf,.doc,.docx,.jpg,.jpeg,.png",
           "tooltip": "Upload receipts or supporting documents.",
-          "validate": {
-            "required": false
-          },
           "conditional": {
             "show": true,
             "when": "show_attachment",

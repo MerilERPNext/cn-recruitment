@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Modal from "../CommonModel";
 import BenefitRequestForm from "./BenefitsRequestForm";
 import CardTable from "../../shared/CardTable";
@@ -10,7 +10,7 @@ import Button from "../../shared/atoms/Button";
 import { useCurrentEmployeeIdCard } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { createPortal } from "react-dom";
-import { BenefitPayslip, useGetBenefitClaimLockingPeriod, useGetBenefitRequestLockView } from "../../../hooks/useBenefit";
+import { BenefitPayslip } from "../../../hooks/useBenefit";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 
@@ -21,6 +21,7 @@ const MyRequests: React.FC = () => {
     const handleRequestBenefit = () => {
         setShowBenefitForm(true);
     };
+    const [selectedYear, setSelectedYear] = useState("");
 
     const { data: employeeIdCard } = useCurrentEmployeeIdCard();
 
@@ -32,19 +33,9 @@ const MyRequests: React.FC = () => {
     const years = Array.from({ length: 5 }, (_, i) =>
         (currentYear - i).toString()
     );
-    const [selectedYear, setSelectedYear] = useState(currentYear.toString().slice(2));
+
 
     const yearPeriod = (!selectedYear ? "" : `${selectedYear}-${parseInt(selectedYear) + 1}`);
-    const { data: employee } = useCurrentEmployeeIdCard();
-    const today = new Date().toISOString().split("T")[0];
-
-    const { data, isLoading } = useGetBenefitRequestLockView(employee?.id || "", yearPeriod, today);
-    const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } = useGetBenefitClaimLockingPeriod(employee?.id || "", yearPeriod, today);
-    const showBenefitRequestButton = !benefitClaimLockLoading && benefitClaimLock?.status === "success";
-    const LockRequestMessage = useMemo(() => {
-        if (!data || isLoading) return null;
-        return <div className={` text-sm rounded-lg p-4 mt-2 mb-4 ${data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"}`}>{data?.message}</div>
-    }, [data, isLoading]);
 
     return (
         <div className="px-4 pt-2">
@@ -85,18 +76,16 @@ const MyRequests: React.FC = () => {
                         </>
                     )}
                 </button>
-                {showBenefitRequestButton &&
-                    <Button
-                        bgColor="blue-600"
-                        size="md"
-                        className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4"
-                        onClick={handleRequestBenefit}
-                    >
-                        Request Benefit
-                    </Button>
-                }
+
+                <Button
+                    bgColor="blue-600"
+                    size="md"
+                    className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4"
+                    onClick={handleRequestBenefit}
+                >
+                    Request Benefit
+                </Button>
             </div>
-            {LockRequestMessage}
             <CardTable
                 titles={[
                     "Employee Name",
@@ -112,7 +101,7 @@ const MyRequests: React.FC = () => {
                 <DataListView
                     queryKey={["mybenefit-request", employeeIdCard?.id || "", employeeIdCard?.company || "", yearPeriod || ""]}
                     customAPI={{
-                        method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_data_list_view",
+                        method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_payslip_list_view",
                         params: {
                             employee: employeeIdCard?.id || "",
                             company: employeeIdCard?.company || "",

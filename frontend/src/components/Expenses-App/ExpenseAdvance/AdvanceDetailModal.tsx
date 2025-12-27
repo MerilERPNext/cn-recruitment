@@ -1,6 +1,6 @@
 import React from "react";
 import { X } from "lucide-react";
-import { StatusBadge } from "../../SalarySlip/Advances/StatusBadge";
+import { StatusBadge } from "../../Compansation/Advances/StatusBadge";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";

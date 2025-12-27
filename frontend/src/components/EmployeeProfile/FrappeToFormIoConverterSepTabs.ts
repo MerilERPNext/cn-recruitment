@@ -1,6 +1,57 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { profileService } from "../../services/profileService";
 
+// Cache for table field metadata to prevent duplicate API calls
+const tableFieldsCache = new Map<string, any[]>();
+
+/**
+ * Fetches table field metadata with caching
+ * @param doctype - The doctype of the table to fetch fields for
+ * @returns Array of field definitions
+ */
+async function getTableFields(doctype: string): Promise<any[]> {
+  if (tableFieldsCache.has(doctype)) {
+    return tableFieldsCache.get(doctype)!;
+  }
+
+  try {
+    const res = await profileService.getEmployeeFieldPermissions({
+      doctype,
+      detailed: 1,
+      all_fields: 1,
+    });
+
+    if (res?.length) {
+      tableFieldsCache.set(doctype, res);
+      return res;
+    }
+  } catch (e) {
+    console.error(`Failed to fetch fields for table ${doctype}`, e);
+  }
+
+  return [];
+}
+
+/**
+ * Clears the table fields cache
+ */
+export function clearTableFieldsCache() {
+  tableFieldsCache.clear();
+}
+
+/**
+ * Pre-fetches all table field metadata for the given fields
+ * @param apiFields - Array of field definitions
+ */
+async function prefetchTableFields(apiFields: any[]): Promise<void> {
+  const tableFields = apiFields.filter(
+    (f) => f.fieldtype === "Table" && f.options
+  );
+  const uniqueDoctypes = [...new Set(tableFields.map((f) => f.options))];
+
+  await Promise.all(uniqueDoctypes.map((doctype) => getTableFields(doctype)));
+}
+
 // Enhanced mapping for better FormIO compatibility
 const formioFieldTypeMap: Record<string, string> = {
   // Text fields
@@ -358,6 +409,9 @@ export async function convertToFormioWithTabMetadata(
     return { tabs: [], hasTabs: false };
   }
 
+  // Pre-fetch all table field metadata to avoid duplicate API calls
+  await prefetchTableFields(apiFields);
+
   const tabs: TabWithSchema[] = [];
   let currentTab: any = null;
   let currentSection: any = null;
@@ -518,32 +572,36 @@ export async function convertToFormioWithTabMetadata(
         const allowedFields = new Set([
           "Data",
           "Small Text",
+          "Text",
+          "Long Text",
           "Select",
           "Link",
+          "Dynamic Link",
           "Currency",
           "Float",
           "Int",
-          "Text",
           "Check",
           "Email",
           "Password",
           "Phone",
           "Percent",
+          "Date",
+          "Datetime",
+          "Time",
+          "Attach",
+          "Attach Image",
+          "Read Only",
         ]);
 
         let childComponents: any[] = [];
         if (field.options) {
-          try {
-            const res = await profileService.getEmployeeFieldPermissions({
-              doctype: field.options,
-              detailed: 1,
-              all_fields: 1,
-            });
+          const res = await getTableFields(field.options);
 
-            if (res?.length) {
-              childComponents = res
-                .filter((fd: any) => allowedFields.has(fd.fieldtype))
-                .map((childField: any) => ({
+          if (res?.length) {
+            childComponents = res
+              .filter((fd: any) => allowedFields.has(fd.fieldtype))
+              .map((childField: any) => {
+                const component: any = {
                   label: childField.label,
                   type: frappeFieldTypeToFormioFieldType(
                     childField.fieldtype,
@@ -552,13 +610,20 @@ export async function convertToFormioWithTabMetadata(
                   input: true,
                   applyMaskOn: "change",
                   tableView: true,
-                }));
-            }
-          } catch (e) {
-            console.error(
-              `Failed to fetch fields for child table ${field.options}`,
-              e
-            );
+                };
+
+                // Special handling for file fields in datagrid
+                if (childField.fieldtype === "Attach" || childField.fieldtype === "Attach Image") {
+                  component.storage = "customBase64";
+                  component.multiple = false;
+                  component.fileTypes =
+                    childField.fieldtype === "Attach Image"
+                      ? [{ label: "Images", value: "image/*" }]
+                      : [];
+                }
+
+                return component;
+              });
           }
         }
 
@@ -581,7 +646,35 @@ export async function convertToFormioWithTabMetadata(
         // Handle value if present
         const fieldValue = employeeData[field.fieldname];
         if (Array.isArray(fieldValue)) {
-          mapped.defaultValue = fieldValue;
+          // Check for file fields that need transformation
+          const fileKeys = childComponents
+            .filter((c: any) => c.type === "file")
+            .map((c: any) => c.key);
+
+          if (fileKeys.length > 0) {
+            mapped.defaultValue = fieldValue.map((row: any) => {
+              const newRow = { ...row };
+              fileKeys.forEach((key: string) => {
+                const val = newRow[key];
+                if (typeof val === "string" && val.trim() !== "") {
+                  // Transform string URL to FormIO file object
+                  newRow[key] = [
+                    {
+                      storage: "url",
+                      url: val,
+                      name: val.split("/").pop(),
+                      originalName: val.split("/").pop(),
+                      size: 0,
+                      type: "file",
+                    },
+                  ];
+                }
+              });
+              return newRow;
+            });
+          } else {
+            mapped.defaultValue = fieldValue;
+          }
         }
 
       } else {
@@ -1002,6 +1095,9 @@ export async function convertFieldsToSimpleTabbedData(
     return { tabs: [] };
   }
 
+  // Pre-fetch all table field metadata to avoid duplicate API calls
+  await prefetchTableFields(apiFields);
+
   const tabs: SimpleTab[] = [];
   let currentTab: SimpleTab | null = null;
 
@@ -1077,34 +1173,49 @@ export async function convertFieldsToSimpleTabbedData(
       };
 
       if (field.fieldtype === 'Table' && field.options) {
-        try {
-          const res = await profileService.getEmployeeFieldPermissions({
-            doctype: field.options,
-            detailed: 1,
-            all_fields: 1,
-          });
+        const res = await getTableFields(field.options);
 
-          if (res?.length && Array.isArray(fieldValue)) {
-            // Map table rows using child field definitions
-            simpleField.value = fieldValue.map((row: any) => {
-              const rowData: Record<string, any> = {};
-              res.forEach((childField: any) => {
-                if (childField.fieldtype === 'Section Break' || childField.fieldtype === 'Column Break') return;
-                rowData[childField.fieldname] = row[childField.fieldname];
-              });
-              // Keep original row data if needed, but for simple view, mapped data is cleaner
-              // Or better yet, maybe we just want to enhance the value structure?
-              // The user said "mapped with the field permission".
-              // Let's assume they want the row object to only contain relevant fields or be structured nicely.
-              // For "Card Renderer", it takes Record<string, any>.
+        if (res?.length && Array.isArray(fieldValue)) {
+          // Map table rows using child field definitions
+          simpleField.value = fieldValue.map((row: any) => {
+            const rowData: Record<string, any> = {};
+            res.forEach((childField: any) => {
+              if (
+                childField.fieldtype === "Section Break" ||
+                childField.fieldtype === "Column Break"
+              )
+                return;
 
-              // Let's return the row as is but ensuring we have the keys from the child fields.
-              // Actually, simply returning the row is often enough, but let's filter by permissions
-              return rowData;
+              let childSimpleType = "text";
+              if (
+                ["Int", "Float", "Currency", "Percent"].includes(
+                  childField.fieldtype
+                )
+              )
+                childSimpleType = "number";
+              else if (
+                ["Date", "Datetime", "Time"].includes(childField.fieldtype)
+              )
+                childSimpleType = "date";
+              else if (
+                ["Select", "Link", "Dynamic Link"].includes(
+                  childField.fieldtype
+                )
+              )
+                childSimpleType = "select";
+              else if (["Check"].includes(childField.fieldtype))
+                childSimpleType = "boolean";
+              else if (["Attach", "Attach Image"].includes(childField.fieldtype))
+                childSimpleType = "file";
+
+              rowData[childField.fieldname] = {
+                value: row[childField.fieldname],
+                type: childSimpleType,
+                label: childField.label || childField.fieldname,
+              };
             });
-          }
-        } catch (e) {
-          console.error(`Failed to fetch child fields for table ${field.fieldname}`, e);
+            return rowData;
+          });
         }
       }
 

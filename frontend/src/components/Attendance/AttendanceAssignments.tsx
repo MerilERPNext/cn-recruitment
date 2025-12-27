@@ -195,7 +195,10 @@ const AttendanceAssignments = ({
             key: "effective_from",
             type: "datetime",
             input: true,
-            widget: { type: "calendar" },
+            widget: { type: "calendar", minDate: new Date() },
+            datePicker: {
+              minDate: new Date(),
+            },
             format: "dd-MM-yyyy",
             defaultValue: new Date(),
             placeholder: "dd-mm-yyyy",
@@ -303,7 +306,7 @@ const AttendanceAssignments = ({
             onClick={() => {
               handleSubmit();
             }}
-            className="w-full rounded-lg py-3 bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="w-full rounded-lg py-3 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
           >
             {mutation?.isPending ? (
               <CircularLoader size="sm" color="white" />

@@ -1,8 +1,8 @@
 import FrappeAPI from "../utils/frappeAPI";
 
 export interface UiPermissionAction {
-  action_name: string;
   enabled: boolean;
+  action_name: string;
 }
 export interface UiPermissionPage {
   page_name: string;
@@ -19,10 +19,12 @@ export interface UiPermissionModule {
 export type UiPermissionResponse = UiPermissionModule[];
 
 export const permissionService = {
-  getUiPermission: async (): Promise<UiPermissionResponse> => {
+  getUiPermission: async (appName?: string): Promise<UiPermissionResponse> => {
     const response = await FrappeAPI.callMethod(
       "nextai.api.permission.moduler_ui_perm.get_list",
-      {}
+      {
+        ...(appName ? { app_name: appName } : {}),
+      }
     );
 
     return response as UiPermissionResponse;

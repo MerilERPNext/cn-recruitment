@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import { useState } from "react";
@@ -15,12 +16,8 @@ export default function PasswordReset() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
-
-  // mutations
   const mutation = useUpdatePasswordViaKey();
   const validationMutation = useUpdatePasswordValidation();
-
-  // key from URL
   const queryParams = new URLSearchParams(window.location.search);
   const key = queryParams.get("key") || "";
 
@@ -37,33 +34,21 @@ export default function PasswordReset() {
       return;
     }
 
-    // 🔹 Step 1: Password validation API
+    //  Password validation API
     validationMutation.mutate(
       { new_password: newPassword },
       {
         onSuccess: (res: any) => {
-          /**
-           * Expected API response structure:
-           * res.feedback.password_policy_validation_passed
-           * res.feedback.warning
-           * res.feedback.suggestions
-           */
-
           const feedback = res?.feedback;
           const isValid =
             feedback?.password_policy_validation_passed === true;
-
-          // ❌ Password policy failed
           if (!isValid) {
             const warning = feedback?.warning || "";
             const suggestions: string[] =
               feedback?.suggestions || [];
-
-            // show alert / toast
             if (warning) {
               toast.error(warning);
             }
-
             if (suggestions.length > 0) {
               toast(
                 suggestions.join("\n"),
@@ -75,10 +60,10 @@ export default function PasswordReset() {
               warning ||
                 "Password does not meet security requirements."
             );
-            return; // ⛔ stop here
+            return; 
           }
 
-          // ✅ Step 2: Reset password API (ONLY if validation passed)
+          //  Reset password API (ONLY if validation passed)
           mutation.mutate(
             { key, new_password: newPassword },
             {
@@ -116,7 +101,6 @@ export default function PasswordReset() {
     <div className="min-h-screen bg-[#4F9DD9]">
       <main className="flex items-center justify-center min-h-[calc(100vh-80px)] py-12 px-4">
         <div className="w-full max-w-md">
-          {/* Icon */}
           <div className="flex justify-center mb-8">
             <div className="relative w-16 h-16 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full flex items-center justify-center">
               <Lock className="w-8 h-8 text-blue-600" />
@@ -135,7 +119,6 @@ export default function PasswordReset() {
           </p>
 
           <div className="bg-white rounded-lg shadow-lg p-8 space-y-6">
-            {/* New Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 New Password
@@ -165,8 +148,6 @@ export default function PasswordReset() {
                 </button>
               </div>
             </div>
-
-            {/* Confirm Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Confirm Password
@@ -200,15 +181,11 @@ export default function PasswordReset() {
                 </button>
               </div>
             </div>
-
-            {/* Error */}
             {error && (
               <p className="text-red-500 text-sm">
                 {error}
               </p>
             )}
-
-            {/* Submit */}
             <button
               onClick={handleSubmit}
               disabled={isLoading}

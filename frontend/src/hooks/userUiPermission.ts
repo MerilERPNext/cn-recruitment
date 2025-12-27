@@ -4,10 +4,10 @@ import {
   UiPermissionResponse,
 } from "../services/permissionService";
 
-export const useGetUiPermission = () => {
+export const useGetUiPermission = (appName?: string) => {
   return useQuery<UiPermissionResponse>({
-    queryKey: ["ui-permission"],
-    queryFn: () => permissionService.getUiPermission(),
-    staleTime: 5 * 60 * 1000, // cache for 5 minutes
+    queryKey: ["ui-permission", appName ?? "all"],
+    queryFn: () => permissionService.getUiPermission(appName),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
