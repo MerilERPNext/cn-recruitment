@@ -376,7 +376,7 @@ const AttendanceSummary = () => {
             {/* Header */}
             <div className="mb-4">
               {/* Team Summary */}
-              <div className="space-y-3 border-b-1 bg-white border-gray-200 pt-0 mt-4">
+              <div className="space-y-3 border-b bg-white border-gray-200 pt-0 mt-4">
 
                 <div className="flex">
                   <h2 className="base-title">Today's Team Summary</h2>
