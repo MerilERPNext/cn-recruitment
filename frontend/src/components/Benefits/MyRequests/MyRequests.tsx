@@ -85,7 +85,7 @@ const MyRequests: React.FC = () => {
                         </>
                     )}
                 </button>
-                {showBenefitRequestButton &&
+                {!showBenefitRequestButton &&
                     <Button
                         bgColor="blue-600"
                         size="md"

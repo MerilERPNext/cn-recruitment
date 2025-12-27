@@ -73,12 +73,18 @@
                     "customConditional": "show = !!data.earning_component;"
                 },
                 {
+                    "type": "textarea",
+                    "key": "custom_note_by_employee",
+                    "label": "Note by employee",
+                    "placeholder": "Add a note...",
+                    "rows": 4
+                },
+                {
                     "type": "select",
                     "key": "custom_payroll_period",
                     "label": "Payroll Period",
                     "placeholder": "Payroll Period",
                     "input": true,
-                    "disabled": true,
                     "dataSrc": "custom",
                     "data": {
                         "custom": "values=[];if(data.currentEmployeeId&&data.earning_component){xhr=new XMLHttpRequest();xhr.open('GET','/api/method/cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.get_max_amount?employee='+data.currentEmployeeId+'&earning_component='+data.earning_component,false);xhr.send();if(xhr.status===200){res=JSON.parse(xhr.responseText);if(res.message&&res.message.data&&res.message.data.payroll_period){values=[{payroll_period:res.message.data.payroll_period}];data.custom_payroll_period=res.message.data.payroll_period;}}}"

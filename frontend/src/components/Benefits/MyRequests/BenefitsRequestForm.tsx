@@ -128,7 +128,7 @@ export default function BenefitRequestForm({
             custom_note_by_employee: submission.data.custom_note_by_employee,
             claimed_amount: submission.data.claimed_amount,
             custom_max_amount: submission.data.custom_max_amount,
-            custom_payroll_period: submission.data.custom_payroll_period
+            custom_payroll_period: submission?.data?.custom_payroll_period
         };
 
         mutation.mutate(submissionData as Record<string, unknown>, {

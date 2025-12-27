@@ -5,7 +5,6 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
-import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
 import { useCommentOnBenefitClaim } from "../../../hooks/useBenefit";
 import { createPortal } from "react-dom";
 
@@ -72,7 +71,6 @@ const BenefitRequestItem = ({
     }
   }
 
-  const commentMutation = useExpenseCommentUpdate();
   if (!data) return null;
 
   const actions = data?.custom_doctype_actions
