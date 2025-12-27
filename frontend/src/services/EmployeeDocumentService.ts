@@ -2,9 +2,10 @@ import { DocumentItem } from "../types/employeeDocument";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const EmployeeDocumentService = {
-  getDraftEmployeeDocument: async (): Promise<DocumentItem[]> => {
+  getDraftEmployeeDocument: async (employeeId: string): Promise<DocumentItem[]> => {
     const response = await FrappeAPI.getDocumentList("Employee Documents", {
         fields: ["*"],
+        filters: [["employee", "=", employeeId]]
     });
 
     return response.data as DocumentItem[];

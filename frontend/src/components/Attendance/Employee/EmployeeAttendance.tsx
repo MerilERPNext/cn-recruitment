@@ -29,12 +29,21 @@ import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
 import { ViewAll } from "../../shared/atoms/ViewAll";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const { setSidebarOpen } = useSidebar();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canRequestAttendance = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary"
+  );
+
   const [showDetailsFor, setShowDetailsFor] = useState<{
     date: Date;
     status: string;
@@ -257,7 +266,7 @@ const EmployeeAttendance = () => {
         {/* ------------------------------------------------- Calendar End---------------------------------------------- */}
 
         {/* Request Attendance Correction - Only show for mobile */}
-        {!isDesktop && (
+        {!isDesktop && canRequestAttendance && (
           <div className="bg-white p-4 border-b-1 border-gray-200 rounded-bl-lg rounded-br-lg">
             <div className="flex gap-2">
               <button

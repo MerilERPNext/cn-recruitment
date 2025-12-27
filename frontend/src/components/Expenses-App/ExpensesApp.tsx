@@ -27,7 +27,7 @@ const ExpensesApp: React.FC = () => {
     null
   );
 
-  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
+  const { data: userUiPermission } = useGetUiPermission("Expenses");
 
   const canAddExpense = isActionEnabled(
     userUiPermission,
