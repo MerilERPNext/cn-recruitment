@@ -37,6 +37,7 @@ import AttendanceChart from "../AttendanceChart";
 import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
 import { ViewAll } from "../shared/atoms/ViewAll";
+import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 
 const AttendanceSummary = () => {
   const navigate = useNavigate();
@@ -105,6 +106,7 @@ const AttendanceSummary = () => {
   ];
 
   const [showAttendanceRequestModal, setShowAttendanceRequestModal] = useState(false);
+  const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
 
   const quickAction: {
     section: string;
@@ -147,7 +149,7 @@ const AttendanceSummary = () => {
         background: "bg-blue-50",
         actions: [
           { label: "View My Overtime", type: "link", href: "/webapp/attendance/my-overtime-requests" },
-          { label: "+ Log Overtime", type: "primary", onClick: () => setShowAttendanceRequestModal(true) }
+          { label: "+ Log Overtime", type: "primary", onClick: () => setShowOvertimeRequest(true) }
         ]
       },
       {
@@ -456,6 +458,15 @@ const AttendanceSummary = () => {
           <AttendanceRequestFormV2
             onClose={() => setShowAttendanceRequestModal(false)}
           />
+        )}
+        {showOvertimeRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <CreateOvertimeRequest
+                onCancel={() => setShowOvertimeRequest(false)}
+              />
+            </div>
+          </div>
         )}
       </div>
     </>

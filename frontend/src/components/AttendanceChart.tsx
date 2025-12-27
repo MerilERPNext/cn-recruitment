@@ -78,7 +78,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
 
   const daysInMonth = getDaysInCurrentMonth();
 
-  const totalDaysForChart = present + absent + leaves;
+  const totalDaysForChart = daysInMonth - (present + absent + leaves + week_offs);
   // Percentages based on total working days
   const presentPercent = totalDaysForChart > 0 ? (present / totalDaysForChart) * 100 : 0;
   const absentPercent = totalDaysForChart > 0 ? (absent / totalDaysForChart) * 100 : 0;
