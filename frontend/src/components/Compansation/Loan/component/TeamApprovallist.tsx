@@ -3,6 +3,7 @@ import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import Button from "../../../shared/atoms/Button";
 import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -122,7 +123,7 @@ const ApprovalRejectionLoanList = ({
               className="flex-1"
             >
               {loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action ? (
+                loadingAction?.action === action ? (
                 <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
               ) : (
                 action
@@ -159,9 +160,11 @@ const ApprovalRejectionLoanList = ({
         />
       </div>
 
-      <div className="text-sm font-medium">
-        {data?.reference_document?.applicant_name ||
-          data?.reference_document?.applicant}
+      <div className="text-sm font-medium text-start">
+        <WrapperHoverCard employeeId={data?.reference_document?.custom_employee}>
+          {data?.reference_document?.applicant_name ||
+            data?.reference_document?.applicant}
+        </WrapperHoverCard>
       </div>
 
       <div className="text-sm">
@@ -202,7 +205,7 @@ const ApprovalRejectionLoanList = ({
             }
           >
             {loadingAction?.id === data?.todo_id &&
-            loadingAction?.action === action ? (
+              loadingAction?.action === action ? (
               <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
             ) : (
               action
