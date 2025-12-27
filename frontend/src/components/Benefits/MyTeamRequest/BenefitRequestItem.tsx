@@ -309,9 +309,9 @@ const BenefitRequestItem = ({
                 size="sm"
                 bgColor="blue-100"
                 textColor="blue-600"
-                disabled={!rejectionComment.trim() || commentMutation.isPending}
+                disabled={!rejectionComment.trim() || CommentBenefitClaim.isPending}
               >
-                {commentMutation.isPending ? (
+                {CommentBenefitClaim.isPending ? (
                   <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   "Save & Continue"
