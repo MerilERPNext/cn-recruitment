@@ -14,6 +14,8 @@ import { useFileUploader } from "../../../hooks/useFileUploader";
 import CircularLoader from "../../shared/atoms/CircularLoader";
 import { FormSchema, SchemaComponent } from "../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import HeaderBar from "../../HeaderBar";
 
 interface BenefitRequestFormProps {
     isOpen: boolean;
@@ -26,6 +28,7 @@ export default function BenefitRequestForm({
     onClose,
     onSuccess,
 }: BenefitRequestFormProps) {
+    const { isDesktop } = useScreenSize();
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name || ""
@@ -124,6 +127,8 @@ export default function BenefitRequestForm({
             earning_component: submission.data.earning_component,
             custom_note_by_employee: submission.data.custom_note_by_employee,
             claimed_amount: submission.data.claimed_amount,
+            custom_max_amount: submission.data.custom_max_amount,
+            custom_payroll_period: submission.data.custom_payroll_period
         };
 
         mutation.mutate(submissionData as Record<string, unknown>, {
@@ -160,15 +165,20 @@ export default function BenefitRequestForm({
                 onMouseDown={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-20">
-                    <h2 className="text-xl font-semibold">Create Employee Benefit Claim</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-full hover:bg-gray-100 transition"
-                    >
-                        <X />
-                    </button>
-                </div>
+                {isDesktop ?
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-20">
+                        <h2 className="text-xl font-semibold">Request Benefit Claim</h2>
+                        <button
+                            onClick={onClose}
+                            className="p-2 rounded-full hover:bg-gray-100 transition"
+                        >
+                            <X />
+                        </button>
+                    </div>
+                    :
+
+                    <HeaderBar title="Request Benefit Claim" onBack={onClose} />
+                }
 
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto pb-20 px-6">

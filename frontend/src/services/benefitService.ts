@@ -58,3 +58,40 @@ export const getAllAccruedReimbursements = async (employee: string, company: str
     return response;
 };
 
+export const putCommentBenefitClaim = async (doc_name: string, comment: string) => {
+    const response = await FrappeAPI.updateDocument(
+        "Employee Benefit Claim",
+        doc_name,
+        {
+            custom_note_by_approver: comment
+        }
+    );
+    return response;
+};
+
+export const getBenefitRequestLockView = async (employee: string, payroll_period: string, posting_date: string) => {
+    const response = await FrappeAPI.callMethod(
+        "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_claim_locking_period_visibility",
+        {
+            employee,
+            payroll_period,
+            posting_date,
+            doctype: "Employee Benefit Claim"
+        }
+    );
+
+    return response;
+};
+
+export const getBenefitClaimLockingPeriod = async (employee: string, payroll_period: string, posting_date: string) => {
+    const response = await FrappeAPI.callMethod(
+        "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_claim_locking_period",
+        {
+            employee,
+            payroll_period,
+            posting_date,
+            doctype_name: "Employee Benefit Claim"
+        }
+    );
+    return response;
+};
