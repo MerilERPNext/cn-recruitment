@@ -434,3 +434,12 @@ export const buildLeavePayload = ({
       submission.custom_second_half_day_date?.split("T")[0],
   };
 };
+
+//sidebar dot counts mapper
+export const NOTIFICATION_TITLE_MAP: Record<string, string[]> = {
+  "Help Desk": ["Helpdesk"],
+  Compensation: ["Salary Slip"],
+  "Leaves & Holidays": ["Leaves"],
+  Attendance: ["Attendance"],
+  Expenses: ["Expenses"],
+};

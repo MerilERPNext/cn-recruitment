@@ -18,6 +18,7 @@ import type {
   AccrualJournalMetadataResponse,
   AccrualJournalEntriesResponse,
   PolicyQuestionsResponse,
+  AttendanceStatusResponse,
 } from "../types/leaves";
 import toast from "react-hot-toast";
 
@@ -425,3 +426,21 @@ export function useCreateLeaveApplication() {
     },
   });
 }
+
+export const useGetAttendanceStatus = (
+  employeeId: string | undefined,
+  fromDate: string,
+  toDate: string
+) => {
+  return useQuery<AttendanceStatusResponse>({
+    queryKey: ["attendance-status", employeeId, fromDate, toDate],
+    queryFn: () => {
+      if (!employeeId) {
+        throw new Error("Employee ID is required");
+      }
+      return leaveService.getAttendanceStatus(employeeId, fromDate, toDate);
+    },
+    enabled: !!employeeId && !!fromDate && !!toDate,
+    staleTime: 5 * 60 * 1000,
+  });
+};
