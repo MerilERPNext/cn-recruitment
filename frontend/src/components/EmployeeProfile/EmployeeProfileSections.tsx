@@ -23,7 +23,7 @@ interface EditableField {
     key: string;
     label: string;
 }
-const EmployeeProfileSections = () => {
+export default function EmployeeProfileSections() {
     const { targetEmployeeId } = useTargetUser();
 
     const { data: userId } = useLoggedInUser();
@@ -103,6 +103,7 @@ const EmployeeProfileSections = () => {
     if (!employeeId || fieldPermissionsLoading || employee.isLoading || !tabs.length) {
         return <ProfileGridSkeleton />;
     }
+    console.log(tabs)
     return (
         <div>
             <div className="flex items-start justify-between">
@@ -201,9 +202,6 @@ const EmployeeProfileSections = () => {
         </div>
     );
 };
-
-export default EmployeeProfileSections;
-
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CardsRenderer = ({ items }: { items: Record<string, any>[] }) => {

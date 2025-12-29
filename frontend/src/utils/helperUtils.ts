@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   differenceInMinutes,
+  endOfMonth,
   format,
   isAfter,
   isValid,
   parse,
   parseISO,
+  startOfMonth,
   subMonths,
 } from "date-fns";
 import { FilterCondition, FilterOperator } from "../types/frappe";
@@ -21,9 +23,8 @@ export const gradientClassMap: Record<string, string> = {
 };
 
 export const getStatusGradient = (firstHalf: string, secondHalf: string) => {
-  const gradient = `linear-gradient(to bottom right, ${
-    gradientClassMap[firstHalf?.toLowerCase()]
-  } 50%, ${gradientClassMap[secondHalf?.toLowerCase()]} 50%)`;
+  const gradient = `linear-gradient(to bottom right, ${gradientClassMap[firstHalf?.toLowerCase()]
+    } 50%, ${gradientClassMap[secondHalf?.toLowerCase()]} 50%)`;
   return { background: gradient };
 };
 
@@ -376,6 +377,15 @@ export function getDatesBetween(start: string, end: string): string[] {
   return dates;
 }
 
+export const getMonthDateRange = (monthValue: string) => {
+  const parsedMonth = parse(monthValue, "yyyy-MM", new Date());
+
+  return {
+    frm_date: format(startOfMonth(parsedMonth), "yyyy-MM-dd"),
+    to_date: format(endOfMonth(parsedMonth), "yyyy-MM-dd"),
+  };
+};
+
 export const buildLeavePayload = ({
   employee,
   submission,
@@ -434,3 +444,4 @@ export const buildLeavePayload = ({
       submission.custom_second_half_day_date?.split("T")[0],
   };
 };
+

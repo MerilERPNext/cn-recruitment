@@ -22,6 +22,7 @@ import type {
   CanShowClockIn,
   EmployeeAllCheckin,
   EmployeeCheckInLog,
+  EmployeeRegularize,
   EmployeeShift,
   EmployeeShiftSummary,
   IOvertimeLog,
@@ -242,6 +243,33 @@ export const useGetAllEmployeeCheckin = (
     ...defaultQueryOptions,
   });
 };
+
+
+export const useGetAllEmployeeRegularize = (
+  filters: any, enabled: boolean
+): UseQueryResult<EmployeeRegularize[], Error> => {
+  return useQuery<EmployeeRegularize[], Error>({
+    queryKey: ["all-employee-regularize", filters],
+    queryFn: () => attendanceService.getAllEmployeeRegularize(filters),
+    refetchOnWindowFocus: true,
+    enabled: enabled,
+    ...defaultQueryOptions,
+  });
+};
+
+
+export function useMarkBulkAttendance() {
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.markBulkAttendance(body),
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
+
+
 export const useGetAllEmployeeOvertimeLog = (
   filters: any
 ): UseQueryResult<IOvertimeLog[], Error> => {
