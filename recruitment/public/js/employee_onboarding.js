@@ -77,25 +77,22 @@ frappe.ui.form.on("Employee Onboarding", {
                             console.log("✅ Setting employee_name:", r.message.employee_name);
                             frm.set_value('employee_name', r.message.employee_name);
                         }
-                        if (r.message.custom_its_name) {
-                            console.log("✅ Setting custom_its_name:", r.message.custom_its_name);
-                            frm.set_value('custom_its_name', r.message.custom_its_name);
+                        
+                        if (r.message.custom_primary_mobile_number) {
+                            console.log("✅ Setting custom_primary_mobile_number:", r.message.custom_primary_mobile_number);
+                            frm.set_value('custom_primary_mobile_number', r.message.custom_primary_mobile_number);
                         }
-                        if (r.message.custom_its_mobile) {
-                            console.log("✅ Setting custom_its_mobile:", r.message.custom_its_mobile);
-                            frm.set_value('custom_its_mobile', r.message.custom_its_mobile);
+                        if (r.message.custom_whatsapp_number) {
+                            console.log("✅ Setting custom_whatsapp_number:", r.message.custom_whatsapp_number);
+                            frm.set_value('custom_whatsapp_number', r.message.custom_whatsapp_number);
                         }
-                        if (r.message.custom_whatsapp_no) {
-                            console.log("✅ Setting custom_whatsapp_no:", r.message.custom_whatsapp_no);
-                            frm.set_value('custom_whatsapp_no', r.message.custom_whatsapp_no);
+                        if (r.message.custom_email_id) {
+                            console.log("✅ Setting custom_email_id:", r.message.custom_email_id);
+                            frm.set_value('custom_email_id', r.message.custom_email_id);
                         }
-                        if (r.message.custom_its_email) {
-                            console.log("✅ Setting custom_its_email:", r.message.custom_its_email);
-                            frm.set_value('custom_its_email', r.message.custom_its_email);
-                        }
-                        if (r.message.custom_farigh_year) {
-                            console.log("✅ Setting custom_farigh_year:", r.message.custom_farigh_year);
-                            frm.set_value('custom_farigh_year', r.message.custom_farigh_year);
+                        if (r.message.custom_farig_year) {
+                            console.log("✅ Setting custom_farig_year:", r.message.custom_farig_year);
+                            frm.set_value('custom_farig_year', r.message.custom_farig_year);
                         }
                         if (r.message.custom_farig_darajah) {
                             console.log("✅ Setting custom_farig_darajah:", r.message.custom_farig_darajah);
