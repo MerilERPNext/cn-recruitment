@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { ExpenseCategoryType } from "../types/expense";
 import {
   CalculateExpenseParams,
   CalculateExpenseResponse,
@@ -278,5 +279,14 @@ export const expenseService = {
       console.error("Error while adding comment:", error);
       throw error;
     }
+  },
+
+  //get Expense type general/relocation
+  getExpenseCategoryTypes: async (): Promise<ExpenseCategoryType[]> => {
+    const response = await FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.fiter_category_types"
+    );
+
+    return Array.isArray(response) ? response : [];
   },
 };

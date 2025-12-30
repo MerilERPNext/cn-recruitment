@@ -37,8 +37,7 @@ import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { ROUTES } from "../../constants/routes";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { useGetUnreadNotificationCount } from "../../hooks/useNotification";
-import { NOTIFICATION_TITLE_MAP } from "../../utils/helperUtils";
+import { useAppNotificationCounts } from "../../hooks/useAppNotificationCounts";
 
 interface SubSubMenuItem {
   name: string;
@@ -105,21 +104,19 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
   const { data: currentUser } = useCurrentUser();
-  const { data: notificationData } = useGetUnreadNotificationCount(
-    currentUser?.name
-  );
+  const { getCount } = useAppNotificationCounts();
 
-  const getNotificationCount = (sidebarLabel: string) => {
-    if (!notificationData?.apps) return 0;
+  // const getNotificationCount = (sidebarLabel: string) => {
+  //   if (!notificationData?.apps) return 0;
 
-    const backendTitles = NOTIFICATION_TITLE_MAP[sidebarLabel];
+  //   const backendTitles = NOTIFICATION_TITLE_MAP[sidebarLabel];
 
-    if (!backendTitles) return 0;
+  //   if (!backendTitles) return 0;
 
-    return notificationData.apps
-      .filter((app) => backendTitles.includes(app.title))
-      .reduce((sum, app) => sum + (app.count ?? 0), 0);
-  };
+  //   return notificationData.apps
+  //     .filter((app) => backendTitles.includes(app.title))
+  //     .reduce((sum, app) => sum + (app.count ?? 0), 0);
+  // };
 
   const handleTodoClick = () => {
     window.open(ROUTES.TODO, "_blank");
@@ -680,12 +677,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
-                          {!isExpanded &&
-                            getNotificationCount(item?.label) > 0 && (
-                              <span className="absolute -top-1 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
-                                {getNotificationCount(item?.label)}
-                              </span>
-                            )}
+                          {!isExpanded && getCount(item.label) > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                              {getCount(item.label)}
+                            </span>
+                          )}
                         </div>
                         <span
                           className={`font-medium whitespace-nowrap transition-all duration-300 ${
@@ -696,12 +692,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         >
                           {item.label}
                         </span>
-                        {isExpanded &&
-                          getNotificationCount(item?.label) > 0 && (
-                            <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center">
-                              {getNotificationCount(item?.label)}
-                            </span>
-                          )}
+                        {isExpanded && getCount(item.label) > 0 && (
+                          <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center">
+                            {getCount(item.label)}
+                          </span>
+                        )}
                       </div>
                       {isExpanded && (
                         <ChevronRight
@@ -723,8 +718,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 relative">
                           <Icon className="h-5 w-5" />
+                          {!isExpanded && getCount("Todo") > 0 && (
+                            <span className="absolute -top-4 -right-4 min-w-[16px] h-4 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                              {getCount("Todo")}
+                            </span>
+                          )}
                         </div>
                         <span
                           className={`font-medium whitespace-nowrap transition-all duration-300 ${
@@ -735,6 +735,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         >
                           {item.label}
                         </span>
+                        {isExpanded && getCount("Todo") > 0 && (
+                          <span className="ml-auto min-w-[22px] h-5 px-2 rounded-full bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center">
+                            {getCount("Todo")}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ) : item.label === "Help Desk" ? (
@@ -746,10 +751,17 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                       }`}
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
+                      <div className="relative flex items-center space-x-3">
+                        <div className="flex-shrink-0 relative">
                           <Icon className="h-5 w-5" />
+
+                          {!isExpanded && getCount("Help Desk") > 0 && (
+                            <span className="absolute -top-4 -right-4 min-w-[16px] h-4 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                              {getCount("Help Desk")}
+                            </span>
+                          )}
                         </div>
+
                         <span
                           className={`font-medium whitespace-nowrap transition-all duration-300 ${
                             isExpanded
@@ -759,6 +771,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         >
                           {item.label}
                         </span>
+
+                        {isExpanded && getCount("Help Desk") > 0 && (
+                          <span className="ml-auto min-w-[22px] h-5 px-2 rounded-full bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center">
+                            {getCount("Help Desk")}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ) : (

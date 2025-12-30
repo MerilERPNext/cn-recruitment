@@ -19,6 +19,7 @@ import {
   CalculateExpenseResponse,
 } from "../types/expenseAdvance";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
+import { ExpenseCategoryType } from "../types/expense";
 
 export const useExpenseTypes = (
   filters?: FilterCondition[]
@@ -342,3 +343,12 @@ export function useExpenseCommentUpdate() {
     },
   });
 }
+
+export const useGetExpenseCategoryTypes = () => {
+  return useQuery<ExpenseCategoryType[]>({
+    queryKey: ["expense-category-types"],
+    queryFn: expenseService.getExpenseCategoryTypes,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
