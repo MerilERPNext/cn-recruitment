@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import { ViewAll } from "../shared/atoms/ViewAll";
+import useCurrentUser from "../../hooks/useCurrentUser";
+import { useGetUnreadNotificationCount } from "../../hooks/useNotification";
 
 interface CNMicroapp {
   name: string;
@@ -14,7 +16,8 @@ interface CNMicroapp {
 const MyMicroApp: React.FC<{
   item: CNMicroapp;
   index?: number;
-}> = ({ item, index = 0 }) => {
+  notificationCount?: number;
+}> = ({ item, index = 0, notificationCount = 0 }) => {
   const navigate = useNavigate();
 
   const colors = [
@@ -47,8 +50,14 @@ const MyMicroApp: React.FC<{
       className="text-center cursor-pointer hover:scale-105 transition-transform mb-2"
     >
       <div
-        className={`w-16 h-16 ${color.bg} rounded-lg mx-auto mb-2 flex items-center justify-center shadow-md`}
+        className={`w-16 h-16 ${color.bg} rounded-lg mx-auto mb-2 flex items-center justify-center shadow-md relative`}
       >
+        {notificationCount > 0 && (
+          <span className="absolute -top-2 -right-2 min-w-[18px] size-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+            {notificationCount}
+          </span>
+        )}
+
         {item.icon ? (
           isSvg ? (
             <div
@@ -80,17 +89,32 @@ const MyMicroApp: React.FC<{
 };
 
 const MicroAppInDashboard: React.FC = () => {
+  const { data: currentUser } = useCurrentUser();
+  const { data: notificationData } = useGetUnreadNotificationCount(
+    currentUser?.name
+  );
+
+  const getNotificationCount = (title?: string) => {
+    if (!title || !notificationData?.apps) return 0;
+
+    return notificationData.apps.find((app) => app.title === title)?.count ?? 0;
+  };
+
   return (
     <div className="bg-white rounded-lg p-6 shadow-md border border-[rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-between mb-4">
         <h3 className="section-title">Admin Apps</h3>
-        {/* <span className="text-blue-600 text-sm cursor-pointer">View All</span> */}
         <ViewAll title="View All" />
       </div>
       <div>
         <FrappeListView
           doctype="CN Microapp"
-          ItemComponent={MyMicroApp}
+          ItemComponent={(props) => (
+            <MyMicroApp
+              {...props}
+              notificationCount={getNotificationCount(props.item.title)}
+            />
+          )}
           isSearch={false}
           layout="column"
           orderBy="creation"

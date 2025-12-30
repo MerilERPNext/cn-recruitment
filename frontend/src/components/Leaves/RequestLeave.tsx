@@ -28,6 +28,7 @@ import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
 import DailyConfiguration from "./DailyConfiguration";
 import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
+import AttendanceStatusModal from "./AttendanceStatusModal";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -117,6 +118,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const [dailyConfig, setDailyConfig] = useState<
     Record<string, "Full Day" | "First Half" | "Second Half">
   >({});
+
+  //modal states
+  const [showAttendanceButton, setShowAttendanceButton] = useState(false);
+  const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
 
   const showDailyConfig = Boolean(
     formData.halfDay &&
@@ -291,6 +296,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       calculateLeaveDays(formData, dailyConfig);
     }
   }, [dailyConfig]);
+
+  useEffect(() => {
+    setShowAttendanceButton(Boolean(formData.fromDate && formData.toDate));
+  }, [formData.fromDate, formData.toDate]);
 
   const handleFromDateChange = useCallback(
     (event: { data: FormSubmissionData }) => {
@@ -682,6 +691,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     requiredFieldMap,
   ]);
 
+  const handleAttendanceClick = useCallback(() => {
+    setIsAttendanceModalOpen(true);
+  }, []);
+
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="flex justify-between items-center ml-6 my-2 text-sm text-gray-700">
@@ -690,11 +703,22 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           {leaveDays === 1 ? "Day" : "Days"}
         </div>
 
-        {selectedLeaveBalance !== null && (
-          <div className="mr-6">
-            <strong>Available Balance:</strong> {selectedLeaveBalance}
-          </div>
-        )}
+        <div className="mr-6 flex flex-col items-end">
+          {selectedLeaveBalance !== null && (
+            <div>
+              <strong>Available Balance:</strong> {selectedLeaveBalance}
+            </div>
+          )}
+          {showAttendanceButton && (
+            <Button
+              onClick={handleAttendanceClick}
+              variant="outline"
+              className="mt-2"
+            >
+              Attendance Status
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto pb-20">
@@ -790,6 +814,14 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           </Button>
         )}
       </div>
+      {isAttendanceModalOpen && (
+        <AttendanceStatusModal
+          isOpen={isAttendanceModalOpen}
+          onClose={() => setIsAttendanceModalOpen(false)}
+          fromDate={formData.fromDate || ""}
+          toDate={formData.toDate || ""}
+        />
+      )}
     </div>
   );
 };

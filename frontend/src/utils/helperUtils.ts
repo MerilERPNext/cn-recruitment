@@ -445,3 +445,11 @@ export const buildLeavePayload = ({
   };
 };
 
+//sidebar dot counts mapper
+export const NOTIFICATION_TITLE_MAP: Record<string, string[]> = {
+  "Help Desk": ["Helpdesk"],
+  Compensation: ["Salary Slip"],
+  "Leaves & Holidays": ["Leaves"],
+  Attendance: ["Attendance"],
+  Expenses: ["Expenses"],
+};

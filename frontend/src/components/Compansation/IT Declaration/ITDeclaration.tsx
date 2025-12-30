@@ -27,7 +27,7 @@ const ITDeclarationForm = () => {
   return (
     <div className="bg-gray-50 min-h-screen">
       <header className="mb-6 py-4 px-8 bg-blue-50 rounded-lg">
-        <div className="flex items-center justify-between w-full">
+        <div className="flex max-lg:flex-col-reverse lg:items-center flex-wrap lg:justify-between gap-4 w-full">
           <div className="space-y-2">
             <h1 className="text-xs font-semibold text-gray-800">
               IT Declaration for the Financial Year 2025 - 2026
@@ -42,7 +42,7 @@ const ITDeclarationForm = () => {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-row flex-wrap gap-2">
             <button className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700">
               COMPARE TAX
             </button>
@@ -72,11 +72,10 @@ const ITDeclarationForm = () => {
             <button
               key={cat.category_name}
               onClick={() => setActiveTab(cat.category_name)}
-              className={`px-4 py-1 text-xs rounded-2xl border ${
-                activeTab === cat.category_name
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
+              className={`px-4 py-1 text-xs rounded-2xl border ${activeTab === cat.category_name
+                ? "bg-blue-600 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+                }`}
             >
               {cat.category_name}
             </button>

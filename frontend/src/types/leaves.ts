@@ -389,3 +389,13 @@ export interface PolicyQuestionsResponse {
   policy_question: string;
   questions: PolicyQuestionItem[];
 }
+
+// types/attendance.ts
+
+export interface AttendanceStatusItem {
+  employee_name: string;
+  attendance_date: string; // yyyy-mm-dd
+  status: "Present" | "Absent" | "On Leave" | string;
+}
+
+export type AttendanceStatusResponse = AttendanceStatusItem[];

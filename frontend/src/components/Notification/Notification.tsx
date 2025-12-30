@@ -59,7 +59,6 @@ const NotificationList = () => {
             <NotificationItem {...props} activeTab={activeTab} />
           )}
           isSearch={true}
-          pageSize={10}
           defaultFields={[
             "name",
             "subject",

@@ -189,9 +189,14 @@ export type EmployeeShiftSummary = {
   present: number;
   absent: number;
   leaves: number;
+  week_offs: number;
   avg_overtime: string;
   avg_late_by: string;
   avg_working_hours: string;
+  my_attendance_requests: number;
+  team_attendance_requests: number;
+  my_overtime_requests: number;
+  team_overtime_requests: number;
 };
 export type EmployeeStatusType =
   | "present"
