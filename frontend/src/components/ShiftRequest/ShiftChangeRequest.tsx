@@ -22,7 +22,7 @@ export default function ShiftChangeRequests() {
   );
 
   const handleCloseModal = useCallback(() => {
-      navigate(-1);
+    navigate(-1);
   }, [setSearchParams]);
 
   const handleActionComplete = useCallback(() => {
@@ -31,11 +31,11 @@ export default function ShiftChangeRequests() {
     setRefetchApprovalList(true);
   }, [setSearchParams]);
 
-    const handleApprovalRefetchComplete = useCallback(() => {
-      setRefetchApprovalList(false);
-    }, []);
-  
-    
+  const handleApprovalRefetchComplete = useCallback(() => {
+    setRefetchApprovalList(false);
+  }, []);
+
+
   return (
     <div className="bg-white ">
       <ApprovalList
@@ -58,13 +58,12 @@ export default function ShiftChangeRequests() {
         )}
       />
       {requestId && (
-              <ShiftDetailView
-                documentName={requestId}
-                onClose={ handleCloseModal}
-                onAction={handleActionComplete}
-
-              />
-            )}
+        <ShiftDetailView
+          documentName={requestId}
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
+        />
+      )}
     </div>
   );
 }
