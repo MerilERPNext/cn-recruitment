@@ -4,6 +4,7 @@ import "formiojs/dist/formio.full.css";
 import {
   useAttendanceRequestAttachments,
   useCreateNewAttendanceRequest,
+  useGetEmployeeShift,
   useGetUserRoles,
   useReqValidationsForAttendanceRequest,
   useUpdateAttendanceRequest,
@@ -145,6 +146,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     useState<string>("");
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
+
   const [isForOthers, setIsForOthers] = useState(false);
   const [formSchema, setFormSchema] = useState<FormSchema>(
     (propSchema || defaultFormSchema) as FormSchema
@@ -157,6 +159,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   );
   const { data: userRoles } = useGetUserRoles();
 
+  const { data: shiftData } = useGetEmployeeShift(currentUser?.name || "");
+  console.log("shift data", shiftData)
   const activeEmployeeId =
     currentlySelectedEmployee || currentEmployee?.employee || "";
 
@@ -556,7 +560,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           to_date: baseBody.from_date,
-          custom_from_time: formatTime(submission.data.custom_from_time),
+          custom_from_time: submission.data.custom_from_time,
           custom__request_reason: submission.data.custom__request_reason,
           custom_location: submission?.data?.custom_location,
         };
@@ -565,8 +569,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           to_date: baseBody.to_date,
-          custom_from_time: formatTime(submission.data.custom_from_time),
-          custom_to_time: formatTime(submission.data.custom_to_time),
+          custom_from_time: submission.data.custom_from_time,
+          custom_to_time: submission.data.custom_to_time,
           custom__request_reason: submission.data.custom__request_reason,
           overnight_out_duty: submission.data.overnight_out_duty || false,
         };
@@ -581,8 +585,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           to_date: formatDateToYYYYMMDD(
             new Date(submission.data.to_date || "")
           ),
-          custom_from_time: formatTime(submission.data.custom_from_time),
-          custom_to_time: formatTime(submission.data.custom_to_time),
+          custom_from_time: submission.data.custom_from_time,
+          custom_to_time: submission.data.custom_to_time,
           custom__request_reason: submission.data.custom__request_reason,
         };
         break;
@@ -596,8 +600,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           to_date: formatDateToYYYYMMDD(
             new Date(submission.data.to_date || new Date())
           ),
-          custom_from_time: formatTime(submission.data.custom_from_time),
-          custom_to_time: formatTime(submission.data.custom_to_time),
+          custom_from_time: submission.data.custom_from_time,
+          custom_to_time: submission.data.custom_to_time,
           custom__request_reason: submission.data.custom__request_reason,
           custom_location: submission?.data?.custom_location,
         };
@@ -812,6 +816,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               noAlerts: true,
               clearOnSubmit: false,
               keepAlive: true,
+              shiftData: shiftData,
+              shiftRedraw: shiftData?.shift
             }}
             onChange={handleFormChange}
             onFormReady={(instance: FormioFormInstance) => {
