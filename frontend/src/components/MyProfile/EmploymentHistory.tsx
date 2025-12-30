@@ -4,6 +4,8 @@ import EmploymentHistoryCard from "./EmploymentHistoryCard";
 import Button from "../shared/atoms/Button";
 import { EditIcon, PlusIcon } from "lucide-react";
 import EmploymentHistoryForm from "./EmploymentHistorForm";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -36,6 +38,19 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   ) as { data: Employee | null; isLoading: boolean; error: any };
   const history = data?.custom_work_history || [];
 
+  const { data: userUiPermission } = useGetUiPermission("Profile");
+  const canEditEmploymentHistory = isActionEnabled(
+    userUiPermission,
+    "edit_employee_history",
+    "Employee Profile"
+  );
+  const canAddEmploymentHistory = isActionEnabled(
+    userUiPermission,
+    "add_employee_history",
+    "Employee Profile"
+  );
+
+
   const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
 
@@ -62,7 +77,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             </p>
           </div>
           <div className="flex gap-2 ">
-            <Button
+            {canEditEmploymentHistory && <Button
               onClick={() => {
                 setIsModalOpen(true)
                 setIsEditing(true)
@@ -72,15 +87,15 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               size="md"
             >
               Edit
-            </Button>
-            <Button
+            </Button>}
+            {canAddEmploymentHistory && <Button
               onClick={() => setIsModalOpen(true)}
               icon={<PlusIcon className="h-4 w-4" />}
               variant="contain"
               size="md"
             >
               Add
-            </Button>
+            </Button>}
           </div>
         </div>
         {!employeeId && (

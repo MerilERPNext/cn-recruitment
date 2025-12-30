@@ -59,7 +59,7 @@ const AttendanceSummary = () => {
   const { data: attendancePolicy } = useGetPolicyForDate({
     employee: currentEmployee?.employee,
     as_of: format(new Date(), "yyyy-MM-dd"),
-  });
+  }, !!currentEmployee?.employee);
   const goToPreviousMonth = () => {
     setCurrentDate((prev) => subMonths(prev, 1));
   };
@@ -164,8 +164,8 @@ const AttendanceSummary = () => {
       <button
         type="button"
         onClick={() => navigate(path!)}
-        className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800
-                 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+        className="w-full text-left text-sm text-gray-800
+                 hover:text-blue-600 rounded-lg transition-colors"
       >
         {data}
       </button>

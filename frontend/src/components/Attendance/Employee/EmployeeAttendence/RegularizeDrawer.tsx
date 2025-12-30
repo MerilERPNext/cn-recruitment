@@ -12,6 +12,7 @@ import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { EmployeeRegularize } from "../../../../types/attendance";
 import toast from "react-hot-toast";
+import CircularLoader from "../../../shared/atoms/CircularLoader";
 
 const RegularizeDrawer = () => {
     const [open, setOpen] = useState(false);
@@ -40,7 +41,7 @@ const RegularizeDrawer = () => {
         },
         open
     );
-    const { mutateAsync: markBulkAttendance } = useMarkBulkAttendance();
+    const { mutateAsync: markBulkAttendance, isPending: isMarkBulkAttendancePending } = useMarkBulkAttendance();
 
     useEffect(() => {
         if (!open) setSelectedDates([]);
@@ -105,19 +106,7 @@ const RegularizeDrawer = () => {
                 title="Attendance Regularization"
                 size="xxl"
             >
-                {selectedDates.length > 0 && <div className="fixed w-full px-8 bottom-0 z-10 bg-white left-0 border-t border-gray-200 rounded-lg shadow-lg  py-3 flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                        Selected: {selectedDates.length}
-                    </span>
 
-                    <Button
-                        size="md"
-                        disabled={selectedDates.length === 0}
-                        onClick={handleSubmit}
-                    >
-                        Submit
-                    </Button>
-                </div>}
 
                 <div className="mb-30">
                     {isLoading && (
@@ -205,6 +194,21 @@ const RegularizeDrawer = () => {
                             </div>
                         )}
                 </div>
+                {selectedDates.length > 0 && <div className="sticky w-full px-8 bottom-14 z-10 bg-white left-0 border-t border-gray-200 rounded-lg shadow-lg  py-3 flex items-center justify-between">
+                    <span className="text-sm text-gray-600">
+                        Selected: {selectedDates.length}
+                    </span>
+
+                    <Button
+                        size="md"
+                        disabled={selectedDates.length === 0}
+                        onClick={handleSubmit}
+                    >
+                        {isMarkBulkAttendancePending ? <CircularLoader color="white" /> :
+                            "Submit"
+                        }
+                    </Button>
+                </div>}
             </SideDrawer>
         </>
     );

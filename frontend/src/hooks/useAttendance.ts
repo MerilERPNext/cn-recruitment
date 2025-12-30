@@ -223,12 +223,13 @@ export function useCheckAttachmentMandatory(
 }
 
 export const useGetPolicyForDate = (
-  filters: any
+  filters: any, enabled: boolean
 ): UseQueryResult<string, Error> => {
   return useQuery<string, Error>({
     queryKey: ["policy-for-date", filters],
     queryFn: () => attendanceService.getPolicyForDate(filters),
     refetchOnWindowFocus: true,
+    enabled: enabled,
     ...defaultQueryOptions,
   });
 };

@@ -249,7 +249,7 @@ export const leaveService = {
     targetDate: string
   ): Promise<AttendancePolicyResponse> => {
     const response = await FrappeAPI.callMethod(
-      "cn_leave_shift_managment.api.get_attendance_policy_for_date",
+      "cn_leave_shift_managment.api.get_attendance_policy_for_date_api",
       {
         employee: String(employee),
         target_date: targetDate,

@@ -11,6 +11,8 @@ import React from "react";
 import { Building2 } from "lucide-react";
 import { useState } from "react";
 import ReportingDetailsForm from "../MyProfile/ReportingDetailsForm";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 const ReportingDetails = () => {
     const { data: currentUser } = useCurrentUser();
@@ -20,6 +22,19 @@ const ReportingDetails = () => {
 
     const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
         useGetEmployeeHierarchyHistory(currentEmployee?.employee || "");
+
+    const { data: userUiPermission } = useGetUiPermission("Profile");
+    const canEditReportingDetails = isActionEnabled(
+        userUiPermission,
+        "edit_reporting_details",
+        "Employee Profile"
+    );
+    const canAddReportingDetails = isActionEnabled(
+        userUiPermission,
+        "add_reporting_details",
+        "Employee Profile"
+    );
+
 
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
@@ -100,7 +115,7 @@ const ReportingDetails = () => {
                         </p>
                     </div>
                     <div className="flex gap-2 ">
-                        <Button
+                        {canEditReportingDetails && <Button
                             onClick={() => {
                                 setIsModalOpen(true)
                                 setIsEditing(true)
@@ -110,15 +125,15 @@ const ReportingDetails = () => {
                             size="md"
                         >
                             Edit
-                        </Button>
-                        <Button
+                        </Button>}
+                        {canAddReportingDetails && <Button
                             onClick={() => setIsModalOpen(true)}
                             icon={<PlusIcon className="h-4 w-4" />}
                             variant="contain"
                             size="md"
                         >
                             Add
-                        </Button>
+                        </Button>}
                     </div>
                 </div>
 

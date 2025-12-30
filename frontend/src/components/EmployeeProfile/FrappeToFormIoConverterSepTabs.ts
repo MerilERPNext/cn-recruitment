@@ -168,10 +168,8 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.searchEnabled = true;
       schema.multiple = field.fieldtype === "Table MultiSelect";
 
-      const targetDoctype = field.fieldtype === "Table MultiSelect" ? field.label : field.options;
-
       schema.data = {
-        url: `/api/method/nextai.funnel.apis.fetch_data.get_searched_doc_list?fields=*&doctype=${targetDoctype ?? ""}&limit=20`,
+        url: `/api/method/nextai.funnel.apis.fetch_data.get_searched_doc_list?fields=*&doctype=${field.options ?? ""}&limit=20`,
       };
 
       schema.lazyLoad = true;
