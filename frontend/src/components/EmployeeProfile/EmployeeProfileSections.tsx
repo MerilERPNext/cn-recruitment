@@ -23,7 +23,7 @@ interface EditableField {
     key: string;
     label: string;
 }
-const EmployeeProfileSections = () => {
+export default function EmployeeProfileSections() {
     const { targetEmployeeId } = useTargetUser();
 
     const { data: userId } = useLoggedInUser();
@@ -116,7 +116,7 @@ const EmployeeProfileSections = () => {
                 </div>
             </div>
             {tabs.length > 1 && (
-                <div className=" px-6 sticky top-12 md:top-16 z-10 bg-white flex-shrink-0 w-full max-w-full shadow-sm mb-2">
+                <div className=" px-6 sticky top-12 md:top-16 bg-white flex-shrink-0 w-full max-w-full shadow-sm mb-2">
                     <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-2 w-full py-2">
                         {tabs.map(tab => (
                             <button
@@ -202,9 +202,6 @@ const EmployeeProfileSections = () => {
     );
 };
 
-export default EmployeeProfileSections;
-
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CardsRenderer = ({ items }: { items: Record<string, any>[] }) => {
     if (!Array.isArray(items) || items.length === 0) {
@@ -261,7 +258,6 @@ const GenericCard = ({ data }: { data: Record<string, any> }) => {
         </div>
     );
 };
-
 const formatKey = (key: string) =>
     key
         .replace(/_/g, " ")

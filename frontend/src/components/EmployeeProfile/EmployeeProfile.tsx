@@ -13,7 +13,7 @@ import defaultProfile from "../../assets/user.png";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { NotebookPen, Pencil } from "lucide-react";
+import { Award, IdCard, MapPin, NotebookPen, Pencil } from "lucide-react";
 import { Tab } from "../NavigationTab";
 import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
@@ -66,7 +66,6 @@ const EmployeeProfile: React.FC = () => {
     employeeId,
     currentUser?.employee || ""
   );
-
   const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
     useState(false);
   const navigate = useNavigate();
@@ -292,12 +291,19 @@ const EmployeeProfile: React.FC = () => {
                   {user?.employee_name}
                 </h1>
                 <Tooltip content={user?.designation}>
-                  <p className="text-sm font-medium text-gray-500 truncate mt-0.5">
-                    {user?.designation}
+                  <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
+                    <Award size={12} />
+                    <span>{user?.designation}</span>
                   </p>
                 </Tooltip>
-                <p className="text-gray-400 text-xs mt-1 font-medium">
-                  ID: {user?.employee}
+
+                <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
+                  <MapPin size={12} />
+                  <span>{user?.branch}</span>
+                </p>
+                <p className="text-gray-400 text-xs mt-1 font-medium flex gap-1 items-center justify-start">
+                  <IdCard size={12} />
+                  <span>{user?.employee}</span>
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -418,12 +424,20 @@ const EmployeeProfile: React.FC = () => {
                         {user?.employee_name}
                       </h1>
                       <Tooltip content={user?.designation}>
-                        <p className="text-blue-600 font-semibold text-sm mt-0.5">
-                          {user?.designation?.slice(0, 40)}
+                        <p className="text-blue-600 font-semibold text-sm mt-0.5 flex gap-1 items-center justify-start">
+                          <Award size={12} />
+                          <span>
+                            {user?.designation?.slice(0, 40)}
+                          </span>
                         </p>
                       </Tooltip>
-                      <p className="text-gray-500 text-xs mt-1">
-                        ID: {user?.employee}
+                      <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
+                        <MapPin size={12} />
+                        <span>{user?.branch}</span>
+                      </p>
+                      <p className="text-gray-500 text-xs mt-1 flex gap-1 items-center justify-start">
+                        <IdCard size={12} />
+                        <span>{user?.employee}</span>
                       </p>
                       {user?.custom_employment_status && (
                         <span className="inline-block mt-2 px-3 py-0.5 bg-yellow-100 text-yellow-800 text-[10px] font-bold rounded-lg uppercase tracking-wider">
@@ -454,7 +468,7 @@ const EmployeeProfile: React.FC = () => {
             </div>
           )}
           {/* Horizontal Tabs - Sticky inside scroll container */}
-          <div className="bg-white border-b sticky top-0 z-20">
+          <div className="bg-white border-b sticky top-0 z-10">
             <div className="flex overflow-x-auto scrollbar-hide px-6 py-3 tracking-wide">
               {tabs.map((tab) => (
                 <button

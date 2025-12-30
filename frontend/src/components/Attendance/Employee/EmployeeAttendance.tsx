@@ -278,7 +278,7 @@ const EmployeeAttendance = () => {
               >
                 {/* <Plus className="w-4 h-4 mr-2 font-bold" /> */}
                 {/* Raise Request */}
-                Regularize
+                Attendance Request
               </button>
             </div>
           </div>

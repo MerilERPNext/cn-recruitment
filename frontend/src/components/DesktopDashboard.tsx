@@ -735,8 +735,8 @@ export default function DesktopDashboard() {
                     : "flex-row gap-4"
                     }  mt-4`}
                 >
-                  <div className="flex w-full">
-                    {canShowClockIn?.can_show && (
+                  {canShowClockIn?.can_show && (
+                    <div className="flex w-full">
                       <button
                         onClick={() =>
                           handleClockInOut(
@@ -756,14 +756,14 @@ export default function DesktopDashboard() {
                             ? "Clock Out"
                             : "Clock In"}
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Status */}
                   {homeSummary && homeSummary?.length > 0 ? (
-                    <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
+                    <div className={`flex rounded-lg items-center justify-center w-full gap-1 px-1 text-sm rounded py-1 ${isCurrentlyCheckedIn ? "bg-green-100" : "bg-red-100"}`}>
                       <div
-                        className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                        className={`w-2 h-2 rounded-lg shrink-0 ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
                           }`}
                       ></div>
 
