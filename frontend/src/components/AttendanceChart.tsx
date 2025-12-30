@@ -178,7 +178,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                 />
               )}
 
-              {otherDaysAngle &&
+              {otherDaysAngle > 0 && (
                 <path
                   d={createArcPath(
                     presentAngle + absentAngle + leavesAngle + weekOffsAngle,
@@ -189,7 +189,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                   fill="#0000"
                   className="transition-all duration-700 hover:opacity-80"
                 />
-              }
+              )}
 
             </svg>
 
