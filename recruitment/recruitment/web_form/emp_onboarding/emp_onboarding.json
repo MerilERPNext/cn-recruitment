@@ -24,7 +24,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 100,
- "modified": "2025-12-17 12:16:43.907390",
+ "modified": "2025-12-30 17:34:06.299524",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "emp-onboarding",
@@ -37,7 +37,7 @@
  "show_sidebar": 0,
  "success_message": "",
  "success_title": "Thank You",
- "title": "Employee Onboarding-1",
+ "title": "KG/Staff",
  "web_form_fields": [
   {
    "allow_read_on_all_link_options": 0,

@@ -23,7 +23,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 100,
- "modified": "2025-12-17 12:00:10.492317",
+ "modified": "2025-12-30 17:35:24.333440",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "employee-onboarding",
@@ -35,7 +35,7 @@
  "show_sidebar": 0,
  "success_message": "",
  "success_title": "Thank You",
- "title": "Employee Onboarding",
+ "title": "Professionals",
  "web_form_fields": [
   {
    "allow_read_on_all_link_options": 0,
