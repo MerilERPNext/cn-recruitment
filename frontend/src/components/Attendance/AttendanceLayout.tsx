@@ -14,15 +14,20 @@ import Button from "../shared/atoms/Button";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 const AttendanceLayoutContent: React.FC = () => {
+  const { targetEmployeeId } = useTargetUser();
   const { data: userId } = useLoggedInUser();
   const { isSidebarOpen } = useSidebar();
 
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
+  const effectiveEmployeeId = targetEmployeeId || user?.employee;
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    user?.employee || ""
+    effectiveEmployeeId || ""
   );
 
   const { isDesktop } = useScreenSize();
@@ -30,6 +35,12 @@ const AttendanceLayoutContent: React.FC = () => {
   const [showLeaveRequest, setShowLeaveRequest] = useState(false);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canRequestAttendance = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary"
+  );
 
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -167,8 +178,9 @@ const AttendanceLayoutContent: React.FC = () => {
   const ActionsButton = () => {
     return (
       <div className="relative" ref={actionsDropdownRef}>
-        <Button
+        {canRequestAttendance && <Button
           // onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+
           onClick={() => {
             if (isOvertimePage && plannedOvertimAllowed) {
               setShowOvertimeRequest(true);
@@ -180,14 +192,14 @@ const AttendanceLayoutContent: React.FC = () => {
           bgColor="blue-600"
           className="hover:bg-blue-700"
         >
-          {isOvertimePage && plannedOvertimAllowed ? "+ Overtime" : "+ Regularize"}
+          {isOvertimePage && plannedOvertimAllowed ? "+ Overtime" : "+ Attendance Request"}
           {/* <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
               showActionsDropdown ? "rotate-180" : ""
             }`}
           /> */}
         </Button>
-
+        }
         {/* Actions Dropdown - Positioned to the top of the button */}
         {/* {showActionsDropdown && (
           <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">

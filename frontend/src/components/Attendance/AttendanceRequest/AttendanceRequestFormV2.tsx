@@ -4,6 +4,7 @@ import "formiojs/dist/formio.full.css";
 import {
   useAttendanceRequestAttachments,
   useCreateNewAttendanceRequest,
+  useGetEmployeeShift,
   useGetUserRoles,
   useReqValidationsForAttendanceRequest,
   useUpdateAttendanceRequest,
@@ -22,6 +23,7 @@ import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
+import { GenericFormSchema, transformSchemaWithRequired } from "../../../utils/transformSchemaWithRequired";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -144,6 +146,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     useState<string>("");
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
+
   const [isForOthers, setIsForOthers] = useState(false);
   const [formSchema, setFormSchema] = useState<FormSchema>(
     (propSchema || defaultFormSchema) as FormSchema
@@ -156,6 +159,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   );
   const { data: userRoles } = useGetUserRoles();
 
+  const { data: shiftData } = useGetEmployeeShift(currentUser?.name || "");
+  console.log("shift data", shiftData)
   const activeEmployeeId =
     currentlySelectedEmployee || currentEmployee?.employee || "";
 
@@ -181,61 +186,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     return map;
   }, [requiredFields]);
 
-  /**
-   * Helper: deep clone schema and apply required flags + label postfix for required fields
-   */
-  const transformSchemaWithRequired = (
-    baseSchema: FormSchema,
-    requiredMap: Record<string, boolean>
-  ): FormSchema => {
-    if (!baseSchema) return baseSchema;
-    // deep clone
-    const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
-
-    const applyToComponents = (components?: SchemaComponent[]) => {
-      if (!components) return;
-      components.forEach((comp) => {
-        const key = comp.key;
-        if (key && requiredMap[key]) {
-          // ensure validate exists
-          if (!comp.validate) comp.validate = {};
-          // set required flag
-          comp.validate.required = true;
-
-          // Append red asterisk to label (avoid duplicating)
-          if (typeof comp.label === "string") {
-            const asteriskHtml =
-              "<span style='color:red;margin-left:3px;'> *</span>";
-            if (!comp.label.includes(asteriskHtml)) {
-              // Some labels may include HTML already; we append the asterisk HTML
-              comp.label = `${comp.label} ${asteriskHtml}`;
-            }
-          }
-        }
-        // recurse into nested components (like panels, columns, containers)
-        if (comp.components && Array.isArray(comp.components)) {
-          applyToComponents(comp.components);
-        }
-        // some schema use nested components in 'columns' or 'rows' etc - handle common cases
-        if (comp.columns && Array.isArray(comp.columns)) {
-          comp.columns.forEach((col: { components: SchemaComponent[] }) =>
-            applyToComponents(col.components)
-          );
-        }
-        if (comp.rows && Array.isArray(comp.rows)) {
-          comp.rows.forEach((row) =>
-            row.forEach((cell: { components: SchemaComponent[] }) =>
-              applyToComponents(cell.components)
-            )
-          );
-        }
-      });
-    };
-
-    applyToComponents(cloned.components);
-    return cloned;
-  };
-
   // Fetch schema from backend if schemaUrl is provided
   useEffect(() => {
     if (schemaUrl && !propSchema) {
@@ -248,7 +198,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             const transformed = transformSchemaWithRequired(
               src,
               requiredFieldMap
-            );
+            ) as FormSchema;
             setFormSchema(transformed);
           } catch (e) {
             console.error(e);
@@ -271,7 +221,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     if (propSchema) {
       try {
         setFormSchema(
-          transformSchemaWithRequired(propSchema, requiredFieldMap)
+          transformSchemaWithRequired(propSchema as GenericFormSchema, requiredFieldMap) as FormSchema
         );
       } catch {
         setFormSchema(propSchema);
@@ -285,7 +235,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     try {
       setFormSchema((prev) => {
         if (!prev) return prev;
-        return transformSchemaWithRequired(prev, requiredFieldMap);
+        return transformSchemaWithRequired(prev as GenericFormSchema, requiredFieldMap) as FormSchema;
       });
     } catch (e) {
       // ignore transform errors
@@ -346,9 +296,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
       try {
         const transformed = transformSchemaWithRequired(
-          filteredSchema,
+          filteredSchema as GenericFormSchema,
           requiredFieldMap
-        );
+        ) as FormSchema;
         setFormSchema(transformed);
       } catch {
         setFormSchema(filteredSchema);
@@ -379,7 +329,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           defaultAttendanceData?.reference_document?.to_date || selectedDate,
         request_type:
           defaultAttendanceData?.reference_document?.custom_request_type,
-        employee: defaultAttendanceData?.reference_document?.employee || "",
+        employee: defaultAttendanceData?.reference_document?.employee,
         company: "",
         custom_from_time: defaultAttendanceData?.reference_document
           ?.custom_from_time
@@ -401,7 +351,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           defaultAttendanceData?.reference_document?.custom__request_reason ||
           "",
         custom_location:
-          defaultAttendanceData?.reference_document?.custom_location || "",
+          defaultAttendanceData?.reference_document?.custom_location,
         select_shift: defaultAttendanceData?.reference_document?.shift || "",
         overnight_out_duty: false,
         message: defaultAttendanceData?.reference_document?.explanation || "",
@@ -610,7 +560,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           to_date: baseBody.from_date,
-          custom_from_time: formatTime(submission.data.custom_from_time),
+          custom_from_time: submission.data.custom_from_time,
           custom__request_reason: submission.data.custom__request_reason,
           custom_location: submission?.data?.custom_location,
         };
@@ -619,8 +569,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           to_date: baseBody.to_date,
-          custom_from_time: formatTime(submission.data.custom_from_time),
-          custom_to_time: formatTime(submission.data.custom_to_time),
+          custom_from_time: submission.data.custom_from_time,
+          custom_to_time: submission.data.custom_to_time,
           custom__request_reason: submission.data.custom__request_reason,
           overnight_out_duty: submission.data.overnight_out_duty || false,
         };
@@ -635,8 +585,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           to_date: formatDateToYYYYMMDD(
             new Date(submission.data.to_date || "")
           ),
-          custom_from_time: formatTime(submission.data.custom_from_time),
-          custom_to_time: formatTime(submission.data.custom_to_time),
+          custom_from_time: submission.data.custom_from_time,
+          custom_to_time: submission.data.custom_to_time,
           custom__request_reason: submission.data.custom__request_reason,
         };
         break;
@@ -650,8 +600,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           to_date: formatDateToYYYYMMDD(
             new Date(submission.data.to_date || new Date())
           ),
-          custom_from_time: formatTime(submission.data.custom_from_time),
-          custom_to_time: formatTime(submission.data.custom_to_time),
+          custom_from_time: submission.data.custom_from_time,
+          custom_to_time: submission.data.custom_to_time,
           custom__request_reason: submission.data.custom__request_reason,
           custom_location: submission?.data?.custom_location,
         };
@@ -866,6 +816,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               noAlerts: true,
               clearOnSubmit: false,
               keepAlive: true,
+              shiftData: shiftData,
+              shiftRedraw: shiftData?.shift
             }}
             onChange={handleFormChange}
             onFormReady={(instance: FormioFormInstance) => {

@@ -1,10 +1,10 @@
 import { Link } from "lucide-react";
-import { Notice } from "../../Notices/types/noticeItem";
 import DOMPurify from "dompurify";
 import { useNavigate } from "react-router-dom";
+import { UserNotice } from "../../../types/notice";
 
 interface NoticeSlideProps {
-    data: Notice;
+    data: UserNotice;
     backgroundColor?: string;
 }
 
@@ -55,9 +55,6 @@ export const NoticeSlide = ({ data, backgroundColor }: NoticeSlideProps) => {
 
                 <div className="text-sm mb-3 mx-4 line-clamp-2 text-wrap trim max-w-[65%] bg-transparent"
                 >{plainText}</div>
-
-
-
             </div>
         </div>
     );

@@ -141,7 +141,7 @@ const SearchMembers = () => {
             </div>
           </div>
           {isFocused && (
-            <div className="absolute sm:top-[60%] top-[120%] left-1/2 -translate-x-1/2 rounded-lg overflow-hidden border-gray-200 shadow-lg border bg-gray-50 py-2 overflow-y-auto max-w-[90%] max-h-[200px]  w-full  sm:mt-6">
+            <div className="z-50 absolute sm:top-[60%] top-[120%] left-1/2 -translate-x-1/2 rounded-lg overflow-hidden border-gray-200 shadow-lg border bg-gray-50 py-2 overflow-y-auto max-w-[90%] max-h-[200px]  w-full  sm:mt-6">
               {employeeList()}
             </div>
           )}

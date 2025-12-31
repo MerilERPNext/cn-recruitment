@@ -34,11 +34,11 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
-
             // Check if the click is on a Choice.js dropdown or its items
             const isChoiceDropdown =
                 target.closest(".choices__list--dropdown") ||
                 target.closest(".choices__item--choice") ||
+                target.closest(".choices__button ") ||
                 target.closest(".choices");
 
             if (
@@ -57,9 +57,6 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
         return () => document.removeEventListener("mousedown", handler);
     }, [open, onClose]);
 
-    const closedTransform =
-        side === "right" ? "translate-x-full" : "-translate-x-full";
-
     return (
         <>
             {/* Backdrop */}
@@ -76,10 +73,12 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
                 className={`
           fixed top-0 h-full bg-white z-50
           shadow-xl ring-1 ring-black/5
-          transition-transform duration-300 ease-in-out
-          ${side === "right" ? "right-0" : "left-0"}
+          transition-[left,right] duration-300 ease-in-out
+          ${side === "right"
+                        ? (open ? "right-0" : "-right-full sm:-right-[42rem]")
+                        : (open ? "left-0" : "-left-full sm:-left-[42rem]")
+                    }
           ${sizeClasses[size]}
-          ${open ? "translate-x-0" : closedTransform}
         `}
             >
                 {/* Header */}

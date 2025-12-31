@@ -402,3 +402,22 @@ code {
 .formio-component-attachments .col-md-2 {
   display: none !important;
 }
+
+/* Form.io inline radio fix */
+.inline-radio-group .form-radio {
+  display: flex;
+  align-items: center;
+}
+
+.inline-radio-group .form-check {
+  display: flex;
+  align-items: center;
+  margin-right: 1.5rem;
+}
+/* Choices.js Dropdown Styling Improvements */
+.choices__list--dropdown {
+  z-index: 1001 !important; /* Ensure it stays above other elements */
+}
+
+/* Ensure the drawer itself allows content to overflow slightly for shadows/etc if needed */
+/* But since we use dropdown: body, the actual dropdown list is outside this hierarchy */

@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   differenceInMinutes,
+  endOfMonth,
   format,
   isAfter,
   isValid,
   parse,
   parseISO,
+  startOfMonth,
   subMonths,
 } from "date-fns";
 import { FilterCondition, FilterOperator } from "../types/frappe";
@@ -343,7 +346,6 @@ export const getBadgePropsByPriority = (
   }
 };
 
-
 export const generateMonthOptions = (count: number): MonthOption[] => {
   const now = new Date();
 
@@ -354,4 +356,100 @@ export const generateMonthOptions = (count: number): MonthOption[] => {
       value: format(date, "yyyy-MM"),
     };
   });
+};
+
+export function getDatesBetween(start: string, end: string): string[] {
+  const dates: string[] = [];
+
+  // normalize to YYYY-MM-DD first
+  const startDate = start.split("T")[0];
+  const endDate = end.split("T")[0];
+
+  // force local-safe time
+  const current = new Date(`${startDate}T12:00:00`);
+  const last = new Date(`${endDate}T12:00:00`);
+
+  while (current <= last) {
+    dates.push(current.toISOString().split("T")[0]);
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+}
+
+export const getMonthDateRange = (monthValue: string) => {
+  const parsedMonth = parse(monthValue, "yyyy-MM", new Date());
+
+  return {
+    frm_date: format(startOfMonth(parsedMonth), "yyyy-MM-dd"),
+    to_date: format(endOfMonth(parsedMonth), "yyyy-MM-dd"),
+  };
+};
+
+export const buildLeavePayload = ({
+  employee,
+  submission,
+  dailyConfig,
+}: {
+  employee: string;
+  submission: any;
+  dailyConfig: Record<string, "Full Day" | "First Half" | "Second Half">;
+}) => {
+  const isSingleDay =
+    submission.fromDate?.split("T")[0] === submission.toDate?.split("T")[0];
+
+  const basePayload: any = {
+    employee,
+    leave_type: submission.leaveType,
+    from_date: submission.fromDate?.split("T")[0],
+    to_date: submission.toDate?.split("T")[0],
+    description: submission.description,
+    custom_reason: submission.custom_reason,
+    custom_attachment: submission?.custom_attachment?.[0]?.url,
+  };
+
+  if (!submission.halfDay) {
+    return {
+      ...basePayload,
+      half_day: 0,
+    };
+  }
+
+  if (isSingleDay) {
+    return {
+      ...basePayload,
+      half_day: 1,
+      custom_half_day_type: submission.halfDayOption,
+    };
+  }
+
+  if (submission.half_day_mode === "individual") {
+    return {
+      ...basePayload,
+      individual: 1,
+      individual_dates: Object.entries(dailyConfig).map(([date, type]) => ({
+        date,
+        half_day: type === "Full Day" ? 0 : 1,
+        half_day_type: type === "Full Day" ? "" : type,
+      })),
+    };
+  }
+
+  return {
+    ...basePayload,
+    half_day: 1,
+    custom_half_day_type: "Continuous",
+    half_day_date: submission.half_day_date?.split("T")[0],
+    custom_second_half_day_date:
+      submission.custom_second_half_day_date?.split("T")[0],
+  };
+};
+
+//sidebar dot counts mapper
+export const NOTIFICATION_TITLE_MAP: Record<string, string[]> = {
+  "Help Desk": ["Helpdesk"],
+  Compensation: ["Salary Slip"],
+  "Leaves & Holidays": ["Leaves"],
+  Attendance: ["Attendance"],
+  Expenses: ["Expenses"],
 };

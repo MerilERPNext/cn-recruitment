@@ -53,9 +53,6 @@
           "input": true,
           "placeholder": "Select Employee",
           "customClass": "mb-4",
-          "validate": {
-            "required": true
-          },
           "customConditional": "show = data.isForOthers === true;",
           "dataSrc": "url",
           "data": {
@@ -92,6 +89,7 @@
           "input": true,
           "customClass": "mb-4",
           "disabled": true,
+          "errorLabel": "Company",
           "customConditional": "show = data.isForOthers === true;",
           "customDefaultValue": " ",
           "calculateValue": " ",
@@ -138,7 +136,7 @@
               "width": 6,
               "components": [
                 {
-                  "type": "select",
+                  "type": "time",
                   "key": "shift_start",
                   "label": "Shift Start",
                   "placeholder": "Loading shift information...",
@@ -149,15 +147,8 @@
                   "hidden": false,
                   "widget": "choicesjs",
                   "dataSrc": "url",
-                  "data": {
-                    "url": "/api/method/cn_leave_shift_managment.api.get_employee_shift?user={{data.currentUserId}}"
-                  },
-                  "valueProperty": "start_time",
-                  "template": "<span>{{ item.start_time }}</span>",
-                  "selectValues": "message",
-                  "refreshOn": "currentUserId",
-                  "clearOnRefresh": true,
-                  "lazyLoad": true,
+                  "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.start_time;}",
+                  "redrawOn": "options.shiftRedraw",
                   "logic": [
                     {
                       "name": "update shift  start time",
@@ -181,7 +172,7 @@
               "width": 6,
               "components": [
                 {
-                  "type": "select",
+                  "type": "time",
                   "key": "shift_end",
                   "label": "Shift End",
                   "placeholder": "Loading shift information...",
@@ -190,14 +181,8 @@
                   "customClass": "mb-4",
                   "disabled": true,
                   "hidden": false,
-                  "widget": "choicesjs",
-                  "dataSrc": "url",
-                  "data": {
-                    "url": "/api/method/cn_leave_shift_managment.api.get_employee_shift?user={{data.currentUserId}}"
-                  },
-                  "valueProperty": "end_time",
-                  "template": "<span>{{ item.end_time }}</span>",
-                  "selectValues": "message",
+                  "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.end_time;}",
+                  "redrawOn": "options.shiftRedraw",
                   "refreshOn": "currentUserId",
                   "clearOnRefresh": true,
                   "lazyLoad": true,
@@ -274,10 +259,13 @@
           "redrawOn": "from_date"
         },
         {
-          "label": "From Time",
+          "label": "From Time <span style='color:red;margin-left:3px;'>*</span>",
           "errorLabel": "From Time",
           "key": "custom_from_time",
-          "type": "datetime",
+          "type": "time",
+          "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.start_time;}",
+          "redrawOn": "options.shiftRedraw",
+          "allowCalculateOverride": true,
           "input": true,
           "enableDate": false,
           "enableTime": true,
@@ -301,7 +289,10 @@
           "label": "To Time <span style='color:red;margin-left:3px;'> *</span>",
           "errorLabel": "To Time",
           "key": "custom_to_time",
-          "type": "datetime",
+          "type": "time",
+          "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.end_time;}",
+          "redrawOn": "options.shiftRedraw",
+          "allowCalculateOverride": true,
           "input": true,
           "enableDate": false,
           "enableTime": true,
@@ -470,10 +461,7 @@
           "input": true,
           "placeholder": "Provide additional details...",
           "rows": 4,
-          "customClass": "mb-4",
-          "validate": {
-            "required": true
-          }
+          "customClass": "mb-4"
         },
         {
           "label": "Attachments",
@@ -487,9 +475,6 @@
           "privateDownload": false,
           "filePattern": ".pdf,.doc,.docx,.jpg,.jpeg,.png",
           "tooltip": "Upload receipts or supporting documents.",
-          "validate": {
-            "required": false
-          },
           "conditional": {
             "show": true,
             "when": "show_attachment",

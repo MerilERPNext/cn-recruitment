@@ -10,6 +10,7 @@ import type {
   CanShowClockIn,
   EmployeeAllCheckin,
   EmployeeCheckInLog,
+  EmployeeRegularize,
   EmployeeShift,
   EmployeeShiftSummary,
   IOvertimeLog,
@@ -349,6 +350,40 @@ export const attendanceService = {
       throw error;
     }
   },
+
+
+  getAllEmployeeRegularize: async (
+    filters: AllEventsAndAttendanceT
+  ): Promise<EmployeeRegularize[]> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        `cn_leave_shift_managment.cn_leave_shift_managment.overrides.attendance.get_unmarked_days_date`,
+        filters
+      );
+      return response as EmployeeRegularize[];
+    } catch (error) {
+      console.error("📡 Error while getting employee checkin:", error);
+      throw error;
+    }
+  },
+
+  markBulkAttendance: async (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    body: Record<string, any>
+  ): Promise<EmployeeRegularize[]> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        `cn_leave_shift_managment.cn_leave_shift_managment.overrides.attendance.mark_bulk_attendance`,
+        body
+      );
+      return response as EmployeeRegularize[];
+    } catch (error) {
+      console.error("📡 Error while getting employee checkin:", error);
+      throw error;
+    }
+  },
+
+
   getAllEmployeeOvertimeLog: async (
     filters: AllEventsAndAttendanceT
   ): Promise<IOvertimeLog[]> => {

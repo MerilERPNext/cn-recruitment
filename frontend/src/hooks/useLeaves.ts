@@ -18,6 +18,7 @@ import type {
   AccrualJournalMetadataResponse,
   AccrualJournalEntriesResponse,
   PolicyQuestionsResponse,
+  AttendanceStatusResponse,
 } from "../types/leaves";
 import toast from "react-hot-toast";
 
@@ -408,5 +409,38 @@ export const useGetPolicyQuestions = (
     enabled: !!doctypeName && !!targetDoctype,
     staleTime: 10 * 60 * 1000,
     retry: 1,
+  });
+};
+
+export function useCreateLeaveApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mutationFn: (leaveData: any) =>
+      leaveService.createLeaveApplication(leaveData),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myLeaveRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+    },
+  });
+}
+
+export const useGetAttendanceStatus = (
+  employeeId: string | undefined,
+  fromDate: string,
+  toDate: string
+) => {
+  return useQuery<AttendanceStatusResponse>({
+    queryKey: ["attendance-status", employeeId, fromDate, toDate],
+    queryFn: () => {
+      if (!employeeId) {
+        throw new Error("Employee ID is required");
+      }
+      return leaveService.getAttendanceStatus(employeeId, fromDate, toDate);
+    },
+    enabled: !!employeeId && !!fromDate && !!toDate,
+    staleTime: 5 * 60 * 1000,
   });
 };

@@ -6,7 +6,7 @@ import {
     ShiftAndPolicyAudit,
     WeekOffAudit,
 } from "../../../../types/attendance"; // adjust path if needed
-import CircularLoader from "../../../shared/atoms/CircularLoader";
+import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 
 const AuditReport = () => {
     const { data: currentUser } = useCurrentUser();
@@ -20,7 +20,10 @@ const AuditReport = () => {
     });
 
     if (isLoading) {
-        return <div className="p-4 text-sm text-gray-500"><CircularLoader /></div>;
+        return <div className="space-y-8">
+            <TableSkeleton columns={4} rows={6} />
+            <TableSkeleton columns={4} rows={6} />
+        </div>;
     }
 
     /* ===================== Error ===================== */

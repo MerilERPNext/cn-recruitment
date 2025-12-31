@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
+    useMutation,
     useQuery,
     UseQueryResult,
 } from "@tanstack/react-query";
 
-import { getAllAccruedReimbursements, getBenefitPaySlipHTML, getBenefitPayslipListView } from "../services/benefitService";
+import { getAllAccruedReimbursements, getBenefitClaimLockingPeriod, getBenefitPaySlipHTML, getBenefitPayslipListView, getBenefitRequestLockView, putCommentBenefitClaim } from "../services/benefitService";
 
 
 export interface BenefitPayslip {
@@ -103,3 +104,38 @@ export const useGetAllAccruedReimbursements = (employee: string, company: string
 };
 
 
+
+export const useCommentOnBenefitClaim = () => {
+    return useMutation({
+        mutationFn: async ({ doc_name, comment }: { doc_name: string, comment: string }) => {
+            const response = await putCommentBenefitClaim(doc_name, comment);
+            return response;
+        },
+    })
+}
+
+export const useGetBenefitRequestLockView = (employee: string, payroll_period: string, posting_date: string): UseQueryResult<
+    { status: string, message: string },
+    Error
+> => {
+    return useQuery<any, Error>({
+        queryKey: ["benefit", "benefit-request-lock", employee, payroll_period, posting_date],
+        queryFn: () => getBenefitRequestLockView(employee, payroll_period, posting_date),
+        refetchOnWindowFocus: true,
+        enabled: !!employee && !!payroll_period && !!posting_date
+        // ...defaultQueryOptions,
+    });
+};
+
+export const useGetBenefitClaimLockingPeriod = (employee: string, payroll_period: string, posting_date: string): UseQueryResult<
+    { status: string, message: string },
+    Error
+> => {
+    return useQuery<any, Error>({
+        queryKey: ["benefit", "benefit-claim-locking", employee, payroll_period, posting_date],
+        queryFn: () => getBenefitClaimLockingPeriod(employee, payroll_period, posting_date),
+        refetchOnWindowFocus: true,
+        enabled: !!employee && !!payroll_period && !!posting_date
+        // ...defaultQueryOptions,
+    });
+};

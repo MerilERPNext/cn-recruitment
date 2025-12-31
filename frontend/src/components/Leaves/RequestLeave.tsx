@@ -6,15 +6,14 @@ import React, {
   useRef,
 } from "react";
 import { Form } from "@tsed/react-formio";
-//import { Formio } from "formiojs";
 import "formiojs/dist/formio.form.css";
-import { useCreateFrappeDocument } from "../../hooks/useFrappeQuery";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { toast } from "react-hot-toast";
 import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  useCreateLeaveApplication,
   useEditApprovedLeave,
   useGetLeaveReason,
   useGetLeaveRequestFields,
@@ -27,6 +26,9 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import Button from "../shared/atoms/Button";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
+import DailyConfiguration from "./DailyConfiguration";
+import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
+import AttendanceStatusModal from "./AttendanceStatusModal";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -34,6 +36,7 @@ interface FormSubmissionData {
   toDate?: string;
   halfDay?: boolean;
   half_day?: 0 | 1;
+  half_day_mode?: "continuous" | "individual";
   halfDayOption?: "First Half" | "Second Half";
   description?: string;
   half_day_date?: string;
@@ -81,14 +84,16 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           to_date: submission.data.toDate?.split("T")[0],
           half_day: submission.data.halfDay ? 1 : 0,
           half_day_date: submission.data.half_day_date?.split("T")[0],
-          custom_half_day_type: submission.data.halfDay
-            ? submission.data.halfDayOption
-            : undefined,
+          custom_half_day_type: submission.data.custom_half_day_type,
           custom_second_half_day_date:
             submission.data?.custom_second_half_day_date?.split("T")[0],
           description: submission.data.description,
           custom_reason: submission.data.custom_reason,
           custom_attachment: submission.data?.custom_attachment?.[0]?.url,
+          daily_half_day_config:
+            submission.data.custom_half_day_type === "individual"
+              ? dailyConfig
+              : undefined,
         },
       });
       setTimeout(() => {
@@ -104,34 +109,26 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEmployee, editLeaveMutation, defaults, onSuccess, onCancel]);
-
-  const createLeaveMutation = useCreateFrappeDocument({
-    onSuccess: () => {
-      toast.success("Leave request submitted successfully!");
-      setTimeout(() => {
-        setRefetchAttendance(true);
-      }, 2000);
-      queryClient.invalidateQueries({ queryKey: ["comp-off-list"] });
-      queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      triggerRefetch();
-      onSuccess?.();
-      onCancel?.();
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (err: any) => {
-      const formatedError = errorResponseFormater(
-        err,
-        "Submission failed. Please try again."
-      );
-      toast.error(formatedError);
-      console.error(err);
-    },
-  });
+  const createLeaveMutation = useCreateLeaveApplication();
 
   const [formData, setFormData] = useState<FormSubmissionData>({});
   const [leaveDays, setLeaveDays] = useState<number | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formInstance = useRef<any>(null);
+  const [dailyConfig, setDailyConfig] = useState<
+    Record<string, "Full Day" | "First Half" | "Second Half">
+  >({});
+
+  //modal states
+  const [showAttendanceButton, setShowAttendanceButton] = useState(false);
+  const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
+
+  const showDailyConfig = Boolean(
+    formData.halfDay &&
+      formData.half_day_mode === "individual" &&
+      formData.fromDate &&
+      formData.toDate
+  );
 
   const leaveTypeOptions = useMemo(() => {
     if (!leaveBalanceData?.leave_balance) return [];
@@ -161,28 +158,52 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       ? leaveBalanceMap[formData.leaveType]
       : null;
 
-  const calculateLeaveDays = useCallback((data: FormSubmissionData) => {
-    const { fromDate, toDate, halfDay } = data;
-    if (!fromDate || !toDate) return setLeaveDays(null);
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
-    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from) {
-      return setLeaveDays(null);
-    }
-    const diffMs = to.getTime() - from.getTime();
-    let days = diffMs / (1000 * 60 * 60 * 24) + 1;
-    if (halfDay) {
-      if (fromDate === toDate) {
-        days -= 0.5;
-      } else {
-        let halfDayCount = 0;
-        if (data.half_day_date) halfDayCount += 0.5;
-        if (data.custom_second_half_day_date) halfDayCount += 0.5;
-        days -= halfDayCount;
+  const calculateLeaveDays = useCallback(
+    (data: FormSubmissionData, dailyCfg?: typeof dailyConfig) => {
+      const { fromDate, toDate, halfDay } = data;
+
+      if (!fromDate || !toDate) {
+        setLeaveDays(null);
+        return;
       }
-    }
-    setLeaveDays(days);
-  }, []);
+
+      if (halfDay && data.half_day_mode === "individual" && dailyCfg) {
+        let total = 0;
+
+        Object.values(dailyCfg).forEach((v) => {
+          if (v === "Full Day") total += 1;
+          else total += 0.5;
+        });
+
+        setLeaveDays(total);
+        return;
+      }
+
+      const from = new Date(fromDate);
+      const to = new Date(toDate);
+
+      if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from) {
+        setLeaveDays(null);
+        return;
+      }
+
+      let days = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24) + 1;
+
+      if (halfDay) {
+        if (fromDate === toDate) {
+          days -= 0.5;
+        } else {
+          let halfDayCount = 0;
+          if (data.half_day_date) halfDayCount += 0.5;
+          if (data.custom_second_half_day_date) halfDayCount += 0.5;
+          days -= halfDayCount;
+        }
+      }
+
+      setLeaveDays(days);
+    },
+    []
+  );
 
   const { data: fields } = useGetLeaveRequestFields(
     formData.leaveType,
@@ -227,6 +248,59 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     }
   }, [defaults, calculateLeaveDays]);
 
+  useEffect(() => {
+    if (
+      !formData.halfDay ||
+      formData.half_day_mode !== "individual" ||
+      !formData.fromDate ||
+      !formData.toDate
+    ) {
+      return;
+    }
+
+    const dates = getDatesBetween(formData.fromDate, formData.toDate);
+
+    setDailyConfig((prev) => {
+      const next: Record<string, "Full Day" | "First Half" | "Second Half"> =
+        {};
+      dates.forEach((d) => {
+        next[d] = prev[d] ?? "Full Day";
+      });
+      return next;
+    });
+  }, [
+    formData.halfDay,
+    formData.half_day_mode,
+    formData.fromDate,
+    formData.toDate,
+  ]);
+
+  useEffect(() => {
+    if (!formData.halfDay || formData.half_day_mode !== "individual") {
+      setDailyConfig({});
+    }
+  }, [formData.halfDay, formData.half_day_mode]);
+
+  useEffect(() => {
+    if (formData.half_day_mode !== "individual") return;
+
+    const form = formInstance.current;
+    if (!form) return;
+
+    form.getComponent("half_day_date")?.setValue(null);
+    form.getComponent("custom_second_half_day_date")?.setValue(null);
+  }, [formData.half_day_mode]);
+
+  useEffect(() => {
+    if (formData.halfDay && formData.half_day_mode === "individual") {
+      calculateLeaveDays(formData, dailyConfig);
+    }
+  }, [dailyConfig]);
+
+  useEffect(() => {
+    setShowAttendanceButton(Boolean(formData.fromDate && formData.toDate));
+  }, [formData.fromDate, formData.toDate]);
+
   const handleFromDateChange = useCallback(
     (event: { data: FormSubmissionData }) => {
       const fromDateValue = event?.data?.fromDate;
@@ -243,38 +317,31 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   );
 
   const handleSubmit = useCallback(async () => {
-    if (!currentEmployee?.name) {
-      toast.error("Employee data not loaded.");
-      return;
-    }
-    if (!formInstance?.current) {
-      return;
-    }
+    if (!currentEmployee?.name || !formInstance.current) return;
+
     try {
       const submission = await formInstance.current.submit();
-      await createLeaveMutation.mutateAsync({
-        doctype: "Leave Application",
-        data: {
-          employee: currentEmployee.name,
-          leave_type: submission.data.leaveType,
-          from_date: submission.data.fromDate?.split("T")[0],
-          to_date: submission.data.toDate?.split("T")[0],
-          half_day: submission.data.halfDay,
-          half_day_date: submission.data.half_day_date?.split("T")[0],
-          custom_half_day_type: submission.data.halfDay
-            ? submission.data.halfDayOption
-            : undefined,
-          custom_second_half_day_date:
-            submission.data?.custom_second_half_day_date?.split("T")[0],
-          description: submission.data.description,
-          custom_reason: submission.data.custom_reason,
-          custom_attachment: submission.data?.custom_attachment?.[0]?.url,
-        },
+
+      const payload = buildLeavePayload({
+        employee: currentEmployee.name,
+        submission: submission.data,
+        dailyConfig,
       });
-    } catch (error) {
-      console.error("Form submit error:", error);
+
+      await createLeaveMutation.mutateAsync(payload);
+
+      toast.success("Leave request submitted successfully!");
+      triggerRefetch();
+      onSuccess?.();
+      onCancel?.();
+    } catch (err) {
+      const formatted = errorResponseFormater(
+        err,
+        "Submission failed. Please try again."
+      );
+      toast.error(formatted);
     }
-  }, [currentEmployee, createLeaveMutation]);
+  }, [currentEmployee, dailyConfig]);
 
   const leaveForm = useMemo(() => {
     const defaultFieldFlags: LeaveFieldFlags = {
@@ -287,6 +354,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       half_day: 0,
       half_day_date: 0,
       custom_second_half_day_date: 0,
+      show_half_day_options: 0,
+      show_individual_continuous: 0,
     };
 
     const show: LeaveFieldFlags = fields?.show ?? defaultFieldFlags;
@@ -323,9 +392,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 placeholder: "DD-MM-YYYY",
                 enableDate: true,
                 enableTime: false,
-                // defaultValue: defaults?.fromDate
-                //   ? `${defaults.fromDate}T00:00:00`
-                //   : "",
                 defaultValue:
                   defaults?.source === "balances"
                     ? `${today}T00:00:00`
@@ -374,37 +440,79 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     const halfDayComponents = show.half_day
       ? [
           {
-            type: "checkbox",
-            key: "halfDay",
-            errorLabel: "Half-Day Leave",
-            label: !!mandatory.half_day
-              ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
-              : "Half-Day Leave",
-            defaultValue: defaults?.halfDay,
-            input: true,
-            labelPosition: "bottom",
-            validate: { required: !!mandatory.half_day },
-            customClass:
-              "custom-halfday-toggle ml-2 my-3 border rounded-lg shadow-sm bg-white p-2",
-          },
-          {
-            type: "radio",
-            key: "halfDayOption",
-            label: "Select Half-Day Option",
-            input: true,
-            validate: { required: true },
-            values: [
-              { label: "First Half", value: "First Half" },
-              { label: "Second Half", value: "Second Half" },
+            type: "columns",
+            key: "halfDayColumns",
+            customClass: "bg-gray-100 mx-2 p-3 rounded-md mt-4",
+            columns: [
+              {
+                width: 6,
+                components: [
+                  {
+                    type: "checkbox",
+                    key: "halfDay",
+                    label: mandatory.half_day
+                      ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
+                      : "Half-Day Leave",
+                    input: true,
+                    labelPosition: "bottom",
+                    defaultValue: defaults?.halfDay,
+                    validate: { required: !!mandatory.half_day },
+                    customClass:
+                      "custom-halfday-toggle border rounded-lg shadow-sm p-2",
+                  },
+                ],
+              },
+              {
+                width: 6,
+                components: show.show_individual_continuous
+                  ? [
+                      {
+                        type: "radio",
+                        key: "half_day_mode",
+                        label: "Leave Type",
+                        hideLabel: true,
+                        input: true,
+                        optionsLabelPosition: "right",
+                        values: [
+                          { label: "Continuous", value: "continuous" },
+                          { label: "Individual", value: "individual" },
+                        ],
+                        customClass: "inline-radio-group",
+                        defaultValue: "continuous",
+                        conditional: {
+                          show: true,
+                          when: "halfDay",
+                          eq: true,
+                        },
+                      },
+                    ]
+                  : [],
+              },
             ],
-            conditional: { show: true, when: "halfDay", eq: true },
-            customClass: "px-2 mb-4 ml-4",
           },
+          ...(show.show_half_day_options
+            ? [
+                {
+                  type: "radio",
+                  key: "halfDayOption",
+                  label: "Select Half-Day Option",
+                  input: true,
+                  validate: { required: !!mandatory.show_half_day_options },
+                  values: [
+                    { label: "First Half", value: "First Half" },
+                    { label: "Second Half", value: "Second Half" },
+                  ],
+                  conditional: { show: true, when: "halfDay", eq: true },
+                  customClass: "px-2 mb-4 ml-4 mt-2",
+                },
+              ]
+            : []),
           {
             type: "columns",
             key: "halfDayDates",
-            conditional: { show: true, when: "halfDay", eq: true },
-            customClass: "px-2 mb-4",
+            customConditional: `
+  show = data.halfDay === true && data.half_day_mode !== "individual";`,
+            customClass: "px-2 mb-4 mx-2",
             columns: [
               {
                 width: 6,
@@ -414,7 +522,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                         type: "datetime",
                         key: "half_day_date",
                         errorLabel: "Half-Day Date",
-                        label: !!mandatory.half_day_date
+                        label: mandatory.half_day_date
                           ? "Half-Day Date <span style='color:red;margin-left:3px;'> *</span>"
                           : "Half-Day Date",
                         placeholder: "DD-MM-YYYY",
@@ -445,7 +553,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                         type: "datetime",
                         key: "custom_second_half_day_date",
                         errorLabel: "Second Half-Day Date",
-                        label: !!mandatory.custom_second_half_day_date
+                        label: mandatory.custom_second_half_day_date
                           ? "Second Half-Day Date <span style='color:red;margin-left:3px;'> *</span>"
                           : "Second Half-Day Date",
                         placeholder: "DD-MM-YYYY",
@@ -475,6 +583,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           },
         ]
       : [];
+
     const panelComponents = [
       ...baseComponents,
       ...(defaults?.hideHalfDayToggle ? [] : halfDayComponents),
@@ -532,11 +641,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               defaultValue: defaults?.custom_attachment
                 ? [
                     {
-                      //name: defaults.custom_attachment.split('/').pop() || 'attachment',
                       name: defaults.custom_attachment,
                       url: defaults.custom_attachment,
                       storage: "url",
-                      // type: "application/octet-stream",
                       size: 0,
                     },
                   ]
@@ -552,10 +659,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                   !!mandatory.custom_attachment ||
                   requiredFieldMap["custom_attachment"],
               },
-              // fileTypes: [
-              //   { label: "Documents", value: ".pdf,.doc,.docx" },
-              //   { label: "Images", value: ".jpg,.jpeg,.png" },
-              // ],
               filePattern: "*/*",
               customClass: "px-2 mb-6",
             },
@@ -588,6 +691,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     requiredFieldMap,
   ]);
 
+  const handleAttendanceClick = useCallback(() => {
+    setIsAttendanceModalOpen(true);
+  }, []);
+
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="flex justify-between items-center ml-6 my-2 text-sm text-gray-700">
@@ -596,11 +703,22 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           {leaveDays === 1 ? "Day" : "Days"}
         </div>
 
-        {selectedLeaveBalance !== null && (
-          <div className="mr-6">
-            <strong>Available Balance:</strong> {selectedLeaveBalance}
-          </div>
-        )}
+        <div className="mr-6 flex flex-col items-end">
+          {selectedLeaveBalance !== null && (
+            <div>
+              <strong>Available Balance:</strong> {selectedLeaveBalance}
+            </div>
+          )}
+          {showAttendanceButton && (
+            <Button
+              onClick={handleAttendanceClick}
+              variant="outline"
+              className="mt-2"
+            >
+              Attendance Status
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto pb-20">
@@ -624,13 +742,49 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             validateOnBlur: false,
             validateOnChange: false,
             suffix: "",
-            // formio: Formio,
           }}
-          onChange={({ data }: { data: FormSubmissionData }) => {
+          onChange={({
+            data,
+            changed,
+          }: {
+            data: FormSubmissionData;
+            changed?: { component?: { key?: string } };
+          }) => {
             setFormData(data);
             calculateLeaveDays(data);
+            if (changed?.component?.key === "half_day_mode") {
+              if (
+                data.halfDay &&
+                data.half_day_mode === "individual" &&
+                data.fromDate &&
+                data.toDate
+              ) {
+                const dates = getDatesBetween(data.fromDate, data.toDate);
+
+                setDailyConfig((prev) => {
+                  const next: Record<
+                    string,
+                    "Full Day" | "First Half" | "Second Half"
+                  > = {};
+                  dates.forEach((d) => {
+                    next[d] = prev[d] ?? "Full Day";
+                  });
+                  return next;
+                });
+              } else {
+                setDailyConfig({});
+              }
+            }
           }}
         />
+        {showDailyConfig && (
+          <DailyConfiguration
+            fromDate={formData.fromDate!}
+            toDate={formData.toDate!}
+            value={dailyConfig}
+            onChange={setDailyConfig}
+          />
+        )}
       </div>
       <div className="border-t border-gray-200 py-4 px-4">
         {!defaults?.isEdit ? (
@@ -660,6 +814,14 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           </Button>
         )}
       </div>
+      {isAttendanceModalOpen && (
+        <AttendanceStatusModal
+          isOpen={isAttendanceModalOpen}
+          onClose={() => setIsAttendanceModalOpen(false)}
+          fromDate={formData.fromDate || ""}
+          toDate={formData.toDate || ""}
+        />
+      )}
     </div>
   );
 };

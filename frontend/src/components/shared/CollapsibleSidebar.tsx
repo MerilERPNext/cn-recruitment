@@ -1,4 +1,3 @@
-
 import type React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -37,8 +36,9 @@ import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { ROUTES } from "../../constants/routes";
 import useCurrentUser from "../../hooks/useCurrentUser";
-// import { useGetUiPermission } from "../../hooks/useGetUiPermission";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { useGetUnreadNotificationCount } from "../../hooks/useNotification";
+import { NOTIFICATION_TITLE_MAP } from "../../utils/helperUtils";
 
 interface SubSubMenuItem {
   name: string;
@@ -57,7 +57,7 @@ interface NavigationItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   path: string;
-  permissionKey: string; // Add this to match with backend
+  permissionKey: string;
   subItems?: SubMenuItem[];
 }
 
@@ -81,11 +81,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(companyLogo) &&
-      companyLogo.length > 0 &&
-      currentEmployeeCompany
+    companyLogo.length > 0 &&
+    currentEmployeeCompany
       ? companyLogo.find(
-        (company) => company.company_name === currentEmployeeCompany
-      )
+          (company) => company.company_name === currentEmployeeCompany
+        )
       : companyLogo?.[0];
   const logoToShow = matchedCompany?.company_logo || "logo not found";
   const originalCompanyName =
@@ -105,6 +105,21 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
   const { data: currentUser } = useCurrentUser();
+  const { data: notificationData } = useGetUnreadNotificationCount(
+    currentUser?.name
+  );
+
+  const getNotificationCount = (sidebarLabel: string) => {
+    if (!notificationData?.apps) return 0;
+
+    const backendTitles = NOTIFICATION_TITLE_MAP[sidebarLabel];
+
+    if (!backendTitles) return 0;
+
+    return notificationData.apps
+      .filter((app) => backendTitles.includes(app.title))
+      .reduce((sum, app) => sum + (app.count ?? 0), 0);
+  };
 
   const handleTodoClick = () => {
     window.open(ROUTES.TODO, "_blank");
@@ -291,17 +306,17 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       subItems: [
         {
           name: "My Benefits",
-          icon: Calculator,
+          icon: Gift,
           href: "/webapp/benefits-app/my-benefits",
         },
         {
           name: "My Requests",
-          icon: Calculator,
+          icon: Users,
           href: "/webapp/benefits-app/my-requests",
         },
         {
           name: "Team Requests",
-          icon: Calculator,
+          icon: Users,
           href: "/webapp/benefits-app/my-team-requests",
         },
         {
@@ -407,7 +422,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     },
   ];
 
-  // Filter navigation items based on permissions - fully dynamic
   const navigationItems = useMemo(() => {
     if (!uiPermissions || uiPermissions.length === 0) {
       return allNavigationItems;
@@ -415,22 +429,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
     return allNavigationItems
       .map((item) => {
-        // Find permission by exact match with permissionKey
         const appPermission = uiPermissions.find(
           (perm) => perm.app_name === item.permissionKey
         );
 
-        // If app is not enabled, filter it out
         if (!appPermission || !appPermission.enabled) {
           return null;
         }
 
-        // If item has no subItems, include it as is
         if (!item.subItems || item.subItems.length === 0) {
           return item;
         }
 
-        // Filter subItems based on page permissions
         const filteredSubItems = item.subItems.filter((subItem) => {
           const pagePermission = appPermission.pages?.find(
             (page) => page.page_name === subItem.name
@@ -438,7 +448,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           return pagePermission && pagePermission.enabled;
         });
 
-        // If no subItems are enabled, filter out the parent
         if (filteredSubItems.length === 0) {
           return null;
         }
@@ -507,7 +516,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     }
 
     if (item.label === "Dashboard") {
-      return location.pathname === "/webapp/" || location.pathname === "/webapp";
+      return (
+        location.pathname === "/webapp/" || location.pathname === "/webapp"
+      );
     }
 
     if (
@@ -584,8 +595,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         `}
       </style>
       <aside
-        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${isExpanded ? "w-64" : "w-20"
-          }`}
+        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${
+          isExpanded ? "w-64" : "w-20"
+        }`}
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -606,8 +618,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   className="w-12 h-12 rounded-full  flex-shrink-0"
                 />
                 <div
-                  className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
-                    }`}
+                  className={`transition-all duration-300 ${
+                    isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                  }`}
                 >
                   <h2
                     className="font-semibant text-gray-900 whitespace-nowrap"
@@ -667,42 +680,58 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
+                          {!isExpanded &&
+                            getNotificationCount(item?.label) > 0 && (
+                              <span className="absolute -top-1 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                                {getNotificationCount(item?.label)}
+                              </span>
+                            )}
                         </div>
                         <span
-                          className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded
-                            ? "opacity-100"
-                            : "opacity-0 -translate-x-2"
-                            }`}
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
                         >
                           {item.label}
                         </span>
+                        {isExpanded &&
+                          getNotificationCount(item?.label) > 0 && (
+                            <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center">
+                              {getNotificationCount(item?.label)}
+                            </span>
+                          )}
                       </div>
                       {isExpanded && (
                         <ChevronRight
-                          className={`h-4 w-4 transition-transform duration-200  ${isDropdownOpen || isAnySubItemActive
-                            ? "rotate-90"
-                            : ""
-                            }`}
+                          className={`h-4 w-4 transition-transform duration-200  ${
+                            isDropdownOpen || isAnySubItemActive
+                              ? "rotate-90"
+                              : ""
+                          }`}
                         />
                       )}
                     </div>
                   ) : item.label === "Todo" ? (
                     <div
                       onClick={handleTodoClick}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${isItemDirectlyActive
-                        ? "bg-blue-600 text-white hover:text-white"
-                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                        }`}
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        isItemDirectlyActive
+                          ? "bg-blue-600 text-white hover:text-white"
+                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
                         </div>
                         <span
-                          className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded
-                            ? "opacity-100"
-                            : "opacity-0 -translate-x-2"
-                            }`}
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
                         >
                           {item.label}
                         </span>
@@ -711,20 +740,22 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   ) : item.label === "Help Desk" ? (
                     <div
                       onClick={handleHelpDeskClick}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${isItemDirectlyActive
-                        ? "bg-blue-600 text-white hover:text-white"
-                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                        }`}
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        isItemDirectlyActive
+                          ? "bg-blue-600 text-white hover:text-white"
+                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
                         </div>
                         <span
-                          className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded
-                            ? "opacity-100"
-                            : "opacity-0 -translate-x-2"
-                            }`}
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
                         >
                           {item.label}
                         </span>
@@ -733,20 +764,22 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   ) : (
                     <Link
                       to={item.path}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${isItemDirectlyActive
-                        ? "bg-blue-600 text-white hover:text-white"
-                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                        }`}
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
+                        isItemDirectlyActive
+                          ? "bg-blue-600 text-white hover:text-white"
+                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
                         </div>
                         <span
-                          className={`font-medium whitespace-nowrap transition-all duration-300 ${isExpanded
-                            ? "opacity-100"
-                            : "opacity-0 -translate-x-2"
-                            }`}
+                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
                         >
                           {item.label}
                         </span>
@@ -777,45 +810,50 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     onClick={() =>
                                       handleSubItemClick(subItem.name, true)
                                     }
-                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${isSubActive || isSubDropdownOpen
-                                      ? "bg-blue-50 text-blue-600"
-                                      : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                                      }`}
+                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${
+                                      isSubActive || isSubDropdownOpen
+                                        ? "bg-blue-50 text-blue-600"
+                                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                                    }`}
                                   >
                                     <div className="flex items-center space-x-2">
                                       <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <span
-                                        className={`font-medium transition-all duration-300 whitespace-nowrap  ${isExpanded
-                                          ? "opacity-100 translate-x-0"
-                                          : "opacity-0 -translate-x-2"
-                                          }`}
+                                        className={`font-medium transition-all duration-300 whitespace-nowrap  ${
+                                          isExpanded
+                                            ? "opacity-100 translate-x-0"
+                                            : "opacity-0 -translate-x-2"
+                                        }`}
                                       >
                                         {subItem.name}
                                       </span>
                                     </div>
                                     <ChevronRight
-                                      className={`h-3 w-3 transition-transform duration-200 ${isSubDropdownOpen ||
+                                      className={`h-3 w-3 transition-transform duration-200 ${
+                                        isSubDropdownOpen ||
                                         isAnySubSubItemActive
-                                        ? "rotate-90"
-                                        : ""
-                                        }`}
+                                          ? "rotate-90"
+                                          : ""
+                                      }`}
                                     />
                                   </div>
                                 ) : (
                                   <Link
                                     to={subItem.href || "#"}
-                                    className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
-                                      ? "bg-blue-600 text-white hover:text-white"
-                                      : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                                      }`}
+                                    className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
+                                      isSubActive
+                                        ? "bg-blue-600 text-white hover:text-white"
+                                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                                    }`}
                                   >
                                     <div className="flex items-center space-x-2">
                                       <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <span
-                                        className={`font-medium transition-all duration-300 whitespace-nowrap ${isExpanded
-                                          ? "opacity-100 translate-x-0"
-                                          : "opacity-0 -translate-x-2"
-                                          }`}
+                                        className={`font-medium transition-all duration-300 whitespace-nowrap ${
+                                          isExpanded
+                                            ? "opacity-100 translate-x-0"
+                                            : "opacity-0 -translate-x-2"
+                                        }`}
                                       >
                                         {subItem.name}
                                       </span>
@@ -837,18 +875,20 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                             <Link
                                               key={subSubItem.name}
                                               to={subSubItem.href}
-                                              className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubSubActive
-                                                ? "bg-blue-600 text-white hover:text-white"
-                                                : "text-gray-400 hover:bg-blue-50 hover:text-blue-600"
-                                                }`}
+                                              className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
+                                                isSubSubActive
+                                                  ? "bg-blue-600 text-white hover:text-white"
+                                                  : "text-gray-400 hover:bg-blue-50 hover:text-blue-600"
+                                              }`}
                                             >
                                               <div className="flex items-center space-x-2">
                                                 <SubSubIcon className="h-3 w-3 opacity-70" />
                                                 <span
-                                                  className={`font-medium transition-all duration-300 whitespace-nowrap ${isExpanded
-                                                    ? "opacity-100 translate-x-0"
-                                                    : "opacity-0 -translate-x-2"
-                                                    }`}
+                                                  className={`font-medium transition-all duration-300 whitespace-nowrap ${
+                                                    isExpanded
+                                                      ? "opacity-100 translate-x-0"
+                                                      : "opacity-0 -translate-x-2"
+                                                  }`}
                                                 >
                                                   {subSubItem.name}
                                                 </span>

@@ -106,7 +106,7 @@ const EmpAttendanceRequestCard = ({
           <div className="text-sm text-gray-900 text-start">
             {formattedDueDate}
           </div>
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+          <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
             <div className="text-sm font-medium text-gray-700 text-start truncate">
               {data?.username}
             </div>

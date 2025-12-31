@@ -4,6 +4,7 @@ import type { EmployeeNode } from "./type/type";
 import { useNavigate } from "react-router";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useTargetUser } from "../../context/ViewedUserContext";
+import Tooltip from "../shared/Tooltip";
 
 export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
   const { data: employee } = useCurrentEmployee();
@@ -61,7 +62,9 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
             </h3>
             <div className="flex gap-2 items-center">
               {title && (
-                <p className="text-gray-500 text-xs truncate mt-0.5">{title}</p>
+                <Tooltip content={title}>
+                  <p className="text-gray-500 text-xs truncate mt-0.5 line-clamp-1">{title.slice(0, 10)}</p>
+                </Tooltip>
               )}
               {totalChildren > 0 && (
                 <p className="text-green-600 bg-green-100 rounded-sm text-xs truncate mt-0.5 px-1">

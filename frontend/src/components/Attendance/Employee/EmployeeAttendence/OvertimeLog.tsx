@@ -3,7 +3,7 @@ import { useGetAllEmployeeOvertimeLog } from "../../../../hooks/useAttendance";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { IOvertimeLog } from "../../../../types/attendance";
-import CircularLoader from "../../../shared/atoms/CircularLoader";
+import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 
 const OvertimeLog = () => {
     const { data: currentUser } = useCurrentUser();
@@ -16,8 +16,8 @@ const OvertimeLog = () => {
 
     if (isLoading) {
         return (
-            <div className="p-4 text-sm text-gray-500">
-                <CircularLoader />
+            <div>
+                <TableSkeleton columns={4} rows={16} />
             </div>
         );
     }

@@ -80,7 +80,7 @@ const Tooltip: React.FC<TooltipProps> = ({
       {children}
       {isVisible && content && (
         <div
-          className={`absolute z-50 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap ${getPositionClasses()} ${className}`}
+          className={`absolute z-100 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap ${getPositionClasses()} ${className}`}
           role="tooltip"
         >
           {content}

@@ -76,7 +76,7 @@ export function MyRequestCard({
           <div className="text-gray-700 text-sm text-start">
             {formattedDate}
           </div>
-          <WrapperHoverCard employeeId={request?.reference_document?.employee}>
+          <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
             <div className="truncate text-gray-900 font-medium text-sm text-start">
               {request?.username || ""}
             </div>
