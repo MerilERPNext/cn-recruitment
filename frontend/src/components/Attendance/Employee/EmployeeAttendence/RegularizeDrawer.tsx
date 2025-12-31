@@ -156,7 +156,7 @@ const RegularizeDrawer = () => {
                                         (item: EmployeeRegularize) => (
                                             <tr
                                                 key={item.date}
-                                                className="hover:bg-gray-50"
+                                                className="hover:bg-gray-50 text-sm"
                                             >
                                                 <td className="border-r px-4 py-3">
                                                     <input
@@ -169,13 +169,13 @@ const RegularizeDrawer = () => {
                                                         }
                                                     />
                                                 </td>
-                                                <td className="border-r px-4 py-3">
+                                                <td className="border-r px-4 py-3 text-sm">
                                                     {item.date}
                                                 </td>
-                                                <td className="border-r px-4 py-3">
+                                                <td className="border-r px-4 py-3 text-sm">
                                                     {item.status}
                                                 </td>
-                                                <td className="border-r px-4 py-3">
+                                                <td className="border-r px-4 py-3 text-sm">
                                                     {item.day}
                                                 </td>
                                             </tr>
