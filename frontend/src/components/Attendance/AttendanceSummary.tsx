@@ -39,6 +39,12 @@ import { ViewAll } from "../shared/atoms/ViewAll";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 import PolicyDrawer from "./PolicyDrawer";
 
+interface PolicyDrawerConfig {
+  title: string;
+  doctypeName: string;
+  targetDoctype: string;
+}
+
 const AttendanceSummary = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
@@ -46,11 +52,8 @@ const AttendanceSummary = () => {
 
   const [openPolicyDrawer, setOpenPolicyDrawer] = useState(false);
 
-  const [policyDrawerConfig, setPolicyDrawerConfig] = useState<{
-    title: string;
-    doctypeName: string;
-    targetDoctype: string;
-  } | null>(null);
+  const [policyDrawerConfig, setPolicyDrawerConfig] =
+    useState<PolicyDrawerConfig | null>(null);
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -265,53 +268,31 @@ const AttendanceSummary = () => {
   const getNavigatableSettingsButton = (settingType: string, data?: string) => {
     if (!data) return null;
 
-    if (settingType === "Current Shift") {
-      return (
-        <button
-          type="button"
-          onClick={() => {
-            setPolicyDrawerConfig({
-              title: settingType,
-              doctypeName: "Shift Type",
-              targetDoctype: data,
-            });
-            setOpenPolicyDrawer(true);
-          }}
-          className="w-full text-left text-sm text-gray-800 hover:text-blue-600"
-        >
-          {data}
-        </button>
-      );
-    }
+    const drawerSettings: Record<
+      string,
+      { doctypeName: string; useEmployeeAsTarget?: boolean }
+    > = {
+      "Current Shift": { doctypeName: "Shift Type" },
+      "Attendance Method": {
+        doctypeName: "Employee",
+        useEmployeeAsTarget: true,
+      },
+      "Week Off": { doctypeName: "Week Off" },
+    };
 
-    if (settingType === "Attendance Method") {
+    const settingConfig = drawerSettings[settingType];
+    if (settingConfig) {
+      const { doctypeName, useEmployeeAsTarget } = settingConfig;
       return (
         <button
           type="button"
           onClick={() => {
             setPolicyDrawerConfig({
               title: settingType,
-              doctypeName: "Employee",
-              targetDoctype: currentEmployee?.employee || "",
-            });
-            setOpenPolicyDrawer(true);
-          }}
-          className="w-full text-left text-sm text-gray-800 hover:text-blue-600"
-        >
-          {data}
-        </button>
-      );
-    }
-
-    if (settingType === "Week Off") {
-      return (
-        <button
-          type="button"
-          onClick={() => {
-            setPolicyDrawerConfig({
-              title: settingType,
-              doctypeName: "Week Off",
-              targetDoctype: data,
+              doctypeName,
+              targetDoctype: useEmployeeAsTarget
+                ? currentEmployee?.employee || ""
+                : data,
             });
             setOpenPolicyDrawer(true);
           }}

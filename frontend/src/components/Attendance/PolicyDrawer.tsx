@@ -22,8 +22,10 @@ const PolicyDrawer = ({
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40"
+      <button
+        type="button"
+        aria-label="Close drawer"
+        className="fixed inset-0 bg-black/50 z-40 cursor-default"
         onClick={onClose}
       />
 

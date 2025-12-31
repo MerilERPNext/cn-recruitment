@@ -26,9 +26,7 @@ const PolicyQAContent = ({ doctypeName, targetDoctype }: Props) => {
 
   if (isError) {
     return (
-      <p className="text-sm text-red-600">
-        Failed to load policy information
-      </p>
+      <p className="text-sm text-red-600">Failed to load policy information</p>
     );
   }
 
@@ -48,7 +46,6 @@ const PolicyQAContent = ({ doctypeName, targetDoctype }: Props) => {
       {/* Body */}
       {open && (
         <div className="px-6 pb-6 pt-2 border-t">
-
           {isLoading && <p className="text-sm text-gray-500">Loading...</p>}
 
           {!isLoading && questions.length === 0 && (
@@ -58,8 +55,8 @@ const PolicyQAContent = ({ doctypeName, targetDoctype }: Props) => {
           )}
 
           <div className="space-y-4">
-            {questions.map((q, i) => (
-              <div key={i}>
+            {questions.map((q) => (
+              <div key={q.question}>
                 <p className="font-semibold text-sm">{q.question}</p>
                 <p className="text-sm text-gray-600">{q.answer}</p>
               </div>
