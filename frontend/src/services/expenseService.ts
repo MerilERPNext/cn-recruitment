@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ExpenseCategoryType } from "../types/expense";
+import {
+  ExpenseCategoryType,
+  ExpensePolicyQuestionsResponse,
+} from "../types/expense";
 import {
   CalculateExpenseParams,
   CalculateExpenseResponse,
@@ -288,5 +291,17 @@ export const expenseService = {
     );
 
     return Array.isArray(response) ? response : [];
+  },
+
+  //get expense policy questions
+  getExpensePolicyQuestions: async (
+    categoryName?: string
+  ): Promise<ExpensePolicyQuestionsResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_category_questions.get_expense_category_questions",
+      categoryName ? { category_name: categoryName } : {}
+    );
+
+    return response as ExpensePolicyQuestionsResponse;
   },
 };

@@ -19,7 +19,10 @@ import {
   CalculateExpenseResponse,
 } from "../types/expenseAdvance";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
-import { ExpenseCategoryType } from "../types/expense";
+import {
+  ExpenseCategoryType,
+  ExpensePolicyQuestionsResponse,
+} from "../types/expense";
 
 export const useExpenseTypes = (
   filters?: FilterCondition[]
@@ -348,6 +351,16 @@ export const useGetExpenseCategoryTypes = () => {
   return useQuery<ExpenseCategoryType[]>({
     queryKey: ["expense-category-types"],
     queryFn: expenseService.getExpenseCategoryTypes,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+//expense policy questions
+export const useGetExpensePolicyQuestions = (categoryName?: string) => {
+  return useQuery<ExpensePolicyQuestionsResponse>({
+    queryKey: ["expense-policy-questions", categoryName],
+    queryFn: () => expenseService.getExpensePolicyQuestions(categoryName),
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
