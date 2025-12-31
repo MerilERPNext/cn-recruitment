@@ -237,20 +237,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Compensation",
       subItems: [
         {
-          name: "Annual CTC",
-          icon: Calculator,
-          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
-        },
-
-        {
-          name: "Salary Slip",
-          icon: CreditCard,
-          href: "/webapp/salary-slip-app/salary-slip-list",
-        },
-        {
-          name: "Tax Declaration Sheet",
-          icon: Wallet,
-          href: "/webapp/salary-slip-app/income-tax-sheet",
+          name: "Pay Package",
+          icon: IndianRupee,
+          href: "/webapp/salary-slip-app/benefits-list",
         },
         {
           name: "IT Declaration",
@@ -258,17 +247,30 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/it-declaration-form",
         },
         {
+          name: "Tax Declaration Sheet",
+          icon: Wallet,
+          href: "/webapp/salary-slip-app/income-tax-sheet",
+        },
+        {
+          name: "Salary Slip",
+          icon: CreditCard,
+          href: "/webapp/salary-slip-app/salary-slip-list",
+        },
+        {
+          name: "Extra Payment",
+          icon: HandCoins,
+          href: "/webapp/salary-slip-app/extra-payment",
+        },
+        {
           name: "My Loan Requests",
           icon: BadgeIndianRupee,
           href: "/webapp/salary-slip-app/my-loan-requests",
         },
-
         {
           name: "Team Loan Requests",
           icon: Users,
           href: "/webapp/salary-slip-app/team-loan-requests",
         },
-
         {
           name: "My Advances",
           icon: IndianRupee,
@@ -280,19 +282,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/team-advances-list",
         },
         {
-          name: "Pay Package",
-          icon: IndianRupee,
-          href: "/webapp/salary-slip-app/benefits-list",
-        },
-        {
           name: "Perquisite",
           icon: IndianRupee,
           href: "/webapp/salary-slip-app/perquisite-list",
         },
         {
-          name: "Extra Payment",
-          icon: HandCoins,
-          href: "/webapp/salary-slip-app/extra-payment",
+          name: "Annual CTC",
+          icon: Calculator,
+          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
         },
         {
           name: "Payroll Documents",
