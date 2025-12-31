@@ -22,15 +22,7 @@ export const getTaxSheetData = async (
 
   
 
-export const getITDecalarationData = async () => {
-  const response = await FrappeAPI.callMethod(
-    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.tds_declaration_form"
-  );
 
-  console.log("FULL API RESPONSE 👉", response);
-
-  return response;
-};
 
 export const PayrollPeriodsService = {
   getPayrollPeriods: async () => {
