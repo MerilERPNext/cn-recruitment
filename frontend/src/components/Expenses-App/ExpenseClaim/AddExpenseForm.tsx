@@ -9,6 +9,7 @@ import {
   useCalculateExpenseAmount,
   useGetUnitPrice,
   useUpdateExpense,
+  useGetExpenseCategoryTypes,
 } from "../../../hooks/useExpense";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -68,6 +69,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const [formKey, setFormKey] = useState<number>(0);
   const [vehicleType, setVehicleType] = useState<string | null>(null);
   const [previousCategory, setPreviousCategory] = useState<string | null>(null);
+  const [selectedCategoryType, setSelectedCategoryType] =
+    useState<string>("General");
+
+  const { data: categoryTypes } = useGetExpenseCategoryTypes();
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     try {
@@ -81,7 +86,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
   const [dynamicFields, setDynamicFields] = useState<any[]>([]);
 
-  const [mainFormData, setMainFormData] = useState<any>({});
+  const [mainFormData, setMainFormData] = useState<any>({
+    categoryType: "General",
+  });
   const [dynamicFormData, setDynamicFormData] = useState<any>({});
 
   const [showCategoryAndType, setShowCategoryAndType] = useState(true);
@@ -143,17 +150,21 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         },
       ];
     }
-
+    console.log(previousCategory);
     setDynamicFormData(copy);
     setMainFormData({
+      categoryType: initialExpense.categoryType || "General",
       expenseCategory: initialExpense.expenseCategory,
       expenseType: initialExpense.expenseType,
     });
+    setSelectedCategoryType(initialExpense.categoryType || "General");
     setShowCategoryAndType(true);
     setFormKey((k) => k + 1);
     clearFailedStatus(initialExpense.uid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialExpense]);
 
+  // FIX 1: Reset dynamic form when expense type changes (not in edit mode)
   useEffect(() => {
     const expenseType =
       mainFormData?.expenseType || mainFormData?.expense_type || null;
@@ -165,6 +176,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     if (expenseType) {
       setDynamicFormData({});
       setCalcParams(undefined);
+      setVehicleType(null);
       setFormKey((k) => k + 1);
 
       if (
@@ -230,6 +242,24 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
           className: "text-xl font-semibold mb-4 hidden md:block",
         },
         {
+          type: "select",
+          key: "categoryType",
+          label: 'Select Category Type <span style="color:red">&nbsp;*</span>',
+          placeholder: "Select Category Type",
+          dataSrc: "custom",
+          data: {
+            custom: `values = data.categoryTypeOptions || [];`,
+          },
+          validate: {
+            required: true,
+            customMessage: "Category Type is required",
+          },
+          input: true,
+          html: true,
+          customClass: "mt-4",
+          disabled: !!editingExpenseId,
+        },
+        {
           type: "columns",
           key: "categoryAndTypeRow",
           customClass: "flex min-w-full mt-4",
@@ -244,7 +274,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   placeholder: "Select Expense Category",
                   dataSrc: "url",
                   data: {
-                    url: `/api/method/chatnext_expense_trips.expense_claim.get_applicable_expense_categories`,
+                    url: `/api/method/chatnext_expense_trips.expense_claim.get_applicable_expense_categories?category_type={{ data.categoryType }}`,
                     headers: [{ key: "Accept", value: "application/json" }],
                   },
                   selectValues: "message",
@@ -298,8 +328,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     [currentEmployee, editingExpenseId]
   );
 
+  // FIX 2: Set previousCategory in handleSubmit
   const handleSubmit = (submission: any) => {
     setMainFormData(submission.data);
+    setPreviousCategory(submission.data.expenseCategory);
     setShowCategoryAndType(false);
     setFormKey((k) => k + 1);
   };
@@ -447,10 +479,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 customMessage: `${field?.label} is required`,
               },
               input: true,
-              // fileTypes: [
-              //   { label: "Documents", value: ".pdf,.doc,.docx" },
-              //   { label: "Images", value: ".jpg,.jpeg,.png" },
-              // ],
               filePattern: "*/*",
               customClass: "mb-4",
               html: true,
@@ -797,10 +825,12 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setDynamicFormData(copy);
 
     setMainFormData({
+      categoryType: expense.categoryType || "General",
       expenseCategory: expense.expenseCategory,
       expenseType: expense.expenseType,
     });
 
+    setSelectedCategoryType(expense.categoryType || "General");
     setShowCategoryAndType(true);
     setFormKey((k) => k + 1);
     clearFailedStatus(expense.uid);
@@ -824,20 +854,33 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             key={formKey}
             ref={formRef}
             form={formSchema}
-            submission={{ data: mainFormData }}
+            submission={{
+              data: {
+                ...mainFormData,
+                categoryType: selectedCategoryType,
+                categoryTypeOptions: categoryTypes || ["General", "Relocation"],
+              },
+            }}
             onChange={(change: any) => {
+              const newCategoryType = change.data.categoryType;
               const newCategory = change.data.expenseCategory;
 
+              // FIX 3: Better handling of category type changes
               if (
-                previousCategory &&
-                newCategory &&
-                previousCategory !== newCategory
+                selectedCategoryType &&
+                newCategoryType &&
+                selectedCategoryType !== newCategoryType
               ) {
+                change.data.expenseCategory = null;
                 change.data.expenseType = null;
 
                 setDynamicFormData({});
                 setDynamicFields([]);
                 setCalcParams(undefined);
+                setPreviousCategory(null);
+                setVehicleType(null);
+                setSelectedCategoryType(newCategoryType);
+                setMainFormData({ ...change.data });
                 setFormKey((k) => k + 1);
 
                 try {
@@ -847,6 +890,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 } catch (e) {
                   console.error(e);
                 }
+                return;
+              }
+
+              if (newCategoryType) {
+                setSelectedCategoryType(newCategoryType);
               }
 
               if (newCategory) {
@@ -1217,12 +1265,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   return p.guest_name || "-";
                                 }
 
-                                // For Employee or Self type
                                 if (p.employee_name) {
                                   return p.employee_name;
                                 }
 
-                                // Fallback: lookup from employeeOptionsForDrawer
                                 if (p.employee) {
                                   const found = employeeOptionsForDrawer.find(
                                     (opt) => opt.name === p.employee
@@ -1398,15 +1444,30 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               </table>
             </div>
 
+            {/* FIX 5: Comprehensive state reset in "Add More" button */}
             <div className="flex justify-end mt-4 gap-3">
               <button
                 className="bg-blue-500 text-white font-bold px-6 py-2 rounded hover:bg-blue-600"
                 onClick={() => {
                   setShowCategoryAndType(true);
-                  setFormKey((prev) => prev + 1);
                   setEditingExpenseId(null);
-                  setMainFormData({});
+                  setMainFormData({ categoryType: "General" });
                   setDynamicFormData({});
+                  setDynamicFields([]);
+                  setCalcParams(undefined);
+                  setVehicleType(null);
+                  setPreviousCategory(null);
+                  setSelectedCategoryType("General");
+                  setFormKey((prev) => prev + 1);
+
+                  setTimeout(() => {
+                    if (formRef.current?.reset) {
+                      formRef.current.reset();
+                    }
+                    if (dynamicFormRef.current?.reset) {
+                      dynamicFormRef.current.reset();
+                    }
+                  }, 0);
                 }}
               >
                 Add More
