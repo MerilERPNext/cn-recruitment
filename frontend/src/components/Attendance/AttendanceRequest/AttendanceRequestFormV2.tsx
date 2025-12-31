@@ -517,11 +517,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     }
   }, [attendanceRequestAttachmentsMandatory]);
 
-  const formatTime = (date: Date | string | undefined): string | undefined => {
-    if (!date) return undefined;
-    const d = new Date(date);
-    return d.toLocaleTimeString("en-GB");
-  };
+  // const formatTime = (date: Date | string | undefined): string | undefined => {
+  //   if (!date) return undefined;
+  //   const d = new Date(date);
+  //   return d.toLocaleTimeString("en-GB");
+  // };
 
   type CustomError = Error & {
     response?: { data?: { exception?: string } };
