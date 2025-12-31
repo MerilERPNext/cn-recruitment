@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useDrag, useDrop } from "react-dnd";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useGetUnreadNotificationCount } from "../../../hooks/useNotification";
@@ -14,39 +14,40 @@ export interface DragItem {
 
 export interface CNMicroapp {
     display_order: number;
-    is_visible: unknown;
     name: string;
     title?: string;
-    content_route?: string;
+    content_route: string;
     status?: string;
-    icon?: string;
+    icon: string;
+    is_visible: boolean;
+    is_pinned: boolean;
+    is_favorite: boolean;
+    custom_label?: string;
+    redirect_to_new_tab?: boolean;
 }
 interface MyMicroAppProps {
     item: CNMicroapp;
     index: number;
     notificationCount?: number;
     moveApp: (from: number, to: number) => void;
+    onDragEnd: () => void;
 }
 
 const MyMicroApp: React.FC<MyMicroAppProps> = ({
     item,
     index,
     moveApp,
+    onDragEnd,
 }) => {
     const { data: currentUser } = useCurrentUser();
     const { data: notificationData } = useGetUnreadNotificationCount(
         currentUser?.name
     );
 
-
     const getNotificationCount = (title?: string) => {
-        return 10
         if (!title || !notificationData?.apps) return 0;
-
-        // return notificationData.apps.find((app) => app.title === title)?.count ?? 10;
+        return notificationData.apps.find((app) => app.title === title)?.count ?? 0;
     };
-    const navigate = useNavigate();
-
     /* -------------------- DND -------------------- */
     const [{ isDragging }, dragRef] = useDrag<
         DragItem,
@@ -58,6 +59,9 @@ const MyMicroApp: React.FC<MyMicroAppProps> = ({
         collect: monitor => ({
             isDragging: monitor.isDragging(),
         }),
+        end: () => {
+            onDragEnd();
+        }
     });
 
     const [, dropRef] = useDrop<DragItem>({
@@ -86,60 +90,62 @@ const MyMicroApp: React.FC<MyMicroAppProps> = ({
     const color = colors[index % colors.length];
 
     const handleClick = () => {
-        if (item.content_route) {
-            navigate(item.content_route);
+        if (item.content_route === window.location.pathname) {
+            window.scrollTo(0, 0);
+            return
         }
     };
 
     const isSvg =
         item.icon?.toLowerCase().endsWith(".svg") ||
         item.icon?.toLowerCase().includes(".svg?");
-
     return (
-        <div
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ref={node => dragRef(dropRef(node)) as any}
-            onClick={handleClick}
-            className={`text-center cursor-move hover:scale-105 transition-transform mb-2
-        ${isDragging ? "opacity-40" : ""}`}
-        >
+        <Link to={item.content_route} target={item.redirect_to_new_tab ? "_blank" : "_self"}>
             <div
-                className={`w-16 h-16 ${color.bg} rounded-lg mx-auto mb-2 flex items-center justify-center shadow-md relative`}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ref={node => dragRef(dropRef(node)) as any}
+                onClick={handleClick}
+                className={`text-center cursor-move hover:scale-105 transition-transform mb-2
+                ${isDragging ? "opacity-40" : ""}`}
             >
-                {getNotificationCount(item.title) > 0 && (
-                    <span className="absolute -top-2 -right-2 min-w-[18px] size-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
-                        {getNotificationCount(item.title)}
-                    </span>
-                )}
+                <div
+                    className={`w-16 h-16 ${color.bg} rounded-lg mx-auto mb-2 flex items-center justify-center shadow-md relative`}
+                >
+                    {getNotificationCount(item.title) > 0 && (
+                        <span className="absolute -top-2 -right-2 min-w-[18px] size-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                            {getNotificationCount(item.title)}
+                        </span>
+                    )}
 
-                {item.icon ? (
-                    isSvg ? (
-                        <div
-                            className={`w-8 h-8 ${color.text}`}
-                            style={{
-                                backgroundColor: "currentColor",
-                                maskImage: `url(${item.icon})`,
-                                maskSize: "contain",
-                                maskRepeat: "no-repeat",
-                                maskPosition: "center",
-                                WebkitMaskImage: `url(${item.icon})`,
-                                WebkitMaskSize: "contain",
-                                WebkitMaskRepeat: "no-repeat",
-                                WebkitMaskPosition: "center",
-                            }}
-                        />
+                    {item.icon ? (
+                        isSvg ? (
+                            <div
+                                className={`w-8 h-8 ${color.text}`}
+                                style={{
+                                    backgroundColor: "currentColor",
+                                    maskImage: `url(${item.icon})`,
+                                    maskSize: "contain",
+                                    maskRepeat: "no-repeat",
+                                    maskPosition: "center",
+                                    WebkitMaskImage: `url(${item.icon})`,
+                                    WebkitMaskSize: "contain",
+                                    WebkitMaskRepeat: "no-repeat",
+                                    WebkitMaskPosition: "center",
+                                }}
+                            />
+                        ) : (
+                            <img src={item.icon} alt={item.title} className="w-8 h-8" />
+                        )
                     ) : (
-                        <img src={item.icon} alt={item.title} className="w-8 h-8" />
-                    )
-                ) : (
-                    <span className={`${color.text} font-bold text-lg`}>
-                        {item.title ? item.title.charAt(0).toUpperCase() : "A"}
-                    </span>
-                )}
-            </div>
+                        <span className={`${color.text} font-bold text-lg`}>
+                            {item.title ? item.title.charAt(0).toUpperCase() : "A"}
+                        </span>
+                    )}
+                </div>
 
-            <p className="text-xs text-gray-600">{item.title}</p>
-        </div>
+                <p className="text-xs text-gray-600">{item?.custom_label || item.title}</p>
+            </div>
+        </Link>
     );
 };
 

@@ -100,6 +100,17 @@ export const useUserMicroApps = (
   });
 };
 
+export function useSaveUserMicroApps() {
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.saveUserMicroApps(body),
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
+
+
 export const useGetEmployeeShift = (
   userId: string,
   filters?: object

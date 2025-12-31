@@ -13,6 +13,7 @@ import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { EmployeeRegularize } from "../../../../types/attendance";
 import toast from "react-hot-toast";
 import CircularLoader from "../../../shared/atoms/CircularLoader";
+import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 
 const RegularizeDrawer = () => {
     const [open, setOpen] = useState(false);
@@ -87,8 +88,9 @@ const RegularizeDrawer = () => {
                     refetch()
                     toast.success("Regularization submitted successfully");
                 },
-                onError: () => {
-                    toast.error("Failed to submit regularization");
+                onError: (error) => {
+                    const err = errorResponseFormater(error)
+                    toast.error(err);
                 }
             })
     };

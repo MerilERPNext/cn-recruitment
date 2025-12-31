@@ -34,9 +34,11 @@ const MicroAppGrid: FC<MicroAppGridProps> = ({
         });
     }, []);
 
-    useEffect(() => {
-        onOrderChange?.(items);
-    }, [items, onOrderChange]);
+    const handleDragEnd = () => {
+        if (onOrderChange) {
+            onOrderChange(items);
+        }
+    };
 
     return (
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-4 gap-4">
@@ -46,6 +48,7 @@ const MicroAppGrid: FC<MicroAppGridProps> = ({
                     item={item}
                     index={index}
                     moveApp={moveApp}
+                    onDragEnd={handleDragEnd}
                 />
             ))}
         </div>
