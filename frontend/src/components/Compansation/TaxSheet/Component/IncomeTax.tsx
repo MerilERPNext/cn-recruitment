@@ -1,110 +1,84 @@
-"use client"
-const incomeData = [
-  {
-    section: "Income from Salary",
-    items: [
-      { label: "Gross Salary", value: 19999996 },
-      { label: "Less: CTC Reimbursements", value: "(0)" },
-      { label: "Total Reimbursements", value: 0 },
-      { label: "Gross Income after deduction and Reimbursements", value: 19999996 },
-      { label: "Less exemption under Section 10", value: 0 },
-      { label: "Total Income 15 Exemptions", value: 0 },
-      { label: "Time amount of salary received after Section 10", value: 19999996 },
-    ],
-  },
-  {
-    section: "Less Deduction under section 16",
-    items: [
-      { label: "Less Deductions under section 16", value: 0 },
-      { label: "Standard Deduction under section 16(ia)", value: 75000 },
-      { label: "Total amount of deductions under section 16", value: 75000 },
-    ],
-  },
-  { section: "Income from Other Sources", items: [{ label: "Add: Income from Other Sources", value: 14625004 }] },
-  {
-    section: "Tax Calculations",
-    items: [
-      { label: "Total Income Chargeable to Income Tax", value: 34624000 },
-      { label: "Total Taxable Income", value: 34624000 },
-      { label: "Income tax at slab rates", value: 1346482 },
-      { label: "Outside Tax / Advance Tax (C)", value: 0 },
-      { label: "Tax Deducted 10 Gross by Current Employer (D)", value: 144008 },
-      { label: "Remaining Tax (E = C - D)", value: "1,202,474" },
-      { label: "Remaining Months", value: 9 },
-      { label: "Monthly TDS", value: 133608 },
-    ],
-  },
-]
+"use client";
+import { useEffect, useState } from "react";
+import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
+import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
+import {
+  useIncomeTaxComputationData,
+  useTaxSheetPayrollPriodsData,
+} from "../../../../hooks/useTaxSheet";
+import CustomDropdown from "../../../shared/CustomDropdown";
+import IncomeTaxComputationlist from "./IncomeTaxComputationlist";
 
-export default function IncomeComputationSheet() {
+type PayrollPeriod = {
+  name: string;
+};
+type taxsheetData = {
+  current_tax_regime: string;
+  // Add other relevant fields as needed
+};
 
-    return (
-        <div className="">
-          <div className="overflow-hidden">
-            <div id="income-sheet-content" className=" bg-white">
-      
-              {/* Header */}
-              <div className=" border px-4 py-2 rounded-t-lg bg-gray-100">
-                <div className="grid grid-cols-4 gap-4 text-sm font-semibold">
-                  <div className="text-sm">Description</div>
-                  <div className="text-center">Declared Amount</div>
-                  <div className="text-center">Exemption</div>
-                  <div className="text-center">Taxable Amount</div>
-                </div>
-              </div>
-              {/* Content Sections */}
-              <div className="border">
-                {incomeData.map((section, sectionIdx) => (
-                  <div key={sectionIdx}>
-                    <h3 className="text-sm font-bold bg-blue-50 p-2">
-                      {section.section}
-                    </h3>
-      
-                    <div className="space-y-2">
-                      {section.items.map((item, itemIdx) => (
-                        <div
-                          key={itemIdx}
-                          className={`grid grid-cols-4 gap-4 text-sm p-2 border-b ${
-                            item.label.includes("Total") || item.label.includes("Income Tax")
-                              ? "bg-gray-50 font-semibold"
-                              : ""
-                          }`}
-                        >
-                          {/* Col 1: Label */}
-                          <div>{item.label}</div>
-      
-                          {/* Col 2: Declared Amount */}
-                          <div className="text-center">
-                            {typeof item.value === "number"
-                              ? item.value.toLocaleString("en-IN")
-                              : item.value}
-                          </div>
-      
-                          {/* Col 3: Exemption */}
-                          <div className="text-center">{ "-"}</div>
-      
-                          {/* Col 4: Taxable Amount */}
-                          <div className="text-center">{ "-"}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-      
-              {/* Footer */}
-              <div className=" p-2 border text-sm">
-                <div className="grid grid-cols-4 gap-4 font-semibold">
-                  <div>Net Tax Payable (Before 1(i)) or Receivable:</div>
-                  <div className="text-center">1,202,474</div>
-                  <div></div>
-                  <div></div>
-                </div>
-              </div>
-      
-            </div>
+export default function IncomeComputationSheetContainer() {
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData() as {
+    data: PayrollPeriod[] | undefined;
+  };
+
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+
+  useEffect(() => {
+    if (payrollPeriods?.length && !selectedPeriod) {
+      const currentYear = new Date().getFullYear().toString();
+
+      // Try to find payroll period that includes the current year
+      const periodForCurrentYear =
+        payrollPeriods.find((p) => p.name.includes(currentYear))?.name ||
+        payrollPeriods[0].name; // fallback to first period
+
+      setSelectedPeriod(periodForCurrentYear);
+    }
+  }, [payrollPeriods, selectedPeriod]);
+
+  const { data: taxsheetData } = useIncomeTaxComputationData(
+    user?.employee || null,
+    user?.company || null,
+    selectedPeriod || null
+  ) as { data: taxsheetData | undefined };
+
+  const payrollPeriodOptions =
+    payrollPeriods?.map((p) => ({
+      value: p.name,
+      label: p.name,
+    })) || [];
+
+  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedPeriod(e.target.value);
+  };
+  
+
+  return (
+    <div className="mb-2">
+      <div className="py-2 px-4 bg-blue-50 rounded">
+      <div className="flex items-center justify-between w-full">
+<div className="flex items-center gap-4">
+
+          <h1 className="base-title font-semibold text-gray-800">
+            Income Tax Computation Sheet {selectedPeriod}
+          </h1>
+          <span className="text-sm bg-green-200 text-gray-600 px-2 py-1 rounded">{taxsheetData?.current_tax_regime ?? "Regime not available"}</span>
+</div>
+          <div className="flex flex-row md:flex-row md:items-center md:gap-4">
+            <CustomDropdown
+              value={selectedPeriod}
+              onChange={handlePeriodChange}
+              options={payrollPeriodOptions}
+            />
           </div>
         </div>
-      )
-      
+      </div>
+      <div>
+        <IncomeTaxComputationlist data={taxsheetData} />
+      </div>
+    </div>
+  );
 }

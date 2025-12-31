@@ -1,6 +1,7 @@
 // types/itDeclaration.ts
 
 export type ITItem = {
+  name: string;
   exemption_sub_category: string;
   description: string | null;
   editable: number;

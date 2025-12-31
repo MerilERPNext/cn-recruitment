@@ -1,135 +1,224 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
+"use client"
+import { useEffect, useState } from "react"
+import type React from "react"
 
-import { useEffect, useState } from "react";
-import { ITCategory } from "../../../types/itDeclaration";
-import {
-  useITDeclarationTabData,
-  useNewRegime,
-} from "../../../hooks/payroll/useITDeclaration";
-import { normalizeITCategories } from "./Component/DataHandling";
-import CategoryDeclaration from "./Component/test";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import type { ITCategory } from "../../../types/itDeclaration"
+import { useITDeclarationTabData, useNewRegime, useSubmitITDeclaration } from "../../../hooks/payroll/useITDeclaration"
+import { normalizeITCategories } from "./Component/DataHandling"
+import CategoryDeclaration from "./Component/test"
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser"
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee"
+import HRAForm, { type HRAData } from "./Component/HraExemptio"
+import CompareTaxSheetHandler from "./Component/TaxCompare"
+import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet"
+import CustomDropdown from "../../shared/CustomDropdown"
 
-type HRAExemption = {
-  monthly_hra: number;
-  rented_in_metro_city: number;
-  annual_hra_exemption: number;
-  monthly_hra_exemption: number;
-  start_date: string;
-  end_date: string;
-  pan: string;
-  address_line1: string;
-  address_line2: string;
-};
+
+type PayrollPeriod = {
+  name: string
+}
 
 const ITDeclarationForm = () => {
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: userId } = useLoggedInUser()
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "")
+  const mutation = useSubmitITDeclaration()
+  const { data: payrollPeriods, } = useTaxSheetPayrollPriodsData() as {
+    data: PayrollPeriod[] | undefined
+    refetch: () => void
+  }
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("")
 
-  const newRegimeValue = useNewRegime(
-    user?.employee || null,
-    user?.company || null
-  ).data as any | undefined;
+  const newRegimeResponse = useNewRegime(user?.employee || null, user?.company || null).data as any
+  const declarationId = newRegimeResponse?.declaration_id
+  const [goHeadWithNewRegime, setGoHeadWithNewRegime] = useState<0 | 1 | null>(null)
+  const [apiResponse, setApiResponse] = useState<any | null>(null)
 
-  const goHeadValue = newRegimeValue?.go_head_with_new_regime;
-  const declarationId = newRegimeValue?.declaration_id;
-
-  const { data: apiResponse } = useITDeclarationTabData(
-    goHeadValue,
-    user?.employee || null,
-    user?.company || null
-  ) as {data?: any};
-
-  const normalizedCategories = normalizeITCategories(apiResponse);
-
-  // ✅ STATES
-  const [categories, setCategories] = useState<ITCategory[]>([]);
-  const [hraExemption, setHraExemption] = useState<HRAExemption[]>([]);
-  const [activeMainTab, setActiveMainTab] =
-    useState<"hra" | "category">("hra");
-  const [activeCategoryTab, setActiveCategoryTab] = useState("");
-
-  // ✅ API → STATE
   useEffect(() => {
-    if (normalizedCategories.length > 0) {
-      setCategories(normalizedCategories);
-      setActiveCategoryTab(normalizedCategories[0].category_name);
+    if (newRegimeResponse?.go_head_with_new_regime === 0 || newRegimeResponse?.go_head_with_new_regime === 1) {
+      setGoHeadWithNewRegime(newRegimeResponse.go_head_with_new_regime)
+    }
+  }, [newRegimeResponse])
+
+  const goHeadWithNewRegimeBool = goHeadWithNewRegime === 1
+  const { data: responseData, refetch: refetchDeclaration } = useITDeclarationTabData(
+    goHeadWithNewRegimeBool,
+    user?.employee || null,
+    user?.company || null,
+    selectedPeriod || null,
+  ) as { data?: any; refetch: () => void }
+
+  // Set initial payroll period once
+  useEffect(() => {
+    if (payrollPeriods?.length && !selectedPeriod) {
+      const currentYear = new Date().getFullYear().toString()
+      const periodForCurrentYear =
+        payrollPeriods.find((p) => p.name.includes(currentYear))?.name || payrollPeriods[0].name
+      setSelectedPeriod(periodForCurrentYear)
+    }
+  }, [payrollPeriods, selectedPeriod])
+
+  useEffect(() => {
+    setCategories([])
+    setHraData(null)
+    setActiveCategoryTab("")
+  }, [selectedPeriod])
+
+  // Refetch API when payroll period changes
+  useEffect(() => {
+    if (responseData) {
+      setApiResponse(responseData)
+    }
+  }, [responseData])
+
+  const payrollPeriodOptions =
+    payrollPeriods?.map((p) => ({
+      value: p.name,
+      label: p.name,
+    })) || []
+
+  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedPeriod(e.target.value)
+  }
+
+  const [categories, setCategories] = useState<ITCategory[]>([])
+  const [activeMainTab, setActiveMainTab] = useState<"hra" | "category">("category")
+  const [hraData, setHraData] = useState<HRAData | null>(null)
+  const [activeCategoryTab, setActiveCategoryTab] = useState("")
+
+  useEffect(() => {
+    if (!apiResponse) return
+
+    const normalized = normalizeITCategories(apiResponse)
+
+    if (normalized.length > 0) {
+      setCategories(normalized)
+      setActiveCategoryTab(normalized[0].category_name)
     }
 
-    if (apiResponse?.hra_exemption) {
-      setHraExemption(apiResponse.hra_exemption);
+    if (apiResponse?.hra_exemption?.length > 0) {
+      setHraData(apiResponse.hra_exemption[0])
     }
-  }, [normalizedCategories, apiResponse]);
+  }, [apiResponse])
 
-  const activeCategory = categories.find(
-    (c) => c.category_name === activeCategoryTab
-  );
+  const activeCategory = categories.find((c) => c.category_name === activeCategoryTab)
 
-  // ✅ CATEGORY AMOUNT UPDATE
-  const handleAmountChange = (
-    categoryName: string,
-    itemIndex: number,
-    value: number
-  ) => {
+  const handleHraChange = (field: "rented_in_metro_city" | "monthly_hra", value: number) => {
+    setHraData((prev) =>
+      prev
+        ? {
+            ...prev,
+            [field]: value,
+          }
+        : prev,
+    )
+  }
+
+  const resetForm = () => {
+    // HRA reset
+    setHraData(null)
+
+    // Categories reset (amount = 0)
+    setCategories((prev) =>
+      prev.map((cat) => ({
+        ...cat,
+        items: cat.items.map((item) => ({
+          ...item,
+          amount: 0,
+        })),
+      })),
+    )
+
+    // Tabs reset
+    setActiveMainTab("category")
+    setActiveCategoryTab("")
+
+    // Refetch data to repopulate form with fresh API response
+    refetchDeclaration()
+  }
+
+  const handleAmountChange = (categoryName: string, itemIndex: number, value: number) => {
     setCategories((prev) =>
       prev.map((cat) =>
         cat.category_name !== categoryName
           ? cat
           : {
               ...cat,
-              items: cat.items.map((item, idx) =>
-                idx === itemIndex
-                  ? { ...item, amount: value }
-                  : item
-              ),
-            }
-      )
-    );
-  };
+              items: cat.items.map((item, idx) => (idx === itemIndex ? { ...item, amount: value } : item)),
+            },
+      ),
+    )
+  }
 
-  // ✅ SUBMIT
   const handleSubmit = () => {
+    const declarations = categories.flatMap((cat) =>
+      cat.items
+        .filter((item) => Number(item.amount) > 0)
+        .map((item) => ({
+          exemption_category: cat.category_name,
+          exemption_sub_category: item.exemption_sub_category,
+          amount: Number(item.amount),
+          max_amount: Number(item.max_amount ?? item.amount),
+        })),
+    )
+
     const payload = {
       declaration_id: declarationId,
-      go_head_with_new_regime: goHeadValue,
-      hra_exemption: hraExemption,
-      categories,
-    };
-
-    alert(JSON.stringify(payload, null, 2));
-    console.log("SUBMIT PAYLOAD 👉", payload);
-  };
+      data: {
+        monthly_house_rent: goHeadWithNewRegimeBool ? 0 : (hraData?.monthly_hra ?? 0),
+        rented_in_metro_city: goHeadWithNewRegimeBool ? 0 : (hraData?.rented_in_metro_city ?? 0),
+        monthly_hra_exemption: goHeadWithNewRegimeBool ? 0 : (hraData?.monthly_hra_exemption ?? 0),
+        company: user?.company,
+        payroll_period: selectedPeriod,
+        employee: user?.employee,
+        go_head_with_new_regime: goHeadWithNewRegime,
+        declarations,
+      },
+    }
+    mutation.mutate(payload, {
+      onSuccess: (res: any) => {
+        console.log("API SUCCESS ✅", res)
+        alert("Declaration submitted successfully!")
+        resetForm()
+      },
+      onError: (err: any) => {
+        console.error("API ERROR ❌", err)
+        alert("Failed to submit declaration.")
+      },
+    })
+    console.log("FINAL PAYLOAD", payload)
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen">
       <header className="mb-6 py-4 px-8 bg-blue-50 rounded-lg">
         <div className="flex justify-between">
-          <h1 className="text-xs font-semibold">
-            IT Declaration FY 2025-26
-          </h1>
+          <h1 className="text-xs font-semibold">IT Declaration FY 2025-26</h1>
 
           <div className="flex gap-2">
-            <button className="bg-blue-600 text-white px-4 py-1 rounded text-xs">
-              Compare Tax
-            </button>
+            <div className="flex flex-row md:flex-row md:items-center md:gap-4">
+              <CustomDropdown value={selectedPeriod} onChange={handlePeriodChange} options={payrollPeriodOptions} />
+            </div>
+            <div className="flex items-center gap-3">
+              <CompareTaxSheetHandler declarationId={declarationId} disabled={false} />
+            </div>
+
             <button
               onClick={handleSubmit}
-              className="bg-blue-600 text-white px-4 py-1 rounded text-xs"
+              disabled={goHeadWithNewRegime === null}
+              className="bg-blue-600 text-white px-4 py-1 rounded text-xs disabled:opacity-50"
             >
               Submit
             </button>
           </div>
         </div>
 
-        {/* REGIME */}
         <div className="flex gap-4 mt-4">
           <label className="flex items-center text-xs">
             <input
               type="radio"
-              checked={goHeadValue === 1}
-              readOnly
+              checked={goHeadWithNewRegime === 1}
+              onChange={() => setGoHeadWithNewRegime(1)}
               className="mr-2"
             />
             Yes
@@ -138,131 +227,61 @@ const ITDeclarationForm = () => {
           <label className="flex items-center text-xs">
             <input
               type="radio"
-              checked={goHeadValue === 0}
-              readOnly
+              checked={goHeadWithNewRegime === 0}
+              onChange={() => setGoHeadWithNewRegime(0)}
               className="mr-2"
             />
             No
           </label>
         </div>
 
-        {/* 🔹 MAIN TABS */}
         <div className="flex gap-4 mt-4">
-          <button
-            onClick={() => setActiveMainTab("hra")}
-            className={`px-4 py-1 rounded text-sm ${
-              activeMainTab === "hra"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200"
-            }`}
-          >
-            HRA Exemption
-          </button>
-
           <button
             onClick={() => setActiveMainTab("category")}
             className={`px-4 py-1 rounded text-sm ${
-              activeMainTab === "category"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200"
+              activeMainTab === "category" ? "bg-blue-600 text-white" : "bg-gray-200"
             }`}
           >
             Categories
           </button>
+
+          {!goHeadWithNewRegimeBool && (
+            <button
+              onClick={() => setActiveMainTab("hra")}
+              className={`px-4 py-1 rounded text-sm ${
+                activeMainTab === "hra" ? "bg-blue-600 text-white" : "bg-gray-200"
+              }`}
+            >
+              HRA Exemption
+            </button>
+          )}
         </div>
 
-        {/* 🔹 HRA TAB */}
-        {activeMainTab === "hra" && (
-  <div className="border rounded p-4 mt-4">
-    <h2 className="font-semibold mb-4 text-sm">
-      HRA Exemption Details
-    </h2>
+        {activeMainTab === "hra" && hraData && <HRAForm hraData={hraData} onChange={handleHraChange} />}
 
-    {hraExemption.map((hra, index) => (
-      <div
-        key={index}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 border p-3 rounded"
-      >
-        {/* Monthly HRA */}
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Monthly HRA
-          </label>
-          <input
-            type="number"
-            value={hra.monthly_hra || ""}
-            readOnly
-            className="w-full border rounded px-2 py-1 text-sm bg-gray-50"
-          />
-        </div>
-
-        {/* Metro City */}
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Rented in Metro City
-          </label>
-          <input
-            type="text"
-            value={hra.rented_in_metro_city ? "Yes" : "No"}
-            readOnly
-            className="w-full border rounded px-2 py-1 text-sm bg-gray-50"
-          />
-        </div>
-
-        {/* Annual Exemption */}
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Annual HRA Exemption
-          </label>
-          <input
-            type="number"
-            value={hra.annual_hra_exemption || ""}
-            readOnly
-            className="w-full border rounded px-2 py-1 text-sm bg-gray-50"
-          />
-        </div>
-
-        {/* Monthly Exemption */}
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Monthly HRA Exemption
-          </label>
-          <input
-            type="number"
-            value={hra.monthly_hra_exemption || ""}
-            readOnly
-            className="w-full border rounded px-2 py-1 text-sm bg-gray-50"
-          />
-        </div>
-      </div>
-    ))}
-  </div>
-)}
-
-
-        {/* 🔹 CATEGORY TABS */}
         {activeMainTab === "category" && (
-          <nav className="flex flex-wrap gap-2 mt-4 border-b pb-3">
-            {categories.map((cat) => (
-              <button
-                key={cat.category_name}
-                onClick={() =>
-                  setActiveCategoryTab(cat.category_name)
-                }
-                className={`px-3 py-1 text-xs rounded-lg border ${
-                  activeCategoryTab === cat.category_name
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100"
-                }`}
-              >
-                {cat.category_name}
-              </button>
-            ))}
-          </nav>
+      <nav className="mt-4 border-b pb-3 overflow-x-auto">
+      <div className="flex gap-2 whitespace-nowrap">
+        {categories.map((cat) => (
+          <button
+            key={cat.category_name}
+            onClick={() => setActiveCategoryTab(cat.category_name)}
+            className={`px-3 py-1 text-xs rounded-lg border flex-shrink-0
+              ${
+                activeCategoryTab === cat.category_name
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100"
+              }`}
+          >
+            {cat.category_name}
+          </button>
+        ))}
+      </div>
+    </nav>
+    
         )}
       </header>
 
-      {/* CATEGORY CONTENT */}
       {activeMainTab === "category" && activeCategory && (
         <CategoryDeclaration
           categoryName={activeCategory.category_name}
@@ -271,7 +290,7 @@ const ITDeclarationForm = () => {
         />
       )}
     </div>
-  );
-};
+  )
+}
 
-export default ITDeclarationForm;
+export default ITDeclarationForm

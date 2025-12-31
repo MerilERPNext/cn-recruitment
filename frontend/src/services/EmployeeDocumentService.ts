@@ -18,7 +18,7 @@ export const AcknowledgementRequiredService = {
     const response = await FrappeAPI.callMethod(
       "nextai.nextai.doctype.employee_documents.employee_documents.set_acknwolegement",
       {
-        empdoc_id: document_id, // 👈 single id
+        empdoc_id: document_id,
       }
     );
 
