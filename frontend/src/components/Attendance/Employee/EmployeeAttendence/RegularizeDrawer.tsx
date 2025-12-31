@@ -13,6 +13,7 @@ import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { EmployeeRegularize } from "../../../../types/attendance";
 import toast from "react-hot-toast";
 import CircularLoader from "../../../shared/atoms/CircularLoader";
+import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 
 const RegularizeDrawer = () => {
     const [open, setOpen] = useState(false);
@@ -87,8 +88,9 @@ const RegularizeDrawer = () => {
                     refetch()
                     toast.success("Regularization submitted successfully");
                 },
-                onError: () => {
-                    toast.error("Failed to submit regularization");
+                onError: (error) => {
+                    const err = errorResponseFormater(error)
+                    toast.error(err);
                 }
             })
     };
@@ -156,7 +158,7 @@ const RegularizeDrawer = () => {
                                         (item: EmployeeRegularize) => (
                                             <tr
                                                 key={item.date}
-                                                className="hover:bg-gray-50"
+                                                className="hover:bg-gray-50 text-sm"
                                             >
                                                 <td className="border-r px-4 py-3">
                                                     <input
@@ -169,13 +171,13 @@ const RegularizeDrawer = () => {
                                                         }
                                                     />
                                                 </td>
-                                                <td className="border-r px-4 py-3">
+                                                <td className="border-r px-4 py-3 text-sm">
                                                     {item.date}
                                                 </td>
-                                                <td className="border-r px-4 py-3">
+                                                <td className="border-r px-4 py-3 text-sm">
                                                     {item.status}
                                                 </td>
-                                                <td className="border-r px-4 py-3">
+                                                <td className="border-r px-4 py-3 text-sm">
                                                     {item.day}
                                                 </td>
                                             </tr>

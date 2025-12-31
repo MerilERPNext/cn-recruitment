@@ -720,36 +720,38 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...((submission?.data?.attachments as any) || []),
       ]);
-    // Auto-sync from_date to to_date for certain request types
-    if (submission?.changed?.component?.key === "from_date") {
-      const formInstance = formAddressInstance.current;
-      if (formInstance) {
-        const fromDateValue = submission?.data?.from_date;
-        const toDateComponent = formInstance.getComponent("to_date");
-        if (toDateComponent && fromDateValue) {
-          // Format date to YYYY-MM-DD if needed, or pass as string if already formatted
-          // Ideally Formio works well with ISO strings or Date objects, but for consistency we can try YYYY-MM-DD if it's a date object
-          let valToSet = fromDateValue;
-          if (fromDateValue instanceof Date) {
-            valToSet = formatDateToYYYYMMDD(fromDateValue);
-          } else if (
-            typeof fromDateValue === "string" &&
-            fromDateValue.includes("T")
-          ) {
-            // Try to safe parse ISO
-            const d = new Date(fromDateValue);
-            if (!isNaN(d.getTime())) {
-              valToSet = formatDateToYYYYMMDD(d);
-            }
-          }
 
-          toDateComponent.setValue(String(valToSet), {
-            noUpdateEvent: true,
-          });
-          // Removed redraw() as setValue updates the view and redraw() was causing state loss
-        }
-      }
-    }
+    // This code is currently commented out as we currently don't need it but can be used in future if needed
+    // Auto-sync from_date to to_date for certain request types 
+    // if (submission?.changed?.component?.key === "from_date") {
+    //   const formInstance = formAddressInstance.current;
+    //   if (formInstance) {
+    //     const fromDateValue = submission?.data?.from_date;
+    //     const toDateComponent = formInstance.getComponent("to_date");
+    //     if (toDateComponent && fromDateValue) {
+    //       // Format date to YYYY-MM-DD if needed, or pass as string if already formatted
+    //       // Ideally Formio works well with ISO strings or Date objects, but for consistency we can try YYYY-MM-DD if it's a date object
+    //       let valToSet = fromDateValue;
+    //       if (fromDateValue instanceof Date) {
+    //         valToSet = formatDateToYYYYMMDD(fromDateValue);
+    //       } else if (
+    //         typeof fromDateValue === "string" &&
+    //         fromDateValue.includes("T")
+    //       ) {
+    //         // Try to safe parse ISO
+    //         const d = new Date(fromDateValue);
+    //         if (!isNaN(d.getTime())) {
+    //           valToSet = formatDateToYYYYMMDD(d);
+    //         }
+    //       }
+
+    //       toDateComponent.setValue(String(valToSet), {
+    //         noUpdateEvent: true,
+    //       });
+    //       // Removed redraw() as setValue updates the view and redraw() was causing state loss
+    //     }
+    //   }
+    // }
   };
 
   if (isSchemaLoading) {

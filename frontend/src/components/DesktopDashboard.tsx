@@ -119,7 +119,6 @@ export default function DesktopDashboard() {
   // ]);
   const { data: userNotices, isLoading: userNoticeIsLoading } = useGetUserNotices();
 
-  console.log(userNotices, "-----------------------------");
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,

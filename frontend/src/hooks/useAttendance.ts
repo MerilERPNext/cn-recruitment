@@ -89,6 +89,28 @@ export const useHomeSummaryDetails = (
   });
 };
 
+export const useUserMicroApps = (
+  filters?: string
+): UseQueryResult<any, Error> => {
+  return useQuery<any, Error>({
+    queryKey: ["user-microapps", filters],
+    queryFn: () => attendanceService.getUserMicroApps(filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
+export function useSaveUserMicroApps() {
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.saveUserMicroApps(body),
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
+
+
 export const useGetEmployeeShift = (
   userId: string,
   filters?: object

@@ -290,21 +290,21 @@ const EmployeeProfile: React.FC = () => {
                 <h1 className="text-xl font-extrabold text-gray-900 truncate tracking-tight">
                   {user?.employee_name}
                 </h1>
-                <Tooltip content={user?.designation}>
+                {user?.designation && <Tooltip content={user?.designation}>
                   <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
                     <Award size={12} />
                     <span>{user?.designation}</span>
                   </p>
-                </Tooltip>
+                </Tooltip>}
 
-                <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
+                {user?.branch && <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
                   <MapPin size={12} />
                   <span>{user?.branch}</span>
-                </p>
-                <p className="text-gray-400 text-xs mt-1 font-medium flex gap-1 items-center justify-start">
+                </p>}
+                {user?.employee && <p className="text-gray-400 text-xs mt-1 font-medium flex gap-1 items-center justify-start">
                   <IdCard size={12} />
                   <span>{user?.employee}</span>
-                </p>
+                </p>}
 
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   {user?.custom_employment_status && (
@@ -423,22 +423,22 @@ const EmployeeProfile: React.FC = () => {
                       <h1 className="text-xl font-bold text-gray-900 leading-tight">
                         {user?.employee_name}
                       </h1>
-                      <Tooltip content={user?.designation}>
+                      {user?.designation && <Tooltip content={user?.designation}>
                         <p className="text-blue-600 font-semibold text-sm mt-0.5 flex gap-1 items-center justify-start">
                           <Award size={12} />
                           <span>
                             {user?.designation?.slice(0, 40)}
                           </span>
                         </p>
-                      </Tooltip>
-                      <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
+                      </Tooltip>}
+                      {user?.branch && <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
                         <MapPin size={12} />
                         <span>{user?.branch}</span>
-                      </p>
-                      <p className="text-gray-500 text-xs mt-1 flex gap-1 items-center justify-start">
+                      </p>}
+                      {user?.employee && <p className="text-gray-500 text-xs mt-1 flex gap-1 items-center justify-start">
                         <IdCard size={12} />
                         <span>{user?.employee}</span>
-                      </p>
+                      </p>}
                       {user?.custom_employment_status && (
                         <span className="inline-block mt-2 px-3 py-0.5 bg-yellow-100 text-yellow-800 text-[10px] font-bold rounded-lg uppercase tracking-wider">
                           {user?.custom_employment_status}

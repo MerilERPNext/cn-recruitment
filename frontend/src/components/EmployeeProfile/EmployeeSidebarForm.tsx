@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import Button from "../shared/atoms/Button";
 import CircularLoader from "../shared/atoms/CircularLoader";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 const EmployeeSidebarForm = ({
     edit,
@@ -32,28 +33,37 @@ const EmployeeSidebarForm = ({
                 }
             }
 
-            const formattedData = Object.entries(allData).reduce(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (acc: { [key: string]: any }, [key, value]) => {
-                    if (key === "branch") {
-                        return acc;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const sanitizeData = (data: any): any => {
+                if (Array.isArray(data)) {
+                    // Convert empty arrays to empty string (fixes empty attachments issue)
+                    if (data.length === 0) {
+                        return "";
                     }
+                    // Flatten file arrays to URL string
+                    if (data[0]?.storage === "customBase64" || data[0]?.storage === "url") {
+                        return data[0]?.url || "";
+                    }
+                    // Recursively sanitize array items
+                    return data.map(item => sanitizeData(item));
+                }
 
-                    if (Array.isArray(value) && !value.length) {
-                        acc[key] = "";
-                    } else if (
-                        Array.isArray(value) &&
-                        (value[0]?.storage === "customBase64" ||
-                            value[0]?.storage === "url")
-                    ) {
-                        acc[key] = value[0]?.url;
-                    } else {
-                        acc[key] = value;
+                if (data !== null && typeof data === 'object') {
+                    // Recursively sanitize object values
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const cleansed: Record<string, any> = {};
+                    for (const [key, value] of Object.entries(data)) {
+                        // Skip 'branch' key as per original logic
+                        if (key === "branch") continue;
+                        cleansed[key] = sanitizeData(value);
                     }
-                    return acc;
-                },
-                {}
-            );
+                    return cleansed;
+                }
+
+                return data;
+            };
+
+            const formattedData = sanitizeData(allData);
 
             if (employeeId) {
                 mutation.mutate(
@@ -69,14 +79,18 @@ const EmployeeSidebarForm = ({
                         },
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onError(err: any) {
-                            toast.error("Failed to update data.");
+                            // toast.error("Failed to update data.");
+                            const error = errorResponseFormater(err)
+                            toast.error(error);
                             console.warn("Form submission error -", err);
                         },
                     }
                 );
             }
         } catch (err) {
-            toast.error("Failed to update data.");
+            const error = errorResponseFormater(err)
+            toast.error(error);
+
             console.warn("Form submission error -", err);
         }
     };

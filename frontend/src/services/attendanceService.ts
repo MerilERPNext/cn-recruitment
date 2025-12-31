@@ -54,6 +54,42 @@ export const attendanceService = {
       throw error;
     }
   },
+  getUserMicroApps: async (
+    filters?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> => {
+    try {
+      const response = await FrappeAPI.getMethod(
+        "nextai.api.microapps.user_preferences.get_user_microapps",
+        {
+          filters: filters || "",
+        }
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return response as any;
+    } catch (error) {
+      console.error("📡 Error marking notice as read:", error);
+      throw error;
+    }
+  },
+  saveUserMicroApps: async (
+    body: Record<string, unknown>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "nextai.api.microapps.user_preferences.save_user_preferences",
+        body
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return response as any;
+    } catch (error) {
+      console.error("📡 Error marking notice as read:", error);
+      throw error;
+    }
+  },
+
+
   getEmployeeShift: async (
     userId: string,
     filters?: object
