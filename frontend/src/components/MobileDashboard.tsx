@@ -58,6 +58,7 @@ import toast from "react-hot-toast";
 import { ViewAll } from "./shared/atoms/ViewAll";
 import ViewingAsBanner from "./ViewingAsBanner";
 import SearchMembers from "./shared/SearchMembers";
+import { useAppNotificationCounts } from "../hooks/useAppNotificationCounts";
 
 const statusStyles = {
   unpaid: {
@@ -104,6 +105,7 @@ const MobileDashboard: React.FC = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
+  const { getCount } = useAppNotificationCounts();
   const fetchLocation = async () => {
     setIsLocationLoading(true);
     setLocationError(null);
@@ -556,8 +558,13 @@ const MobileDashboard: React.FC = () => {
               to="/webapp/leave-app"
               className="flex flex-col items-center group"
             >
-              <div className="w-16 h-16 bg-blue-50 border-2 border-blue-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors">
+              <div className="relative w-16 h-16 bg-blue-50 border-2 border-blue-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors">
                 <Calendar className="w-6 h-6 text-blue-600 group-hover:text-blue-800 transition-colors" />
+                {getCount("Leaves & Holidays") > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {getCount("Leaves & Holidays")}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-medium text-blue-700 text-center">
                 Leaves & Holidays
@@ -568,8 +575,13 @@ const MobileDashboard: React.FC = () => {
               to="/webapp/attendance"
               className="flex flex-col items-center group"
             >
-              <div className="w-16 h-16 bg-green-50 border-2 border-green-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-green-200 transition-colors">
+              <div className="relative w-16 h-16 bg-green-50 border-2 border-green-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-green-200 transition-colors">
                 <User className="w-6 h-6 text-green-600 group-hover:text-green-800 transition-colors" />
+                {getCount("Attendance") > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {getCount("Attendance")}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-medium text-green-700 text-center">
                 Attendance
@@ -580,8 +592,13 @@ const MobileDashboard: React.FC = () => {
               to="/webapp/salary-slip-app"
               className="flex flex-col items-center group"
             >
-              <div className="w-16 h-16 bg-yellow-50 border-2 border-yellow-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-yellow-200 transition-colors">
+              <div className="relative w-16 h-16 bg-yellow-50 border-2 border-yellow-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-yellow-200 transition-colors">
                 <IndianRupee className="w-6 h-6 text-yellow-600 group-hover:text-yellow-800 transition-colors" />
+                {getCount("Compensation") > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {getCount("Compensation")}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-medium text-yellow-700 text-center">
                 Compensation
@@ -594,8 +611,13 @@ const MobileDashboard: React.FC = () => {
               to="/webapp/benefits-app"
               className="flex flex-col items-center group"
             >
-              <div className="w-16 h-16 bg-orange-50 border-2 border-orange-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-orange-200 transition-colors">
+              <div className="relative w-16 h-16 bg-orange-50 border-2 border-orange-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-orange-200 transition-colors">
                 <Gift className="w-6 h-6 text-orange-600 group-hover:text-orange-800 transition-colors" />
+                {getCount("Benefits") > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {getCount("Benefits")}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-medium text-orange-700 text-center">
                 Benefits
@@ -606,8 +628,13 @@ const MobileDashboard: React.FC = () => {
               to="/webapp/shift-request"
               className="flex flex-col items-center group"
             >
-              <div className="w-16 h-16 bg-purple-50 border-2 border-purple-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-purple-200 transition-colors">
+              <div className="relative w-16 h-16 bg-purple-50 border-2 border-purple-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-purple-200 transition-colors">
                 <ArrowUpDown className="w-6 h-6 text-purple-600 group-hover:text-purple-800 transition-colors" />
+                {getCount("Shifts") > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {getCount("Shifts")}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-medium text-purple-700 text-center">
                 Shifts
@@ -618,8 +645,13 @@ const MobileDashboard: React.FC = () => {
               to="/webapp/flow-app"
               className="flex flex-col items-center group"
             >
-              <div className="w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
+              <div className="relative w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
                 <Workflow className="w-6 h-6 text-fuchsia-600 group-hover:text-fuchsia-800 transition-colors" />
+                {getCount("Flows") > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {getCount("Flows")}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-medium text-pink-700 text-center">
                 Flows
@@ -630,8 +662,13 @@ const MobileDashboard: React.FC = () => {
               to="/webapp/performance-app"
               className="flex flex-col items-center group"
             >
-              <div className="w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
+              <div className="relative w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
                 <ChartNoAxesCombined className="w-6 h-6 text-fuchsia-600 group-hover:text-fuchsia-800 transition-colors" />
+                {getCount("Performance") > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {getCount("Performance")}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-medium text-pink-700 text-center">
                 Performance
@@ -642,8 +679,13 @@ const MobileDashboard: React.FC = () => {
               to="/webapp/expenses-app"
               className="flex flex-col items-center group"
             >
-              <div className="w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
+              <div className="relative w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
                 <ReceiptIndianRupee className="w-6 h-6 text-pink-600 group-hover:text-pink-800 transition-colors" />
+                {getCount("Expenses") > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {getCount("Expenses")}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-medium text-pink-700 text-center">
                 Expenses
@@ -654,8 +696,13 @@ const MobileDashboard: React.FC = () => {
               to="/webapp/policies-app"
               className="flex flex-col items-center group"
             >
-              <div className="w-16 h-16 bg-orange-50 border-2 border-orange-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-orange-200 transition-colors">
+              <div className="relative w-16 h-16 bg-orange-50 border-2 border-orange-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-orange-200 transition-colors">
                 <Shield className="w-6 h-6 text-orange-600 group-hover:text-orange-800 transition-colors" />
+                {getCount("Policies") > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {getCount("Policies")}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-medium text-orange-700 text-center">
                 Policies

@@ -2,6 +2,7 @@ import FrappeAPI from "../utils/frappeAPI";
 import type {
   AccrualJournalEntriesResponse,
   AccrualJournalMetadataResponse,
+  AttendanceStatusResponse,
   ButtonStatusResponse,
   LeaveFieldResponse,
   LeavePassbookMetadataResponse,
@@ -249,7 +250,7 @@ export const leaveService = {
     targetDate: string
   ): Promise<AttendancePolicyResponse> => {
     const response = await FrappeAPI.callMethod(
-      "cn_leave_shift_managment.api.get_attendance_policy_for_date",
+      "cn_leave_shift_managment.api.get_attendance_policy_for_date_api",
       {
         employee: String(employee),
         target_date: targetDate,
@@ -346,5 +347,22 @@ export const leaveService = {
         leave_data: leaveData,
       }
     );
+  },
+
+  getAttendanceStatus: async (
+    employeeId: string,
+    fromDate: string,
+    toDate: string
+  ): Promise<AttendanceStatusResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_attendance_status",
+      {
+        employee: employeeId,
+        from_date: fromDate,
+        to_date: toDate,
+      }
+    );
+
+    return response as AttendanceStatusResponse;
   },
 };

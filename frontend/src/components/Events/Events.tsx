@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useGetAllEmployees } from "../../hooks/useEmployee";
 import { format } from "date-fns";
 import Badge from "../shared/Badge";
+import Tooltip from "../shared/Tooltip";
 
 const Events = () => {
     const { data = [] } = useGetAllEmployees(
@@ -146,8 +147,10 @@ const Events = () => {
 
                                         {/* Text */}
                                         <div className="flex leading-tight">
-                                            <p className="text-sm text-gray-600 font-medium">
-                                                {employee.employee_name}</p>
+                                            <Tooltip content={employee.employee_name} >
+                                                <p className="text-sm text-gray-600 font-medium line-clamp-1">
+                                                    {employee.employee_name.slice(0, 16)}{employee.employee_name.length > 16 ? "..." : ""}</p>
+                                            </Tooltip>
                                         </div>
                                     </div>
 

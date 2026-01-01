@@ -1,99 +1,296 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
-import { useIncomeTaxSheetData } from "../../../hooks/useTaxSheet";
-import CategoryDeclaration from "./Component/test";
-import { ITCategory } from "../../../types/itDeclaration";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client"
+import { useEffect, useState } from "react"
+import type React from "react"
 
+import type { ITCategory } from "../../../types/itDeclaration"
+import { useITDeclarationTabData, useNewRegime, useSubmitITDeclaration } from "../../../hooks/payroll/useITDeclaration"
+import { normalizeITCategories } from "./Component/DataHandling"
+import CategoryDeclaration from "./Component/test"
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser"
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee"
+import HRAForm, { type HRAData } from "./Component/HraExemptio"
+import CompareTaxSheetHandler from "./Component/TaxCompare"
+import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet"
+import CustomDropdown from "../../shared/CustomDropdown"
+
+
+type PayrollPeriod = {
+  name: string
+}
 
 const ITDeclarationForm = () => {
-  const { data } = useIncomeTaxSheetData();
+  const { data: userId } = useLoggedInUser()
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "")
+  const mutation = useSubmitITDeclaration()
+  const { data: payrollPeriods, } = useTaxSheetPayrollPriodsData(user?.company ?? null) as {
+    data: PayrollPeriod[] | undefined
+    refetch: () => void
+  }
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("")
 
-  // ✅ force correct array type
-  const categories: ITCategory[] = Array.isArray(data) ? data : [];
+  const newRegimeResponse = useNewRegime(user?.employee || null, user?.company || null, selectedPeriod || null).data as any
+  const declarationId = newRegimeResponse?.declaration_id
+  const [goHeadWithNewRegime, setGoHeadWithNewRegime] = useState<0 | 1 | null>(null)
+  const [apiResponse, setApiResponse] = useState<any | null>(null)
 
-  const [activeTab, setActiveTab] = useState<string>("");
-
-  // auto-select first category
   useEffect(() => {
-    if (categories.length > 0 && !activeTab) {
-      setActiveTab(categories[0].category_name);
+    if (newRegimeResponse?.go_head_with_new_regime === 0 || newRegimeResponse?.go_head_with_new_regime === 1) {
+      setGoHeadWithNewRegime(newRegimeResponse.go_head_with_new_regime)
     }
-  }, [categories, activeTab]);
+  }, [newRegimeResponse])
 
-  const activeCategory = categories.find(
-    (cat) => cat.category_name === activeTab
-  );
+  const goHeadWithNewRegimeBool = goHeadWithNewRegime === 1
+  const { data: responseData, refetch: refetchDeclaration } = useITDeclarationTabData(
+    goHeadWithNewRegimeBool,
+    user?.employee || null,
+    user?.company || null,
+    selectedPeriod || null,
+  ) as { data?: any; refetch: () => void }
+
+  // Set initial payroll period once
+  useEffect(() => {
+    if (payrollPeriods?.length && !selectedPeriod) {
+      const currentYear = new Date().getFullYear().toString()
+      const periodForCurrentYear =
+        payrollPeriods.find((p) => p.name.includes(currentYear))?.name || payrollPeriods[0].name
+      setSelectedPeriod(periodForCurrentYear)
+    }
+  }, [payrollPeriods, selectedPeriod])
+
+  useEffect(() => {
+    setCategories([])
+    setHraData(null)
+    setActiveCategoryTab("")
+  }, [selectedPeriod])
+
+  // Refetch API when payroll period changes
+  useEffect(() => {
+    if (responseData) {
+      setApiResponse(responseData)
+    }
+  }, [responseData])
+
+  const payrollPeriodOptions =
+    payrollPeriods?.map((p) => ({
+      value: p.name,
+      label: p.name,
+    })) || []
+
+  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedPeriod(e.target.value)
+  }
+
+  const [categories, setCategories] = useState<ITCategory[]>([])
+  const [activeMainTab, setActiveMainTab] = useState<"hra" | "category">("category")
+  const [hraData, setHraData] = useState<HRAData | null>(null)
+  const [activeCategoryTab, setActiveCategoryTab] = useState("")
+
+  useEffect(() => {
+    if (!apiResponse) return
+
+    const normalized = normalizeITCategories(apiResponse)
+
+    if (normalized.length > 0) {
+      setCategories(normalized)
+      setActiveCategoryTab(normalized[0].category_name)
+    }
+
+    if (apiResponse?.hra_exemption?.length > 0) {
+      setHraData(apiResponse.hra_exemption)
+    }
+  }, [apiResponse])
+
+  const activeCategory = categories.find((c) => c.category_name === activeCategoryTab)
+
+  const handleHraChange = (field: "rented_in_metro_city" | "monthly_hra", value: number) => {
+    setHraData((prev) =>
+      prev
+        ? {
+            ...prev,
+            [field]: value,
+          }
+        : prev,
+    )
+  }
+
+  const resetForm = () => {
+    // HRA reset
+    setHraData(null)
+
+    // Categories reset (amount = 0)
+    setCategories((prev) =>
+      prev.map((cat) => ({
+        ...cat,
+        items: cat.items.map((item) => ({
+          ...item,
+          amount: 0,
+        })),
+      })),
+    )
+
+    // Tabs reset
+    setActiveMainTab("category")
+    setActiveCategoryTab("")
+
+    // Refetch data to repopulate form with fresh API response
+    refetchDeclaration()
+  }
+
+  const handleAmountChange = (categoryName: string, itemIndex: number, value: number) => {
+    setCategories((prev) =>
+      prev.map((cat) =>
+        cat.category_name !== categoryName
+          ? cat
+          : {
+              ...cat,
+              items: cat.items.map((item, idx) => (idx === itemIndex ? { ...item, amount: value } : item)),
+            },
+      ),
+    )
+  }
+
+  const handleSubmit = () => {
+    const declarations = categories.flatMap((cat) =>
+      cat.items
+        .filter((item) => Number(item.amount) > 0)
+        .map((item) => ({
+          exemption_category: cat.category_name,
+          exemption_sub_category: item.exemption_sub_category,
+          amount: Number(item.amount),
+          max_amount: Number(item.max_amount ?? item.amount),
+        })),
+    )
+
+    const payload = {
+      declaration_id: declarationId,
+      data: {
+        monthly_house_rent: goHeadWithNewRegimeBool ? 0 : (hraData?.monthly_hra ?? 0),
+        rented_in_metro_city: goHeadWithNewRegimeBool ? 0 : (hraData?.rented_in_metro_city ?? 0),
+        monthly_hra_exemption: goHeadWithNewRegimeBool ? 0 : (hraData?.monthly_hra_exemption ?? 0),
+        company: user?.company,
+        payroll_period: selectedPeriod,
+        employee: user?.employee,
+        go_head_with_new_regime: goHeadWithNewRegime,
+        declarations,
+      },
+    }
+    mutation.mutate(payload, {
+      onSuccess: (res: any) => {
+        console.log("API SUCCESS ✅", res)
+        alert("Declaration submitted successfully!")
+        resetForm()
+      },
+      onError: (err: any) => {
+        console.error("API ERROR ❌", err)
+        alert("Failed to submit declaration.")
+      },
+    })
+    console.log("FINAL PAYLOAD", payload)
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen">
       <header className="mb-6 py-4 px-8 bg-blue-50 rounded-lg">
-        <div className="flex max-lg:flex-col-reverse lg:items-center flex-wrap lg:justify-between gap-4 w-full">
-          <div className="space-y-2">
-            <h1 className="text-xs font-semibold text-gray-800">
-              IT Declaration for the Financial Year 2025 - 2026
-              <span className="ml-2 text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded">
-                UPDATED
-              </span>
-            </h1>
+        <div className="flex justify-between">
+          <h1 className="text-xs font-semibold">IT Declaration FY 2025-26</h1>
 
-            <p className="text-xs text-gray-600 mt-1">
-              Go Ahead with New Tax Regime :{" "}
-              <span className="font-medium">NEW</span>
-            </p>
-          </div>
+          <div className="flex gap-2">
+            <div className="flex flex-row md:flex-row md:items-center md:gap-4">
+              <CustomDropdown value={selectedPeriod} onChange={handlePeriodChange} options={payrollPeriodOptions} />
+            </div>
+            <div className="flex items-center gap-3">
+              <CompareTaxSheetHandler declarationId={declarationId} disabled={false} />
+            </div>
 
-          <div className="flex flex-row flex-wrap gap-2">
-            <button className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700">
-              COMPARE TAX
-            </button>
-
-            <span className="border border-gray-300 px-4 py-1.5 rounded text-sm bg-white text-center">
-              Form 12BB
-            </span>
-
-            <button className="bg-blue-600 text-white px-4 py-1 rounded text-sm font-medium hover:bg-blue-700">
+            <button
+              onClick={handleSubmit}
+              disabled={goHeadWithNewRegime === null}
+              className="bg-blue-600 text-white px-4 py-1 rounded text-xs "
+            >
               Submit
             </button>
           </div>
         </div>
 
         <div className="flex gap-4 mt-4">
-          <label className="flex items-center text-xs font-medium text-gray-700">
-            <input type="checkbox" className="mr-2" /> Yes
+          <label className="flex items-center text-xs">
+            <input
+              type="radio"
+              checked={goHeadWithNewRegime === 1}
+              onChange={() => setGoHeadWithNewRegime(1)}
+              className="mr-2"
+            />
+            Yes
           </label>
-          <label className="flex items-center text-xs font-medium text-gray-700">
-            <input type="checkbox" className="mr-2" /> No
+
+          <label className="flex items-center text-xs">
+            <input
+              type="radio"
+              checked={goHeadWithNewRegime === 0}
+              onChange={() => setGoHeadWithNewRegime(0)}
+              className="mr-2"
+            />
+            No
           </label>
         </div>
 
-        {/* Tabs */}
-        <nav className="flex flex-wrap gap-2 mt-4 border-b pb-3">
-          {categories.map((cat) => (
+        <div className="flex gap-4 mt-4">
+          <button
+            onClick={() => setActiveMainTab("category")}
+            className={`px-4 py-1 rounded text-sm ${
+              activeMainTab === "category" ? "bg-blue-600 text-white" : "bg-gray-200"
+            }`}
+          >
+            Categories
+          </button>
+
+          {!goHeadWithNewRegimeBool && (
             <button
-              key={cat.category_name}
-              onClick={() => setActiveTab(cat.category_name)}
-              className={`px-4 py-1 text-xs rounded-2xl border ${activeTab === cat.category_name
-                ? "bg-blue-600 text-white"
-                : "text-gray-600 hover:bg-gray-100"
-                }`}
+              onClick={() => setActiveMainTab("hra")}
+              className={`px-4 py-1 rounded text-sm ${
+                activeMainTab === "hra" ? "bg-blue-600 text-white" : "bg-gray-200"
+              }`}
             >
-              {cat.category_name}
+              HRA Exemption
             </button>
-          ))}
-        </nav>
+          )}
+        </div>
+
+        {activeMainTab === "hra" && hraData && <HRAForm hraData={hraData} onChange={handleHraChange} />}
+
+        {activeMainTab === "category" && (
+      <nav className="mt-4 border-b pb-3 overflow-x-auto">
+      <div className="flex gap-2 whitespace-nowrap">
+        {categories.map((cat) => (
+          <button
+            key={cat.category_name}
+            onClick={() => setActiveCategoryTab(cat.category_name)}
+            className={`px-3 py-1 text-xs rounded-lg border flex-shrink-0
+              ${
+                activeCategoryTab === cat.category_name
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100"
+              }`}
+          >
+            {cat.category_name}
+          </button>
+        ))}
+      </div>
+    </nav>
+    
+        )}
       </header>
 
-      {/* Active Category */}
-      <div className="bg-white p-6 shadow rounded-lg">
-        {activeCategory && (
-          <CategoryDeclaration
-            categoryName={activeCategory.category_name}
-            items={activeCategory.items}
-          />
-        )}
-      </div>
+      {activeMainTab === "category" && activeCategory && (
+        <CategoryDeclaration
+          categoryName={activeCategory.category_name}
+          items={activeCategory.items}
+          onAmountChange={handleAmountChange}
+        />
+      )}
     </div>
-  );
-};
+  )
+}
 
-export default ITDeclarationForm;
+export default ITDeclarationForm

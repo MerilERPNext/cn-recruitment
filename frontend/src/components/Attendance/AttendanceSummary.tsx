@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-
 import {
   useAllAttendance,
   useGetEmployeeShift,
@@ -38,11 +37,23 @@ import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
 import { ViewAll } from "../shared/atoms/ViewAll";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
+import PolicyDrawer from "./PolicyDrawer";
+
+interface PolicyDrawerConfig {
+  title: string;
+  doctypeName: string;
+  targetDoctype: string;
+}
 
 const AttendanceSummary = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  const [openPolicyDrawer, setOpenPolicyDrawer] = useState(false);
+
+  const [policyDrawerConfig, setPolicyDrawerConfig] =
+    useState<PolicyDrawerConfig | null>(null);
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -61,10 +72,13 @@ const AttendanceSummary = () => {
     format(startOfMonth(currentDate), "yyyy-MM-dd"),
     format(endOfMonth(currentDate), "yyyy-MM-dd")
   );
-  const { data: attendancePolicy } = useGetPolicyForDate({
-    employee: currentEmployee?.employee,
-    as_of: format(new Date(), "yyyy-MM-dd"),
-  });
+  const { data: attendancePolicy } = useGetPolicyForDate(
+    {
+      employee: currentEmployee?.employee,
+      as_of: format(new Date(), "yyyy-MM-dd"),
+    },
+    !!currentEmployee?.employee
+  );
   const goToPreviousMonth = () => {
     setCurrentDate((prev) => subMonths(prev, 1));
   };
@@ -105,79 +119,111 @@ const AttendanceSummary = () => {
     },
   ];
 
-  const [showAttendanceRequestModal, setShowAttendanceRequestModal] = useState(false);
+  const [showAttendanceRequestModal, setShowAttendanceRequestModal] =
+    useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
 
   const quickAction: {
     section: string;
     cards: QuickActionCardData[];
-  } = useMemo(() => ({
-    section: "Quick Actions",
-    cards: [
-      {
-        id: "my_requests",
-        title: "My Attendance",
-        subtitle: "Pending Requests",
-        value: employeeAttendanceSummary?.my_attendance_requests || 0,
-        icon: "FileText",
-        color: "green",
-        background: "bg-green-50",
-        actions: [
-          { label: "View My Requests", type: "link", href: "/webapp/attendance/attendance-request" },
-          { label: "+ New Request", type: "primary", onClick: () => setShowAttendanceRequestModal(true) }
-        ]
-      },
-      {
-        id: "team_requests",
-        title: "Team Attendance",
-        subtitle: "Pending Requests",
-        value: employeeAttendanceSummary?.team_attendance_requests || 0,
-        icon: "Users",
-        color: "yellow",
-        background: "bg-yellow-50",
-        actions: [
-          { label: "Manage Team Requests", type: "link", href: "/webapp/attendance/team-attendance-requests" },
-        ]
-      },
-      {
-        id: "my_overtime",
-        title: "My Overtime",
-        subtitle: "Pending Requests",
-        value: employeeAttendanceSummary?.my_overtime_requests || 0,
-        icon: "FileText",
-        color: "blue",
-        background: "bg-blue-50",
-        actions: [
-          { label: "View My Overtime", type: "link", href: "/webapp/attendance/my-overtime-requests" },
-          { label: "+ Log Overtime", type: "primary", onClick: () => setShowOvertimeRequest(true) }
-        ]
-      },
-      {
-        id: "team_overtime",
-        title: "Team Overtime",
-        subtitle: "Pending Requests",
-        value: employeeAttendanceSummary?.team_overtime_requests || 0,
-        icon: "Users",
-        color: "purple",
-        background: "bg-purple-50",
-        actions: [
-          { label: "Manage Team Overtime", type: "link", href: "/webapp/attendance/team-overtime-requests" },
-        ]
-      },
-      {
-        id: "shifts",
-        title: "Shifts",
-        subtitle: "Shift schedule overview",
-        value: null,
-        icon: "Calendar",
-        color: "indigo",
-        background: "bg-indigo-50",
-        actions: [
-          { label: "View My Shifts", type: "link", href: "/webapp/shift-request/all-shifts-dashboard" },
-        ]
-      }
-    ]
-  }), [employeeAttendanceSummary]);
+  } = useMemo(
+    () => ({
+      section: "Quick Actions",
+      cards: [
+        {
+          id: "my_requests",
+          title: "My Attendance",
+          subtitle: "Pending Requests",
+          value: employeeAttendanceSummary?.my_attendance_requests || 0,
+          icon: "FileText",
+          color: "green",
+          background: "bg-green-50",
+          actions: [
+            {
+              label: "View My Requests",
+              type: "link",
+              href: "/webapp/attendance/attendance-request",
+            },
+            {
+              label: "+ New Request",
+              type: "primary",
+              onClick: () => setShowAttendanceRequestModal(true),
+            },
+          ],
+        },
+        {
+          id: "team_requests",
+          title: "Team Attendance",
+          subtitle: "Pending Requests",
+          value: employeeAttendanceSummary?.team_attendance_requests || 0,
+          icon: "Users",
+          color: "yellow",
+          background: "bg-yellow-50",
+          actions: [
+            {
+              label: "Manage Team Requests",
+              type: "link",
+              href: "/webapp/attendance/team-attendance-requests",
+            },
+          ],
+        },
+        {
+          id: "my_overtime",
+          title: "My Overtime",
+          subtitle: "Pending Requests",
+          value: employeeAttendanceSummary?.my_overtime_requests || 0,
+          icon: "FileText",
+          color: "blue",
+          background: "bg-blue-50",
+          actions: [
+            {
+              label: "View My Overtime",
+              type: "link",
+              href: "/webapp/attendance/my-overtime-requests",
+            },
+            {
+              label: "+ Log Overtime",
+              type: "primary",
+              onClick: () => setShowOvertimeRequest(true),
+            },
+          ],
+        },
+        {
+          id: "team_overtime",
+          title: "Team Overtime",
+          subtitle: "Pending Requests",
+          value: employeeAttendanceSummary?.team_overtime_requests || 0,
+          icon: "Users",
+          color: "purple",
+          background: "bg-purple-50",
+          actions: [
+            {
+              label: "Manage Team Overtime",
+              type: "link",
+              href: "/webapp/attendance/team-overtime-requests",
+            },
+          ],
+        },
+        {
+          id: "shifts",
+          title: "Shifts",
+          subtitle: "Shift schedule overview",
+          value: null,
+          icon: "Calendar",
+          color: "indigo",
+          background: "bg-indigo-50",
+          actions: [
+            {
+              label: "View My Shifts",
+              type: "link",
+              href: "/webapp/shift-request/all-shifts-dashboard",
+            },
+          ],
+        },
+      ],
+    }),
+    [employeeAttendanceSummary]
+  );
 
   const getAttendanceMethod = () => {
     const methods = [];
@@ -219,11 +265,43 @@ const AttendanceSummary = () => {
     },
   ];
 
-  const getNavigatableSettingsButton = (
-    settingType: string,
-    data?: string
-  ) => {
+  const getNavigatableSettingsButton = (settingType: string, data?: string) => {
     if (!data) return null;
+
+    const drawerSettings: Record<
+      string,
+      { doctypeName: string; useEmployeeAsTarget?: boolean }
+    > = {
+      "Current Shift": { doctypeName: "Shift Type" },
+      "Attendance Method": {
+        doctypeName: "Employee",
+        useEmployeeAsTarget: true,
+      },
+      "Week Off": { doctypeName: "Week Off" },
+    };
+
+    const settingConfig = drawerSettings[settingType];
+    if (settingConfig) {
+      const { doctypeName, useEmployeeAsTarget } = settingConfig;
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            setPolicyDrawerConfig({
+              title: settingType,
+              doctypeName,
+              targetDoctype: useEmployeeAsTarget
+                ? currentEmployee?.employee || ""
+                : data,
+            });
+            setOpenPolicyDrawer(true);
+          }}
+          className="w-full text-left text-sm text-gray-800 hover:text-blue-600"
+        >
+          {data}
+        </button>
+      );
+    }
 
     let path: string | null = null;
 
@@ -244,14 +322,12 @@ const AttendanceSummary = () => {
       <button
         type="button"
         onClick={() => navigate(path!)}
-        className="w-full text-left px-3 py-1 text-sm font-medium text-gray-800
-                 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+        className="w-full text-left text-sm text-gray-800 hover:text-blue-600"
       >
         {data}
       </button>
     );
   };
-
 
   return (
     <>
@@ -299,7 +375,11 @@ const AttendanceSummary = () => {
               <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
                 <div className="flex">
                   <h2 className="module-title">Today's Team Summary</h2>
-                  <ViewAll className="ml-auto" title="View Team Calender" to="/webapp/attendance/team-attendance" />
+                  <ViewAll
+                    className="ml-auto"
+                    title="View Team Calender"
+                    to="/webapp/attendance/team-attendance"
+                  />
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                   {teamSummaryData.map((data, index) => (
@@ -319,7 +399,7 @@ const AttendanceSummary = () => {
                 <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0 mt-5">
                   <h2 className="module-title">Quick Actions</h2>
                   <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {quickAction.cards.map(card => (
+                    {quickAction.cards.map((card) => (
                       <QuickActionCard key={card.id} {...card} />
                     ))}
                   </div>
@@ -348,15 +428,19 @@ const AttendanceSummary = () => {
                         </h3>
 
                         {setting.details.length > 0 ? (
-                          setting.details.map((detail, detailIndex) =>
-                            getNavigatableSettingsButton(setting.title, detail) ?? (
-                              <p
-                                key={detailIndex}
-                                className="text-sm text-gray-700"
-                              >
-                                {detail}
-                              </p>
-                            )
+                          setting.details.map(
+                            (detail, detailIndex) =>
+                              getNavigatableSettingsButton(
+                                setting.title,
+                                detail
+                              ) ?? (
+                                <p
+                                  key={detailIndex}
+                                  className="text-sm text-gray-700"
+                                >
+                                  {detail}
+                                </p>
+                              )
                           )
                         ) : (
                           <p className="text-sm text-gray-500">
@@ -377,10 +461,13 @@ const AttendanceSummary = () => {
             <div className="mb-4">
               {/* Team Summary */}
               <div className="space-y-3 border-b bg-white border-gray-200 pt-0 mt-4">
-
                 <div className="flex">
                   <h2 className="base-title">Today's Team Summary</h2>
-                  <ViewAll className="ml-auto" title="View Team Calender" to="/webapp/attendance/team-attendance" />
+                  <ViewAll
+                    className="ml-auto"
+                    title="View Team Calender"
+                    to="/webapp/attendance/team-attendance"
+                  />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {teamSummaryData.map((data, index) => (
@@ -401,7 +488,7 @@ const AttendanceSummary = () => {
                 <div className="space-y-3  bg-white border-gray-200 py-4 pt-0 mt-4">
                   <h2 className="base-title">Quick Actions</h2>
                   <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {quickAction.cards.map(card => (
+                    {quickAction.cards.map((card) => (
                       <QuickActionCard key={card.id} {...card} />
                     ))}
                   </div>
@@ -428,17 +515,20 @@ const AttendanceSummary = () => {
                           <h3 className="card-title mb-1">{setting.title}</h3>
 
                           {setting.details.length > 0 ? (
-                            setting.details.map((detail, detailIndex) =>
-                              getNavigatableSettingsButton(setting.title, detail) ?? (
-                                <p
-                                  key={detailIndex}
-                                  className="text-sm text-gray-700"
-                                >
-                                  {detail}
-                                </p>
-                              )
+                            setting.details.map(
+                              (detail, detailIndex) =>
+                                getNavigatableSettingsButton(
+                                  setting.title,
+                                  detail
+                                ) ?? (
+                                  <p
+                                    key={detailIndex}
+                                    className="text-sm text-gray-700"
+                                  >
+                                    {detail}
+                                  </p>
+                                )
                             )
-
                           ) : (
                             <p className="text-sm text-gray-500">
                               No policy assigned
@@ -467,6 +557,16 @@ const AttendanceSummary = () => {
               />
             </div>
           </div>
+        )}
+
+        {openPolicyDrawer && policyDrawerConfig && (
+          <PolicyDrawer
+            isOpen={openPolicyDrawer}
+            onClose={() => setOpenPolicyDrawer(false)}
+            title={policyDrawerConfig.title}
+            doctypeName={policyDrawerConfig.doctypeName}
+            targetDoctype={policyDrawerConfig.targetDoctype}
+          />
         )}
       </div>
     </>

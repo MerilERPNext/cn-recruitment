@@ -33,7 +33,7 @@ const NotificationList = () => {
 
   const layout = (
     <div className="flex flex-col h-full">
-      <HeaderBar title="Notification Log" onBack={() => navigate(-1)} />
+      <HeaderBar title="Notification Log" onBack={() => navigate(-1)} /> 
 
       {/* Tabs */}
       <div className="flex border-b">
@@ -59,7 +59,6 @@ const NotificationList = () => {
             <NotificationItem {...props} activeTab={activeTab} />
           )}
           isSearch={true}
-          pageSize={10}
           defaultFields={[
             "name",
             "subject",

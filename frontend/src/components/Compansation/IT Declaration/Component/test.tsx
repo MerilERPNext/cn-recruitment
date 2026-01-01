@@ -1,57 +1,91 @@
 type Item = {
-    name: string;
-    max_amount: number;
-    custom_description: string | null;
-  };
-  
-  type Props = {
-    categoryName: string;
-    items: Item[];
-  };
-  
-  const CategoryDeclaration = ({ categoryName, items }: Props) => {
-    return (
-      <div>
-        <h2 className="text-sm font-semibold mb-4">
-          {categoryName}
-        </h2>
-  
-        <div className="space-y-3">
-          {items.map((item, idx) => (
+  exemption_sub_category: string;
+  description: string | null;
+  max_amount: number;
+  editable: number;
+  amount?: number;
+};
+
+type Props = {
+  categoryName: string;
+  items: Item[];
+  onAmountChange: (
+    categoryName: string,
+    itemIndex: number,
+    value: number
+  ) => void;
+};
+
+const CategoryDeclaration = ({
+  categoryName,
+  items,
+  onAmountChange,
+}: Props) => {
+  return (
+    <div className="bg-white p-6 shadow rounded-lg">
+      <h2 className="text-sm font-semibold mb-4">{categoryName}</h2>
+
+      <div className="space-y-3">
+        {items.map((item, idx) => {
+          const isEditable = item.editable === 1;
+
+          return (
             <div
               key={idx}
-              className="flex items-center justify-between border-b pb-2"
+              className="flex justify-between border-b pb-2"
             >
-              <div className="flex flex-col">
-                <span className="text-xs font-medium">
-                  {item.name}
-                </span>
-                {item.custom_description && (
-                  <span className="text-[11px] text-gray-500">
-                    {item.custom_description}
-                  </span>
+              <div>
+                <p className="text-xs font-medium">
+                  {item.exemption_sub_category}
+                </p>
+                {item.description && (
+                  <p className="text-[11px] text-gray-500">
+                    {item.description}
+                  </p>
                 )}
               </div>
-  
-              <div className="flex flex-col items-end">
-                <input
-                  type="number"
-                  className="border rounded px-2 py-1 text-xs w-32"
-                  placeholder="Amount"
-                  max={item.max_amount || undefined}
-                />
+
+              <div className="text-right">
+              <input
+  type="text"
+  disabled={!isEditable}
+  value={item.amount === 0 ? "" : item.amount ?? ""}
+  onFocus={() => {
+    if (item.amount === 0) {
+      onAmountChange(categoryName, idx, 0);
+    }
+  }}
+  onChange={(e) => {
+    // only numbers allow
+    const value = e.target.value.replace(/[^0-9]/g, "");
+
+    onAmountChange(
+      categoryName,
+      idx,
+      value === "" ? 0 : Number(value)
+    );
+  }}
+  placeholder={isEditable ? "Enter amount" : ""}
+  className={`border rounded px-2 py-1 text-xs w-32 ${
+    isEditable
+      ? "bg-white"
+      : "bg-gray-100 cursor-not-allowed"
+  }`}
+/>
+
+
                 {item.max_amount > 0 && (
-                  <span className="text-[10px] text-gray-600 font-semibold">
+                  <p className="text-[10px] font-semibold">
                     Max ₹{item.max_amount}
-                  </span>
+                  </p>
                 )}
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
-    );
-  };
-  
-  export default CategoryDeclaration;
-  
+    </div>
+  );
+};
+
+export default CategoryDeclaration;

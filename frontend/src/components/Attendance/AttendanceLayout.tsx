@@ -180,6 +180,7 @@ const AttendanceLayoutContent: React.FC = () => {
       <div className="relative" ref={actionsDropdownRef}>
         {canRequestAttendance && <Button
           // onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+
           onClick={() => {
             if (isOvertimePage && plannedOvertimAllowed) {
               setShowOvertimeRequest(true);
@@ -191,7 +192,7 @@ const AttendanceLayoutContent: React.FC = () => {
           bgColor="blue-600"
           className="hover:bg-blue-700"
         >
-          {isOvertimePage && plannedOvertimAllowed ? "+ Overtime" : "+ Regularize"}
+          {isOvertimePage && plannedOvertimAllowed ? "+ Overtime" : "+ Attendance Request"}
           {/* <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
               showActionsDropdown ? "rotate-180" : ""

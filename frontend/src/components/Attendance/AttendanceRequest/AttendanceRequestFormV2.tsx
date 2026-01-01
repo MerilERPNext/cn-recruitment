@@ -4,6 +4,7 @@ import "formiojs/dist/formio.full.css";
 import {
   useAttendanceRequestAttachments,
   useCreateNewAttendanceRequest,
+  useGetEmployeeShift,
   useGetUserRoles,
   useReqValidationsForAttendanceRequest,
   useUpdateAttendanceRequest,
@@ -145,6 +146,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     useState<string>("");
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
+
   const [isForOthers, setIsForOthers] = useState(false);
   const [formSchema, setFormSchema] = useState<FormSchema>(
     (propSchema || defaultFormSchema) as FormSchema
@@ -157,6 +159,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   );
   const { data: userRoles } = useGetUserRoles();
 
+  const { data: shiftData } = useGetEmployeeShift(currentUser?.name || "");
+  console.log("shift data", shiftData)
   const activeEmployeeId =
     currentlySelectedEmployee || currentEmployee?.employee || "";
 
@@ -513,11 +517,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     }
   }, [attendanceRequestAttachmentsMandatory]);
 
-  const formatTime = (date: Date | string | undefined): string | undefined => {
-    if (!date) return undefined;
-    const d = new Date(date);
-    return d.toLocaleTimeString("en-GB");
-  };
+  // const formatTime = (date: Date | string | undefined): string | undefined => {
+  //   if (!date) return undefined;
+  //   const d = new Date(date);
+  //   return d.toLocaleTimeString("en-GB");
+  // };
 
   type CustomError = Error & {
     response?: { data?: { exception?: string } };
@@ -556,7 +560,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           to_date: baseBody.from_date,
-          custom_from_time: formatTime(submission.data.custom_from_time),
+          custom_from_time: submission.data.custom_from_time,
           custom__request_reason: submission.data.custom__request_reason,
           custom_location: submission?.data?.custom_location,
         };
@@ -565,8 +569,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           to_date: baseBody.to_date,
-          custom_from_time: formatTime(submission.data.custom_from_time),
-          custom_to_time: formatTime(submission.data.custom_to_time),
+          custom_from_time: submission.data.custom_from_time,
+          custom_to_time: submission.data.custom_to_time,
           custom__request_reason: submission.data.custom__request_reason,
           overnight_out_duty: submission.data.overnight_out_duty || false,
         };
@@ -581,8 +585,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           to_date: formatDateToYYYYMMDD(
             new Date(submission.data.to_date || "")
           ),
-          custom_from_time: formatTime(submission.data.custom_from_time),
-          custom_to_time: formatTime(submission.data.custom_to_time),
+          custom_from_time: submission.data.custom_from_time,
+          custom_to_time: submission.data.custom_to_time,
           custom__request_reason: submission.data.custom__request_reason,
         };
         break;
@@ -596,8 +600,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           to_date: formatDateToYYYYMMDD(
             new Date(submission.data.to_date || new Date())
           ),
-          custom_from_time: formatTime(submission.data.custom_from_time),
-          custom_to_time: formatTime(submission.data.custom_to_time),
+          custom_from_time: submission.data.custom_from_time,
+          custom_to_time: submission.data.custom_to_time,
           custom__request_reason: submission.data.custom__request_reason,
           custom_location: submission?.data?.custom_location,
         };
@@ -716,36 +720,38 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...((submission?.data?.attachments as any) || []),
       ]);
-    // Auto-sync from_date to to_date for certain request types
-    if (submission?.changed?.component?.key === "from_date") {
-      const formInstance = formAddressInstance.current;
-      if (formInstance) {
-        const fromDateValue = submission?.data?.from_date;
-        const toDateComponent = formInstance.getComponent("to_date");
-        if (toDateComponent && fromDateValue) {
-          // Format date to YYYY-MM-DD if needed, or pass as string if already formatted
-          // Ideally Formio works well with ISO strings or Date objects, but for consistency we can try YYYY-MM-DD if it's a date object
-          let valToSet = fromDateValue;
-          if (fromDateValue instanceof Date) {
-            valToSet = formatDateToYYYYMMDD(fromDateValue);
-          } else if (
-            typeof fromDateValue === "string" &&
-            fromDateValue.includes("T")
-          ) {
-            // Try to safe parse ISO
-            const d = new Date(fromDateValue);
-            if (!isNaN(d.getTime())) {
-              valToSet = formatDateToYYYYMMDD(d);
-            }
-          }
 
-          toDateComponent.setValue(String(valToSet), {
-            noUpdateEvent: true,
-          });
-          // Removed redraw() as setValue updates the view and redraw() was causing state loss
-        }
-      }
-    }
+    // This code is currently commented out as we currently don't need it but can be used in future if needed
+    // Auto-sync from_date to to_date for certain request types 
+    // if (submission?.changed?.component?.key === "from_date") {
+    //   const formInstance = formAddressInstance.current;
+    //   if (formInstance) {
+    //     const fromDateValue = submission?.data?.from_date;
+    //     const toDateComponent = formInstance.getComponent("to_date");
+    //     if (toDateComponent && fromDateValue) {
+    //       // Format date to YYYY-MM-DD if needed, or pass as string if already formatted
+    //       // Ideally Formio works well with ISO strings or Date objects, but for consistency we can try YYYY-MM-DD if it's a date object
+    //       let valToSet = fromDateValue;
+    //       if (fromDateValue instanceof Date) {
+    //         valToSet = formatDateToYYYYMMDD(fromDateValue);
+    //       } else if (
+    //         typeof fromDateValue === "string" &&
+    //         fromDateValue.includes("T")
+    //       ) {
+    //         // Try to safe parse ISO
+    //         const d = new Date(fromDateValue);
+    //         if (!isNaN(d.getTime())) {
+    //           valToSet = formatDateToYYYYMMDD(d);
+    //         }
+    //       }
+
+    //       toDateComponent.setValue(String(valToSet), {
+    //         noUpdateEvent: true,
+    //       });
+    //       // Removed redraw() as setValue updates the view and redraw() was causing state loss
+    //     }
+    //   }
+    // }
   };
 
   if (isSchemaLoading) {
@@ -812,6 +818,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               noAlerts: true,
               clearOnSubmit: false,
               keepAlive: true,
+              shiftData: shiftData,
+              shiftRedraw: shiftData?.shift
             }}
             onChange={handleFormChange}
             onFormReady={(instance: FormioFormInstance) => {

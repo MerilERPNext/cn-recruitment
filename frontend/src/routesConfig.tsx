@@ -521,7 +521,7 @@ export const routesConfig: AppRoute[] = [
       { path: "details-page-mobile", element: <LoanMainComponent /> }, // Nested route
       { path: "advances-list", element: <AdvancesList /> },
       { path: "team-advances-list", element: <TeamAdvanceRequest /> },
-      { path: "benefits-list", element: <PayPackage /> },
+      { path: "pay-package", element: <PayPackage /> },
       { path: "extra-payment", element: <ExtraPayment /> },
       { path: "perquisite-list", element: <Perquisite /> },
     ],

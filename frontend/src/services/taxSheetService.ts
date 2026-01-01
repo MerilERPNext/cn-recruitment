@@ -2,13 +2,31 @@ import FrappeAPI from "../utils/frappeAPI";
 import { PayrollData } from "./benifitService";
 
 export const getTaxSheetData = async (
-  empId: string | null | undefined, selectedPeriod: string | null | undefined
-) => {
+empId: string | null | undefined, company: string | null | undefined, selectedPeriod: string | null) => {
   try {
     const response = await FrappeAPI.callMethod(
       "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_annual_statement",
       {
         employee: empId,
+        company: company,
+        payroll_period: selectedPeriod,
+      }
+    );
+    return response as PayrollData;
+  } catch (error) {
+    console.error("📡 Error while getting claim benifit for", error);
+    throw error;
+  }
+};
+
+export const getIncomeTaxComputationData = async (
+empId: string | null | undefined, selectedPeriod: string | null | undefined, company: string | null) => {
+  try {
+    const response = await FrappeAPI.callMethod(
+      "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_employee_declaration_investments",
+      {
+        employee: empId,
+        company: company,
         payroll_period: selectedPeriod,
       }
     );
@@ -22,21 +40,14 @@ export const getTaxSheetData = async (
 
   
 
-export const getITDecalarationData = async () => {
-  const response = await FrappeAPI.callMethod(
-    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.tds_declaration_form"
-  );
 
-  console.log("FULL API RESPONSE 👉", response);
-
-  return response;
-};
 
 export const PayrollPeriodsService = {
-  getPayrollPeriods: async () => {
+  getPayrollPeriods: async (company: string | null) => {
     const response = await FrappeAPI.getDocumentList("Payroll Period", {
       fields: ["name"],
       orderBy: "creation desc",
+      filters: [["company", "=", company]],
     });
 
     return response.data;
