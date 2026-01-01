@@ -20,6 +20,7 @@ interface HRAFormProps {
 }
 
 const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange }) => {
+  console.log("API RESPONSE STATE ", hraData)
   return (
     <div className="grid grid-cols-2 gap-4 rounded border border-gray-300 p-4 mt-4">
       {/* Monthly HRA - EDITABLE */}

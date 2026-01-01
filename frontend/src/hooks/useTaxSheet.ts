@@ -32,7 +32,6 @@ employee_id: string | null, company: string | null, selectedPeriod: string | nul
 
   
       export const useTDSPRintViewPDF = (
-        employee: string,
         payroll_period: string,
         company: string
       ) => {

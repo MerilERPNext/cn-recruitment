@@ -29,7 +29,6 @@ const TDSSlipHandler = ({ disabled }: Props) => {
   };
 
   const { mutate, isPending } = useTDSPRintViewPDF(
-    user?.employee || "",
     payrollPeriods?.[0]?.name || "",
     user?.company || ""
   );
