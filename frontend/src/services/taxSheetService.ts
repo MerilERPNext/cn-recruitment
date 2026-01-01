@@ -19,6 +19,24 @@ export const getTaxSheetData = async (
   }
 };
 
+export const getIncomeTaxComputationData = async (
+empId: string | null | undefined, selectedPeriod: string | null | undefined, company: string | null) => {
+  try {
+    const response = await FrappeAPI.callMethod(
+      "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_employee_declaration_investments",
+      {
+        employee: empId,
+        company: company,
+        payroll_period: selectedPeriod,
+      }
+    );
+    return response as PayrollData;
+  } catch (error) {
+    console.error("📡 Error while getting claim benifit for", error);
+    throw error;
+  }
+};
+
 
   
 

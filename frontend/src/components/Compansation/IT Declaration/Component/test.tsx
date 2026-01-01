@@ -46,23 +46,33 @@ const CategoryDeclaration = ({
               </div>
 
               <div className="text-right">
-                <input
-                  type="number"
-                  disabled={!isEditable}
-                  value={item.amount ?? ""}
-                  onChange={(e) =>
-                    onAmountChange(
-                      categoryName,
-                      idx,
-                      Number(e.target.value)
-                    )
-                  }
-                  className={`border rounded px-2 py-1 text-xs w-32 ${
-                    isEditable
-                      ? "bg-white"
-                      : "bg-gray-100 cursor-not-allowed"
-                  }`}
-                />
+              <input
+  type="text"
+  disabled={!isEditable}
+  value={item.amount === 0 ? "" : item.amount ?? ""}
+  onFocus={() => {
+    if (item.amount === 0) {
+      onAmountChange(categoryName, idx, 0);
+    }
+  }}
+  onChange={(e) => {
+    // only numbers allow
+    const value = e.target.value.replace(/[^0-9]/g, "");
+
+    onAmountChange(
+      categoryName,
+      idx,
+      value === "" ? 0 : Number(value)
+    );
+  }}
+  placeholder={isEditable ? "Enter amount" : ""}
+  className={`border rounded px-2 py-1 text-xs w-32 ${
+    isEditable
+      ? "bg-white"
+      : "bg-gray-100 cursor-not-allowed"
+  }`}
+/>
+
 
                 {item.max_amount > 0 && (
                   <p className="text-[10px] font-semibold">
