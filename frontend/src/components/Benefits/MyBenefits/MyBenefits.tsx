@@ -15,7 +15,7 @@ import { SkeletonStat } from './Skeletons';
 import { AccrualItem, StatItem } from './CommonItems';
 
 
-export const COLUMN_LAYOUT = "minmax(100px, 1.5fr) 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+export const COLUMN_LAYOUT = "minmax(100px, 1.5fr) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
 const MyBenefits: React.FC = () => {
     const { data: employee } = useCurrentEmployeeIdCard();
