@@ -2,21 +2,21 @@ import { useQuery } from "@tanstack/react-query";
 import { getIncomeTaxComputationData, getTaxSheetData, PayrollPeriodsService } from "../services/taxSheetService";
 
 export function useTaxSheetData(
-employee_id: string | null, selectedPeriod: string | null) {
+employee_id: string | null, company: string | null, selectedPeriod: string | null) {
     return useQuery({
-      queryKey: ["tax-sheet", employee_id, selectedPeriod],
-      queryFn: () => getTaxSheetData(employee_id, selectedPeriod),
-      enabled: !!employee_id && !!selectedPeriod,
+      queryKey: ["tax-sheet", employee_id, selectedPeriod, company],
+      queryFn: () => getTaxSheetData(employee_id, company, selectedPeriod),
+      enabled: !!employee_id && !!company && !!selectedPeriod,
       staleTime: 0, // 5 minutes
     });
   }
 
 
   
-  export function useTaxSheetPayrollPriodsData() {
+  export function useTaxSheetPayrollPriodsData(company: string | null) {
     return useQuery({
-      queryKey: ["tax-sheet-payroll-periods"],
-      queryFn: PayrollPeriodsService.getPayrollPeriods,
+      queryKey: ["tax-sheet-payroll-periods", company],
+      queryFn: () => PayrollPeriodsService.getPayrollPeriods(company),
     });
   }
 

@@ -26,7 +26,7 @@ export default function TaxSheet() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const { data: payrollPeriods } =
-    useTaxSheetPayrollPriodsData() as {
+    useTaxSheetPayrollPriodsData(user?.company || null) as {
       data: PayrollPeriod[] | undefined;
     };
   const [selectedPeriod, setSelectedPeriod] = useState<string>(payrollPeriods?.[0]?.name || "");
@@ -50,6 +50,7 @@ export default function TaxSheet() {
 
   const { data: taxsheetData } = useTaxSheetData(
     user?.employee || null,
+    user?.company || null,
     selectedPeriod || null
   ) as { data: TaxSheetData | undefined };
 

@@ -20,7 +20,7 @@ type taxsheetData = {
 export default function IncomeComputationSheetContainer() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData() as {
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(user?.company ?? null) as {
     data: PayrollPeriod[] | undefined;
   };
 

@@ -23,7 +23,7 @@ const ITDeclarationForm = () => {
   const { data: userId } = useLoggedInUser()
   const { data: user } = useCurrentEmployeeAllDetails(userId || "")
   const mutation = useSubmitITDeclaration()
-  const { data: payrollPeriods, } = useTaxSheetPayrollPriodsData() as {
+  const { data: payrollPeriods, } = useTaxSheetPayrollPriodsData(user?.company ?? null) as {
     data: PayrollPeriod[] | undefined
     refetch: () => void
   }
@@ -97,7 +97,7 @@ const ITDeclarationForm = () => {
     }
 
     if (apiResponse?.hra_exemption?.length > 0) {
-      setHraData(apiResponse.hra_exemption[0])
+      setHraData(apiResponse.hra_exemption)
     }
   }, [apiResponse])
 
@@ -206,7 +206,7 @@ const ITDeclarationForm = () => {
             <button
               onClick={handleSubmit}
               disabled={goHeadWithNewRegime === null}
-              className="bg-blue-600 text-white px-4 py-1 rounded text-xs disabled:opacity-50"
+              className="bg-blue-600 text-white px-4 py-1 rounded text-xs "
             >
               Submit
             </button>

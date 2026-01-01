@@ -2,13 +2,13 @@ import FrappeAPI from "../utils/frappeAPI";
 import { PayrollData } from "./benifitService";
 
 export const getTaxSheetData = async (
-  empId: string | null | undefined, selectedPeriod: string | null | undefined
-) => {
+empId: string | null | undefined, company: string | null | undefined, selectedPeriod: string | null) => {
   try {
     const response = await FrappeAPI.callMethod(
       "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_annual_statement",
       {
         employee: empId,
+        company: company,
         payroll_period: selectedPeriod,
       }
     );
@@ -43,10 +43,11 @@ empId: string | null | undefined, selectedPeriod: string | null | undefined, com
 
 
 export const PayrollPeriodsService = {
-  getPayrollPeriods: async () => {
+  getPayrollPeriods: async (company: string | null) => {
     const response = await FrappeAPI.getDocumentList("Payroll Period", {
       fields: ["name"],
       orderBy: "creation desc",
+      filters: [["company", "=", company]],
     });
 
     return response.data;
