@@ -48,8 +48,8 @@ const MyRequests: React.FC = () => {
 
     return (
         <div className="px-4 pt-2">
-            <div className="flex items-center justify-between md:justify-end gap-4 mb-2">
-                <div className="flex-1 max-w-xs mr-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-between md:justify-end gap-4 mb-2">
+                <div className="flex-1 sm:min-w-60 min-w-full">
                     <select
                         id="yearFilter"
                         value={selectedYear}
@@ -64,37 +64,39 @@ const MyRequests: React.FC = () => {
                         ))}
                     </select>
                 </div>
-                <button
-                    onClick={() => setMaskAmounts(!maskAmounts)}
-                    className="my-btn-secondary"
-                    title={maskAmounts ? "Show amounts" : "Hide amounts"}
-                >
-                    {maskAmounts ? (
-                        <>
-                            <span className="text-sm font-medium text-gray-700">
-                                Show Amounts
-                            </span>
-                            <BsToggleOff className="w-6 h-6 text-gray-400" />
-                        </>
-                    ) : (
-                        <>
-                            <span className="text-sm font-medium text-gray-700">
-                                Hide Amounts
-                            </span>
-                            <BsToggleOn className="w-6 h-6 text-primary" />
-                        </>
-                    )}
-                </button>
-                {!showBenefitRequestButton &&
-                    <Button
-                        bgColor="blue-600"
-                        size="md"
-                        className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4"
-                        onClick={handleRequestBenefit}
+                <div className="w-full flex gap-4">
+                    <button
+                        onClick={() => setMaskAmounts(!maskAmounts)}
+                        className="my-btn-secondary"
+                        title={maskAmounts ? "Show amounts" : "Hide amounts"}
                     >
-                        Request Benefit
-                    </Button>
-                }
+                        {maskAmounts ? (
+                            <>
+                                <span className="text-sm font-medium text-gray-700">
+                                    Show Amounts
+                                </span>
+                                <BsToggleOff className="w-6 h-6 text-gray-400" />
+                            </>
+                        ) : (
+                            <>
+                                <span className="text-sm font-medium text-gray-700">
+                                    Hide Amounts
+                                </span>
+                                <BsToggleOn className="w-6 h-6 text-primary" />
+                            </>
+                        )}
+                    </button>
+                    {!showBenefitRequestButton &&
+                        <Button
+                            bgColor="blue-600"
+                            size="md"
+                            className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4"
+                            onClick={handleRequestBenefit}
+                        >
+                            Request Benefit
+                        </Button>
+                    }
+                </div>
             </div>
             {LockRequestMessage}
             <CardTable

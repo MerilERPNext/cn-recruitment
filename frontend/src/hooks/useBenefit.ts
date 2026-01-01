@@ -90,13 +90,13 @@ export interface SalaryComponentDetail {
 }
 
 
-export const useGetAllAccruedReimbursements = (employee: string, company: string): UseQueryResult<
+export const useGetAllAccruedReimbursements = (employee: string, company: string, payroll_period: string): UseQueryResult<
     SalaryComponentData,
     Error
 > => {
     return useQuery<any, Error>({
-        queryKey: ["benefit", "my-benefits", employee, company],
-        queryFn: () => getAllAccruedReimbursements(employee, company),
+        queryKey: ["benefit", "my-benefits", employee, company, payroll_period],
+        queryFn: () => getAllAccruedReimbursements(employee, company, payroll_period),
         refetchOnWindowFocus: true,
         enabled: !!employee && !!company
         // ...defaultQueryOptions,
