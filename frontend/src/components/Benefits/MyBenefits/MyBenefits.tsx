@@ -212,6 +212,8 @@ const MyBenefits: React.FC = () => {
                                             "Period",
                                             "Work Days",
                                             "Payment Days",
+                                            "Arrear Days",
+                                            "LOP Days",
                                             "Original Accrual",
                                             "Periodic Accrued",
                                             "Claimed Amt",
