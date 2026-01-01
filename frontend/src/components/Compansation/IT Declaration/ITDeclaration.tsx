@@ -14,7 +14,6 @@ import CompareTaxSheetHandler from "./Component/TaxCompare"
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet"
 import CustomDropdown from "../../shared/CustomDropdown"
 
-
 type PayrollPeriod = {
   name: string
 }
@@ -23,13 +22,14 @@ const ITDeclarationForm = () => {
   const { data: userId } = useLoggedInUser()
   const { data: user } = useCurrentEmployeeAllDetails(userId || "")
   const mutation = useSubmitITDeclaration()
-  const { data: payrollPeriods, } = useTaxSheetPayrollPriodsData(user?.company ?? null) as {
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(user?.company ?? null) as {
     data: PayrollPeriod[] | undefined
     refetch: () => void
   }
   const [selectedPeriod, setSelectedPeriod] = useState<string>("")
 
-  const newRegimeResponse = useNewRegime(user?.employee || null, user?.company || null, selectedPeriod || null).data as any
+  const newRegimeResponse = useNewRegime(user?.employee || null, user?.company || null, selectedPeriod || null)
+    .data as any
   const declarationId = newRegimeResponse?.declaration_id
   const [goHeadWithNewRegime, setGoHeadWithNewRegime] = useState<0 | 1 | null>(null)
   const [apiResponse, setApiResponse] = useState<any | null>(null)
@@ -47,6 +47,8 @@ const ITDeclarationForm = () => {
     user?.company || null,
     selectedPeriod || null,
   ) as { data?: any; refetch: () => void }
+
+  console.log("IT Declaration Response Data:", refetchDeclaration)
 
   // Set initial payroll period once
   useEffect(() => {
@@ -103,7 +105,7 @@ const ITDeclarationForm = () => {
 
   const activeCategory = categories.find((c) => c.category_name === activeCategoryTab)
 
-  const handleHraChange = (field: "rented_in_metro_city" | "monthly_hra", value: number) => {
+  const handleHraChange = (field: keyof HRAData, value: string | number) => {
     setHraData((prev) =>
       prev
         ? {
@@ -115,8 +117,20 @@ const ITDeclarationForm = () => {
   }
 
   const resetForm = () => {
-    // HRA reset
-    setHraData(null)
+    // HRA reset - set all fields to empty/default values
+    if (hraData) {
+      setHraData({
+        monthly_hra: 0,
+        rented_in_metro_city: 0,
+        annual_hra_exemption: 0,
+        monthly_hra_exemption: 0,
+        start_date: "",
+        end_date: "",
+        pan: "",
+        address_line1: "",
+        address_line2: "",
+      })
+    }
 
     // Categories reset (amount = 0)
     setCategories((prev) =>
@@ -132,9 +146,6 @@ const ITDeclarationForm = () => {
     // Tabs reset
     setActiveMainTab("category")
     setActiveCategoryTab("")
-
-    // Refetch data to repopulate form with fresh API response
-    refetchDeclaration()
   }
 
   const handleAmountChange = (categoryName: string, itemIndex: number, value: number) => {
@@ -168,6 +179,12 @@ const ITDeclarationForm = () => {
         monthly_house_rent: goHeadWithNewRegimeBool ? 0 : (hraData?.monthly_hra ?? 0),
         rented_in_metro_city: goHeadWithNewRegimeBool ? 0 : (hraData?.rented_in_metro_city ?? 0),
         monthly_hra_exemption: goHeadWithNewRegimeBool ? 0 : (hraData?.monthly_hra_exemption ?? 0),
+        annual_hra_exemption: goHeadWithNewRegimeBool ? 0 : (hraData?.annual_hra_exemption ?? 0),
+        start_date: goHeadWithNewRegimeBool ? "" : (hraData?.start_date ?? ""),
+        end_date: goHeadWithNewRegimeBool ? "" : (hraData?.end_date ?? ""),
+        pan: goHeadWithNewRegimeBool ? "" : (hraData?.pan ?? ""),
+        address_line1: goHeadWithNewRegimeBool ? "" : (hraData?.address_line1 ?? ""),
+        address_line2: goHeadWithNewRegimeBool ? "" : (hraData?.address_line2 ?? ""),
         company: user?.company,
         payroll_period: selectedPeriod,
         employee: user?.employee,
@@ -260,25 +277,20 @@ const ITDeclarationForm = () => {
         {activeMainTab === "hra" && hraData && <HRAForm hraData={hraData} onChange={handleHraChange} />}
 
         {activeMainTab === "category" && (
-      <nav className="mt-4 border-b pb-3 overflow-x-auto">
-      <div className="flex gap-2 whitespace-nowrap">
-        {categories.map((cat) => (
-          <button
-            key={cat.category_name}
-            onClick={() => setActiveCategoryTab(cat.category_name)}
-            className={`px-3 py-1 text-xs rounded-lg border flex-shrink-0
-              ${
-                activeCategoryTab === cat.category_name
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100"
-              }`}
-          >
-            {cat.category_name}
-          </button>
-        ))}
-      </div>
-    </nav>
-    
+          <nav className="mt-4 border-b pb-3 overflow-x-auto">
+            <div className="flex gap-2 whitespace-nowrap">
+              {categories.map((cat) => (
+                <button
+                  key={cat.category_name}
+                  onClick={() => setActiveCategoryTab(cat.category_name)}
+                  className={`px-3 py-1 text-xs rounded-lg border flex-shrink-0
+              ${activeCategoryTab === cat.category_name ? "bg-blue-600 text-white" : "bg-gray-100"}`}
+                >
+                  {cat.category_name}
+                </button>
+              ))}
+            </div>
+          </nav>
         )}
       </header>
 

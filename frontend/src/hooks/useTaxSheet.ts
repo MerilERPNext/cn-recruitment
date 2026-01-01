@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { getIncomeTaxComputationData, getTaxSheetData, PayrollPeriodsService } from "../services/taxSheetService";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getIncomeTaxComputationData, getTaxSheetData, getTaxSheetHTML, PayrollPeriodsService } from "../services/taxSheetService";
 
 export function useTaxSheetData(
 employee_id: string | null, company: string | null, selectedPeriod: string | null) {
@@ -29,3 +29,19 @@ employee_id: string | null, company: string | null, selectedPeriod: string | nul
           staleTime: 0, // 5 minutes
         });
       }
+
+  
+      export const useTDSPRintViewPDF = (
+        employee: string,
+        payroll_period: string,
+        company: string
+      ) => {
+        return useMutation({
+          mutationFn: async (employee: string) => {
+            const html = await getTaxSheetHTML( employee, payroll_period, company);
+            return { response: html };
+          },
+          ...Option,
+        });
+      };
+      
