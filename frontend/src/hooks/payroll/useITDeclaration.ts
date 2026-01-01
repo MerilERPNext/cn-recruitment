@@ -3,10 +3,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { getCompareTaxSheetHTML, getITDecalarationData, getNewRegime, upDateITDeclarationSheet } from "../../services/payrollApi/itDeclarationService";
 
 
-export function useNewRegime(employee: string | null, company: string | null) {
+export function useNewRegime(employee: string | null, company: string | null, payroll_period: string | null) {
     return useQuery({
-      queryKey: ["new-regime", employee, company],
-      queryFn: () => getNewRegime(employee, company),
+      queryKey: ["new-regime", employee, company, payroll_period],
+      queryFn: () => getNewRegime(employee, company, payroll_period),
     });
   }
 

@@ -29,7 +29,7 @@ const ITDeclarationForm = () => {
   }
   const [selectedPeriod, setSelectedPeriod] = useState<string>("")
 
-  const newRegimeResponse = useNewRegime(user?.employee || null, user?.company || null).data as any
+  const newRegimeResponse = useNewRegime(user?.employee || null, user?.company || null, selectedPeriod || null).data as any
   const declarationId = newRegimeResponse?.declaration_id
   const [goHeadWithNewRegime, setGoHeadWithNewRegime] = useState<0 | 1 | null>(null)
   const [apiResponse, setApiResponse] = useState<any | null>(null)

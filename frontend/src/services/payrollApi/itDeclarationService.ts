@@ -6,13 +6,13 @@ type FetchHTMLArgs = {
   declaration_id: string;
 };
 
-export const getNewRegime = async (employee: string | null, company: string | null) => {
+export const getNewRegime = async (employee: string | null, company: string | null, payroll_period: string | null) => {
     const response = await FrappeAPI.callMethod(
       "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.tds_declaration_form",
       {
         employee: employee,
         company: company,
-        payroll_period: "25-26", 
+        payroll_period: payroll_period, 
       }
     );
   
