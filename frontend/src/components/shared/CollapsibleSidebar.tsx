@@ -105,10 +105,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const companyName = getTruncatedCompanyName(originalCompanyName);
   const { data: currentUser } = useCurrentUser();
 
-  const handleTodoClick = () => {
-    window.open(ROUTES.TODO, "_blank");
-  };
-
   const handleHelpDeskClick = () => {
     if (!currentUser?.roles) {
       window.open(ROUTES.HELP_DESK, "_blank");
@@ -399,7 +395,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     {
       icon: ListTodo,
       label: "Todo",
-      path: "",
+      path: ROUTES.TODO,
       permissionKey: "Todo",
     },
     {
@@ -505,7 +501,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const isItemActive = (item: NavigationItem) => {
-    if (item.label === "Todo" || item.label === "Help Desk") {
+    if (item.label === "Help Desk") {
       return false;
     }
 
@@ -692,30 +688,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           }`}
                         />
                       )}
-                    </div>
-                  ) : item.label === "Todo" ? (
-                    <div
-                      onClick={handleTodoClick}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                        isItemDirectlyActive
-                          ? "bg-blue-600 text-white hover:text-white"
-                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <span
-                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
-                            isExpanded
-                              ? "opacity-100"
-                              : "opacity-0 -translate-x-2"
-                          }`}
-                        >
-                          {item.label}
-                        </span>
-                      </div>
                     </div>
                   ) : item.label === "Help Desk" ? (
                     <div

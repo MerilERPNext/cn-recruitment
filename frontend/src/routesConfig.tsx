@@ -413,6 +413,11 @@ const MyTeamBenefitsRequests = lazyWithRetry(
   "MyTeamBenefitsRequests"
 );
 
+const TodoPage = lazyWithRetry(
+  () => import("./components/Todo/TodoPage"),
+  "TodoPage"
+);
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -741,6 +746,11 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/password-reset",
     element: <PasswordReset />,
+  },
+  // Todo App route
+  {
+    path: "/webapp/todo-app",
+    element: <TodoPage />,
   },
 ];
 
