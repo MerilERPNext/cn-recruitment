@@ -11,13 +11,7 @@ import {
   useRevokeApprovedLeave,
 } from "../../hooks/useLeaves";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
-import CustomDropdown from "../shared/CustomDropdown";
 
-const STATUS_OPTIONS = [
-  { label: "Pending", value: "Open" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
 
 const MyLeaveRequests = ({
   pageSize = 10,
@@ -53,12 +47,7 @@ const MyLeaveRequests = ({
     currentEmployee?.name || ""
   );
 
-  const [selectedStatus, setSelectedStatus] = useState("Open");
 
-  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(event.target.value);
-    setRefetchAttendance(true);
-  };
 
   const handleOpenReplaceModal = (leaveData: MyLeaveRequestType) => {
     setReplaceModalData({
@@ -116,22 +105,6 @@ const MyLeaveRequests = ({
     </div>
   );
 
-  const apiParams = {
-    doctype: "Leave Application",
-    employee: currentEmployee?.name,
-    ...(selectedStatus && { status: selectedStatus }),
-  };
-
-  const FilterDropdowns = () => (
-    <div className="flex items-center gap-2">
-      <CustomDropdown
-        value={selectedStatus}
-        onChange={handleStatusChange}
-        options={STATUS_OPTIONS}
-      />
-    </div>
-  );
-
   return (
     <>
       <div>
@@ -141,9 +114,6 @@ const MyLeaveRequests = ({
               <h2 className="base-title md:module-title pb-1">
                 My Leave Requests
               </h2>
-              <div className="flex items-center space-x-3 pb-1">
-                <FilterDropdowns />
-              </div>
             </div>
 
             {isEmployeeLoading ? (
@@ -167,7 +137,11 @@ const MyLeaveRequests = ({
                     customAPI={{
                       method:
                         "cn_leave_shift_managment.api.get_open_approval_todos",
-                      params: apiParams,
+                     
+                      params: {
+                        doctype: "Leave Application",
+                        employee: currentEmployee?.name,
+                      },
                     }}
                     ItemComponent={(props: { item: MyLeaveRequestType }) => (
                       <EmpLeaveRequestCard
@@ -181,11 +155,19 @@ const MyLeaveRequests = ({
                         }
                       />
                     )}
+                    isSearch={true}
+                    isFilter={true}
+                    filterFields={[
+                      {
+                        fieldname: "status",
+                        label: "Status",
+                        fieldtype: "Select",
+                        options: ["Open", "Approved", "Rejected"],
+                      },
+                    ]}
                     SkeletonComponent={CardSkeleton}
                     onRefetchComplete={() => setRefetchAttendance(false)}
                     refetchTrigger={refetchAttendance}
-                    isSearch={false}
-                    isFilter={false}
                     pageSize={pageSize}
                     showRefreshButton={false}
                     orderBy="modified desc"
