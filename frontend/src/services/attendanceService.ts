@@ -580,7 +580,7 @@ export const attendanceService = {
   ): Promise<string> => {
     try {
       const response = await FrappeAPI.getMethod(
-        "cn_leave_shift_managment.cn_leave_shift_managment.overtime.check_overtime_policy",
+        "cn_leave_shift_managment.cn_leave_shift_managment.overtime.check_overtime_policy_api",
         {
           employee: empId,
         }

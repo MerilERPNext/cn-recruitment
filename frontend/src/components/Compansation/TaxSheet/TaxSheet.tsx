@@ -4,7 +4,6 @@ import TaxSheet from "./Component/TaxSheet"
 import IncomeComputationSheet from "./Component/IncomeTax"
 
 import TDSSlipHandler from "./Component/TDSDownloadAndView"
-import { useSalarySlipName } from "../../../hooks/useSalaryDetails"
 
 
 export default function IncomeTaxSheet() {
@@ -12,12 +11,6 @@ export default function IncomeTaxSheet() {
     "taxsheet" | "income-computation"
   >("taxsheet")
 
-  
-
-  const { data: SalarySlipName } = useSalarySlipName() as {
-    data?: { data: { name: string }[] }
-  }
-  const SalarySlipId = SalarySlipName?.data?.[0]?.name
 
   return (
     <div className="min-h-screen bg-white p-4">
@@ -48,12 +41,9 @@ export default function IncomeTaxSheet() {
             </div>
           </div>
           {activeTab === "taxsheet" && (<div className="flex items-center gap-3">
-            {SalarySlipId && (
-              <TDSSlipHandler
-                salarySlipName={SalarySlipId}
-                disabled={false}
-              />
-            )}
+        
+              <TDSSlipHandler disabled={false} />
+          
           </div>
           )}
         </header>

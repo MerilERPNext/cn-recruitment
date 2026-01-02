@@ -49,10 +49,12 @@ export const getBenefitPayslipListView = async (EmployeeId: string, company: str
     return response;
 };
 
-export const getAllAccruedReimbursements = async (employee: string, company: string) => {
+export const getAllAccruedReimbursements = async (employee: string, company: string, payroll_period: string) => {
     const response = await FrappeAPI.callMethod(
         "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.get_all_accrued_reimbursements",
-        { employee, company }
+        {
+            employee, company, payroll_period
+        }
     );
 
     return response;

@@ -1,31 +1,47 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
-import { useTDSPRintViewPDF } from "../../../../hooks/useSalaryDetails";
 import SalarySlipPDFModal from "../../SalarySlipPDFModal";
+import {
+  useTaxSheetPayrollPriodsData,
+  useTDSPRintViewPDF,
+} from "../../../../hooks/useTaxSheet";
+import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
+import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
 
 type Props = {
-  salarySlipName: string;
   disabled?: boolean;
 };
 
-const TDSSlipHandler = ({ salarySlipName, disabled }: Props) => {
+const TDSSlipHandler = ({ disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const [html, setHtml] = useState("");
 
-  const { mutate, isPending } = useTDSPRintViewPDF({
-    onSuccess: (data) => {
-      if (data?.response) {
-        setHtml(data.response);
-        setOpen(true);
-      } else {
-        alert("No TDS HTML found");
-      }
-    },
-  });
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
+    user?.company ?? null
+  ) as {
+    data: any[] | undefined;
+    refetch: () => void;
+  };
+
+  const { mutate, isPending } = useTDSPRintViewPDF(
+    payrollPeriods?.[0]?.name || "",
+    user?.company || ""
+  );
 
   const handleView = () => {
-    mutate(salarySlipName);
+    if (!user?.employee || !payrollPeriods?.[0]?.name || !user?.company) return;
+
+    mutate(user.employee, {
+      onSuccess: (res: any) => {
+        setHtml(res?.response || "");
+        setOpen(true);
+      },
+    });
   };
 
   return (
@@ -34,18 +50,19 @@ const TDSSlipHandler = ({ salarySlipName, disabled }: Props) => {
         <button
           onClick={handleView}
           disabled={disabled || isPending}
-          className="px-4 py-1 bg-blue-600 text-white hover:bg-blue-700 cursor-pointer border rounded text-sm"
+          className="px-4 py-1 bg-blue-600 text-white hover:bg-blue-700 border rounded text-sm disabled:opacity-50"
         >
-           Preview TDS
+          {isPending ? "Loading..." : "Preview TDS"}
         </button>
       </div>
+
       <SalarySlipPDFModal
         isOpen={open}
         onClose={() => {
           setOpen(false);
           setHtml("");
         }}
-        salarySlipName={salarySlipName}
+        salarySlipName={user?.employee || ""}
         salarySlipDate=""
         htmlContent={html}
       />

@@ -25,13 +25,19 @@ export const AccrualItem = ({ item }: { item: SalaryComponentDetail }) => {
 
             {/* Working Days */}
             <div className="text-gray-600">
-                {item.working_days ?? item.working_days ?? 0}
+                {item.working_days}
             </div>
 
             <div className="text-gray-600">
-                {item.working_days ?? item.payment_days ?? 0}
+                {item.payment_days}
             </div>
 
+            <div className="text-gray-600">
+                {item.arrear_days}
+            </div>
+            <div className="text-gray-600">
+                {item.lop_days}
+            </div>
             {/* Periodic Original Amount */}
             <div className=" text-slate-600">
                 ₹{(item.periodic_original_amount ?? 0).toLocaleString()}
