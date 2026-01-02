@@ -39,6 +39,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
                 target.closest(".choices__list--dropdown") ||
                 target.closest(".choices__item--choice") ||
                 target.closest(".choices__button ") ||
+                target.closest(".form-control input active") ||
                 target.closest(".choices");
 
             if (

@@ -76,7 +76,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   const handleonClick = (emp: Employee) => () => {
     recentSearch(emp);
-    setTargetEmployee(emp.name, `/webapp/employee-profile`, true);
+    setTargetEmployee(emp.employee_id, `/webapp/employee-profile`, true);
   };
 
   const isActive = emp.status?.toLowerCase() === "active";

@@ -46,7 +46,7 @@ function isEmployee(obj: unknown): obj is Employee {
     if (typeof employee[field] !== "string") {
       console.warn(
         `isEmployee validation failed: field '${field}' is not a string, got ${typeof employee[
-          field
+        field
         ]}`
       );
       return false;
@@ -495,6 +495,17 @@ export class EmployeeService {
       throw new Error("No employee found for this user");
     }
     return data?.data as Employee[];
+  }
+  static async getSearchMembers(
+    filters?: string,
+    limit?: number
+  ): Promise<Employee[]> {
+    const response = FrappeAPI.getMethod("cn_hrms_core.cn_hrms_core.apis.employee_search.search_employees", {
+      limit: limit,
+      query: filters,
+    });
+    const data = await response;
+    return data as Employee[];
   }
 
   static async getAllReasons(filters?: FilterCondition[]): Promise<IReason[]> {

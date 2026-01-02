@@ -62,11 +62,9 @@ export const profileService = {
   },
   getEmployeeAppreciations: async (): Promise<Award[] | null> => {
     try {
-      const result = await FrappeAPI.getDocumentList("Award", {
-        fields: ["*"],
-      });
-
-      return (result?.data as unknown as Award[]) || [];
+      const result = await FrappeAPI.getMethod("chatnext_work_connect.chatnext_work_connect.api.badge.get_badge_types");
+      console.log(result, "--------------------------------->>>")
+      return (result as unknown as Award[]) || null;
     } catch (e) {
       throw new Error(
         `Some error occured while fetching employee awards.- ${e}`
