@@ -87,6 +87,7 @@ const ITDeclarationForm = () => {
   const [activeMainTab, setActiveMainTab] = useState<"hra" | "category">("category")
   const [hraData, setHraData] = useState<HRAData | null>(null)
   const [activeCategoryTab, setActiveCategoryTab] = useState("")
+  
 
   useEffect(() => {
     if (!apiResponse) return
@@ -98,7 +99,7 @@ const ITDeclarationForm = () => {
       setActiveCategoryTab(normalized[0].category_name)
     }
 
-    if (apiResponse?.hra_exemption?.length > 0) {
+    if (apiResponse?.hra_exemption) {
       setHraData(apiResponse.hra_exemption)
     }
   }, [apiResponse])
@@ -178,8 +179,6 @@ const ITDeclarationForm = () => {
       data: {
         monthly_house_rent: goHeadWithNewRegimeBool ? 0 : (hraData?.monthly_hra ?? 0),
         rented_in_metro_city: goHeadWithNewRegimeBool ? 0 : (hraData?.rented_in_metro_city ?? 0),
-        monthly_hra_exemption: goHeadWithNewRegimeBool ? 0 : (hraData?.monthly_hra_exemption ?? 0),
-        annual_hra_exemption: goHeadWithNewRegimeBool ? 0 : (hraData?.annual_hra_exemption ?? 0),
         start_date: goHeadWithNewRegimeBool ? "" : (hraData?.start_date ?? ""),
         end_date: goHeadWithNewRegimeBool ? "" : (hraData?.end_date ?? ""),
         pan: goHeadWithNewRegimeBool ? "" : (hraData?.pan ?? ""),

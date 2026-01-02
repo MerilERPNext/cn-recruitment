@@ -44,10 +44,12 @@ export default function SalaryAssignmentList() {
     "Status",
     "Monthly CTC",
     "Annual CTC",
+    "Fixed Gross Monthly",
+    "Fixed Gross Annual",
     "Action",
   ];
 
-  const columnWidths = ["1.5fr", "1fr", "1fr", "1fr", "0.8fr"];
+  const columnWidths = ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr",  "0.8fr"];
 
   if (isLoading) return <p className="p-4">Loading...</p>;
   if (isError) return <p className="p-4 text-red-500">Error loading data</p>;
@@ -85,6 +87,8 @@ export default function SalaryAssignmentList() {
 
                 {/* Annual CTC */}
                 <div>₹ {item.annual_ctc || "—"}</div>
+                <div>₹ {item.fixed_gross_monthly || "—"}</div>
+                <div>₹ {item.fixed_gross_annual || "—"}</div>
 
                 {/* Action */}
                 <div>
@@ -228,8 +232,20 @@ export default function SalaryAssignmentList() {
                   </span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-gray-500">Fixed Gross Monthly</span>
+                  <span className="font-semibold">
+                    ₹ {selected.fixed_gross_monthly}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-gray-500">Annual CTC</span>
                   <span className="font-semibold">₹ {selected.annual_ctc}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Fixed Gross Annual CTC</span>
+                  <span className="font-semibold">
+                    ₹ {selected.fixed_gross_annual}
+                  </span>
                 </div>
               </div>
 
@@ -253,7 +269,7 @@ export default function SalaryAssignmentList() {
 
                         <div className="text-right">
                           <p className="font-medium">
-                            ₹ {Number(item.amount).toLocaleString("en-IN")}
+                          Annual: ₹ {Number(item.amount).toLocaleString("en-IN")}
                           </p>
                           <p className="text-xs text-gray-500">
                             Monthly: ₹{" "}

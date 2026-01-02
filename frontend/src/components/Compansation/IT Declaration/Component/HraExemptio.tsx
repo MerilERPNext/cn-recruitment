@@ -53,8 +53,9 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange }) => {
         <input
           type="number"
           value={hraData.annual_hra_exemption}
+          readOnly
           onChange={(e) => onChange("annual_hra_exemption", Number(e.target.value))}
-          className="w-full border rounded px-3 py-1"
+          className="w-full border rounded px-3 py-1 bg-gray-300"
         />
       </div>
 
@@ -64,8 +65,9 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange }) => {
         <input
           type="number"
           value={hraData.monthly_hra_exemption}
+          readOnly
           onChange={(e) => onChange("monthly_hra_exemption", Number(e.target.value))}
-          className="w-full border rounded px-3 py-1"
+          className="w-full border rounded px-3 py-1 bg-gray-300"
         />
       </div>
 
