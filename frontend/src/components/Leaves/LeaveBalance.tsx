@@ -206,7 +206,7 @@ const LeaveBalance: React.FC = () => {
               {leaveBalance.map((leave) => (
                 <div
                   key={leave?.type}
-                  className="rounded-xl p-4 md:mb-4 md:mb-0 bg-white border border-gray-100 shadow-md"
+                  className="rounded-xl p-4 md:mb-0 bg-white border border-gray-100 shadow-md"
                 >
                   <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
                     <span className="text-left base-title md:module-title">
