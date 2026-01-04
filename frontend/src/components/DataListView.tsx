@@ -414,12 +414,7 @@ const DataListView = <T extends BaseItem>({
       data = (paginationQueryResult.data?.data || []) as unknown as T[];
     }
 
-    // return data;
-    return data.filter(
-      (item: any) =>
-        item?.reference_document?.status !== "Cancelled" &&
-        item?.status !== "Cancelled"
-    );
+    return data;
   }, [
     infiniteScroll,
     loadMorePagination,
@@ -723,7 +718,6 @@ const DataListView = <T extends BaseItem>({
                       }
                       className="block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     >
-                      <option value="">All {field.label}</option>
                       {field.options?.map((option) => (
                         <option key={option} value={option}>
                           {option}
