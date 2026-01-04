@@ -141,6 +141,7 @@ const MyLeaveRequests = ({
                       params: {
                         doctype: "Leave Application",
                         employee: currentEmployee?.name,
+                        status: "Open"
                       },
                     }}
                     ItemComponent={(props: { item: MyLeaveRequestType }) => (
