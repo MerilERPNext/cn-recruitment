@@ -7,7 +7,6 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
-import CustomDropdown from "../../shared/CustomDropdown";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import Button from "../../shared/atoms/Button";
 import { Plus } from "lucide-react";
@@ -17,12 +16,6 @@ import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
-
-const STATUS_OPTIONS = [
-  { label: "Pending", value: "Open" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
@@ -49,13 +42,6 @@ const MyOvertimeRequests = () => {
 
   const [showForm, setShowForm] = useState(false);
 
-  const [selectedStatus, setSelectedStatus] = useState("Open");
-
-  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(event.target.value);
-    setRefetchMyRequestsList(true);
-  };
-
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
     setRefetchAttendance(false);
@@ -81,17 +67,6 @@ const MyOvertimeRequests = () => {
     setSearchParams({});
   }, [setSearchParams]);
 
-  const FilterDropdowns = () => (
-    <div className="flex items-center gap-2">
-      <CustomDropdown
-        value={selectedStatus}
-        onChange={handleStatusChange}
-        options={STATUS_OPTIONS}
-      />
-    </div>
-  );
-
-
   return (
     <div>
       <div className="bg-white min-h-screen">
@@ -101,9 +76,6 @@ const MyOvertimeRequests = () => {
               <h2 className="base-title md:module-title pb-1">
                 My Overtime Requests
               </h2>
-              <div className="flex items-center space-x-3 pb-1">
-                <FilterDropdowns />
-              </div>
             </div>
             <CardTable
               columnWidths={["2fr", "1fr", "1fr", "1fr", "1fr"]}
@@ -124,7 +96,7 @@ const MyOvertimeRequests = () => {
                     params: {
                       doctype: "Planned Overtime Request",
                       employee: effectiveEmployeeId,
-                      status: selectedStatus,
+                      status: "Open",
                     },
                   }}
                   ItemComponent={(props: {
@@ -191,9 +163,7 @@ const MyOvertimeRequests = () => {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <CreateOvertimeRequest
-              onCancel={() => setShowForm(false)}
-            />
+            <CreateOvertimeRequest onCancel={() => setShowForm(false)} />
           </div>
         </div>
       )}
