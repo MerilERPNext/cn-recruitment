@@ -26,7 +26,9 @@
   "end_date",
   "reporting_to",
   "reporting_name",
-  "reporting_designation"
+  "reporting_designation",
+  "hidden_fields_tab",
+  "applicant_email"
  ],
  "fields": [
   {
@@ -35,6 +37,7 @@
    "label": "Applicant Details"
   },
   {
+   "default": "Email",
    "fieldname": "job_applicant",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
@@ -174,12 +177,26 @@
    "in_list_view": 1,
    "label": "Name of the Intern",
    "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.email_id",
+   "fieldname": "applicant_email",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Applicant Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "hidden_fields_tab",
+   "fieldtype": "Tab Break",
+   "hidden": 1,
+   "label": "Hidden Fields"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-05 16:11:33.039976",
+ "modified": "2026-01-05 16:39:31.268036",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Internship Letter",

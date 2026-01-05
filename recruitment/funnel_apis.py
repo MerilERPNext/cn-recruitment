@@ -53,3 +53,33 @@ def update_rejected_documents(variables):
 
     # Save the updated document
     onboarding_doc.save(ignore_permissions=True, ignore_version=True)
+
+
+def get_dashboard_for_job_applicant(data):
+    return {
+        "fieldname": "job_applicant",
+        "transactions": [
+            {
+                "label": "Recruitment",
+                "items": [
+                    "Job Offer",
+                    "Interview"
+                ]
+            },
+            {
+                "label": "Letters",
+                "items": [
+                    "Internship Letter",
+                    "Appointment Letter"
+                ]
+            },
+            {
+                "label": "Employee",
+                "items": [
+                    "Employee",
+                    "Employee Onboarding"
+                ]
+            }
+        ],
+    }
+
