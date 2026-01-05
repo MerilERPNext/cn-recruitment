@@ -8,7 +8,7 @@
  "field_order": [
   "applicant_details_section",
   "job_applicant",
-  "name_of_the_inern",
+  "name_of_the_intern",
   "name_of_the_college",
   "column_break_jcrd",
   "internship_letter_date",
@@ -41,14 +41,6 @@
    "in_list_view": 1,
    "label": "Job Applicant",
    "options": "Job Applicant",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "job_applicant.applicant_name",
-   "fieldname": "name_of_the_inern",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Name of the inern",
    "reqd": 1
   },
   {
@@ -162,7 +154,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Draft\nIssued\nAccepted\nCompleted\nCancelled",
+   "options": "Draft\nIssued\nAccepted\nCompleted\nRejected",
    "reqd": 1
   },
   {
@@ -173,12 +165,21 @@
    "label": "Company",
    "options": "Company",
    "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.applicant_name",
+   "fetch_if_empty": 1,
+   "fieldname": "name_of_the_intern",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name of the Intern",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-05 12:47:52.882265",
+ "modified": "2026-01-05 16:11:33.039976",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Internship Letter",
