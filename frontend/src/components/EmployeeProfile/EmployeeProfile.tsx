@@ -60,8 +60,6 @@ const EmployeeProfile: React.FC = () => {
     refetch: userRefetch,
     isLoading: userIsLoading,
   } = useGetEmployeeDetailsByEmpId(employeeId);
-  // const { data: employeeAppreciations } =
-  //   useGetEmployeeAppreciations();
   const { data: showAttendanceAssignment } = useShowAttendanaceAssignmentButton(
     employeeId,
     currentUser?.employee || ""
@@ -337,16 +335,17 @@ const EmployeeProfile: React.FC = () => {
         <div className="bg-white border-b sticky top-0 z-10">
           <div className="flex overflow-x-auto scrollbar-hide px-4 py-2">
             {tabs.map((tab) => (
-              <button
+              <Button
                 key={tab.key}
+                variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
                 className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-600 hover:text-blue-600"
+                  ? "border-primary-600 text-primary-600"
+                  : "border-transparent text-gray-600 hover:text-primary-600"
                   }`}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -375,7 +374,7 @@ const EmployeeProfile: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Profile">
-      <div className="flex flex-col h-full bg-gray-50 p-6 gap-4 w-full overflow-hidden">
+      <div className="flex flex-col h-full p-6 gap-4 w-full overflow-hidden">
         {/* Profile Header */}
 
         {/* All Sections Rendered */}
@@ -450,9 +449,7 @@ const EmployeeProfile: React.FC = () => {
                         <Button
                           icon={<NotebookPen size={"14px"} />}
                           size="sm"
-                          bgColor="blue-50"
                           variant="contain"
-                          textColor="blue-600"
                           onClick={() => setIsAttendanceAssignmentsOpen(true)}
                         >
                           Attendance Assignment
@@ -471,16 +468,17 @@ const EmployeeProfile: React.FC = () => {
           <div className="bg-white border-b sticky top-0 z-10">
             <div className="flex overflow-x-auto scrollbar-hide px-6 py-3 tracking-wide">
               {tabs.map((tab) => (
-                <button
+                <Button
                   key={tab.key}
+                  variant="subtle"
                   onClick={() => scrollToSection(tab.key)}
-                  className={`whitespace-nowrap px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-blue-600"
+                  className={`whitespace-nowrap rounded-[0] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-600 hover:text-primary"
                     }`}
                 >
                   {tab.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>

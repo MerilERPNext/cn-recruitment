@@ -119,17 +119,19 @@ export default function EmployeeProfileSections() {
                 <div className=" px-6 sticky top-12 md:top-16 bg-white flex-shrink-0 w-full max-w-full shadow-sm mb-2">
                     <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-2 w-full py-2">
                         {tabs.map(tab => (
-                            <button
+                            <Button
                                 key={tab.key}
                                 onClick={() => scrollToSection(tab.key)}
-                                className={`whitespace-nowrap px-2 py-1 rounded-md text-sm font-medium transition-all duration-200
+                                variant="subtle"
+                                size="md"
+                                className={`rounded-2xl whitespace-nowrap px-2 py-1 text-sm font-medium transition-all duration-200
                   ${activeTab === tab.key
-                                        ? "bg-blue-100 text-blue-600"
-                                        : "border-transparent text-gray-600 hover:text-blue-600"
+                                        ? "bg-primary-100 text-primary-600"
+                                        : "border-transparent text-gray-600 hover:text-primary-600"
                                     }`}
                             >
                                 {tab.label}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </div>

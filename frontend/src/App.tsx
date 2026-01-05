@@ -131,8 +131,7 @@ const App: React.FC = () => {
               <MandatoryPoliciesHandler />
 
               <div
-                className="min-h-screen"
-                style={{ backgroundColor: "var(--background-medium)" }}
+                className="min-h-screen bg-app"
               >
                 <Routes>
                   <Route element={<ModalWrapper />}>

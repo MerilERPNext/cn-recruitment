@@ -6,6 +6,7 @@ import { ViewAll } from "../shared/atoms/ViewAll";
 import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
 import { getDueStatus } from "./DueStatus";
 import useCurrentUser from "../../hooks/useCurrentUser";
+import { Card } from "../shared/atoms/Card";
 
 interface ToDo {
   priority: string;
@@ -64,7 +65,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
   };
 
   return (
-    <div className="flex items-center p-2 rounded-lg bg-gray-100 gap-3 mb-2">
+    <div className="flex items-center p-2 rounded-lg border-b gap-3 mb-2">
       <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
         <FileText className="w-4 h-4 text-blue-500" />
       </div>
@@ -158,20 +159,19 @@ const TasksAwaiting: React.FC = () => {
   const totalCount = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-md border border-[rgba(0,0,0,0.05)]">
+    <Card shadow="sm" className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h3 className="section-title">Tasks Awaiting You</h3>
         <ViewAll title="Visit Todo" onClick={handleTodoClick} />
       </div>
 
-      <div className="flex overflow-x-auto gap-3 mb-4 p-2">
+      <div className="flex gap-3 mb-4 p-2">
         <button
           onClick={() => setActiveCategory("All")}
-          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${
-            activeCategory === "All"
-              ? "bg-gray-900 text-white scale-105"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          } transition-all`}
+          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${activeCategory === "All"
+            ? "bg-gray-900 text-white scale-105"
+            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            } transition-all`}
         >
           All ({totalCount})
         </button>
@@ -184,11 +184,10 @@ const TasksAwaiting: React.FC = () => {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
-                isActive
-                  ? `scale-105 ring-2 ${colors}`
-                  : `${colors} opacity-70 hover:opacity-100`
-              }`}
+              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
+                ? `scale-105 ring-2 ${colors}`
+                : `${colors} opacity-70 hover:opacity-100`
+                }`}
             >
               {cat} ({count})
             </button>
@@ -223,7 +222,7 @@ const TasksAwaiting: React.FC = () => {
         />
       )}
 
-      <div className="max-h-[38.9rem] min-h-fit  overflow-y-auto">
+      <div className="flex-1 overflow-y-auto">
         {filtered.map((item) => (
           <MyToDoItem key={item.name} item={item} />
         ))}
@@ -232,7 +231,7 @@ const TasksAwaiting: React.FC = () => {
           <p className="text-gray-500 text-sm p-4">No tasks found.</p>
         )}
       </div>
-    </div>
+    </Card>
   );
 };
 

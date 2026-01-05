@@ -127,7 +127,8 @@ const EmployeeSidebarForm = ({
                             <Button
                                 onClick={handleSubmit}
                                 disabled={mutation?.isPending}
-                                className="mt-2 w-full rounded-lg py-3 bg-black text-white font-medium hover:bg-blue-800 transition-colors"
+                                size="md"
+                                fullWidth
                             >
                                 {mutation?.isPending || employeeIsLoading ? (
                                     <CircularLoader size="sm" color="white" />

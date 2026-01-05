@@ -189,8 +189,6 @@ const AttendanceLayoutContent: React.FC = () => {
             }
           }}
           size="lg"
-          bgColor="blue-600"
-          className="hover:bg-blue-700"
         >
           {isOvertimePage && plannedOvertimAllowed ? "+ Overtime" : "+ Attendance Request"}
           {/* <ChevronDown

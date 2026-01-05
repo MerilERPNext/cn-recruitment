@@ -3,6 +3,7 @@ import { useGetAllEmployees } from "../../hooks/useEmployee";
 import { format } from "date-fns";
 import Badge from "../shared/Badge";
 import Tooltip from "../shared/Tooltip";
+import { Card } from "../shared/atoms/Card";
 
 const Events = () => {
     const { data = [] } = useGetAllEmployees(
@@ -68,7 +69,7 @@ const Events = () => {
     return (
         <div className="bg-white rounded-lg shadow-sm max-h-[16.5rem] min-h-[16.5rem] flex flex-col">
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b px-6 py-2 flex justify-between w-full rounded-lg">
+            <div className="sticky top-0 bg-white border-b px-4 py-2 flex justify-between w-full">
                 <h3 className="section-title mb-0 text-left">Events</h3>
                 {/* Tabs */}
                 <div className="flex gap-2 overflow-x-auto">
@@ -127,9 +128,9 @@ const Events = () => {
                             );
 
                             return (
-                                <div
+                                <Card
                                     key={`${employee.employee_name}-${index}`}
-                                    className="flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-lg p-2"
+                                    className="flex items-center justify-between gap-3 py-2 px-0"
                                 >
                                     <div className="flex gap-2 items-center">
                                         {/* Avatar */}
@@ -169,7 +170,7 @@ const Events = () => {
                                                 : "text-emerald-700"
                                         }
                                     />
-                                </div>
+                                </Card>
                             );
                         })}
                     </div>

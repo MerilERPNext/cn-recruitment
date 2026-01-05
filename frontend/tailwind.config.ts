@@ -1,8 +1,5 @@
 /** @type {import('tailwindcss').Config} */
 
-const primary = "hsla(208, 100%, 43%, 1)";
-const secondary = "hsla(190, 81%, 42%, 1)";
-
 export default {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx,css}", "./index.html"],
   safelist: [
@@ -19,47 +16,133 @@ export default {
     "grid-cols-11",
     "grid-cols-12",
   ],
-  darkMode: "media", // Changed from false to 'media'
+  darkMode: "media",
   theme: {
     extend: {
+      /* =============================== * COLORS (PW PALETTE) * =============================== */
       colors: {
+        app: "#F8F7FF",
+        surface: "#F8F7FF",
         primary: {
-          DEFAULT: primary,
-          50: "hsla(208, 100%, 91%, 1)",
-          100: "hsla(208, 100%, 83%, 1)",
-          200: "hsla(208, 100%, 75%, 1)",
-          300: "hsla(208, 100%, 67%, 1)",
-          400: "hsla(208, 100%, 59%, 1)",
-          500: "hsla(208, 100%, 51%, 1)",
-          600: primary,
-          700: "hsla(208, 100%, 35%, 1)",
-          800: "hsla(208, 100%, 27%, 1)",
-          900: "hsla(208, 100%, 19%, 1)",
+          DEFAULT: "#5A4BDA", // PW Indigo 500
+          10: "#F8F7FF",
+          50: "#F1EFFF",
+          100: "#D2CCFF ",
+          200: "#B2A9FF",
+          300: "#9387FF",
+          400: "#7363FC",
+          500: "#5A4BDA",
+          600: "#4437B8",
+          700: "#312596 ",
+          800: "#211774",
+          900: "#140D52",
         },
         secondary: {
-          DEFAULT: secondary,
-          50: "hsla(190, 81%, 90%, 1)",
-          100: "hsla(190, 81%, 82%, 1)",
-          200: "hsla(190, 81%, 74%, 1)",
-          300: "hsla(190, 81%, 66%, 1)",
-          400: "hsla(190, 81%, 58%, 1)",
-          500: "hsla(190, 81%, 50%, 1)",
-          600: secondary,
-          700: "hsla(190, 81%, 34%, 1)",
-          800: "hsla(190, 81%, 28%, 1)",
-          900: "hsla(190, 81%, 20%, 1)",
+          DEFAULT: "#6172F3",
+          10: "#F5F8FF",
+          50: "#EEF4FF",
+          100: "#E0EAFF",
+          200: "#C7D7FE",
+          300: "#A4BCFD",
+          400: "#8098F9",
+          500: "#6172F3",
+          600: "#444CE7",
+          700: "#3538CD",
+          800: "#2D31A6",
+          900: "#2D3282",
         },
+
+        gray: {
+          10: "#EAECEF",
+          50: "#E4E7EA",
+          100: "#D9DCE1 ",
+          200: "#CDD1D8",
+          300: "#C1C6CE",
+          400: "#B5BBC5",
+          500: "#989DA5",
+          600: "#7B7F86",
+          700: "#5E6166 ",
+          800: "#414347",
+          900: "#26282D",
+        },
+        text: {
+          title: "#1B2124",
+          body1: "#3D3D3D",
+          body2: "#757575",
+          disabled: "#A1A3A4",
+          success: "#1B7938",
+          warning: "#EAAA2E",
+          error: "#BF2734",
+          primary: "#5A4BDA",
+          link: "#037CBF",
+        },
+        success: {
+          DEFAULT: "#1B7938",
+          50: "#CAE0D1",
+          100: "#EDFCF2",
+          200: "#AAF0C4",
+          600: "#17662F",
+          800: "#0E3F1D",
+        },
+
+        warning: {
+          DEFAULT: "#EAAA2E",
+          50: "#FDEFD3",
+          100: "#F7E0B4",
+          200: "#F4D392",
+          600: "#C58F27",
+          800: "#7A5818",
+        },
+
+        error: {
+          DEFAULT: "#BF2734",
+          50: "#F2D0D4",
+          100: "#E8B1B6",
+          200: "#DE8F95",
+          600: "#A0212C ",
+          800: "#63141B",
+        },
+
+        info: {
+          DEFAULT: "#0EA5E9",
+          50: "#E0F2FE",
+          100: "#C7E4FD",
+          200: "#A4D1FE",
+          600: "#0284C7",
+          800: "#075985",
+        },
+
+
         "gray-darker": "#504747",
       },
+
+      /* =============================== * FONTS (PW TYPOGRAPHY) * =============================== */
+      fontFamily: {
+        brand: ['"Reddit Sans"', "system-ui", "sans-serif"],
+        sans: ['"Reddit Sans"', "system-ui", "sans-serif"],
+        serif: ['"Reddit Sans"', "system-ui", "sans-serif"],
+        inconsolata: ["Inconsolata"],
+        source: [
+          "source-code-pro",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          "Courier New",
+          "monospace",
+        ],
+      },
+
+      /* =============================== * EVERYTHING BELOW IS UNCHANGED * =============================== */
+
       spacing: {
-        7.5: "1.875rem", // 30px
-        15: "3.75rem", // 60px
-        22: "5.5rem", // 88px
-        25: "6.25rem", // 100px
-        26: "6.5rem", // 104px
-        30: "8.5rem", // 136px
-        32: "9rem", // 144px
-        68: "17rem", // 272px
+        7.5: "1.875rem",
+        15: "3.75rem",
+        22: "5.5rem",
+        25: "6.25rem",
+        26: "6.5rem",
+        30: "8.5rem",
+        32: "9rem",
+        68: "17rem",
       },
       padding: {
         px: "1px",
@@ -70,27 +153,8 @@ export default {
         "-2px": "-2px",
         auto: "auto",
       },
-      fontSize: {
-        micro: ".5rem", // 8px
-        xxs: ".625rem", // 10px
-        md: "1.125rem", // 18px
-      },
       fontWeight: {
         hairline: 100,
-      },
-      fontFamily: {
-        brand: ["Inter", "Source Sans Pro", "sans-serif"],
-        sans: ["Inter", "Source Sans Pro", "sans-serif"],
-        serif: ["Inter", "Source Sans Pro", "sans-serif"],
-        inconsolata: ["Inconsolata"],
-        source: [
-          "source-code-pro",
-          "Menlo",
-          "Monaco",
-          "Consolas",
-          "Courier New",
-          "monospace",
-        ],
       },
       minWidth: {
         site: "18.75rem",
@@ -163,6 +227,35 @@ export default {
       },
       fill: {
         transparent: "transparent",
+      },
+      fontSize: {
+        /* =============================== * DISPLAY * =============================== */
+        "display-1": ["80px", { lineHeight: "100px", fontWeight: "700" }],
+        "display-2": ["64px", { lineHeight: "80px", fontWeight: "700" }],
+
+        /* =============================== * HEADINGS * =============================== */
+        h1: ["40px", { lineHeight: "50px", fontWeight: "700" }],
+        h2: ["32px", { lineHeight: "48px", fontWeight: "700" }],
+        h3: ["24px", { lineHeight: "32px", fontWeight: "700" }],
+        h4: ["20px", { lineHeight: "30px", fontWeight: "700" }],
+
+        /* =============================== * SUBHEADING * =============================== */
+        subheading: ["16px", { lineHeight: "28px", fontWeight: "600" }],
+
+        /* =============================== * BODY * =============================== */
+        body: ["14px", { lineHeight: "24px", fontWeight: "400" }],
+        "body-medium": ["14px", { lineHeight: "24px", fontWeight: "500" }],
+        "body-semibold": ["14px", { lineHeight: "24px", fontWeight: "600" }],
+
+        /* =============================== * SMALL BODY * =============================== */
+        "body-sm": ["12px", { lineHeight: "20px", fontWeight: "400" }],
+        "sm": ["12px", { lineHeight: "20px", fontWeight: "400" }],
+        "body-sm-medium": ["12px", { lineHeight: "20px", fontWeight: "500" }],
+        "md": ["14px", { lineHeight: "20px", fontWeight: "600" }],
+        "lg": ["16px", { lineHeight: "20px", fontWeight: "600" }],
+
+        /* =============================== * TINY / LABEL * =============================== */
+        label: ["10px", { lineHeight: "16px", fontWeight: "500" }],
       },
       flex: {
         2: "2 2 0%",

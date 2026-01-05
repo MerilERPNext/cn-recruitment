@@ -294,7 +294,7 @@ export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {
   });
 };
 export const useGetEmployeeAppreciations = () => {
-  return useQuery<Award[] | null>({
+  return useQuery<{ badges: Award[] } | null>({
     queryKey: ["all-emp-appreciations"],
     queryFn: () => profileService.getEmployeeAppreciations(),
     staleTime: 1000 * 60 * 5,
