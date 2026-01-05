@@ -1,3 +1,31 @@
+// INJECT CSS IMMEDIATELY - Before anything else loads
+if (!document.getElementById('override-title-css')) {
+    const style = document.createElement('style');
+    style.id = 'override-title-css';
+    style.innerHTML = `
+        /* Completely hide original title text */
+        .web-form-title, .page-title h3, .page-title h1 {
+            visibility: hidden !important;
+            position: relative !important;
+            font-weight: bold !important;
+            height: 40px !important;
+            margin-bottom: 20px !important;
+        }
+        /* Show only the replacement text */
+        .web-form-title::before, .page-title h3::before, .page-title h1::before {
+            content: "Onboarding Form" !important;
+            visibility: visible !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            font-size: 32px !important;
+            font-weight: bold !important;
+            color: #000 !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 frappe.ready(function () {
     console.log("✅ Web Form Script Loaded");
 
@@ -10,6 +38,44 @@ frappe.ready(function () {
     }, 300);
 
     function initWebForm() {
+
+        // Set custom page title
+        document.title = "Onboarding Form";
+
+        // Function to update title (runs multiple times to override any dynamic changes)
+        function updateTitle() {
+            // Target all possible title elements and update text
+            $('.web-form-title').text("Onboarding Form");
+            $('.page-title h3').text("Onboarding Form");
+            $('.page-title h1').text("Onboarding Form");
+            $('h3').each(function() {
+                const text = $(this).text();
+                if (text.includes("KG") || text.includes("Staff") || text.includes("Professional") || text.includes("Emp") || text.includes("Employee") || text.includes("Welcome") || text.includes("Incubyte") || text.includes("Proffessional")) {
+                    $(this).text("Onboarding Form");
+                }
+            });
+            $('h1').each(function() {
+                const text = $(this).text();
+                if (text.includes("KG") || text.includes("Staff") || text.includes("Professional") || text.includes("Emp") || text.includes("Employee") || text.includes("Welcome") || text.includes("Incubyte") || text.includes("Proffessional")) {
+                    $(this).text("Onboarding Form");
+                }
+            });
+
+            // Make title bold and bigger (CSS already handles this, but reinforce it)
+            $('.web-form-title, .page-title h3, .page-title h1').css({
+                'font-weight': 'bold',
+                'font-size': '32px'
+            });
+        }
+
+        // Update title multiple times to ensure it sticks
+        updateTitle();
+        setTimeout(updateTitle, 100);
+        setTimeout(updateTitle, 300);
+        setTimeout(updateTitle, 800);
+        setTimeout(updateTitle, 1500);
+
+        console.log("✅ Page title set to: Onboarding Form (bold & big)");
 
         $(".navbar, .web-footer").remove();
 

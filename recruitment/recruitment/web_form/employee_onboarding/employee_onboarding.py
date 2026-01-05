@@ -240,7 +240,9 @@ def create_job_applicant(email, first_name):
 			job_applicant.applicant_first_name = first_name
 			print(f"[create_job_applicant] Set applicant_first_name custom field: {first_name}")
 
-		job_applicant.insert(ignore_permissions=True)
+		# Use ignore_mandatory=True to bypass mandatory field validation
+		# (e.g., resume_attachment is mandatory in Job Applicant but not required from web form)
+		job_applicant.insert(ignore_permissions=True, ignore_mandatory=True)
 		frappe.db.commit()
 
 		print(f"[create_job_applicant] SUCCESS - Created: {job_applicant.name}")
