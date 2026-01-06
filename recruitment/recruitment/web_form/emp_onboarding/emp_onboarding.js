@@ -450,34 +450,28 @@ frappe.ready(function () {
             const isReviewPage = $('.review-page-container').length > 0;
             const formIsVisible = $('form[data-web-form], form.web-form').is(':visible');
 
-            // Hide ALL default Save/Submit buttons EVERYWHERE
-            $('button[type="submit"]').not('.btn-custom-save').hide();
-            $('.page-header button, .page-title button, .page-head button, .page-actions button').filter(function() {
-                return $(this).text().toLowerCase().includes('save');
-            }).hide();
-
-            // Page 4 detector - ONLY check custom_previously_employed field
+            // Page 4 detector - Check for education fields (SSC/HSC, Bachelors, Masters)
             let isPage4 = false;
             let foundField = '';
 
-            // ONLY check for custom_previously_employed field (unique to Page 4)
-            const $prevEmployedField = $('[data-fieldname="custom_previously_employed"]');
-            console.log("🔎 Checking for custom_previously_employed field:");
-            console.log("  - Field exists in DOM:", $prevEmployedField.length > 0);
-            if ($prevEmployedField.length > 0) {
-                console.log("  - Field is visible:", $prevEmployedField.is(':visible'));
-                console.log("  - Field height:", $prevEmployedField.height());
+            // Check for SSC & HSC field (unique to Page 4 - Education page)
+            const $educationField = $('[data-fieldname="custom_ssc__hsc_marksheets__certificates"]');
+            console.log("🔎 Checking for custom_ssc__hsc_marksheets__certificates field:");
+            console.log("  - Field exists in DOM:", $educationField.length > 0);
+            if ($educationField.length > 0) {
+                console.log("  - Field is visible:", $educationField.is(':visible'));
+                console.log("  - Field height:", $educationField.height());
             }
 
-            if ($prevEmployedField.length > 0 && $prevEmployedField.is(':visible') && $prevEmployedField.height() > 0) {
+            if ($educationField.length > 0 && $educationField.is(':visible') && $educationField.height() > 0) {
                 isPage4 = true;
-                foundField = 'custom_previously_employed';
-                console.log("✅ Page 4 DETECTED! Field: custom_previously_employed is visible");
+                foundField = 'custom_ssc__hsc_marksheets__certificates';
+                console.log("✅ Page 4 DETECTED! Field: custom_ssc__hsc_marksheets__certificates is visible");
             } else {
-                console.log("❌ Page 4 NOT detected - custom_previously_employed not found/visible");
+                console.log("❌ Page 4 NOT detected - custom_ssc__hsc_marksheets__certificates not found/visible");
             }
 
-            // All fallback detection disabled - only using custom_previously_employed field
+            // All fallback detection disabled - only using education field for Page 4 detection
 
             // Log ALL visible fields for debugging - ALWAYS LOG to help diagnose
             let allVisible = [];
@@ -500,6 +494,12 @@ frappe.ready(function () {
 
                 // Add class to body to indicate we're on Page 4
                 $('body').addClass('on-page-4');
+
+                // Hide ALL default Save/Submit buttons on Page 4
+                $('button[type="submit"]').not('.btn-custom-save').hide();
+                $('.page-header button, .page-title button, .page-head button, .page-actions button').filter(function() {
+                    return $(this).text().toLowerCase().includes('save');
+                }).hide();
 
                 // AGGRESSIVELY HIDE Next button on Page 4
                 $('.web-form-actions .btn-next').hide().attr('style', 'display: none !important;');
@@ -652,19 +652,26 @@ frappe.ready(function () {
                 });
 
             } else {
-                console.log("❌ NOT on Page 4 - Showing Next button");
+                console.log("❌ NOT on Page 4 - Showing Next button, HIDING Save button");
 
                 // Remove class from body
                 $('body').removeClass('on-page-4');
 
-                // Remove Save button
+                // Remove custom Save button
                 $('.btn-custom-save').remove();
 
                 if (!isReviewPage && formIsVisible) {
-                    // On other pages - AGGRESSIVELY show Next button
-                    console.log("🔄 Forcing Next button to show");
+                    // On other pages (1-3) - HIDE Save button, SHOW Next button
+                    console.log("🔄 Hiding Save button, showing Next button on pages 1-3");
 
-                    // Remove ALL inline styles and show the button
+                    // HIDE default save/submit button on Pages 1-3
+                    $('button[type="submit"]').hide();
+                    $('.web-form-actions button[type="submit"]').hide();
+                    $('.page-header button, .page-title button, .page-head button, .page-actions button').filter(function() {
+                        return $(this).text().toLowerCase().includes('save');
+                    }).hide();
+
+                    // Remove ALL inline styles and show the Next button
                     $('.web-form-actions .btn-next').removeAttr('style').attr('style', 'display: inline-block !important;').show();
 
                     $('.web-form-actions button').each(function() {
@@ -678,6 +685,9 @@ frappe.ready(function () {
                     $('.web-form-actions .btn-primary').filter(function() {
                         return $(this).text().toLowerCase().includes('next');
                     }).removeAttr('style').attr('style', 'display: inline-block !important;').show();
+                } else if (isReviewPage) {
+                    // On review page - hide default buttons
+                    $('button[type="submit"]').not('.btn-submit-final').hide();
                 }
             }
         }, 400);
