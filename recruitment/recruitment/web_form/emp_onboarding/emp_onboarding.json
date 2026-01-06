@@ -24,7 +24,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 100,
- "modified": "2026-01-03 15:42:11.505042",
+ "modified": "2026-01-06 13:21:06.461498",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "emp-onboarding",
@@ -37,7 +37,7 @@
  "show_sidebar": 0,
  "success_message": "",
  "success_title": "Thank You",
- "title": "Onboarding Form",
+ "title": "KG/Staff",
  "web_form_fields": [
   {
    "allow_read_on_all_link_options": 0,
@@ -836,11 +836,12 @@
   {
    "allow_read_on_all_link_options": 0,
    "fieldname": "custom_name_of_bank",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "hidden": 0,
    "label": "Name of Bank",
    "max_length": 0,
    "max_value": 0,
+   "options": "Bank",
    "precision": "",
    "read_only": 0,
    "reqd": 1,
