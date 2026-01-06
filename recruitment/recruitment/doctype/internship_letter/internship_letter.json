@@ -98,7 +98,6 @@
    "reqd": 1
   },
   {
-   "fetch_from": "job_applicant.custom_ctc_finalized",
    "fieldname": "stipend",
    "fieldtype": "Data",
    "label": "Stipend",
@@ -149,7 +148,7 @@
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "label": "Office Location",
-   "options": "Location",
+   "options": "Branch",
    "reqd": 1
   },
   {
@@ -196,7 +195,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-05 16:39:31.268036",
+ "modified": "2026-01-06 09:45:59.926412",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Internship Letter",
