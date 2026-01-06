@@ -62,6 +62,9 @@ import { Typography } from "./shared/atoms/Typography";
 import { Card } from "./shared/atoms/Card";
 import Events from "./Events/Events";
 import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
+import { ViewAll } from "./shared/atoms/ViewAll";
+import Badge from "./shared/Badge";
+import CircularLoader from "./shared/atoms/CircularLoader";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -361,7 +364,7 @@ export default function DesktopDashboard() {
         {/* Header */}
         <div
           className="bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600
-  border-b border-gray-200 px-6 py-4
+  border-b border-gray-200 px-6 py-[0.3rem]
   flex items-center sticky top-0 z-10 gap-4"
         >
           <div className="flex flex-col min-w-0">
@@ -469,20 +472,19 @@ export default function DesktopDashboard() {
                       {/* Text Info */}
                       {/* Text Info */}
                       <div className="flex-1 min-w-0">
-                        <Typography variant="subheading" color="title" className="truncate block">
+                        <Typography variant="subheading" color="title" className="truncate block font-bold">
                           {currentEmployee?.employee_name || "Temp User"}
                         </Typography>
-                        <Typography variant="bodySmall" color="secondary" className="break-words block max-w-xs">
-                          {currentEmployee?.custom_designation_name ||
-                            "Temp Designation"}
+                        <Typography variant="bodySmall" color="secondary" className="truncate block mt-0.5">
+                          {currentEmployee?.custom_designation_name || "Temp Designation"}
                         </Typography>
-                        <Typography variant="label" color="disabled" className="block mt-1">
-                          Employee ID: {currentEmployee?.employee || "N/A"}
-                        </Typography>
-                        <Typography variant="bodySmall" color="secondary" className="break-words block max-w-xs mt-1">
-                          {currentEmployee?.company_email ||
-                            currentEmployee?.personal_email ||
-                            "Temp Email"}
+                        <div className="flex items-center gap-2 mt-2">
+                          <Typography variant="label" color="disabled" className="font-bold uppercase tracking-wider">
+                            ID: {currentEmployee?.employee || "N/A"}
+                          </Typography>
+                        </div>
+                        <Typography variant="bodySmall" color="secondary" className="truncate block mt-1">
+                          {currentEmployee?.company_email || currentEmployee?.personal_email || "Temp Email"}
                         </Typography>
                       </div>
                     </div>
@@ -565,7 +567,7 @@ export default function DesktopDashboard() {
                       className="justify-start gap-3 px-4 font-normal"
                     >
                       {mutation.isPending ? (
-                        "Sending..."
+                        <CircularLoader size="sm" color="blue-500" />
                       ) : (
                         <>
                           <RotateCcwKey className="w-4 h-4" />
@@ -642,7 +644,7 @@ export default function DesktopDashboard() {
             </div>
 
             <div className="lg:col-span-4">
-              <Card shadow="sm" className="h-full flex flex-col gap-6">
+              <Card shadow="sm" className="h-full flex flex-col gap-4">
                 <div>
                   <Typography variant="subheading" className="mb-4 text-left block">
                     Total hours worked
@@ -676,13 +678,12 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div className="border-t border-gray-100 pt-4">
-                  <div className="flex items-center justify-between w-full mb-2">
+                  <div className="flex items-start justify-between w-full mb-2">
                     <div>
                       <Typography variant="subheading" color="title" className="block mb-1">
                         Daily Timings
                       </Typography>
-                      <Typography variant="bodySmall" className="flex items-center gap-1.5">
-                        <Timer className="w-3.5 h-3.5 text-gray-400" />
+                      <Typography variant="bodySmall" color="body2" className="flex items-center gap-1.5">
                         Shift: {employeeShift?.start_time
                           ? formatTimeSafe(employeeShift.start_time)
                           : "--:--"} - {employeeShift?.end_time
@@ -690,13 +691,26 @@ export default function DesktopDashboard() {
                             : "--:--"}
                       </Typography>
                     </div>
+                    <Badge
+                      label={isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
+                      size="md"
+                      pulse={{
+                        show: true,
+                        color: isCurrentlyCheckedIn ? "bg-success" : "bg-error"
+                      }}
+                      backgroundColor={isCurrentlyCheckedIn
+                        ? "bg-success-100 border-success-100"
+                        : "bg-error-100 border-error-100"
+                      }
+                      textColor={isCurrentlyCheckedIn ? "text-success" : "text-error"}
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     {/* IN TIME */}
-                    <div className="bg-success-50/50 p-4 rounded-xl border border-success-100/50">
+                    <div className="py-2 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-success/10 rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-success-100 rounded-xl flex items-center justify-center">
                           <CheckCircle className="w-5 h-5 text-success" />
                         </div>
                         <div>
@@ -713,9 +727,9 @@ export default function DesktopDashboard() {
                     </div>
 
                     {/* OUT TIME */}
-                    <div className="bg-error-50/50 p-4 rounded-xl">
+                    <div className="py-2 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-error/10 rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-error-100 rounded-xl flex items-center justify-center">
                           <XCircle className="w-5 h-5 text-error" />
                         </div>
                         <div>
@@ -767,29 +781,12 @@ export default function DesktopDashboard() {
                   )}
 
                   {/* Status */}
-                  {homeSummary && homeSummary?.length > 0 ? (
-                    <div
-                      className={`flex-1 flex rounded-xl items-center justify-center gap-2 px-3 py-2 transition-colors ${isCurrentlyCheckedIn
-                        ? "bg-success-50/50 border-success-100 text-success"
-                        : "bg-error-50/50 border-error-100 text-error"
-                        }`}
-                    >
-                      <div
-                        className={`w-2 h-2 rounded-full animate-pulse ${isCurrentlyCheckedIn ? "bg-success text-success" : "bg-error text-error"
-                          }`}
-                      ></div>
 
-                      <Typography variant="bodySmall" className="text-inherit">
-                        {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
-                      </Typography>
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-xl border border-primary-100">
-                      <Typography variant="bodySmall" className="font-bold text-primary-600">
-                        Let's Get Started
-                      </Typography>
-                    </div>
-                  )}
+                  {!homeSummary?.length && <div className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-xl border border-primary-100">
+                    <Typography variant="bodySmall" className="font-bold text-primary-600">
+                      Let's Get Started
+                    </Typography>
+                  </div>}
                 </div>
               </Card>
             </div>
@@ -804,21 +801,18 @@ export default function DesktopDashboard() {
             </div>
 
             <div className="lg:col-span-4">
-              <Card shadow="sm" className="h-full">
-                <div className="flex justify-between items-center mb-4 border-b pb-1">
+              <Card shadow="sm" padding="none" className="h-full">
+                <div className="flex justify-between items-center mb-4 border-b p-2">
                   <Typography variant="subheading" color="title">Requests</Typography>
-                  <Button
-                    variant="subtle"
-                    size="md"
+
+                  <ViewAll
                     onClick={() => {
                       navigate("/webapp/requests");
                     }}
-                  >
-                    View All
-                  </Button>
+                  />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 px-4">
                   {[
                     {
                       label: "Apply Leave",
@@ -856,7 +850,7 @@ export default function DesktopDashboard() {
                         }`}>
                         <action.icon className="w-5 h-5 shadow-sm" />
                       </div>
-                      <Typography variant="bodySmall" className="font-bold leading-tight line-clamp-2">
+                      <Typography variant="bodySmall" className="font-semibold leading-tight line-clamp-2">
                         {action.label}
                       </Typography>
                     </div>

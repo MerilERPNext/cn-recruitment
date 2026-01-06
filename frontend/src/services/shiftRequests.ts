@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
-import { ShiftRequest,ShiftType, UpdateShiftRequestPayload } from "../types/shift";
+import { ShiftRequest, ShiftType, UpdateShiftRequestPayload } from "../types/shift";
 
 export const ShiftRequestService = {
   getDraftShiftRequests: async (): Promise<ShiftRequest[]> => {
@@ -12,21 +12,21 @@ export const ShiftRequestService = {
 
     return response.data as ShiftRequest[];
   },
-  
+
   createShiftRequest: async (payload: Partial<ShiftRequest>): Promise<ShiftRequest> => {
     const response = await FrappeAPI.createDocument("Shift Request", payload);
     return response as ShiftRequest;
   },
- 
+
   updateShiftRequest: async (payload: Partial<UpdateShiftRequestPayload>): Promise<ShiftRequest> => {
-    const response = await FrappeAPI.updateDocument("Shift Request", payload?.name as string,payload?.data as Record<string, any>);
-    
-    await FrappeAPI.callMethod("nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",{
+    const response = await FrappeAPI.updateDocument("Shift Request", payload?.name as string, payload?.data as Record<string, any>);
+
+    await FrappeAPI.callMethod("nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event", {
       docname: payload?.name,
       doctype: "Shift Request",
       data: [payload?.data],
     })
-    
+
     return response as ShiftRequest;
   },
 
@@ -36,12 +36,12 @@ export const ShiftRequestService = {
       action: "Approved",
     });
   },
-  
+
   getShiftRequestById: async (id: string): Promise<ShiftRequest> => {
     const response = await FrappeAPI.getDocument("Shift Request", id) as Promise<ShiftRequest>;
     return response;
   },
- 
+
   rejectShiftRequest: async (shiftRequestName: string): Promise<any> => {
     return await FrappeAPI.callMethod("recruitment.api.shift_submit.process_shift_request", {
       docname: shiftRequestName,
@@ -51,14 +51,25 @@ export const ShiftRequestService = {
 };
 
 export const getAllShiftTypes = async (): Promise<{ data: ShiftType[] }> => {
-    const res = await FrappeAPI.getDocumentList("Shift Type", {
-      fields: ["name", "start_time", "end_time"],
-      orderBy: "creation desc",
-    });
-    return {
-      data: res.data as ShiftType[],
-    };
+  const res = await FrappeAPI.getDocumentList("Shift Type", {
+    fields: ["name", "start_time", "end_time"],
+    orderBy: "creation desc",
+  });
+  return {
+    data: res.data as ShiftType[],
   };
+};
 
- 
-  
+
+
+export const getEmployeeShifts = async (): Promise<{ data: ShiftType[] }> => {
+  const res = await FrappeAPI.callMethod("cn_leave_shift_managment.api.get_employee_shifts", {
+    // fields: ["name", "start_time", "end_time"],
+    orderBy: "creation desc",
+  });
+  return {
+    data: res as ShiftType[],
+  };
+};
+
+

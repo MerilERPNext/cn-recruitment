@@ -683,6 +683,18 @@ export const getAllAttendancePolicies = async (
     data: res.data as Policy[], // Return the expected format
   };
 };
+
+export const getAttendanceAssignmentPolicies = async (
+  employee: Array<string>
+): Promise<{ data: Policy[] }> => {
+  const res = await FrappeAPI.callMethod("cn_leave_shift_managment.api.get_employee_policies", {
+    employee: employee
+  });
+  return {
+    data: res as Policy[], // Return the expected format
+  };
+};
+
 export const getAllWeekOffs = async (
   filters?: FilterCondition[]
 ): Promise<{ data: WeeklyOff[] }> => {

@@ -77,12 +77,12 @@ export default {
           link: "#037CBF",
         },
         success: {
-          DEFAULT: "#1B7938",
-          50: "#CAE0D1",
-          100: "#EDFCF2",
+          DEFAULT: "#16B364",
+          50: "#EDFCF2",
+          100: "#E0FBE7",
           200: "#AAF0C4",
-          600: "#17662F",
-          800: "#0E3F1D",
+          600: "#099250",
+          800: "#095C37",
         },
 
         warning: {
@@ -229,33 +229,32 @@ export default {
         transparent: "transparent",
       },
       fontSize: {
-        /* =============================== * DISPLAY * =============================== */
+        /* DISPLAY */
         "display-1": ["80px", { lineHeight: "100px", fontWeight: "700" }],
         "display-2": ["64px", { lineHeight: "80px", fontWeight: "700" }],
 
-        /* =============================== * HEADINGS * =============================== */
+        /* HEADINGS */
         h1: ["40px", { lineHeight: "50px", fontWeight: "700" }],
-        h2: ["32px", { lineHeight: "48px", fontWeight: "700" }],
+        h2: ["32px", { lineHeight: "44px", fontWeight: "700" }],
         h3: ["24px", { lineHeight: "32px", fontWeight: "700" }],
-        h4: ["20px", { lineHeight: "30px", fontWeight: "700" }],
+        h4: ["20px", { lineHeight: "28px", fontWeight: "700" }],
 
         /* =============================== * SUBHEADING * =============================== */
-        subheading: ["16px", { lineHeight: "28px", fontWeight: "600" }],
+        subheading: ["18px", { lineHeight: "28px", fontWeight: "600" }],
 
         /* =============================== * BODY * =============================== */
-        body: ["14px", { lineHeight: "24px", fontWeight: "400" }],
-        "body-medium": ["14px", { lineHeight: "24px", fontWeight: "500" }],
-        "body-semibold": ["14px", { lineHeight: "24px", fontWeight: "600" }],
+        body: ["16px", { lineHeight: "24px", fontWeight: "400" }],
+        "body-medium": ["16px", { lineHeight: "24px", fontWeight: "500" }],
+        "md": ["16px", { lineHeight: "24px", fontWeight: "500" }],
+        "body-semibold": ["16px", { lineHeight: "24px", fontWeight: "600" }],
 
         /* =============================== * SMALL BODY * =============================== */
-        "body-sm": ["12px", { lineHeight: "20px", fontWeight: "400" }],
-        "sm": ["12px", { lineHeight: "20px", fontWeight: "400" }],
-        "body-sm-medium": ["12px", { lineHeight: "20px", fontWeight: "500" }],
-        "md": ["14px", { lineHeight: "20px", fontWeight: "600" }],
-        "lg": ["16px", { lineHeight: "20px", fontWeight: "600" }],
+        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+        "sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
 
         /* =============================== * TINY / LABEL * =============================== */
         label: ["10px", { lineHeight: "16px", fontWeight: "500" }],
+
       },
       flex: {
         2: "2 2 0%",

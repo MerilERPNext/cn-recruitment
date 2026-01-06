@@ -38,13 +38,15 @@ const ShowHolidays = () => {
 
   return (
     <div className="w-full bg-white rounded-lg p-4">
-      <div className="border-b border-gray-200 pb-6 mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Employment Holidays
-        </h2>
-        <p className="text-gray-600">
-          Your employment holidays
-        </p>
+      <div className="border-b border-gray-200 pb-4 mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Employment Holidays
+          </h2>
+          <p className="text-gray-600">
+            Your employment holidays
+          </p>
+        </div>
       </div>
 
       <ul className="space-y-4 h-auto rounded-lg">
@@ -55,7 +57,7 @@ const ShowHolidays = () => {
           >
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
-                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-semibold text-xs">
+                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-primary-50 text-primary-600 font-semibold text-xs">
                   <span className="uppercase leading-none">
                     {holiday?.date && format(new Date(holiday?.date), "MMM")}
                   </span>
@@ -68,7 +70,7 @@ const ShowHolidays = () => {
                   <span className="font-medium text-gray-900">
                     {holiday.holiday_name}
                   </span>
-                  <span className="text-blue-700 text-sm">{holiday.type}</span>
+                  <span className="text-primary-700 text-sm">{holiday.type}</span>
                 </div>
               </div>
             </div>

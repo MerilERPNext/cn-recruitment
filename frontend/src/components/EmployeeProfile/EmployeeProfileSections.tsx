@@ -15,9 +15,11 @@ import {
 import Button from "../shared/atoms/Button";
 import EmployeeSidebarForm from "./EmployeeSidebarForm";
 import ProfileGridSkeleton from "./ProfileSkeleton";
-import { PencilIcon } from "lucide-react";
+import { PencilIcon, FileText } from "lucide-react";
 import usePermission from "../../hooks/usePermission";
 import { Link } from "react-router-dom";
+import { Typography } from "../shared/atoms/Typography";
+import { Card } from "../shared/atoms/Card";
 
 interface EditableField {
     key: string;
@@ -106,28 +108,28 @@ export default function EmployeeProfileSections() {
     return (
         <div>
             <div className="flex items-start justify-between">
-                <div className="border-gray-200 px-6 my-2 pb-2">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <div className="px-6 py-4">
+                    <Typography variant="h3" className="font-bold text-gray-900 mb-1">
                         Personal Information
-                    </h2>
-                    <p className="text-gray-600">
-                        Your personal information
-                    </p>
+                    </Typography>
+                    <Typography variant="bodyMedium" color="secondary">
+                        Comprehensive details and records.
+                    </Typography>
                 </div>
             </div>
             {tabs.length > 1 && (
-                <div className=" px-6 sticky top-12 md:top-16 bg-white flex-shrink-0 w-full max-w-full shadow-sm mb-2">
-                    <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-2 w-full py-2">
+                <div className="px-6 sticky top-12 md:top-16 bg-white z-20 flex-shrink-0 w-full max-w-full border-b border-gray-50 pb-2">
+                    <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
                         {tabs.map(tab => (
                             <Button
                                 key={tab.key}
                                 onClick={() => scrollToSection(tab.key)}
                                 variant="subtle"
-                                size="md"
-                                className={`rounded-2xl whitespace-nowrap px-2 py-1 text-sm font-medium transition-all duration-200
+                                size="sm"
+                                className={`rounded-full whitespace-nowrap px-4 py-1.5 text-xs font-semibold transition-all duration-200
                   ${activeTab === tab.key
-                                        ? "bg-primary-100 text-primary-600"
-                                        : "border-transparent text-gray-600 hover:text-primary-600"
+                                        ? "bg-primary-50 text-header-active border-primary-100"
+                                        : "border-transparent text-header-inactive hover:text-header-active"
                                     }`}
                             >
                                 {tab.label}
@@ -148,17 +150,18 @@ export default function EmployeeProfileSections() {
                         className="scroll-mt-28"
                     >
                         {/* Section Header */}
-                        <div className="flex items-center justify-between mb-5 py-1 px-6 bg-gray-100">
-                            <h2 className="text-lg font-md font-semibold text-gray-900">
+                        <div className="flex items-center justify-between mb-6 py-3 px-6 bg-gray-50/50 border-y border-gray-100/50">
+                            <Typography variant="subheading" className="font-bold text-gray-800">
                                 {tab.label}
-                            </h2>
+                            </Typography>
 
                             {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && (
                                 <Button
                                     variant="subtle"
                                     icon={<PencilIcon className="h-4 w-4" />}
-                                    size="md"
+                                    size="sm"
                                     onClick={() => setEdit({ key: tab.key, label: tab.label })}
+                                    className="font-bold text-primary-600"
                                 >
                                     Edit
                                 </Button>
@@ -166,24 +169,28 @@ export default function EmployeeProfileSections() {
                         </div>
 
                         {/* Info Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6">
                             {tab.fields
                                 ?.filter(field => !field.hidden)
                                 .map(field => (
                                     <div
                                         key={field.key}
-                                        className="rounded-lg  px-4 py-3"
+                                        className="px-4 py-2 border-l border-gray-100 hover:border-primary-200 transition-colors"
                                     >
-                                        <p className="text-xs uppercase tracking-wide text-gray-600 mb-1">
+                                        <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest mb-1 block">
                                             {field.label || "-"}
-                                        </p>
+                                        </Typography>
                                         {
-                                            field?.type === 'file' ? <Link to={field.value} target="_blank"
-
-                                            >{field.value}</Link> :
-                                                <p className="text-sm font-medium text-gray-900">
+                                            field?.type === 'file' ? (
+                                                <Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
+                                                    <FileText size={14} />
+                                                    <span className="truncate max-w-[200px] inline-block">{field.value}</span>
+                                                </Link>
+                                            ) : (
+                                                <Typography variant="bodyMedium" className="font-bold text-gray-900">
                                                     {Array.isArray(field.value) ? <CardsRenderer items={field.value} /> : field?.value || "—"}
-                                                </p>
+                                                </Typography>
+                                            )
                                         }
                                     </div>
                                 ))}
@@ -207,7 +214,7 @@ export default function EmployeeProfileSections() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CardsRenderer = ({ items }: { items: Record<string, any>[] }) => {
     if (!Array.isArray(items) || items.length === 0) {
-        return <p className="text-gray-500">No data available</p>;
+        return <Typography variant="bodySmall" color="secondary" className="italic">No data available</Typography>;
     }
     return (
         <div className="w-full">
@@ -222,8 +229,8 @@ const GenericCard = ({ data }: { data: Record<string, any> }) => {
     if (!data || typeof data !== "object") return null;
 
     return (
-        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-gray-300 mb-2">
-            <div className="space-y-3">
+        <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all mb-3 group/card">
+            <div className="space-y-4">
                 {Object.entries(data).map(([key, field]) => {
                     const isStructured = field && typeof field === 'object' && 'value' in field;
                     const value = isStructured ? field.value : field;
@@ -233,31 +240,35 @@ const GenericCard = ({ data }: { data: Record<string, any> }) => {
                     return (
                         <div
                             key={key}
-                            className="flex items-start justify-between gap-6 border-b border-gray-50 pb-2 last:border-0 last:pb-0"
+                            className="flex items-center justify-between gap-6 border-b border-gray-100/50 pb-2 last:border-0 last:pb-0"
                         >
                             {/* Label */}
-                            <span className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest">
                                 {label}
-                            </span>
+                            </Typography>
 
                             {/* Value */}
-                            <div className="max-w-[65%] text-sm font-semibold text-gray-900 text-right break-words leading-relaxed">
+                            <div className="max-w-[70%] text-right overflow-hidden">
                                 {type === 'file' && value ? (
                                     <Link
                                         to={value}
                                         target="_blank"
+                                        className="flex items-center gap-1.5 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm"
                                     >
-                                        {value}
+                                        <FileText size={12} />
+                                        <span className="truncate block max-w-[150px]">{value}</span>
                                     </Link>
                                 ) : (
-                                    formatValue(value)
+                                    <Typography variant="bodySmall" className="font-bold text-gray-800 break-words">
+                                        {formatValue(value)}
+                                    </Typography>
                                 )}
                             </div>
                         </div>
                     );
                 })}
             </div>
-        </div>
+        </Card>
     );
 };
 const formatKey = (key: string) =>

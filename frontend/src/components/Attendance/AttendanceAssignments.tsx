@@ -17,6 +17,7 @@ import {
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
+import Button from "../shared/atoms/Button";
 
 interface AttendanceAssignmentsProps {
   onSuccess?: (data?: any) => void;
@@ -302,7 +303,8 @@ const AttendanceAssignments = ({
 
         {/* Footer */}
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <button
+          <Button
+            size="md"
             onClick={() => {
               handleSubmit();
             }}
@@ -313,7 +315,7 @@ const AttendanceAssignments = ({
             ) : (
               "Update"
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

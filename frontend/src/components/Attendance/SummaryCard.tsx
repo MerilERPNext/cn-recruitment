@@ -1,5 +1,5 @@
-import React from "react";
 import { LucideIcon } from "lucide-react";
+import { Typography } from "../shared/atoms/Typography";
 
 interface SummaryCardProps {
   icon: LucideIcon;
@@ -15,8 +15,8 @@ interface SummaryCardProps {
 const SummaryCard: React.FC<SummaryCardProps> = ({
   icon: Icon,
   iconColor,
-  bgColor,
-  borderColor,
+  bgColor: bgClass,
+  borderColor: borderClass,
   value,
   label,
   isDesktop,
@@ -24,28 +24,18 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   if (isDesktop) {
     return (
       <div
-        className={`flex flex-1 items-center gap-3 p-3 rounded-lg hover:shadow-sm transition-shadow ${bgColor} ${borderColor}`}
+        className={`flex flex-1 items-center gap-3 p-3 rounded-2xl hover:shadow-md transition-all duration-300 border ${bgClass} ${borderClass} group/summary`}
       >
-        <div className="flex-shrink-0">
-          <Icon className={`w-5 h-5 ${iconColor}`} />
+        <div className={`flex-shrink-0 p-2 rounded-xl bg-white shadow-sm group-hover/summary:scale-105 transition-transform`}>
+          <Icon className={`w-4 h-4 ${iconColor}`} />
         </div>
         <div className="min-w-0 flex-1">
-          <p
-            className={`text-lg font-bold leading-none ${iconColor.replace(
-              "-600",
-              "-800"
-            )}`}
-          >
+          <Typography variant="bodyMedium" className={`font-bold leading-tight ${iconColor.replace("-600", "-800")}`}>
             {value}
-          </p>
-          <p
-            className={`text-xs font-medium mt-1 ${iconColor.replace(
-              "-600",
-              "-700"
-            )}`}
-          >
+          </Typography>
+          <Typography variant="label" className={`font-semibold mt-0.5 uppercase tracking-wider text-[10px] ${iconColor.replace("-600", "-700")}`}>
             {label}
-          </p>
+          </Typography>
         </div>
       </div>
     );
@@ -54,15 +44,17 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   // Mobile layout
   return (
     <div
-      className={`w-full text-center p-3 rounded-lg ${bgColor} border-2 ${borderColor}`}
+      className={`w-full text-center p-3 rounded-2xl ${bgClass} border-2 ${borderClass} shadow-sm group/summary-mobile active:scale-95 transition-all`}
     >
-      <Icon className={`w-6 h-6 mx-auto mb-1 ${iconColor}`} />
-      <p className={`text-lg font-bold ${iconColor.replace("-600", "-800")}`}>
+      <div className="bg-white/50 w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-sm">
+        <Icon className={`w-5 h-5 ${iconColor}`} />
+      </div>
+      <Typography variant="bodyMedium" className={`font-bold ${iconColor.replace("-600", "-800")}`}>
         {value}
-      </p>
-      <p className={`text-xs font-medium ${iconColor.replace("-600", "-700")}`}>
+      </Typography>
+      <Typography variant="label" className={`font-bold mt-0.5 uppercase tracking-widest text-[9px] ${iconColor.replace("-600", "-700")}`}>
         {label}
-      </p>
+      </Typography>
     </div>
   );
 };

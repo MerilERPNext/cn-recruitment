@@ -17,6 +17,13 @@ type TypographyVariant =
     | "bodySmall"
     | "label";
 
+type TypographyFont =
+    | "brand"
+    | "sans"
+    | "serif"
+    | "inconsolata"
+    | "source";
+
 type TypographyAlign =
     | "inherit"
     | "left"
@@ -45,6 +52,7 @@ type TypographyProps<T extends React.ElementType = "span"> = {
     component?: T;
     align?: TypographyAlign;
     color?: TypographyColor;
+    font?: TypographyFont;
     gutterBottom?: boolean;
     noWrap?: boolean;
     className?: string;
@@ -84,15 +92,23 @@ const VARIANT_CLASSES: Record<TypographyVariant, string> = {
     h4: "text-h4 font-brand",
 
     /* Subheading */
-    subheading: "text-subheading font-medium",
+    subheading: "text-subheading font-brand font-semibold",
 
     /* Body */
-    body: "text-body",
-    bodyMedium: "text-body-medium",
-    bodySmall: "text-body-sm text-gray-600",
+    body: "text-body font-brand",
+    bodyMedium: "text-body-medium font-brand font-medium",
+    bodySmall: "text-body-sm font-brand",
 
     /* Label */
-    label: "text-label uppercase",
+    label: "text-label font-brand uppercase tracking-wider",
+};
+
+const FONT_CLASSES: Record<TypographyFont, string> = {
+    brand: "font-brand",
+    sans: "font-sans",
+    serif: "font-serif",
+    inconsolata: "font-inconsolata",
+    source: "font-source",
 };
 
 const ALIGN_CLASSES: Record<TypographyAlign, string> = {
@@ -104,7 +120,7 @@ const ALIGN_CLASSES: Record<TypographyAlign, string> = {
 };
 
 const COLOR_CLASSES: Record<TypographyColor, string> = {
-    inherit: "inherit",
+    inherit: "text-inherit",
     white: "text-white",
     info: "text-info",
     title: "text-text-title",
@@ -132,6 +148,7 @@ export function Typography<T extends React.ElementType = "span">(
         component,
         align = "inherit",
         color = "inherit",
+        font,
         gutterBottom = false,
         noWrap = false,
         className = "",
@@ -143,6 +160,7 @@ export function Typography<T extends React.ElementType = "span">(
 
     const classes = [
         VARIANT_CLASSES[variant],
+        FONT_CLASSES[font as TypographyFont],
         ALIGN_CLASSES[align],
         COLOR_CLASSES[color],
         gutterBottom && "mb-1.5",

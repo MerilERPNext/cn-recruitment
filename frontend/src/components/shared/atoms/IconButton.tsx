@@ -36,7 +36,7 @@ const COLOR_STYLES: Record<
         outline:
             "bg-primary-50 border-primary text-primary hover:bg-primary-100",
         subtle:
-            "bg-primary-50 border-transparent text-primary hover:bg-primary-100",
+            "bg-primary-50 border-gray-100/50 text-primary hover:bg-primary-100",
     },
     secondary: {
         contain:
@@ -44,7 +44,7 @@ const COLOR_STYLES: Record<
         outline:
             "bg-secondary-50 border-secondary text-secondary hover:bg-secondary-100",
         subtle:
-            "bg-secondary-50 border-transparent text-secondary hover:bg-secondary-100",
+            "bg-secondary-50 border-gray-100/50 text-secondary hover:bg-secondary-100",
     },
     success: {
         contain:
@@ -52,7 +52,7 @@ const COLOR_STYLES: Record<
         outline:
             "bg-success-50 border-success text-success hover:bg-success-100",
         subtle:
-            "bg-success-50 border-transparent text-success hover:bg-success-100",
+            "bg-success-50 border-gray-100/50 text-success hover:bg-success-100",
     },
     warning: {
         contain:
@@ -60,21 +60,21 @@ const COLOR_STYLES: Record<
         outline:
             "bg-warning-50 border-warning text-warning hover:bg-warning-100",
         subtle:
-            "bg-warning-50 border-transparent text-warning hover:bg-warning-100",
+            "bg-warning-50 border-gray-100/50 text-warning hover:bg-warning-100",
     },
     error: {
         contain: "bg-error border-error text-white hover:bg-error-600",
         outline:
             "bg-error-50 border-error text-error hover:bg-error-100",
         subtle:
-            "bg-error-50 border-transparent text-error hover:bg-error-100",
+            "bg-error-50 border-gray-100/50 text-error hover:bg-error-100",
     },
     info: {
         contain: "bg-info border-info text-white hover:bg-info-600",
         outline:
             "bg-info-50 border-info text-info hover:bg-info-100",
         subtle:
-            "bg-info-50 border-transparent text-info hover:bg-info-100",
+            "bg-info-50 border-gray-100/50 text-info hover:bg-info-100",
     },
 };
 
@@ -120,13 +120,13 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
             >
                 <div
                     className={[
-                        "w-16 h-16 rounded-xl border-2 flex items-center justify-center mb-2 transition-colors duration-150",
+                        "w-12 h-12 rounded-xl border flex items-center justify-center mb-2 transition-all duration-200 shadow-sm group-hover:shadow-md",
                         COLOR_STYLES[resolvedColor][resolvedVariant],
                     ]
                         .filter(Boolean)
                         .join(" ")}
                 >
-                    <span className="w-8 h-8 flex items-center justify-center rounded-sm">
+                    <span className="w-6 h-6 flex items-center justify-center">
                         {icon}
                     </span>
                 </div>

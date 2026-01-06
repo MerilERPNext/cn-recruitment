@@ -38,6 +38,9 @@ import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2
 import { ViewAll } from "../shared/atoms/ViewAll";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 import PolicyDrawer from "./PolicyDrawer";
+import { Typography } from "../shared/atoms/Typography";
+import { Card } from "../shared/atoms/Card";
+import Button from "../shared/atoms/Button";
 
 interface PolicyDrawerConfig {
   title: string;
@@ -137,7 +140,7 @@ const AttendanceSummary = () => {
           value: employeeAttendanceSummary?.my_attendance_requests || 0,
           icon: "FileText",
           color: "green",
-          background: "bg-green-50",
+          background: "bg-success-50/40",
           actions: [
             {
               label: "View My Requests",
@@ -158,7 +161,7 @@ const AttendanceSummary = () => {
           value: employeeAttendanceSummary?.team_attendance_requests || 0,
           icon: "Users",
           color: "yellow",
-          background: "bg-yellow-50",
+          background: "bg-warning-50/40",
           actions: [
             {
               label: "Manage Team Requests",
@@ -174,7 +177,7 @@ const AttendanceSummary = () => {
           value: employeeAttendanceSummary?.my_overtime_requests || 0,
           icon: "FileText",
           color: "blue",
-          background: "bg-blue-50",
+          background: "bg-primary-50/40",
           actions: [
             {
               label: "View My Overtime",
@@ -195,7 +198,7 @@ const AttendanceSummary = () => {
           value: employeeAttendanceSummary?.team_overtime_requests || 0,
           icon: "Users",
           color: "purple",
-          background: "bg-purple-50",
+          background: "bg-purple-50/40",
           actions: [
             {
               label: "Manage Team Overtime",
@@ -211,7 +214,7 @@ const AttendanceSummary = () => {
           value: null,
           icon: "Calendar",
           color: "indigo",
-          background: "bg-indigo-50",
+          background: "bg-indigo-50/40",
           actions: [
             {
               label: "View My Shifts",
@@ -284,8 +287,8 @@ const AttendanceSummary = () => {
     if (settingConfig) {
       const { doctypeName, useEmployeeAsTarget } = settingConfig;
       return (
-        <button
-          type="button"
+        <Typography
+          variant="bodySmall"
           onClick={() => {
             setPolicyDrawerConfig({
               title: settingType,
@@ -296,10 +299,10 @@ const AttendanceSummary = () => {
             });
             setOpenPolicyDrawer(true);
           }}
-          className="w-full text-left text-sm text-gray-800 hover:text-blue-600"
+          className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
         >
           {data}
-        </button>
+        </Typography>
       );
     }
 
@@ -319,13 +322,13 @@ const AttendanceSummary = () => {
     }
 
     return (
-      <button
-        type="button"
+      <Typography
+        variant="bodySmall"
         onClick={() => navigate(path!)}
-        className="w-full text-left text-sm text-gray-800 hover:text-blue-600"
+        className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
       >
         {data}
-      </button>
+      </Typography>
     );
   };
 
@@ -333,26 +336,32 @@ const AttendanceSummary = () => {
     <>
       <div className="p-4">
         {/* Date Navigation */}
-        <div className="flex items-center justify-between mb-4 bg-white border border-gray-200 p-4 rounded-xl">
-          <button
-            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+        <Card padding="sm" radius="xl" shadow="none" className="flex items-center justify-between mb-4  px-4 py-3">
+          <Button
+            variant="subtle"
+            size="sm"
+            className="p-2 rounded-xl hover:bg-slate-50 transition-colors"
             onClick={goToPreviousMonth}
           >
-            <ChevronLeft className="h-5 w-5 text-gray-600" />
-          </button>
+            <ChevronLeft className="h-5 w-5 text-slate-600" />
+          </Button>
           <div className="text-center">
-            <h1 className="base-title md:text-xl font-bold text-gray-900">
+            <Typography variant="h3" className="font-bold text-slate-900 tracking-tight">
               {format(currentDate, "MMMM yyyy")}
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">Attendance Overview</p>
+            </Typography>
+            <Typography variant="label" color="secondary" className="font-medium mt-0.5 uppercase tracking-widest text-[10px]">
+              Attendance Overview
+            </Typography>
           </div>
-          <button
-            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+          <Button
+            variant="subtle"
+            size="sm"
+            className="p-2 rounded-xl hover:bg-slate-50 transition-colors"
             onClick={goToNextMonth}
           >
-            <ChevronRight className="h-5 w-5 text-gray-600" />
-          </button>
-        </div>
+            <ChevronRight className="h-5 w-5 text-slate-600" />
+          </Button>
+        </Card>
 
         <AttendanceChart
           present={employeeAttendanceSummary?.present || 0}
@@ -368,20 +377,20 @@ const AttendanceSummary = () => {
         />
         {isDesktop ? (
           // Desktop Layout
-          <div className="flex py-4">
+          <div className="flex py-4 gap-6">
             {/* Left/Main Column */}
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 space-y-6 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm shadow-slate-200/50">
               {/* Today's Team Summary */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-                <div className="flex">
-                  <h2 className="module-title">Today's Team Summary</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Typography variant="bodyMedium" className="font-bold text-slate-900">Today's Team Summary</Typography>
                   <ViewAll
                     className="ml-auto"
                     title="View Team Calender"
                     to="/webapp/attendance/team-attendance"
                   />
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                   {teamSummaryData.map((data, index) => (
                     <SummaryCard
                       key={index}
@@ -396,20 +405,22 @@ const AttendanceSummary = () => {
                     />
                   ))}
                 </div>
-                <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0 mt-5">
-                  <h2 className="module-title">Quick Actions</h2>
-                  <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {quickAction.cards.map((card) => (
-                      <QuickActionCard key={card.id} {...card} />
-                    ))}
-                  </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="space-y-4 pt-6 border-t border-slate-100">
+                <Typography variant="bodyMedium" className="font-bold text-slate-900">Quick Actions</Typography>
+                <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {quickAction.cards.map((card) => (
+                    <QuickActionCard key={card.id} {...card} />
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* Right Column: Settings */}
-            <div className="w-1/3 ml-6 bg-white border border-gray-200 rounded-xl p-4 mb-4">
-              <h2 className="module-title mb-4">Settings</h2>
+            <Card padding="md" radius="xl" shadow="none" className="w-80 flex-shrink-0 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm shadow-slate-200/50">
+              <Typography variant="bodyMedium" className="font-bold text-slate-900 mb-4">Settings</Typography>
               <div className="space-y-4">
                 {settingsData.map((setting, index) => {
                   const Icon = setting.icon;
@@ -417,15 +428,15 @@ const AttendanceSummary = () => {
                   return (
                     <div
                       key={index}
-                      className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
+                      className="flex items-start gap-3 p-3 bg-slate-50/50 rounded-2xl border border-slate-100/50 hover:bg-white hover:border-primary-100 hover:shadow-sm transition-all duration-300"
                     >
-                      <div className="p-2 bg-gray-200 rounded-lg">
-                        <Icon className="h-4 w-4 text-gray-700" />
+                      <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                        <Icon className="h-4 w-4 text-primary-600" />
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">
+                      <div className="flex-1 min-w-0">
+                        <Typography variant="bodySmall" className="font-bold text-slate-900 mb-0.5">
                           {setting.title}
-                        </h3>
+                        </Typography>
 
                         {setting.details.length > 0 ? (
                           setting.details.map(
@@ -434,111 +445,112 @@ const AttendanceSummary = () => {
                                 setting.title,
                                 detail
                               ) ?? (
-                                <p
+                                <Typography
                                   key={detailIndex}
-                                  className="text-sm text-gray-700"
+                                  variant="bodySmall"
+                                  className="font-medium text-slate-600"
                                 >
                                   {detail}
-                                </p>
+                                </Typography>
                               )
                           )
                         ) : (
-                          <p className="text-sm text-gray-500">
+                          <Typography variant="bodySmall" color="disabled" className="italic">
                             No policy defined
-                          </p>
+                          </Typography>
                         )}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </Card>
           </div>
         ) : (
           // Mobile Layout
-          <div className="bg-white p-4 mt-4">
-            {/* Header */}
-            <div className="mb-4">
-              {/* Team Summary */}
-              <div className="space-y-3 border-b bg-white border-gray-200 pt-0 mt-4">
-                <div className="flex">
-                  <h2 className="base-title">Today's Team Summary</h2>
-                  <ViewAll
-                    className="ml-auto"
-                    title="View Team Calender"
-                    to="/webapp/attendance/team-attendance"
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {teamSummaryData.map((data, index) => (
-                    <SummaryCard
-                      key={index}
-                      icon={data.icon}
-                      iconColor={`text-${data.color}-600`}
-                      bgColor={`bg-${data.color}-50`}
-                      borderColor={`border-${data.color}-100`}
-                      value={data.value}
-                      label={data.label}
-                      isDesktop={isDesktop}
-                      isMetric={true}
-                    />
-                  ))}
-                </div>
-
-                <div className="space-y-3  bg-white border-gray-200 py-4 pt-0 mt-4">
-                  <h2 className="base-title">Quick Actions</h2>
-                  <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {quickAction.cards.map((card) => (
-                      <QuickActionCard key={card.id} {...card} />
-                    ))}
-                  </div>
-                </div>
+          <div className="mt-6 space-y-6">
+            {/* Team Summary */}
+            <Card padding="sm" radius="xl" shadow="none" className="space-y-4 bg-white border border-slate-100 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <Typography variant="bodyMedium" className="font-bold text-slate-900">Today's Team Summary</Typography>
+                <ViewAll
+                  className="ml-auto"
+                  title="View Team Calender"
+                  to="/webapp/attendance/team-attendance"
+                />
               </div>
+              <div className="grid grid-cols-3 gap-3">
+                {teamSummaryData.map((data, index) => (
+                  <SummaryCard
+                    key={index}
+                    icon={data.icon}
+                    iconColor={`text-${data.color}-600`}
+                    bgColor={`bg-${data.color}-50`}
+                    borderColor={`border-${data.color}-100`}
+                    value={data.value}
+                    label={data.label}
+                    isDesktop={isDesktop}
+                    isMetric={true}
+                  />
+                ))}
+              </div>
+            </Card>
 
-              {/* Settings */}
-              <div className="bg-white border-gray-200 py-4">
-                <div
-                  className={isDesktop ? "grid grid-cols-2 gap-4" : "space-y-4"}
-                >
-                  {settingsData.map((setting, index) => {
-                    const Icon = setting.icon;
+            {/* Quick Actions */}
+            <div className="space-y-4 px-1">
+              <Typography variant="bodyMedium" className="font-bold text-slate-900">Quick Actions</Typography>
+              <div className="w-full grid grid-cols-1 gap-4">
+                {quickAction.cards.map((card) => (
+                  <QuickActionCard key={card.id} {...card} />
+                ))}
+              </div>
+            </div>
 
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
-                      >
-                        <div className="p-2 bg-gray-200 rounded-lg">
-                          <Icon className="h-4 w-4 text-gray-700" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="card-title mb-1">{setting.title}</h3>
+            {/* Settings */}
+            <div className="space-y-4 px-1 pb-10">
+              <Typography variant="bodyMedium" className="font-bold text-slate-900">Settings</Typography>
+              <div className="space-y-3">
+                {settingsData.map((setting, index) => {
+                  const Icon = setting.icon;
 
-                          {setting.details.length > 0 ? (
-                            setting.details.map(
-                              (detail, detailIndex) =>
-                                getNavigatableSettingsButton(
-                                  setting.title,
-                                  detail
-                                ) ?? (
-                                  <p
-                                    key={detailIndex}
-                                    className="text-sm text-gray-700"
-                                  >
-                                    {detail}
-                                  </p>
-                                )
-                            )
-                          ) : (
-                            <p className="text-sm text-gray-500">
-                              No policy assigned
-                            </p>
-                          )}
-                        </div>
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm"
+                    >
+                      <div className="p-2 bg-slate-50 rounded-xl">
+                        <Icon className="h-4 w-4 text-primary-600" />
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="flex-1 min-w-0">
+                        <Typography variant="bodySmall" className="font-bold text-slate-900 mb-0.5">
+                          {setting.title}
+                        </Typography>
+
+                        {setting.details.length > 0 ? (
+                          setting.details.map(
+                            (detail, detailIndex) =>
+                              getNavigatableSettingsButton(
+                                setting.title,
+                                detail
+                              ) ?? (
+                                <Typography
+                                  key={detailIndex}
+                                  variant="bodySmall"
+                                  className="font-medium text-slate-600"
+                                >
+                                  {detail}
+                                </Typography>
+                              )
+                          )
+                        ) : (
+                          <Typography variant="bodySmall" color="disabled" className="italic">
+                            No policy assigned
+                          </Typography>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import Badge from "../shared/Badge";
 import Tooltip from "../shared/Tooltip";
 import { Card } from "../shared/atoms/Card";
+import { Typography } from "../shared/atoms/Typography";
 
 const Events = () => {
     const { data = [] } = useGetAllEmployees(
@@ -67,43 +68,46 @@ const Events = () => {
     const tabs = ["Birthdays", "Anniversaries"];
 
     return (
-        <div className="bg-white rounded-lg shadow-sm max-h-[16.5rem] min-h-[16.5rem] flex flex-col">
+        <Card shadow="sm" padding="none" className="h-full flex flex-col max-h-[16.5rem] min-h-[16.5rem]">
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b px-4 py-2 flex justify-between w-full">
-                <h3 className="section-title mb-0 text-left">Events</h3>
-                {/* Tabs */}
-                <div className="flex gap-2 overflow-x-auto">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab}
-                            type="button"
-                            onClick={() => setActiveTab(tab)}
-                        >
-                            <Badge
-                                label={tab}
-                                size="sm"
-                                backgroundColor={
-                                    activeTab === tab
-                                        ? tab === "Birthdays"
-                                            ? "bg-blue-100"
-                                            : "bg-emerald-100"
-                                        : "bg-gray-100"
-                                }
-                                textColor={
-                                    activeTab === tab
-                                        ? tab === "Birthdays"
-                                            ? "text-blue-700"
-                                            : "text-emerald-700"
-                                        : "text-gray-700"
-                                }
-                            />
-                        </button>
-                    ))}
+            <div className="sticky top-0 bg-white rounded-t-lg border-b px-2 py-2 flex justify-between items-center w-full ">
+                <Typography variant="subheading" color="title">Events</Typography>
+                <div className="flex items-center gap-4">
+                    {/* Tabs */}
+                    <div className="flex gap-2">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab}
+                                type="button"
+                                onClick={() => setActiveTab(tab)}
+                                className="focus:outline-none"
+                            >
+                                <Badge
+                                    label={tab}
+                                    size="sm"
+                                    backgroundColor={
+                                        activeTab === tab
+                                            ? tab === "Birthdays"
+                                                ? "bg-blue-100"
+                                                : "bg-success-100"
+                                            : "bg-gray-100"
+                                    }
+                                    textColor={
+                                        activeTab === tab
+                                            ? tab === "Birthdays"
+                                                ? "text-blue-700"
+                                                : "text-success"
+                                            : "text-gray-700"
+                                    }
+                                />
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
             {/* Content Scroll Area */}
-            <div className="flex-1 overflow-y-auto px-4 py-3">
+            <div className="flex-1 overflow-y-auto p-2">
 
                 <div className="flex flex-col gap-3">
 
@@ -111,9 +115,11 @@ const Events = () => {
                     {/* Events List */}
                     <div className="space-y-3">
                         {events.length === 0 && (
-                            <p className="text-gray-500 text-center py-4">
-                                No upcoming {activeTab.toLowerCase()}.
-                            </p>
+                            <div className="flex flex-col items-center justify-center py-8 opacity-60">
+                                <Typography variant="bodySmall">
+                                    No upcoming {activeTab.toLowerCase()}.
+                                </Typography>
+                            </div>
                         )}
 
                         {events.map((employee, index) => {
@@ -129,8 +135,9 @@ const Events = () => {
 
                             return (
                                 <Card
+                                    shadow="none"
                                     key={`${employee.employee_name}-${index}`}
-                                    className="flex items-center justify-between gap-3 py-2 px-0"
+                                    className="flex items-center justify-between gap-3 py-2 px-2 rounded-xl hover:border-gray-50 hover:bg-gray-50/50 transition-all group"
                                 >
                                     <div className="flex gap-2 items-center">
                                         {/* Avatar */}
@@ -149,8 +156,9 @@ const Events = () => {
                                         {/* Text */}
                                         <div className="flex leading-tight">
                                             <Tooltip content={employee.employee_name} >
-                                                <p className="text-sm text-gray-600 font-medium line-clamp-1">
-                                                    {employee.employee_name.slice(0, 16)}{employee.employee_name.length > 16 ? "..." : ""}</p>
+                                                <Typography variant="bodySmall" className="font-medium line-clamp-1">
+                                                    {employee.employee_name.slice(0, 16)}{employee.employee_name.length > 16 ? "..." : ""}
+                                                </Typography>
                                             </Tooltip>
                                         </div>
                                     </div>
@@ -162,12 +170,12 @@ const Events = () => {
                                         backgroundColor={
                                             isBirthdayTab
                                                 ? "bg-blue-100"
-                                                : "bg-emerald-100"
+                                                : "bg-success-100"
                                         }
                                         textColor={
                                             isBirthdayTab
                                                 ? "text-blue-700"
-                                                : "text-emerald-700"
+                                                : "text-success"
                                         }
                                     />
                                 </Card>
@@ -176,7 +184,7 @@ const Events = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </Card>
     );
 };
 

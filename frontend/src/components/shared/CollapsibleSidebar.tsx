@@ -615,18 +615,24 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   className="w-12 h-12 rounded-full  flex-shrink-0"
                 />
                 <div
-                  className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                  className={`transition-all duration-300 flex flex-col justify-center ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
                     }`}
                 >
-                  <h2
-                    className="font-semibant text-gray-900 whitespace-nowrap"
+                  <Typography
+                    variant="subheading"
+                    color="title"
+                    className="whitespace-nowrap leading-tight"
                     title={originalCompanyName}
                   >
                     {companyName}
-                  </h2>
-                  <p className="text-sm text-gray-500 whitespace-nowrap">
+                  </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    color="body2"
+                    className="whitespace-nowrap"
+                  >
                     Employee Portal
-                  </p>
+                  </Typography>
                 </div>
               </div>
             </Link>
@@ -689,7 +695,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             }`}
                         >
                           <Typography
-                            variant="bodyMedium"
+                            variant="bodySmall"
                             className="font-medium whitespace-nowrap"
                             color="inherit"
                           >
@@ -735,7 +741,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             }`}
                         >
                           <Typography
-                            variant="bodyMedium"
+                            variant="bodySmall"
                             className="font-medium whitespace-nowrap"
                             color="inherit"
                           >
@@ -775,8 +781,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             }`}
                         >
                           <Typography
-                            variant="bodyMedium"
-                            className="whitespace-nowrap"
+                            variant="bodySmall"
+                            className="font-medium whitespace-nowrap"
                             color="inherit"
                           >
                             {item.label}
@@ -809,7 +815,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             }`}
                         >
                           <Typography
-                            variant="bodyMedium"
+                            variant="bodySmall"
                             className="font-medium whitespace-nowrap"
                             color="inherit"
                           >
@@ -845,7 +851,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     }
                                     className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${isSubActive || isSubDropdownOpen
                                       ? "bg-primary-50 text-primary-600"
-                                      : "text-text-body2 hover:bg-primary-50 hover:text-primary-600"
+                                      : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
                                       }`}
                                   >
                                     <div className="flex items-center space-x-2">
@@ -857,7 +863,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                           }`}
                                       >
                                         <Typography
-                                          variant="bodyMedium"
+                                          variant="bodySmall"
                                           color="inherit"
                                           className="font-medium whitespace-nowrap"
                                         >
@@ -878,7 +884,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     to={subItem.href || "#"}
                                     className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
                                       ? "bg-primary-600 text-white hover:text-white"
-                                      : "text-text-body2 hover:bg-primary-50 hover:text-primary-600"
+                                      : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
                                       }`}
                                   >
                                     <div className="flex items-center space-x-2">
@@ -890,7 +896,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                           }`}
                                       >
                                         <Typography
-                                          variant="bodyMedium"
+                                          variant="bodySmall"
                                           color="inherit"
                                           className="font-medium whitespace-nowrap"
                                         >
@@ -917,7 +923,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                               to={subSubItem.href}
                                               className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubSubActive
                                                 ? "bg-primary-600 text-white hover:text-white"
-                                                : "text-text-secondary hover:bg-primary-50 hover:text-primary-600"
+                                                : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
                                                 }`}
                                             >
                                               <div className="flex items-center space-x-2">
@@ -929,7 +935,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                                     }`}
                                                 >
                                                   <Typography
-                                                    variant="label"
+                                                    variant="bodySmall"
                                                     color="inherit"
                                                     className="font-medium whitespace-nowrap"
                                                   >

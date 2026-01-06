@@ -83,7 +83,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       },
       success: {
         contain:
-          "bg-success-50 text-success hover:bg-success/20 active:bg-success-800",
+          "bg-success-100 text-success hover:bg-success/20 active:bg-success-800",
         outline:
           "border border-success text-success hover:bg-success-50",
         subtle: "text-success hover:bg-success-50",

@@ -173,11 +173,11 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       >
         {/* Header */}
         <div
-          className="bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600 border-b border-gray-200 px-8 py-3 flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
-          style={{ height: "73px" }}
+          className="bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
+          style={{ height: "73px", maxHeight: "73px" }}
         >
           <div>
-            <Typography variant="h3" component="h1" color="white" className="font-brand">
+            <Typography variant="h3" component="h1" color="white">
               {getPageTitle()}
             </Typography>
             <Typography variant="label" color="white" className="opacity-90 block">

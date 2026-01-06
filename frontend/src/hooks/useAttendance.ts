@@ -12,6 +12,7 @@ import {
   getAllShiftBlocks,
   getAllShiftLocations,
   getAllWeekOffs,
+  getAttendanceAssignmentPolicies,
 } from "../services/attendanceService";
 import type {
   AllEventsAndAttendanceT,
@@ -558,6 +559,12 @@ export const useAllAttendancePolicies = (filters?: FilterCondition[]) => {
   return useQuery({
     queryKey: ["all-attendance-policies", filters],
     queryFn: () => getAllAttendancePolicies(filters),
+  });
+};
+export const useAllAttendanceAssignmentPolicies = (employee: string[]) => {
+  return useQuery({
+    queryKey: ["all-attendance-assignment-policies", employee],
+    queryFn: () => getAttendanceAssignmentPolicies(employee),
   });
 };
 
