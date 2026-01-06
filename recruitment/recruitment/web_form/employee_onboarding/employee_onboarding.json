@@ -11,7 +11,6 @@
  "anonymous": 0,
  "apply_document_permissions": 0,
  "button_label": "Save",
- "show_submit_button": 1,
  "client_script": "frappe.web_form.on('date_of_joining',(field,value)=>{\r\n    var doj = frappe.web_form.get_value('date_of_joining');\r\n    let givenDate = new Date(doj);\r\n    givenDate.setDate(givenDate.getDate() - 2);\r\n    let year = givenDate.getFullYear();\r\n    let month = String(givenDate.getMonth() + 1).padStart(2, '0'); // Months are zero-based\r\n    let day = String(givenDate.getDate()).padStart(2, '0');\r\n    let resultDateString = `${year}-${month}-${day}`;\r\n    frappe.web_form.set_value('boarding_begins_on', resultDateString)\r\n})",
  "condition_json": "[]",
  "creation": "2025-10-20 19:05:01.704536",
@@ -24,7 +23,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 100,
- "modified": "2026-01-06 13:19:45.038034",
+ "modified": "2026-01-06 17:55:57.838799",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "employee-onboarding",
@@ -829,7 +828,7 @@
    "options": "Bank",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {

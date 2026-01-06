@@ -24,7 +24,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 100,
- "modified": "2026-01-06 13:21:06.461498",
+ "modified": "2026-01-06 17:57:30.474424",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "emp-onboarding",
@@ -702,20 +702,6 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "fieldname": "custom_aadhar_pan_verificaion_link",
-   "fieldtype": "Data",
-   "hidden": 0,
-   "label": "Aadhar Pan Verificaion Link",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "URL",
-   "precision": "",
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
    "fieldname": "custom_aadhar_card_number",
    "fieldtype": "Data",
    "hidden": 0,
@@ -844,7 +830,7 @@
    "options": "Bank",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -925,6 +911,20 @@
    "precision": "",
    "read_only": 0,
    "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "custom_previously_employed",
+   "fieldtype": "Select",
+   "hidden": 0,
+   "label": "Previously Employed",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "\nExperienced\nFresher",
+   "precision": "",
+   "read_only": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
