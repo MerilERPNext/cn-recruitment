@@ -249,6 +249,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/income-tax-sheet",
         },
         {
+          name: "Annual CTC",
+          icon: Calculator,
+          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
+        },
+        {
           name: "Salary Slip",
           icon: CreditCard,
           href: "/webapp/salary-slip-app/salary-slip-list",
@@ -284,11 +289,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/perquisite-list",
         },
         {
-          name: "Annual CTC",
-          icon: Calculator,
-          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
-        },
-        {
           name: "Payroll Documents",
           icon: FileText,
           href: "/webapp/salary-slip-app/hr-payroll",
@@ -311,11 +311,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Users,
           href: "/webapp/benefits-app/my-requests",
         },
-        {
-          name: "Team Requests",
-          icon: Users,
-          href: "/webapp/benefits-app/my-team-requests",
-        },
+        // {
+        //   name: "Team Requests",
+        //   icon: Users,
+        //   href: "/webapp/benefits-app/my-team-requests",
+        // },
         {
           name: "Benefit Slips",
           icon: Calculator,

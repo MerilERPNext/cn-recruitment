@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createAdvance,
@@ -12,6 +13,7 @@ import {
   getExpenseTypeFields,
   getExpenseTypes,
   getProjects,
+  updateEmployeeAdvance,
 } from "../services/employeeAdvances";
 import { ApiAdvance } from "../types/employeeAttendance";
 
@@ -119,5 +121,25 @@ export const useAdvanceTypes = () => {
   return useQuery({
     queryKey: ["advance-types"],
     queryFn: getAdvancesTypes,
+  });
+};
+
+export interface EmployeeAdvanceUpdatePayload {
+  docname: string; // Loan Application ka name/id
+  data: Record<string, any>; // update karne wala data
+}
+
+export const useEmployeeAdvanceUpdate = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: EmployeeAdvanceUpdatePayload) => updateEmployeeAdvance(payload),
+    onSuccess: (data, variables) => {
+      console.log("Employee Advance updated:", data);
+      queryClient.invalidateQueries({ queryKey: ["employee-advance", variables.docname] });
+      queryClient.invalidateQueries({ queryKey: ["employee-advance-list"] });
+    },
+    onError: (error: any) => {
+      console.error("Update failed:", error.response?.data || error.message);
+    },
   });
 };

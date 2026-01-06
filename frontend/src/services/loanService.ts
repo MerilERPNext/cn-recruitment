@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { LoanApplicationUpdatePayload } from "../hooks/useLoan";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const getAllLoanProducts = async (): Promise<{
@@ -24,4 +26,13 @@ export const createLoanApplication = async (
     console.error("📡 Error while Adding Loan Application in:", error);
     throw error;
   }
+};
+
+
+export const updateLoanApplication = async ({
+  docname,
+  data,
+}: LoanApplicationUpdatePayload) => {
+  const response = await FrappeAPI.updateDocument("Loan Application", docname, data);
+  return response;
 };
