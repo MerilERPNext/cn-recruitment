@@ -1,7 +1,7 @@
 import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button from "../../shared/atoms/Button";
+import Button, { ButtonColor } from "../../shared/atoms/Button";
 import DOMPurify from "dompurify";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
@@ -38,29 +38,29 @@ const ApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string): { bg: string; text: string } => {
+  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
-      bg: "gray-100",
+      bg: "disabled" as ButtonColor,
       text: "gray-600",
     };
     switch (parsedAction) {
       case "approve":
         styles = {
-          bg: "green-100",
+          bg: "success" as ButtonColor,
           text: "green-600",
         };
         break;
       case "reject":
         styles = {
-          bg: "red-100",
+          bg: "error" as ButtonColor,
           text: "red-600",
         };
 
         break;
       default:
         styles = {
-          bg: "gray-200",
+          bg: "disabled" as ButtonColor,
           text: "gray-600",
         };
         break;
@@ -117,7 +117,7 @@ const ApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -174,6 +174,7 @@ const ApprovalCard = ({
               data?.status === "Pending" &&
               actions.map((action: string) => (
                 <Button
+                  variant="soft"
                   key={action}
                   onClick={(e) => {
                     e.preventDefault();
@@ -181,7 +182,6 @@ const ApprovalCard = ({
                     onAction(action, data);
                   }}
                   bgColor={getActionStyles(action).bg}
-                  textColor={getActionStyles(action).text}
                   disabled={
                     loadingAction?.id === data?.todo_id &&
                     loadingAction?.action === action
@@ -274,6 +274,7 @@ const ApprovalCard = ({
                   data?.status === "Pending" &&
                   actions.map((action: string) => (
                     <Button
+                      variant="soft"
                       key={action}
                       onClick={(e) => {
                         e.preventDefault();
@@ -282,7 +283,6 @@ const ApprovalCard = ({
                       }}
                       fullWidth
                       bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
                       disabled={
                         loadingAction?.id === data?.todo_id &&
                         loadingAction?.action === action

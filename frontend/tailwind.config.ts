@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+import plugin from "tailwindcss/plugin"
 
 export default {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx,css}", "./index.html"],
@@ -24,32 +25,32 @@ export default {
         app: "#F8F7FF",
         surface: "#F8F7FF",
         primary: {
-          DEFAULT: "#5A4BDA", // PW Indigo 500
-          10: "#F8F7FF",
-          50: "#F1EFFF",
-          100: "#D2CCFF ",
-          200: "#B2A9FF",
-          300: "#9387FF",
-          400: "#7363FC",
-          500: "#5A4BDA",
-          600: "#4437B8",
-          700: "#312596 ",
-          800: "#211774",
-          900: "#140D52",
-        },
-        secondary: {
           DEFAULT: "#6172F3",
           10: "#F5F8FF",
           50: "#EEF4FF",
-          100: "#E0EAFF",
+          100: "#E0EAFF ",
           200: "#C7D7FE",
           300: "#A4BCFD",
           400: "#8098F9",
-          500: "#6172F3",
+          500: "#6172F3", // Primary
           600: "#444CE7",
-          700: "#3538CD",
+          700: "#3538CD ",
           800: "#2D31A6",
           900: "#2D3282",
+        },
+        secondary: {
+          DEFAULT: "#7A5AF8",
+          10: "#FAFAFF",
+          50: "#F4F3FF",
+          100: "#EBE9FE",
+          200: "#D9D6FE",
+          300: "#BDB4FE",
+          400: "#9B8AFB",
+          500: "#7A5AF8", // Secondary
+          600: "#6938EF",
+          700: "#5925DC",
+          800: "#4A1FB8",
+          900: "#3E1C96",
         },
 
         gray: {
@@ -273,5 +274,13 @@ export default {
   corePlugins: {
     borderCollapse: true,
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addComponents }) => {
+      addComponents({
+        ".hover-lift": {
+          "@apply hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50": {},
+        },
+      })
+    }),
+  ],
 };

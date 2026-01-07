@@ -100,7 +100,7 @@ const VARIANT_CLASSES: Record<TypographyVariant, string> = {
     bodySmall: "text-body-sm font-brand",
 
     /* Label */
-    label: "text-label font-brand uppercase tracking-wider",
+    label: "text-label font-brand tracking-wider",
 };
 
 const FONT_CLASSES: Record<TypographyFont, string> = {

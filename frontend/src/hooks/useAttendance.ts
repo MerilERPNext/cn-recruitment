@@ -561,10 +561,11 @@ export const useAllAttendancePolicies = (filters?: FilterCondition[]) => {
     queryFn: () => getAllAttendancePolicies(filters),
   });
 };
-export const useAllAttendanceAssignmentPolicies = (employee: string[]) => {
+export const useAllAttendanceAssignmentPolicies = (employee: string) => {
   return useQuery({
     queryKey: ["all-attendance-assignment-policies", employee],
     queryFn: () => getAttendanceAssignmentPolicies(employee),
+    enabled: !!employee,
   });
 };
 

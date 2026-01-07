@@ -75,14 +75,14 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                    <Typography variant="bodySmall" color="primary" className="font-bold tracking-tight">
+                    <Typography variant="bodySmall" className="font-bold tracking-tight">
                         {title}
                     </Typography>
 
                     {subtitle && (
                         <div className="mt-1 flex items-baseline gap-2">
                             {value != null && (
-                                <Typography variant="h4" className="font-bold text-primary-600">
+                                <Typography variant="h4" color="body2" className="font-bold">
                                     {value}
                                 </Typography>
                             )}

@@ -20,6 +20,8 @@ import Modal from "../../shared/Modal";
 import EmployeeAttendanceDetails from "../Employee/EmployeeAttendanceDetails";
 import { AttendanceRecord } from "../../../types/attendance";
 import { useMemo } from "react";
+import { Typography } from "../../shared/atoms/Typography";
+import Button from "../../shared/atoms/Button";
 
 const formatTimeSafe = (timeStr: string | undefined) => {
   if (!timeStr) return "--:--";
@@ -147,15 +149,16 @@ const AllEmpAttendance = () => {
             <div className="text-red-500 text-lg font-semibold mb-2">
               Error Loading Attendance Data
             </div>
-            <p className="text-gray-600 mb-4">
+            <Typography variant="bodySmall" color="body2" className="text-gray-600 mb-4">
               {error?.message || "Unable to load attendance information"}
-            </p>
-            <button
+            </Typography>
+            <Button
+              size="sm"
               onClick={() => window.location.reload()}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              variant="contain"
             >
               Retry
-            </button>
+            </Button>
           </div>
         </div>
       </>
@@ -202,12 +205,15 @@ const AllEmpAttendance = () => {
         <div className="flex justify-center gap-2 items-center">
 
           {isDesktop ? (
-            <button className="bg-gray-100 hover:bg-gray-200 w-fit mx-auto border flex items-center gap-x-1 px-2 rounded-lg mt-3 mb-6 cursor-pointer transition-all duration-200"
+            <Button
+              size="sm"
+              variant="subtle"
+              className="my-2"
               onClick={() => setShowSelectByMonth(true)}
             >
-              <h2 className="font-semibold text-lg text-center py-2">
+              <Typography variant="bodyMedium" >
                 {selectedMonth?.label}
-              </h2>
+              </Typography>
               <div
                 className=" p-1 rounded-md h-fit"
               >
@@ -216,11 +222,11 @@ const AllEmpAttendance = () => {
                   key={"desktop-calendar-filter-icon"}
                 />
               </div>
-            </button>
-          ):
-             <h2 className="font-semibold text-lg text-center py-2">
-            {selectedMonth?.label}
-          </h2>
+            </Button>
+          ) :
+            <Typography variant="bodyMedium">
+              {selectedMonth?.label}
+            </Typography>
           }
         </div>
 
@@ -281,7 +287,7 @@ const AllEmpAttendance = () => {
                         {item?.status}
                       </div>
                       {item?.shift && (
-                        <div className="bg-gray-200 text-gray-600 rounded-xl px-2 py-[2px] h-full text-xs flex items-center justify-center">
+                        <div className="bg-gray-50 text-gray-700 rounded-xl px-2 py-[2px] h-full text-xs flex items-center justify-center">
                           Shift {item?.shift}
                         </div>
                       )}
@@ -290,35 +296,35 @@ const AllEmpAttendance = () => {
                     {item?.doctype === "Attendance" && (
                       <div className="w-full rounded-xl flex justify-between">
                         <div>
-                          <p className="text-gray-500 text-xs text-start font-semibold">
+                          <Typography variant="label" color="body2">
                             Check In
-                          </p>
+                          </Typography>
                           <div className="flex justify-center items-center gap-2">
                             <LogIn
                               className={`h-4 w-4 ${item?.in_time
-                                  ? "text-green-600"
-                                  : "text-gray-600"
+                                ? "text-green-600"
+                                : "text-gray-600"
                                 }`}
                             />
-                            <h5 className="font-semibold text-start">
+                            <Typography className="font-semibold text-start">
                               {formatTimeSafe(item?.in_time)}
-                            </h5>
+                            </Typography>
                           </div>
                         </div>
                         <div>
-                          <p className="text-gray-500 text-xs text-start font-semibold">
+                          <Typography variant="label" color="body2">
                             Check Out
-                          </p>
+                          </Typography>
                           <div className="flex justify-center items-center gap-2">
                             <LogOut
                               className={`h-4 w-4 ${item?.out_time
-                                  ? "text-red-600"
-                                  : "text-gray-600"
+                                ? "text-red-600"
+                                : "text-gray-600"
                                 }`}
                             />
-                            <h5 className="font-semibold text-start">
+                            <Typography variant="bodyMedium" >
                               {formatTimeSafe(item?.out_time)}
-                            </h5>
+                            </Typography>
                           </div>
                         </div>
                       </div>

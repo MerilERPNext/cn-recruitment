@@ -8,6 +8,8 @@ import ContextualPopup from "../../shared/molecules/ContextualPopup";
 import { EditAttendance } from "./EditAttendance";
 import Badge from "../../shared/Badge";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { Typography } from "../../shared/atoms/Typography";
+import Button from "../../shared/atoms/Button";
 
 const EmployeeStatusCard = ({
   data,
@@ -106,7 +108,7 @@ const EmployeeStatusCard = ({
   );
 
   return (
-    <div className="w-full p-3 border shadow-sm rounded-xl transition-all duration-200 bg-white border border-gray-100 hover:bg-blue-50 transition-colors">
+    <div className="w-full mt-2 p-3 border shadow-sm rounded-xl transition-all duration-200 bg-white hover-lift border border-gray-100 transition-colors">
       <div className="flex flex-col sm:flex-row  gap-3 w-full">
         {/* Left Section - Avatar + Info */}
         <div className="flex items-start gap-3 flex-1 justify-center">
@@ -119,61 +121,81 @@ const EmployeeStatusCard = ({
           <div className="flex-1 min-w-10">
             <div className="flex flex-wrap items-start gap-2">
               <WrapperHoverCard employeeId={data?.employee}>
-
-                <h5 className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none">
+                <Typography
+                  variant="bodyMedium"
+                  className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
+                >
                   {data?.employee_name}
-                </h5>
+                </Typography>
               </WrapperHoverCard>
-              {data?.shift ?
+              {data?.shift ? (
                 <Badge size="sm" label={"Shift " + data?.shift} />
-                : null
-              }
+              ) : null}
             </div>
-            <p
-              className={`font-medium text-sm capitalize mt-1 ${isDesktop ? "text-gray-700" : "text-gray-600"
-                }`}
+            <Typography
+              variant="bodySmall"
+              color="body2"
+              className="capitalize mt-1"
             >
               {data?.status}
-            </p>
+            </Typography>
           </div>
+          {!isDesktop && (
+            <Button
+              ref={buttonRef}
+              variant="subtle"
+              size="sm"
+              onClick={() => setIsPopupOpen(!isPopupOpen)}
+              className="self-center h-full px-2 text-gray-600 hover:text-gray-800"
+            >
+              <EllipsisVertical size={18} />
+            </Button>)}
         </div>
         <div className="flex justify-center w-full  max-w-[700px]  gap-4">
           {/* Middle Section - Time Info */}
           <div className="flex flex-wrap sm:flex-nowrap justify-between max-w-[700px] sm:justify-between gap-4 sm:gap-6 mt-2 sm:mt-0  w-full py-1 px-4">
             <div className="text-center">
-              <p className="text-gray-500 text-xs font-medium">Check-in</p>
-              <h5 className="font-semibold text-gray-800">
+              <Typography variant="bodySmall" color="body2" className="font-medium">
+                Check-in
+              </Typography>
+              <Typography variant="bodyMedium" className="font-semibold text-gray-800">
                 {data?.in_time
                   ? format(new Date(data?.in_time), "HH:mm")
                   : "--:--"}
-              </h5>
+              </Typography>
             </div>
             <div className="text-center">
-              <p className="text-gray-500 text-xs font-medium">Check-out</p>
-              <h5 className="font-semibold text-gray-800">
+              <Typography variant="bodySmall" color="body2" className="font-medium">
+                Check-out
+              </Typography>
+              <Typography variant="bodyMedium" className="font-semibold text-gray-800">
                 {data?.out_time
                   ? format(new Date(data?.out_time), "HH:mm")
                   : "--:--"}
-              </h5>
+              </Typography>
             </div>
             <div className="text-center">
-              <p className="text-gray-500 text-xs font-medium">Working Hours</p>
-              <h5 className="font-semibold text-gray-800">
+              <Typography variant="bodySmall" color="body2" className="font-medium">
+                Working Hours
+              </Typography>
+              <Typography variant="bodyMedium" className="font-semibold text-gray-800">
                 {data?.working_hours
                   ? `${data.working_hours.toFixed(2)} hrs`
                   : "--:--"}
-              </h5>
+              </Typography>
             </div>
           </div>
 
           {/* Right Section - Menu */}
-          <button
+          {isDesktop && <Button
             ref={buttonRef}
+            variant="subtle"
+            size="sm"
             onClick={() => setIsPopupOpen(!isPopupOpen)}
-            className="text-gray-600 hover:text-gray-800 transition-colors self-center h-full"
+            className="self-center h-full px-2 text-gray-600 hover:text-gray-800"
           >
             <EllipsisVertical size={18} />
-          </button>
+          </Button>}
         </div>
       </div>
 
@@ -192,13 +214,16 @@ const EmployeeStatusCard = ({
         triggerRef={buttonRef}
       >
         <div className="">
-          <button
+          <Button
+            variant="subtle"
+            fullWidth
+            contentAlign="start"
             onClick={() => setEditAttendance(true)}
-            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+            className="text-sm px-4 py-2"
           >
             <Edit size={16} />
-            <span>Edit</span>
-          </button>
+            Edit
+          </Button>
         </div>
       </ContextualPopup>
     </div>

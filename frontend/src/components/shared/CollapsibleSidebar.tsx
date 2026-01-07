@@ -653,7 +653,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                 if (isAnySubItemActive) {
                   parentItemClasses = "bg-primary-50 text-primary-600";
                 } else if (isItemDirectlyActive && !hasSubItems) {
-                  parentItemClasses = "bg-primary-600 text-white";
+                  parentItemClasses = "bg-primary-500 text-white";
                 } else if (isDropdownOpen) {
                   parentItemClasses = "bg-primary-50 text-primary-600";
                 } else {
@@ -665,7 +665,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   isAnySubItemActive ||
                   (isItemDirectlyActive && !hasSubItems)
                 ) {
-                  parentItemClasses = "bg-primary-600 text-white";
+                  parentItemClasses = "bg-primary-500 text-white";
                 } else {
                   parentItemClasses =
                     "text-text-body1 hover:bg-primary-50 hover:text-primary-600";
@@ -721,7 +721,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     <div
                       onClick={handleTodoClick}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${isItemDirectlyActive
-                        ? "bg-primary-600 text-white hover:text-white"
+                        ? "bg-primary-500 text-white hover:text-white"
                         : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
                         }`}
                     >
@@ -759,7 +759,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     <div
                       onClick={handleHelpDeskClick}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${isItemDirectlyActive
-                        ? "bg-primary-600 text-white hover:text-white"
+                        ? "bg-primary-500 text-white hover:text-white"
                         : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
                         }`}
                     >
@@ -800,7 +800,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     <Link
                       to={item.path}
                       className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${isItemDirectlyActive
-                        ? "bg-primary-600 text-white hover:text-white"
+                        ? "bg-primary-500 text-white hover:text-white"
                         : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
                         }`}
                     >
@@ -883,7 +883,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                   <Link
                                     to={subItem.href || "#"}
                                     className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
-                                      ? "bg-primary-600 text-white hover:text-white"
+                                      ? "bg-primary-500 text-white hover:text-white"
                                       : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
                                       }`}
                                   >
@@ -922,7 +922,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                               key={subSubItem.name}
                                               to={subSubItem.href}
                                               className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubSubActive
-                                                ? "bg-primary-600 text-white hover:text-white"
+                                                ? "bg-primary-500 text-white hover:text-white"
                                                 : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
                                                 }`}
                                             >
