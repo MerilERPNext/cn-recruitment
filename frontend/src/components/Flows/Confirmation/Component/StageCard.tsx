@@ -107,7 +107,7 @@ const CardStages = ({ triggerRefetch, data, actions, todoId, isActive, assignedT
 
     const canPerformActions = useMemo(() => {
         if (!isActive) return false;
-        if (!currentEmployee?.name || assignedTo?.emp_id) return false;
+        if (!currentEmployee?.name || !assignedTo?.emp_id) return false;
         if (currentEmployee.name === assignedTo?.emp_id) return true;
         if (currentUser?.roles && currentUser.roles.some(role => role.role === assignedTo?.role)) return true;
         return false;
