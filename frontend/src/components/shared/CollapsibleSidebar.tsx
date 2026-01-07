@@ -118,10 +118,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   //     .reduce((sum, app) => sum + (app.count ?? 0), 0);
   // };
 
-  const handleTodoClick = () => {
-    window.open(ROUTES.TODO, "_blank");
-  };
-
   const handleHelpDeskClick = () => {
     if (!currentUser?.roles) {
       window.open(ROUTES.HELP_DESK, "_blank");
@@ -408,7 +404,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     {
       icon: ListTodo,
       label: "Todo",
-      path: "",
+      path: ROUTES.TODO,
       permissionKey: "Todo",
     },
     {
@@ -508,7 +504,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const isItemActive = (item: NavigationItem) => {
-    if (item.label === "Todo" || item.label === "Help Desk") {
+    if (item.label === "Help Desk") {
       return false;
     }
 
@@ -707,40 +703,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           }`}
                         />
                       )}
-                    </div>
-                  ) : item.label === "Todo" ? (
-                    <div
-                      onClick={handleTodoClick}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                        isItemDirectlyActive
-                          ? "bg-blue-600 text-white hover:text-white"
-                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0 relative">
-                          <Icon className="h-5 w-5" />
-                          {!isExpanded && getCount("Todo") > 0 && (
-                            <span className="absolute -top-4 -right-4 min-w-[16px] h-4 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                              {getCount("Todo")}
-                            </span>
-                          )}
-                        </div>
-                        <span
-                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
-                            isExpanded
-                              ? "opacity-100"
-                              : "opacity-0 -translate-x-2"
-                          }`}
-                        >
-                          {item.label}
-                        </span>
-                        {isExpanded && getCount("Todo") > 0 && (
-                          <span className="ml-auto min-w-[22px] h-5 px-2 rounded-full bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center">
-                            {getCount("Todo")}
-                          </span>
-                        )}
-                      </div>
                     </div>
                   ) : item.label === "Help Desk" ? (
                     <div
