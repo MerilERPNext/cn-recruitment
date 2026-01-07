@@ -7,6 +7,7 @@ import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
 import toast from "react-hot-toast";
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -27,7 +28,7 @@ const ApprovalRejectionAdvanceList = ({
   onClick,
   loadingAction,
 }: ApprovalRejectionLoanProps) => {
-  const { isDesktop} = useScreenSize();
+  const { isDesktop } = useScreenSize();
   const { data: user } = useCurrentUser();
   const commentMutation = useExpenseCommentUpdate();
 
@@ -66,8 +67,10 @@ const ApprovalRejectionAdvanceList = ({
       return;
     }
 
-    const referenceDoctype = data?.reference_document?.doctype || "Employee Advance";
-    const referenceName = data?.reference_document?.name || data?.reference_name;
+    const referenceDoctype =
+      data?.reference_document?.doctype || "Employee Advance";
+    const referenceName =
+      data?.reference_document?.name || data?.reference_name;
 
     try {
       await commentMutation.mutateAsync({
@@ -113,13 +116,23 @@ const ApprovalRejectionAdvanceList = ({
             />
           </div>
 
-          <div className="text-sm font-medium">{data?.reference_document?.employee_name}</div>
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="text-sm font-medium">
+              {data?.reference_document?.employee_name}
+            </div>
+          </WrapperHoverCard>
 
           <div>{data.reference_document.custom_advance_type}</div>
 
-          <div className="text-sm">{data?.reference_document?.advance_amount}</div>
+          <div className="text-sm">
+            {data?.reference_document?.advance_amount}
+          </div>
 
-          <div>{formatToIndianDate(data.reference_document.custom_repayment_start_date)}</div>
+          <div>
+            {formatToIndianDate(
+              data.reference_document.custom_repayment_start_date
+            )}
+          </div>
 
           <div>{formatToIndianDate(data.reference_document.posting_date)}</div>
 
@@ -158,7 +171,9 @@ const ApprovalRejectionAdvanceList = ({
           <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
             <div className="bg-white w-full max-w-md rounded-xl p-5">
               <h3 className="font-semibold mb-2">
-                {selectedAction === "Reject" ? "Reject Reason" : "Approval Comment"}
+                {selectedAction === "Reject"
+                  ? "Reject Reason"
+                  : "Approval Comment"}
               </h3>
 
               <textarea
@@ -203,8 +218,12 @@ const ApprovalRejectionAdvanceList = ({
       >
         <div className="flex justify-between items-start mb-3">
           <div>
-            <p className="font-semibold text-sm">{data?.reference_document?.employee_name}</p>
-            <p className="text-xs text-gray-500">{data?.reference_document?.custom_advance_type}</p>
+            <p className="font-semibold text-sm">
+              {data?.reference_document?.employee_name}
+            </p>
+            <p className="text-xs text-gray-500">
+              {data?.reference_document?.custom_advance_type}
+            </p>
           </div>
 
           <input
@@ -224,7 +243,9 @@ const ApprovalRejectionAdvanceList = ({
         <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
           <div>
             <span className="block text-gray-400">Amount</span>
-            <span className="font-medium text-gray-800">{data?.reference_document?.advance_amount}</span>
+            <span className="font-medium text-gray-800">
+              {data?.reference_document?.advance_amount}
+            </span>
           </div>
 
           <div>
@@ -234,7 +255,9 @@ const ApprovalRejectionAdvanceList = ({
 
           <div>
             <span className="block text-gray-400">Start Date</span>
-            {formatToIndianDate(data?.reference_document?.custom_repayment_start_date)}
+            {formatToIndianDate(
+              data?.reference_document?.custom_repayment_start_date
+            )}
           </div>
 
           <div>
@@ -274,7 +297,9 @@ const ApprovalRejectionAdvanceList = ({
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
           <div className="bg-white w-full max-w-md rounded-xl p-5">
             <h3 className="font-semibold mb-2">
-              {selectedAction === "Reject" ? "Reject Reason" : "Approval Comment"}
+              {selectedAction === "Reject"
+                ? "Reject Reason"
+                : "Approval Comment"}
             </h3>
 
             <textarea
