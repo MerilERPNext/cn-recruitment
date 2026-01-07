@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Modal from "../CommonModel";
 import BenefitRequestForm from "./BenefitsRequestForm";
 import CardTable from "../../shared/CardTable";
@@ -10,9 +10,10 @@ import Button from "../../shared/atoms/Button";
 import { useCurrentEmployeeIdCard } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { createPortal } from "react-dom";
-import { BenefitPayslip, useGetBenefitClaimLockingPeriod, useGetBenefitRequestLockView } from "../../../hooks/useBenefit";
+import { BenefitPayslip, useGetBenefitClaimLockingPeriod, useGetBenefitRequestLockView, useGetYearFilterOptions } from "../../../hooks/useBenefit";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import CustomDropdown from "../../shared/CustomDropdown";
 
 const MyRequests: React.FC = () => {
     const [maskAmounts, setMaskAmounts] = useState(true);
@@ -28,18 +29,26 @@ const MyRequests: React.FC = () => {
         setShowBenefitForm(false);
     };
 
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 5 }, (_, i) =>
-        (currentYear - i).toString()
-    );
-    const [selectedYear, setSelectedYear] = useState(currentYear.toString().slice(2));
+    const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(employeeIdCard?.company || "");
 
-    const yearPeriod = (!selectedYear ? "" : `${selectedYear}-${parseInt(selectedYear) + 1}`);
+    const optionYears = useMemo(() => {
+        if (YearsLoading || !optionYearsData) return [];
+        else return optionYearsData?.map(data => ({ label: data?.name, value: data?.name }))
+    }, [optionYearsData, YearsLoading]);
+
+    const [selectedYear, setSelectedYear] = useState("");
+
+    useEffect(() => {
+        if (optionYears.length > 0 && !selectedYear) {
+            setSelectedYear(optionYears[0].value);
+        }
+    }, [optionYears, selectedYear]);
+
     const { data: employee } = useCurrentEmployeeIdCard();
     const today = new Date().toISOString().split("T")[0];
 
-    const { data, isLoading } = useGetBenefitRequestLockView(employee?.id || "", yearPeriod, today);
-    const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } = useGetBenefitClaimLockingPeriod(employee?.id || "", yearPeriod, today);
+    const { data, isLoading } = useGetBenefitRequestLockView(employee?.id || "", selectedYear, today);
+    const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } = useGetBenefitClaimLockingPeriod(employee?.id || "", selectedYear, today);
     const showBenefitRequestButton = !benefitClaimLockLoading && benefitClaimLock?.status === "success";
     const LockRequestMessage = useMemo(() => {
         if (!data || isLoading) return null;
@@ -48,55 +57,46 @@ const MyRequests: React.FC = () => {
 
     return (
         <div className="px-4 pt-2">
-            <div className="flex flex-col sm:flex-row items-center justify-between md:justify-end gap-4 mb-2">
-                <div className="flex-1 sm:min-w-60 min-w-full">
-                    <select
-                        id="yearFilter"
+            <div className="flex flex-row items-center flex-wrap justify-between md:justify-end gap-4 mb-2">
+                <div className="min-w-[100px]">
+                    <CustomDropdown
+                        position='bottom-right'
                         value={selectedYear}
-                        onChange={(e) => setSelectedYear(e.target.value)}
-                        className="my-form-input"
-                    >
-                        <option value="">All Years</option>
-                        {years.map((year) => (
-                            <option key={year} value={year.slice(2)}>
-                                {year}
-                            </option>
-                        ))}
-                    </select>
+                        onChange={(event) => setSelectedYear(event?.target.value)}
+                        options={optionYears}
+                    />
                 </div>
-                <div className="w-full flex gap-4">
-                    <button
-                        onClick={() => setMaskAmounts(!maskAmounts)}
-                        className="my-btn-secondary"
-                        title={maskAmounts ? "Show amounts" : "Hide amounts"}
+                <button
+                    onClick={() => setMaskAmounts(!maskAmounts)}
+                    className="my-btn-secondary"
+                    title={maskAmounts ? "Show amounts" : "Hide amounts"}
+                >
+                    {maskAmounts ? (
+                        <>
+                            <span className="text-sm font-medium text-gray-700">
+                                Show Amounts
+                            </span>
+                            <BsToggleOff className="w-6 h-6 text-gray-400" />
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-sm font-medium text-gray-700">
+                                Hide Amounts
+                            </span>
+                            <BsToggleOn className="w-6 h-6 text-primary" />
+                        </>
+                    )}
+                </button>
+                {showBenefitRequestButton &&
+                    <Button
+                        bgColor="blue-600"
+                        size="md"
+                        className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4"
+                        onClick={handleRequestBenefit}
                     >
-                        {maskAmounts ? (
-                            <>
-                                <span className="text-sm font-medium text-gray-700">
-                                    Show Amounts
-                                </span>
-                                <BsToggleOff className="w-6 h-6 text-gray-400" />
-                            </>
-                        ) : (
-                            <>
-                                <span className="text-sm font-medium text-gray-700">
-                                    Hide Amounts
-                                </span>
-                                <BsToggleOn className="w-6 h-6 text-primary" />
-                            </>
-                        )}
-                    </button>
-                    {!showBenefitRequestButton &&
-                        <Button
-                            bgColor="blue-600"
-                            size="md"
-                            className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4"
-                            onClick={handleRequestBenefit}
-                        >
-                            Request Benefit
-                        </Button>
-                    }
-                </div>
+                        Request Benefit
+                    </Button>
+                }
             </div>
             {LockRequestMessage}
             <CardTable
@@ -112,13 +112,13 @@ const MyRequests: React.FC = () => {
                 ]}
             >
                 <DataListView
-                    queryKey={["mybenefit-request", employeeIdCard?.id || "", employeeIdCard?.company || "", yearPeriod || ""]}
+                    queryKey={["mybenefit-request", employeeIdCard?.id || "", employeeIdCard?.company || "", selectedYear || ""]}
                     customAPI={{
                         method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_data_list_view",
                         params: {
                             employee: employeeIdCard?.id || "",
                             company: employeeIdCard?.company || "",
-                            payroll_period: yearPeriod,
+                            payroll_period: selectedYear,
                         },
                     }}
                     ItemComponent={(props: {
@@ -171,6 +171,7 @@ const MyRequests: React.FC = () => {
 const BenefitSlipItem = ({ item, maskAmounts }: { item: BenefitPayslip, maskAmounts: boolean }) => {
     const { isDesktop } = useScreenSize();
 
+    console.log("item ", item)
     return isDesktop ? <div className="px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
         <span className="text-sm font-medium text-gray-700 text-start truncate">{item?.employee_name}</span>
         <span className="text-sm font-medium text-gray-700 text-start truncate">{item?.company}</span>
