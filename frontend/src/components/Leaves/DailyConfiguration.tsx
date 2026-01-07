@@ -39,9 +39,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
 
   return (
     <div className="mx-2 mt-4 border rounded-lg overflow-hidden">
-      <div className="px-4 py-2 font-semibold text-gray-700 bg-gray-50">
-        Daily Configuration
-      </div>
+      <div className="px-4 py-2 bg-gray-50">Daily Configuration</div>
       <div className="px-4 py-3 border-b bg-white flex items-center gap-6 text-sm">
         <span className="font-medium text-gray-700">Apply to all:</span>
 
@@ -90,7 +88,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
 
             return (
               <tr key={date} className="border-t">
-                <td className="px-4 py-2 font-medium">
+                <td className="px-4 py-2">
                   {new Date(date).toLocaleDateString("en-GB")}
                 </td>
 

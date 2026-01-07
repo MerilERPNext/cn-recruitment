@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 
 import useDebounce from "../../hooks/useDebounce";
-import { useEmployees } from "../../hooks/useEmployee";
+import { useSearchEmployees } from "../../hooks/useEmployee";
 import SearchCard from "../Employee/SearchCard";
 import { Employee } from "../../types/employee";
 
@@ -36,23 +36,24 @@ const SearchMembers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const query = useDebounce(searchQuery, 350);
 
-  const {
-    data: employees,
-    isLoading,
-    error,
-  } = useEmployees(
-    ["employee_name", "image", "status", "department", "designation", "name"],
-    [],
-    [
-      ["name", "like", `%${query}%`],
-      ["employee_name", "like", `%${query}%`],
-      ["status", "like", `%${query}%`],
-      ["department", "like", `%${query}%`],
-      ["designation", "like", `%${query}%`],
-      ["name", "like", `%${query}%`],
-    ]
-  );
+  // const {
+  //   data: employees,
+  //   isLoading,
+  //   error,
+  // } = useEmployees(
+  //   ["employee_name", "image", "status", "department", "designation", "name"],
+  //   [],
+  //   [
+  //     ["name", "like", `%${query}%`],
+  //     ["employee_name", "like", `%${query}%`],
+  //     ["status", "like", `%${query}%`],
+  //     ["department", "like", `%${query}%`],
+  //     ["designation", "like", `%${query}%`],
+  //     ["name", "like", `%${query}%`],
+  //   ]
+  // );
 
+  const { data: employees, isLoading, error } = useSearchEmployees(query.split(" ").join(","))
   // Load recent searches
   useEffect(() => {
     const stored: Employee[] = JSON.parse(
@@ -141,7 +142,7 @@ const SearchMembers = () => {
             </div>
           </div>
           {isFocused && (
-            <div className="absolute sm:top-[60%] top-[120%] left-1/2 -translate-x-1/2 rounded-lg overflow-hidden border-gray-200 shadow-lg border bg-gray-50 py-2 overflow-y-auto max-w-[90%] max-h-[200px]  w-full  sm:mt-6">
+            <div className="z-50 absolute sm:top-[60%] top-[120%] left-1/2 -translate-x-1/2 rounded-lg overflow-hidden border-gray-200 shadow-lg border bg-gray-50 py-2 overflow-y-auto max-w-[90%] max-h-[200px]  w-full  sm:mt-6">
               {employeeList()}
             </div>
           )}

@@ -2,13 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useScreenSize } from "../hooks/useScreenSize";
-import {
-  LogOut,
-  ChevronDown,
-  User,
-  Dock,
-  RotateCcwKey,
-} from "lucide-react";
+import { LogOut, ChevronDown, User, Dock, RotateCcwKey } from "lucide-react";
 import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
@@ -186,9 +180,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
               Manage your {getPageTitle().toLowerCase()}
             </p>
           </div>
-          {location.pathname !== ROUTES.SEARCH_MEMBERS && (
-            <SearchMembers />
-          )}
+          {location.pathname !== ROUTES.SEARCH_MEMBERS && <SearchMembers />}
           <div className="flex items-center gap-4">
             <button
               onClick={handleNotificationClick}
@@ -219,8 +211,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee?.employee ? (
@@ -251,19 +244,17 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       />
                     </div>
                     <ChevronDown
-                      className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                        }`}
+                      className={`w-4 h-4 text-white transition-transform ${
+                        showProfileDropdown ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
-
                 </>
               )}
 
               {/* Profile Dropdown */}
               {showProfileDropdown && (
-                <div
-                  className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]"
-                >
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center gap-3">
                       {/* Avatar */}
@@ -294,7 +285,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                   <div className="py-2">
                     <button
                       onClick={() => {
-                        clearTargetEmployee()
+                        clearTargetEmployee();
                         navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
@@ -311,7 +302,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                       >
                         <Dock className="w-4 h-4" />
-                        Switch to Desk
+                        Switch to Admin
                       </button>
                     )}
                     <button
@@ -351,7 +342,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
         <ViewingAsBanner />
 
         {/* Page Content */}
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative bg-[#F5F8FF]">
           {children}
 
           {/* Action Button positioned in bottom right */}

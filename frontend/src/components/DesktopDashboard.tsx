@@ -117,9 +117,9 @@ export default function DesktopDashboard() {
   // const { data: notices, isLoading: noticeIsLoading } = useGetAllNotices(5, [
   //   ["status", "!=", "Expired"],
   // ]);
-  const { data: userNotices, isLoading: userNoticeIsLoading } = useGetUserNotices();
+  const { data: userNotices, isLoading: userNoticeIsLoading } =
+    useGetUserNotices();
 
-  console.log(userNotices, "-----------------------------");
   const {
     data: homeSummary,
     refetch: refetchHomeSummary,
@@ -135,29 +135,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
           parseISO(b.time.replace(" ", "T"))
         )
       )[0]
+    : undefined;
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T"))
+          )
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -414,8 +414,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -444,8 +445,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               )}
@@ -540,7 +542,7 @@ export default function DesktopDashboard() {
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                       >
                         <Dock className="w-4 h-4" />
-                        Switch to Desk
+                        Switch to Admin
                       </button>
                     )}
                     <button
@@ -594,18 +596,23 @@ export default function DesktopDashboard() {
 
             {/* Hero Banner */}
             <div className=" w-full max-w-full overflow-hidden rounded-2xl bg-white mb-2">
-              {!userNoticeIsLoading && userNotices && userNotices?.length > 0 && (
-                <Carousel
-                  className="w-full h-full max-h-[150px]"
-                  showNavigation={false}
-                >
-                  {userNotices?.map((item) => (
-                    <CarouselSlide key={item.name} autoScrollDelay={item.auto_scroll_frequency * 1000}>
-                      <NoticeSlide data={item} />
-                    </CarouselSlide>
-                  ))}
-                </Carousel>
-              )}
+              {!userNoticeIsLoading &&
+                userNotices &&
+                userNotices?.length > 0 && (
+                  <Carousel
+                    className="w-full h-full max-h-[150px]"
+                    showNavigation={false}
+                  >
+                    {userNotices?.map((item) => (
+                      <CarouselSlide
+                        key={item.name}
+                        autoScrollDelay={item.auto_scroll_frequency * 1000}
+                      >
+                        <NoticeSlide data={item} />
+                      </CarouselSlide>
+                    ))}
+                  </Carousel>
+                )}
             </div>
           </div>
 
@@ -730,13 +737,14 @@ export default function DesktopDashboard() {
 
                 {/* Clock In / Out */}
                 <div
-                  className={`flex ${homeSummary && !homeSummary?.length
-                    ? "flex-col-reverse gap-2"
-                    : "flex-row gap-4"
-                    }  mt-4`}
+                  className={`flex ${
+                    homeSummary && !homeSummary?.length
+                      ? "flex-col-reverse gap-2"
+                      : "flex-row gap-4"
+                  }  mt-4`}
                 >
-                  <div className="flex w-full">
-                    {canShowClockIn?.can_show && (
+                  {canShowClockIn?.can_show && (
+                    <div className="flex w-full">
                       <button
                         onClick={() =>
                           handleClockInOut(
@@ -753,18 +761,23 @@ export default function DesktopDashboard() {
                         {clockInCheckOutPending || isRefetching
                           ? "Processing…"
                           : isCurrentlyCheckedIn
-                            ? "Clock Out"
-                            : "Clock In"}
+                          ? "Clock Out"
+                          : "Clock In"}
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Status */}
                   {homeSummary && homeSummary?.length > 0 ? (
-                    <div className="flex items-center justify-center w-full gap-2  px-2 text-sm bg-red-100 rounded py-1">
+                    <div
+                      className={`flex rounded-lg items-center justify-center w-full gap-1 px-1 text-sm rounded py-1 ${
+                        isCurrentlyCheckedIn ? "bg-green-100" : "bg-red-100"
+                      }`}
+                    >
                       <div
-                        className={`w-2 h-2 shrink-0 rounded-full ${isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
-                          }`}
+                        className={`w-2 h-2 rounded-lg shrink-0 ${
+                          isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
+                        }`}
                       ></div>
 
                       <span

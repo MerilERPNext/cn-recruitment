@@ -35,6 +35,17 @@ export const useEmployees = (
     ...defaultQueryOptions,
   });
 };
+export const useSearchEmployees = (
+  filters?: string, limit?: number
+): UseQueryResult<Employee[], Error> => {
+  return useQuery<Employee[], Error>({
+    queryKey: ["employee", "search", filters],
+    queryFn: () => EmployeeService.getSearchMembers(filters, limit),
+    enabled: !!filters,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
 
 export const useEmployee = (
   employeeId: string | null

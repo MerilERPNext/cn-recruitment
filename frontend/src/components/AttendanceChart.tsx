@@ -78,17 +78,19 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
 
   const daysInMonth = getDaysInCurrentMonth();
 
-  const totalDaysForChart = daysInMonth - (present + absent + leaves + week_offs);
+  const otherDays = Math.max(daysInMonth - (present + absent + leaves + week_offs), 0);
   // Percentages based on total working days
-  const presentPercent = totalDaysForChart > 0 ? (present / totalDaysForChart) * 100 : 0;
-  const absentPercent = totalDaysForChart > 0 ? (absent / totalDaysForChart) * 100 : 0;
-  const leavesPercent = totalDaysForChart > 0 ? (leaves / totalDaysForChart) * 100 : 0;
-
+  const presentPercent = (present / daysInMonth) * 100;
+  const absentPercent = (absent / daysInMonth) * 100;
+  const leavesPercent = (leaves / daysInMonth) * 100;
+  const weekOffPercent = (week_offs / daysInMonth) * 100;
+  const otherDaysPercent = (otherDays / daysInMonth) * 100;
   // Angles
   const presentAngle = (presentPercent / 100) * 360;
   const absentAngle = (absentPercent / 100) * 360;
   const leavesAngle = (leavesPercent / 100) * 360;
-
+  const weekOffsAngle = (weekOffPercent / 100) * 360;
+  const otherDaysAngle = (otherDaysPercent / 100) * 360;
 
   return (
     <div
@@ -161,6 +163,34 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                   className="transition-all duration-700 hover:opacity-80"
                 />
               )}
+
+              {/* Leaves */}
+              {week_offs > 0 && (
+                <path
+                  d={createArcPath(
+                    presentAngle + absentAngle + leavesAngle,
+                    presentAngle + absentAngle + leavesAngle + weekOffsAngle,
+                    80,
+                    50
+                  )}
+                  fill="#FFC0CB"
+                  className="transition-all duration-700 hover:opacity-80"
+                />
+              )}
+
+              {otherDaysAngle > 0 && (
+                <path
+                  d={createArcPath(
+                    presentAngle + absentAngle + leavesAngle + weekOffsAngle,
+                    presentAngle + absentAngle + leavesAngle + weekOffsAngle + otherDaysAngle,
+                    80,
+                    50
+                  )}
+                  fill="#0000"
+                  className="transition-all duration-700 hover:opacity-80"
+                />
+              )}
+
             </svg>
 
 
@@ -226,6 +256,17 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
               borderColor="border-yellow-100"
               value={avg_late_by}
               label="Avg. Overtime"
+              isDesktop={isDesktop}
+              isMetric={true}
+            />
+
+            <SummaryCard
+              icon={Timer}
+              iconColor="text-pink-600"
+              bgColor="bg-pink-50"
+              borderColor="border-pink-100"
+              value={week_offs}
+              label="Week Offs"
               isDesktop={isDesktop}
               isMetric={true}
             />

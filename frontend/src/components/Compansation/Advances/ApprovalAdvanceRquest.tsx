@@ -5,18 +5,20 @@ import React, { useState, useCallback } from "react";
 import CardTable from "../../shared/CardTable";
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
+import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
 
 
 const TeamAdvanceRequest = () => {
 
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
 
-  const handleRequestClick = useCallback((data: any) => {
-    console.log("Loan click", data);
+  const handleRequestClick = useCallback((item: any) => {
+    setSelectedItem(item);
   }, []);
 
   const Card = ({
@@ -70,7 +72,7 @@ const CardHeader = ({
             <ApprovalList
               status="Pending"
               doctype={"Employee Advance"}
-              pageSize={4}
+              pageSize={10000}
               showPagination={false}
               refetch={refetchApprovalList}
               setRefetch={setRefetchApprovalList}
@@ -81,7 +83,7 @@ const CardHeader = ({
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
                   onAction={item?.onAction}
-                  onClick={handleRequestClick}
+                  onClick={() => handleRequestClick(item)}
                   loadingAction={item?.loadingAction}
                 />
               )}
@@ -89,6 +91,11 @@ const CardHeader = ({
           </CardTable>
         </div>
       </Card>
+      <AdvanceDetailsModal
+        open={!!selectedItem}
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
     </div>
   );
 };

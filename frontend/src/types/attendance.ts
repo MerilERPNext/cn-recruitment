@@ -409,6 +409,12 @@ export interface ShiftAndPolicyAudit {
   updated_on: string;
 }
 
+export interface EmployeeRegularize {
+  date: string;
+  status: string;
+  day: string;
+
+}
 export interface WeekOffAudit {
   week_off: string | null;
   updated_by: string;

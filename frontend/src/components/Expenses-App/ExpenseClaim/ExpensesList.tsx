@@ -18,6 +18,9 @@ import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import { format } from "date-fns";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
+import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
+import { MoreVertical, FileText } from "lucide-react";
+import DropdownMenu from "../../shared/DropDownMenu";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Draft" },
@@ -199,6 +202,7 @@ const ExpensesList: React.FC = () => {
   >(null);
 
   const [selectedStatus, setSelectedStatus] = React.useState("Draft");
+  const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = React.useState(false);
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee } = useCurrentEmployee();
@@ -296,6 +300,19 @@ const ExpensesList: React.FC = () => {
     status: selectedStatus,
   };
 
+  const mobileMenuItems = [
+    {
+      label: "Policy",
+      icon: <FileText size={16} />,
+      onClick: () => setIsPolicyDrawerOpen(true),
+    },
+    {
+      label: "Shared",
+      icon: <Users size={16} />,
+      onClick: () => navigate("/webapp/expenses-app/shared-expenses"),
+    },
+  ];
+
   return (
     <div
       className="relative flex size-full flex-col group/design-root md:p-6"
@@ -305,16 +322,36 @@ const ExpensesList: React.FC = () => {
         <h2 className="base-title md:module-title pb-1">My Expense Claims</h2>
 
         <div className="flex items-center space-x-3 pb-1">
-          <Button
-            onClick={() => navigate("/webapp/expenses-app/shared-expenses")}
-            icon={<Users size={16} />}
-            size="md"
-            variant="outline"
-            bgColor="blue-500"
-            className="hover:bg-blue-100 rounded-xl"
-          >
-            Shared
-          </Button>
+          {isDesktop ? (
+            <>
+              <Button
+                variant="outline"
+                size="md"
+                bgColor="blue-500"
+                className="rounded-xl hover:bg-blue-100"
+                onClick={() => setIsPolicyDrawerOpen(true)}
+              >
+                Policy
+              </Button>
+
+              <Button
+                onClick={() => navigate("/webapp/expenses-app/shared-expenses")}
+                icon={<Users size={16} />}
+                size="md"
+                variant="outline"
+                bgColor="blue-500"
+                className="hover:bg-blue-100 rounded-xl"
+              >
+                Shared
+              </Button>
+            </>
+          ) : (
+            <DropdownMenu items={mobileMenuItems} placement="bottom-right">
+              <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
+                <MoreVertical size={18} />
+              </button>
+            </DropdownMenu>
+          )}
           <FilterDropdowns />
         </div>
       </div>
@@ -371,6 +408,10 @@ const ExpensesList: React.FC = () => {
           selectedSendBackUser={selectedSendBackUser}
         />
       )}
+      <ExpensePolicyDrawer
+        isOpen={isPolicyDrawerOpen}
+        onClose={() => setIsPolicyDrawerOpen(false)}
+      />
     </div>
   );
 };

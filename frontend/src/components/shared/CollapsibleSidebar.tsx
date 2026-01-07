@@ -37,8 +37,7 @@ import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { ROUTES } from "../../constants/routes";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { useGetUnreadNotificationCount } from "../../hooks/useNotification";
-import { NOTIFICATION_TITLE_MAP } from "../../utils/helperUtils";
+import { useAppNotificationCounts } from "../../hooks/useAppNotificationCounts";
 
 interface SubSubMenuItem {
   name: string;
@@ -105,25 +104,19 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
   const { data: currentUser } = useCurrentUser();
-  const { data: notificationData } = useGetUnreadNotificationCount(
-    currentUser?.name
-  );
+  const { getCount } = useAppNotificationCounts();
 
-  const getNotificationCount = (sidebarLabel: string) => {
-    if (!notificationData?.apps) return 0;
+  // const getNotificationCount = (sidebarLabel: string) => {
+  //   if (!notificationData?.apps) return 0;
 
-    const backendTitles = NOTIFICATION_TITLE_MAP[sidebarLabel];
+  //   const backendTitles = NOTIFICATION_TITLE_MAP[sidebarLabel];
 
-    if (!backendTitles) return 0;
+  //   if (!backendTitles) return 0;
 
-    return notificationData.apps
-      .filter((app) => backendTitles.includes(app.title))
-      .reduce((sum, app) => sum + (app.count ?? 0), 0);
-  };
-
-  const handleTodoClick = () => {
-    window.open(ROUTES.TODO, "_blank");
-  };
+  //   return notificationData.apps
+  //     .filter((app) => backendTitles.includes(app.title))
+  //     .reduce((sum, app) => sum + (app.count ?? 0), 0);
+  // };
 
   const handleHelpDeskClick = () => {
     if (!currentUser?.roles) {
@@ -237,20 +230,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Compensation",
       subItems: [
         {
-          name: "Annual CTC",
-          icon: Calculator,
-          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
-        },
-
-        {
-          name: "Salary Slip",
-          icon: CreditCard,
-          href: "/webapp/salary-slip-app/salary-slip-list",
-        },
-        {
-          name: "Tax Declaration Sheet",
-          icon: Wallet,
-          href: "/webapp/salary-slip-app/income-tax-sheet",
+          name: "Pay Package",
+          icon: IndianRupee,
+          href: "/webapp/salary-slip-app/pay-package",
         },
         {
           name: "IT Declaration",
@@ -258,17 +240,35 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/it-declaration-form",
         },
         {
+          name: "Tax Declaration Sheet",
+          icon: Wallet,
+          href: "/webapp/salary-slip-app/income-tax-sheet",
+        },
+        {
+          name: "Annual CTC",
+          icon: Calculator,
+          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
+        },
+        {
+          name: "Salary Slip",
+          icon: CreditCard,
+          href: "/webapp/salary-slip-app/salary-slip-list",
+        },
+        {
+          name: "Extra Payment",
+          icon: HandCoins,
+          href: "/webapp/salary-slip-app/extra-payment",
+        },
+        {
           name: "My Loan Requests",
           icon: BadgeIndianRupee,
           href: "/webapp/salary-slip-app/my-loan-requests",
         },
-
         {
           name: "Team Loan Requests",
           icon: Users,
           href: "/webapp/salary-slip-app/team-loan-requests",
         },
-
         {
           name: "My Advances",
           icon: IndianRupee,
@@ -280,19 +280,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/team-advances-list",
         },
         {
-          name: "Pay Package",
-          icon: IndianRupee,
-          href: "/webapp/salary-slip-app/benefits-list",
-        },
-        {
           name: "Perquisite",
           icon: IndianRupee,
           href: "/webapp/salary-slip-app/perquisite-list",
-        },
-        {
-          name: "Extra Payment",
-          icon: HandCoins,
-          href: "/webapp/salary-slip-app/extra-payment",
         },
         {
           name: "Payroll Documents",
@@ -317,11 +307,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Users,
           href: "/webapp/benefits-app/my-requests",
         },
-        {
-          name: "Team Requests",
-          icon: Users,
-          href: "/webapp/benefits-app/my-team-requests",
-        },
+        // {
+        //   name: "Team Requests",
+        //   icon: Users,
+        //   href: "/webapp/benefits-app/my-team-requests",
+        // },
         {
           name: "Benefit Slips",
           icon: Calculator,
@@ -414,7 +404,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     {
       icon: ListTodo,
       label: "Todo",
-      path: "",
+      path: ROUTES.TODO,
       permissionKey: "Todo",
     },
     {
@@ -514,7 +504,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const isItemActive = (item: NavigationItem) => {
-    if (item.label === "Todo" || item.label === "Help Desk") {
+    if (item.label === "Help Desk") {
       return false;
     }
 
@@ -683,12 +673,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
-                          {!isExpanded &&
-                            getNotificationCount(item?.label) > 0 && (
-                              <span className="absolute -top-1 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
-                                {getNotificationCount(item?.label)}
-                              </span>
-                            )}
+                          {!isExpanded && getCount(item.label) > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                              {getCount(item.label)}
+                            </span>
+                          )}
                         </div>
                         <span
                           className={`font-medium whitespace-nowrap transition-all duration-300 ${
@@ -699,12 +688,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         >
                           {item.label}
                         </span>
-                        {isExpanded &&
-                          getNotificationCount(item?.label) > 0 && (
-                            <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center">
-                              {getNotificationCount(item?.label)}
-                            </span>
-                          )}
+                        {isExpanded && getCount(item.label) > 0 && (
+                          <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center">
+                            {getCount(item.label)}
+                          </span>
+                        )}
                       </div>
                       {isExpanded && (
                         <ChevronRight
@@ -716,30 +704,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         />
                       )}
                     </div>
-                  ) : item.label === "Todo" ? (
-                    <div
-                      onClick={handleTodoClick}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                        isItemDirectlyActive
-                          ? "bg-blue-600 text-white hover:text-white"
-                          : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <span
-                          className={`font-medium whitespace-nowrap transition-all duration-300 ${
-                            isExpanded
-                              ? "opacity-100"
-                              : "opacity-0 -translate-x-2"
-                          }`}
-                        >
-                          {item.label}
-                        </span>
-                      </div>
-                    </div>
                   ) : item.label === "Help Desk" ? (
                     <div
                       onClick={handleHelpDeskClick}
@@ -749,10 +713,17 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
                       }`}
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
+                      <div className="relative flex items-center space-x-3">
+                        <div className="flex-shrink-0 relative">
                           <Icon className="h-5 w-5" />
+
+                          {!isExpanded && getCount("Help Desk") > 0 && (
+                            <span className="absolute -top-4 -right-4 min-w-[16px] h-4 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                              {getCount("Help Desk")}
+                            </span>
+                          )}
                         </div>
+
                         <span
                           className={`font-medium whitespace-nowrap transition-all duration-300 ${
                             isExpanded
@@ -762,6 +733,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         >
                           {item.label}
                         </span>
+
+                        {isExpanded && getCount("Help Desk") > 0 && (
+                          <span className="ml-auto min-w-[22px] h-5 px-2 rounded-full bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center">
+                            {getCount("Help Desk")}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ) : (

@@ -69,6 +69,19 @@
 [data-testid="formioContainer"] .formio-button-remove-row:hover {
   background: #fee2e2 !important;
 }
+ [data-testid="formioContainer"].profile-form .choices__item  {
+  background: #f0f0f0 !important;
+  border:none !important;
+  outline:none !important;
+  padding: 6px !important;
+  border-radius: 4px !important;
+  color: rgb(79, 79, 79) !important;
+  margin: 2px !important;
+}
+ [data-testid="formioContainer"].profile-form .choices__item .choices__button {
+    filter: invert(1) !important;  
+    border: none !important;
+}
 
 .field-required:after {
   display: none !important;

@@ -26,7 +26,7 @@ export default function TaxSheet() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const { data: payrollPeriods } =
-    useTaxSheetPayrollPriodsData() as {
+    useTaxSheetPayrollPriodsData(user?.company || null) as {
       data: PayrollPeriod[] | undefined;
     };
   const [selectedPeriod, setSelectedPeriod] = useState<string>(payrollPeriods?.[0]?.name || "");
@@ -50,6 +50,7 @@ export default function TaxSheet() {
 
   const { data: taxsheetData } = useTaxSheetData(
     user?.employee || null,
+    user?.company || null,
     selectedPeriod || null
   ) as { data: TaxSheetData | undefined };
 
@@ -149,15 +150,13 @@ export default function TaxSheet() {
       </header>
 
       <div className="overflow-x-auto border rounded-lg">
-        <div
-          className="min-w-max"
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${
-              taxsheetData.months.length + 2
-            }, minmax(120px, 1fr))`,
-          }}
-        >
+<div
+  className="min-w-max"
+  style={{
+    display: "grid",
+    gridTemplateColumns: `repeat(${(taxsheetData?.months?.length || 0) + 2}, minmax(120px, 1fr))`,
+  }}
+>
           <div className="bg-gray-50 border-b px-4 py-2 text-sm font-semibold">
             Particulars
           </div>

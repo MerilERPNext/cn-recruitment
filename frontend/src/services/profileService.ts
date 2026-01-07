@@ -35,7 +35,7 @@ export const profileService = {
     include_values?: number;
   }): Promise<IField[]> => {
     const response = await FrappeAPI.callMethod(
-      "nextai.api.doctype_meta.get_fields",
+      "cn_hrms_core.cn_hrms_core.apis.doctype_meta.get_fields",
       {
         doctype: doctype,
         docname: docname,
@@ -62,11 +62,9 @@ export const profileService = {
   },
   getEmployeeAppreciations: async (): Promise<Award[] | null> => {
     try {
-      const result = await FrappeAPI.getDocumentList("Award", {
-        fields: ["*"],
-      });
-
-      return (result?.data as unknown as Award[]) || [];
+      const result = await FrappeAPI.getMethod("chatnext_work_connect.chatnext_work_connect.api.badge.get_badge_types");
+      console.log(result, "--------------------------------->>>")
+      return (result as unknown as Award[]) || null;
     } catch (e) {
       throw new Error(
         `Some error occured while fetching employee awards.- ${e}`

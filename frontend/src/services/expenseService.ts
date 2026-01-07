@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
+  ExpenseCategoryType,
+  ExpensePolicyQuestionsResponse,
+} from "../types/expense";
+import {
   CalculateExpenseParams,
   CalculateExpenseResponse,
   ExpenseTypeFieldsResponse,
@@ -278,5 +282,26 @@ export const expenseService = {
       console.error("Error while adding comment:", error);
       throw error;
     }
+  },
+
+  //get Expense type general/relocation
+  getExpenseCategoryTypes: async (): Promise<ExpenseCategoryType[]> => {
+    const response = await FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.fiter_category_types"
+    );
+
+    return Array.isArray(response) ? response : [];
+  },
+
+  //get expense policy questions
+  getExpensePolicyQuestions: async (
+    categoryName?: string
+  ): Promise<ExpensePolicyQuestionsResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_category_questions.get_expense_category_questions",
+      categoryName ? { category_name: categoryName } : {}
+    );
+
+    return response as ExpensePolicyQuestionsResponse;
   },
 };
