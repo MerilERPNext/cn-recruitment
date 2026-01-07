@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import img from "../../../assets/pngegg.png";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails, useEmployee } from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
   useDifinitaionNameForSeparation,
@@ -13,14 +13,20 @@ import {
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./Component/ApprovalTracker";
 import { Loader2 } from "lucide-react";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 const ConfirmationWorkflow = () => {
   const { data: userId } = useLoggedInUser();
   const { data: employee_name } = useCurrentEmployeeAllDetails(userId || "");
+  const { targetEmployeeId, isViewingOtherUser } =
+    useTargetUser();
+  const { data: targetEmployee } = useEmployee(targetEmployeeId);
+
   const doctype_name = "Employee";
   const doctype = "Employee Confirmation";
-  const document_name = employee_name?.name || "";
-  const { data: definitionName } = useDifinitaionNameForSeparation();
+  const document_name = isViewingOtherUser ? targetEmployee?.name || "" : employee_name?.name || "";
+  const { data: definitionName, refetch } = useDifinitaionNameForSeparation();
+  const triggerRefetch = () => { refetch(); };
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
@@ -34,6 +40,8 @@ const ConfirmationWorkflow = () => {
   const confirmationData = getFunnelData("Confirmation");
   const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
+
+  console.log("confirmationData", confirmationData)
 
   const { data } = useChatAssistant(
     doctype_name,
@@ -72,10 +80,9 @@ const ConfirmationWorkflow = () => {
       {item ?
         <main className="min-h-full bg-background mb-2">
           <div className="max-w-full">
-            <ApprovalTracker data={item} />
+            <ApprovalTracker triggerRefetch={triggerRefetch} data={item} />
           </div>
         </main>
-
         :
         <div className=" items-start  mb-6">
           <div className="   mt-2  min-h-auto  flex   flex-col   items-center   justify-center   rounded-xl      py-4">

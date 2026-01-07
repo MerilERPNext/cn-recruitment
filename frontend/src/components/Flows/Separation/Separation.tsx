@@ -2,23 +2,27 @@
 import { Loader2 } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import { useConfirmationAndseparation } from "../../../hooks/useConfiremnation";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails, useEmployee } from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
   useDifinitaionNameForSeparation,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
-import SeparationApprovalTracker from "./Component/ApprovalTracker";
+import ApprovalTracker from "../Confirmation/Component/ApprovalTracker";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 const Separation = () => {
   const { data: userId } = useLoggedInUser();
   const { data: employee_name } = useCurrentEmployeeAllDetails(userId || "");
   const doctype_name = "Employee";
   const doctype = "Employee Separation";
-  const document_name = employee_name?.name || "";
+  const { targetEmployeeId, isViewingOtherUser } =
+    useTargetUser();
+  const { data: targetEmployee } = useEmployee(targetEmployeeId);
+  const document_name = isViewingOtherUser ? targetEmployee?.name || "" : employee_name?.name || "";
   const { data: definitionName } = useDifinitaionNameForSeparation();
-  const { data: confirmationCreationData, isLoading } = useConfirmationAndseparation(doctype);
+  const { data: confirmationCreationData, isLoading, refetch: triggerRefetch } = useConfirmationAndseparation(doctype);
   const item = confirmationCreationData?.[0];
 
   function getFunnelData(trigger_category: string) {
@@ -70,7 +74,7 @@ const Separation = () => {
         {item ? (
           <main className="min-h-full bg-background mb-2">
             <div className="max-w-full">
-              <SeparationApprovalTracker data={item} />
+              <ApprovalTracker triggerRefetch={triggerRefetch} data={item} />
             </div>
           </main>
         ) : (

@@ -1,15 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import ApprovalDetails from "./ApprovalDetails"
 import ApprovalModal from "./ApprovalModel"
-
-interface ApprovalStage {
+import CardTable from "../../../shared/CardTable"
+import { FormIOComponent } from "../../../../types/formio"
+import CardStages from "./StageCard"
+export interface ApprovalStage {
   stage_name: string | null
   user: string | null
   role: string | null
-  status: "Approved" | "Pending" | "Rejected"
+  user_id: string | null;
+  status: "Approved" | "Pending" | "Rejected";
+  form_json?: {
+    components: FormIOComponent[]
+  }
 }
 
 interface ReferenceDocument {
@@ -22,6 +28,7 @@ interface ReferenceDocument {
 }
 
 interface ApprovalData {
+  allocated_to: string;
   todo_id: string
   reference_type: string
   reference_name: string
@@ -31,14 +38,22 @@ interface ApprovalData {
   role: string
   approval_stages_status: ApprovalStage[]
   reference_document: ReferenceDocument
+  custom_doctype_actions: string;
 }
 
 interface ApprovalTrackerProps {
-  data: ApprovalData
+  data: ApprovalData,
+  triggerRefetch: () => void
 }
 
-export default function ApprovalTracker({ data }: ApprovalTrackerProps) {
+export default function ApprovalTracker({ data, triggerRefetch }: ApprovalTrackerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const actions = useMemo(() => {
+    return data?.custom_doctype_actions
+      ? JSON.parse(data?.custom_doctype_actions)
+      : [];
+  }, [data])
 
   if (!data) {
     return (
@@ -49,13 +64,12 @@ export default function ApprovalTracker({ data }: ApprovalTrackerProps) {
     );
   }
   const allStagesComplete =
-  data?.approval_stages_status?.every(
-    (stage) => stage.status === "Approved" || stage.status === "Rejected"
-  ) ?? false
+    data?.approval_stages_status?.every(
+      (stage) => stage.status === "Approved" || stage.status === "Rejected"
+    ) ?? false
 
   const pendingCount =
-  data?.approval_stages_status?.filter((s) => s.status === "Pending").length ?? 0
-
+    data?.approval_stages_status?.filter((s) => s.status === "Pending").length ?? 0
 
   return (
     <div className="space-y-6">
@@ -104,12 +118,25 @@ export default function ApprovalTracker({ data }: ApprovalTrackerProps) {
             {allStagesComplete ? (
               <ApprovalDetails data={data} />
             ) : (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-              >
-               See Approval Status 
-              </button>
+              <div className="w-full">
+                <CardTable
+                  titles={[
+                    "Stage",
+                    "Assigned To",
+                    "Status",
+                    "Action"
+                  ]}
+                >
+                  <div className="flex flex-col pt-1">
+                    {data?.approval_stages_status.map((item, idx) => {
+                      const isActive = item.status === "Pending" && (idx == 0 || data?.approval_stages_status[idx - 1].status === "Pending");
+                      return (
+                        <CardStages triggerRefetch={triggerRefetch} data={item} assignedTo={{ emp_id: data?.allocated_to, role: data?.role }} actions={actions} isActive={isActive} todoId={data.todo_id} />
+                      );
+                    })}
+                  </div>
+                </CardTable>
+              </div>
             )}
           </div>
         </div>
@@ -120,3 +147,5 @@ export default function ApprovalTracker({ data }: ApprovalTrackerProps) {
     </div>
   )
 }
+
+
