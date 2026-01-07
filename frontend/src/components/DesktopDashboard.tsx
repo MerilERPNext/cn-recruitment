@@ -343,7 +343,7 @@ export default function DesktopDashboard() {
   const currentUserIsAdmin = currentUser?.roles?.some(
     (role) => "Administrator" === role.role
   );
-
+  
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Collapsible Sidebar */}
@@ -469,19 +469,17 @@ export default function DesktopDashboard() {
                       {/* Text Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900">
-                          {currentEmployee?.employee_name || "Temp User"}
+                          {currentEmployee?.employee_name }
                         </h3>
                         <p className="text-sm text-gray-600 break-words whitespace-normal max-w-xs">
-                          {currentEmployee?.custom_designation_name ||
-                            "Temp Designation"}
+                          {currentEmployee?.custom_designation_name}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Employee ID: {currentEmployee?.employee || "N/A"}
+                          Employee ID: {currentEmployee?.employee}
                         </p>
                         <p className="text-xs text-gray-500 break-words whitespace-normal max-w-xs">
                           {currentEmployee?.company_email ||
-                            currentEmployee?.personal_email ||
-                            "Temp Email"}
+                            currentEmployee?.personal_email}
                         </p>
                       </div>
                     </div>
