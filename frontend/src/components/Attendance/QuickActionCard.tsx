@@ -123,7 +123,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
                             key={idx}
                             onClick={action.onClick}
                             size="sm"
-                            variant={action.type === "primary" ? "contain" : "subtle"}
+                            variant={action.type === "primary" ? "soft" : "subtle"}
                             className="font-bold text-[9px] uppercase tracking-widest px-3 py-1 h-auto"
                         >
                             {action.label}
