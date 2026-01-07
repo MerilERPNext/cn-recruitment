@@ -98,13 +98,13 @@ export const getBenefitClaimLockingPeriod = async (employee: string, payroll_per
     return response;
 };
 
-export const getYearFilterOptions = async (company: string) => {
+export const getYearFilterOptions = async (company: string): Promise<{ name: string }[]> => {
     const response = await FrappeAPI.callMethod(
         "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.get_payroll_period",
         {
             company
         }
     );
-    return response;
+    return response as { name: string }[];
 };
 
