@@ -260,30 +260,30 @@
         },
         {
           "label": "From Time <span style='color:red;margin-left:3px;'>*</span>",
-          "errorLabel": "From Time",
           "key": "custom_from_time",
           "type": "time",
+          "input": true,
           "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.start_time;}",
+          "customOnChange": "if (value) { const d = moment(value, ['h:mm A','HH:mm']); value = d.format('HH:mm'); }",
           "redrawOn": "options.shiftRedraw",
           "allowCalculateOverride": true,
-          "input": true,
-          "enableDate": false,
-          "enableTime": true,
-          "format": "HH:mm:ss",
-          "placeholder": "hh:mm",
-          "customClass": "mb-4",
           "validate": {
             "customMessage": "From Time is required",
             "custom": "valid = ['Clockin', 'Short Attendance Request', 'Attendance Adjustment'].includes(data.request_type) ? !!input : true;"
           },
           "customConditional": "show = ['Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(data.request_type || '');",
+          "enableDate": false,
+          "enableTime": true,
+          "format": "hh:mm A",
+          "placeholder": "hh:mm AM",
           "widget": {
             "type": "calendar",
-            "time_24hr": true,
             "noCalendar": true,
             "enableTime": true,
-            "dateFormat": "H:i"
-          }
+            "time_24hr": false,
+            "dateFormat": "h:i K"
+          },
+          "customClass": "mb-4"
         },
         {
           "label": "To Time <span style='color:red;margin-left:3px;'> *</span>",
@@ -296,8 +296,8 @@
           "input": true,
           "enableDate": false,
           "enableTime": true,
-          "format": "HH:mm:ss",
-          "placeholder": "hh:mm",
+          "format": "hh:mm A",
+          "placeholder": "hh:mm AM",
           "customClass": "mb-4",
           "validate": {
             "customMessage": "To Time is required",
@@ -306,10 +306,10 @@
           "customConditional": "show = [ 'Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
           "widget": {
             "type": "calendar",
-            "time_24hr": true,
             "noCalendar": true,
             "enableTime": true,
-            "dateFormat": "H:i"
+            "time_24hr": false,
+            "dateFormat": "h:i K"
           }
         },
         {
