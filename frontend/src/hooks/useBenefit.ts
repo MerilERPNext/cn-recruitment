@@ -142,8 +142,8 @@ export const useGetYearFilterOptions = (company: string): UseQueryResult<
     { name: string }[],
     Error
 > => {
-    return useQuery<any, Error>({
-        queryKey: ["benefit", "benefit-claim-locking", company],
+    return useQuery<{ name: string }[], Error>({
+        queryKey: ["benefit", "year-filter-options", company],
         queryFn: () => getYearFilterOptions(company),
         enabled: !!company
         // ...defaultQueryOptions,
