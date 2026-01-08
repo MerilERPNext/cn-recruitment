@@ -1,4 +1,5 @@
 import { BulkActionProps } from "../../../types/attendance";
+import { Typography } from "../../shared/atoms/Typography";
 
 export function BulkActionBar({
   selectedIds,
@@ -12,19 +13,23 @@ export function BulkActionBar({
   const allSelected = selectedIds.length === pendingRequests.length;
 
   return (
-    <div className="p-2 px-6 bg-blue-50 rounded-xl lg:rounded-none">
+    <div className="p-2 px-6 bg-primary/10 rounded-xl lg:rounded-none">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           <input type="checkbox" checked={allSelected} onChange={onSelectAll} />
-          <span className="text-sm font-medium text-blue-600">
+          <Typography
+            variant="bodySmall"
+            color="primary"
+            className="font-medium"
+          >
             Select all pending requests
-          </span>
+          </Typography>
         </div>
       </div>
-      <span className="text-xs font-medium text-gray-400">
+      <Typography variant="bodySmall" color="disabled" className="font-medium">
         Note - Requests which require other actions are not selectable for bulk
         approval
-      </span>
+      </Typography>
 
       {selectedIds.length > 0 && (
         <div className="flex space-x-2 mt-2">

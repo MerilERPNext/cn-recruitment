@@ -37,6 +37,21 @@ export default {
           800: "#211774",
           900: "#140D52",
         },
+
+        // primary: {
+        //   DEFAULT: "#138CFF", // PW Indigo 500
+        //   10: "#F4FBFF",
+        //   50: "#E8F4FF",
+        //   100: "#D1E9FF ",
+        //   200: "#ABD6FF",
+        //   300: "#7CBFFF",
+        //   400: "#4BA8FF",
+        //   500: "#138CFF",
+        //   600: "#1181EB",
+        //   700: "#1072D0 ",
+        //   800: "#0C5EAD",
+        //   900: "#0A5295",
+        // },
         secondary: {
           DEFAULT: "#6172F3",
           10: "#F5F8FF",
@@ -111,7 +126,6 @@ export default {
           600: "#0284C7",
           800: "#075985",
         },
-
 
         "gray-darker": "#504747",
       },
@@ -245,16 +259,15 @@ export default {
         /* =============================== * BODY * =============================== */
         body: ["16px", { lineHeight: "24px", fontWeight: "400" }],
         "body-medium": ["16px", { lineHeight: "24px", fontWeight: "500" }],
-        "md": ["16px", { lineHeight: "24px", fontWeight: "500" }],
+        md: ["16px", { lineHeight: "24px", fontWeight: "500" }],
         "body-semibold": ["16px", { lineHeight: "24px", fontWeight: "600" }],
 
         /* =============================== * SMALL BODY * =============================== */
         "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
-        "sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+        sm: ["14px", { lineHeight: "20px", fontWeight: "400" }],
 
         /* =============================== * TINY / LABEL * =============================== */
         label: ["10px", { lineHeight: "16px", fontWeight: "500" }],
-
       },
       flex: {
         2: "2 2 0%",

@@ -7,6 +7,8 @@ interface HeaderBarProps {
   onBack?: () => void;
   rightSlot?: React.ReactNode;
   leftIcon?: React.ReactNode; // Optional custom left icon
+  bgColor?: string;
+  className?: string;
 }
 
 const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -15,9 +17,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   onBack,
   rightSlot,
   leftIcon,
+  bgColor = "white",
+  className = "",
 }) => {
   return (
-    <div className="flex w-full min-h-[60px] md:rounded-lg  items-center sticky top-0 z-50 justify-between px-4 py-3 bg-white md:z-1">
+    <div
+      className={`flex w-full min-h-[60px] md:rounded-lg  items-center sticky top-0 z-50 justify-between px-4 py-3 md:z-1 bg-${bgColor} ${className}`}
+    >
       <div className="flex items-center w-full">
         {showBackButton && (
           <button

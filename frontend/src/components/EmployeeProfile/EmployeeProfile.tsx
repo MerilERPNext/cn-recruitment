@@ -39,8 +39,6 @@ export interface PersonalInfoProps {
   refetch?: () => void;
 }
 
-
-
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId } = useTargetUser();
@@ -286,25 +284,40 @@ const EmployeeProfile: React.FC = () => {
                 </button>
               </div>
               <div className="flex flex-col flex-1 min-w-0 pt-0.5">
-                <Typography variant="h3" className="font-bold truncate tracking-tight">
+                <Typography
+                  variant="h3"
+                  className="font-bold truncate tracking-tight"
+                >
                   {user?.employee_name}
                 </Typography>
-                {user?.designation && (
-                  <Tooltip content={user?.designation}>
-                    <Typography variant="bodySmall" color="secondary" className="font-medium truncate mt-1 flex gap-1.5 items-center">
+                {user?.custom_designation_name && (
+                  <Tooltip content={user?.custom_designation_name}>
+                    <Typography
+                      variant="bodySmall"
+                      color="secondary"
+                      className="font-medium truncate mt-1 flex gap-1.5 items-center"
+                    >
                       <Award size={14} className="text-primary-500" />
-                      <span>{user?.designation}</span>
+                      <span>{user?.custom_designation_name}</span>
                     </Typography>
                   </Tooltip>
                 )}
                 {user?.branch && (
-                  <Typography variant="bodySmall" color="secondary" className="font-medium truncate mt-1 flex gap-1.5 items-center">
+                  <Typography
+                    variant="bodySmall"
+                    color="secondary"
+                    className="font-medium truncate mt-1 flex gap-1.5 items-center"
+                  >
                     <MapPin size={14} className="text-primary-500" />
                     <span>{user?.branch}</span>
                   </Typography>
                 )}
                 {user?.employee && (
-                  <Typography variant="label" color="disabled" className="font-medium mt-1.5 flex gap-1.5 items-center uppercase tracking-wider">
+                  <Typography
+                    variant="label"
+                    color="disabled"
+                    className="font-medium mt-1.5 flex gap-1.5 items-center uppercase tracking-wider"
+                  >
                     <IdCard size={14} />
                     <span>{user?.employee}</span>
                   </Typography>
@@ -314,9 +327,21 @@ const EmployeeProfile: React.FC = () => {
                     <Badge
                       label={user?.custom_employment_status}
                       size="sm"
-                      backgroundColor={user?.status === "Active" ? "bg-success-50/50" : "bg-gray-50"}
-                      textColor={user?.status === "Active" ? "text-success" : "text-gray-600"}
-                      pulse={user?.status === "Active" ? { show: true, color: "bg-success" } : undefined}
+                      backgroundColor={
+                        user?.status === "Active"
+                          ? "bg-success-50/50"
+                          : "bg-gray-50"
+                      }
+                      textColor={
+                        user?.status === "Active"
+                          ? "text-success"
+                          : "text-gray-600"
+                      }
+                      pulse={
+                        user?.status === "Active"
+                          ? { show: true, color: "bg-success" }
+                          : undefined
+                      }
                     />
                   )}
                   {showAttendanceAssignment && (
@@ -345,10 +370,11 @@ const EmployeeProfile: React.FC = () => {
                 key={tab.key}
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                  ? "border-primary-600 text-primary-600"
-                  : "border-transparent text-gray-600 hover:text-primary-600"
-                  }`}
+                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${
+                  activeTab === tab.key
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-gray-600 hover:text-primary-600"
+                }`}
               >
                 {tab.label}
               </Button>
@@ -391,7 +417,12 @@ const EmployeeProfile: React.FC = () => {
           {userIsLoading ? (
             <HeaderInfoSkeleton />
           ) : (
-            <Card padding="none" radius="none" shadow="none" className="bg-white border rounded-tl-xl rounded-tr-xl p-8 border-gray-100">
+            <Card
+              padding="none"
+              radius="none"
+              shadow="none"
+              className="bg-white border rounded-tl-xl rounded-tr-xl p-8 border-gray-100"
+            >
               <div className="flex items-center justify-between gap-8 w-full">
                 <div className="flex items-center gap-8 flex-1">
                   <input
@@ -415,7 +446,8 @@ const EmployeeProfile: React.FC = () => {
                       className="absolute bottom-[-10px] right-[-10px] bg-primary-600 h-10 w-10 flex justify-center items-center text-white rounded-2xl shadow-lg hover:bg-primary-700 transition-all hover:scale-110 active:scale-95 z-10"
                       aria-label="Upload new avatar"
                     >
-                      {updateDocMutation.isPending || uploadMutation.isPending ? (
+                      {updateDocMutation.isPending ||
+                      uploadMutation.isPending ? (
                         <CircularLoader size="sm" color="white" />
                       ) : (
                         <Pencil size={18} />
@@ -424,26 +456,39 @@ const EmployeeProfile: React.FC = () => {
                   </div>
                   <div className="flex flex-col min-w-0">
                     <div className="space-y-1">
-                      <Typography variant="h2" className="font-bold text-gray-900 tracking-tight">
+                      <Typography
+                        variant="h2"
+                        className="font-bold text-gray-900 tracking-tight"
+                      >
                         {user?.employee_name}
                       </Typography>
                       <div className="flex flex-wrap items-center gap-4">
-                        {user?.designation && (
-                          <Tooltip content={user?.designation}>
-                            <Typography variant="bodyMedium" className="font-semibold text-primary-600 flex gap-2 items-center">
+                        {user?.custom_designation_name && (
+                          <Tooltip content={user?.custom_designation_name}>
+                            <Typography
+                              variant="bodyMedium"
+                              className="font-semibold text-primary-600 flex gap-2 items-center"
+                            >
                               <Award size={16} />
-                              <span>{user?.designation}</span>
+                              <span>{user?.custom_designation_name}</span>
                             </Typography>
                           </Tooltip>
                         )}
                         {user?.branch && (
-                          <Typography variant="bodyMedium" className="font-medium flex gap-2 items-center text-primary-500">
+                          <Typography
+                            variant="bodyMedium"
+                            className="font-medium flex gap-2 items-center text-primary-500"
+                          >
                             <MapPin size={16} />
                             <span>{user?.branch}</span>
                           </Typography>
                         )}
                         {user?.employee && (
-                          <Typography variant="bodySmall" color="disabled" className="text-primary-500 font-medium flex gap-2 items-center uppercase tracking-widest">
+                          <Typography
+                            variant="bodySmall"
+                            color="disabled"
+                            className="text-primary-500 font-medium flex gap-2 items-center uppercase tracking-widest"
+                          >
                             <IdCard size={16} />
                             <span>{user?.employee}</span>
                           </Typography>
@@ -454,9 +499,21 @@ const EmployeeProfile: React.FC = () => {
                           <Badge
                             label={user?.custom_employment_status}
                             size="md"
-                            backgroundColor={user?.status === "Active" ? "bg-success-100/50" : "bg-gray-100"}
-                            textColor={user?.status === "Active" ? "text-success" : "text-gray-600"}
-                            pulse={user?.status === "Active" ? { show: true, color: "bg-success" } : undefined}
+                            backgroundColor={
+                              user?.status === "Active"
+                                ? "bg-success-100/50"
+                                : "bg-gray-100"
+                            }
+                            textColor={
+                              user?.status === "Active"
+                                ? "text-success"
+                                : "text-gray-600"
+                            }
+                            pulse={
+                              user?.status === "Active"
+                                ? { show: true, color: "bg-success" }
+                                : undefined
+                            }
                           />
                         )}
                         {showAttendanceAssignment && (
@@ -485,10 +542,11 @@ const EmployeeProfile: React.FC = () => {
                   key={tab.key}
                   variant="subtle"
                   onClick={() => scrollToSection(tab.key)}
-                  className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-600 hover:text-primary"
-                    }`}
+                  className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
+                    activeTab === tab.key
+                      ? "border-primary text-primary"
+                      : "border-transparent text-gray-600 hover:text-primary"
+                  }`}
                 >
                   {tab.label}
                 </Button>

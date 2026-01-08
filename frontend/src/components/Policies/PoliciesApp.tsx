@@ -21,7 +21,7 @@ const PoliciesApp: React.FC = () => {
   }, [location.pathname]);
 
   const mobileLayout = (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen">
       <HeaderBar title={title} onBack={() => navigate(-1)} />
       <main className="md:p-4 z-100 flex-grow overflow-y-auto">
         <Outlet />

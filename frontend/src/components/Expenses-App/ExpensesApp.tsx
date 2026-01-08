@@ -116,26 +116,7 @@ const ExpensesApp: React.FC = () => {
   };
 
   const mobileLayout = (
-    <div className="flex flex-col min-h-screen bg-white">
-      <style>{`
-        :root {
-          --primary-color: #0c7ff2;
-          --secondary-color: #60758a;
-          --text-primary: #111418;
-          --text-secondary: #60758a;
-          --background-light: #ffffff;
-          --background-medium: #f0f2f5;
-          --border-light: #dbe0e6;
-        }
-        .scrollbar-hidden {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .scrollbar-hidden::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-
+    <div className="flex flex-col min-h-screen">
       <div className="sticky top-0 z-50 bg-white border-b">
         <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
         <NavigationTabs
@@ -152,7 +133,6 @@ const ExpensesApp: React.FC = () => {
         <div className="sticky mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
           <div className="max-w-4xl mx-auto flex space-x-4">
             <Button
-              bgColor="blue-600"
               size="lg"
               onClick={handleAddNew}
               className="hover:bg-blue-700 flex-1"
@@ -167,12 +147,7 @@ const ExpensesApp: React.FC = () => {
   );
 
   const actionButton = shouldShowActionButton() ? (
-    <Button
-      bgColor="blue-600"
-      size="lg"
-      onClick={handleAddNew}
-      className="hover:bg-blue-700"
-    >
+    <Button size="lg" onClick={handleAddNew} className="hover:bg-blue-700">
       {activeTab === "Expenses" && "+ Add Expense"}
       {activeTab === "My Advances" && "+ Request Advances"}
     </Button>
@@ -180,7 +155,7 @@ const ExpensesApp: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Expenses" actionButton={actionButton}>
-      <div className="flex flex-col h-full bg-white">
+      <div className="flex flex-col h-full">
         <div className="flex-1 overflow-y-auto">
           <Outlet />
           {renderExpenseFormModal()}

@@ -16,6 +16,8 @@ import DropdownMenu from "../shared/DropDownMenu";
 import BalanceDetailsDrawer from "./LeaveBalance/BalanceDetailsDrawer";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import { Card } from "../shared/atoms/Card";
+import { Typography } from "../shared/atoms/Typography";
 
 type LeaveTransactionEntry = {
   type: string;
@@ -58,29 +60,36 @@ const LeaveTransactionCard: React.FC<{
       {data.map((entry, idx) => (
         <div
           key={`${entry.type}-${idx}`}
-          className="border border-gray-200 rounded-lg mb-2 shadow-md"
+          className="rounded-xl mb-2 hover:shadow-md"
         >
           <button
             type="button"
             aria-expanded={openIndex === idx}
-            className="w-full flex justify-between items-center p-4 bg-white rounded-lg"
+            className="w-full flex justify-between items-center p-4 rounded-t-xl bg-white"
             onClick={() => toggle(idx)}
           >
-            <span className="font-medium">{entry.type}</span>
-            <span className="text-base md:text-lg  font-bold text-gray-700">
-              {entry.total.toString().padStart(2, "0")}
-            </span>
+            <Typography variant="subheading" color="title">
+              {entry.type}
+            </Typography>
+
+            <Typography variant="subheading" color="title">
+              {entry.total.toString()}
+            </Typography>
           </button>
 
           {openIndex === idx && (
-            <div className="grid grid-cols-4 gap-2 p-4 bg-gray-50">
+            <div className="grid grid-cols-4 gap-2 p-4 bg-primary/10 rounded-b-xl">
               {entry.monthly.map((count, mIdx) => (
                 <div
                   key={`${entry.type}-${mIdx}`}
-                  className="text-sm text-center p-2 border rounded-lg bg-white shadow-sm"
+                  className="text-sm text-center p-2 border rounded-lg bg-white"
                 >
-                  <div className="font-medium">{monthLabels[mIdx]}</div>
-                  <div className="text-blue-600 font-bold">{count}</div>
+                  <Typography variant="bodyMedium" color="title">
+                    {monthLabels[mIdx]}
+                  </Typography>
+                  <Typography variant="bodyMedium" color="primary">
+                    {count}
+                  </Typography>
                 </div>
               ))}
             </div>
@@ -187,10 +196,11 @@ const LeaveBalance: React.FC = () => {
       )}
 
       {showTransactions ? (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col md:static md:max-w-full">
+        <div className="fixed inset-0 z-50 flex flex-col md:static md:max-w-full">
           <HeaderBar
             title="Transactions History"
             onBack={() => toggleTransactions(null)}
+            bgColor=""
           />
           <main className="flex-1 overflow-y-auto p-4">
             <LeaveTransactionCard
@@ -204,90 +214,95 @@ const LeaveBalance: React.FC = () => {
           <div className="md:pt-4 md:p-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 max-w-4xl mx-auto">
               {leaveBalance.map((leave) => (
-                <div
-                  key={leave?.type}
-                  className="rounded-xl p-4 md:mb-4 md:mb-0 bg-white border border-gray-100 shadow-md"
-                >
-                  <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
-                    <span className="text-left base-title md:module-title">
-                      {leave?.type}
-                    </span>
-                    <div className="flex items-center gap-3">
-                      {leave?.visibility_flags?.show_carry_over && (
-                        <span className="text-sm text-green-800">
-                          {leave.carry_over} Carry Forwarded
-                        </span>
-                      )}
+                <div key={leave?.type}>
+                  <Card shadow="sm" radius="xl" className="hover:shadow-md">
+                    <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
+                      <Typography variant="subheading" color="title">
+                        {leave?.type}
+                      </Typography>
+                      <div className="flex items-center gap-3">
+                        {leave?.visibility_flags?.show_carry_over && (
+                          <Typography color="success">
+                            {leave.carry_over} Carry Forwarded
+                          </Typography>
+                        )}
 
-                      {canRequestLeave && (
-                        <button
-                          onClick={() =>
-                            openModal({
-                              source: "balances",
-                              leaveType: leave?.type,
-                            })
-                          }
-                          className="rounded-full bg-blue-100 p-0.5"
+                        {canRequestLeave && (
+                          <button
+                            onClick={() =>
+                              openModal({
+                                source: "balances",
+                                leaveType: leave?.type,
+                              })
+                            }
+                            className="rounded-full bg-primary/10 text-primary p-0.5"
+                          >
+                            <span>
+                              <Plus size={20} />
+                            </span>
+                          </button>
+                        )}
+
+                        <DropdownMenu
+                          placement="bottom-left"
+                          className="text-gray-800 hover:primary-10"
+                          items={[
+                            {
+                              label: "Details",
+                              icon: <ListChecks size={16} />,
+                              onClick: () => handleOpenDrawer(leave),
+                            },
+                          ]}
                         >
-                          <span>
-                            <Plus size={20} />
-                          </span>
-                        </button>
-                      )}
-
-                      <DropdownMenu
-                        placement="bottom-left"
-                        className="text-gray-800"
-                        items={[
-                          {
-                            label: "Details",
-                            icon: <ListChecks size={16} />,
-                            onClick: () => handleOpenDrawer(leave),
-                          },
-                        ]}
-                      >
-                        <EllipsisVertical size={18} />
-                      </DropdownMenu>
+                          <EllipsisVertical
+                            size={18}
+                            className="text-primary"
+                          />
+                        </DropdownMenu>
+                      </div>
                     </div>
-                  </div>
-                  <div
-                    className="flex justify-between mt-2 gap-2 cursor-pointer"
-                    onClick={() => toggleTransactions(leave.type)}
-                  >
-                    {leave?.visibility_flags?.show_entitled && (
-                      <div className="flex-1 text-center border border-blue-100 rounded-lg py-2 flex flex-col items-center justify-center bg-blue-50">
-                        <FaRegCalendarCheck className="w-6 h-6 text-blue-600 mb-1" />
-                        <p className="md:text-lg text-base font-bold text-blue-800">
-                          {leave.entitled}
-                        </p>
-                        <p className="text-xs font-medium text-blue-700">
-                          Entitled
-                        </p>
-                      </div>
-                    )}
-                    {leave?.visibility_flags?.show_availed && (
-                      <div className="flex-1 text-center border border-green-100 rounded-lg py-2 flex flex-col items-center justify-center bg-green-50">
-                        <FaClockRotateLeft className="w-6 h-6 text-green-600 mb-1" />
-                        <p className="md:text-lg text-base font-bold text-green-800">
-                          {leave.availed}
-                        </p>
-                        <p className="text-xs font-medium text-green-700">
-                          Availed
-                        </p>
-                      </div>
-                    )}
-                    {leave?.visibility_flags?.show_balance && (
-                      <div className="flex-1 text-center border border-orange-100 rounded-lg py-2 flex flex-col items-center justify-center bg-orange-50">
-                        <FiPieChart className="w-6 h-6 text-orange-600 mb-1" />
-                        <p className="md:text-lg text-base font-bold text-orange-800">
-                          {leave.balance}
-                        </p>
-                        <p className="text-xs font-medium text-orange-700">
-                          Balance
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                    <div
+                      className="flex justify-between mt-2 gap-2 cursor-pointer"
+                      onClick={() => toggleTransactions(leave.type)}
+                    >
+                      {leave?.visibility_flags?.show_entitled && (
+                        <div className="flex-1 text-center  rounded-xl py-2 flex flex-col items-center justify-center bg-primary/10">
+                          <FaRegCalendarCheck className="w-6 h-6 text-primary mb-1" />
+                          <p className="md:text-lg text-base font-bold text-primary">
+                            {leave.entitled}
+                          </p>
+                          <Typography color="primary" variant="bodyMedium">
+                            Entitled
+                          </Typography>
+                        </div>
+                      )}
+                      {leave?.visibility_flags?.show_availed && (
+                        <div className="flex-1 text-center  rounded-xl py-2 flex flex-col items-center justify-center bg-success/10">
+                          <FaClockRotateLeft className="w-6 h-6 text-success mb-1" />
+                          <p className="md:text-lg text-base font-bold text-success">
+                            {leave.availed}
+                          </p>
+                          <Typography color="success" variant="bodyMedium">
+                            Availed
+                          </Typography>
+                        </div>
+                      )}
+                      {leave?.visibility_flags?.show_balance && (
+                        <div className="flex-1 text-center rounded-xl py-2 flex flex-col items-center justify-center bg-warning/20">
+                          <FiPieChart className="w-6 h-6 text-orange-700 mb-1" />
+                          <p className="md:text-lg text-base font-bold text-orange-700">
+                            {leave.balance}
+                          </p>
+                          <Typography
+                            variant="bodyMedium"
+                            className="text-orange-700"
+                          >
+                            Balance
+                          </Typography>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
                 </div>
               ))}
             </div>

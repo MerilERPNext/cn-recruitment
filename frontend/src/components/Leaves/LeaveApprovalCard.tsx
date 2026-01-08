@@ -108,7 +108,7 @@ const LeaveApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -117,7 +117,7 @@ const LeaveApprovalCard = ({
             <div className="flex items-center justify-start">
               <input
                 type="checkbox"
-                className="accent-blue-500"
+                className="accent-primary"
                 checked={isSelected}
                 onClick={(e) => e.stopPropagation()}
                 onChange={() => onToggleSelect?.(data?.todo_id)}
