@@ -1,26 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
+import { useMemo } from "react";
+import { formatDashedDate } from "../../../../utils/formatToIndianDate";
+
 
 
 interface ApprovalDetailsProps {
-    data: any;
-  }
+  data: any;
+  title: "Employee Separation" | "Employee Confirmation";
+}
 
 
-export default function ApprovalDetails({ data }: ApprovalDetailsProps) {
+export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
   const doc = data.reference_document
 
-  const detailsFields = [
-    { label: "Employee ID", value: doc.employee },
-    { label: "Employee Name", value: doc.employee_name },
-    { label: "Designation", value: doc.designation },
-    { label: "Department", value: doc.department },
-    { label: "Date of Joining", value: doc.date_of_joining },
-    { label: "Document Type", value: doc.doctype },
-    { label: "Status", value: doc.status },
-    { label: "Reference", value: data.reference_name },
-  ]
+  const detailsFields = useMemo(() => {
+    const fields = [
+      { label: "Employee ID", value: doc.employee },
+      { label: "Employee Name", value: doc.employee_name },
+      { label: "Designation", value: doc.designation },
+      { label: "Department", value: doc.department },
+      { label: "Date of Joining", value: formatDashedDate(doc.date_of_joining) },
+      { label: "Status", value: doc.status },
+    ];
+
+    if (title === "Employee Confirmation") {
+      fields.splice(5, 0, { label: "Probation End Date", value: formatDashedDate(doc.probation_end_date) });
+    }
+
+    return fields;
+  }, [title]);
 
   return (
     <div className="space-y-4">
@@ -38,7 +48,7 @@ export default function ApprovalDetails({ data }: ApprovalDetailsProps) {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Employee Confirmation </h3>
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">{title}</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {detailsFields.map((field, index) => (

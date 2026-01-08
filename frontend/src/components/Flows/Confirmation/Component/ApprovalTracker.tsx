@@ -8,6 +8,7 @@ import CardTable from "../../../shared/CardTable"
 import { FormIOComponent } from "../../../../types/formio"
 import CardStages from "./StageCard"
 export interface ApprovalStage {
+  approval_response_data: string;
   stage_name: string | null
   user: string | null
   role: string | null
@@ -27,8 +28,9 @@ interface ReferenceDocument {
   [key: string]: any
 }
 
-interface ApprovalData {
+export interface ApprovalData {
   allocated_to: string;
+  allocated_to_emp_id: string;
   todo_id: string
   reference_type: string
   reference_name: string
@@ -43,10 +45,10 @@ interface ApprovalData {
 
 interface ApprovalTrackerProps {
   data: ApprovalData,
-  triggerRefetch: () => void
+  For: "Employee Separation" | "Employee Confirmation"
 }
 
-export default function ApprovalTracker({ data, triggerRefetch }: ApprovalTrackerProps) {
+export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const actions = useMemo(() => {
@@ -115,29 +117,29 @@ export default function ApprovalTracker({ data, triggerRefetch }: ApprovalTracke
 
           {/* Action Button or Details */}
           <div className="mt-4">
-            {allStagesComplete ? (
-              <ApprovalDetails data={data} />
-            ) : (
-              <div className="w-full">
-                <CardTable
-                  titles={[
-                    "Stage",
-                    "Assigned To",
-                    "Status",
-                    "Action"
-                  ]}
-                >
-                  <div className="flex flex-col pt-1">
-                    {data?.approval_stages_status.map((item, idx) => {
-                      const isActive = item.status === "Pending" && (idx == 0 || data?.approval_stages_status[idx - 1].status === "Pending");
-                      return (
-                        <CardStages triggerRefetch={triggerRefetch} data={item} assignedTo={{ emp_id: data?.allocated_to, role: data?.role }} actions={actions} isActive={isActive} todoId={data.todo_id} />
-                      );
-                    })}
-                  </div>
-                </CardTable>
-              </div>
+            {allStagesComplete && (
+              <ApprovalDetails data={data} title={For} />
             )}
+            <div className="w-full mt-8">
+              <CardTable
+                titles={[
+                  "Stage",
+                  "Assigned To",
+                  "Status",
+                  "Action"
+                ]}
+              >
+                <div className="flex flex-col pt-1">
+                  {data?.approval_stages_status.map((item, idx) => {
+                    const isActive = item.status === "Pending" && (idx == 0 || data?.approval_stages_status[idx - 1].status != "Pending");
+                    return (
+                      <CardStages data={item} assignedTo={{ user_id: data?.allocated_to, emp_id: data?.allocated_to_emp_id, role: data?.role }} actions={actions} isActive={isActive} todoId={data.todo_id} />
+                    );
+                  })}
+                </div>
+              </CardTable>
+            </div>
+
           </div>
         </div>
       </div>
