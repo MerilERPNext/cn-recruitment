@@ -102,7 +102,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
               onClick={() => handleSelect(option.value)}
               className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${
                 value === option.value
-                  ? "bg-error-50 text-primary-600 font-medium"
+                  ? "bg-primary/10 text-primary-600 font-medium"
                   : "text-gray-700"
               }`}
             >

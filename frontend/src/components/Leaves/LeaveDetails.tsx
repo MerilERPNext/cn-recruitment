@@ -287,7 +287,6 @@ export function LeaveDetailView({
                       }}
                       size="md"
                       bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
                     >
                       {isLoading ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />

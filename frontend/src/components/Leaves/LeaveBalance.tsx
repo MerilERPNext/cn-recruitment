@@ -312,7 +312,7 @@ const LeaveBalance: React.FC = () => {
             <div className="w-full mt-6 px-4 md:hidden">
               <button
                 type="button"
-                className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+                className="w-full py-3 rounded-lg bg-primary text-white font-medium hover:bg-blue-700 transition-colors"
                 onClick={() => openModal()}
               >
                 + Request Leave

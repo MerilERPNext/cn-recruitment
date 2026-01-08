@@ -424,7 +424,6 @@ export function TeamExpenseDetailView({
                     onClick={() => handleAction(action)}
                     size="sm"
                     bgColor={getActionStyles(action).bg}
-                    textColor={getActionStyles(action).text}
                   >
                     {isLoading ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
@@ -696,8 +695,7 @@ export function TeamExpenseDetailView({
                             onClick={() => handleSaveItem(item.id)}
                             disabled={savingItem === item.id}
                             size="sm"
-                            bgColor="blue-100"
-                            textColor="blue-600"
+                            bgColor="primary/10"
                             className="px-4"
                           >
                             {savingItem === item.id ? (
@@ -772,15 +770,13 @@ export function TeamExpenseDetailView({
                   onClick={handleCancelComment}
                   size="sm"
                   bgColor="gray-100"
-                  textColor="gray-700"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSaveComment}
                   size="sm"
-                  bgColor="blue-100"
-                  textColor="blue-600"
+                  bgColor="primary/10"
                   disabled={
                     !rejectionComment.trim() || commentMutation.isPending
                   }
@@ -811,15 +807,13 @@ export function TeamExpenseDetailView({
                   onClick={handleCancelClose}
                   size="sm"
                   bgColor="gray-100"
-                  textColor="gray-700"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleConfirmClose}
                   size="sm"
-                  bgColor="red-100"
-                  textColor="red-600"
+                  bgColor="error/10"
                 >
                   Discard Changes
                 </Button>
@@ -844,15 +838,13 @@ export function TeamExpenseDetailView({
                   onClick={handleCancelAction}
                   size="sm"
                   bgColor="gray-100"
-                  textColor="gray-700"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleConfirmAction}
                   size="sm"
-                  bgColor="red-100"
-                  textColor="red-600"
+                  bgColor="error/10"
                 >
                   Proceed Anyway
                 </Button>

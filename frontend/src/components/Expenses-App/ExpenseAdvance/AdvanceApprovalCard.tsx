@@ -186,7 +186,6 @@ const AdvanceApprovalCard = ({
                     onAction(action, data);
                   }}
                   bgColor={getActionStyles(action).bg}
-                  textColor={getActionStyles(action).text}
                   disabled={
                     loadingAction?.id === data?.todo_id &&
                     loadingAction?.action === action
@@ -282,7 +281,6 @@ const AdvanceApprovalCard = ({
                       }}
                       fullWidth
                       bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
                       disabled={
                         loadingAction?.id === data?.todo_id &&
                         loadingAction?.action === action

@@ -155,7 +155,7 @@ const LeaveAppInner: React.FC = () => {
                   onClick={() => handleSubTabChange(subTab)}
                   className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                     activeSubTab === subTab
-                      ? "bg-blue-600 text-white shadow-sm"
+                      ? "bg-primary text-white shadow-sm"
                       : "text-gray-600 hover:text-blue-700 hover:bg-gray-50"
                   }`}
                 >
@@ -179,7 +179,7 @@ const LeaveAppInner: React.FC = () => {
             <div className="max-w-4xl mx-auto flex">
               <button
                 onClick={() => openModal()}
-                className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+                className="flex-1 py-3 rounded-lg bg-primary text-white font-medium hover:bg-blue-700 transition-colors"
               >
                 + Request Leave
               </button>
@@ -201,7 +201,6 @@ const LeaveAppInner: React.FC = () => {
   const actionButton =
     !isHolidaysActive && canRequestLeave ? (
       <Button
-        bgColor="blue-600"
         size="lg"
         className="hover:bg-blue-700"
         onClick={() => openModal()}

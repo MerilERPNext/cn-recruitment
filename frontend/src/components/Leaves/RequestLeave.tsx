@@ -793,8 +793,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             fullWidth
             size="lg"
             variant="contain"
-            bgColor={"blue-600"}
-            textColor="white"
             className="hover:bg-blue-700"
           >
             {createLeaveMutation.isPending ? "Processing..." : "Submit Request"}
@@ -806,7 +804,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             size="lg"
             variant="contain"
             bgColor={isDesktop ? "blue-600" : "black"}
-            textColor="white"
             disabled={editLeaveMutation.isPending}
             className="hover:bg-blue-700"
           >

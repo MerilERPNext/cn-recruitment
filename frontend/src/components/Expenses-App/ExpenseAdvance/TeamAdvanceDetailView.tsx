@@ -201,13 +201,13 @@ export default function TeamAdvanceDetailView({
                 ? "red-100"
                 : "gray-200"
             }
-            textColor={
-              buttonType === "approve"
-                ? "green-600"
-                : buttonType === "reject"
-                ? "red-600"
-                : "gray-600"
-            }
+            // textColor={
+            //   buttonType === "approve"
+            //     ? "green-600"
+            //     : buttonType === "reject"
+            //     ? "red-600"
+            //     : "gray-600"
+            // }
             fullWidth
             size="md"
           >

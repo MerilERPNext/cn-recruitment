@@ -234,7 +234,6 @@ const ExpenseApprovalCard = ({
                     handleActionClick(action, data);
                   }}
                   bgColor={getActionStyles(action).bg}
-                  textColor={getActionStyles(action).text}
                   disabled={
                     loadingAction?.id === data?.todo_id &&
                     loadingAction?.action === action
@@ -335,7 +334,6 @@ const ExpenseApprovalCard = ({
                       }}
                       fullWidth
                       bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
                       disabled={
                         loadingAction?.id === data?.todo_id &&
                         loadingAction?.action === action
@@ -391,15 +389,13 @@ const ExpenseApprovalCard = ({
                 onClick={handleCancelComment}
                 size="sm"
                 bgColor="gray-100"
-                textColor="gray-700"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSaveComment}
                 size="sm"
-                bgColor="blue-100"
-                textColor="blue-600"
+                bgColor="primary/10"
                 disabled={!rejectionComment.trim() || commentMutation.isPending}
               >
                 {commentMutation.isPending ? (
