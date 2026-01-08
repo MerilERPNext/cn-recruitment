@@ -544,9 +544,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             fullWidth
             size="lg"
             variant="contain"
-            bgColor={"blue-600"}
-            textColor="white"
-            className="hover:bg-blue-700"
+            bgColor="primary"
             onClick={handleSubmit}
           >
             Submit Request

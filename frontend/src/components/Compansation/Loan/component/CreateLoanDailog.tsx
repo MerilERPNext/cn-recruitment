@@ -187,9 +187,7 @@ export default function CreateLoanDialog({
             fullWidth
             size="lg"
             variant="contain"
-            bgColor={"blue-600"}
-            textColor="white"
-            className={"hover:bg-blue-700 font-medium"}
+            bgColor="primary"
           >
             Submit Request
           </Button>

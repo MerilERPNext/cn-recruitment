@@ -307,9 +307,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             onClick={handleSubmit}
             size="md"
             variant="contain"
-            bgColor={"blue-600"}
-            textColor="white"
-            className={"hover:bg-blue-700 flex-1 font-medium"}
+            bgColor="primary"
+            className={"flex-1 font-medium"}
           >
             Submit Request
           </Button>

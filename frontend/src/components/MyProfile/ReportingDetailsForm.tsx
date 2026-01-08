@@ -140,9 +140,7 @@ const ReportingDetailsForm = ({ onCancel, isEdit = false }: ReportingDetailsProp
                         fullWidth
                         size="lg"
                         variant="contain"
-                        bgColor={"blue-600"}
-                        textColor="white"
-                        className="hover:bg-blue-700 font-medium"
+                        bgColor="primary"
                     >
                         {
                             employeeReportingDetailsPending ? <CircularLoader />

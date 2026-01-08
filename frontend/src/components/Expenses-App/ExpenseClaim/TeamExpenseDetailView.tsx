@@ -695,9 +695,9 @@ export function TeamExpenseDetailView({
                           <Button
                             onClick={() => handleSaveItem(item.id)}
                             disabled={savingItem === item.id}
+                            variant="contain"
+                            bgColor="primary"
                             size="sm"
-                            bgColor="blue-100"
-                            textColor="blue-600"
                             className="px-4"
                           >
                             {savingItem === item.id ? (
@@ -771,16 +771,14 @@ export function TeamExpenseDetailView({
                 <Button
                   onClick={handleCancelComment}
                   size="sm"
-                  bgColor="gray-100"
-                  textColor="gray-700"
+                  bgColor="disabled"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSaveComment}
                   size="sm"
-                  bgColor="blue-100"
-                  textColor="blue-600"
+                  bgColor="primary"
                   disabled={
                     !rejectionComment.trim() || commentMutation.isPending
                   }
@@ -810,17 +808,11 @@ export function TeamExpenseDetailView({
                 <Button
                   onClick={handleCancelClose}
                   size="sm"
-                  bgColor="gray-100"
-                  textColor="gray-700"
+                  bgColor="disabled"
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleConfirmClose}
-                  size="sm"
-                  bgColor="red-100"
-                  textColor="red-600"
-                >
+                <Button onClick={handleConfirmClose} size="sm" bgColor="error">
                   Discard Changes
                 </Button>
               </div>
@@ -843,17 +835,11 @@ export function TeamExpenseDetailView({
                 <Button
                   onClick={handleCancelAction}
                   size="sm"
-                  bgColor="gray-100"
-                  textColor="gray-700"
+                  bgColor="disabled"
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleConfirmAction}
-                  size="sm"
-                  bgColor="red-100"
-                  textColor="red-600"
-                >
+                <Button onClick={handleConfirmAction} size="sm" bgColor="error">
                   Proceed Anyway
                 </Button>
               </div>

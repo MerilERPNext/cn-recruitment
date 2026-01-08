@@ -22,7 +22,6 @@ import { LeaveFieldFlags } from "../../types/leaves";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
-import { useScreenSize } from "../../hooks/useScreenSize";
 import Button from "../shared/atoms/Button";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
@@ -59,7 +58,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     currentEmployee?.name,
     today
   );
-  const { isDesktop } = useScreenSize();
   const queryClient = useQueryClient();
   const { defaults } = useRequestLeaveModal();
   const editLeaveMutation = useEditApprovedLeave();
@@ -793,9 +791,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             fullWidth
             size="lg"
             variant="contain"
-            bgColor={"blue-600"}
-            textColor="white"
-            className="hover:bg-blue-700"
+            bgColor="primary"
           >
             {createLeaveMutation.isPending ? "Processing..." : "Submit Request"}
           </Button>
@@ -805,10 +801,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             fullWidth
             size="lg"
             variant="contain"
-            bgColor={isDesktop ? "blue-600" : "black"}
-            textColor="white"
+            bgColor="primary"
             disabled={editLeaveMutation.isPending}
-            className="hover:bg-blue-700"
           >
             {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
           </Button>
