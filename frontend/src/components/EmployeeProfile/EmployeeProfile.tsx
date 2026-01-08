@@ -449,7 +449,7 @@ const EmployeeProfile: React.FC = () => {
                           </Typography>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 mt-4">
+                      <div className="flex flex-col justify-start items-start gap-2 mt-4">
                         {user?.custom_employment_status && (
                           <Badge
                             label={user?.custom_employment_status}
@@ -459,21 +459,27 @@ const EmployeeProfile: React.FC = () => {
                             pulse={user?.status === "Active" ? { show: true, color: "bg-success" } : undefined}
                           />
                         )}
-                        {showAttendanceAssignment && (
-                          <Button
-                            icon={<NotebookPen size={14} />}
-                            size="sm"
-                            variant="contain"
-                            onClick={() => setIsAttendanceAssignmentsOpen(true)}
-                            className="font-bold uppercase tracking-wider mt-2"
-                          >
-                            Attendance Assignment
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-2 mt-2">
+
+                          {showAttendanceAssignment && (
+                            <Button
+                              icon={<NotebookPen size={14} />}
+                              size="sm"
+                              variant="soft"
+                              onClick={() => setIsAttendanceAssignmentsOpen(true)}
+                              className="uppercase tracking-wider h-full  px-4 py-2 font-medium "
+                            >
+                              Attendance Assignment
+                            </Button>
+                          )}
+                          {/* <Appreciations /> */}
+                        </div>
                       </div>
                     </div>
                   </div>
+
                 </div>
+                {/* <AwardsSection isDesktop={true} /> */}
               </div>
             </Card>
           )}
