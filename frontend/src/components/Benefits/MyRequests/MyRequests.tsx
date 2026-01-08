@@ -59,7 +59,7 @@ const MyRequests: React.FC = () => {
   return (
     <div className="px-4 pt-2">
       <div className="flex flex-row items-center flex-wrap justify-between md:justify-end gap-4 mb-2">
-        <div className="min-w-[100px]">
+        <div className="min-w-[100px] mr-auto">
           <CustomDropdown
             position='bottom-right'
             value={selectedYear}
