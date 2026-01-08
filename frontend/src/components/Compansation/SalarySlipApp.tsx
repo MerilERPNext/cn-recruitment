@@ -137,8 +137,8 @@ const SalarySlipApp: React.FC = () => {
   const desktopLayout = (
     <ViewModeContext.Provider value={{ viewMode, setViewMode: () => {} }}>
       <DesktopLayoutWrapper title="Compensation">
-        <div className="flex flex-col h-full bg-gray-50">
-          <div className="flex-1 overflow-y-auto px-8 py-4">
+        <div className="flex flex-col h-full bg-app">
+          <div className="flex-1 overflow-y-auto px-2 py-4">
             <Outlet />
           </div>
         </div>

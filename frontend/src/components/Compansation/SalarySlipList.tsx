@@ -20,6 +20,7 @@ import { FaRegEye } from "react-icons/fa";
 import CardTable from "../shared/CardTable";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import Button from "../shared/atoms/Button";
 
 const SalarySlipsList = () => {
   const navigate = useNavigate();
@@ -327,9 +328,9 @@ const DownloadMenu = ({
                 }}
                 className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
               >
-                <span className="p-2 border rounded">
-                  <FaRegEye className="w-4 h-4 text-blue-500" />
-                </span>
+                <Button className="p-2 border rounded" bgColor="none">
+                  <FaRegEye className="w-4 h-4 text-primary" />
+                </Button>
                 {item.label}
               </button>
             </div>
@@ -372,7 +373,7 @@ const SalarySlipItemDesktop = ({
 
   return (
     <div className="my-data-row">
-      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer">
         <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
           <WrapperHoverCard employeeId={item.employee}>{item.employee_name}</WrapperHoverCard>
           {/* <div

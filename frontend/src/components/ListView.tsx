@@ -589,7 +589,7 @@ const FrappeListView = <T extends BaseItem>({
   return (
     <>
       {/* Header */}
-      <div className="border-gray-200 pb-2">
+      <div className="border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1 w-full">
             {isSearch && (

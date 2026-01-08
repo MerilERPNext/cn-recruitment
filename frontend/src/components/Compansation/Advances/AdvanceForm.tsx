@@ -18,6 +18,7 @@ import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
 import { FormSchema, SchemaComponent } from "../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
+import { Typography } from "../../shared/atoms/Typography";
 
 interface AdvanceFormProps {
   user?: any;
@@ -189,21 +190,19 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   }, [onClose]);
 
   return (
-    <div className="advance-form-container flex flex-col h-full bg-gray-50">
+    <div className="advance-form-container flex flex-col h-full bg-app">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <div className="sticky top-0 z-50 bg-primary/20 border-b border-gray-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-4">
           {isDesktop ? (
-            <div className="flex items-center justify-between h-16">
-              <h2 className="text-xl font-semibold text-gray-900">
+            <div className="flex items-center mt-0.5 justify-between h-16">
+              <Typography variant="subheading" color="body1">
                 Advance Request
-              </h2>
-              <button
-                onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
-              >
+              </Typography>
+              <Button
+                onClick={onClose}>
                 <X className="w-6 h-6" />
-              </button>
+              </Button>
             </div>
           ) : (
             <HeaderBar
@@ -243,7 +242,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
       </div>
 
       {/* Footer */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3">
+      <div className="sticky bottom-0 bg-primary/20 border-t border-gray-200 px-5 py-3">
         <div className="max-w-3xl mx-auto flex space-x-3">
           <Button
             onClick={handleCancel}
@@ -257,10 +256,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
           <Button
             onClick={handleSubmit}
             size="md"
-            variant="contain"
-            bgColor="blue-600"
-            textColor="white"
-            className={"flex-1 hover:bg-blue-700 py-3"}
+            className={"flex-1 hover:bg-primary-600 py-3"}
           >
             Submit
           </Button>

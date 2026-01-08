@@ -7,6 +7,8 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import HeaderBar from "../../HeaderBar";
 import CardTable from "../../shared/CardTable";
+import { Typography } from "../../shared/atoms/Typography";
+import { Card } from "../../shared/atoms/Card";
 
 type SalaryItem = any;
 type CTCComponentItem = {
@@ -55,14 +57,23 @@ export default function SalaryAssignmentList() {
   if (isError) return <p className="p-4 text-red-500">Error loading data</p>;
 
   return (
-    <>
+    <div className="mt-4">
+     <div className="mb-4">
+              <Typography variant="h4">
+              Pay package
+              </Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage Pay Package
+              </Typography>
+     </div>
+
       <CardTable titles={titles} columnWidths={columnWidths}>
-        <div className="card-subtitle bg-white ">
+        <div className="  ">
           {list.map((item) =>
             isDesktop ? (
               <div
                 key={item.name}
-                className="my-data-row grid px-6 py-3 gap-4 items-center text-sm border-t border-gray-200"
+                className="my-data-row grid px-6 py-3 gap-4 items-center text-sm border hover:bg-primary/20 border-gray-100"
                 style={{ gridTemplateColumns: columnWidths.join(" ") }}
               >
                 {/* Effective Date */}
@@ -74,7 +85,7 @@ export default function SalaryAssignmentList() {
                     className={`text-xs font-medium px-2 py-[1px] rounded-xl
       ${
         isActive(item.from_date)
-          ? "bg-green-100 text-green-600 border border-green-200"
+          ? "bg-success-100 text-success border border-success-200"
           : "bg-gray-100 text-gray-400 border border-gray-200"
       }`}
                   >
@@ -94,7 +105,7 @@ export default function SalaryAssignmentList() {
                 <div>
                   <button
                     onClick={() => setSelected(item)}
-                    className="text-blue-600 hover:underline"
+                    className="text-primary  border border-primary/40 px-2 py-0.5 rounded hover:bg-primary/20 text-sm font-medium"
                   >
                     View
                   </button>
@@ -194,14 +205,14 @@ export default function SalaryAssignmentList() {
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
           <div
-            className={`bg-white w-full ${
+            className={`bg-app w-full ${
               isDesktop ? "max-w-[600px]" : ""
             } shadow-lg relative h-screen overflow-y-auto`}
           >
             {/* HEADER */}
             {isDesktop ? (
-              <div className="flex justify-between items-center p-4 border-b">
-                <h2 className="font-semibold text-lg">CTC Breakdown</h2>
+              <div className="flex justify-between items-center p-4 bg-primary/20 border-b">
+                <Typography variant="subheading" color="body1">CTC Breakdown</ Typography>
                 <button
                   onClick={() => setSelected(null)}
                   className="text-gray-500 hover:text-black"
@@ -220,11 +231,11 @@ export default function SalaryAssignmentList() {
             <div className="p-4 space-y-6 text-sm">
               {/* SUMMARY */}
               <div className="flex justify-between">
-                <span className="text-gray-500">Effective From</span>
+                <span className="font-semibold">Effective From</span>
                 <span className="font-semibold">{selected.from_date}</span>
               </div>
 
-              <div className="grid gap-3 border border-gray-200 p-4 rounded">
+              <Card className="grid gap-3 border border-gray-200  p-4 rounded">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Monthly CTC</span>
                   <span className="font-semibold">
@@ -247,13 +258,13 @@ export default function SalaryAssignmentList() {
                     ₹ {selected.fixed_gross_annual}
                   </span>
                 </div>
-              </div>
+              </Card>
 
               {/* COMPONENTS */}
-              <div>
-                <p className="font-medium mb-2">Salary Components</p>
+              <div className="space-y-6">
+                <p className="font-semibold">Salary Components</p>
 
-                <div className="space-y-2 border border-gray-200 rounded p-4">
+                <Card className="space-y-2 border border-gray-200 rounded p-4">
                   {selected.component_part_of_ctc?.map(
                     (item: CTCComponentItem, index: number) => (
                       <div
@@ -279,12 +290,12 @@ export default function SalaryAssignmentList() {
                       </div>
                     )
                   )}
-                </div>
+                </Card>
               </div>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

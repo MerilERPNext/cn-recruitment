@@ -6,6 +6,7 @@ import ApprovalList from "../../../shared/ApprovalList";
 import CardTable from "../../../shared/CardTable";
 import ApprovalRejectionLoanList from "../component/TeamApprovallist";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { Typography } from "../../../shared/atoms/Typography";
 
 const TeamLoanRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -26,12 +27,13 @@ const TeamLoanRequest = () => {
     children: React.ReactNode;
     className?: string;
   }) => (
-    <div className={`my-dashboard-card ${className ?? ""}`}>{children}</div>
+    <div className={` ${className ?? ""}`}>{children}</div>
   );
 
   const CardHeader = ({ title }: { title: string }) => (
-    <div className="flex justify-between items-center mb-4">
-      <h2 className="section-title">{title}</h2>
+    <div className="flex flex-col w-full items-start mb-4">
+          <Typography variant="subheading" color="body1">{title}</Typography>
+          <Typography variant="bodySmall" color="body2">Track {title}</Typography>
     </div>
   );
 

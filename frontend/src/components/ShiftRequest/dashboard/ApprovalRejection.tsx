@@ -43,14 +43,14 @@ const ApprovalRejectionQueue = ({
     switch (parsedAction) {
       case "approve":
         styles = {
-          bg: "green-100",
-          text: "green-600",
+          bg: "success-100",
+          text: "success",
         };
         break;
       case "reject":
         styles = {
-          bg: "red-100",
-          text: "red-600",
+          bg: "error-50",
+          text: "error",
         };
 
         break;
@@ -68,14 +68,14 @@ const ApprovalRejectionQueue = ({
 
   return (
     <div
-      className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+      className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer"
       style={{ gridTemplateColumns }}
       onClick={() => onClick?.(data)}
     >
       <div className="flex items-center">
         <input
           type="checkbox"
-          className="accent-blue-500"
+          className="accent-primary"
           checked={isSelected}
           onClick={(e) => e.stopPropagation()}
           onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -123,7 +123,7 @@ const ApprovalRejectionQueue = ({
                   onAction(action, data);
                 }}
                 bgColor={getActionStyles(action).bg}
-                textColor={getActionStyles(action).text}
+                className={`text-${getActionStyles(action).text}`}
                 disabled={
                   loadingAction?.id === data?.todo_id &&
                   loadingAction?.action === action
