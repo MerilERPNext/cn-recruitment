@@ -38,7 +38,9 @@ const ApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
+  const getActionStyles = (
+    action: string
+  ): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
       bg: "disabled" as ButtonColor,
@@ -85,7 +87,7 @@ const ApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? "5% 10% 15% 8% 8% 8% 10% 20%" // 8 columns (with Select)
-    : "12% 20% 10% 10% 10% 10% 20%"// 7 columns (Adjusted widths)
+    : "12% 20% 10% 10% 10% 10% 20%"; // 7 columns (Adjusted widths)
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
@@ -188,7 +190,7 @@ const ApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -289,7 +291,7 @@ const ApprovalCard = ({
                       }
                     >
                       {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

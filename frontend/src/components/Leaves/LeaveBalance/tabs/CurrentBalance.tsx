@@ -5,6 +5,7 @@ import { Form } from "@tsed/react-formio";
 import { useGetLeaveBalance } from "../../../../hooks/useLeaves";
 import { useCurrentEmployee } from "../../../../hooks/useEmployee";
 import { LeaveBalance } from "../../../../types/leaves";
+import { Typography } from "../../../shared/atoms/Typography";
 
 interface CurrentBalanceTabProps {
   leaveData: LeaveBalance;
@@ -220,11 +221,11 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
 
           {displayData ? (
             <>
-              <div className="bg-blue-50 rounded-lg p-4 mb-4">
+              <div className="bg-primary/10 rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="title-module font-semibold text-gray-800">
+                  <Typography className="font-medium">
                     Balance as of {formatDate(selectedDate)}
-                  </h3>
+                  </Typography>
                   <span className="text-lg font-bold text-gray-900">
                     {displayData.balance ?? 0}
                   </span>
@@ -241,7 +242,7 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
                       Annual Allotment: {displayData.entitled ?? 0}
                     </p>
                   </div>
-                  <span className="text-base md:text-lg font-bold text-green-600">
+                  <span className="text-base md:text-lg font-bold text-success">
                     +{displayData.entitled ?? 0}
                   </span>
                 </div>

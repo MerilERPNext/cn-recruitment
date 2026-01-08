@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { format, isValid, parse } from "date-fns";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Badge from "../shared/Badge";
-import Button from "../shared/atoms/Button";
+import Button, { ButtonColor } from "../shared/atoms/Button";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveApprovalCardProps = {
@@ -33,29 +34,31 @@ const LeaveApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string): { bg: string; text: string } => {
+  const getActionStyles = (
+    action: string
+  ): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
-      bg: "gray-100",
+      bg: "disabled" as ButtonColor,
       text: "gray-600",
     };
     switch (parsedAction) {
       case "approve":
         styles = {
-          bg: "green-100",
+          bg: "success" as ButtonColor,
           text: "green-600",
         };
         break;
       case "reject":
         styles = {
-          bg: "red-100",
+          bg: "error" as ButtonColor,
           text: "red-600",
         };
 
         break;
       default:
         styles = {
-          bg: "gray-200",
+          bg: "disabled" as ButtonColor,
           text: "gray-600",
         };
         break;
@@ -159,6 +162,7 @@ const LeaveApprovalCard = ({
               data?.reference_document?.status === "Open" &&
               actions.map((action: string) => (
                 <Button
+                  variant="soft"
                   key={action}
                   onClick={(e) => {
                     e.preventDefault();
@@ -166,7 +170,6 @@ const LeaveApprovalCard = ({
                     onAction(action, data);
                   }}
                   bgColor={getActionStyles(action).bg}
-                  textColor={getActionStyles(action).text}
                   disabled={
                     loadingAction?.id === data?.todo_id &&
                     loadingAction?.action === action
@@ -258,6 +261,7 @@ const LeaveApprovalCard = ({
                   data?.reference_document?.status === "Open" &&
                   actions.map((action: string) => (
                     <Button
+                      variant="soft"
                       key={action}
                       onClick={(e) => {
                         e.preventDefault();
@@ -266,7 +270,6 @@ const LeaveApprovalCard = ({
                       }}
                       fullWidth
                       bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
                       disabled={
                         loadingAction?.id === data?.todo_id &&
                         loadingAction?.action === action
