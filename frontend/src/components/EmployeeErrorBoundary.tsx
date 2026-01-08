@@ -22,6 +22,26 @@ class EmployeeErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Check for dynamic import errors
+    if (
+        error.message.includes('Failed to fetch dynamically imported module') ||
+        error.message.includes('Importing a module script failed')
+    ) {
+        const storageKey = 'dynamic_import_reload_timestamp';
+        const lastReload = sessionStorage.getItem(storageKey);
+        const now = Date.now();
+        
+        // If no reload in the last 10 seconds, try reloading
+        if (!lastReload || now - parseInt(lastReload) > 10000) {
+            console.warn('Dynamic import error detected, reloading page...');
+            sessionStorage.setItem(storageKey, now.toString());
+            window.location.reload();
+            return;
+        } else {
+             console.error('Dynamic import error persistence detected, showing error boundary');
+        }
+    }
+
     console.error('Employee Error Boundary Details:', {
       error: error.message,
       stack: error.stack,
