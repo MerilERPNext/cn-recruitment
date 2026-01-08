@@ -3,6 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
+from datetime import timedelta
 
 
 class EmployeeConfirmation(Document):
@@ -15,11 +16,39 @@ class EmployeeConfirmation(Document):
 			employee_type = confirmation_policy.employee_type
 			employee = frappe.get_doc("Employee", self.employee)
 			employee.employment_type = employee_type
+			employee.custom_employment_status = "Confirmed"
 			employee.save()
 		elif confirmation_status == "Probation Extended":
 			probation_period = confirmation_policy.auto_assign_probation_period_on_addition
 			employee = frappe.get_doc("Employee", self.employee)
 			employee.custom_probation_period = probation_period
+			employee.custom_employment_status = "Probation Extended"
+
+			if not probation_period:
+				return 
+
+			probation_period_doc = frappe.get_doc('Probation Period', probation_period)
+
+			date_of_joining = employee.date_of_joining
+			if not date_of_joining:
+				return 
+
+			probation_duration = probation_period_doc.duration_of_probation
+			probation_period_in = probation_period_doc.probation_period_in
+
+			if probation_period_in == 'Months':
+				probation_end_date = frappe.utils.add_months(date_of_joining, probation_duration)
+			else: 
+				probation_end_date = date_of_joining + timedelta(days=probation_duration)
+			
+			self.probation_end_date = probation_end_date
+			self.save()
+			employee.save()
+		elif confirmation_status == "Terminated":
+			employee = frappe.get_doc("Employee", self.employee)
+			employee.custom_employment_status = "Terminated"
+			employee.status = "Suspended"
+			employee.flags.ignore_validate = True
 			employee.save()
 
 	def validate(self):
@@ -57,4 +86,3 @@ class EmployeeConfirmation(Document):
 		)
 		if probation_extended_exists:
 			pass  
-
