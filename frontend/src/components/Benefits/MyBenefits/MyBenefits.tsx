@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     ChevronDown,
     Wallet,
@@ -10,33 +10,44 @@ import CardTable from '../../shared/CardTable';
 import { FetchParams } from '../../../services/customApiService';
 import { FrappePageResponse } from '../../../types/frappe';
 import { useCurrentEmployeeIdCard } from '../../../hooks/useEmployee';
-import { SalaryComponentDetail, useGetAllAccruedReimbursements } from '../../../hooks/useBenefit';
+import { SalaryComponentDetail, useGetAllAccruedReimbursements, useGetYearFilterOptions } from '../../../hooks/useBenefit';
 import { SkeletonStat } from './Skeletons';
 import { AccrualItem, StatItem } from './CommonItems';
+import CustomDropdown from '../../shared/CustomDropdown';
 
 
 export const COLUMN_LAYOUT = "minmax(100px, 1.5fr) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
 const MyBenefits: React.FC = () => {
     const { data: employee } = useCurrentEmployeeIdCard();
+    const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(employee?.company || "");
 
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 5 }, (_, i) =>
-        (currentYear - i).toString()
-    );
-    const [selectedYear, setSelectedYear] = useState(currentYear.toString().slice(2));
+    const optionYears = useMemo(() => {
+        if (YearsLoading || !optionYearsData) return [];
+        else return optionYearsData?.map(data => ({ label: data?.name, value: data?.name }))
+    }, [optionYearsData, YearsLoading]);
 
-    const yearPeriod = (!selectedYear ? "" : `${selectedYear}-${parseInt(selectedYear) + 1}`);
+    const [selectedYear, setSelectedYear] = useState("");
+
+    useEffect(() => {
+        if (optionYears.length > 0 && !selectedYear) {
+            setSelectedYear(optionYears[0].value);
+        }
+    }, [optionYears, selectedYear]);
+
     const {
         data: allAccruedReimbursements,
         isLoading,
-    } = useGetAllAccruedReimbursements(employee?.id || "", employee?.company || "", yearPeriod);
-
+        isError,
+        refetch,
+        error
+    } = useGetAllAccruedReimbursements(employee?.id || "", employee?.company || "", selectedYear);
     // Keep track of which benefit cards are expanded — map by component name
     const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
 
     const toggleExpanded = (key: string) =>
         setExpandedMap(prev => ({ ...prev, [key]: !prev[key] }));
+
 
 
     // // Render error UI
@@ -46,7 +57,7 @@ const MyBenefits: React.FC = () => {
     //             <header className="bg-white mx-8 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
     //                 <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
     //                     <div className="flex items-center justify-between">
-    //                         <h1 className="text-xl font-bold text-slate-900">My Benefits for FY {yearInterval}</h1>
+    //                         <h1 className="text-xl font-bold text-slate-900">My Benefits for FY {yearPeriod}</h1>
     //                         <div className="flex gap-3 items-center">
     //                             <button className="p-2 rounded bg-slate-100 hover:bg-slate-200" onClick={() => refetch?.()}>
     //                                 Retry
@@ -75,7 +86,7 @@ const MyBenefits: React.FC = () => {
         return (
             <div className="min-h-screen bg-gray-50 font-sans text-slate-800 pb-12">
 
-                <h1 className="text-xl mx-8 pl-2 sm:pt-2 pt-4  pb-4 font-bold  text-slate-900">My Benefits for FY {yearPeriod}</h1>
+                <h1 className="text-xl mx-8 pl-2 sm:pt-2 pt-4  pb-4 font-bold  text-slate-900">My Benefits for FY {selectedYear}</h1>
                 <main className="w-full px-4 sm:px-6 lg:px-8 pb-8">
                     <div className="space-y-6">
                         {Array.from({ length: skeletonCount }).map((_, i) => (
@@ -108,23 +119,17 @@ const MyBenefits: React.FC = () => {
 
     // At this point we have real data in allAccruedReimbursements.data
     const components = allAccruedReimbursements?.data ?? [];
-    console.log(allAccruedReimbursements, yearPeriod)
+    console.log(allAccruedReimbursements, selectedYear)
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-slate-800 pb-12">
-            <h1 className="text-xl mx-8 pl-2 sm:pt-2 pt-4  pb-4 font-bold  text-slate-900">My Benefits for FY {yearPeriod}</h1>
-            <div className="flex-1 sm:max-w-xs mx-4 mr-auto">
-                <select
-                    id="yearFilter"
+            <h1 className="text-xl mx-8 pl-2 sm:pt-2 pt-4  pb-4 font-bold  text-slate-900">My Benefits for FY {selectedYear}</h1>
+            <div className="flex-1 sm:max-w-xs mx-4 px-4 lg:px-8 mr-auto">
+                <CustomDropdown
+                    position='bottom-right'
                     value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
-                    className="my-form-input"
-                >
-                    {years.map((year) => (
-                        <option key={year} value={year.slice(2)}>
-                            {year}
-                        </option>
-                    ))}
-                </select>
+                    onChange={(event) => setSelectedYear(event?.target.value)}
+                    options={optionYears}
+                />
             </div>
             {!components || components.length === 0 ? (
                 <div className="w-full px-4 sm:px-6 lg:px-8 py-8">

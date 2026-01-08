@@ -2,39 +2,46 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MoreVertical } from "lucide-react";
 
 import { FaRegEye } from "react-icons/fa";
 import SalarySlipPDFModal from "../../Compansation/SalarySlipPDFModal";
 import CardTable from "../../shared/CardTable";
-import { BenefitPayslip, useGetBenefitSlipHTML } from "../../../hooks/useBenefit";
+import { BenefitPayslip, useGetBenefitSlipHTML, useGetYearFilterOptions } from "../../../hooks/useBenefit";
 import { useCurrentEmployeeIdCard } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import DropdownMenu from "../../shared/DropDownMenu";
 import BenefitSlipPDFMOdel from "./BenefitSlipPDFModel";
 import { createPortal } from "react-dom";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import CustomDropdown from "../../shared/CustomDropdown";
 
 
 const BenefitsSlips = () => {
 
-    const currentYear = new Date().getFullYear();
-    const [selectedYear, setSelectedYear] = useState(currentYear.toString().slice(2));
+    const { data: employeeIdCard } = useCurrentEmployeeIdCard();
+    const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(employeeIdCard?.company || "");
+
+    const optionYears = useMemo(() => {
+        if (YearsLoading || !optionYearsData) return [];
+        else return optionYearsData?.map(data => ({ label: data?.name, value: data?.name }))
+    }, [optionYearsData, YearsLoading]);
+
+    const [selectedYear, setSelectedYear] = useState("");
+
+    useEffect(() => {
+        if (optionYears.length > 0 && !selectedYear) {
+            setSelectedYear(optionYears[0].value);
+        }
+    }, [optionYears, selectedYear]);
+
     const [pdfModalOpen, setPdfModalOpen] = useState(false);
     const [modalHtmlContent, setModalHtmlContent] = useState<string>("");
     const [selectedSalarySlip, setSelectedSalarySlip] = useState<{
         name: string;
         date: string;
     } | null>(null);
-
-
-    const yearPeriod = (!selectedYear ? "" : `${selectedYear}-${parseInt(selectedYear) + 1}`);
-    const { data: employeeIdCard } = useCurrentEmployeeIdCard();
-
-    const years = Array.from({ length: 5 }, (_, i) =>
-        (currentYear - i).toString()
-    );
 
     return (
         <div className="px-4 pt-2">
@@ -55,19 +62,12 @@ const BenefitsSlips = () => {
             <>
                 <div className="mb-4 flex items-center justify-between gap-4">
                     <div className="flex-1 mt-2 lg:max-w-xs">
-                        <select
-                            id="yearFilter"
+                        <CustomDropdown
+                            position='bottom-right'
                             value={selectedYear}
-                            onChange={(e) => setSelectedYear(e.target.value)}
-                            className="my-form-input"
-                        >
-                            <option value="">All Years</option>
-                            {years.map((year) => (
-                                <option key={year} value={year.slice(2)}>
-                                    {year}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(event) => setSelectedYear(event?.target.value)}
+                            options={optionYears}
+                        />
                     </div>
                 </div>
             </>
@@ -81,13 +81,13 @@ const BenefitsSlips = () => {
                 columnWidths={["1fr", "1fr", "50px"]}
             >
                 <DataListView
-                    queryKey={["benefit-sips", employeeIdCard?.id || "", employeeIdCard?.company || "", yearPeriod || ""]}
+                    queryKey={["benefit-sips", employeeIdCard?.id || "", employeeIdCard?.company || "", selectedYear || ""]}
                     customAPI={{
                         method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_payslip_list_view",
                         params: {
                             employee: employeeIdCard?.id || "",
                             company: employeeIdCard?.company || "",
-                            payroll_period: yearPeriod,
+                            payroll_period: selectedYear,
                         },
                     }}
                     getItemKey={(item: any, _: number) => item.name}
