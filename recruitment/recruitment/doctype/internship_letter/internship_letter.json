@@ -7,20 +7,21 @@
  "engine": "InnoDB",
  "field_order": [
   "applicant_details_section",
-  "job_applicant",
+  "status",
   "name_of_the_intern",
+  "position_title",
+  "job_applicant",
   "name_of_the_college",
   "column_break_jcrd",
   "internship_letter_date",
   "address_of_the_college__residential_address",
   "enrolment_no",
+  "recruiter",
   "section_break_iken",
-  "position_title",
   "company",
   "department",
   "stipend",
   "office_location",
-  "status",
   "column_break_qaef",
   "start_date",
   "end_date",
@@ -42,6 +43,7 @@
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Job Applicant",
    "options": "Job Applicant",
    "reqd": 1
@@ -66,7 +68,6 @@
   {
    "fieldname": "address_of_the_college__residential_address",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Address of the college / Residential Address",
    "reqd": 1
   },
@@ -85,6 +86,7 @@
    "default": "Intern",
    "fieldname": "position_title",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Position Title",
    "reqd": 1
   },
@@ -155,6 +157,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nIssued\nAccepted\nCompleted\nRejected",
    "reqd": 1
@@ -169,11 +172,13 @@
    "reqd": 1
   },
   {
+   "bold": 1,
    "fetch_from": "job_applicant.applicant_name",
    "fetch_if_empty": 1,
    "fieldname": "name_of_the_intern",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Name of the Intern",
    "reqd": 1
   },
@@ -190,12 +195,20 @@
    "fieldtype": "Tab Break",
    "hidden": 1,
    "label": "Hidden Fields"
+  },
+  {
+   "fetch_from": "job_applicant.custom_recruiter_name",
+   "fieldname": "recruiter",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Recruiter"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-06 09:45:59.926412",
+ "modified": "2026-01-08 15:14:40.684752",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Internship Letter",
