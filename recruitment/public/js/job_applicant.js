@@ -1027,7 +1027,7 @@ frappe.ui.form.on('Job Applicant', {
 
 // Helper function to make fields non-mandatory
 function make_fields_non_mandatory(frm) {
-    ["status", "resume_attachment"].forEach(field => {
+    ["status", "resume_attachment", "email_id"].forEach(field => {
         if (frm.fields_dict[field]) {
             frm.fields_dict[field].df.reqd = 0;
             frm.refresh_field(field);

@@ -118,7 +118,7 @@ frappe.ui.form.on("Job Offer", {
 	}	
 })
 function make_fields_non_mandatory(frm) {
-    ["custom_jo_expiry_date"].forEach(field => {
+    ["custom_jo_expiry_date", "job_applicant", "designation"].forEach(field => {
         if (frm.fields_dict[field]) {
             frm.fields_dict[field].df.reqd = 0;
             frm.refresh_field(field);

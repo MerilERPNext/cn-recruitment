@@ -584,16 +584,14 @@ frappe.ready(function () {
                     e.stopPropagation();
                     console.log("💾 Save button clicked - Collecting all form data");
 
-                    // Get required fields
-                    const email = frappe.web_form.get_value('custom_email_id');
+                    // Get required fields - Only First Name is mandatory
                     const first_name = frappe.web_form.get_value('custom_first_name');
-                    const designation = frappe.web_form.get_value('designation');
 
-                    if (!email || !first_name || !designation) {
+                    if (!first_name) {
                         frappe.msgprint({
-                            title: 'Required Fields Missing',
+                            title: 'Required Field Missing',
                             indicator: 'red',
-                            message: 'Please fill Email, First Name, and Designation before saving.'
+                            message: 'Please fill First Name before saving.'
                         });
                         return false;
                     }

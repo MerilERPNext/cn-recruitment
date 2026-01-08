@@ -582,11 +582,11 @@ frappe.ready(function () {
                     const first_name = frappe.web_form.get_value('custom_first_name');
                     const designation = frappe.web_form.get_value('designation');
 
-                    if (!email || !first_name || !designation) {
+                    if (!first_name) {
                         frappe.msgprint({
                             title: 'Required Fields Missing',
                             indicator: 'red',
-                            message: 'Please fill Email, First Name, and Designation before saving.'
+                            message: 'Please fill First Name before saving.'
                         });
                         return false;
                     }
