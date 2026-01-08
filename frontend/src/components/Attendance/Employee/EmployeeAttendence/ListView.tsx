@@ -11,8 +11,16 @@ import CheckInStatus from "./CheckInStatus";
 import AuditReport from "./AuditReport";
 import OvertimeLog from "./OvertimeLog";
 import RegularizeDrawer from "./RegularizeDrawer";
+import { useGetUiPermission } from "../../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../../utils/uiPermission";
 
 const ListView = () => {
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canRegularize = isActionEnabled(
+    userUiPermission,
+    "regularize_attendance",
+    "My Attendance"
+  );
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const [openSidebarFor, setOpenSidebarFor] = useState<{ isOpen: boolean, for: string | null, label: string, sideBarSize: DrawerSize }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
@@ -48,7 +56,7 @@ const ListView = () => {
         />
         <div className="flex gap-2">
 
-          <RegularizeDrawer />
+          {canRegularize && <RegularizeDrawer />}
 
           <DropdownMenu
             placement={'bottom-left'}

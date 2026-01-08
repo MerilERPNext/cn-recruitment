@@ -41,10 +41,10 @@ const ShowHolidays = () => {
       <div className="border-b border-gray-200 pb-4 mb-8">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Employment Holidays
+            Employee Holidays
           </h2>
           <p className="text-gray-600">
-            Your employment holidays
+            Your employee holidays
           </p>
         </div>
       </div>

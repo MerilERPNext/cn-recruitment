@@ -91,7 +91,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
         if (e.key === "Enter" || e.key === " ") handleonClick(emp)();
       }}
     >
-      <div className="flex items-center sm:items-center justify-between gap-3  px-4 py-3 bg-white hover:bg-blue-100 border-b ">
+      <div className="flex items-center sm:items-center justify-between gap-3 rounded-md  px-4 py-3 bg-white hover:bg-primary-100 border-b ">
         <Avatar name={emp.employee_name} src={emp.image} />
         <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full">
           <div className="flex flex-col min-w-0 w-full">

@@ -112,13 +112,13 @@ export default function EmployeeProfileSections() {
                     <Typography variant="h3" className="font-bold text-gray-900 mb-1">
                         Personal Information
                     </Typography>
-                    <Typography variant="bodyMedium" color="secondary">
+                    <Typography variant="bodyMedium" color="body2">
                         Comprehensive details and records.
                     </Typography>
                 </div>
             </div>
             {tabs.length > 1 && (
-                <div className="px-6 sticky top-12 md:top-16 bg-white z-20 flex-shrink-0 w-full max-w-full border-b border-gray-50 pb-2">
+                <div className="px-6 sticky top-12 md:top-16 bg-white z-10 flex-shrink-0 w-full max-w-full border-b border-gray-50 pb-2">
                     <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
                         {tabs.map(tab => (
                             <Button
