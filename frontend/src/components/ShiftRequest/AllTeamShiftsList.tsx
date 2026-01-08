@@ -3,8 +3,11 @@ import { StatusBadge } from "./AllShiftsDashboard";
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
-import formatToIndianDate, { formatEndDate } from "../../utils/formatToIndianDate";
+import formatToIndianDate, {
+  formatEndDate,
+} from "../../utils/formatToIndianDate";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 const TeamShiftRowItem: React.FC<{
   item: ApiShiftAssignment;
@@ -15,10 +18,18 @@ const TeamShiftRowItem: React.FC<{
       key={`${item.name}-${index}`}
       className="my-data-row grid grid-cols-5 gap-4 items-center text-center"
     >
-      <div className="my-data-cell font-medium truncate">
-        {item.employee_name || item.employee}
+      <WrapperHoverCard employeeId={item.employee}>
+        <div className="my-data-cell font-medium truncate">
+          {item.employee_name || item.employee}
+        </div>
+      </WrapperHoverCard>
+
+      <div
+        className="my-data-cell truncate"
+        title={`Shift Time: ${item.start_time} - ${item.end_time}`}
+      >
+        {item.shift_type}
       </div>
-      <div className="my-data-cell truncate" title={`Shift Time: ${item.start_time} - ${item.end_time}`}>{item.shift_type}</div>
       <div className="my-data-cell">{formatToIndianDate(item.start_date)}</div>
       <div className="my-data-cell">{formatEndDate(item.end_date)}</div>
       <div className="my-data-cell flex justify-center">

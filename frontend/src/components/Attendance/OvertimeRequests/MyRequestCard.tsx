@@ -65,7 +65,6 @@ export function MyRequestCard({
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
-
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>
@@ -76,11 +75,11 @@ export function MyRequestCard({
           <div className="text-gray-700 text-sm text-start">
             {formattedDate}
           </div>
-          <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
+          <div className="text-gray-900 font-medium text-sm text-start">
+            <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
               {request?.username || ""}
-            </div>
-          </WrapperHoverCard>
+            </WrapperHoverCard>
+          </div>
           <div className="w-full flex justify-start">
             <Tooltip content={`Allocated to : ${request?.allocated_to}`}>
               <Badge
