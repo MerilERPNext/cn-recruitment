@@ -31,7 +31,6 @@ const BenefitRequestItem = ({
   onClick,
   loadingAction,
 }: BenefitRequestItemProps) => {
-  console.log(data);
   const { isDesktop } = useScreenSize();
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [rejectionComment, setRejectionComment] = useState("");
