@@ -37,10 +37,7 @@ const MyBenefits: React.FC = () => {
 
     const {
         data: allAccruedReimbursements,
-        isLoading,
-        isError,
-        refetch,
-        error
+        isLoading
     } = useGetAllAccruedReimbursements(employee?.id || "", employee?.company || "", selectedYear);
     // Keep track of which benefit cards are expanded — map by component name
     const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
