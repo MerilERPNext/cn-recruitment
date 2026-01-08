@@ -13,33 +13,46 @@ import toast from "react-hot-toast"
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee"
 
 interface CardStagesProps {
-    triggerRefetch: () => void;
     data: ApprovalStage;
     actions: string[];
     todoId: string;
     isActive: boolean;
     assignedTo: {
         emp_id: string;
+        user_id: string;
         role: string;
     }
 };
 
-const CardStages = ({ triggerRefetch, data, actions, todoId, isActive, assignedTo }: CardStagesProps) => {
+const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesProps) => {
 
 
     const [formSchema, setFormSchema] = useState<FormIOSchema | null>(null);
     const [show, setShow] = useState(false);
 
-    const handleShowForm = (schema: FormIOComponent[] | undefined) => {
+    const handleShowForm = (schema: FormIOComponent[] | undefined, approval_response_data: string) => {
+        const data = JSON.parse(approval_response_data);
+
         setFormSchema((prev) => {
-            if (!schema)
-                return prev;
-            return ({
+            if (!schema) return prev;
+
+            const updatedSchema = schema.map((component) => {
+                const key = component.key;
+
+                if (key && data[key] !== undefined) {
+                    return {
+                        ...component,
+                        defaultValue: data[key],
+                    };
+                }
+
+                return component;
+            });
+
+            return {
                 display: "form",
-                components: [
-                    ...schema
-                ]
-            })
+                components: updatedSchema,
+            };
         });
         setShow(true);
     }
@@ -86,7 +99,7 @@ const CardStages = ({ triggerRefetch, data, actions, todoId, isActive, assignedT
                     );
                 }
                 if (action.toLowerCase() !== "approve") {
-                    triggerRefetch();
+                    // triggerRefetch();
                 }
 
                 // Query invalidation now handled by Frappe realtime events
@@ -102,14 +115,25 @@ const CardStages = ({ triggerRefetch, data, actions, todoId, isActive, assignedT
                 // setLoadingAction(null);
             }
         },
-        [mutation, triggerRefetch]
+        [mutation]
     );
 
     const canPerformActions = useMemo(() => {
+
         if (!isActive) return false;
-        if (!currentEmployee?.name || !assignedTo?.emp_id) return false;
-        if (currentEmployee.name === assignedTo?.emp_id) return true;
-        if (currentUser?.roles && currentUser.roles.some(role => role.role === assignedTo?.role)) return true;
+
+        // Case 1: employee name matches assigned emp_id
+        if (currentEmployee?.name === assignedTo?.emp_id) return true;
+
+        // Case 2: user name matches assigned user_id
+        if (assignedTo?.user_id === currentUser?.name) return true;
+
+        // Case 3: user has a role matching assigned role
+        if (
+            currentUser?.roles &&
+            currentUser.roles.some(role => role.role === assignedTo?.role)
+        ) return true;
+
         return false;
     }, [currentEmployee, assignedTo, isActive, currentUser]);
 
@@ -123,7 +147,7 @@ const CardStages = ({ triggerRefetch, data, actions, todoId, isActive, assignedT
                     <span className="flex gap-2">
                         {data?.form_json?.components && data.status !== "Pending" &&
                             <button className={`rounded-lg ring-1 hover:font-semibold transition-all duration-100 ring-blue-500 text-blue-500 hover:ring-2 px-1 py-1 text-sm`}
-                                onClick={() => handleShowForm(data?.form_json?.components)}> Show Review </button>}
+                                onClick={() => handleShowForm(data?.form_json?.components, data?.approval_response_data)}> Show Review </button>}
                         {canPerformActions &&
                             actions.map(action => (
                                 <button onClick={() => handleAction(action, { todo_id: todoId })} className="rounded-lg ring-1 hover:font-semibold transition-all duration-300 ring-blue-500 text-blue-500 hover:ring-2 px-1 py-1 text-sm">
@@ -166,7 +190,7 @@ const CardStages = ({ triggerRefetch, data, actions, todoId, isActive, assignedT
                     {/* Review Button */}
                     {data?.form_json?.components && data.status !== "Pending" && (
                         <button
-                            onClick={() => handleShowForm(data?.form_json?.components)}
+                            onClick={() => handleShowForm(data?.form_json?.components, data?.approval_response_data)}
                             className="w-full rounded-xl border border-blue-200 bg-blue-50 text-blue-600 py-2 text-sm font-medium hover:bg-blue-100 transition"
                         >
                             View Review Form
@@ -189,7 +213,8 @@ const CardStages = ({ triggerRefetch, data, actions, todoId, isActive, assignedT
                     )}
                 </div>
             }
-            {formSchema && show &&
+            {
+                formSchema && show &&
                 createPortal(<div className="fixed inset-0 z-50 bg-black/10 flex justify-center items-center">
                     <div className="max-w-[500px] mx-2 w-full rounded-xl bg-white p-6">
                         <div className="flex border-b pb-2 mb-2">
@@ -210,7 +235,7 @@ const CardStages = ({ triggerRefetch, data, actions, todoId, isActive, assignedT
                 </div>, document.body)
             }
 
-        </div>
+        </div >
     )
 }
 
