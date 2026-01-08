@@ -31,7 +31,7 @@ const MicroAppInDashboard: React.FC = () => {
   };
 
   return (
-    <Card shadow="sm" className="h-full">
+    <Card shadow="sm" className="h-full ">
       <div className="flex items-center justify-between mb-4">
         <Typography variant="subheading" color="title">Admin apps</Typography>
         <ViewAll title="View all" />

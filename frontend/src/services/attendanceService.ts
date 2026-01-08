@@ -685,13 +685,13 @@ export const getAllAttendancePolicies = async (
 };
 
 export const getAttendanceAssignmentPolicies = async (
-  employee: Array<string>
-): Promise<{ data: Policy[] }> => {
+  employee: string
+): Promise<{ data: { policies: Policy[] } }> => {
   const res = await FrappeAPI.callMethod("cn_leave_shift_managment.api.get_employee_policies", {
-    employee: employee
+    employees: [employee]
   });
   return {
-    data: res as Policy[], // Return the expected format
+    data: res as { policies: Policy[] }, // Return the expected format
   };
 };
 

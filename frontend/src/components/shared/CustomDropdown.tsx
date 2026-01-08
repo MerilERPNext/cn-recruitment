@@ -1,5 +1,6 @@
 // import { Funnel } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
+import Button from "./atoms/Button";
 
 interface Option {
   value: string;
@@ -64,8 +65,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       ref={dropdownRef}
       className={`relative inline-block ${className || ""}`}
     >
-      <button
-        type="button"
+      <Button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
       >
@@ -85,25 +85,26 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
             d="M19 9l-7 7-7-7"
           />
         </svg>
-      </button>
+        {/* <Funnel size={18} /> */}
+      </Button>
 
       {isOpen && (
         <div
-          className={`absolute right-0 mt-2 w-max min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${positionCss[position]}`}
+          className={`absolute right-0 mt-2 w-fit min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${positionCss[position]}`}
         >
           {options.map((option) => (
-            <button
+            <Button
+              variant="subtle"
               key={option.value}
-              type="button"
               onClick={() => handleSelect(option.value)}
-              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-primary/10 transition-colors ${
+              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors ${
                 value === option.value
-                  ? "bg-primary/10 text-primary font-medium"
+                  ? "bg-blue-50 text-blue-600 font-medium"
                   : "text-gray-700"
               }`}
             >
               {option.label}
-            </button>
+            </Button>
           ))}
         </div>
       )}

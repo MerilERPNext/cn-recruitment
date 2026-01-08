@@ -766,7 +766,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 top-[-30px] z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();

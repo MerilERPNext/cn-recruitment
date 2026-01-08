@@ -93,7 +93,7 @@ export function MyRequestCard({
         </div>
       ) : (
         <div
-          className="block cursor-pointer border border-gray-200 gap-3 bg-white shadow-sm transition-shadow rounded-xl mx-2"
+          className="block cursor-pointer border border-gray-200 gap-3 bg-white shadow-sm transition-shadow rounded-xl"
           onClick={() => onClick?.(request)}
         >
           <div className="p-4">

@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { Typography } from "./atoms/Typography";
 
 const CardTable = ({
   titles,
@@ -21,23 +22,24 @@ const CardTable = ({
     <div
       className={
         isDesktop
-          ? `overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm`
+          ? `overflow-x-auto rounded-lg bg-white shadow-sm`
           : ""
       }
     >
       {/* Header */}
       {isDesktop && (
         <div
-          className="grid gap-4 px-6 h-12 bg-gray-50 border-b border-gray-200"
+          className="grid gap-4 px-6 py-4 bg-gray-50"
           style={{ gridTemplateColumns }}
         >
           {titles?.map((item, i) => (
-            <span
+            <Typography
               key={i}
-              className="text-xs font-semibold text-gray-500 flex items-center justify-start"
+              variant="bodySmall"
+              className="font-medium flex items-center justify-start"
             >
               {item}
-            </span>
+            </Typography>
           ))}
         </div>
       )}

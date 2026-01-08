@@ -1,14 +1,15 @@
 import React, { ReactNode, forwardRef } from "react";
 
-type ButtonVariant = "contain" | "outline" | "subtle";
+type ButtonVariant = "contain" | "outline" | "subtle" | "soft";
 type ButtonSize = "sm" | "md" | "lg";
-type ButtonColor =
+export type ButtonColor =
   | "primary"
   | "secondary"
   | "success"
   | "warning"
   | "error"
-  | "info";
+  | "info"
+  | "disabled";
 
 type ButtonContentAlign = "start" | "center" | "end" | "between";
 
@@ -47,7 +48,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const sizeClasses: Record<ButtonSize, string> = {
       sm: "text-label px-3 py-1.5",
-      md: "text-body-sm-medium px-4 py-2",
+      md: "text-body-sm px-4 py-2 font-normal",
       lg: "text-body-medium px-6 py-3",
     };
 
@@ -72,34 +73,48 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           "bg-primary text-white hover:bg-primary-600 active:bg-primary-700",
         outline: "border border-primary text-primary hover:bg-primary-50",
         subtle: "text-primary hover:bg-primary/10",
+        soft: "bg-primary-50 text-primary-600 hover:bg-primary-100",
       },
       secondary: {
         contain:
           "bg-secondary text-white hover:bg-secondary-600 active:bg-secondary-700",
         outline: "border border-secondary text-secondary hover:bg-secondary-50",
         subtle: "text-secondary hover:bg-secondary-50",
+        soft: "bg-secondary-50 text-secondary-600 hover:bg-secondary-100",
       },
       success: {
         contain:
           "bg-success-100 text-success hover:bg-success/20 active:bg-success-800",
         outline: "border border-success text-success hover:bg-success-50",
         subtle: "text-success hover:bg-success-50",
+        soft: "bg-success-50 text-success hover:bg-success-100",
       },
       warning: {
         contain:
           "bg-warning text-white hover:bg-warning-600 active:bg-warning-800",
         outline: "border border-warning text-warning hover:bg-warning-50",
         subtle: "text-warning hover:bg-warning-50",
+        soft: "bg-warning-50 text-warning hover:bg-warning-100",
       },
       error: {
         contain: "bg-error text-white hover:bg-error-600 active:bg-error-800",
         outline: "border border-error text-error hover:bg-error-50",
         subtle: "text-error hover:bg-error-50",
+        soft: "bg-error-50 text-error hover:bg-error-100",
       },
       info: {
         contain: "bg-info text-white hover:bg-info-600 active:bg-info-800",
         outline: "border border-info text-info hover:bg-info-50",
         subtle: "text-info hover:bg-info-50",
+        soft: "bg-info-50 text-info hover:bg-info-100",
+      },
+      disabled: {
+        contain:
+          "bg-gray-200 text-gray-600 hover:bg-gray-200 active:bg-gray-200",
+        outline:
+          "border border-gray-200 text-gray-600 hover:bg-gray-200",
+        subtle: "text-gray-600 hover:bg-gray-200",
+        soft: "bg-gray-50 text-gray-600 hover:bg-gray-100",
       },
     };
 
@@ -111,7 +126,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       bgColor && COLOR_STYLES[bgColor] ? bgColor : "primary";
 
     const resolvedVariant: ButtonVariant =
-      variant && ["contain", "outline", "subtle"].includes(variant)
+      variant && ["contain", "outline", "subtle", "soft"].includes(variant)
         ? variant
         : "contain";
 

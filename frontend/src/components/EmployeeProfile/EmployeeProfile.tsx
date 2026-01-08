@@ -443,7 +443,7 @@ const EmployeeProfile: React.FC = () => {
                     </div>
                     <button
                       onClick={handleImageClick}
-                      className="absolute bottom-[-10px] right-[-10px] bg-primary-600 h-10 w-10 flex justify-center items-center text-white rounded-2xl shadow-lg hover:bg-primary-700 transition-all hover:scale-110 active:scale-95 z-10"
+                      className="absolute bottom-[-10px] right-[-10px] bg-primary-500 h-10 w-10 flex justify-center items-center text-white rounded-2xl shadow-lg hover:bg-primary-700 transition-all hover:scale-110 active:scale-95 z-10"
                       aria-label="Upload new avatar"
                     >
                       {updateDocMutation.isPending ||
@@ -538,9 +538,8 @@ const EmployeeProfile: React.FC = () => {
           <div className="bg-white border-b sticky top-0 z-10">
             <div className="flex overflow-x-auto scrollbar-hide px-6 py-3 tracking-wide">
               {tabs.map((tab) => (
-                <Button
+                <button
                   key={tab.key}
-                  variant="subtle"
                   onClick={() => scrollToSection(tab.key)}
                   className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
                     activeTab === tab.key
@@ -549,7 +548,7 @@ const EmployeeProfile: React.FC = () => {
                   }`}
                 >
                   {tab.label}
-                </Button>
+                </button>
               ))}
             </div>
           </div>

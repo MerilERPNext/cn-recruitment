@@ -68,9 +68,9 @@ const Events = () => {
     const tabs = ["Birthdays", "Anniversaries"];
 
     return (
-        <Card shadow="sm" padding="none" className="h-full flex flex-col max-h-[16.5rem] min-h-[16.5rem]">
+        <Card shadow="sm" className="h-full flex flex-col max-h-[16.5rem] min-h-[16.5rem]">
             {/* Header */}
-            <div className="sticky top-0 bg-white rounded-t-lg border-b px-2 py-2 flex justify-between items-center w-full ">
+            <div className="sticky top-0 bg-white rounded-t-lg flex justify-between items-center w-full ">
                 <Typography variant="subheading" color="title">Events</Typography>
                 <div className="flex items-center gap-4">
                     {/* Tabs */}
@@ -107,7 +107,7 @@ const Events = () => {
             </div>
 
             {/* Content Scroll Area */}
-            <div className="flex-1 overflow-y-auto p-2">
+            <div className="flex-1 overflow-y-auto py-2">
 
                 <div className="flex flex-col gap-3">
 
@@ -137,7 +137,7 @@ const Events = () => {
                                 <Card
                                     shadow="none"
                                     key={`${employee.employee_name}-${index}`}
-                                    className="flex items-center justify-between gap-3 py-2 px-2 rounded-xl hover:border-gray-50 hover:bg-gray-50/50 transition-all group"
+                                    className="flex items-center justify-between gap-3 py-2 px-2 rounded-xl hover-lift transition-all group"
                                 >
                                     <div className="flex gap-2 items-center">
                                         {/* Avatar */}

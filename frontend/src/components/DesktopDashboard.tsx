@@ -363,7 +363,7 @@ export default function DesktopDashboard() {
       >
         {/* Header */}
         <div
-          className="bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600
+          className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500
   border-b border-gray-200 px-6 py-[0.3rem]
   flex items-center sticky top-0 z-10 gap-4"
         >
@@ -459,7 +459,7 @@ export default function DesktopDashboard() {
               {showProfileDropdown && (
                 <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                       {/* Profile Image */}
                       <div className="w-16 h-16 flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
                         <img
@@ -473,18 +473,18 @@ export default function DesktopDashboard() {
                       {/* Text Info */}
                       <div className="flex-1 min-w-0">
                         <Typography variant="subheading" color="title" className="truncate block font-bold">
-                          {currentEmployee?.employee_name || "Temp User"}
+                          {currentEmployee?.employee_name || "N/A"}
                         </Typography>
-                        <Typography variant="bodySmall" color="secondary" className="truncate block mt-0.5">
-                          {currentEmployee?.custom_designation_name || "Temp Designation"}
+                        <Typography variant="bodySmall" color="body2" className="truncate block">
+                          {currentEmployee?.custom_designation_name || "N/A"}
                         </Typography>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2">
                           <Typography variant="label" color="disabled" className="font-bold uppercase tracking-wider">
                             ID: {currentEmployee?.employee || "N/A"}
                           </Typography>
                         </div>
-                        <Typography variant="bodySmall" color="secondary" className="truncate block mt-1">
-                          {currentEmployee?.company_email || currentEmployee?.personal_email || "Temp Email"}
+                        <Typography variant="bodySmall" color="body2" className="truncate block">
+                          {currentEmployee?.company_email || currentEmployee?.personal_email || "N/A"}
                         </Typography>
                       </div>
                     </div>
@@ -493,31 +493,31 @@ export default function DesktopDashboard() {
 
                   <div className="p-2">
                     <div className="px-4 py-2">
-                      <Typography variant="label" color="disabled" className="uppercase tracking-wide mb-2 block">
+                      <Typography variant="bodySmall" color="body2" className="uppercase mb-2 font-medium">
                         Company Information
                       </Typography>
                       <div className="space-y-1">
                         <div className="flex justify-between">
-                          <Typography variant="bodySmall" color="secondary">Department:</Typography>
-                          <Typography variant="bodySmall" color="title">
+                          <Typography variant="bodySmall" color="body2">Department:</Typography>
+                          <Typography variant="bodySmall" color="body2">
                             {currentEmployee?.department || "N/A"}
                           </Typography>
                         </div>
                         <div className="flex justify-between">
-                          <Typography variant="bodySmall" color="secondary">Company:</Typography>
-                          <Typography variant="bodySmall" color="title">
+                          <Typography variant="bodySmall" color="body2">Company:</Typography>
+                          <Typography variant="bodySmall" color="body2">
                             {currentEmployee?.company || "N/A"}
                           </Typography>
                         </div>
                         <div className="flex justify-between">
-                          <Typography variant="bodySmall" color="secondary">Join Date:</Typography>
-                          <Typography variant="bodySmall" color="title">
+                          <Typography variant="bodySmall" color="body2">Join Date:</Typography>
+                          <Typography variant="bodySmall" color="body2">
                             {currentEmployee?.date_of_joining || "N/A"}
                           </Typography>
                         </div>
                         <div className="flex justify-between">
-                          <Typography variant="bodySmall" color="secondary">Status:</Typography>
-                          <Typography variant="bodySmall" color="success" className="font-medium">
+                          <Typography variant="bodySmall" color="body2">Status:</Typography>
+                          <Typography variant="bodySmall" color="success">
                             {currentEmployee?.status || "Active"}
                           </Typography>
                         </div>
@@ -536,7 +536,6 @@ export default function DesktopDashboard() {
                         navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
-                      className="justify-start gap-3 px-4 font-normal"
                     >
                       <User className="w-4 h-4" />
                       View Full Profile
@@ -551,7 +550,6 @@ export default function DesktopDashboard() {
                         onClick={() => {
                           window.location.href = "/app/home";
                         }}
-                        className="justify-start gap-3 px-4 font-normal"
                       >
                         <Dock className="w-4 h-4" />
                         Switch to Admin
@@ -564,7 +562,6 @@ export default function DesktopDashboard() {
                       contentAlign="start"
                       onClick={handleReset}
                       disabled={mutation.isPending}
-                      className="justify-start gap-3 px-4 font-normal"
                     >
                       {mutation.isPending ? (
                         <CircularLoader size="sm" color="blue-500" />
@@ -586,7 +583,6 @@ export default function DesktopDashboard() {
                         await logoutHandler();
                         setShowProfileDropdown(false);
                       }}
-                      className="justify-start gap-3 px-4 font-normal"
                     >
                       <LogOut className="w-4 h-4" />
                       Logout
@@ -616,7 +612,7 @@ export default function DesktopDashboard() {
             )}
 
             {/* Hero Banner */}
-            <div className=" w-full max-w-full overflow-hidden bg-white mb-2">
+            <div className=" w-full max-w-full overflow-hidden bg-white mb-4">
               {!userNoticeIsLoading &&
                 userNotices &&
                 userNotices?.length > 0 && (
@@ -637,7 +633,7 @@ export default function DesktopDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
             {/* Row 1: Tasks Awaiting (8) | Clocking (4) */}
             <div className="lg:col-span-8">
               <TasksAwaiting />
@@ -700,7 +696,7 @@ export default function DesktopDashboard() {
                       }}
                       backgroundColor={isCurrentlyCheckedIn
                         ? "bg-success-100 border-success-100"
-                        : "bg-error-100 border-error-100"
+                        : "bg-error-50 border-error-100"
                       }
                       textColor={isCurrentlyCheckedIn ? "text-success" : "text-error"}
                     />
@@ -729,7 +725,7 @@ export default function DesktopDashboard() {
                     {/* OUT TIME */}
                     <div className="py-2 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-error-100 rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-error-50 rounded-xl flex items-center justify-center">
                           <XCircle className="w-5 h-5 text-error" />
                         </div>
                         <div>
@@ -801,8 +797,8 @@ export default function DesktopDashboard() {
             </div>
 
             <div className="lg:col-span-4">
-              <Card shadow="sm" padding="none" className="h-full">
-                <div className="flex justify-between items-center mb-4 border-b p-2">
+              <Card shadow="sm" className="h-full">
+                <div className="flex justify-between items-center mb-4">
                   <Typography variant="subheading" color="title">Requests</Typography>
 
                   <ViewAll
@@ -812,7 +808,7 @@ export default function DesktopDashboard() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 px-4">
+                <div className="grid grid-cols-2 gap-4">
                   {[
                     {
                       label: "Apply Leave",
@@ -841,7 +837,7 @@ export default function DesktopDashboard() {
                   ].map((action, idx) => (
                     <div
                       key={idx}
-                      className="group flex flex-col items-center justify-center p-4 rounded-xl  hover:bg-gray-50 transition-all cursor-pointer text-center"
+                      className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"
                       onClick={action.onClick}
                     >
                       <div className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${action.color === 'primary' ? 'bg-primary-100 text-primary-600' :

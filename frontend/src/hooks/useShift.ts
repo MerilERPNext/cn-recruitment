@@ -50,10 +50,11 @@ export const useShiftTypes = () => {
     queryFn: getAllShiftTypes,
   });
 };
-export const useEmployeeShifts = () => {
+export const useEmployeeShifts = (employee: string) => {
   return useQuery({
-    queryKey: ["employee-shifts-assignment"],
-    queryFn: getEmployeeShifts,
+    queryKey: ["employee-shifts-assignment", employee],
+    queryFn: () => getEmployeeShifts(employee),
+    enabled: !!employee,
   });
 };
 

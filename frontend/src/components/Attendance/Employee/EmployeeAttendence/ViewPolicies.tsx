@@ -4,9 +4,18 @@ import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { useGetEmployeeShift, useGetPolicyForDate, useReqValidationsForOvertimeRequest } from "../../../../hooks/useAttendance";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { Typography } from "../../../shared/atoms/Typography";
+import PolicyDrawer from "../../PolicyDrawer";
+import { useState } from "react";
+import { PolicyDrawerConfig } from "../../AttendanceSummary";
 
 const ViewPolicies = () => {
     const navigate = useNavigate()
+    const [openPolicyDrawer, setOpenPolicyDrawer] = useState(false);
+
+    const [policyDrawerConfig, setPolicyDrawerConfig] =
+        useState<PolicyDrawerConfig | null>(null);
+
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name as string
@@ -60,11 +69,43 @@ const ViewPolicies = () => {
         },
     ];
 
-    const getNavigatableSettingsButton = (
-        settingType: string,
-        data?: string
-    ) => {
+    const getNavigatableSettingsButton = (settingType: string, data?: string) => {
         if (!data) return null;
+
+        const drawerSettings: Record<
+            string,
+            { doctypeName: string; useEmployeeAsTarget?: boolean }
+        > = {
+            "Current Shift": { doctypeName: "Shift Type" },
+            "Attendance Method": {
+                doctypeName: "Employee",
+                useEmployeeAsTarget: true,
+            },
+            "Week Off": { doctypeName: "Week Off" },
+        };
+
+        const settingConfig = drawerSettings[settingType];
+        if (settingConfig) {
+            const { doctypeName, useEmployeeAsTarget } = settingConfig;
+            return (
+                <Typography
+                    variant="bodySmall"
+                    onClick={() => {
+                        setPolicyDrawerConfig({
+                            title: settingType,
+                            doctypeName,
+                            targetDoctype: useEmployeeAsTarget
+                                ? currentEmployee?.employee || ""
+                                : data,
+                        });
+                        setOpenPolicyDrawer(true);
+                    }}
+                    className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
+                >
+                    {data}
+                </Typography>
+            );
+        }
 
         let path: string | null = null;
 
@@ -82,16 +123,16 @@ const ViewPolicies = () => {
         }
 
         return (
-            <button
-                type="button"
+            <Typography
+                variant="bodySmall"
                 onClick={() => navigate(path!)}
-                className="w-full text-left text-sm text-gray-800
-                 hover:text-blue-600 rounded-lg transition-colors"
+                className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
             >
                 {data}
-            </button>
+            </Typography>
         );
     };
+
     return (
         <div >
             <div className="space-y-2">
@@ -101,7 +142,7 @@ const ViewPolicies = () => {
                     return (
                         <div
                             key={index}
-                            className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
+                            className="group flex items-start gap-4 p-4 rounded-2xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 hover:shadow-sm transition-all duration-300"
                         >
                             <div className="p-2 bg-gray-200 rounded-lg">
                                 <Icon className="h-4 w-4 text-gray-700" />
@@ -112,26 +153,44 @@ const ViewPolicies = () => {
                                 </h3>
 
                                 {setting.details.length > 0 ? (
-                                    setting.details.map((detail, detailIndex) =>
-                                        getNavigatableSettingsButton(setting.title, detail) ?? (
-                                            <p
-                                                key={detailIndex}
-                                                className="text-sm text-gray-700"
-                                            >
-                                                {detail}
-                                            </p>
-                                        )
-                                    )
+                                    <div className="space-y-1">
+                                        {setting.details.map(
+                                            (detail, detailIndex) =>
+                                                getNavigatableSettingsButton(
+                                                    setting.title,
+                                                    detail
+                                                ) ?? (
+                                                    <Typography
+                                                        key={detailIndex}
+                                                        variant="bodySmall"
+                                                        className="font-medium text-gray-600 block"
+                                                    >
+                                                        {detail}
+                                                    </Typography>
+                                                )
+                                        )}
+                                    </div>
                                 ) : (
-                                    <p className="text-sm text-gray-500">
-                                        No policy defined
-                                    </p>
+                                    <Typography variant="bodySmall" className="text-gray-400 italic">
+                                        Not configured
+                                    </Typography>
                                 )}
                             </div>
                         </div>
                     );
                 })}
             </div>
+            {
+                openPolicyDrawer && policyDrawerConfig && (
+                    <PolicyDrawer
+                        isOpen={openPolicyDrawer}
+                        onClose={() => setOpenPolicyDrawer(false)}
+                        title={policyDrawerConfig.title}
+                        doctypeName={policyDrawerConfig.doctypeName}
+                        targetDoctype={policyDrawerConfig.targetDoctype}
+                    />
+                )
+            }
         </div>
     )
 }

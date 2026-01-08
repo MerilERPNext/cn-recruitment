@@ -27,17 +27,17 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
   return (
     <div
       key={item.name} // Assuming item.name is unique
-      className="flex items-center justify-between p-3 rounded-xl border border-transparent hover:border-gray-100 hover:bg-gray-50/50 transition-all group"
+      className="flex items-center justify-between p-3 rounded-xl border border-transparent hover-lift transition-all group"
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
           <ClipboardList className="w-5 h-5" />
         </div>
         <div>
-          <Typography variant="bodyMedium" className="font-semibold block line-clamp-1">
+          <Typography variant="bodySmall" className="font-medium block line-clamp-1">
             {item.subject || item.description || "Task"}
           </Typography>
-          <Typography variant="bodySmall" color="secondary" className="text-[11px]">
+          <Typography variant="label" color="body2" >
             {item.due_date
               ? `Due on ${format(parse(item.due_date, "yyyy-MM-dd", new Date()), "do MMM")}`
               : item.date
