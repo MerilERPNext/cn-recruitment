@@ -9,7 +9,8 @@ export type ButtonColor =
   | "warning"
   | "error"
   | "info"
-  | "disabled";
+  | "disabled"
+  | (string & {});
 
 type ButtonContentAlign = "start" | "center" | "end" | "between";
 
@@ -67,7 +68,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
        Theme-safe color styles
     =============================== */
 
-    const COLOR_STYLES: Record<ButtonColor, Record<ButtonVariant, string>> = {
+    const COLOR_STYLES: Record<string, Record<ButtonVariant, string>> = {
       primary: {
         contain:
           "bg-primary text-white hover:bg-primary-600 active:bg-primary-700",
@@ -130,13 +131,16 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
        Runtime-safe resolution
     =============================== */
 
-    const resolvedColor: ButtonColor =
-      bgColor && COLOR_STYLES[bgColor] ? bgColor : "primary";
-
     const resolvedVariant: ButtonVariant =
       variant && ["contain", "outline", "subtle", "soft"].includes(variant)
         ? variant
         : "contain";
+
+    // Determine color classes: use predefined styles or fallback to raw className
+    const colorClasses =
+      bgColor in COLOR_STYLES
+        ? COLOR_STYLES[bgColor][resolvedVariant]
+        : `bg-${bgColor}`;
 
     const widthClass = fullWidth ? "w-full" : "w-fit";
 
@@ -154,7 +158,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           transition-colors duration-150
           disabled:opacity-50 disabled:cursor-not-allowed
           ${sizeClasses[size]}
-          ${COLOR_STYLES[resolvedColor][resolvedVariant]}
+          ${colorClasses}
           ${className}
         `}
       >

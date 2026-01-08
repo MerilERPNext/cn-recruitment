@@ -125,7 +125,7 @@ const SearchMembers = () => {
       <main className="flex-grow w-full">
         <div className="relative mx-auto max-w-3xl px-3 sm:px-6 lg:px-8 ">
           <div className="flex items-center gap-2">
-            <div className="flex-1  flex  bg-gray-100 focus-within:bg-white items-center gap-2 rounded-xl  px-3 sm:px-4 h-11 sm:h-12 focus-within:ring-2 ring-blue-700 transition">
+            <div className="flex-1  flex  bg-white focus-within:bg-white items-center gap-2 rounded-xl  px-3 sm:px-4 h-11 sm:h-12 focus-within:ring-2 ring-blue-700 transition">
               <Search className="text-gray-600 w-5 h-5" aria-hidden="true" />
               <input
                 id="member-search"
@@ -142,7 +142,7 @@ const SearchMembers = () => {
             </div>
           </div>
           {isFocused && (
-            <div className="z-50 absolute sm:top-[60%] top-[120%] left-1/2 -translate-x-1/2 rounded-lg overflow-hidden border-gray-200 shadow-lg border bg-gray-50 py-2 overflow-y-auto max-w-[90%] max-h-[200px]  w-full  sm:mt-6">
+            <div className="z-50 absolute sm:top-[60%] top-[120%] left-1/2 -translate-x-1/2 rounded-lg overflow-hidden border-gray-200 shadow-lg border bg-white p-2 overflow-y-auto max-w-[90%] max-h-[200px]  w-full  sm:mt-6">
               {employeeList()}
             </div>
           )}

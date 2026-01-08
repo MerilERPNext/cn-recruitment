@@ -180,7 +180,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.searchField = "q";
 
       schema.template = `
-    <span>{{ item.title || item.label || item.full_name || item.fullname || item.first_name || item.name }}</span>
+    <span> {{ item.name }} ({{ item.employee_name || item.title || item.label || item.full_name || item.fullname || item.first_name }})</span>
   `;
 
       break;

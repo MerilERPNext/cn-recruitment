@@ -112,7 +112,7 @@ export default function EmployeeProfileSections() {
                     <Typography variant="h3" className="font-bold text-gray-900 mb-1">
                         Personal Information
                     </Typography>
-                    <Typography variant="bodyMedium" color="secondary">
+                    <Typography variant="bodyMedium" color="body2">
                         Comprehensive details and records.
                     </Typography>
                 </div>
