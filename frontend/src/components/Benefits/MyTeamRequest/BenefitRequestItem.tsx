@@ -7,6 +7,7 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
 import { useCommentOnBenefitClaim } from "../../../hooks/useBenefit";
 import { createPortal } from "react-dom";
+import { getActionStyles } from "../../../utils/actionButtonStyles";
 
 // Props type
 type BenefitRequestItemProps = {
@@ -30,9 +31,9 @@ const BenefitRequestItem = ({
   onClick,
   loadingAction,
 }: BenefitRequestItemProps) => {
-  console.log(data)
+  console.log(data);
   const { isDesktop } = useScreenSize();
-  const [showCommentModal, setShowCommentModal] = useState(false)
+  const [showCommentModal, setShowCommentModal] = useState(false);
   const [rejectionComment, setRejectionComment] = useState("");
 
   const CommentBenefitClaim = useCommentOnBenefitClaim();
@@ -45,12 +46,12 @@ const BenefitRequestItem = ({
   const [sAction, setSAction] = useState<string>("");
 
   const handlePreSaveAction = (action: string) => {
-    setShowCommentModal(() => action === "Reject")
+    setShowCommentModal(() => action === "Reject");
     if (action !== "Reject") {
       onAction(action, data);
     }
     setSAction(action);
-  }
+  };
 
   const handleSaveComment = async () => {
     if (!rejectionComment.trim()) {
@@ -69,7 +70,7 @@ const BenefitRequestItem = ({
     } catch (error) {
       console.error("Failed to save comment", error);
     }
-  }
+  };
 
   if (!data) return null;
 
@@ -80,43 +81,11 @@ const BenefitRequestItem = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string): { bg: string; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "gray-100",
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "green-100",
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "red-100",
-          text: "red-600",
-        };
-
-        break;
-      default:
-        styles = {
-          bg: "gray-200",
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
-
   const gridTemplateColumns = "2% 10% 18% 10% 10% 10% 10% 20%";
-
 
   return (
     <div>
-
-      {isDesktop ?
+      {isDesktop ? (
         <div
           className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
@@ -159,6 +128,7 @@ const BenefitRequestItem = ({
           <div className="flex w-full justify-start gap-2 whitespace-nowrap">
             {actions?.length &&
               actions.map((action: string) => {
+                const actionStyle = getActionStyles(action);
                 return (
                   <Button
                     key={action}
@@ -167,15 +137,15 @@ const BenefitRequestItem = ({
                       e.stopPropagation();
                       handlePreSaveAction(action);
                     }}
-                    bgColor={getActionStyles(action).bg}
-                    textColor={getActionStyles(action).text}
+                    bgColor={actionStyle.bgColor}
+                    variant={actionStyle.variant}
                     disabled={
                       loadingAction?.id === data?.todo_id &&
                       loadingAction?.action === action
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -185,7 +155,7 @@ const BenefitRequestItem = ({
               })}
           </div>
         </div>
-        :
+      ) : (
         <div
           className="flex flex-col gap-4 border rounded-lg p-4 mt-2 border-gray-300  hover:bg-gray-50 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
@@ -221,20 +191,29 @@ const BenefitRequestItem = ({
           <div className="flex justify-between">
             <div className="flex flex-col justify-start text-start  text-gray-900 text-sm">
               <label className="text-sm text-gray-500">claimed amount</label>
-              <span className="text-gray-800 font-semibold">{data.reference_document.claimed_amount}</span>
+              <span className="text-gray-800 font-semibold">
+                {data.reference_document.claimed_amount}
+              </span>
             </div>
             <div className="flex flex-col justify-center text-center  text-gray-900 text-sm">
-              <label className="text-sm text-gray-500">max eligible amount</label>
-              <span className="text-gray-800 font-semibold">{data.reference_document.custom_max_amount}</span>
+              <label className="text-sm text-gray-500">
+                max eligible amount
+              </label>
+              <span className="text-gray-800 font-semibold">
+                {data.reference_document.custom_max_amount}
+              </span>
             </div>
             <div className="flex flex-col justify-end text-end  text-gray-900 text-sm">
               <label className="text-sm text-gray-500">claim date</label>
-              <span className="text-gray-800 font-semibold">{formatToIndianDate(data.reference_document.claim_date)}</span>
+              <span className="text-gray-800 font-semibold">
+                {formatToIndianDate(data.reference_document.claim_date)}
+              </span>
             </div>
           </div>
           <div className="flex w-full justify-start gap-2 whitespace-nowrap">
             {actions?.length &&
               actions.map((action: string) => {
+                const actionStyle = getActionStyles(action);
                 return (
                   <Button
                     className="w-full"
@@ -244,15 +223,15 @@ const BenefitRequestItem = ({
                       e.stopPropagation();
                       handlePreSaveAction(action);
                     }}
-                    bgColor={getActionStyles(action).bg}
-                    textColor={getActionStyles(action).text}
+                    bgColor={actionStyle.bgColor}
+                    variant={actionStyle.variant}
                     disabled={
                       loadingAction?.id === data?.todo_id &&
                       loadingAction?.action === action
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -261,82 +240,104 @@ const BenefitRequestItem = ({
                 );
               })}
           </div>
-        </div>}
-      {showCommentModal && createPortal(
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleCancelComment();
-          }}
-        >
-          <div
-            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Comment Required
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Please add a comment before rejecting this benefit request.
-            </p>
-            <div className="mb-4">
-              <label className="text-xs text-gray-500 uppercase mb-1 block">
-                COMMENT *
-              </label>
-              <textarea
-                value={rejectionComment}
-                onChange={(e) => setRejectionComment(e.target.value)}
-                placeholder="Enter your rejection comment..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                rows={4}
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <Button
-                onClick={handleCancelComment}
-                size="sm"
-                bgColor="gray-100"
-                textColor="gray-700"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveComment}
-                size="sm"
-                bgColor="blue-100"
-                textColor="blue-600"
-                disabled={!rejectionComment.trim() || CommentBenefitClaim.isPending}
-              >
-                {CommentBenefitClaim.isPending ? (
-                  <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Save & Continue"
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>,
-        document.body
+        </div>
       )}
+      {showCommentModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCancelComment();
+            }}
+          >
+            <div
+              className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Comment Required
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please add a comment before rejecting this benefit request.
+              </p>
+              <div className="mb-4">
+                <label className="text-xs text-gray-500 uppercase mb-1 block">
+                  COMMENT *
+                </label>
+                <textarea
+                  value={rejectionComment}
+                  onChange={(e) => setRejectionComment(e.target.value)}
+                  placeholder="Enter your rejection comment..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  rows={4}
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={handleCancelComment}
+                  size="sm"
+                  bgColor="disabled"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveComment}
+                  size="sm"
+                  bgColor="primary"
+                  disabled={
+                    !rejectionComment.trim() || CommentBenefitClaim.isPending
+                  }
+                >
+                  {CommentBenefitClaim.isPending ? (
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    "Save & Continue"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
 
-
 const StatusBadge = ({ status }: { status: string }) => {
-  const statusConfig: Record<string, { bg: string; text: string; borderColor: string }> = {
-    Pending: { bg: "bg-yellow-100", text: "text-yellow-800", borderColor: "border-yellow-300" },
-    Cancelled: { bg: "bg-gray-100", text: "text-gray-800", borderColor: "border-gray-300" },
-    Rejected: { bg: "bg-red-100", text: "text-red-800", borderColor: "border-red-300" },
-    Approved: { bg: "bg-green-100", text: "text-green-800", borderColor: "border-green-300" },
+  const statusConfig: Record<
+    string,
+    { bg: string; text: string; borderColor: string }
+  > = {
+    Pending: {
+      bg: "bg-yellow-100",
+      text: "text-yellow-800",
+      borderColor: "border-yellow-300",
+    },
+    Cancelled: {
+      bg: "bg-gray-100",
+      text: "text-gray-800",
+      borderColor: "border-gray-300",
+    },
+    Rejected: {
+      bg: "bg-red-100",
+      text: "text-red-800",
+      borderColor: "border-red-300",
+    },
+    Approved: {
+      bg: "bg-green-100",
+      text: "text-green-800",
+      borderColor: "border-green-300",
+    },
   };
 
   const config = statusConfig[status] || statusConfig.Pending;
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-xl text-xs font-medium border ${config.bg} ${config.text} ${config.borderColor}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-xl text-xs font-medium border ${config.bg} ${config.text} ${config.borderColor}`}
+    >
       {status}
     </span>
   );

@@ -4,6 +4,7 @@ import Button from "../../../shared/atoms/Button";
 import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import { getActionStyles } from "../../../../utils/actionButtonStyles";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -14,6 +15,7 @@ export type ApprovalRejectionLoanProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
 };
+
 
 const ApprovalRejectionLoanList = ({
   isSelected = false,
@@ -36,12 +38,7 @@ const ApprovalRejectionLoanList = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string) => {
-    const a = action.toLowerCase();
-    if (a === "approve") return { bg: "green-100", text: "green-600" };
-    if (a === "reject") return { bg: "red-100", text: "red-600" };
-    return { bg: "gray-200", text: "gray-600" };
-  };
+ 
 
   /* ===================== MOBILE UI ===================== */
   if (isMobile) {
@@ -107,29 +104,33 @@ const ApprovalRejectionLoanList = ({
 
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
-          {actions.map((action: string) => (
-            <Button
-              key={action}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAction(action, data);
-              }}
-              bgColor={getActionStyles(action).bg}
-              textColor={getActionStyles(action).text}
-              disabled={
-                loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action
-              }
-              className="flex-1"
-            >
-              {loadingAction?.id === data?.todo_id &&
+          {actions.map((action: string) => {
+            const actionStyle = getActionStyles(action);
+
+            return (
+              <Button
+                key={action}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAction(action, data);
+                }}
+                bgColor={actionStyle.bgColor}
+                variant={actionStyle.variant}
+                disabled={
+                  loadingAction?.id === data?.todo_id &&
+                  loadingAction?.action === action
+                }
+                className="flex-1"
+              >
+                {loadingAction?.id === data?.todo_id &&
                 loadingAction?.action === action ? (
-                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                action
-              )}
-            </Button>
-          ))}
+                  <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  action
+                )}
+              </Button>
+            );
+          })}
         </div>
       </div>
     );
@@ -140,8 +141,7 @@ const ApprovalRejectionLoanList = ({
     <div
       className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
       style={{
-        gridTemplateColumns:
-          "5% 8% 8% 8% 8% 10% 8% 8% 8% 20%",
+        gridTemplateColumns: "5% 8% 8% 8% 8% 10% 8% 8% 8% 20%",
       }}
       onClick={() => onClick?.(data)}
     >
@@ -161,15 +161,15 @@ const ApprovalRejectionLoanList = ({
       </div>
 
       <div className="text-sm font-medium text-start">
-        <WrapperHoverCard employeeId={data?.reference_document?.custom_employee}>
+        <WrapperHoverCard
+          employeeId={data?.reference_document?.custom_employee}
+        >
           {data?.reference_document?.applicant_name ||
             data?.reference_document?.applicant}
         </WrapperHoverCard>
       </div>
 
-      <div className="text-sm">
-        {data?.reference_document?.loan_product}
-      </div>
+      <div className="text-sm">{data?.reference_document?.loan_product}</div>
 
       <div>{data?.reference_document?.loan_amount}</div>
       <div>{data?.reference_document?.rate_of_interest}%</div>
@@ -181,37 +181,39 @@ const ApprovalRejectionLoanList = ({
         )}
       </div>
 
-      <div>
-        {formatToIndianDate(data?.reference_document?.posting_date)}
-      </div>
+      <div>{formatToIndianDate(data?.reference_document?.posting_date)}</div>
 
       <div>
         <StatusBadge status={data?.reference_document?.status} />
       </div>
 
       <div className="flex gap-2">
-        {actions.map((action: string) => (
-          <Button
-            key={action}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAction(action, data);
-            }}
-            bgColor={getActionStyles(action).bg}
-            textColor={getActionStyles(action).text}
-            disabled={
-              loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action
-            }
-          >
-            {loadingAction?.id === data?.todo_id &&
+        {actions.map((action: string) => {
+          const actionStyle = getActionStyles(action);
+
+          return (
+            <Button
+              key={action}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(action, data);
+              }}
+              bgColor={actionStyle.bgColor}
+              variant={actionStyle.variant}
+              disabled={
+                loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action
+              }
+            >
+              {loadingAction?.id === data?.todo_id &&
               loadingAction?.action === action ? (
-              <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              action
-            )}
-          </Button>
-        ))}
+                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                action
+              )}
+            </Button>
+          );
+        })}
       </div>
     </div>
   );

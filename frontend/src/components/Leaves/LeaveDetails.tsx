@@ -12,6 +12,7 @@ import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
+import { getActionStyles } from "../../utils/actionButtonStyles";
 
 export function LeaveDetailView({
   documentName,
@@ -111,36 +112,6 @@ export function LeaveDetailView({
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
-
-  const getActionStyles = (action: string): { bg: string; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "gray-100",
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "green-100",
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "red-100",
-          text: "red-600",
-        };
-
-        break;
-      default:
-        styles = {
-          bg: "gray-200",
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
 
   const formatDate = (date: string): string => {
     if (!date) return "--/--/----";
@@ -262,6 +233,8 @@ export function LeaveDetailView({
             <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
               {actions?.length &&
                 actions?.map((action: string) => {
+                  const actionStyle = getActionStyles(action);
+
                   const isLoading =
                     currentAction === action && mutation.isPending;
                   return (
@@ -273,8 +246,8 @@ export function LeaveDetailView({
                         handleAction(action);
                       }}
                       size="md"
-                      bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
+                      bgColor={actionStyle.bgColor}
+                      variant={actionStyle.variant}
                     >
                       {isLoading ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
