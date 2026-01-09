@@ -5,23 +5,13 @@ import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
-import CustomDropdown from "../../shared/CustomDropdown";
-
-interface Option {
-  value: string;
-  label: string;
-}
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("Draft");
   const navigate = useNavigate();
-  const options: Option[] = [
-    { value: "Draft", label: "Pending" },
-    { value: "Approved", label: "Approved" },
-    { value: "Rejected", label: "Rejected" },
-  ];
+  const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(false);
+
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
@@ -48,13 +38,28 @@ const TeamExpense = () => {
     setRefetchApprovalList(true);
   }, [setSearchParams]);
 
-  const handleStatusFilterChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setStatusFilter(e.target.value);
-      setRefetchApprovalList(true);
-    },
-    []
-  );
+  const tableTitles = isBulkSelectEnabled
+    ? [
+        "Select",
+        "Employee",
+        "Expense Category",
+        "Claimed Amount",
+        "Due Date",
+        "Status",
+        "Actions",
+      ]
+    : [
+        "Employee",
+        "Expense Category",
+        "Claimed Amount",
+        "Due Date",
+        "Status",
+        "Actions",
+      ];
+
+  const tableColumnWidths = isBulkSelectEnabled
+    ? ["0.5fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"]
+    : ["1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"]
 
   return (
     <>
@@ -64,40 +69,29 @@ const TeamExpense = () => {
             <h2 className="base-title md:module-title pb-1">
               Team Expense Claims
             </h2>
-            <div className="flex items-center gap-3 pb-1">
-              <CustomDropdown
-                options={options}
-                value={statusFilter}
-                onChange={handleStatusFilterChange}
-              />
-            </div>
           </div>
-          <CardTable
-            titles={[
-              ...(statusFilter === "Draft" ? ["Select"] : []),
-              "Employee",
-              "Expense Category",
-              "Claimed Amount",
-              "Due Date",
-              "Status",
-              "Actions",
-            ]}
-            columnWidths={[
-              statusFilter === "Draft"
-                ? "0.5fr 1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr"
-                : "1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr",
-            ]}
-          >
+          <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             {currentUser?.name ? (
               <ApprovalList
                 doctype={"Expense Claim"}
-                status={statusFilter}
+                status={"Draft"}
                 refetch={refetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
                 showPagination={true}
                 infiniteScroll={true}
                 loadMorePagination={false}
+                isSearch={true}
+                isFilter={true}
+                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                filterFields={[
+                  {
+                    fieldname: "status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: ["Draft", "Approved", "Rejected"],
+                  },
+                ]}
                 renderCardContent={(item) => (
                   <ExpenseApprovalCard
                     isSelected={item?.isSelected}
@@ -106,7 +100,7 @@ const TeamExpense = () => {
                     onAction={item?.onAction}
                     onClick={(request: any) => handleRequestClick(request)}
                     loadingAction={item?.loadingAction}
-                    showCheckbox={statusFilter === "Draft"}
+                    showCheckbox={isBulkSelectEnabled}
                   />
                 )}
               />
