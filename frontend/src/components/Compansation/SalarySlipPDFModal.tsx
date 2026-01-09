@@ -58,13 +58,19 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
             {salarySlipDate && <p className="text-sm text-gray-500">{salarySlipDate}</p>}
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => setIsMasked(!isMasked)}>
+            <Button
+            variant="soft"
+             onClick={() => setIsMasked(!isMasked)}>
               {isMasked ? <BsToggleOff className="w-6 h-6" /> : <BsToggleOn className="w-6 h-6" />}
             </Button>
-            <Button onClick={handleDownload}>
+            <Button
+            variant="soft"
+             onClick={handleDownload}>
               <Download className="w-6 h-6" />
             </Button>
-            <Button onClick={onClose}>
+            <Button 
+            variant="soft" 
+            onClick={onClose}>
               <X className="w-6 h-6" />
             </Button>
           </div>
