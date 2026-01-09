@@ -44,26 +44,36 @@ const ViewPolicies = () => {
     const settingsData = [
         {
             icon: Clock,
+            color: "text-green-500",
+            background: "bg-green-50",
             title: "Attendance Method",
             details: getAttendanceMethod(),
         },
         {
             icon: Users,
+            color: "text-yellow-500",
+            background: "bg-yellow-50",
             title: "Current Shift",
             details: employeeShift ? [employeeShift?.shift] : [],
         },
         {
             icon: Shield,
+            color: "text-blue-500",
+            background: "bg-blue-50",
             title: "Attendance Policy",
             details: attendancePolicy ? [attendancePolicy] : [],
         },
         {
             icon: Calendar,
+            color: "text-indigo-500",
+            background: "bg-indigo-50",
             title: "Week Off",
             details: [currentEmployee?.custom_weekly_off || ""],
         },
         {
             icon: Timer,
+            color: "text-purple-500",
+            background: "bg-purple-50",
             title: "Overtime Policy",
             details: employeeOvertimePolicy ? [employeeOvertimePolicy] : [],
         },
@@ -142,10 +152,10 @@ const ViewPolicies = () => {
                     return (
                         <div
                             key={index}
-                            className="group flex items-start gap-4 p-4 rounded-2xl border border-gray-100 hover-lift transition-all duration-300"
+                            className="group flex items-start gap-4 p-4 shadow-sm hover-lift transition-all duration-300"
                         >
-                            <div className="p-2 bg-primary-100 rounded-lg">
-                                <Icon className="h-4 w-4 text-primary-700" />
+                            <div className={`p-2 rounded-lg ${setting.background}`}>
+                                <Icon className={`h-4 w-4 ${setting.color}`} />
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-semibold text-gray-900 mb-1">

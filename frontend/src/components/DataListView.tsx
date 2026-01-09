@@ -940,7 +940,7 @@ const DataListView = <T extends BaseItem>({
                 <div
                   key={itemKey}
                   onClick={() => onItemClick?.(item)}
-                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-gray-50" : ""
+                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
                     }`}
                 >
                   <ItemComponent item={item} index={index} />
