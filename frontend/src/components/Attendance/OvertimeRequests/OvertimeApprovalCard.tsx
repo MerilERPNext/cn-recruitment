@@ -112,7 +112,7 @@ const OvertimeApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -174,7 +174,7 @@ const OvertimeApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -258,7 +258,7 @@ const OvertimeApprovalCard = ({
                       className="w-full"
                     >
                       {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action
