@@ -100,7 +100,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
           {options.map((option) => (
             <Button
               size="md"
-              variant="subtle"
+              variant={value === option.value ? "soft" : "subtle"}
               bgColor={value === option.value ? "primary" : "disabled"}
               key={option.value}
               onClick={() => handleSelect(option.value)}
