@@ -122,16 +122,6 @@ const AttendanceRequest = ({
                           fieldtype: "Select",
                           options: ["Pending", "Approved", "Rejected"],
                         },
-                        {
-                          fieldname: "allocated_to",
-                          label: "Allocated to",
-                          fieldtype: "Data",
-                        },
-                        {
-                          fieldname: "due_date",
-                          label: "Due Date",
-                          fieldtype: "Date",
-                        },
                       ]}
                     />
                   ) : (
