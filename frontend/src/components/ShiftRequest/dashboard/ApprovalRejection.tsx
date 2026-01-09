@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
@@ -96,7 +95,7 @@ const ApprovalRejectionQueue = ({
         <span>{data.reference_document.shift_type}</span>
         <span className="text-[12px] text-gray-700 whitespace-nowrap">
           {data.reference_document.custom_start_time &&
-          data.reference_document.custom_end_time
+            data.reference_document.custom_end_time
             ? `${data.reference_document.custom_start_time} - ${data.reference_document.custom_end_time}`
             : "---"}
         </span>
@@ -116,7 +115,6 @@ const ApprovalRejectionQueue = ({
       <div className="flex w-full justify-start gap-2 whitespace-nowrap">
         {actions?.length &&
           actions.map((action: string) => {
-            const actionStyle = getActionStyles(action);
 
             return (
               <Button
@@ -134,7 +132,7 @@ const ApprovalRejectionQueue = ({
                 }
               >
                 {loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                   <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   action

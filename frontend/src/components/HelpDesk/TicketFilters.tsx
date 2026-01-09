@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Filter, Plus, X, ChevronDown } from "lucide-react";
+import { Filter, Plus, X } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
 import { FilterableField, TicketFilters as TicketFiltersType } from "../../hooks/useHelpDeskTickets";
@@ -84,7 +84,6 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
   fields,
   filters,
   onApply,
-  isLoading,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filterItems, setFilterItems] = useState<FilterItem[]>([]);

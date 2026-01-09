@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { ExternalLink, X, ChevronUp, ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import { HDTicket } from "../../hooks/useHelpDeskTickets";
@@ -83,7 +82,6 @@ const TicketTable: React.FC<TicketTableProps> = ({
   sortDirection,
   onSort,
 }) => {
-  const navigate = useNavigate();
   const allSelected = tickets.length > 0 && selectedTickets.size === tickets.length;
 
   const isRaiserOrAdmin = (ticket: HDTicket) => {
