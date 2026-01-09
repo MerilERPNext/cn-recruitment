@@ -5,7 +5,7 @@ import {
     UseQueryResult,
 } from "@tanstack/react-query";
 
-import { getAllAccruedReimbursements, getBenefitClaimLockingPeriod, getBenefitPaySlipHTML, getBenefitPayslipListView, getBenefitRequestLockView, putCommentBenefitClaim } from "../services/benefitService";
+import { getAllAccruedReimbursements, getBenefitClaimLockingPeriod, getBenefitPaySlipHTML, getBenefitPayslipListView, getBenefitRequestLockView, getYearFilterOptions, putCommentBenefitClaim } from "../services/benefitService";
 
 
 export interface BenefitPayslip {
@@ -97,7 +97,6 @@ export const useGetAllAccruedReimbursements = (employee: string, company: string
     return useQuery<any, Error>({
         queryKey: ["benefit", "my-benefits", employee, company, payroll_period],
         queryFn: () => getAllAccruedReimbursements(employee, company, payroll_period),
-        refetchOnWindowFocus: true,
         enabled: !!employee && !!company
         // ...defaultQueryOptions,
     });
@@ -134,8 +133,20 @@ export const useGetBenefitClaimLockingPeriod = (employee: string, payroll_period
     return useQuery<any, Error>({
         queryKey: ["benefit", "benefit-claim-locking", employee, payroll_period, posting_date],
         queryFn: () => getBenefitClaimLockingPeriod(employee, payroll_period, posting_date),
-        refetchOnWindowFocus: true,
         enabled: !!employee && !!payroll_period && !!posting_date
         // ...defaultQueryOptions,
     });
 };
+
+export const useGetYearFilterOptions = (company: string): UseQueryResult<
+    { name: string }[],
+    Error
+> => {
+    return useQuery<{ name: string }[], Error>({
+        queryKey: ["benefit", "year-filter-options", company],
+        queryFn: () => getYearFilterOptions(company),
+        enabled: !!company
+        // ...defaultQueryOptions,
+    });
+};
+

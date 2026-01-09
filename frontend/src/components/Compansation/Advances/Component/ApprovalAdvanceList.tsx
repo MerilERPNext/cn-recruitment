@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from "react";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import Button from "../../../shared/atoms/Button";
 import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
-
+import toast from "react-hot-toast";
+import { useCurrentUser } from "../../../../hooks/useCurrentUser";
+import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -25,6 +29,12 @@ const ApprovalRejectionAdvanceList = ({
   loadingAction,
 }: ApprovalRejectionLoanProps) => {
   const { isDesktop } = useScreenSize();
+  const { data: user } = useCurrentUser();
+  const commentMutation = useExpenseCommentUpdate();
+
+  const [commentOpen, setCommentOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
 
   if (!data) return null;
 
@@ -43,18 +53,182 @@ const ApprovalRejectionAdvanceList = ({
     return { bg: "gray-200", text: "gray-600" };
   };
 
-  /* ===================== DESKTOP UI (UNCHANGED) ===================== */
+  const handleActionClick = (action: string) => {
+    setSelectedAction(action);
+    setComment("");
+    setCommentOpen(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!selectedAction) return;
+
+    if (!comment.trim()) {
+      toast.error("Comment is required");
+      return;
+    }
+
+    const referenceDoctype =
+      data?.reference_document?.doctype || "Employee Advance";
+    const referenceName =
+      data?.reference_document?.name || data?.reference_name;
+
+    try {
+      await commentMutation.mutateAsync({
+        referenceDoctype,
+        referenceName,
+        content: comment,
+        comment_email: user?.name || "",
+      });
+
+      onAction(selectedAction, data);
+
+      setComment("");
+      setSelectedAction(null);
+      setCommentOpen(false);
+      toast.success(`${selectedAction} successful`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save comment");
+    }
+  };
+
+  /* ===================== DESKTOP UI ===================== */
   if (isDesktop) {
     return (
+      <>
+        <div
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          style={{ gridTemplateColumns: "5% 15% 15% 10% 12% 12% 10% 13%" }}
+          onClick={() => onClick?.(data)}
+        >
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              className="accent-blue-500"
+              checked={isSelected}
+              onClick={(e) => e.stopPropagation()}
+              onChange={() => onToggleSelect?.(data?.todo_id)}
+              disabled={
+                isDisabled ||
+                actionsWithForm?.includes("Approve") ||
+                actionsWithForm?.includes("Reject")
+              }
+            />
+          </div>
+
+          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            <div className="text-sm font-medium">
+              {data?.reference_document?.employee_name}
+            </div>
+          </WrapperHoverCard>
+
+          <div>{data.reference_document.custom_advance_type}</div>
+
+          <div className="text-sm">
+            {data?.reference_document?.advance_amount}
+          </div>
+
+          <div>
+            {formatToIndianDate(
+              data.reference_document.custom_repayment_start_date
+            )}
+          </div>
+
+          <div>{formatToIndianDate(data.reference_document.posting_date)}</div>
+
+          <div>
+            <StatusBadge status={data?.reference_document?.status} />
+          </div>
+
+          <div className="flex gap-2">
+            {actions.map((action: string) => (
+              <Button
+                key={action}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleActionClick(action);
+                }}
+                bgColor={getActionStyles(action).bg}
+                textColor={getActionStyles(action).text}
+                disabled={
+                  loadingAction?.id === data?.todo_id &&
+                  loadingAction?.action === action
+                }
+              >
+                {loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action ? (
+                  <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  action
+                )}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* COMMENT MODAL */}
+        {commentOpen && (
+          <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
+            <div className="bg-white w-full max-w-md rounded-xl p-5">
+              <h3 className="font-semibold mb-2">
+                {selectedAction === "Reject"
+                  ? "Reject Reason"
+                  : "Approval Comment"}
+              </h3>
+
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={4}
+                className="w-full border rounded-md p-2 text-sm"
+                placeholder="Enter comment..."
+              />
+
+              <div className="flex justify-end gap-3 mt-4">
+                <Button
+                  bgColor="gray-200"
+                  textColor="gray-700"
+                  onClick={() => setCommentOpen(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  bgColor={getActionStyles(selectedAction!).bg}
+                  textColor={getActionStyles(selectedAction!).text}
+                  onClick={handleConfirmAction}
+                  disabled={commentMutation.isPending || !comment.trim()}
+                >
+                  Save & {selectedAction}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  /* ===================== MOBILE UI ===================== */
+  return (
+    <>
       <div
-        className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
-        style={{ gridTemplateColumns: "5% 15% 15% 10% 12% 12% 10% 13%" }}
+        className="bg-white rounded-xl border border-gray-200 p-4 mb-3 shadow-sm"
         onClick={() => onClick?.(data)}
       >
-        <div className="flex items-center">
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <p className="font-semibold text-sm">
+              {data?.reference_document?.employee_name}
+            </p>
+            <p className="text-xs text-gray-500">
+              {data?.reference_document?.custom_advance_type}
+            </p>
+          </div>
+
           <input
             type="checkbox"
-            className="accent-blue-500"
+            className="accent-blue-500 mt-1"
             checked={isSelected}
             onClick={(e) => e.stopPropagation()}
             onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -66,37 +240,39 @@ const ApprovalRejectionAdvanceList = ({
           />
         </div>
 
-        <div className="text-sm font-medium">
-          {data?.reference_document?.employee_name}
+        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+          <div>
+            <span className="block text-gray-400">Amount</span>
+            <span className="font-medium text-gray-800">
+              {data?.reference_document?.advance_amount}
+            </span>
+          </div>
+
+          <div>
+            <span className="block text-gray-400">Status</span>
+            <StatusBadge status={data?.reference_document?.status} />
+          </div>
+
+          <div>
+            <span className="block text-gray-400">Start Date</span>
+            {formatToIndianDate(
+              data?.reference_document?.custom_repayment_start_date
+            )}
+          </div>
+
+          <div>
+            <span className="block text-gray-400">Posting Date</span>
+            {formatToIndianDate(data?.reference_document?.posting_date)}
+          </div>
         </div>
 
-        <div>{data.reference_document.custom_advance_type}</div>
-
-        <div className="text-sm">
-          {data?.reference_document?.advance_amount}
-        </div>
-
-        <div>
-          {formatToIndianDate(
-            data.reference_document.custom_repayment_start_date
-          )}
-        </div>
-
-        <div>
-          {formatToIndianDate(data.reference_document.posting_date)}
-        </div>
-
-        <div>
-          <StatusBadge status={data?.reference_document?.status} />
-        </div>
-
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {actions.map((action: string) => (
             <Button
               key={action}
               onClick={(e) => {
                 e.stopPropagation();
-                onAction(action, data);
+                handleActionClick(action);
               }}
               bgColor={getActionStyles(action).bg}
               textColor={getActionStyles(action).text}
@@ -115,90 +291,47 @@ const ApprovalRejectionAdvanceList = ({
           ))}
         </div>
       </div>
-    );
-  }
 
-  /* ===================== MOBILE CARD UI ===================== */
-  return (
-    <div
-      className="bg-white rounded-xl border border-gray-200 p-4 mb-3 shadow-sm"
-      onClick={() => onClick?.(data)}
-    >
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <p className="font-semibold text-sm">
-            {data?.reference_document?.employee_name}
-          </p>
-          <p className="text-xs text-gray-500">
-            {data?.reference_document?.custom_advance_type}
-          </p>
+      {/* COMMENT MODAL */}
+      {commentOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
+          <div className="bg-white w-full max-w-md rounded-xl p-5">
+            <h3 className="font-semibold mb-2">
+              {selectedAction === "Reject"
+                ? "Reject Reason"
+                : "Approval Comment"}
+            </h3>
+
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={4}
+              className="w-full border rounded-md p-2 text-sm"
+              placeholder="Enter comment..."
+            />
+
+            <div className="flex justify-end gap-3 mt-4">
+              <Button
+                bgColor="gray-200"
+                textColor="gray-700"
+                onClick={() => setCommentOpen(false)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                bgColor={getActionStyles(selectedAction!).bg}
+                textColor={getActionStyles(selectedAction!).text}
+                onClick={handleConfirmAction}
+                disabled={commentMutation.isPending || !comment.trim()}
+              >
+                Save & {selectedAction}
+              </Button>
+            </div>
+          </div>
         </div>
-
-        <input
-          type="checkbox"
-          className="accent-blue-500 mt-1"
-          checked={isSelected}
-          onClick={(e) => e.stopPropagation()}
-          onChange={() => onToggleSelect?.(data?.todo_id)}
-          disabled={
-            isDisabled ||
-            actionsWithForm?.includes("Approve") ||
-            actionsWithForm?.includes("Reject")
-          }
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
-        <div>
-          <span className="block text-gray-400">Amount</span>
-          <span className="font-medium text-gray-800">
-            {data?.reference_document?.advance_amount}
-          </span>
-        </div>
-
-        <div>
-          <span className="block text-gray-400">Status</span>
-          <StatusBadge status={data?.reference_document?.status} />
-        </div>
-
-        <div>
-          <span className="block text-gray-400">Start Date</span>
-          {formatToIndianDate(
-            data?.reference_document?.custom_repayment_start_date
-          )}
-        </div>
-
-        <div>
-          <span className="block text-gray-400">Posting Date</span>
-          {formatToIndianDate(data?.reference_document?.posting_date)}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {actions.map((action: string) => (
-          <Button
-            key={action}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAction(action, data);
-            }}
-            bgColor={getActionStyles(action).bg}
-            textColor={getActionStyles(action).text}
-            disabled={
-              loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action
-            }
-          >
-            {loadingAction?.id === data?.todo_id &&
-            loadingAction?.action === action ? (
-              <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              action
-            )}
-          </Button>
-        ))}
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 
