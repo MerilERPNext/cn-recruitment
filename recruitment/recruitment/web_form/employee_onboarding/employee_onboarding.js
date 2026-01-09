@@ -171,6 +171,7 @@ frappe.ready(function () {
                     setTimeout(() => {
                         safeSet("custom_initiate_onboarding_id", initiate_id);
                         safeSet("designation", d.designation);
+                        safeSet("company", d.company);
                         console.log("✅ All Initiate fields set");
                     }, 2000);
                 }

@@ -24,7 +24,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 100,
- "modified": "2026-01-08 18:02:45.905512",
+ "modified": "2026-01-09 16:15:42.393919",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "emp-onboarding",
@@ -311,7 +311,7 @@
    "label": "Marital Status",
    "max_length": 0,
    "max_value": 0,
-   "options": "\nUnmarried\nMarried\nDivorced\nWidowed",
+   "options": "\nSingle\nMarried\nDivorced\nWidowed",
    "precision": "",
    "read_only": 0,
    "reqd": 1,
@@ -723,19 +723,6 @@
    "precision": "",
    "read_only": 0,
    "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "custom_cancelled_cheque_details__passbook",
-   "fieldtype": "Data",
-   "hidden": 0,
-   "label": "Cancelled Cheque Details / Passbook",
-   "max_length": 0,
-   "max_value": 0,
-   "precision": "",
-   "read_only": 0,
-   "reqd": 1,
    "show_in_filter": 0
   },
   {

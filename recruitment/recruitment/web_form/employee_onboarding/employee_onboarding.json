@@ -23,7 +23,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 100,
- "modified": "2026-01-08 18:02:28.825154",
+ "modified": "2026-01-09 16:15:56.139350",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "employee-onboarding",
@@ -721,19 +721,6 @@
    "precision": "",
    "read_only": 0,
    "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "custom_cancelled_cheque_details__passbook",
-   "fieldtype": "Data",
-   "hidden": 0,
-   "label": "Cancelled Cheque Details / Passbook",
-   "max_length": 0,
-   "max_value": 0,
-   "precision": "",
-   "read_only": 0,
-   "reqd": 1,
    "show_in_filter": 0
   },
   {
