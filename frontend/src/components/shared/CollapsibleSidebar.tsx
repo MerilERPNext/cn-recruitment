@@ -81,11 +81,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(companyLogo) &&
-    companyLogo.length > 0 &&
-    currentEmployeeCompany
+      companyLogo.length > 0 &&
+      currentEmployeeCompany
       ? companyLogo.find(
-          (company) => company.company_name === currentEmployeeCompany
-        )
+        (company) => company.company_name === currentEmployeeCompany
+      )
       : companyLogo?.[0];
   const logoToShow = matchedCompany?.company_logo || "logo not found";
   const originalCompanyName =
@@ -118,10 +118,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   //     .filter((app) => backendTitles.includes(app.title))
   //     .reduce((sum, app) => sum + (app.count ?? 0), 0);
   // };
-
-  const handleTodoClick = () => {
-    window.open(ROUTES.TODO, "_blank");
-  };
 
   const handleHelpDeskClick = () => {
     if (!currentUser?.roles) {
@@ -250,6 +246,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/income-tax-sheet",
         },
         {
+          name: "Annual CTC",
+          icon: Calculator,
+          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
+        },
+        {
           name: "Salary Slip",
           icon: CreditCard,
           href: "/webapp/salary-slip-app/salary-slip-list",
@@ -285,11 +286,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/perquisite-list",
         },
         {
-          name: "Annual CTC",
-          icon: Calculator,
-          href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
-        },
-        {
           name: "Payroll Documents",
           icon: FileText,
           href: "/webapp/salary-slip-app/hr-payroll",
@@ -312,11 +308,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Users,
           href: "/webapp/benefits-app/my-requests",
         },
-        {
-          name: "Team Requests",
-          icon: Users,
-          href: "/webapp/benefits-app/my-team-requests",
-        },
+        // {
+        //   name: "Team Requests",
+        //   icon: Users,
+        //   href: "/webapp/benefits-app/my-team-requests",
+        // },
         {
           name: "Benefit Slips",
           icon: Calculator,
@@ -409,7 +405,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     {
       icon: ListTodo,
       label: "Todo",
-      path: "",
+      path: ROUTES.TODO,
       permissionKey: "Todo",
     },
     {
@@ -509,7 +505,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const isItemActive = (item: NavigationItem) => {
-    if (item.label === "Todo" || item.label === "Help Desk") {
+    if (item.label === "Help Desk") {
       return false;
     }
 
@@ -593,9 +589,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         `}
       </style>
       <aside
-        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${
-          isExpanded ? "w-64" : "w-20"
-        }`}
+        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${isExpanded ? "w-64" : "w-20"
+          }`}
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -616,9 +611,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   className="w-12 h-12 rounded-full  flex-shrink-0"
                 />
                 <div
-                  className={`transition-all duration-300 flex flex-col justify-center ${
-                    isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
-                  }`}
+                  className={`transition-all duration-300 flex flex-col justify-center ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                    }`}
                 >
                   <Typography
                     variant="subheading"
@@ -691,11 +685,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           )}
                         </div>
                         <span
-                          className={`transition-all duration-300 ${
-                            isExpanded
+                          className={`transition-all duration-300 ${isExpanded
                               ? "opacity-100"
                               : "opacity-0 -translate-x-2"
-                          }`}
+                            }`}
                         >
                           <Typography
                             variant="bodySmall"
@@ -713,62 +706,20 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       </div>
                       {isExpanded && (
                         <ChevronRight
-                          className={`h-4 w-4 transition-transform duration-200  ${
-                            isDropdownOpen || isAnySubItemActive
+                          className={`h-4 w-4 transition-transform duration-200  ${isDropdownOpen || isAnySubItemActive
                               ? "rotate-90"
                               : ""
-                          }`}
+                            }`}
                         />
                       )}
-                    </div>
-                  ) : item.label === "Todo" ? (
-                    <div
-                      onClick={handleTodoClick}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                        isItemDirectlyActive
-                          ? "bg-primary-500 text-white hover:text-white"
-                          : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0 relative">
-                          <Icon className="h-5 w-5" />
-                          {!isExpanded && getCount("Todo") > 0 && (
-                            <span className="absolute -top-4 -right-4 min-w-[16px] h-4 px-1 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                              {getCount("Todo")}
-                            </span>
-                          )}
-                        </div>
-                        <span
-                          className={`transition-all duration-300 ${
-                            isExpanded
-                              ? "opacity-100"
-                              : "opacity-0 -translate-x-2"
-                          }`}
-                        >
-                          <Typography
-                            variant="bodySmall"
-                            className="font-medium whitespace-nowrap"
-                            color="inherit"
-                          >
-                            {item.label}
-                          </Typography>
-                        </span>
-                        {isExpanded && getCount("Todo") > 0 && (
-                          <span className="ml-auto min-w-[22px] h-5 px-2 rounded-full bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
-                            {getCount("Todo")}
-                          </span>
-                        )}
-                      </div>
                     </div>
                   ) : item.label === "Help Desk" ? (
                     <div
                       onClick={handleHelpDeskClick}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                        isItemDirectlyActive
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${isItemDirectlyActive
                           ? "bg-primary-500 text-white hover:text-white"
                           : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                      }`}
+                        }`}
                     >
                       <div className="relative flex items-center space-x-3">
                         <div className="flex-shrink-0 relative">
@@ -782,11 +733,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         </div>
 
                         <span
-                          className={`transition-all duration-300 ${
-                            isExpanded
+                          className={`transition-all duration-300 ${isExpanded
                               ? "opacity-100"
                               : "opacity-0 -translate-x-2"
-                          }`}
+                            }`}
                         >
                           <Typography
                             variant="bodySmall"
@@ -807,22 +757,20 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   ) : (
                     <Link
                       to={item.path}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
-                        isItemDirectlyActive
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${isItemDirectlyActive
                           ? "bg-primary-500 text-white hover:text-white"
                           : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
                         </div>
                         <span
-                          className={`transition-all duration-300 ${
-                            isExpanded
+                          className={`transition-all duration-300 ${isExpanded
                               ? "opacity-100"
                               : "opacity-0 -translate-x-2"
-                          }`}
+                            }`}
                         >
                           <Typography
                             variant="bodySmall"
@@ -859,20 +807,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     onClick={() =>
                                       handleSubItemClick(subItem.name, true)
                                     }
-                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${
-                                      isSubActive || isSubDropdownOpen
+                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${isSubActive || isSubDropdownOpen
                                         ? "bg-primary-50 text-primary-600"
                                         : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                                    }`}
+                                      }`}
                                   >
                                     <div className="flex items-center space-x-2">
                                       <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <span
-                                        className={`transition-all duration-300 whitespace-nowrap  ${
-                                          isExpanded
+                                        className={`transition-all duration-300 whitespace-nowrap  ${isExpanded
                                             ? "opacity-100 translate-x-0"
                                             : "opacity-0 -translate-x-2"
-                                        }`}
+                                          }`}
                                       >
                                         <Typography
                                           variant="bodySmall"
@@ -884,31 +830,28 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                       </span>
                                     </div>
                                     <ChevronRight
-                                      className={`h-3 w-3 transition-transform duration-200 ${
-                                        isSubDropdownOpen ||
-                                        isAnySubSubItemActive
+                                      className={`h-3 w-3 transition-transform duration-200 ${isSubDropdownOpen ||
+                                          isAnySubSubItemActive
                                           ? "rotate-90"
                                           : ""
-                                      }`}
+                                        }`}
                                     />
                                   </div>
                                 ) : (
                                   <Link
                                     to={subItem.href || "#"}
-                                    className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
-                                      isSubActive
+                                    className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
                                         ? "bg-primary-500 text-white hover:text-white"
                                         : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                                    }`}
+                                      }`}
                                   >
                                     <div className="flex items-center space-x-2">
                                       <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <span
-                                        className={`transition-all duration-300 whitespace-nowrap ${
-                                          isExpanded
+                                        className={`transition-all duration-300 whitespace-nowrap ${isExpanded
                                             ? "opacity-100 translate-x-0"
                                             : "opacity-0 -translate-x-2"
-                                        }`}
+                                          }`}
                                       >
                                         <Typography
                                           variant="bodySmall"
@@ -936,20 +879,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                             <Link
                                               key={subSubItem.name}
                                               to={subSubItem.href}
-                                              className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
-                                                isSubSubActive
+                                              className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubSubActive
                                                   ? "bg-primary-500 text-white hover:text-white"
                                                   : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                                              }`}
+                                                }`}
                                             >
                                               <div className="flex items-center space-x-2">
                                                 <SubSubIcon className="h-3 w-3 opacity-70" />
                                                 <span
-                                                  className={`font-medium transition-all duration-300 whitespace-nowrap ${
-                                                    isExpanded
+                                                  className={`font-medium transition-all duration-300 whitespace-nowrap ${isExpanded
                                                       ? "opacity-100 translate-x-0"
                                                       : "opacity-0 -translate-x-2"
-                                                  }`}
+                                                    }`}
                                                 >
                                                   <Typography
                                                     variant="bodySmall"

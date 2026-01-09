@@ -18,9 +18,9 @@ type Props = {
 const TDSSlipHandler = ({ disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const [html, setHtml] = useState("");
-
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  
 
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company ?? null
@@ -39,7 +39,7 @@ const TDSSlipHandler = ({ disabled }: Props) => {
 
     mutate(user.employee, {
       onSuccess: (res: any) => {
-        setHtml(res?.response || "");
+        setHtml(res?.response?.html || "");
         setOpen(true);
       },
     });

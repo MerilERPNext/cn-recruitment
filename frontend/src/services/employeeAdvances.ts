@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
 import { ApiAdvance } from "../types/employeeAttendance";
 import {
@@ -188,4 +189,18 @@ export const getAdvancesTypes = async (): Promise<any> => {
   return await FrappeAPI.callMethod(
     "chatnext_expense_trips.employee_advance.get_advance_type"
   );
+};
+
+// Define the missing type
+type EmployeeAdvanceUpdatePayload = {
+  docname: string;
+  data: Record<string, unknown>;
+};
+
+export const updateEmployeeAdvance = async ({
+  docname,
+  data,
+}: EmployeeAdvanceUpdatePayload) => {
+  const response = await FrappeAPI.updateDocument("Employee Advance", docname, data);
+  return response;
 };
