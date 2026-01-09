@@ -10,7 +10,7 @@ const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const navigate = useNavigate();
-  const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(false);
+  const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
