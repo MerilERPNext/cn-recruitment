@@ -112,8 +112,8 @@ const ITDeclarationForm = () => {
 
   /* ---------------- Handlers ---------------- */
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedPeriod(e.target.value);
-  };
+    setSelectedPeriod(e.target.value)
+  }
 
   const handleHraChange = (field: keyof HRAData, value: string | number) => {
     setHraData((prev) => (prev ? { ...prev, [field]: value } : prev))
@@ -314,16 +314,16 @@ const ITDeclarationForm = () => {
             {/* Categories */}
             <div className="grid-row mt-4">
               {sectionCategories.map((cat: any) => (
-                <Button
+                <button
                   key={cat.category_name}
                   onClick={() => setActiveCategory(cat.category_name)}
                   className={`p-3 ml-2 text-left border rounded text-xs ${activeCategory === cat.category_name
-                      ? "border-blue-600 bg-blue-50"
-                      : "bg-white"
+                    ? "border-blue-600 bg-blue-50"
+                    : "bg-white"
                     }`}
                 >
                   {cat.category_name}
-                </Button>
+                </button>
               ))}
             </div>
 

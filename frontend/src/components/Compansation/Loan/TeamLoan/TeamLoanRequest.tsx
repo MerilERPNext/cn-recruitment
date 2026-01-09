@@ -55,6 +55,7 @@ const TeamLoanRequest = () => {
         >
           <ApprovalList
 
+
             status="Open"
             doctype="Loan Application"
             pageSize={1000000}

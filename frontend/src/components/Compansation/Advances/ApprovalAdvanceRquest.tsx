@@ -5,9 +5,8 @@ import React, { useState, useCallback } from "react";
 import CardTable from "../../shared/CardTable";
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
-import { Typography } from "../../shared/atoms/Typography";
-
 import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
+import { Typography } from "../../shared/atoms/Typography";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
