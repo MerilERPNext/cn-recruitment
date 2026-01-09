@@ -121,17 +121,7 @@ const MyOvertimeRequests = () => {
                       label: "Status",
                       fieldtype: "Select",
                       options: ["Open", "Approved", "Rejected"],
-                    },
-                    {
-                      fieldname: "allocated_to",
-                      label: "Allocated to",
-                      fieldtype: "Data",
-                    },
-                    {
-                      fieldname: "due_date",
-                      label: "Due Date",
-                      fieldtype: "Date",
-                    },
+                    }
                   ]}
                   pageSize={10}
                   showRefreshButton={false}
