@@ -200,7 +200,6 @@ const LeaveBalance: React.FC = () => {
           <HeaderBar
             title="Transactions History"
             onBack={() => toggleTransactions(null)}
-            bgColor=""
           />
           <main className="flex-1 overflow-y-auto p-4">
             <LeaveTransactionCard

@@ -86,8 +86,8 @@ const ApprovalCard = ({
   };
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "5% 10% 15% 8% 8% 8% 10% 20%" // 8 columns (with Select)
-    : "12% 20% 10% 10% 10% 10% 20%"; // 7 columns (Adjusted widths)
+    ? "5% 10% 15% 8% 8% 8% 10% 20%"
+    : "12% 20% 10% 10% 10% 10% 20%";
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {

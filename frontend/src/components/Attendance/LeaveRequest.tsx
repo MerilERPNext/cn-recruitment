@@ -164,8 +164,6 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     return map;
   }, [requiredFields]);
 
-  console.log("requiredFieldMap", requiredFieldMap);
-
   useEffect(() => {
     if (defaults?.fromDate && defaults?.toDate) {
       const initial: FormSubmissionData = {
