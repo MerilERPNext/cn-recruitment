@@ -5,6 +5,7 @@ import Button, { ButtonColor } from "../../shared/atoms/Button";
 import DOMPurify from "dompurify";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { Typography } from "../../shared/atoms/Typography";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -119,7 +120,7 @@ const ApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/20"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -148,18 +149,26 @@ const ApprovalCard = ({
           </WrapperHoverCard>
 
           <div className="truncate text-gray-900 font-medium text-sm text-start line-clamp-1">
-            {cleanExplaination}
+            <Typography variant="bodySmall" className="font-semibold tracking-tight">
+              {cleanExplaination}
+            </Typography>
           </div>
 
           {/* Date */}
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.reference_document?.from_date)}
+            <Typography variant="bodySmall" className="font-semibold tracking-tight">
+              {formatDate(data?.reference_document?.from_date)}
+            </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.reference_document?.to_date)}
+            <Typography variant="bodySmall" className="font-semibold tracking-tight">
+              {formatDate(data?.reference_document?.to_date)}
+            </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.due_date)}
+            <Typography variant="bodySmall" className="font-semibold tracking-tight">
+              {formatDate(data?.due_date)}
+            </Typography>
           </div>
           {/* Status + Actions */}
           <div className="flex items-center justify-start">
@@ -190,7 +199,7 @@ const ApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -291,7 +300,7 @@ const ApprovalCard = ({
                       }
                     >
                       {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

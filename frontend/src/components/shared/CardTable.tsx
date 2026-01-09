@@ -29,7 +29,7 @@ const CardTable = ({
       {/* Header */}
       {isDesktop && (
         <div
-          className="grid gap-4 px-6 py-4 bg-gray-50"
+          className="grid gap-4 px-6 py-4 bg-gray-50/80"
           style={{ gridTemplateColumns }}
         >
           {titles?.map((item, i) => (

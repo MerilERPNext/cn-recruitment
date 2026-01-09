@@ -85,11 +85,26 @@ const PoliciesList: React.FC = () => {
   const categoryName = (location.state as PolicyState | undefined)?.name;
   const [selectedStatus, setSelectedStatus] = useState("All");
   const statusOptions = [
-    "All",
-    "Pending",
-    "Acknowledged",
-    "Declined",
-    "Archived",
+    {
+      value: "All",
+      label: "All",
+    },
+    {
+      value: "Pending",
+      label: "Pending",
+    },
+    {
+      value: "Acknowledged",
+      label: "Acknowledged",
+    },
+    {
+      value: "Declined",
+      label: "Declined",
+    },
+    {
+      value: "Archived",
+      label: "Archived",
+    },
   ];
 
   if (!categoryName) {

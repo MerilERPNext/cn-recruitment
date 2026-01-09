@@ -419,5 +419,12 @@ code {
   z-index: 1001 !important; /* Ensure it stays above other elements */
 }
 
+/* HelpDesk Table - Remove vertical cell borders */
+.helpdesk-table th,
+.helpdesk-table td {
+  border-left: none !important;
+  border-right: none !important;
+}
+
 /* Ensure the drawer itself allows content to overflow slightly for shadows/etc if needed */
 /* But since we use dropdown: body, the actual dropdown list is outside this hierarchy */
