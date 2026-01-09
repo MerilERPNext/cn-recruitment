@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState, useEffect, useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Calendar,
@@ -71,6 +71,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   setIsExpanded,
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
 
@@ -121,6 +122,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const handleTodoClick = () => {
     window.open(ROUTES.TODO, "_blank");
+  };
+
+  const handleHelpDeskClick = () => {
+    navigate("/webapp/helpdesk");
   };
 
   
