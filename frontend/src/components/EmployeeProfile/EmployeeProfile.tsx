@@ -357,11 +357,11 @@ const EmployeeProfile: React.FC = () => {
                       Attendance
                     </Button>
                   )}
+                  <Appreciations />
                 </div>
               </div>
             </div>
-            {/* Awards Section with Divider */}
-            {/* <AwardsSection awards={employeeAppreciations} isDesktop={false} /> */}
+            <AwardsSection isDesktop={false} />
           </div>
         )}
         {/* Horizontal Tabs */}
