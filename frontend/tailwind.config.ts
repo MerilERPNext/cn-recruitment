@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-import plugin from "tailwindcss/plugin"
+import plugin from "tailwindcss/plugin";
 
 export default {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx,css}", "./index.html"],
@@ -112,7 +112,6 @@ export default {
           600: "#0284C7",
           800: "#075985",
         },
-
 
         "gray-darker": "#504747",
       },
@@ -246,16 +245,15 @@ export default {
         /* =============================== * BODY * =============================== */
         body: ["16px", { lineHeight: "24px", fontWeight: "400" }],
         "body-medium": ["16px", { lineHeight: "24px", fontWeight: "500" }],
-        "md": ["16px", { lineHeight: "24px", fontWeight: "500" }],
+        md: ["16px", { lineHeight: "24px", fontWeight: "500" }],
         "body-semibold": ["16px", { lineHeight: "24px", fontWeight: "600" }],
 
         /* =============================== * SMALL BODY * =============================== */
         "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
-        "sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+        sm: ["14px", { lineHeight: "20px", fontWeight: "400" }],
 
         /* =============================== * TINY / LABEL * =============================== */
         label: ["10px", { lineHeight: "16px", fontWeight: "500" }],
-
       },
       flex: {
         2: "2 2 0%",
@@ -278,9 +276,10 @@ export default {
     plugin(({ addComponents }) => {
       addComponents({
         ".hover-lift": {
-          "@apply hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50": {},
+          "@apply hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50":
+            {},
         },
-      })
+      });
     }),
   ],
 };

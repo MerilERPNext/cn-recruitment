@@ -15,6 +15,7 @@ interface CustomDropdownProps {
   className?: string;
   options: Option[];
   position?: Position;
+  label?: string;
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -23,6 +24,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   className,
   options,
   position = "bottom-left",
+  label = "Select",
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -58,7 +60,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   };
 
   const selectedLabel =
-    options.find((opt) => opt.value === value)?.label || "Select";
+    options.find((opt) => opt.value === value)?.label || label;
 
   return (
     <div
@@ -66,13 +68,15 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       className={`relative inline-block ${className || ""}`}
     >
       <Button
+        variant="contain"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
       >
         <span>{selectedLabel}</span>
         <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""
-            }`}
+          className={`w-4 h-4 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -89,23 +93,23 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
       {isOpen && (
         <div
-          className={`absolute right-0 mt-2 w-fit min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${positionCss[position]}`}
+          className={`absolute right-0 mt-2 w-fit min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${positionCss[position]}`}
         >
           {options.map((option) => (
             <Button
               variant="subtle"
               key={option.value}
               onClick={() => handleSelect(option.value)}
-              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors ${value === option.value
-                ? "bg-blue-50 text-blue-600 font-medium"
-                : "text-gray-700"
-                }`}
+              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${
+                value === option.value
+                  ? "bg-primary/10 text-primary-600 font-medium"
+                  : "text-gray-700"
+              }`}
             >
               {option.label}
             </Button>
           ))}
         </div>
-
       )}
     </div>
   );

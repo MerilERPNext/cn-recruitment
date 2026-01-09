@@ -12,6 +12,8 @@ import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
+import { getActionStyles } from "../../utils/actionButtonStyles";
+import { Typography } from "../shared/atoms/Typography";
 
 export function LeaveDetailView({
   documentName,
@@ -112,36 +114,6 @@ export function LeaveDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const getActionStyles = (action: string): { bg: string; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "gray-100",
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "green-100",
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "red-100",
-          text: "red-600",
-        };
-
-        break;
-      default:
-        styles = {
-          bg: "gray-200",
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
-
   const formatDate = (date: string): string => {
     if (!date) return "--/--/----";
 
@@ -185,10 +157,10 @@ export function LeaveDetailView({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            className="p-2 rounded-full hover:bg-primary/10 transition-colors duration-200"
             aria-label="Close"
           >
-            <X className="h-5 w-5 text-gray-600" />
+            <X className="h-5 w-5 text-primary" />
           </button>
         </div>
 
@@ -206,49 +178,61 @@ export function LeaveDetailView({
               {/* Display From Date */}
               {data?.reference_document?.from_date && (
                 <p className="flex flex-col gap-1">
-                  <span className="card-title">From Date</span>
-                  <span className="card-subtitle">
+                  <Typography variant="bodyMedium">From Date</Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="text-gray-500/80 font-medium"
+                  >
                     {formatDate(data?.reference_document?.from_date)}
-                  </span>
+                  </Typography>
                 </p>
               )}
 
               {/* Display To Date */}
               {data?.reference_document?.to_date && (
                 <p className=" flex flex-col gap-1">
-                  <span className="card-title">To Date</span>
-                  <span className="card-subtitle">
+                  <Typography variant="bodyMedium">To Date</Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="text-gray-500/80 font-medium"
+                  >
                     {formatDate(data?.reference_document?.to_date)}
-                  </span>
+                  </Typography>
                 </p>
               )}
             </div>
           </div>
           {data?.due_date && (
             <p className=" flex flex-col gap-1">
-              <span className="card-title">Due Date</span>
-              <span className="card-subtitle">
+              <Typography variant="bodyMedium">Due Date</Typography>
+              <Typography
+                variant="bodySmall"
+                className="text-gray-500/80 font-medium"
+              >
                 {formatDate(data?.due_date)}
-              </span>
+              </Typography>
             </p>
           )}
           <div className="py-2 flex flex-col gap-1">
-            <p className="card-title">Reason</p>
+            <Typography variant="bodyMedium">Reason</Typography>
 
-            <span className="card-subtitle">
+            <Typography
+              variant="bodySmall"
+              className="text-gray-500/80 font-medium"
+            >
               {data?.reference_document?.custom_reason}
-            </span>
+            </Typography>
           </div>
           {/* explanation */}
           <div className="py-2">
-            <p className="card-title mb-2">Description</p>
-            <div className="text-sm bg-gray-100 p-3 rounded-lg">
+            <Typography variant="bodyMedium">Description</Typography>
+            <div className="text-xs bg-primary/10 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </div>
           </div>
           {data?.reference_document?.custom_attachment ? (
             <div className="py-4">
-              <p className="card-title mb-2">Attachment</p>
+              <Typography variant="bodyMedium">Attachment</Typography>
               <FileRenderer
                 filePath={data?.reference_document?.custom_attachment || ""}
               />
@@ -262,6 +246,8 @@ export function LeaveDetailView({
             <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
               {actions?.length &&
                 actions?.map((action: string) => {
+                  const actionStyle = getActionStyles(action);
+
                   const isLoading =
                     currentAction === action && mutation.isPending;
                   return (
@@ -273,8 +259,8 @@ export function LeaveDetailView({
                         handleAction(action);
                       }}
                       size="md"
-                      bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
+                      bgColor={actionStyle.bgColor}
+                      variant={actionStyle.variant}
                     >
                       {isLoading ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />

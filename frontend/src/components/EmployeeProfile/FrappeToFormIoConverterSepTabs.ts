@@ -169,7 +169,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.multiple = field.fieldtype === "Table MultiSelect";
 
       schema.data = {
-        url: `/api/method/nextai.funnel.apis.fetch_data.get_searched_doc_list?fields=*&doctype=${field.options ?? ""}&limit=20`,
+        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.options ?? ""}&limit=20`,
       };
 
       schema.lazyLoad = true;

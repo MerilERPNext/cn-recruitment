@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { format, isValid, parse } from "date-fns";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import { getActionStyles } from "../../utils/actionButtonStyles";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -32,36 +34,6 @@ const LeaveApprovalCard = ({
   const actionsWithForm = data?.custom_doctype_actions_with_form
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
-
-  const getActionStyles = (action: string): { bg: string; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "gray-100",
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "green-100",
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "red-100",
-          text: "red-600",
-        };
-
-        break;
-      default:
-        styles = {
-          bg: "gray-200",
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
 
   const formatDate = (date: string): string => {
     if (!date) return "--/--/----";
@@ -108,7 +80,7 @@ const LeaveApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -117,7 +89,7 @@ const LeaveApprovalCard = ({
             <div className="flex items-center justify-start">
               <input
                 type="checkbox"
-                className="accent-blue-500"
+                className="accent-primary"
                 checked={isSelected}
                 onClick={(e) => e.stopPropagation()}
                 onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -157,29 +129,33 @@ const LeaveApprovalCard = ({
           <div className="flex w-full justify-start gap-2">
             {actions?.length &&
               data?.reference_document?.status === "Open" &&
-              actions.map((action: string) => (
-                <Button
-                  key={action}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAction(action, data);
-                  }}
-                  bgColor={getActionStyles(action).bg}
-                  textColor={getActionStyles(action).text}
-                  disabled={
-                    loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action
-                  }
-                >
-                  {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
-                    <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    action
-                  )}
-                </Button>
-              ))}
+              actions.map((action: string) => {
+                const actionStyle = getActionStyles(action);
+
+                return (
+                  <Button
+                    key={action}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onAction(action, data);
+                    }}
+                    bgColor={actionStyle.bgColor}
+                    variant={actionStyle.variant}
+                    disabled={
+                      loadingAction?.id === data?.todo_id &&
+                      loadingAction?.action === action
+                    }
+                  >
+                    {loadingAction?.id === data?.todo_id &&
+                    loadingAction?.action === action ? (
+                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      action
+                    )}
+                  </Button>
+                );
+              })}
           </div>
         </div>
       ) : (
@@ -256,30 +232,34 @@ const LeaveApprovalCard = ({
               <div className="flex sm:flex-row sm:justify-start gap-2">
                 {actions?.length > 0 &&
                   data?.reference_document?.status === "Open" &&
-                  actions.map((action: string) => (
-                    <Button
-                      key={action}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onAction(action, data);
-                      }}
-                      fullWidth
-                      bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
-                      disabled={
-                        loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action
-                      }
-                    >
-                      {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  ))}
+                  actions.map((action: string) => {
+                    const actionStyle = getActionStyles(action);
+
+                    return (
+                      <Button
+                        key={action}
+                        fullWidth
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onAction(action, data);
+                        }}
+                        bgColor={actionStyle.bgColor}
+                        variant={actionStyle.variant}
+                        disabled={
+                          loadingAction?.id === data?.todo_id &&
+                          loadingAction?.action === action
+                        }
+                      >
+                        {loadingAction?.id === data?.todo_id &&
+                        loadingAction?.action === action ? (
+                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          action
+                        )}
+                      </Button>
+                    );
+                  })}
               </div>
             </div>
           </div>

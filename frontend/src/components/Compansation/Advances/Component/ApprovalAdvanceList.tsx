@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { getActionStyles } from "../../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import Button from "../../../shared/atoms/Button";
 import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
-
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -14,6 +14,8 @@ export type ApprovalRejectionLoanProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
 };
+
+
 
 const ApprovalRejectionAdvanceList = ({
   isSelected = false,
@@ -82,9 +84,7 @@ const ApprovalRejectionAdvanceList = ({
           )}
         </div>
 
-        <div>
-          {formatToIndianDate(data.reference_document.posting_date)}
-        </div>
+        <div>{formatToIndianDate(data.reference_document.posting_date)}</div>
 
         <div>
           <StatusBadge status={data?.reference_document?.status} />

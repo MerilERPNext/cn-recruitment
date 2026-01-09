@@ -142,10 +142,10 @@ const ViewPolicies = () => {
                     return (
                         <div
                             key={index}
-                            className="group flex items-start gap-4 p-4 rounded-2xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 hover:shadow-sm transition-all duration-300"
+                            className="group flex items-start gap-4 p-4 rounded-2xl border border-gray-100 hover-lift transition-all duration-300"
                         >
-                            <div className="p-2 bg-gray-200 rounded-lg">
-                                <Icon className="h-4 w-4 text-gray-700" />
+                            <div className="p-2 bg-primary-100 rounded-lg">
+                                <Icon className="h-4 w-4 text-primary-700" />
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-semibold text-gray-900 mb-1">

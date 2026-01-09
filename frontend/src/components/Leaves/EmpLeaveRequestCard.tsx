@@ -108,9 +108,12 @@ const EmpLeaveRequestCard = ({
     if (status === "open")
       return { label: "Pending", statusColor: "bg-yellow-100 text-yellow-800" };
     if (status === "approved")
-      return { label: "Approved", statusColor: "bg-green-100 text-green-800" };
+      return {
+        label: "Approved",
+        statusColor: "bg-success/10 text-success",
+      };
     if (status === "cancelled")
-      return { label: "Cancelled", statusColor: "bg-red-100 text-red-800" };
+      return { label: "Cancelled", statusColor: "bg-danger/10 text-danger" };
     return {
       label: rawStatus || "Unknown",
       statusColor: "bg-gray-100 text-gray-800",
@@ -135,7 +138,7 @@ const EmpLeaveRequestCard = ({
       {data?.custom_allow_revoke &&
         data?.reference_document?.status === "Open" && (
           <button
-            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+            className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 flex items-center gap-2"
             onClick={handleRevokeClick}
             disabled={revokeEventMutation.isPending}
           >
@@ -145,7 +148,7 @@ const EmpLeaveRequestCard = ({
         )}
       {allowRevoke && (
         <button
-          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+          className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 flex items-center gap-2"
           onClick={onRevokeApproved}
         >
           <RotateCcw className="w-3 h-3" />
@@ -155,7 +158,7 @@ const EmpLeaveRequestCard = ({
 
       {allowEdit && (
         <button
-          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+          className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 flex items-center gap-2"
           onClick={handleEditClick}
         >
           <SquarePen className="w-3 h-3" />
@@ -164,7 +167,7 @@ const EmpLeaveRequestCard = ({
       )}
       {allowReplace && (
         <button
-          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+          className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 flex items-center gap-2"
           onClick={handleReplaceClick}
         >
           <Repeat1 className="w-3 h-3" />
@@ -179,7 +182,7 @@ const EmpLeaveRequestCard = ({
       {isDesktop ? (
         <div
           style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr" }}
-          className={`grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer relative`}
+          className={`grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer relative`}
         >
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.leave_type}

@@ -87,8 +87,7 @@ export default function ExtraPaymentForm({
             fullWidth
             size="lg"
             variant="contain"
-            bgColor="blue-600"
-            className="hover:bg-blue-700 font-medium"
+            bgColor="primary"
           >
             Submit Request
           </Button>

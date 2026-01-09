@@ -281,9 +281,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             fullWidth
             size="lg"
             variant="contain"
-            bgColor={"blue-600"}
-            textColor="white"
-            className="hover:bg-blue-700 font-medium"
+            bgColor="primary"
           >
             {mutation?.isPending || uploadFileLoading ? (
               <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />

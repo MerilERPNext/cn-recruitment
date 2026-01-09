@@ -300,6 +300,25 @@ export const useGetEmployeeAppreciations = () => {
     staleTime: 1000 * 60 * 5,
   });
 };
+export const useGetEmployeeEarnedAppreciations = (employee: string) => {
+  return useQuery<{ badges: Award[] } | null>({
+    queryKey: ["all-emp-appreciations", employee],
+    queryFn: () => profileService.getEmployeeEarnedAppreciations(employee),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee,
+  });
+};
+
+export const useAppreciateAnEmployeeMutation = () => {
+  return useMutation({
+    mutationKey: ["appreciateAnEmployee"],
+    mutationFn: (body: Record<string, unknown>) => profileService.appreciateAnEmployee(body),
+    onError: (error) => {
+      console.error("Error appreciating an employee:", error);
+    },
+  });
+};
+
 export const useShowAttendanaceAssignmentButton = (
   employee_id: string,
   currentUser: string

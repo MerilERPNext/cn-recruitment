@@ -2,7 +2,9 @@ import React, { useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { Award } from "../../types/employee";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
-import { useGetEmployeeAppreciations } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails, useGetEmployeeEarnedAppreciations } from "../../hooks/useEmployee";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import useCurrentUser from "../../hooks/useCurrentUser";
 
 export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
 
@@ -108,8 +110,15 @@ interface AwardsSectionProps {
 export const AwardsSection: React.FC<AwardsSectionProps> = ({
     isDesktop,
 }) => {
+    const { targetEmployeeId } = useTargetUser();
+
+    const { data: currentUser } = useCurrentUser();
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+        currentUser?.name || ""
+    );
+    const employee = targetEmployeeId || currentEmployee?.name;
     const { data: employeeAppreciations } =
-        useGetEmployeeAppreciations();
+        useGetEmployeeEarnedAppreciations(employee || "");
     const awards = employeeAppreciations?.badges;
     if (isDesktop) {
         return (
