@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import img from "../../../assets/pngegg.png";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails, useEmployee } from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
   useDifinitaionNameForSeparation,
@@ -12,15 +12,22 @@ import {
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./Component/ApprovalTracker";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useTargetUser } from "../../../context/ViewedUserContext";
+import { useEffect, useState } from "react";
 
 const ConfirmationWorkflow = () => {
   const { data: userId } = useLoggedInUser();
   const { data: employee_name } = useCurrentEmployeeAllDetails(userId || "");
+  const { targetEmployeeId, isViewingOtherUser } =
+    useTargetUser();
+  const { data: targetEmployee } = useEmployee(targetEmployeeId);
+
   const doctype_name = "Employee";
   const doctype = "Employee Confirmation";
-  const document_name = employee_name?.name || "";
-  const { data: definitionName } = useDifinitaionNameForSeparation();
+  const document_name = isViewingOtherUser ? targetEmployee?.name || "" : employee_name?.name || "";
+  const { data: definitionName, refetch } = useDifinitaionNameForSeparation();
+
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
@@ -29,11 +36,15 @@ const ConfirmationWorkflow = () => {
       )
       : [];
   }
-  const { data: confirmationCreationData, isLoading } = useConfirmationAndseparation(doctype);
+
+  const [reInitiateSeparation, setReInitiateSeparation] = useState(false);
+  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useConfirmationAndseparation(doctype);
   const item = confirmationCreationData?.[0];
   const confirmationData = getFunnelData("Confirmation");
   const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
+
+
 
   const { data } = useChatAssistant(
     doctype_name,
@@ -53,6 +64,23 @@ const ConfirmationWorkflow = () => {
     }
   };
 
+  useEffect(() => {
+    const handleChatClose = () => {
+      refetchConfirmationAndSeparation();
+      refetch();
+    };
+
+    document.addEventListener("chatnext:modal:chat:close", handleChatClose);
+
+    return () => {
+      document.removeEventListener("chatnext:modal:chat:close", handleChatClose);
+    };
+  }, [refetchConfirmationAndSeparation, refetch]);
+
+  const InitiatePageShow = reInitiateSeparation || !item;
+
+  const canReInitiate = (["On Probation", "Probation Extended"].includes((isViewingOtherUser ? targetEmployee : employee_name)?.custom_employment_status || ""));
+
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
     return (
@@ -69,13 +97,13 @@ const ConfirmationWorkflow = () => {
   return (
     <div className=" bg-white  min-h-screen  p-8  text-gray-800  font-sans">
       {/* Header */}
-      {item ?
+      {!InitiatePageShow ?
         <main className="min-h-full bg-background mb-2">
           <div className="max-w-full">
-            <ApprovalTracker data={item} />
+            <ApprovalTracker For="Employee Confirmation" data={item} />
+            {canReInitiate && <button onClick={() => setReInitiateSeparation(true)} className="px-2 py-1 rounded-lg bg-blue-500 text-white flex items-center gap-2 hover:bg-blue-600"><ArrowLeft className="w-4 h-4" />Go to Initiate Confirmation Page</button>}
           </div>
         </main>
-
         :
         <div className=" items-start  mb-6">
           <div className="   mt-2  min-h-auto  flex   flex-col   items-center   justify-center   rounded-xl      py-4">
@@ -113,6 +141,7 @@ const ConfirmationWorkflow = () => {
           </div>
         </div>
       }
+
     </div>
   );
 };

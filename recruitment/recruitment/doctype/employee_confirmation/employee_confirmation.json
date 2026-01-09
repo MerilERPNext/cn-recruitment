@@ -15,7 +15,8 @@
   "department",
   "designation",
   "date_of_joining",
-  "confirmation_policy"
+  "confirmation_policy",
+  "probation_end_date"
  ],
  "fields": [
   {
@@ -79,13 +80,20 @@
    "fieldtype": "Link",
    "label": "Confirmation Policy",
    "options": "Confirmation Policy"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "probation_end_date",
+   "fieldtype": "Date",
+   "label": "Probation End Date",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-11-20 14:25:00.643930",
+ "modified": "2026-01-08 16:01:06.861751",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Confirmation",

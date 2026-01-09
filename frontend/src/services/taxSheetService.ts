@@ -55,7 +55,7 @@ const fetchHTML = async (method: string, args: FetchHTMLArgs) => {
 
 export const getTaxSheetHTML = async (employee: string, payroll_period: string, company: string) => {
   return fetchHTML(
-    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.print_declaration_preview",
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.print_declaration_pdf",
     {
       employee: employee,
       payroll_period: payroll_period,

@@ -83,7 +83,7 @@ const OvertimeApprovalCard = ({
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const gridTemplateColumns = isBulkSelectEnabled
     ? "5% 10% 35% 8% 8% 20%" // With checkbox
-    : "12% 40% 10% 10% 20%";// Without checkbox
+    : "12% 40% 10% 10% 20%"; // Without checkbox
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -174,7 +174,7 @@ const OvertimeApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -258,7 +258,7 @@ const OvertimeApprovalCard = ({
                       className="w-full"
                     >
                       {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action
