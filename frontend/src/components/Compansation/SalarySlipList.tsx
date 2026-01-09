@@ -371,8 +371,8 @@ const SalarySlipItemDesktop = ({
   );
 
   return (
-    <div className="my-data-row">
-      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer">
+    <div className="">
+      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/20 cursor-pointer">
         <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
           <WrapperHoverCard employeeId={item.employee}>
             {item.employee_name}

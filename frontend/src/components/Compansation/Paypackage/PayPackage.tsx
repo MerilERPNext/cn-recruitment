@@ -205,13 +205,13 @@ export default function SalaryAssignmentList() {
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
           <div
-            className={`bg-app w-full ${
+            className={`bg-white w-full ${
               isDesktop ? "max-w-[600px]" : ""
             } shadow-lg relative h-screen overflow-y-auto`}
           >
             {/* HEADER */}
             {isDesktop ? (
-              <div className="flex justify-between items-center p-4 bg-primary/20 border-b">
+              <div className="flex justify-between items-center p-4  border-b">
                 <Typography variant="subheading" color="body1">CTC Breakdown</ Typography>
                 <button
                   onClick={() => setSelected(null)}
@@ -237,23 +237,23 @@ export default function SalaryAssignmentList() {
 
               <Card className="grid gap-3 border border-gray-200  p-4 rounded">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Monthly CTC</span>
-                  <span className="font-semibold">
+                  <Typography variant="bodySmall" className="font-medium">Monthly CTC</Typography >
+                  <Typography >
                     ₹ {selected.monthly_ctc}
-                  </span>
+                  </Typography >
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Fixed Gross Monthly</span>
-                  <span className="font-semibold">
+                  <Typography variant="bodySmall" className="font-medium">Fixed Gross Monthly</Typography>
+                  <Typography>
                     ₹ {selected.fixed_gross_monthly}
-                  </span>
+                  </Typography>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Annual CTC</span>
-                  <span className="font-semibold">₹ {selected.annual_ctc}</span>
+                  <Typography variant="bodySmall" className="font-medium">Annual CTC</Typography>
+                  <Typography>₹ {selected.annual_ctc}</Typography>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Fixed Gross Annual CTC</span>
+                  <Typography variant="bodySmall" className="font-medium">Fixed Gross Annual CTC</Typography>
                   <span className="font-semibold">
                     ₹ {selected.fixed_gross_annual}
                   </span>
@@ -271,21 +271,21 @@ export default function SalaryAssignmentList() {
                         key={item.component ?? index}
                         className="flex justify-between items-start"
                       >
-                        <span>
+                        <Typography variant="bodySmall" className="font-medium flex ">
                           {item.component}
-                          <span className="text-xs text-gray-500 ml-2">
+                          <Typography variant="bodySmall" className="ml-1" color="body2">
                             ({item.type})
-                          </span>
-                        </span>
+                          </Typography>
+                        </Typography>
 
                         <div className="text-right">
-                          <p className="font-medium">
+                          <Typography variant="bodySmall" className="font-medium ">
                           Annual: ₹ {Number(item.amount).toLocaleString("en-IN")}
-                          </p>
-                          <p className="text-xs text-gray-500">
+                          </Typography>
+                          <Typography variant="bodySmall" className="ml-1" color="body2">
                             Monthly: ₹{" "}
                             {(Number(item.amount) / 12).toLocaleString("en-IN")}
-                          </p>
+                          </Typography>
                         </div>
                       </div>
                     )

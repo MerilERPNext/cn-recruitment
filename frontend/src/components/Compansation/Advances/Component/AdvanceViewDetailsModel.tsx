@@ -18,8 +18,8 @@ type Props = {
 
 const getActionStyles = (action: string) => {
   const a = action.toLowerCase();
-  if (a === "approve") return { bg: "green-100", text: "green-600" };
-  if (a === "reject") return { bg: "red-100", text: "red-600" };
+  if (a === "approve") return { bg: "success-50", text: "success" };
+  if (a === "reject") return { bg: "error-50", text: "error" };
   return { bg: "gray-200", text: "gray-600" };
 };
 
@@ -152,6 +152,7 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
                 key={action}
                 onClick={() => handleActionClick(action)}
                 bgColor={getActionStyles(action).bg}
+                className={getActionStyles(action).text}
                 disabled={
                   loadingAction?.id === data?.todo_id &&
                   loadingAction?.action === action
@@ -181,12 +182,13 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
             />
 
             <div className="flex justify-end gap-3 mt-4">
-              <Button bgColor="gray-200" onClick={() => setCommentOpen(false)}>
+              <Button bgColor="gray-200"  onClick={() => setCommentOpen(false)}>
                 Cancel
               </Button>
 
               <Button
                 bgColor={getActionStyles(selectedAction!).bg}
+                className={getActionStyles(selectedAction!).text}
                 onClick={handleConfirmAction}
                 disabled={commentMutation.isPending}
               >

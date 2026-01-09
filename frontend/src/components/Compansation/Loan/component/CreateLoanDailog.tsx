@@ -144,11 +144,12 @@ export default function CreateLoanDialog({
 
         {/* Dialog Header */}
         {isDesktop ?
-          < div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-primary/20 sticky top-0 z-20">
+          < div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
             <h2 className=" base-title text-gray-900">
               Create New Loan
             </h2>
             <Button
+            variant="soft"
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               aria-label="Close"
@@ -161,7 +162,7 @@ export default function CreateLoanDialog({
         }
 
         {/* Dialog Content */}
-        <div className="flex-1 min-h-0 bg-app overflow-y-auto pb-20">
+        <div className="flex-1 min-h-0 bg-white overflow-y-auto pb-20">
           {currentEmployee?.company && (
             <Form
               form={transformedSchema}
@@ -179,7 +180,7 @@ export default function CreateLoanDialog({
               }}
             />)}
         </div>
-        <div className="fixed md:static bottom-0 right-0 w-full bg-primary/20 py-4 px-4 z-50 border-t border-gray-200">
+        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
           <Button
             onClick={() => {
               handleSubmit();
