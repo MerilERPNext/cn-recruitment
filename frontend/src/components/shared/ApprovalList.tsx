@@ -31,9 +31,10 @@ type ApprovalListProps = {
   onApprovalRefetchComplete?: () => void;
   infiniteScroll?: boolean;
   loadMorePagination?: boolean;
-  filterFields?: FilterField[]
-  isFilter?: boolean
-  isSearch?: boolean
+  filterFields?: FilterField[];
+  isFilter?: boolean;
+  isSearch?: boolean;
+  onBulkSelectVisibilityChange?: (enabled: boolean) => void;
 };
 
 const ApprovalList = ({
@@ -49,9 +50,11 @@ const ApprovalList = ({
   loadMorePagination = false,
   filterFields,
   isFilter = false,
-  isSearch = false
+  isSearch = false,
+  onBulkSelectVisibilityChange,
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
 
   const mutation = useApprovalListActions();
   const [loadingAction, setLoadingAction] = useState<{
@@ -65,6 +68,17 @@ const ApprovalList = ({
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
+
+  const currentStatus = activeFilters?.status || status;
+
+  const isBulkSelectEnabled =
+    currentStatus === "Open" ||
+    currentStatus === "Pending" ||
+    currentStatus === "Draft";
+
+  useEffect(() => {
+    onBulkSelectVisibilityChange?.(isBulkSelectEnabled);
+  }, [isBulkSelectEnabled, onBulkSelectVisibilityChange]);
 
   const triggerRefetch = () => {
     if (setRefetch) {
@@ -103,8 +117,8 @@ const ApprovalList = ({
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-              req?.custom_doctype_actions_with_form.replace(/'/g, '"')
-            )
+                req?.custom_doctype_actions_with_form.replace(/'/g, '"')
+              )
             : [];
           if (
             actionsWithForm?.includes("Approve") ||
@@ -188,7 +202,8 @@ const ApprovalList = ({
         {
           onSuccess: () => {
             toast.success(
-              `Requests ${action === "Reject" ? "rejected" : action.toLowerCase()
+              `Requests ${
+                action === "Reject" ? "rejected" : action.toLowerCase()
               }d successfully!`
             );
             triggerRefetch();
@@ -221,6 +236,9 @@ const ApprovalList = ({
             fields: ["*"],
           },
         }}
+        onFiltersChange={(filters) => {
+          setActiveFilters(filters);
+        }}
         isSearch={isSearch}
         isFilter={isFilter}
         filterFields={filterFields}
@@ -232,17 +250,15 @@ const ApprovalList = ({
         onDataLoad={(data) => setAllRequests(data)}
         PreListComponent={() => (
           <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
-            {(status === "Open" ||
-              status === "Pending" ||
-              status === "Draft") && (
-                <BulkActionBar
-                  selectedIds={selectedIds}
-                  pendingRequests={allRequests}
-                  onSelectAll={handleSelectAll}
-                  onBulkAction={handleBulkAction}
-                  loadingAction={bulkLoading}
-                />
-              )}
+            {isBulkSelectEnabled && (
+              <BulkActionBar
+                selectedIds={selectedIds}
+                pendingRequests={allRequests}
+                onSelectAll={handleSelectAll}
+                onBulkAction={handleBulkAction}
+                loadingAction={bulkLoading}
+              />
+            )}
           </div>
         )}
         ItemComponent={(props: { item: any }) => {

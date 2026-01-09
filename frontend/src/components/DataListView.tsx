@@ -109,6 +109,7 @@ interface DataListViewProps<T extends BaseItem> {
   filterFields?: FilterField[];
   getItemKey?: (item: T, index: number) => string;
   enableUrlParams?: boolean;
+  onFiltersChange?: (filters: Record<string, any>) => void;
 }
 
 const DataListView = <T extends BaseItem>({
@@ -139,6 +140,7 @@ const DataListView = <T extends BaseItem>({
   filterFields = [],
   getItemKey,
   enableUrlParams = true,
+  onFiltersChange,
 }: DataListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
@@ -157,6 +159,12 @@ const DataListView = <T extends BaseItem>({
 
   const filtersString = enableUrlParams ? queryParam.get("filters") : null;
   const [queryParamsFilters, setQueryParamsFilters] = useState({});
+
+  useEffect(() => {
+    if (onFiltersChange) {
+      onFiltersChange(debouncedFilters);
+    }
+  }, [debouncedFilters, onFiltersChange]);
 
   useEffect(() => {
     if (!enableUrlParams || !filtersString) {
